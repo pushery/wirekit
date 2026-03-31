@@ -1,0 +1,23 @@
+{
+    "name": "pushery/wirekit",
+    "description": "Free, MIT-licensed UI component library for Laravel Livewire — built with Tailwind CSS v4 and Alpine.js.",
+    "keywords": ["laravel", "livewire", "ui", "components", "tailwind", "alpine"],
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "pushery",
+            "homepage": "https://github.com/pushery"
+        }
+    ],
+    "require": {
+        "php": "^8.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "Pushery\\WireKit\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
