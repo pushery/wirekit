@@ -1,0 +1,31 @@
+# PHP
+/vendor/
+composer.lock
+.phpunit.result.cache
+.phpunit.cache/
+.php-cs-fixer.cache
+.pest/
+coverage/
+
+# Node (root: markdownlint + esbuild)
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+_ide_helper*.php
+.phpstorm.meta.php
+
+# Logs
+*.log

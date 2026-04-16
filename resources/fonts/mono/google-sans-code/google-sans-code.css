@@ -1,0 +1,32 @@
+/*
+ * Google Sans Code
+ * License: SIL Open Font License 1.1
+ * Source: https://fonts.google.com/specimen/Google+Sans+Code
+ *
+ * Available weights: 400 (Regular), 500 (Medium), 700 (Bold)
+ * Missing weights: 600 (SemiBold) — not included in this preset
+ */
+
+@font-face {
+    font-family: 'Google Sans Code';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('GoogleSansCode-Regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Google Sans Code';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('GoogleSansCode-Medium.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Google Sans Code';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('GoogleSansCode-Bold.woff2') format('woff2');
+}

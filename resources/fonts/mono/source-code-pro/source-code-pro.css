@@ -1,0 +1,32 @@
+/*
+ * Source Code Pro
+ * License: SIL Open Font License 1.1
+ * Source: https://fonts.google.com/specimen/Source+Code+Pro
+ *
+ * Available weights: 400 (Regular), 500 (Medium), 700 (Bold)
+ * Missing weights: 600 (SemiBold) — not included in this preset
+ */
+
+@font-face {
+    font-family: 'Source Code Pro';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('SourceCodePro-Regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Source Code Pro';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('SourceCodePro-Medium.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Source Code Pro';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('SourceCodePro-Bold.woff2') format('woff2');
+}
