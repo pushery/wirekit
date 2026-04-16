@@ -1,0 +1,32 @@
+/*
+ * Roboto Mono
+ * License: Apache 2.0
+ * Source: https://fonts.google.com/specimen/Roboto+Mono
+ *
+ * Available weights: 400 (Regular), 500 (Medium), 700 (Bold)
+ * Missing weights: 600 (SemiBold) — not included in this preset
+ */
+
+@font-face {
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('RobotoMono-Regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('RobotoMono-Medium.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('RobotoMono-Bold.woff2') format('woff2');
+}

@@ -1,0 +1,66 @@
+{
+    "name": "pushery/wirekit",
+    "description": "A free, open-source UI component library for Laravel Livewire — styled with Tailwind CSS v4 and powered by Alpine.js.",
+    "keywords": [
+        "laravel", "livewire", "blade", "components",
+        "tailwindcss", "alpinejs", "tall-stack", "ui-kit", "wirekit"
+    ],
+    "homepage": "https://github.com/pushery/wirekit",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "pushery",
+            "homepage": "https://github.com/pushery"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "illuminate/contracts": "^12.0",
+        "illuminate/support": "^12.0",
+        "illuminate/view": "^12.0"
+    },
+    "require-dev": {
+        "bacon/bacon-qr-code": "^3.1",
+        "laravel/pint": "^1.0",
+        "livewire/livewire": "^4.0",
+        "orchestra/testbench": "^10.0",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0"
+    },
+    "suggest": {
+        "blade-ui-kit/blade-icons": "Required for the icon system (~1.7). Install alongside your preferred icon set.",
+        "blade-ui-kit/blade-heroicons": "Heroicons preset — ~316 icons, Mini/Outline/Solid styles",
+        "mallardduck/blade-lucide-icons": "Lucide preset — ~1,500 outline icons",
+        "codeat3/blade-phosphor-icons": "Phosphor preset — ~1,500 icons in 6 weight styles",
+        "ryangjchandler/blade-tabler-icons": "Tabler preset — ~5,700 outline/filled icons",
+        "bacon/bacon-qr-code": "Required for the qr-code component — server-side QR code SVG generation"
+    },
+    "autoload": {
+        "psr-4": {
+            "Pushery\\WireKit\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Pushery\\WireKit\\Tests\\": "tests/"
+        },
+        "files": [
+            "tests/helpers.php"
+        ]
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Pushery\\WireKit\\WireKitServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
