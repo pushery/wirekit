@@ -1,0 +1,735 @@
+/*!
+ * WireKit CSS v1.0.0 — MIT License
+ * https://github.com/pushery/wirekit
+ * https://wirekit.app
+ *
+ * Design Tokens for WireKit UI Components.
+ * No third-party CSS dependencies bundled.
+ *
+ * ⚠️  DO NOT @import this file in your app.css!
+ *     Use the @wirekitStyles Blade directive instead:
+ *
+ *     <head>
+ *         @wirekitStyles
+ *         @vite(['resources/css/app.css', 'resources/js/app.js'])
+ *         @wirekitScripts
+ *     </head>
+ *
+ *     This file contains Tailwind v4 directives (@theme, @custom-variant)
+ *     that conflict with Tailwind's Vite plugin when processed via @import.
+ *
+ * To customize tokens, override CSS variables in your app.css:
+ *
+ *     @layer base {
+ *         :root { --color-wk-accent: var(--color-blue-600); }
+ *     }
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Light mode tokens ────────────────────────────────────── */
+/* Refined Baseline: neutral palette (zero chroma), editorial  */
+/* typography, 2-layer shadow system. All WCAG ratios verified. */
+
+@theme {
+    /* ─── Accent Colors ─── */
+    --color-wk-accent: var(--color-neutral-900);
+    --color-wk-accent-hover: var(--color-neutral-800);
+    --color-wk-accent-content: var(--color-neutral-900);
+    --color-wk-accent-fg: var(--color-neutral-50);  /* ~18:1 on neutral-900 */
+
+    /* ─── Danger Colors ─── */
+    --color-wk-danger: var(--color-red-600);
+    --color-wk-danger-hover: var(--color-red-700);
+    --color-wk-danger-fg: var(--color-white);
+    --color-wk-danger-text: var(--color-red-600);
+
+    /* ─── Success Colors ─── */
+    /* fg is dark-on-green (zinc-900 on green-600 = 6.35:1) because white-on-green-600
+       only reaches 3.30:1 and fails WCAG 2.2 AA for normal text. success-text is the
+       "text label" variant used on white/elevated surfaces, bumped to green-700 for 5.52:1. */
+    --color-wk-success: var(--color-green-600);
+    --color-wk-success-hover: var(--color-green-700);
+    --color-wk-success-fg: var(--color-zinc-900);
+    --color-wk-success-text: var(--color-green-700);
+
+    /* ─── Warning Colors ─── */
+    /* fg is dark-on-amber (zinc-900 on amber-500 = 9.03:1) — white-on-amber-500 only
+       reaches 2.15:1 and is the WCAG failure most often flagged in audits. */
+    --color-wk-warning: var(--color-amber-500);
+    --color-wk-warning-hover: var(--color-amber-600);
+    --color-wk-warning-fg: var(--color-zinc-900);
+
+    /* ─── Neutral Colors (Backgrounds) ─── */
+    --color-wk-bg: var(--color-white);
+    --color-wk-bg-elevated: var(--color-white);
+    --color-wk-bg-subtle: var(--color-neutral-50);
+    --color-wk-bg-muted: var(--color-neutral-100);
+    --color-wk-bg-input: var(--color-white);
+
+    /* ─── Neutral Colors (Text) ─── */
+    /* text-subtle/text-placeholder use neutral-500 for 4.74:1 on white —
+       neutral-400 only reaches 2.52:1 which fails AA for placeholder/helper copy. */
+    --color-wk-text: var(--color-neutral-950); /* ~19:1 on white */
+    --color-wk-text-muted: var(--color-neutral-500); /* 4.74:1 on white — AA minimum */
+    --color-wk-text-subtle: var(--color-neutral-500);
+    --color-wk-text-placeholder: var(--color-neutral-500);
+
+    /* ─── Borders ─── */
+    --color-wk-border: var(--color-neutral-300);
+    --color-wk-border-hover: var(--color-neutral-400);
+    --color-wk-border-subtle: var(--color-neutral-200);
+    --color-wk-border-error: var(--color-red-500);
+
+    /* ─── Focus Ring ─── */
+    --color-wk-ring: var(--color-neutral-950);
+    --color-wk-ring-offset: var(--color-white);
+
+    /* ─── Radius — single base value, everything else scales ─── */
+    --radius-wk: 0.5rem;
+    --radius-wk-sm: calc(var(--radius-wk) * 0.75);
+    --radius-wk-md: var(--radius-wk);
+    --radius-wk-lg: calc(var(--radius-wk) * 1.25);
+    --radius-wk-xl: calc(var(--radius-wk) * 2);
+    --radius-wk-full: 9999px;
+
+    /* ─── Shadows — 2-Layer System ─── */
+    --shadow-wk-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-wk-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --shadow-wk-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.10), 0 4px 10px -2px rgba(0, 0, 0, 0.06);
+    --shadow-wk-none: 0 0 0 0 transparent;
+
+    /* ─── Typography ─── */
+    --font-wk-sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-wk-mono: ui-monospace, 'Fira Code', 'Cascadia Code', monospace;
+    --font-wk-heading-weight: 600;
+    --font-wk-body-weight: 400;
+    --font-wk-letter-spacing: -0.01em;
+    --font-wk-line-height: 1.5;
+    --leading-wk-tight: 1.25;
+    --leading-wk-relaxed: 1.625;
+
+    /* ─── Motion ─── */
+    --transition-wk-duration: 150ms;
+    --transition-wk-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ─── Border Width ─── */
+    --border-wk-width: 1px;
+
+    /* ─── State Opacity ─── */
+    --opacity-wk-hover: 0.8;
+    --opacity-wk-disabled: 0.5;
+    --opacity-wk-loading: 0.7;
+
+    /* ─── Focus Ring Dimensions ─── */
+    --ring-wk-width: 2px;
+    --ring-wk-offset: 2px;
+
+    /* ─── Component Heights ─── */
+    --size-wk-xs: 1.5rem;
+    --size-wk-sm: 2rem;
+    --size-wk-md: 2.5rem;
+    --size-wk-lg: 3rem;
+    --size-wk-xl: 6rem;
+
+    /* ─── Horizontal Padding (Inputs, Buttons, Overlays) ─── */
+    --padding-wk-x-xs: 0.375rem;
+    --padding-wk-x-sm: 0.625rem;
+    --padding-wk-x-md: 0.75rem;
+    --padding-wk-x-lg: 1rem;
+    --padding-wk-x-xl: 1.5rem;
+
+    /* ─── Vertical Padding (Textarea, Overlays) ─── */
+    --padding-wk-y-xs: 0.25rem;
+    --padding-wk-y-sm: 0.375rem;
+    --padding-wk-y-md: 0.5rem;
+    --padding-wk-y-lg: 0.75rem;
+    --padding-wk-y-xl: 1rem;
+
+    /* ─── Gap / Spacing ─── */
+    --gap-wk-sm: 0.5rem;
+    --gap-wk-md: 0.75rem;
+
+    /* ─── Font Sizes per Size ─── */
+    --text-wk-xs: 0.75rem;
+    --text-wk-sm: 0.8125rem;
+    --text-wk-md: 0.875rem;
+    --text-wk-lg: 1rem;
+    --text-wk-xl: 1.25rem;
+    --text-wk-2xl: 1.5rem;
+
+    /* ─── Overlay: Backdrop ─── */
+    --color-wk-overlay: oklch(0% 0 0 / 0.5);
+
+    /* ─── Overlay: Z-Index Layers ─── */
+    --z-wk-sticky: 40;
+    --z-wk-dropdown: 50;
+    --z-wk-tooltip: 60;
+    --z-wk-modal: 70;
+    --z-wk-drawer: 70;
+
+    /* ─── Overlay: Modal Sizing ─── */
+    --size-wk-modal-sm: 24rem;
+    --size-wk-modal-md: 32rem;
+    --size-wk-modal-lg: 42rem;
+    --size-wk-modal-xl: 56rem;
+    --size-wk-modal-full: 100%;
+
+    /* ─── Overlay: Drawer Sizing ─── */
+    --size-wk-drawer-sm: 20rem;
+    --size-wk-drawer-md: 28rem;
+    --size-wk-drawer-lg: 40rem;
+
+    /* ─── Overlay: Tooltip (inverted: dark bg, light text) ─── */
+    --size-wk-tooltip-max: 20rem;
+    --color-wk-tooltip-bg: var(--color-wk-text);
+    --color-wk-tooltip-text: var(--color-wk-bg);
+
+    /* ─── Scrollbar ─── */
+    --color-wk-scrollbar-thumb: var(--color-neutral-300);
+    --color-wk-scrollbar-thumb-hover: var(--color-neutral-400);
+    --color-wk-scrollbar-track: transparent;
+    --size-wk-scrollbar: 6px;
+}
+
+/* ─── Dark mode overrides ──────────────────────────────────── */
+
+@layer theme {
+    .dark {
+        /* Accent — inverted */
+        --color-wk-accent: var(--color-neutral-50);
+        --color-wk-accent-hover: var(--color-neutral-200);
+        --color-wk-accent-content: var(--color-neutral-50);
+        --color-wk-accent-fg: var(--color-neutral-900); /* ~18.4:1 on neutral-50 */
+
+        /* Danger — both base (red-600) and hover (red-700) keep white-on-red ≥ 4.83:1
+           for WCAG AA. Previous red-500/red-600 combo failed white-fg contrast (3.76:1). */
+        --color-wk-danger: var(--color-red-600);
+        --color-wk-danger-hover: var(--color-red-700);
+        --color-wk-danger-fg: var(--color-white);
+        --color-wk-danger-text: var(--color-red-400);
+
+        /* Success — success-fg inherits zinc-900 from light mode.
+           zinc-900 on green-500 = 6.99:1 (AA ✓). */
+        --color-wk-success: var(--color-green-500);
+        --color-wk-success-hover: var(--color-green-400);
+        --color-wk-success-text: var(--color-green-400);
+
+        /* Warning — warning-fg inherits zinc-900 from light mode.
+           zinc-900 on amber-400 = 11.88:1 (AAA ✓). */
+        --color-wk-warning: var(--color-amber-400);
+        --color-wk-warning-hover: var(--color-amber-300);
+
+        /* Neutral Backgrounds — elevation via contrast, not blur */
+        --color-wk-bg: var(--color-neutral-950);
+        --color-wk-bg-elevated: var(--color-neutral-900);
+        --color-wk-bg-subtle: var(--color-neutral-900);
+        --color-wk-bg-muted: var(--color-neutral-800);
+        --color-wk-bg-input: var(--color-neutral-950);
+
+        /* Neutral Text — subtle/placeholder use neutral-400 on neutral-950 for ~7.82:1.
+           neutral-500 only reaches 4.18:1 on neutral-950 — below AA. */
+        --color-wk-text: var(--color-neutral-50);  /* ~18.4:1 on neutral-950 */
+        --color-wk-text-muted: var(--color-neutral-400); /* ~7.82:1 */
+        --color-wk-text-subtle: var(--color-neutral-400);
+        --color-wk-text-placeholder: var(--color-neutral-400);
+
+        /* Borders — neutral-600 on neutral-950 ≈ 2.53:1 (UI decorative OK,
+           inputs pair with bg-input differentiation for compound cue).
+           Previous neutral-800 was 1.31:1 — too low even for decorative use. */
+        --color-wk-border: var(--color-neutral-600);
+        --color-wk-border-hover: var(--color-neutral-500);
+        --color-wk-border-subtle: var(--color-neutral-700);
+        --color-wk-border-error: var(--color-red-400);
+
+        /* Focus Ring */
+        --color-wk-ring: var(--color-neutral-50);
+        --color-wk-ring-offset: var(--color-neutral-950);
+
+        /* Backdrop — stronger opacity in dark mode */
+        --color-wk-overlay: oklch(0% 0 0 / 0.7);
+
+        /* Shadows — higher opacity needed on near-black backgrounds */
+        --shadow-wk-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.20);
+        --shadow-wk-md: 0 4px 12px -2px rgba(0, 0, 0, 0.30), 0 2px 4px -1px rgba(0, 0, 0, 0.20);
+        --shadow-wk-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.40), 0 4px 10px -2px rgba(0, 0, 0, 0.25);
+
+        /* Scrollbar — lighter thumb on dark backgrounds */
+        --color-wk-scrollbar-thumb: var(--color-neutral-600);
+        --color-wk-scrollbar-thumb-hover: var(--color-neutral-500);
+    }
+}
+
+/* ─── Scrollbar Utility ────────────────────────────────────── */
+/* Apply .wk-scrollbar to any scrollable container for a slim, */
+/* themed scrollbar that respects light/dark mode.             */
+/*                                                              */
+/* Usage:                                                       */
+/*   <div class="wk-scrollbar overflow-auto max-h-64">...</div> */
+/*   <pre class="wk-scrollbar">...</pre>                       */
+/*                                                              */
+/* All values are customizable via CSS variables:               */
+/*   --color-wk-scrollbar-thumb, --color-wk-scrollbar-track,   */
+/*   --size-wk-scrollbar                                        */
+
+/* Firefox — uses native thin scrollbar API */
+.wk-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-wk-scrollbar-thumb) var(--color-wk-scrollbar-track);
+}
+
+/* WebKit/Blink (Chrome, Safari, Edge) — custom pseudo-elements */
+.wk-scrollbar::-webkit-scrollbar {
+    width: var(--size-wk-scrollbar);
+    height: var(--size-wk-scrollbar);
+}
+
+.wk-scrollbar::-webkit-scrollbar-track {
+    background: var(--color-wk-scrollbar-track);
+}
+
+.wk-scrollbar::-webkit-scrollbar-thumb {
+    background-color: var(--color-wk-scrollbar-thumb);
+    border-radius: var(--radius-wk-full);
+}
+
+.wk-scrollbar::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-wk-scrollbar-thumb-hover);
+}
+
+/* Corner piece where horizontal and vertical scrollbars meet */
+.wk-scrollbar::-webkit-scrollbar-corner {
+    background: var(--color-wk-scrollbar-track);
+}
+
+/* ─── Alpine x-transition sync ─────────────────────────────── */
+/* Components with Alpine transitions use this class.           */
+/* Duration and easing are read from design tokens.             */
+.wk-transition {
+    transition-duration: var(--transition-wk-duration);
+    transition-timing-function: var(--transition-wk-easing);
+}
+
+/* ─── Skeleton loader shimmer ──────────────────────────────── */
+/* Animated placeholder for content that is being loaded.       */
+/* Respects prefers-reduced-motion (falls back to solid color). */
+.wk-skeleton {
+    position: relative;
+    overflow: hidden;
+}
+
+.wk-skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        color-mix(in srgb, var(--color-wk-bg-elevated) 60%, transparent) 50%,
+        transparent 100%
+    );
+    animation: wk-shimmer 1.6s infinite;
+}
+
+@keyframes wk-shimmer {
+    100% { transform: translateX(100%); }
+}
+
+/* ─── Progress bar indeterminate ───────────────────────────── */
+/* Used when the total progress is unknown (e.g. background     */
+/* task with no percentage). Bar slides across the track.       */
+.wk-progress-indeterminate {
+    width: 40%;
+    animation: wk-progress-indeterminate 1.4s infinite ease-in-out;
+}
+
+@keyframes wk-progress-indeterminate {
+    0% { left: -40%; }
+    100% { left: 100%; }
+}
+
+/* ─── Circular progress indeterminate ─────────────────────── */
+/* SVG circle that rotates when value is unknown.              */
+.wk-progress-circle-indeterminate {
+    animation: wk-progress-circle-spin 1.4s linear infinite;
+    transform-origin: center;
+}
+
+@keyframes wk-progress-circle-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ─── Resizable (hybrid split panels) ────────────────────── */
+/* Split panel layout where CSS handles layout (flex + width/  */
+/* height + min/max + containment) and a tiny Alpine component */
+/* (wirekitResizableHandle, ~170 LOC) handles the interactive  */
+/* drag + keyboard control on the divider between panels.      */
+/*                                                              */
+/* Markup contract:                                             */
+/*   <div data-wk-resizable data-wk-direction="horizontal">    */
+/*     <div data-wk-resizable-panel style="--wk-default-size:50%;
+/*                                          --wk-min-size:10%;
+/*                                          --wk-max-size:90%;">…</div>
+/*     <div data-wk-resizable-handle                            */
+/*          role="separator"                                    */
+/*          aria-orientation="vertical|horizontal"              */
+/*          aria-valuenow/min/max                               */
+/*          aria-controls="…previous panel id…"                 */
+/*          tabindex="0">                                       */
+/*       <span data-wk-resizable-grip></span>                   */
+/*     </div>                                                   */
+/*     <div data-wk-resizable-panel>…</div>                     */
+/*   </div>                                                     */
+/*                                                              */
+/* The handle is keyboard-focusable and supports Arrow keys,    */
+/* Home, End, Enter/Space per the WAI-ARIA Window Splitter      */
+/* pattern. Pointer drag updates the previous panel's inline    */
+/* width/height as a percentage, clamped to [minSize, maxSize]. */
+
+/* Wrapper bounds isolation. Without containment, dragging the   */
+/* native corner grip past the panel's `max-width` / `max-height` */
+/* could push the wrapper itself wider/taller — the inline width  */
+/* the browser writes during resize wins over the `max-*` clamp   */
+/* unless we tell the browser the wrapper's size is independent  */
+/* of its descendants.                                            */
+/*                                                                 */
+/* Horizontal mode: wrapper's width is externally set (`w-full`   */
+/* = 100% of parent), height flows from panel content, so we      */
+/* lock only the inline axis via `contain: inline-size`. This is  */
+/* well-supported since Chrome 105 / Firefox 110 / Safari 16.    */
+/*                                                                 */
+/* Vertical mode: the component contract requires an explicit    */
+/* container height (`style="height: 18rem"` or equivalent — the */
+/* docs explicitly call this out), so BOTH dimensions are known   */
+/* externally and we can use the stronger `contain: size` which  */
+/* is universally supported since Chrome 52 / Firefox 69 / Safari */
+/* 15.4. This is deliberately different from the older           */
+/* `contain: block-size` value (Chrome 121 / Firefox 135 / Safari */
+/* 18) which would not kick in on older browsers and left the    */
+/* vertical wrapper able to grow past its 18rem cap on any       */
+/* browser older than a few months — the exact scrollbar bug the */
+/* user reported.                                                  */
+[data-wk-resizable][data-wk-direction="horizontal"] {
+    contain: inline-size;
+}
+[data-wk-resizable][data-wk-direction="vertical"] {
+    contain: size;
+}
+
+/* All panels — `overflow: hidden` is mandatory for two reasons:  */
+/*                                                                 */
+/*   1. The native CSS `resize` property only takes effect when   */
+/*      `overflow` is anything other than `visible`.              */
+/*   2. `overflow: auto` would pop a scrollbar the moment the     */
+/*      panel's content is even one pixel taller than the        */
+/*      allocated height — which happens at the edges of the     */
+/*      drag range (e.g. when the user drags the top panel to    */
+/*      its `max-height` and the bottom panel's padding just     */
+/*      barely exceeds the remaining space). `hidden` clips      */
+/*      cleanly instead. Users who need scrollable content inside */
+/*      a panel should wrap it in their own scroll container.   */
+[data-wk-resizable] > [data-wk-resizable-panel] {
+    overflow: hidden;
+    /* min-w/min-h: 0 prevents intrinsic content from forcing    */
+    /* the panel wider/taller than the user's drag target.       */
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Horizontal layout: every non-last panel is sized via an inline */
+/* CSS variable (`--wk-default-size`) that the Blade template      */
+/* writes from the `defaultSize` prop. The Alpine handle component */
+/* later overrides this via an inline `width: XX%` during drags or */
+/* keyboard adjustment; inline-style specificity wins the cascade. */
+/* `flex: 0 0 auto` + `width` is the combination that lets an      */
+/* externally-written inline width take effect inside flexbox.    */
+[data-wk-resizable][data-wk-direction="horizontal"] > [data-wk-resizable-panel]:not(:last-child) {
+    flex: 0 0 auto;
+    width: var(--wk-default-size, 50%);
+    min-width: var(--wk-min-size, 10%);
+    max-width: var(--wk-max-size, 90%);
+}
+
+/* Vertical layout: same idea, but on the height axis. */
+[data-wk-resizable][data-wk-direction="vertical"] > [data-wk-resizable-panel]:not(:last-child) {
+    flex: 0 0 auto;
+    height: var(--wk-default-size, 50%);
+    min-height: var(--wk-min-size, 10%);
+    max-height: var(--wk-max-size, 90%);
+}
+
+/* Last panel always absorbs whatever space the others leave —   */
+/* but it still honours its declared min-size so content cannot  */
+/* be squeezed into a column narrower than `minSize%` of the     */
+/* wrapper. Without this floor a sibling panel could grow until  */
+/* the last panel collapsed to its content's intrinsic minimum,  */
+/* producing the "Inspector rendered one letter per line" bug.   */
+/* The JS handle additionally clamps every drag against this    */
+/* reserved space so the UI stops the user *before* overflow.   */
+[data-wk-resizable][data-wk-direction="horizontal"] > [data-wk-resizable-panel]:last-child {
+    flex: 1 1 0%;
+    min-width: var(--wk-min-size, 10%);
+}
+[data-wk-resizable][data-wk-direction="vertical"] > [data-wk-resizable-panel]:last-child {
+    flex: 1 1 0%;
+    min-height: var(--wk-min-size, 10%);
+}
+
+/* Interactive handle — tinted divider with a centered grip pill.  */
+/* The handle itself is a thin line between panels. In the middle  */
+/* of that line sits an explicit grip pill (the <span>) that marks */
+/* the drag target. The whole handle is the hit area; the pill is  */
+/* the visual affordance.                                          */
+[data-wk-resizable] > [data-wk-resizable-handle] {
+    position: relative;
+    flex-shrink: 0;
+    align-self: stretch;
+    background-color: var(--color-wk-border);
+    /* `touch-action: none` prevents the browser from hijacking   */
+    /* the drag as a scroll gesture on touchscreen devices.       */
+    touch-action: none;
+    /* Subtle inset highlight + shadow to lift the divider off   */
+    /* the panel surface without making it look like a button.   */
+    box-shadow:
+        inset 1px 0 0 var(--color-wk-bg-subtle),
+        inset -1px 0 0 var(--color-wk-bg-subtle);
+    transition: background-color 150ms ease;
+    outline: none;
+}
+[data-wk-resizable] > [data-wk-resizable-handle]:hover,
+[data-wk-resizable] > [data-wk-resizable-handle][data-dragging="true"] {
+    background-color: var(--color-wk-accent);
+}
+[data-wk-resizable] > [data-wk-resizable-handle]:focus-visible {
+    /* Accent outline for keyboard users — matches the rest of    */
+    /* WireKit's focus-ring treatment (2 px outline + offset).   */
+    outline: 2px solid var(--color-wk-ring);
+    outline-offset: 2px;
+    background-color: var(--color-wk-accent);
+}
+[data-wk-resizable][data-wk-direction="horizontal"] > [data-wk-resizable-handle] {
+    width: 4px;
+    height: auto;
+    cursor: col-resize;
+}
+[data-wk-resizable][data-wk-direction="vertical"] > [data-wk-resizable-handle] {
+    height: 4px;
+    width: auto;
+    cursor: row-resize;
+    box-shadow:
+        inset 0 1px 0 var(--color-wk-bg-subtle),
+        inset 0 -1px 0 var(--color-wk-bg-subtle);
+}
+
+/* Grip pill — a tiny rounded rectangle centered on the divider,  */
+/* carrying three dots aligned with the drag axis so the user can */
+/* tell at a glance which direction the handle resizes. The pill   */
+/* is absolutely positioned relative to the handle and cannot be   */
+/* tabbed or clicked independently (the whole handle is the hit    */
+/* target; the pill is purely visual decoration).                  */
+[data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-grip] {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--color-wk-bg);
+    border: 1px solid var(--color-wk-border);
+    border-radius: var(--radius-wk-sm);
+    pointer-events: none;
+    background-image:
+        radial-gradient(circle at center, var(--color-wk-text-muted) 1.25px, transparent 1.75px),
+        radial-gradient(circle at center, var(--color-wk-text-muted) 1.25px, transparent 1.75px),
+        radial-gradient(circle at center, var(--color-wk-text-muted) 1.25px, transparent 1.75px);
+    background-size: 4px 4px;
+    background-repeat: no-repeat;
+    transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+/* Horizontal layout → grip pill is tall-and-narrow with dots    */
+/* stacked vertically (┋) — the drag axis is left↔right.         */
+[data-wk-resizable][data-wk-direction="horizontal"] > [data-wk-resizable-handle] > [data-wk-resizable-grip] {
+    width: 8px;
+    height: 22px;
+    background-position:
+        2px 4px,
+        2px 9px,
+        2px 14px;
+}
+
+/* Vertical layout → grip pill is short-and-wide with dots laid   */
+/* out horizontally (⋯) — the drag axis is top↔bottom.           */
+[data-wk-resizable][data-wk-direction="vertical"] > [data-wk-resizable-handle] > [data-wk-resizable-grip] {
+    width: 22px;
+    height: 8px;
+    background-position:
+        4px 2px,
+        9px 2px,
+        14px 2px;
+}
+
+/* When the handle is active (hover, focus, drag), the grip pill  */
+/* adopts the accent color so the whole affordance reads as one  */
+/* interactive unit.                                              */
+[data-wk-resizable] > [data-wk-resizable-handle]:hover > [data-wk-resizable-grip],
+[data-wk-resizable] > [data-wk-resizable-handle]:focus-visible > [data-wk-resizable-grip],
+[data-wk-resizable] > [data-wk-resizable-handle][data-dragging="true"] > [data-wk-resizable-grip] {
+    border-color: var(--color-wk-accent);
+    background-color: var(--color-wk-bg-subtle);
+}
+
+/* ─── Slider (range input) styling ───────────────────────── */
+/* Cross-browser styles for <input type="range">. Removes     */
+/* native appearance and applies WireKit accent color to the   */
+/* track and thumb. Used by <x-wirekit::slider>.               */
+
+/* Track styling: the horizontal bar the thumb slides along. */
+.wk-slider {
+    height: auto;
+}
+
+/* WebKit (Chrome, Safari, Edge, Opera) */
+.wk-slider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--color-wk-border);
+}
+
+.wk-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    background: var(--color-wk-accent);
+    border: 2px solid var(--color-wk-bg);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    margin-top: -0.375rem; /* center thumb on track: (track-h - thumb-h) / 2 */
+    cursor: pointer;
+}
+
+.wk-slider:focus-visible::-webkit-slider-thumb {
+    outline: 2px solid var(--color-wk-ring);
+    outline-offset: 2px;
+}
+
+/* Firefox */
+.wk-slider::-moz-range-track {
+    width: 100%;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--color-wk-border);
+    border: none;
+}
+
+.wk-slider::-moz-range-thumb {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 9999px;
+    background: var(--color-wk-accent);
+    border: 2px solid var(--color-wk-bg);
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    cursor: pointer;
+}
+
+.wk-slider:focus-visible::-moz-range-thumb {
+    outline: 2px solid var(--color-wk-ring);
+    outline-offset: 2px;
+}
+
+/* Size variants: sm track = 0.25rem, md = 0.5rem (default above), lg = 0.75rem */
+.wk-slider.h-1::-webkit-slider-runnable-track { height: 0.25rem; }
+.wk-slider.h-1::-webkit-slider-thumb { margin-top: -0.5rem; }
+.wk-slider.h-1::-moz-range-track { height: 0.25rem; }
+
+.wk-slider.h-3::-webkit-slider-runnable-track { height: 0.75rem; }
+.wk-slider.h-3::-webkit-slider-thumb { margin-top: -0.25rem; }
+.wk-slider.h-3::-moz-range-track { height: 0.75rem; }
+
+/* Disabled slider fades the thumb too */
+.wk-slider:disabled::-webkit-slider-thumb { cursor: not-allowed; }
+.wk-slider:disabled::-moz-range-thumb { cursor: not-allowed; }
+
+/* ─── Timeline item content padding ───────────────────────── */
+/* Every timeline item content area carries a `padding-bottom`  */
+/* that creates visual spacing between entries while keeping    */
+/* the vertical connector line continuous (no margin gaps).     */
+/*                                                               */
+/* The LAST visible item must NOT carry that trailing padding,  */
+/* otherwise it leaves a phantom block of empty space below the */
+/* dot after the text ends. Two selectors are needed because    */
+/* `<x-wirekit::timeline after="true">` appends an `aria-hidden` */
+/* continuation `<li>` after the real last item, which would    */
+/* break a naive `:last-child` rule:                             */
+/*                                                               */
+/*   1. Normal case (no `after`): the real last item IS the      */
+/*      `:last-child`.                                           */
+/*   2. `after="true"` case: the real last item is followed by   */
+/*      `<li aria-hidden="true">`, so we match via `:has()`.     */
+/*                                                               */
+/* This replaces the former inline `style="padding-bottom:..."` */
+/* + `[li:last-child_&]:pb-0` combo in the Blade template. The    */
+/* inline style beat the class (no `!important`), so the pb-0    */
+/* never actually applied — the bug the user reported when the   */
+/* last-before-continuation item still showed trailing padding.  */
+[data-wk-timeline] [data-wk-timeline-item-content] {
+    padding-bottom: 1.5rem;
+}
+[data-wk-timeline] > li:last-child > [data-wk-timeline-item-content],
+[data-wk-timeline] > li:has(+ li[aria-hidden="true"]) > [data-wk-timeline-item-content] {
+    padding-bottom: 0;
+}
+
+/* Tour step initial position — park every tour step off-screen before    */
+/* Floating UI has a chance to compute its real coordinates. Without this  */
+/* rule, `position: fixed` elements with no top/left fall back to (0, 0)   */
+/* (the "static position" of a fixed element), which causes a visible      */
+/* one-frame flash at the top-left of the viewport between Alpine's        */
+/* `x-show` flip and Floating UI's async positioning pass. Floating UI     */
+/* writes `style="left: Xpx; top: Ypx"` directly on the element once       */
+/* computePosition() resolves — inline styles outrank this stylesheet rule */
+/* (no !important needed), so the panel jumps straight to its final spot. */
+[data-wk-tour-step] {
+    left: -9999px;
+    top: -9999px;
+}
+
+/* Image Compare component tokens. Both are optional overrides — the Blade */
+/* template uses var(..., <fallback>) so the component keeps working even  */
+/* when a consumer ships an older CSS file than the current template.      */
+:root {
+    /* Width (horizontal) or height (vertical) of the reveal divider line. */
+    --wk-image-compare-divider-size: 2px;
+    /* Handle diameter — overridable for smaller/larger thumb targets.     */
+    --wk-image-compare-handle-size: 2.5rem;
+}
+
+/* Accessibility: disable/shorten all WireKit animations & transitions for */
+/* users who request reduced motion (OS-level setting). Covers keyframe    */
+/* animations AND Alpine x-transition durations on WireKit components.     */
+@media (prefers-reduced-motion: reduce) {
+    .wk-skeleton::after,
+    .wk-progress-indeterminate,
+    .wk-progress-circle-indeterminate {
+        animation: none;
+    }
+    /* Neutralize transition-* utilities used by WireKit overlays, tooltips,
+       accordions, and combobox dropdowns. Durations collapse to 0.01ms so
+       elements still appear/disappear, but without visible motion. */
+    [x-transition],
+    [x-transition\:enter],
+    [x-transition\:leave] {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+    /* Image compare: neutralize every transition on the figure + children  */
+    /* so dragging does not smooth-animate the clip-path reveal for users   */
+    /* with vestibular sensitivities. Positioning is inline-style driven,   */
+    /* so values still jump instantly when the user interacts.              */
+    [x-data*="wirekitImageCompare"],
+    [x-data*="wirekitImageCompare"] * {
+        transition: none !important;
+    }
+}

@@ -1,0 +1,158 @@
+@props([
+    'label' => null,
+    'hint' => null,
+    'error' => null,
+    'options' => [],
+    'placeholder' => 'Select...',
+    'scope' => null,
+])
+
+@php
+    use Pushery\WireKit\WireKit;
+
+    $id = $attributes->get('id', $attributes->get('name', 'multi-select-' . \Illuminate\Support\Str::random(6)));
+    $name = $attributes->get('name', $id);
+
+    $hasError = $error || ($errors ?? null)?->has($name);
+    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+
+    // Container classes — styled like an input field, wraps pills + filter input
+    $containerClasses = WireKit::resolveClasses('multi-select', 'base', implode(' ', [
+        'flex flex-wrap items-center gap-1',
+        'min-h-[var(--size-wk-md)]',
+        'px-[var(--padding-wk-x-md)] py-1',
+        'font-[family-name:var(--font-wk-sans)]',
+        'bg-[var(--color-wk-bg-input)]',
+        'rounded-[var(--radius-wk-md)]',
+        'border-[length:var(--border-wk-width)]',
+        'shadow-[var(--shadow-wk-sm)]',
+        'transition-colors duration-[var(--transition-wk-duration)]',
+        'focus-within:ring-[length:var(--ring-wk-width)] focus-within:ring-[var(--color-wk-ring)]',
+        'cursor-text',
+    ]), $scope);
+
+    $stateClasses = $hasError
+        ? 'border-[var(--color-wk-border-error)]'
+        : 'border-[var(--color-wk-border)]';
+
+    // Pill classes for selected values — py-1 for balanced vertical padding
+    $pillClasses = implode(' ', [
+        'inline-flex items-center gap-1',
+        'pl-[var(--padding-wk-x-sm)] pr-1 py-1',
+        'text-[length:var(--text-wk-sm)]',
+        'bg-[var(--color-wk-bg-muted)]',
+        'text-[var(--color-wk-text)]',
+        'rounded-[var(--radius-wk-sm)]',
+    ]);
+
+    // Dropdown option classes
+    $optionClasses = implode(' ', [
+        'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]',
+        'text-[length:var(--text-wk-md)]',
+        'text-[var(--color-wk-text)]',
+        'cursor-pointer',
+        'hover:bg-[var(--color-wk-bg-muted)]',
+        'transition-colors duration-[var(--transition-wk-duration)]',
+    ]);
+
+    $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+
+    // Encode options for Alpine — convert to array of {value, label} objects
+    $encodedOptions = collect($options)->map(fn ($label, $value) => [
+        'value' => (string) $value,
+        'label' => (string) $label,
+    ])->values()->all();
+@endphp
+
+<div class="space-y-1.5">
+    @if($label)
+        <x-wirekit::label :for="$id . '-input'">{{ $label }}</x-wirekit::label>
+    @endif
+
+    <div
+        x-data="wirekitMultiSelect({ options: {{ json_encode($encodedOptions) }}, name: '{{ $name }}' })"
+        class="relative"
+        @click.away="dropdownOpen = false"
+        @keydown.escape="dropdownOpen = false"
+    >
+        {{-- Hidden inputs for form submission --}}
+        <template x-for="(val, i) in selected" :key="i">
+            <input type="hidden" :name="'{{ $name }}[]'" :value="val" />
+        </template>
+
+        {{-- Input container with pills --}}
+        <div
+            class="{{ $containerClasses }} {{ $stateClasses }}"
+            @click="$refs.filterInput.focus(); dropdownOpen = true"
+        >
+            {{-- Selected value pills --}}
+            <template x-for="(val, i) in selected" :key="'pill-'+val">
+                <span class="{{ $pillClasses }}">
+                    <span x-text="getLabel(val)"></span>
+                    <button
+                        type="button"
+                        @click.stop="deselect(val)"
+                        :aria-label="'Remove ' + getLabel(val)"
+                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                    >
+                        <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
+                    </button>
+                </span>
+            </template>
+
+            {{-- Filter text input --}}
+            <input
+                type="text"
+                id="{{ $id }}-input"
+                x-ref="filterInput"
+                x-model="filter"
+                @focus="dropdownOpen = true"
+                @input="dropdownOpen = true"
+                @keydown.backspace="onBackspace($event)"
+                role="combobox"
+                aria-haspopup="listbox"
+                :aria-expanded="dropdownOpen ? 'true' : 'false'"
+                aria-controls="{{ $id }}-listbox"
+                aria-autocomplete="list"
+                @if($hasError) aria-invalid="true" @endif
+                @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+                :placeholder="selected.length === 0 ? '{{ $placeholder }}' : ''"
+                class="flex-1 min-w-[80px] bg-transparent text-[var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[var(--color-wk-text-placeholder)] outline-none"
+            />
+        </div>
+
+        {{-- Dropdown listbox --}}
+        <div
+            x-show="dropdownOpen && filteredOptions.length > 0"
+            x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"
+            x-transition:enter-start="opacity-0 -translate-y-1"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-[var(--transition-wk-duration)]"
+            x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0"
+            id="{{ $id }}-listbox"
+            role="listbox"
+            aria-multiselectable="true"
+            class="absolute z-[var(--z-wk-dropdown)] mt-1 w-full max-h-48 overflow-y-auto rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-lg)] wk-scrollbar"
+            x-cloak
+        >
+            <template x-for="opt in filteredOptions" :key="opt.value">
+                <div
+                    role="option"
+                    :aria-selected="selected.includes(opt.value) ? 'true' : 'false'"
+                    class="{{ $optionClasses }}"
+                    :class="selected.includes(opt.value) ? 'font-[number:var(--font-wk-heading-weight)]' : ''"
+                    @click="toggle(opt.value)"
+                >
+                    <span x-text="opt.label"></span>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    @if($hasError && $errorMessage)
+        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    @elseif($hint)
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @endif
+</div>

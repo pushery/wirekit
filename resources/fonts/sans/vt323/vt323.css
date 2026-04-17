@@ -1,0 +1,16 @@
+/*
+ * VT323
+ * License: SIL Open Font License 1.1
+ * Source: https://fonts.google.com/specimen/VT323
+ *
+ * Available weights: 400 (Regular)
+ * VT323 is a single-weight pixel font inspired by the DEC VT320 terminal.
+ */
+
+@font-face {
+    font-family: 'VT323';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('VT323-Regular.woff2') format('woff2');
+}
