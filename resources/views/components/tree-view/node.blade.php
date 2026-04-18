@@ -1,0 +1,86 @@
+@props([
+    'label' => '',
+    'icon' => null,
+    'expanded' => false,
+    'selected' => false,
+    'scope' => null,
+])
+
+@php
+    use Pushery\WireKit\WireKit;
+
+    // Tree node: each item is a treeitem with optional nested group.
+    // Indentation is handled by nested <ul> elements — browser + screen reader
+    // naturally convey the nesting level.
+    $nodeClasses = WireKit::resolveClasses('tree-view.node', 'base', implode(' ', [
+        'list-none',
+    ]), $scope);
+
+    // The clickable label row
+    $labelClasses = implode(' ', [
+        'flex items-center gap-1',
+        'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
+        'rounded-[var(--radius-wk-sm)]',
+        'cursor-pointer select-none',
+        'hover:bg-[var(--color-wk-bg-muted)]',
+        'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'transition-colors duration-[var(--transition-wk-duration)]',
+    ]);
+
+    $hasChildren = $slot->isNotEmpty();
+    $nodeId = 'wk-tree-' . \Illuminate\Support\Str::random(6);
+@endphp
+
+<li
+    role="treeitem"
+    @if($hasChildren) aria-expanded="{{ $expanded ? 'true' : 'false' }}" @endif
+    @if($selected) aria-selected="true" @endif
+    {{ $attributes->class([$nodeClasses]) }}
+    x-data="{ nodeExpanded: {{ $expanded ? 'true' : 'false' }} }"
+>
+    {{-- Label row — click toggles expansion for branch nodes.
+         Leaf nodes use margin-left instead of an inline spacer so the
+         hover background does not cover empty whitespace. --}}
+    <div
+        class="{{ $labelClasses }}"
+        tabindex="-1"
+        data-wk-tree-node
+        @if(!$hasChildren) style="margin-left: 1.25rem;" @endif
+        @if($hasChildren)
+            @click="nodeExpanded = !nodeExpanded; $el.closest('[role=treeitem]').setAttribute('aria-expanded', nodeExpanded)"
+        @endif
+    >
+        {{-- Expand/collapse chevron (only for branch nodes) --}}
+        @if($hasChildren)
+            <svg
+                aria-hidden="true"
+                class="h-4 w-4 shrink-0 text-[var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]"
+                :class="nodeExpanded ? 'rotate-90' : ''"
+                viewBox="0 0 16 16"
+                fill="currentColor"
+            >
+                <path d="M6 3l5 5-5 5V3z"/>
+            </svg>
+        @endif
+
+        {{-- Optional icon --}}
+        @if($icon)
+            <x-wirekit::icon :name="$icon" class="h-4 w-4 shrink-0" />
+        @endif
+
+        {{-- Node label text --}}
+        <span class="truncate">{{ $label }}</span>
+    </div>
+
+    {{-- Nested children group --}}
+    @if($hasChildren)
+        <ul
+            role="group"
+            x-show="nodeExpanded"
+            x-collapse
+            class="pl-4"
+        >
+            {{ $slot }}
+        </ul>
+    @endif
+</li>

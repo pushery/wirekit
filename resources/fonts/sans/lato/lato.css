@@ -1,0 +1,24 @@
+/*
+ * Lato
+ * License: SIL Open Font License 1.1
+ * Source: https://fonts.google.com/specimen/Lato
+ *
+ * Available weights: 400 (Regular), 700 (Bold)
+ * Missing weights: 500 (Medium), 600 (SemiBold) — not available for this font
+ */
+
+@font-face {
+    font-family: 'Lato';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('Lato-Regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Lato';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('Lato-Bold.woff2') format('woff2');
+}

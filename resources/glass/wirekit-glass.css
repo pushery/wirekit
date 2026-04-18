@@ -1,0 +1,49 @@
+/* WireKit Liquid Glass Extension v1.0.0
+ * Tier 1: backdrop-filter (all modern browsers)
+ * Tier 2: SVG feDisplacementMap refraction (Chrome/Chromium)
+ * Requires: <x-wirekit::glass /> in layout <head>
+ */
+
+/* ── Tier 1 — Frosted Glass ──────────────────────────────── */
+.wk-glass {
+    backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
+    background: rgba(255, 255, 255, 0.72);
+    border: 0.5px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04),
+                inset 0 0.5px 0 rgba(255, 255, 255, 0.6);
+}
+
+.dark .wk-glass {
+    background: rgba(30, 30, 32, 0.78);
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.20),
+                inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ── Tier 2 — Base (Tier 1 fallback for non-Chrome) ──────── */
+.wk-glass-refract {
+    backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
+    -webkit-backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
+    background: rgba(255, 255, 255, 0.72);
+    border: 0.5px solid rgba(255, 255, 255, 0.45);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04),
+                inset 0 0.5px 0 rgba(255, 255, 255, 0.6);
+}
+
+.dark .wk-glass-refract {
+    background: rgba(30, 30, 32, 0.78);
+    border-color: rgba(255, 255, 255, 0.10);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.20),
+                inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* ── Tier 2 — SVG Displacement (Progressive Enhancement) ─── */
+@supports (backdrop-filter: url(#x)) {
+    .wk-glass-refract {
+        backdrop-filter:
+            blur(20px) saturate(1.8) brightness(1.05) url(#wk-glass-refract);
+        -webkit-backdrop-filter:
+            blur(20px) saturate(1.8) brightness(1.05) url(#wk-glass-refract);
+    }
+}

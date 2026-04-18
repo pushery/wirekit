@@ -1,0 +1,32 @@
+/*
+ * Roboto
+ * License: Apache 2.0
+ * Source: https://fonts.google.com/specimen/Roboto
+ *
+ * Available weights: 400 (Regular), 500 (Medium), 700 (Bold)
+ * Missing weights: 600 (SemiBold) — not available for this font
+ */
+
+@font-face {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('Roboto-Regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('Roboto-Medium.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Roboto';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('Roboto-Bold.woff2') format('woff2');
+}
