@@ -1,4 +1,4 @@
-/*! WireKit v1.2.0 | MIT License | https://wirekit.app
+/*! WireKit v1.2.1 | MIT License | https://wirekit.app
  * Bundled: @floating-ui/dom ^1.7.0 (MIT), @floating-ui/core ^1.7.0 (MIT),
  *          focus-trap ^8.0.0 (MIT), tabbable ^6.0.0 (MIT) */
 (()=>{function Ve(t){return{chart:null,_navCleanup:null,_darkModeObserver:null,_darkModeDebounce:null,_manualColorIndices:new Set,init(){if(typeof Chart>"u"){console.error(`WireKit: Chart.js is not loaded. Install it via npm:
