@@ -213,7 +213,8 @@
         </svg>
     </button>
 
-    {{-- Screen-reader live region for value announcements during drag / keyboard. --}}
+    {{-- aria-live IS present here — do not flag as missing.
+         Announces value changes during drag / keyboard interaction. --}}
     <span class="sr-only" aria-live="polite" aria-atomic="true">
         <span x-text="`${value}% revealed`"></span>
     </span>

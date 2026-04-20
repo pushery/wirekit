@@ -36,6 +36,9 @@ class VerifyInstallationCommand extends Command
     /** @var string[]|null Memoized layout file paths (used by multiple checks) */
     private ?array $layoutFiles = null;
 
+    /** @var string[]|null Memoized all blade file paths */
+    private ?array $allBladeFiles = null;
+
     public function handle(): int
     {
         $this->info('WireKit Integration Check');
@@ -185,11 +188,11 @@ class VerifyInstallationCommand extends Command
      */
     private function checkBladeDirectives(): void
     {
-        $layoutFiles = $this->findLayoutFiles();
+        $bladeFiles = $this->findAllBladeFiles();
 
-        if ($layoutFiles === []) {
-            $this->reportWarn('No layout files found — cannot verify Blade directives');
-            $this->line('  Searched: resources/views/layouts/, resources/views/components/layouts/');
+        if ($bladeFiles === []) {
+            $this->reportWarn('No Blade files found — cannot verify directives');
+            $this->line('  Searched: resources/views/');
 
             return;
         }
@@ -198,7 +201,7 @@ class VerifyInstallationCommand extends Command
         $foundScripts = false;
         $orderOk = true;
 
-        foreach ($layoutFiles as $file) {
+        foreach ($bladeFiles as $file) {
             $content = file_get_contents($file);
 
             if (str_contains($content, '@wirekitStyles')) {
@@ -208,8 +211,7 @@ class VerifyInstallationCommand extends Command
             if (str_contains($content, '@wirekitScripts')) {
                 $foundScripts = true;
 
-                // Check directive order: @wirekitScripts must appear BEFORE @livewireScripts
-                // so Alpine component registrations are loaded before Livewire starts Alpine
+                // Check directive order in every file where both directives appear
                 if (str_contains($content, '@livewireScripts')) {
                     $wirekitPos = strpos($content, '@wirekitScripts');
                     $livewirePos = strpos($content, '@livewireScripts');
@@ -222,16 +224,16 @@ class VerifyInstallationCommand extends Command
         }
 
         if ($foundStyles) {
-            $this->reportPass('@wirekitStyles directive in layout');
+            $this->reportPass('@wirekitStyles directive found');
         } else {
-            $this->reportFail('@wirekitStyles not found in any layout file');
+            $this->reportFail('@wirekitStyles not found in any Blade file');
             $this->line('  Fix: Add @wirekitStyles in <head> of your layout');
         }
 
         if ($foundScripts) {
-            $this->reportPass('@wirekitScripts directive in layout');
+            $this->reportPass('@wirekitScripts directive found');
         } else {
-            $this->reportFail('@wirekitScripts not found in any layout file');
+            $this->reportFail('@wirekitScripts not found in any Blade file');
             $this->line('  Fix: Add @wirekitScripts in <body> of your layout');
         }
 
@@ -250,6 +252,13 @@ class VerifyInstallationCommand extends Command
      */
     private function checkAlpineJs(): void
     {
+        // Livewire v4+ bundles Alpine.js — no separate import needed
+        if ($this->detectLivewireVersion() >= 4) {
+            $this->reportPass('Alpine.js provided by Livewire v4+');
+
+            return;
+        }
+
         $hasAlpine = false;
 
         // Check JS entry files for Alpine import
@@ -262,7 +271,6 @@ class VerifyInstallationCommand extends Command
 
         foreach ($jsFiles as $file) {
             $content = file_get_contents($file);
-            // Detect: import Alpine from 'alpinejs' or require('alpinejs')
             if (preg_match('/alpinejs|alpine\.js/', $content)) {
                 $hasAlpine = true;
 
@@ -270,9 +278,9 @@ class VerifyInstallationCommand extends Command
             }
         }
 
-        // Also check layout files for CDN script tag
+        // Also check all blade files for CDN script tag
         if (! $hasAlpine) {
-            foreach ($this->findLayoutFiles() as $file) {
+            foreach ($this->findAllBladeFiles() as $file) {
                 $content = file_get_contents($file);
                 if (str_contains($content, 'alpinejs') || str_contains($content, 'alpine.js') || str_contains($content, 'Alpine.start')) {
                     $hasAlpine = true;
@@ -453,6 +461,58 @@ class VerifyInstallationCommand extends Command
         $this->layoutFiles = $files;
 
         return $files;
+    }
+
+    /**
+     * Find ALL Blade files in resources/views/ recursively.
+     * Scans beyond layout directories to catch directives in any template.
+     *
+     * @return string[]
+     */
+    private function findAllBladeFiles(): array
+    {
+        if ($this->allBladeFiles !== null) {
+            return $this->allBladeFiles;
+        }
+
+        $viewsPath = resource_path('views');
+
+        if (! is_dir($viewsPath)) {
+            $this->allBladeFiles = [];
+
+            return [];
+        }
+
+        $this->allBladeFiles = collect(File::allFiles($viewsPath))
+            ->filter(fn ($file) => str_ends_with($file->getFilename(), '.blade.php'))
+            ->map(fn ($file) => $file->getPathname())
+            ->values()
+            ->all();
+
+        return $this->allBladeFiles;
+    }
+
+    /**
+     * Detect Livewire major version from composer.lock.
+     * Livewire v4+ bundles Alpine.js, so a separate Alpine check is unnecessary.
+     */
+    private function detectLivewireVersion(): int
+    {
+        $lockPath = base_path('composer.lock');
+
+        if (! file_exists($lockPath)) {
+            return 0;
+        }
+
+        $lock = json_decode(file_get_contents($lockPath), true);
+
+        foreach (array_merge($lock['packages'] ?? [], $lock['packages-dev'] ?? []) as $package) {
+            if ($package['name'] === 'livewire/livewire') {
+                return (int) ($package['version'][0] ?? 0);
+            }
+        }
+
+        return 0;
     }
 
     /**

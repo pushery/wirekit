@@ -4,7 +4,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/pushery/wirekit.svg)](https://packagist.org/packages/pushery/wirekit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A free, open-source UI component library for **Laravel Livewire** — styled with **Tailwind CSS v4** and powered by **Alpine.js**.
+A free, open-source UI component library for **Laravel Livewire** — build app dashboards and marketing pages with **Tailwind CSS v4** and **Alpine.js**, zero utility-class soup.
 
 ## Requirements  
 
@@ -142,6 +142,51 @@ Add WireKit's Blade source path to your `resources/css/app.css`:
 | Navbar | `<x-wirekit::navbar>` | [Docs](https://docs.wirekit.app/components/navbar) |
 | Menubar | `<x-wirekit::menubar>` | [Docs](https://docs.wirekit.app/components/menubar) |
 | Navigation Menu | `<x-wirekit::navigation-menu>` | [Docs](https://docs.wirekit.app/components/navigation-menu) |
+
+### Layout Components
+
+| Component | Tag | Docs |
+|-----------|-----|------|
+| App Shell | `<x-wirekit::app-shell>` | [Docs](https://docs.wirekit.app/components/app-shell) |
+| Header | `<x-wirekit::header>` | [Docs](https://docs.wirekit.app/components/header) |
+| Main | `<x-wirekit::main>` | [Docs](https://docs.wirekit.app/components/main) |
+| Brand | `<x-wirekit::brand>` | [Docs](https://docs.wirekit.app/components/brand) |
+| Profile | `<x-wirekit::profile>` | [Docs](https://docs.wirekit.app/components/profile) |
+| Container | `<x-wirekit::container>` | [Docs](https://docs.wirekit.app/components/container) |
+| Stack | `<x-wirekit::stack>` | [Docs](https://docs.wirekit.app/components/stack) |
+| Row | `<x-wirekit::row>` | [Docs](https://docs.wirekit.app/components/row) |
+| Grid | `<x-wirekit::grid>` | [Docs](https://docs.wirekit.app/components/grid) |
+| Section | `<x-wirekit::section>` | [Docs](https://docs.wirekit.app/components/section) |
+| Spacer | `<x-wirekit::spacer>` | [Docs](https://docs.wirekit.app/components/spacer) |
+| Divider | `<x-wirekit::divider>` | [Docs](https://docs.wirekit.app/components/divider) |
+| Center | `<x-wirekit::center>` | [Docs](https://docs.wirekit.app/components/center) |
+| Aspect Ratio | `<x-wirekit::aspect-ratio>` | [Docs](https://docs.wirekit.app/components/aspect-ratio) |
+| Visually Hidden | `<x-wirekit::visually-hidden>` | [Docs](https://docs.wirekit.app/components/visually-hidden) |
+
+### Typography Components
+
+| Component | Tag | Docs |
+|-----------|-----|------|
+| Heading | `<x-wirekit::heading>` | [Docs](https://docs.wirekit.app/components/heading) |
+| Text | `<x-wirekit::text>` | [Docs](https://docs.wirekit.app/components/text) |
+| Link | `<x-wirekit::link>` | [Docs](https://docs.wirekit.app/components/link) |
+| Code | `<x-wirekit::code>` | [Docs](https://docs.wirekit.app/components/code) |
+| Code Block | `<x-wirekit::code-block>` | [Docs](https://docs.wirekit.app/components/code-block) |
+| Kbd | `<x-wirekit::kbd>` | [Docs](https://docs.wirekit.app/components/kbd) |
+| List | `<x-wirekit::list>` | [Docs](https://docs.wirekit.app/components/list) |
+| Blockquote | `<x-wirekit::blockquote>` | [Docs](https://docs.wirekit.app/components/blockquote) |
+| Mark | `<x-wirekit::mark>` | [Docs](https://docs.wirekit.app/components/mark) |
+| Highlight | `<x-wirekit::highlight>` | [Docs](https://docs.wirekit.app/components/highlight) |
+
+### Marketing Components
+
+| Component | Tag | Docs |
+|-----------|-----|------|
+| Hero | `<x-wirekit::hero>` | [Docs](https://docs.wirekit.app/components/hero) |
+| Feature Grid | `<x-wirekit::feature-grid>` | [Docs](https://docs.wirekit.app/components/feature-grid) |
+| Feature | `<x-wirekit::feature>` | [Docs](https://docs.wirekit.app/components/feature) |
+| CTA | `<x-wirekit::cta>` | [Docs](https://docs.wirekit.app/components/cta) |
+| Footer | `<x-wirekit::footer>` | [Docs](https://docs.wirekit.app/components/footer) |
 
 ### Utilities
 

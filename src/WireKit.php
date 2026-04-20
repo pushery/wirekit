@@ -122,6 +122,36 @@ class WireKit
     }
 
     /**
+     * Validate a prop value against a list of allowed values.
+     *
+     * In debug (APP_DEBUG=true): throws InvalidArgumentException.
+     * In production: logs a warning and falls back to the first allowed value.
+     *
+     * @param  list<string>  $allowed
+     */
+    public static function validateProp(
+        string $component,
+        string $prop,
+        string $value,
+        array $allowed,
+    ): string {
+        if (in_array($value, $allowed, true)) {
+            return $value;
+        }
+
+        $list = implode(', ', $allowed);
+        $message = "WireKit [{$component}]: Invalid {$prop} \"{$value}\". Allowed: {$list}.";
+
+        if (config('app.debug')) {
+            throw new \InvalidArgumentException($message);
+        }
+
+        logger()->warning($message);
+
+        return $allowed[0];
+    }
+
+    /**
      * Resolve an icon alias to the actual Blade Icon identifier.
      *
      * Usage: WireKit::icon('close') -> 'heroicon-m-x-mark'

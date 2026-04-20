@@ -26,6 +26,7 @@ export default function wirekitCommandPalette(config = {}) {
         _trap: null,
         _navCleanup: null,
         _hotkeyHandler: null,
+        _showHandler: null,
 
         init() {
             // Parse hotkey (e.g. 'cmd+k') and register global listener
@@ -47,8 +48,9 @@ export default function wirekitCommandPalette(config = {}) {
 
             document.addEventListener('keydown', this._hotkeyHandler);
 
-            // Listen for programmatic open events
-            window.addEventListener('wirekit-command-palette-show', () => this.show());
+            // Listen for programmatic open events — store reference for cleanup
+            this._showHandler = () => this.show();
+            window.addEventListener('wirekit-command-palette-show', this._showHandler);
 
             // SPA cleanup
             this._navCleanup = () => this._forceClose();
@@ -58,6 +60,10 @@ export default function wirekitCommandPalette(config = {}) {
         destroy() {
             if (this._hotkeyHandler) {
                 document.removeEventListener('keydown', this._hotkeyHandler);
+            }
+            if (this._showHandler) {
+                window.removeEventListener('wirekit-command-palette-show', this._showHandler);
+                this._showHandler = null;
             }
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);

@@ -35,7 +35,7 @@
             'border-[length:var(--border-wk-width)]',
             'border-transparent',
         ]),
-        default => $variant,
+        default => WireKit::validateProp('card', 'variant', $variant, ['outlined', 'elevated', 'flat']),
     };
 
     // Hover shadow only when rendered as a link (interactive)
@@ -45,12 +45,23 @@
 
     // Render as <a> when href given, otherwise use $as tag (default: div)
     $tag = $href ? 'a' : $as;
+
+    // Auto-inject rel="noopener noreferrer" when target="_blank"
+    $targetAttr = $attributes->get('target', '');
+    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $relAttr = $attributes->get('rel', '');
+    $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr . ' noopener noreferrer')
+        : $relAttr;
 @endphp
 
 <{{ $tag }}
     data-wk-card
     @if($href) href="{{ $href }}" @endif
-    {{ $attributes->class([$baseClasses, $variantClasses, $interactiveClasses]) }}
+    {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$baseClasses, $variantClasses, $interactiveClasses]) }}
 >
     {{ $slot }}
+    @if($opensNewTab)
+        <span class="sr-only">(opens in new tab)</span>
+    @endif
 </{{ $tag }}>

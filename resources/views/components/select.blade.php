@@ -71,7 +71,7 @@
             'text-[length:var(--text-wk-lg)]',
             'rounded-[var(--radius-wk-md)]',
         ]),
-        default => $size,
+        default => WireKit::validateProp('select', 'size', $size, ['sm', 'md', 'lg']),
     };
 @endphp
 

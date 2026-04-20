@@ -16,6 +16,7 @@
     ]), $scope);
 @endphp
 
+{{-- No x-cloak needed — tree has no hidden/shown toggle; Alpine only handles keyboard nav --}}
 <ul
     role="tree"
     x-data="wirekitTreeView()"

@@ -36,6 +36,14 @@
 
     // Render as <a> when href is provided, otherwise <button>
     $tag = $href ? 'a' : 'button';
+
+    // Auto-inject rel="noopener noreferrer" and SR hint when target="_blank"
+    $targetAttr = $attributes->get('target', '');
+    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $relAttr = $attributes->get('rel', '');
+    $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr . ' noopener noreferrer')
+        : $relAttr;
 @endphp
 
 <{{ $tag }}
@@ -44,7 +52,7 @@
     role="menuitem"
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
-    {{ $attributes->class([$classes, $colorClasses, $disabledClasses]) }}
+    {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$classes, $colorClasses, $disabledClasses]) }}
 >
     {{-- Optional icon (resolved via WireKit icon system) --}}
     @if($icon)
@@ -56,4 +64,8 @@
     @endif
 
     {{ $slot }}
+
+    @if($opensNewTab)
+        <span class="sr-only">(opens in new tab)</span>
+    @endif
 </{{ $tag }}>

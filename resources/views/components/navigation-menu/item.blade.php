@@ -39,12 +39,23 @@
     ]), $scope);
 
     $hasPanel = !$href;
+
+    // Auto-inject rel="noopener noreferrer" when target="_blank"
+    $targetAttr = $attributes->get('target', '');
+    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $relAttr = $attributes->get('rel', '');
+    $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr . ' noopener noreferrer')
+        : $relAttr;
 @endphp
 
 @if($href)
     {{-- Simple link item (no flyout) --}}
-    <a href="{{ $href }}" class="{{ $triggerClasses }}" {{ $attributes }}>
+    <a href="{{ $href }}" class="{{ $triggerClasses }}" {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : []) }}>
         {{ $trigger }}
+        @if($opensNewTab)
+            <span class="sr-only">(opens in new tab)</span>
+        @endif
     </a>
 @else
     {{-- Trigger + flyout panel --}}

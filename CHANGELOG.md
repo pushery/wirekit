@@ -13,6 +13,120 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.2.0] — 2026-04-20
+
+Major feature release. WireKit now covers full-page composition: a 10-component
+layout primitives system, a 9-component typography primitives system, app-shell
+scaffolding, and a marketing-page toolkit — plus a new unified `intent × surface`
+variant API, a component registry, five new artisan commands, and a rewritten
+release pipeline.
+
+### Added
+
+- **Layout primitives (10 components)** — `<x-wirekit::container>` (width-constrained
+  wrapper with max/padding/center props), `<x-wirekit::stack>` (vertical flex),
+  `<x-wirekit::row>` (horizontal flex), `<x-wirekit::grid>` (responsive column
+  syntax `cols="1 sm:2 lg:3"`), `<x-wirekit::section>` (full-width with background
+  and divider variants), `<x-wirekit::spacer>` (flex-grow), `<x-wirekit::divider>`
+  (horizontal/vertical with label and variants), `<x-wirekit::center>` (flex
+  centering), `<x-wirekit::aspect-ratio>` (native CSS `aspect-ratio`), and
+  `<x-wirekit::visually-hidden>` (sr-only wrapper).
+- **Typography primitives (9 components)** — `<x-wirekit::heading>` (h1–h6 with
+  auto-sizing, accent, tracking), `<x-wirekit::text>` (body text with size,
+  variant, weight, align, truncate, line-clamp), `<x-wirekit::link>` (styled
+  anchor with external-link detection), `<x-wirekit::code>` (inline monospace),
+  `<x-wirekit::code-block>` (multi-line with copy button and filename),
+  `<x-wirekit::kbd>` (keyboard key indicator), `<x-wirekit::list>` (ul/ol with
+  spacing), `<x-wirekit::blockquote>` (left-border with citation), and
+  `<x-wirekit::mark>` (text highlight wrapper).
+- **`<x-wirekit::highlight>`** — typography helper that highlights query matches
+  inside a block of text. Pairs with the Prose component's new `variant` prop.
+- **App Shell components (6 components)** — `<x-wirekit::app-shell>` (full-page
+  layout with responsive sidebar toggle), `<x-wirekit::header>` (sticky header
+  with optional container), `<x-wirekit::main>` (content area with padding
+  variants), `<x-wirekit::brand>` (logo + name link), `<x-wirekit::profile>`
+  (avatar + name display), and `<x-wirekit::sidebar.toggle>` (hamburger button).
+- **Marketing components (5 components)** — `<x-wirekit::hero>` (landing-page
+  hero with variants, gradient, slots), `<x-wirekit::feature-grid>` (responsive
+  feature-card grid), `<x-wirekit::feature>` (individual card),
+  `<x-wirekit::cta>` (call-to-action banner with dark and accent variants), and
+  `<x-wirekit::footer>` (columns, brand, legal slots).
+- **Unified Intent × Surface variant system** — new `intent` and `surface` props
+  on Button and Badge. Six intents (`neutral`, `accent`, `success`, `warning`,
+  `danger`, `info`) × five surfaces (`filled`, `soft`, `outline`, `ghost`, `link`)
+  generate consistent combinations via a central `VariantResolver`. The legacy
+  `variant=` API is preserved for full backward compatibility.
+- **`ComponentRegistry`** — central catalog of every WireKit component with
+  category and description metadata. Anti-drift tests enforce registry ↔
+  filesystem consistency (every Blade file has an entry, no stale entries,
+  valid categories, non-empty descriptions).
+- **`php artisan wirekit:list`** — lists all components grouped by category.
+- **`php artisan wirekit:show {name}`** — displays props, sub-components, and
+  docs path for a given component.
+- **`php artisan wirekit:install`** — one-command setup: publishes config and
+  assets, prints layout directive snippet, adds published assets to `.gitignore`.
+- **`php artisan wirekit:theme {preset}`** — injects a theme preset's CSS block
+  into the consumer's `app.css`.
+- **`php artisan wirekit:make {name}`** — scaffolds a Livewire page pre-wired
+  with WireKit components.
+- **Design tokens** — new spacing scale (`--space-wk-xs` through `--space-wk-2xl`),
+  container max widths (`--size-wk-container-sm` through `--size-wk-container-2xl`),
+  `--text-wk-3xl`, `--font-wk-heading-line-height`, and semantic colors
+  (`--color-wk-bg-inverse`, `--color-wk-text-inverse`, `--color-wk-border-strong`,
+  `--color-wk-warning-bg`) with dark-mode counterparts.
+- **Accessibility sections in docs** — Button, Input, Textarea, and Label pages
+  document label pairing, `aria-invalid`/`aria-describedby` wiring,
+  `:user-invalid` styling, focus-visible rings, disabled states, icon-only
+  `aria-label` guidance, external-link auto-protection, and required-indicator
+  semantics.
+- **162 new tests** across the 19 layout and typography primitives, bringing
+  the total test suite to 1316 tests (3712 assertions).
+
+### Changed
+
+- **`target="_blank"` auto-protection** — all link-rendering components
+  (Button, Dropdown Item, Brand, Card, Navigation Menu Item, Link, Menubar Item,
+  Command Palette Item) now automatically inject `rel="noopener noreferrer"`
+  (tabnabbing prevention) and a `<span class="sr-only">(opens in new tab)</span>`
+  screen-reader hint whenever `target="_blank"` is set. No consumer changes
+  needed. Components with both button and link modes include a guard so the
+  injection only fires when `href` is present.
+- **`<x-wirekit::prose>`** — gained a `variant` prop for tighter integration with
+  the new typography primitives.
+- **Release pipeline** — the public-repo release workflow now opens a pull
+  request on `pushery/wirekit` from a release branch, squash-merges it into
+  `main` with the CHANGELOG section as the commit body, and tags the squashed
+  commit. Result: one clean squash commit per release on public main with the
+  full CHANGELOG embedded. Retries are safe.
+
+### Fixed
+
+- **Grid and Feature Grid responsive classes missing from consumer bundles** —
+  `grid.blade.php` and `feature-grid.blade.php` built Tailwind class names via
+  runtime PHP string concatenation (`"{$breakpoint}:grid-cols-{$value}"`).
+  Tailwind's content scanner only sees literal strings, so these classes were
+  dropped from consumer CSS and previews rendered as stacked items instead of
+  responsive grids. Replaced with a literal class map covering all valid
+  breakpoint × column combinations (Grid: 72 entries; Feature Grid: 36 entries).
+  Invalid tokens surface via `WireKit::validateProp()`.
+- **Layout-doc preview rendering** — 40 `<x-wirekit::card>` occurrences in
+  container, grid, stack, row, section, spacer, and divider docs wrapped raw
+  content directly in the card without `<x-wirekit::card.body>`. Card provides
+  border/radius/background but not padding — previews rendered as thin-bordered
+  boxes with cramped text. All 40 occurrences now use `card.body`. Aspect-ratio
+  preview refactored to a styled centering frame.
+- **Feature component test and docs coverage** — added 8 render tests and a
+  dedicated `docs/components/feature.md` page with three previews. Registered
+  in the `DocsPreviewRenderTest` minimum-previews guard.
+- **Documentation sidebar coverage** — five components (Code Block, Header, Main,
+  Brand, Profile) now have their own docs pages and dedicated sidebar entries.
+  Previously their README rows pointed to parent pages, leaving them invisible
+  in the navigation.
+- **README component links** — the Feature row now links to its own docs page
+  instead of Feature Grid. Highlight component added to the Typography table.
+
+---
+
 ## [1.1.1] — 2026-04-18
 
 Feature release with a complete theme overhaul, two new components, and

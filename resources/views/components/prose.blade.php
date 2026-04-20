@@ -1,5 +1,6 @@
 @props([
     'size' => 'md',
+    'variant' => 'default',
     'scope' => null,
 ])
 
@@ -43,11 +44,18 @@
 
     $sizeClasses = match ($size) {
         'sm' => 'text-[length:var(--text-wk-sm)]',
+        'md' => 'text-[length:var(--text-wk-md)]',
         'lg' => 'text-[length:var(--text-wk-lg)]',
-        default => 'text-[length:var(--text-wk-md)]',
+        default => WireKit::validateProp('prose', 'size', $size, ['sm', 'md', 'lg']),
+    };
+
+    $variantClasses = match ($variant) {
+        'default' => '',
+        'muted' => 'text-[var(--color-wk-text-muted)]',
+        default => WireKit::validateProp('prose', 'variant', $variant, ['default', 'muted']),
     };
 @endphp
 
-<div {{ $attributes->class([$classes, $sizeClasses]) }}>
+<div {{ $attributes->class([$classes, $sizeClasses, $variantClasses]) }}>
     {{ $slot }}
 </div>

@@ -28,6 +28,7 @@ export default function wirekitChartJs(config) {
         _manualColorIndices: new Set(),
 
         init() {
+            // Intentional console.error — DX hint when Chart.js peer dependency is missing
             if (typeof Chart === 'undefined') {
                 console.error(
                     'WireKit: Chart.js is not loaded. Install it via npm:\n' +
