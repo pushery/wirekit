@@ -42,7 +42,10 @@
     ]), $scope);
 @endphp
 
-{{-- Modal header — flex row containing the title (left) and an automatic
+{{-- No x-cloak needed — this sub-component lives inside the parent modal's
+     x-show/x-teleport block, which already gates visibility.
+
+     Modal header — flex row containing the title (left) and an automatic
      close-X button (right). The close button is rendered unconditionally
      at Blade time when `close=true` (the default) and then gated at runtime
      with `x-show="dismissible"` — this keeps non-dismissible confirmation
@@ -72,6 +75,7 @@
             aria-label="Close"
             class="{{ $closeClasses }}"
         >
+            {{-- h-4 w-4: standard Tailwind SVG sizing — not a design token candidate --}}
             <svg
                 class="h-4 w-4"
                 fill="none"

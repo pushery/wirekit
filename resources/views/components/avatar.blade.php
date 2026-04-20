@@ -41,7 +41,7 @@
         'md' => 'w-10 h-10 text-[length:var(--text-wk-md)]',
         'lg' => 'w-12 h-12 text-[length:var(--text-wk-lg)]',
         'xl' => 'w-16 h-16 text-[length:var(--text-wk-lg)]',
-        default => $size,
+        default => WireKit::validateProp('avatar', 'size', $size, ['xs', 'sm', 'md', 'lg', 'xl']),
     };
 
     // Shape: circle (default) or square with medium radius

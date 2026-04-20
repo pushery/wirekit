@@ -1,0 +1,50 @@
+@props([
+    'href' => null,
+    'variant' => 'default',
+    'external' => false,
+    'underline' => 'hover',
+    'as' => 'a',
+    'scope' => null,
+])
+
+@php
+    use Pushery\WireKit\WireKit;
+
+    $variantClasses = match ($variant) {
+        'default' => 'text-[var(--color-wk-primary)]',
+        'subtle' => 'text-[var(--color-wk-text-subtle)]',
+        'muted' => 'text-[var(--color-wk-text-muted)]',
+        default => WireKit::validateProp('link', 'variant', $variant, ['default', 'subtle', 'muted']),
+    };
+
+    $underlineClasses = match ($underline) {
+        'always' => 'underline underline-offset-2',
+        'hover' => 'hover:underline underline-offset-2',
+        'none' => 'no-underline',
+        default => WireKit::validateProp('link', 'underline', $underline, ['always', 'hover', 'none']),
+    };
+
+    $classes = WireKit::resolveClasses('link', 'base', implode(' ', [
+        'font-[family-name:var(--font-wk-sans)]',
+        'transition-colors',
+        'duration-[var(--transition-wk-duration)]',
+        'ease-[var(--transition-wk-easing)]',
+        'hover:opacity-80',
+        $variantClasses,
+        $underlineClasses,
+    ]), $scope);
+@endphp
+
+<{{ $as }}
+    @if($href) href="{{ $href }}" @endif
+    @if($external) target="_blank" rel="noopener noreferrer" @endif
+    {{ $attributes->class([$classes]) }}
+>
+    {{ $slot }}
+    @if($external)
+        <svg class="inline-block h-3.5 w-3.5 ml-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+        </svg>
+        <span class="sr-only">(opens in new tab)</span>
+    @endif
+</{{ $as }}>

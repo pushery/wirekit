@@ -1,5 +1,7 @@
 @props([
     'variant' => config('wirekit.components.badge.variant', 'neutral'),
+    'intent' => null,
+    'surface' => null,
     'size' => config('wirekit.components.badge.size', 'md'),
     'dot' => false,
     'scope' => null,
@@ -17,6 +19,19 @@
         'border-[length:var(--border-wk-width)]',
         'whitespace-nowrap',
     ]), $scope);
+
+    // Map intent to variant when intent is provided (v2.0 API)
+    if ($intent !== null) {
+        $variant = match ($intent) {
+            'primary' => 'primary',
+            'neutral' => 'neutral',
+            'success' => 'success',
+            'warning' => 'warning',
+            'danger' => 'danger',
+            'info' => 'info',
+            default => $intent,
+        };
+    }
 
     // Variant classes: tinted backgrounds via color-mix for subtle look
     // Border and text colors from same token family for cohesion
@@ -51,7 +66,7 @@
             'text-[var(--color-wk-text)]',
             'border-[var(--color-wk-border-subtle)]',
         ]),
-        default => $variant,
+        default => WireKit::validateProp('badge', 'variant', $variant, ['primary', 'success', 'warning', 'danger', 'info', 'neutral']),
     };
 
     // Size classes: height, padding, font size, radius
@@ -72,7 +87,7 @@
             'text-[length:var(--text-wk-md)]',
             'rounded-[var(--radius-wk-full)]',
         ]),
-        default => $size,
+        default => WireKit::validateProp('badge', 'size', $size, ['sm', 'md', 'lg']),
     };
 
     // Dot indicator color matches variant text color for cohesion

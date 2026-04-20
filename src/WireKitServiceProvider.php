@@ -11,6 +11,11 @@ use Illuminate\View\Compilers\BladeCompiler;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
 use Pushery\WireKit\Console\GlassInstallCommand;
+use Pushery\WireKit\Console\InstallCommand;
+use Pushery\WireKit\Console\ListComponentsCommand;
+use Pushery\WireKit\Console\MakeCommand;
+use Pushery\WireKit\Console\ShowComponentCommand;
+use Pushery\WireKit\Console\ThemeCommand;
 use Pushery\WireKit\Console\VerifyInstallationCommand;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
@@ -40,6 +45,11 @@ class WireKitServiceProvider extends ServiceProvider
             // Register artisan commands
             $this->commands([
                 GlassInstallCommand::class,
+                InstallCommand::class,
+                ListComponentsCommand::class,
+                MakeCommand::class,
+                ShowComponentCommand::class,
+                ThemeCommand::class,
                 VerifyInstallationCommand::class,
             ]);
 
@@ -236,11 +246,12 @@ class WireKitServiceProvider extends ServiceProvider
         Route::group(['middleware' => 'web'], function () use ($assets): void {
             foreach ($assets as $uri => $meta) {
                 Route::get($uri, function () use ($meta) {
-                    $path = __DIR__.'/../dist/'.$meta['file'];
+                    $path = realpath(__DIR__.'/../dist/'.$meta['file']);
+                    $distDir = realpath(__DIR__.'/../dist');
 
-                    // Guard against missing dist files (e.g. incomplete install)
-                    if (! file_exists($path)) {
-                        abort(404, "WireKit asset not found: {$meta['file']}");
+                    // Guard against missing dist files and path traversal
+                    if ($path === false || $distDir === false || ! str_starts_with($path, $distDir)) {
+                        abort(404);
                     }
 
                     // 1-year immutable cache — safe because the @wirekitStyles

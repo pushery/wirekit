@@ -76,6 +76,7 @@
 
 <div
     @if($dismissible)
+        {{-- No x-cloak: starts visible (shown: true), only hides on user dismiss --}}
         x-data="{ shown: true }"
         x-show="shown"
         x-transition.opacity

@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v1.1.1 — MIT License
+ * WireKit CSS v1.2.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -21,69 +21,75 @@
  * To customize tokens, override CSS variables in your app.css:
  *
  *     @layer base {
- *         :root { --color-wk-accent: var(--color-blue-600); }
+ *         :root { --color-wk-accent: oklch(54.6% 0.245 262.881); }
  *     }
  */
 
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ─── Light mode tokens ────────────────────────────────────── */
-/* Refined Baseline: neutral palette (zero chroma), editorial  */
-/* typography, 2-layer shadow system. All WCAG ratios verified. */
+/* Self-contained OKLCH values — no Tailwind var() dependencies.*/
+/* Verified against Tailwind CSS v4 source. WCAG ratios intact. */
 
 @theme {
     /* ─── Accent Colors ─── */
-    --color-wk-accent: var(--color-neutral-900);
-    --color-wk-accent-hover: var(--color-neutral-800);
-    --color-wk-accent-content: var(--color-neutral-900);
-    --color-wk-accent-fg: var(--color-neutral-50);  /* ~18:1 on neutral-900 */
+    --color-wk-accent: oklch(20.5% 0 0);
+    --color-wk-accent-hover: oklch(26.9% 0 0);
+    --color-wk-accent-content: oklch(20.5% 0 0);
+    --color-wk-accent-fg: oklch(98.5% 0 0);  /* ~18:1 on neutral-900 */
 
     /* ─── Danger Colors ─── */
-    --color-wk-danger: var(--color-red-600);
-    --color-wk-danger-hover: var(--color-red-700);
-    --color-wk-danger-fg: var(--color-white);
-    --color-wk-danger-text: var(--color-red-600);
+    --color-wk-danger: oklch(57.7% 0.245 27.325);
+    --color-wk-danger-hover: oklch(50.5% 0.213 27.518);
+    --color-wk-danger-fg: #fff;
+    --color-wk-danger-text: oklch(57.7% 0.245 27.325);
 
     /* ─── Success Colors ─── */
     /* fg is dark-on-green (zinc-900 on green-600 = 6.35:1) because white-on-green-600
        only reaches 3.30:1 and fails WCAG 2.2 AA for normal text. success-text is the
        "text label" variant used on white/elevated surfaces, bumped to green-700 for 5.52:1. */
-    --color-wk-success: var(--color-green-600);
-    --color-wk-success-hover: var(--color-green-700);
-    --color-wk-success-fg: var(--color-zinc-900);
-    --color-wk-success-text: var(--color-green-700);
+    --color-wk-success: oklch(62.7% 0.194 149.214);
+    --color-wk-success-hover: oklch(52.7% 0.154 150.069);
+    --color-wk-success-fg: oklch(21% 0.006 285.885);
+    --color-wk-success-text: oklch(52.7% 0.154 150.069);
 
     /* ─── Warning Colors ─── */
     /* fg is dark-on-amber (zinc-900 on amber-500 = 9.03:1) — white-on-amber-500 only
        reaches 2.15:1 and is the WCAG failure most often flagged in audits. */
-    --color-wk-warning: var(--color-amber-500);
-    --color-wk-warning-hover: var(--color-amber-600);
-    --color-wk-warning-fg: var(--color-zinc-900);
+    --color-wk-warning: oklch(76.9% 0.188 70.08);
+    --color-wk-warning-hover: oklch(66.6% 0.179 58.318);
+    --color-wk-warning-fg: oklch(21% 0.006 285.885);
+
+    /* ─── Warning Background ─── */
+    --color-wk-warning-bg: oklch(96.4% 0.058 102.1);
 
     /* ─── Neutral Colors (Backgrounds) ─── */
-    --color-wk-bg: var(--color-white);
-    --color-wk-bg-elevated: var(--color-white);
-    --color-wk-bg-subtle: var(--color-neutral-50);
-    --color-wk-bg-muted: var(--color-neutral-100);
-    --color-wk-bg-input: var(--color-white);
+    --color-wk-bg: #fff;
+    --color-wk-bg-elevated: #fff;
+    --color-wk-bg-subtle: oklch(98.5% 0 0);
+    --color-wk-bg-muted: oklch(97% 0 0);
+    --color-wk-bg-input: #fff;
+    --color-wk-bg-inverse: oklch(14.5% 0 0);
 
     /* ─── Neutral Colors (Text) ─── */
     /* text-subtle/text-placeholder use neutral-500 for 4.74:1 on white —
        neutral-400 only reaches 2.52:1 which fails AA for placeholder/helper copy. */
-    --color-wk-text: var(--color-neutral-950); /* ~19:1 on white */
-    --color-wk-text-muted: var(--color-neutral-500); /* 4.74:1 on white — AA minimum */
-    --color-wk-text-subtle: var(--color-neutral-500);
-    --color-wk-text-placeholder: var(--color-neutral-500);
+    --color-wk-text: oklch(14.5% 0 0); /* ~19:1 on white */
+    --color-wk-text-muted: oklch(55.6% 0 0); /* 4.74:1 on white — AA minimum */
+    --color-wk-text-subtle: oklch(55.6% 0 0);
+    --color-wk-text-placeholder: oklch(55.6% 0 0);
+    --color-wk-text-inverse: #fff;
 
     /* ─── Borders ─── */
-    --color-wk-border: var(--color-neutral-300);
-    --color-wk-border-hover: var(--color-neutral-400);
-    --color-wk-border-subtle: var(--color-neutral-200);
-    --color-wk-border-error: var(--color-red-500);
+    --color-wk-border: oklch(87% 0 0);
+    --color-wk-border-hover: oklch(70.8% 0 0);
+    --color-wk-border-subtle: oklch(92.2% 0 0);
+    --color-wk-border-error: oklch(63.7% 0.237 25.331);
+    --color-wk-border-strong: oklch(70.8% 0 0);
 
     /* ─── Focus Ring ─── */
-    --color-wk-ring: var(--color-neutral-950);
-    --color-wk-ring-offset: var(--color-white);
+    --color-wk-ring: oklch(14.5% 0 0);
+    --color-wk-ring-offset: #fff;
 
     /* ─── Radius — single base value, everything else scales ─── */
     --radius-wk: 0.5rem;
@@ -103,6 +109,7 @@
     --font-wk-sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
     --font-wk-mono: ui-monospace, 'Fira Code', 'Cascadia Code', monospace;
     --font-wk-heading-weight: 600;
+    --font-wk-heading-line-height: 1.25;
     --font-wk-body-weight: 400;
     --font-wk-letter-spacing: -0.01em;
     --font-wk-line-height: 1.5;
@@ -119,7 +126,7 @@
     /* ─── State Opacity ─── */
     --opacity-wk-hover: 0.8;
     --opacity-wk-disabled: 0.5;
-    --opacity-wk-loading: 0.7;
+    --opacity-wk-loading: 0.7; /* Consumer-facing token — not used in built-in components */
 
     /* ─── Focus Ring Dimensions ─── */
     --ring-wk-width: 2px;
@@ -150,6 +157,21 @@
     --gap-wk-sm: 0.5rem;
     --gap-wk-md: 0.75rem;
 
+    /* ─── Spacing Scale (Stack, Row, Grid, Section, Container) ─── */
+    --space-wk-xs: 0.25rem;
+    --space-wk-sm: 0.5rem;
+    --space-wk-md: 1rem;
+    --space-wk-lg: 1.5rem;
+    --space-wk-xl: 2.5rem;
+    --space-wk-2xl: 4rem;
+
+    /* ─── Container Max Widths ─── */
+    --size-wk-container-sm: 40rem;
+    --size-wk-container-md: 48rem;
+    --size-wk-container-lg: 64rem;
+    --size-wk-container-xl: 80rem;
+    --size-wk-container-2xl: 96rem;
+
     /* ─── Font Sizes per Size ─── */
     --text-wk-xs: 0.75rem;
     --text-wk-sm: 0.8125rem;
@@ -157,6 +179,7 @@
     --text-wk-lg: 1rem;
     --text-wk-xl: 1.25rem;
     --text-wk-2xl: 1.5rem;
+    --text-wk-3xl: 1.875rem;
 
     /* ─── Overlay: Backdrop ─── */
     --color-wk-overlay: oklch(0% 0 0 / 0.5);
@@ -186,8 +209,8 @@
     --color-wk-tooltip-text: var(--color-wk-bg);
 
     /* ─── Scrollbar ─── */
-    --color-wk-scrollbar-thumb: var(--color-neutral-300);
-    --color-wk-scrollbar-thumb-hover: var(--color-neutral-400);
+    --color-wk-scrollbar-thumb: oklch(87% 0 0);
+    --color-wk-scrollbar-thumb-hover: oklch(70.8% 0 0);
     --color-wk-scrollbar-track: transparent;
     --size-wk-scrollbar: 6px;
 }
@@ -197,54 +220,60 @@
 @layer theme {
     .dark {
         /* Accent — inverted */
-        --color-wk-accent: var(--color-neutral-50);
-        --color-wk-accent-hover: var(--color-neutral-200);
-        --color-wk-accent-content: var(--color-neutral-50);
-        --color-wk-accent-fg: var(--color-neutral-900); /* ~18.4:1 on neutral-50 */
+        --color-wk-accent: oklch(98.5% 0 0);
+        --color-wk-accent-hover: oklch(92.2% 0 0);
+        --color-wk-accent-content: oklch(98.5% 0 0);
+        --color-wk-accent-fg: oklch(20.5% 0 0); /* ~18.4:1 on neutral-50 */
 
         /* Danger — both base (red-600) and hover (red-700) keep white-on-red ≥ 4.83:1
            for WCAG AA. Previous red-500/red-600 combo failed white-fg contrast (3.76:1). */
-        --color-wk-danger: var(--color-red-600);
-        --color-wk-danger-hover: var(--color-red-700);
-        --color-wk-danger-fg: var(--color-white);
-        --color-wk-danger-text: var(--color-red-400);
+        --color-wk-danger: oklch(57.7% 0.245 27.325);
+        --color-wk-danger-hover: oklch(50.5% 0.213 27.518);
+        --color-wk-danger-fg: #fff;
+        --color-wk-danger-text: oklch(70.4% 0.191 22.216);
 
         /* Success — success-fg inherits zinc-900 from light mode.
            zinc-900 on green-500 = 6.99:1 (AA ✓). */
-        --color-wk-success: var(--color-green-500);
-        --color-wk-success-hover: var(--color-green-400);
-        --color-wk-success-text: var(--color-green-400);
+        --color-wk-success: oklch(72.3% 0.219 149.579);
+        --color-wk-success-hover: oklch(79.2% 0.209 151.711);
+        --color-wk-success-text: oklch(79.2% 0.209 151.711);
 
         /* Warning — warning-fg inherits zinc-900 from light mode.
            zinc-900 on amber-400 = 11.88:1 (AAA ✓). */
-        --color-wk-warning: var(--color-amber-400);
-        --color-wk-warning-hover: var(--color-amber-300);
+        --color-wk-warning: oklch(82.8% 0.189 84.429);
+        --color-wk-warning-hover: oklch(87.9% 0.169 91.605);
+
+        /* Warning Background */
+        --color-wk-warning-bg: oklch(32% 0.06 80);
 
         /* Neutral Backgrounds — elevation via contrast, not blur */
-        --color-wk-bg: var(--color-neutral-950);
-        --color-wk-bg-elevated: var(--color-neutral-900);
-        --color-wk-bg-subtle: var(--color-neutral-900);
-        --color-wk-bg-muted: var(--color-neutral-800);
-        --color-wk-bg-input: var(--color-neutral-950);
+        --color-wk-bg: oklch(14.5% 0 0);
+        --color-wk-bg-elevated: oklch(20.5% 0 0);
+        --color-wk-bg-subtle: oklch(20.5% 0 0);
+        --color-wk-bg-muted: oklch(26.9% 0 0);
+        --color-wk-bg-input: oklch(14.5% 0 0);
+        --color-wk-bg-inverse: oklch(98.5% 0 0);
 
         /* Neutral Text — subtle/placeholder use neutral-400 on neutral-950 for ~7.82:1.
            neutral-500 only reaches 4.18:1 on neutral-950 — below AA. */
-        --color-wk-text: var(--color-neutral-50);  /* ~18.4:1 on neutral-950 */
-        --color-wk-text-muted: var(--color-neutral-400); /* ~7.82:1 */
-        --color-wk-text-subtle: var(--color-neutral-400);
-        --color-wk-text-placeholder: var(--color-neutral-400);
+        --color-wk-text: oklch(98.5% 0 0);  /* ~18.4:1 on neutral-950 */
+        --color-wk-text-muted: oklch(70.8% 0 0); /* ~7.82:1 */
+        --color-wk-text-subtle: oklch(70.8% 0 0);
+        --color-wk-text-placeholder: oklch(70.8% 0 0);
+        --color-wk-text-inverse: oklch(14.5% 0 0);
 
         /* Borders — neutral-600 on neutral-950 ≈ 2.53:1 (UI decorative OK,
            inputs pair with bg-input differentiation for compound cue).
            Previous neutral-800 was 1.31:1 — too low even for decorative use. */
-        --color-wk-border: var(--color-neutral-600);
-        --color-wk-border-hover: var(--color-neutral-500);
-        --color-wk-border-subtle: var(--color-neutral-700);
-        --color-wk-border-error: var(--color-red-400);
+        --color-wk-border: oklch(43.9% 0 0);
+        --color-wk-border-hover: oklch(55.6% 0 0);
+        --color-wk-border-subtle: oklch(37.1% 0 0);
+        --color-wk-border-error: oklch(70.4% 0.191 22.216);
+        --color-wk-border-strong: oklch(55.6% 0 0);
 
         /* Focus Ring */
-        --color-wk-ring: var(--color-neutral-50);
-        --color-wk-ring-offset: var(--color-neutral-950);
+        --color-wk-ring: oklch(98.5% 0 0);
+        --color-wk-ring-offset: oklch(14.5% 0 0);
 
         /* Backdrop — stronger opacity in dark mode */
         --color-wk-overlay: oklch(0% 0 0 / 0.7);
@@ -255,8 +284,8 @@
         --shadow-wk-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.40), 0 4px 10px -2px rgba(0, 0, 0, 0.25);
 
         /* Scrollbar — lighter thumb on dark backgrounds */
-        --color-wk-scrollbar-thumb: var(--color-neutral-600);
-        --color-wk-scrollbar-thumb-hover: var(--color-neutral-500);
+        --color-wk-scrollbar-thumb: oklch(43.9% 0 0);
+        --color-wk-scrollbar-thumb-hover: oklch(55.6% 0 0);
     }
 }
 
