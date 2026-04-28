@@ -55,6 +55,7 @@ class VerifyInstallationCommand extends Command
         $this->checkFontAssets();
         $this->checkCssImportAntiPattern();
         $this->checkOptionalDependencies();
+        $this->checkBuiltCssHasWireKitUtilities();
 
         // ── Summary ──
         $this->line('');
@@ -426,6 +427,85 @@ class VerifyInstallationCommand extends Command
         } else {
             $this->line('  <fg=cyan>i</> bacon/bacon-qr-code not installed (optional — only needed for <x-wirekit::qr-code>)');
         }
+    }
+
+    /**
+     * Final post-build sanity: if a Vite manifest exists, the BUILT app CSS
+     * should reference at least one WireKit token. Catches the silent-failure
+     * mode where a consumer adds the @source line to app.css but forgets to
+     * run `npm run build` — the source-side check would still pass while the
+     * page renders without WireKit utilities.
+     *
+     * Skipped silently in environments without `public/build/manifest.json`
+     * (dev / pre-build / package-test scenarios).
+     */
+    private function checkBuiltCssHasWireKitUtilities(): void
+    {
+        $manifestPath = public_path('build/manifest.json');
+        if (! file_exists($manifestPath)) {
+            // Dev mode / pre-build — silently skip. Other checks already
+            // surface the source-side state.
+            return;
+        }
+
+        $manifest = json_decode((string) file_get_contents($manifestPath), true);
+        if (! is_array($manifest)) {
+            $this->reportWarn('Vite manifest at public/build/manifest.json is not valid JSON — skipping built-CSS check');
+
+            return;
+        }
+
+        // Vite manifest shape varies across major versions. Walk the entire
+        // structure and collect every value whose `file` ends in `.css`.
+        $cssEntries = [];
+        $walk = function ($node) use (&$walk, &$cssEntries) {
+            if (! is_array($node)) {
+                return;
+            }
+            if (isset($node['file']) && is_string($node['file']) && str_ends_with($node['file'], '.css')) {
+                $cssEntries[] = $node['file'];
+            }
+            // Some manifests nest CSS files in a `css` array on a JS entry.
+            if (isset($node['css']) && is_array($node['css'])) {
+                foreach ($node['css'] as $css) {
+                    if (is_string($css) && str_ends_with($css, '.css')) {
+                        $cssEntries[] = $css;
+                    }
+                }
+            }
+            foreach ($node as $child) {
+                if (is_array($child)) {
+                    $walk($child);
+                }
+            }
+        };
+        $walk($manifest);
+
+        if (empty($cssEntries)) {
+            // No CSS in the build output at all — likely a JS-only consumer.
+            // Not necessarily a problem; skip silently.
+            return;
+        }
+
+        foreach (array_unique($cssEntries) as $cssEntry) {
+            $cssPath = public_path('build/'.$cssEntry);
+            if (! file_exists($cssPath)) {
+                continue;
+            }
+            $css = (string) file_get_contents($cssPath);
+            // Look for any --color-wk-* token reference. Aggressive minifiers
+            // could rename CSS custom properties in theory, but Tailwind v4
+            // preserves them; if even one is missing across every CSS bundle
+            // we flag the rebuild.
+            if (str_contains($css, '--color-wk-')) {
+                $this->reportPass('Built app CSS contains WireKit utility rules');
+
+                return;
+            }
+        }
+
+        $this->reportFail('Built app CSS does not reference WireKit utilities');
+        $this->line('    Hint: run `npm run build` after adding the @source line for WireKit templates to app.css.');
     }
 
     /**

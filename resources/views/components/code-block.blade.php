@@ -41,10 +41,12 @@
 
 <div {{ $attributes->class([$wrapperClasses]) }} data-wk-code-block>
     @if($filename || $copy)
-        {{-- x-data lifted to toolbar so the live-region span can read `copied` (WCAG 2.2 SC 4.1.3). --}}
+        {{-- x-data lifted to toolbar so the live-region span can read state (WCAG 2.2 SC 4.1.3).
+             srMessage is the SR-only announcement; copied drives the icon swap.
+             Symmetric success/failure announcements: success path sets both; error path sets only srMessage. --}}
         <div
             class="flex items-center justify-between border-b border-[var(--color-wk-border)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-xs,0.25rem)]"
-            @if($copy) x-data="{ copied: false }" @endif
+            @if($copy) x-data="{ copied: false, srMessage: '' }" @endif
         >
             @if($filename)
                 <span class="text-[length:var(--text-wk-xs,0.75rem)] text-[var(--color-wk-text-muted)] font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]">{{ $filename }}</span>
@@ -56,9 +58,16 @@
                 <button
                     type="button"
                     x-on:click="
-                        navigator.clipboard.writeText($el.closest('[data-wk-code-block]').querySelector('code').textContent);
-                        copied = true;
-                        setTimeout(() => copied = false, 2000);
+                        navigator.clipboard.writeText($el.closest('[data-wk-code-block]').querySelector('code').textContent)
+                            .then(() => {
+                                copied = true;
+                                srMessage = 'Code copied to clipboard';
+                                setTimeout(() => { copied = false; srMessage = ''; }, 2000);
+                            })
+                            .catch(() => {
+                                srMessage = 'Copy failed';
+                                setTimeout(() => { srMessage = ''; }, 2000);
+                            });
                     "
                     class="text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)] transition-colors p-1"
                     aria-label="Copy to clipboard"
@@ -75,8 +84,9 @@
                         </svg>
                     </template>
                 </button>
-                {{-- Live region must be in DOM at first paint; x-text toggles content so SR announces on copy. --}}
-                <span class="sr-only" role="status" aria-live="polite" x-text="copied ? 'Code copied to clipboard' : ''"></span>
+                {{-- Live region must be in DOM at first paint; x-text toggles content so SR announces on copy success / failure.
+                     Polite (not assertive) so the announcement does not interrupt other speech. --}}
+                <span class="sr-only" role="status" aria-live="polite" x-text="srMessage"></span>
             @endif
         </div>
     @endif

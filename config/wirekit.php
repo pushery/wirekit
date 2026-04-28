@@ -58,7 +58,7 @@ return [
         'pagination' => ['variant' => 'full'],
         'empty-state' => [],
         'progress' => ['variant' => 'accent', 'size' => 'md', 'circle-size' => 'md'],
-        'stat' => [],
+        'stat' => ['animate' => false],
         'skeleton' => [],
 
         // Phase 2 — Overlay Components
