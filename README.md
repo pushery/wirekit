@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="resources/branding/wirekit-logo-light.png" alt="WireKit" width="320">
+</p>
+
 # WireKit
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/pushery/wirekit.svg)](https://packagist.org/packages/pushery/wirekit)
