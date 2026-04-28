@@ -123,10 +123,13 @@
                     @endif
                 </span>
             @else
-                {{-- Interactive: clickable buttons with hover/keyboard support --}}
+                {{-- Interactive: clickable buttons with hover/keyboard support.
+                     Static aria-checked mirrors the initial value for axe-core's
+                     pre-Alpine-init scan; Alpine overrides reactively. --}}
                 <button
                     type="button"
                     role="radio"
+                    aria-checked="{{ $value >= $i ? 'true' : 'false' }}"
                     :aria-checked="rating >= {{ $i }} ? 'true' : 'false'"
                     aria-label="{{ $i }} {{ $i === 1 ? 'star' : 'stars' }}"
                     @click="rating = {{ $i }}; $el.closest('[x-data]').querySelector('input[type=hidden]').dispatchEvent(new Event('input', { bubbles: true }))"

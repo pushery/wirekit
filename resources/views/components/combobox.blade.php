@@ -141,6 +141,7 @@
         type="text"
         id="{{ $comboId }}"
         role="combobox"
+        aria-expanded="false"
         :aria-expanded="open"
         aria-controls="{{ $listId }}"
         :aria-activedescendant="open && filtered[highlight] ? '{{ $listId }}-opt-' + highlight : null"

@@ -70,7 +70,12 @@
     <label for="{{ $pickerId }}" class="{{ $swatchClasses }}">
         {{-- Native <input type="color"> — we style around it. Assistive tech
              treats it as a color input; the <label> provides the accessible name
-             via the slot content (visually hidden via sr-only). --}}
+             via the slot content (visually hidden via sr-only).
+
+             Fallback: when no slot is provided, render an sr-only label
+             derived from the `name` prop (humanized) so the input always
+             has an accessible name — axe-core would otherwise flag it
+             with rule "label" (form elements must have labels). --}}
         <input
             type="color"
             @if($name) name="{{ $name }}" @endif
@@ -82,6 +87,8 @@
         />
         @if(trim((string) $slot) !== '')
             <span class="sr-only">{{ $slot }}</span>
+        @else
+            <span class="sr-only">{{ $name ? Str::headline((string) $name) . ' colour' : 'Colour picker' }}</span>
         @endif
     </label>
     @if($showValue)

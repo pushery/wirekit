@@ -57,10 +57,15 @@
         <input type="hidden" id="{{ $id }}" name="{{ $name }}" {{ $attributes->only('wire:model') }} x-ref="hiddenInput" />
 
         @foreach($options as $optValue => $optLabel)
+            {{-- Static aria-checked + tabindex mirror the initial state so
+                 axe-core's pre-Alpine-init scan sees a complete radiogroup;
+                 Alpine overrides reactively once it boots. --}}
             <button
                 type="button"
                 role="radio"
+                aria-checked="{{ $selected === $optValue ? 'true' : 'false' }}"
                 :aria-checked="selected === '{{ $optValue }}' ? 'true' : 'false'"
+                tabindex="{{ $selected === $optValue ? '0' : '-1' }}"
                 :tabindex="selected === '{{ $optValue }}' ? '0' : '-1'"
                 @click="selected = '{{ $optValue }}'; $refs.hiddenInput.value = selected; $refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }))"
                 @keydown.arrow-right.prevent="$el.nextElementSibling?.focus(); $el.nextElementSibling?.click()"

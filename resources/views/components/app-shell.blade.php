@@ -7,8 +7,16 @@
 
     // App Shell — orchestrates header + sidebar + main layout.
     // Uses CSS grid to position sidebar and main content area.
+    // Default to `w-full` so the shell fills its parent in any layout
+    // wrapper (raw page, docs preview, sandbox iframe). Without it, a
+    // bare block-level `display:flex` div collapses to its intrinsic
+    // content width inside prose / preview ancestors — making the
+    // header + main visually too narrow with a wide gutter on the right.
+    // `min-h-screen` stays for real-page usage; consumers wanting to
+    // contain the shell to a fixed height (e.g. doc previews) still pass
+    // an explicit `style="min-height: auto; height: ..."` override.
     $classes = WireKit::resolveClasses('app-shell', 'base', implode(' ', [
-        'flex flex-col',
+        'flex flex-col w-full',
         'min-h-screen',
         'bg-[var(--color-wk-bg)]',
         'text-[var(--color-wk-text)]',
@@ -37,6 +45,7 @@
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
                 class="fixed inset-0 z-[calc(var(--z-wk-sticky)+1)] bg-black/50 lg:hidden"
+                aria-hidden="true"
                 x-cloak
             ></div>
 

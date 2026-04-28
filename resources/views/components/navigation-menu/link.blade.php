@@ -23,12 +23,28 @@
     $colorClasses = $active
         ? 'text-[var(--color-wk-accent)] font-[number:var(--font-wk-heading-weight)]'
         : 'text-[var(--color-wk-text)]';
+
+    // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
+    // See sidebar/item.blade.php for the rationale on except('rel') + explicit
+    // rel attribute — $attributes->merge treats rel as a default, so a caller
+    // that passes rel="prev" would silently defeat our security injection.
+    $targetAttr = $attributes->get('target', '');
+    $opensNewTab = str_contains($targetAttr, '_blank');
+    $relAttr = $attributes->get('rel', '');
+    $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr.' noopener noreferrer')
+        : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
 <a
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
-    {{ $attributes->class([$classes, $colorClasses]) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->class([$classes, $colorClasses]) }}
 >
     {{ $slot }}
+    @if($opensNewTab)
+        <span class="sr-only">(opens in new tab)</span>
+    @endif
 </a>

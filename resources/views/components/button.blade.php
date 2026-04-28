@@ -129,20 +129,24 @@
     // Render as <a> when href is provided, otherwise <button>
     $tag = $href ? 'a' : 'button';
 
-    // Auto-inject rel="noopener noreferrer" and SR hint when target="_blank"
+    // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
+    // See dropdown/item.blade.php for rationale on except('rel') + explicit
+    // rel render (avoids $attributes->merge treating rel as a default).
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
-        ? trim($relAttr . ' noopener noreferrer')
+        ? trim($relAttr.' noopener noreferrer')
         : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
 <{{ $tag }}
     @if($href) href="{{ $href }}" @endif
     @if($tag === 'button') type="{{ $type }}" @endif
     @disabled($disabled)
-    {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$baseClasses, $variantClasses, $sizeClasses]) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->class([$baseClasses, $variantClasses, $sizeClasses]) }}
     @if($loading) wire:loading.attr="disabled" @endif
 >
     {{-- Loading spinner (visible during Livewire requests) --}}

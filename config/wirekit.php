@@ -99,6 +99,11 @@ return [
         'scroll-to-top' => ['size' => 'md'],
         'alert-dialog' => ['dismissible' => false],
         'toast-region' => ['position' => 'top-right', 'duration' => 5000, 'max' => 5],
+        'price' => ['size' => 'md'],
+        'ticker' => ['size' => 'md'],
+
+        // Feature card icon-chip tone + size
+        'feature' => ['tone' => 'accent', 'size' => 'md'],
     ],
 
     /*
@@ -137,10 +142,14 @@ return [
     | that are resolved via presets to actual Blade Icon identifiers.
     |
     | Available built-in presets:
-    |   'heroicons'  — blade-ui-kit/blade-heroicons (~316 icons, Mini style)
-    |   'lucide'     — mallardduck/blade-lucide-icons (~1,500 icons)
-    |   'phosphor'   — codeat3/blade-phosphor-icons (~9,000 icons)
-    |   'tabler'     — ryangjchandler/blade-tabler-icons (~5,700 icons)
+    |   'heroicons'           — base, blade-ui-kit/blade-heroicons (~316 icons, Mini style)
+    |   'heroicons-app'       — stackable extension with app-state aliases
+    |                           (arrow-up/down, lock/unlock, bell, lightbulb, …)
+    |   'heroicons-marketing' — stackable extension with marketing/landing aliases
+    |                           (bolt, sparkles, rocket-launch, shield, …)
+    |   'lucide'              — mallardduck/blade-lucide-icons (~1,500 icons)
+    |   'phosphor'            — codeat3/blade-phosphor-icons (~9,000 icons)
+    |   'tabler'              — ryangjchandler/blade-tabler-icons (~5,700 icons)
     |
     | You can also provide a fully qualified class name implementing
     | \Pushery\WireKit\Contracts\IconPreset for custom icon sets.
@@ -148,14 +157,23 @@ return [
     | Install your chosen icon set separately:
     |   composer require blade-ui-kit/blade-icons blade-ui-kit/blade-heroicons
     |
+    | Stacking presets (opt-in):
+    |   To compose multiple presets, use 'presets' instead of 'preset'. Later
+    |   entries override earlier ones; consumer 'aliases' override all presets.
+    |
+    |   'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
+    |
     */
 
     'icons' => [
-        // Active icon preset (default: heroicons)
+        // Active icon preset (default: heroicons). Use 'presets' (plural) to
+        // stack multiple presets — see the comment block above.
         'preset' => 'heroicons',
 
+        // 'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
+
         // Override individual aliases (optional).
-        // Overrides the preset only for the specified aliases.
+        // Overrides every preset for the specified aliases.
         // Useful when you prefer a specific icon from a different set.
         'aliases' => [
             // 'close' => 'lucide-x',

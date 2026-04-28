@@ -87,8 +87,12 @@
     {{-- Visually hidden variant prefix for screen readers ("Warning: ...") --}}
     <span class="sr-only">{{ $variantLabel }}:</span>
 
-    {{-- Default variant icon (inline SVG) — hidden when `icon` prop is false --}}
-    @if($icon !== false)
+    {{-- — iconSlot named slot wins over variant-derived auto
+         icon. The bool $icon prop continues to toggle the auto path off. --}}
+    @php $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty(); @endphp
+    @if($hasIconSlot)
+        <div class="shrink-0 mt-0.5">{{ $iconSlot }}</div>
+    @elseif($icon !== false)
         <div @class(['shrink-0 mt-0.5', $variantColors['icon']]) aria-hidden="true">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">{!! $defaultIcon !!}</svg>
         </div>

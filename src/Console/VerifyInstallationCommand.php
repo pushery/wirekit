@@ -379,9 +379,19 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Detect the anti-pattern of @import-ing wirekit.css in app.css.
-     * wirekit.css contains Tailwind v4 directives (@theme, @custom-variant)
-     * that conflict with the Tailwind Vite plugin — use @wirekitStyles instead.
+     * Report which CSS-loading path the consumer's app.css uses for wirekit.css.
+     *
+     * Both paths work as of v1.3.0 (the file ships with `:root {}` / `.dark {}`
+     * blocks that resolve in any consumption context):
+     *   1. @wirekitStyles Blade directive — emits a `<link>` tag (the
+     *      "fastest" path, no Tailwind compile step required).
+     *   2. @import from app.css — Tailwind v4 picks up the variables;
+     *      slightly slower compile but useful when consumers want a single
+     *      bundled CSS file from Vite.
+     *
+     * Pre-v1.3.0 versions used `@theme {}` which browsers skipped as an
+     * unknown at-rule via the `<link>` path, breaking the documented setup.
+     * That's now fixed; this check just emits an informational line.
      */
     private function checkCssImportAntiPattern(): void
     {
@@ -393,11 +403,8 @@ class VerifyInstallationCommand extends Command
 
         $content = file_get_contents($appCss);
 
-        // Check for @import of wirekit.css (common mistake)
         if (preg_match('/@import\b.*wirekit\.css/', $content)) {
-            $this->reportWarn('wirekit.css is @import-ed in app.css — this causes conflicts');
-            $this->line('  Fix: Remove the @import and use @wirekitStyles Blade directive instead');
-            $this->line('  See: docs/integration.md → "Warning: Do NOT @import wirekit.css"');
+            $this->reportPass('wirekit.css is @import-ed in app.css (valid setup path)');
         }
     }
 

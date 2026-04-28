@@ -1,0 +1,276 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Pushery\WireKit\Console;
+
+use Illuminate\Console\Command;
+use Pushery\WireKit\ComponentRegistry;
+use Pushery\WireKit\Fonts\FontRegistry;
+use Pushery\WireKit\Icons\IconResolver;
+
+/**
+ * emit a hierarchical AI-friendly site sitemap covering
+ * components, tokens, fonts, icon presets, layouts, blueprints, and CLI
+ * commands. Superset of `/components.json` ( F2) — designed for
+ * MCP servers, Cursor, Claude, and other AI tooling that needs a single
+ * entry point to enumerate every WireKit surface.
+ *
+ * Output shape:
+ *   {
+ *     version: "1.x.x",
+ *     generated_at: ISO-8601,
+ *     docs_base: "https://docs.wirekit.app",
+ *     groups: [
+ *       { id: "components", count, items: [...] },
+ *       { id: "themes", count, items: [...] },
+ *       { id: "fonts", count, items: [...] },
+ *       { id: "icons", count, items: [...] },
+ *       { id: "layouts", count, items: [...] },
+ *       { id: "blueprints", count, items: [...] },
+ *       { id: "recipes", count, items: [...] },
+ *       { id: "commands", count, items: [...] }
+ *     ]
+ *   }
+ *
+ * Output is XSS-safe: `JSON_HEX_TAG` is set so user-controlled string
+ * values containing `</script>` cannot break out of a consuming
+ * `<script type="application/ld+json">` block.
+ */
+class ExportApiMapCommand extends Command
+{
+    protected $signature = 'wirekit:export-api-map
+        {--pretty : Pretty-print (multi-line) output}';
+
+    protected $description = 'Emit a machine-readable AI-friendly sitemap of every WireKit surface';
+
+    public function handle(): int
+    {
+        $packageRoot = realpath(__DIR__.'/../..');
+        if ($packageRoot === false) {
+            $this->error('Could not resolve package root.');
+
+            return self::FAILURE;
+        }
+
+        $payload = [
+            'version' => $this->detectVersion($packageRoot),
+            'generated_at' => date('c'),
+            'docs_base' => 'https://docs.wirekit.app',
+            'groups' => [
+                $this->componentsGroup(),
+                $this->themesGroup(),
+                $this->fontsGroup(),
+                $this->iconsGroup(),
+                $this->layoutsGroup($packageRoot),
+                $this->blueprintsGroup($packageRoot),
+                $this->recipesGroup($packageRoot),
+                $this->commandsGroup(),
+            ],
+        ];
+
+        $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG;
+        if ($this->option('pretty')) {
+            $flags |= JSON_PRETTY_PRINT;
+        }
+
+        $this->line(json_encode($payload, $flags));
+
+        return self::SUCCESS;
+    }
+
+    private function detectVersion(string $packageRoot): string
+    {
+        $composerPath = $packageRoot.'/composer.json';
+        if (! file_exists($composerPath)) {
+            return 'unknown';
+        }
+
+        $manifest = json_decode((string) file_get_contents($composerPath), true);
+
+        return is_array($manifest) && isset($manifest['version']) ? (string) $manifest['version'] : 'dev-develop';
+    }
+
+    /**
+     * @return array{id: string, count: int, items: array<int, array<string, mixed>>}
+     */
+    private function componentsGroup(): array
+    {
+        $items = [];
+        foreach (ComponentRegistry::all() as $name => $meta) {
+            $items[] = [
+                'id' => $name,
+                'tag' => '<x-wirekit::'.$name.' />',
+                'category' => $meta['category'] ?? 'Other',
+                'description' => $meta['description'] ?? '',
+                'docs_url' => 'https://docs.wirekit.app/components/'.$name,
+            ];
+        }
+
+        return ['id' => 'components', 'count' => count($items), 'items' => $items];
+    }
+
+    /**
+     * @return array{id: string, count: int, items: array<int, array<string, string>>}
+     */
+    private function themesGroup(): array
+    {
+        $presets = ['default', 'minimal', 'soft', 'material', 'brutalist', 'retro-terminal', 'cupertino'];
+        $items = array_map(fn (string $p): array => [
+            'id' => $p,
+            'install' => 'php artisan wirekit:theme '.$p,
+            'docs_url' => 'https://docs.wirekit.app/theming#'.$p,
+        ], $presets);
+
+        return ['id' => 'themes', 'count' => count($items), 'items' => $items];
+    }
+
+    /**
+     * @return array{id: string, count: int, items: array<int, array<string, mixed>>}
+     */
+    private function fontsGroup(): array
+    {
+        $items = [];
+        foreach (FontRegistry::all() as $key => $preset) {
+            $items[] = [
+                'id' => $key,
+                'category' => $preset->category,
+                'family' => $preset->family,
+                'docs_url' => 'https://docs.wirekit.app/fonts',
+            ];
+        }
+
+        return ['id' => 'fonts', 'count' => count($items), 'items' => $items];
+    }
+
+    /**
+     * @return array{id: string, count: int, items: array<int, array<string, mixed>>}
+     */
+    private function iconsGroup(): array
+    {
+        $presets = IconResolver::availablePresets();
+        $items = array_map(fn (string $p): array => [
+            'id' => $p,
+            'install' => 'php artisan wirekit:publish-icons '.$p,
+            'docs_url' => 'https://docs.wirekit.app/icons#'.$p,
+        ], $presets);
+
+        return ['id' => 'icons', 'count' => count($items), 'items' => $items];
+    }
+
+    /**
+     * @return array{id: string, count: int, items: array<int, array<string, string>>}
+     */
+    private function layoutsGroup(string $packageRoot): array
+    {
+        return $this->scanDocsDir($packageRoot, 'layouts');
+    }
+
+    /**
+     * @return array{id: string, count: int, items: array<int, array<string, string>>}
+     */
+    private function blueprintsGroup(string $packageRoot): array
+    {
+        return $this->scanDocsDir($packageRoot, 'blueprints');
+    }
+
+    /**
+     * @return array{id: string, count: int, items: array<int, array<string, string>>}
+     */
+    private function recipesGroup(string $packageRoot): array
+    {
+        return $this->scanDocsDir($packageRoot, 'recipes');
+    }
+
+    /**
+     * @return array{id: string, count: int, items: array<int, array<string, string>>}
+     */
+    private function scanDocsDir(string $packageRoot, string $subdir): array
+    {
+        $base = $packageRoot.'/docs/'.$subdir;
+        $items = [];
+
+        if (! is_dir($base)) {
+            return ['id' => $subdir, 'count' => 0, 'items' => []];
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($base, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file) {
+            if (! $file->isFile() || $file->getExtension() !== 'md') {
+                continue;
+            }
+
+            // Skip group-index pages (usually `index.md` or empty stubs)
+            if ($file->getBasename() === 'index.md') {
+                continue;
+            }
+
+            $relativePath = ltrim(str_replace($base, '', $file->getPathname()), '/\\');
+            $slug = preg_replace('/\.md$/', '', $relativePath);
+            $slug = str_replace(DIRECTORY_SEPARATOR, '/', (string) $slug);
+
+            $title = $this->extractFrontmatterTitle($file->getPathname()) ?? $this->humanise(basename((string) $slug));
+
+            $items[] = [
+                'id' => $slug,
+                'title' => $title,
+                'docs_url' => 'https://docs.wirekit.app/'.$subdir.'/'.$slug,
+            ];
+        }
+
+        usort($items, fn ($a, $b) => strcmp($a['id'], $b['id']));
+
+        return ['id' => $subdir, 'count' => count($items), 'items' => $items];
+    }
+
+    private function extractFrontmatterTitle(string $path): ?string
+    {
+        $head = (string) file_get_contents($path, false, null, 0, 1024);
+        if (! preg_match('/^---\s*\n(.+?)\n---/s', $head, $m)) {
+            return null;
+        }
+        if (preg_match('/^title:\s*(.+)$/m', $m[1], $tm)) {
+            return trim($tm[1], " \t'\"");
+        }
+
+        return null;
+    }
+
+    private function humanise(string $slug): string
+    {
+        $human = str_replace(['-', '_', '/'], [' ', ' ', ' › '], $slug);
+
+        return ucwords($human);
+    }
+
+    /**
+     * @return array{id: string, count: int, items: array<int, array<string, string>>}
+     */
+    private function commandsGroup(): array
+    {
+        $commands = [
+            'wirekit:install',
+            'wirekit:verify',
+            'wirekit:doctor',
+            'wirekit:list',
+            'wirekit:show',
+            'wirekit:theme',
+            'wirekit:make',
+            'wirekit:component',
+            'wirekit:publish-icons',
+            'wirekit:export-json',
+            'wirekit:export-api-map',
+            'wirekit:cursor-rules',
+            'wirekit:generate-changelogs',
+        ];
+        $items = array_map(fn (string $c): array => [
+            'id' => $c,
+            'docs_url' => 'https://docs.wirekit.app/cli#'.str_replace(':', '', $c),
+        ], $commands);
+
+        return ['id' => 'commands', 'count' => count($items), 'items' => $items];
+    }
+}

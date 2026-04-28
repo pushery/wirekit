@@ -145,6 +145,16 @@ export default function wirekitResizableHandle() {
                 // won't have capture, which only matters for out-of-bounds
                 // drags (the user can still drag inside the handle).
             }
+            // Suppress text selection across the page while the drag is
+            // active. Without this, a drag whose cursor crosses adjacent
+            // panel content highlights that text and the browser repaints
+            // the selection mid-drag — visible as a "flicker" and a
+            // confusing UX. Restored on pointerUp / lostpointercapture.
+            // We capture the prior inline value (NOT the computed style)
+            // so a consumer who already set `body { user-select: ... }`
+            // via stylesheet keeps that rule on restore.
+            this._priorBodyUserSelect = document.body.style.userSelect;
+            document.body.style.userSelect = 'none';
         },
 
         onPointerMove(event) {
@@ -183,6 +193,12 @@ export default function wirekitResizableHandle() {
             } catch (e) {
                 // Same Safari caveat as setPointerCapture above — safe to swallow.
             }
+            // Restore the prior body user-select value (see onPointerDown
+            // for the rationale). If the value was empty (no inline rule
+            // before the drag), we set it back to '' which removes the
+            // inline override entirely so the consumer's stylesheet wins.
+            document.body.style.userSelect = this._priorBodyUserSelect ?? '';
+            this._priorBodyUserSelect = null;
         },
 
         onKeyDown(event) {

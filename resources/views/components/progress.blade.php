@@ -46,6 +46,14 @@
 
     // Auto-generate an id so label + progressbar can be linked via aria-labelledby
     $labelId = 'progress-' . \Illuminate\Support\Str::random(6) . '-label';
+
+    // Extract aria-label / aria-labelledby from attributes so they can be
+    // applied to the role="progressbar" element (the ARIA contract lives
+    // there, not on the outer wrapper). Without this, axe-core flags the
+    // progressbar as missing an accessible name.
+    $ariaLabelAttr = $attributes->get('aria-label');
+    $ariaLabelledbyAttr = $attributes->get('aria-labelledby');
+    $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 @endphp
 
 <div {{ $attributes->class(['w-full font-[family-name:var(--font-wk-sans)]']) }}>
@@ -64,10 +72,19 @@
         </div>
     @endif
 
-    {{-- role="progressbar" + aria-value* are the WCAG/WAI-ARIA contract for progress indicators --}}
+    {{-- role="progressbar" + aria-value* are the WCAG/WAI-ARIA contract for progress indicators.
+         An accessible name is MANDATORY (axe-core's progressbar-name rule) — we source it from:
+         1. `label` prop (preferred, visible above bar)
+         2. `aria-labelledby` attribute (links to another element's id)
+         3. `aria-label` attribute (invisible text)
+         4. Fallback: generic "Progress" so the progressbar always has SOME name --}}
     <div
         role="progressbar"
-        @if($label) aria-labelledby="{{ $labelId }}" @endif
+        @if($label) aria-labelledby="{{ $labelId }}"
+        @elseif($ariaLabelledbyAttr) aria-labelledby="{{ $ariaLabelledbyAttr }}"
+        @elseif($ariaLabelAttr) aria-label="{{ $ariaLabelAttr }}"
+        @else aria-label="Progress"
+        @endif
         @if(! $isIndeterminate)
             aria-valuenow="{{ (int) $clamped }}"
             aria-valuemin="0"

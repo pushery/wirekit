@@ -33,13 +33,16 @@
 
     $tag = $href ? 'a' : 'button';
 
-    // Auto-inject rel="noopener noreferrer" and SR hint when target="_blank"
+    // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
+    // See dropdown/item.blade.php for rationale on except('rel') + explicit
+    // rel render (avoids $attributes->merge treating rel as a default).
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
-        ? trim($relAttr . ' noopener noreferrer')
+        ? trim($relAttr.' noopener noreferrer')
         : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
 <{{ $tag }}
@@ -49,7 +52,8 @@
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
     x-on:click="closeAll()"
-    {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$classes, $colorClasses, $disabledClasses]) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->class([$classes, $colorClasses, $disabledClasses]) }}
 >
     <span>{{ $slot }}</span>
 

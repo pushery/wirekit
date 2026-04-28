@@ -111,6 +111,7 @@
                 @keydown.backspace="onBackspace($event)"
                 role="combobox"
                 aria-haspopup="listbox"
+                aria-expanded="false"
                 :aria-expanded="dropdownOpen ? 'true' : 'false'"
                 aria-controls="{{ $id }}-listbox"
                 aria-autocomplete="list"

@@ -1,6 +1,7 @@
 @props([
     'name' => null,
     'id' => null,
+    'label' => null,
     'value' => null,
     'min' => null,
     'max' => null,
@@ -57,9 +58,31 @@
 
     // Build aria-describedby from hint + error ids conditionally.
     $describedBy = trim(($hint ? $hintId : '') . ' ' . ($hasError ? $errorId : ''));
+
+    // Accessible-name fallback. WCAG 2.1 (4.1.2) requires every input to
+    // have a programmatically-determinable name. When no visible `label`
+    // prop is set AND no `aria-label` / `aria-labelledby` is passed via
+    // attributes, derive a sr-only fallback from `name` (humanized) so
+    // screen readers always announce something. Caller-provided
+    // `aria-label` always wins.
+    $hasExplicitAriaName = $attributes->has('aria-label') || $attributes->has('aria-labelledby');
+    $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
+    $fallbackLabel = $name ? Str::headline((string) $name) : 'Date';
 @endphp
 
 <div class="w-full">
+    @if($label)
+        <label for="{{ $dateId }}" class="block mb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[var(--color-wk-text)]">
+            {{ $label }}
+            @if($required)<span aria-hidden="true" class="text-[var(--color-wk-danger-text)]">&nbsp;*</span>@endif
+        </label>
+    @elseif($needsSrOnlyFallback)
+        {{-- Screen-reader-only label fallback. Visible-label-less demos still
+             pass WCAG 4.1.2 because the input has a programmatically-
+             determinable name. --}}
+        <label for="{{ $dateId }}" class="sr-only">{{ $fallbackLabel }}</label>
+    @endif
+
     <input
         type="date"
         @if($name) name="{{ $name }}" @endif

@@ -72,32 +72,32 @@
     </ol>
 </nav>
 
-{{-- Schema.org BreadcrumbList structured data (JSON-LD).
-     Google, Bing, and other search engines use this to render
-     breadcrumb trails in search results. JSON-LD is preferred
-     over microdata because it keeps markup clean and separate. --}}
+{{-- Schema.org BreadcrumbList structured data (JSON-LD). — Delegated to <x-wirekit::structured-data> so
+     the JSON_HEX_TAG safety flag is applied consistently. Previously
+     this component called json_encode() directly with a flag set that
+     omitted JSON_HEX_TAG — a user-controlled item label containing
+     </script> could break out of the JSON-LD block (real XSS). The
+     structured-data component bakes JSON_HEX_TAG in. --}}
 @if(count($items) > 0)
-<script type="application/ld+json">
-@php
-    $jsonItems = [];
-    foreach ($items as $i => $item) {
-        $itemLabel = is_array($item) ? ($item['label'] ?? '') : (string) $item;
-        $itemHref = is_array($item) ? ($item['href'] ?? null) : null;
-        $entry = [
-            '@type' => 'ListItem',
-            'position' => $i + 1,
-            'name' => $itemLabel,
+    @php
+        $breadcrumbLdData = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [],
         ];
-        if ($itemHref) {
-            $entry['item'] = $itemHref;
+        foreach ($items as $i => $item) {
+            $itemLabel = is_array($item) ? ($item['label'] ?? '') : (string) $item;
+            $itemHref = is_array($item) ? ($item['href'] ?? null) : null;
+            $entry = [
+                '@type' => 'ListItem',
+                'position' => $i + 1,
+                'name' => $itemLabel,
+            ];
+            if ($itemHref) {
+                $entry['item'] = $itemHref;
+            }
+            $breadcrumbLdData['itemListElement'][] = $entry;
         }
-        $jsonItems[] = $entry;
-    }
-    echo json_encode([
-        '@context' => 'https://schema.org',
-        '@type' => 'BreadcrumbList',
-        'itemListElement' => $jsonItems,
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-@endphp
-</script>
+    @endphp
+    <x-wirekit::structured-data :data="$breadcrumbLdData" />
 @endif

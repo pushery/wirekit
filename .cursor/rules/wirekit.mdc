@@ -1,0 +1,193 @@
+---
+description: WireKit component library conventions for AI tooling
+globs:
+  - "**/*.blade.php"
+  - "**/*.css"
+  - "resources/views/**/*"
+---
+
+# WireKit — AI Authoring Rules
+
+WireKit is a Laravel Livewire component library. When generating Blade
+templates, CSS, or PHP that uses WireKit, follow these rules.
+
+## Component invocation
+
+WireKit components use Laravel's anonymous-component namespace syntax
+with a double colon:
+
+```blade
+<x-wirekit::button variant="primary">Save</x-wirekit::button>
+<x-wirekit::input name="email" wire:model="email" />
+<x-wirekit::card>
+    <x-wirekit::heading>Title</x-wirekit::heading>
+    <x-wirekit::text>Body copy</x-wirekit::text>
+</x-wirekit::card>
+```
+
+NEVER use a single colon (`<x-wirekit:button>`) — that syntax does not
+resolve to the package's anonymous-component path.
+
+## Variant system (Plan 28)
+
+Most interactive components support a unified Intent × Surface variant
+system. Acceptable values:
+
+- **Intent:** `primary`, `secondary`, `success`, `warning`, `danger`,
+  `info`, `neutral`, `accent`
+- **Surface:** `solid` (default), `soft`, `outline`, `ghost`, `link`
+
+When in doubt, prefer `variant="primary"` over hand-coding colors.
+
+NEVER apply Tailwind color utilities to recolor a component:
+
+```blade
+{{-- ❌ WRONG --}}
+<x-wirekit::button class="bg-blue-500 text-white">…</x-wirekit::button>
+
+{{-- ✅ RIGHT --}}
+<x-wirekit::button variant="primary">…</x-wirekit::button>
+```
+
+## Design tokens
+
+WireKit ships ~70 CSS variables under the `--*-wk-*` namespace. They
+auto-switch in dark mode via the `.dark` class. NEVER hand-write color
+values; reach for the token. NEVER use Tailwind palette classes
+(`zinc-*`, `gray-*`, `slate-*`) inside WireKit components or their
+overrides.
+
+Common tokens:
+
+- `--color-wk-bg`, `--color-wk-bg-muted`, `--color-wk-bg-input`
+- `--color-wk-text`, `--color-wk-text-muted`, `--color-wk-text-subtle`
+- `--color-wk-border`, `--color-wk-border-subtle`
+- `--color-wk-accent`, `--color-wk-accent-fg`
+- `--space-wk-xs|sm|md|lg|xl|2xl|3xl`
+- `--radius-wk-sm|md|lg|xl`
+- `--shadow-wk-sm|md|lg|xl`
+- `--text-wk-xs|sm|base|lg|xl|2xl|3xl|4xl`
+- `--transition-wk-duration`, `--transition-wk-easing`
+
+NEVER use the `dark:` Tailwind prefix on a WireKit component or its
+content — tokens auto-switch via the parent `.dark` class.
+
+## Icon usage (Plan 32 Chunk B2)
+
+```blade
+<x-wirekit::icon name="check" size="sm" />
+<x-wirekit::icon name="x-mark" size="md" aria-label="Close" />
+```
+
+Acceptable `size` values: `xs` (12px), `sm` (16px), `md` (20px),
+`lg` (24px), `xl` (32px). NEVER use `class="h-N w-N"` on
+`<x-wirekit::icon>` — the `size` prop is the canonical way.
+
+Stackable presets — base preset (`heroicons`) plus optional
+`heroicons-app` and `heroicons-marketing` extensions add app- and
+marketing-specific aliases. Configure in `config/wirekit.php`:
+
+```php
+'icons' => ['presets' => ['heroicons', 'heroicons-marketing']],
+```
+
+## Layout primitives (Plan 28)
+
+Reach for these instead of hand-rolled flex/grid:
+
+- `<x-wirekit::container>` — max-width wrapper with responsive padding
+- `<x-wirekit::stack space="md">` — vertical flex column
+- `<x-wirekit::row space="sm">` — horizontal flex row
+- `<x-wirekit::grid cols="3">` — responsive CSS grid
+- `<x-wirekit::section>` — semantic page section with vertical padding
+- `<x-wirekit::center>` — centers a single child both axes
+- `<x-wirekit::aspect-ratio ratio="16/9">` — locked aspect ratio
+- `<x-wirekit::divider>`, `<x-wirekit::spacer size="md">`
+
+## Typography primitives (Plan 28)
+
+```blade
+<x-wirekit::heading level="2">Section title</x-wirekit::heading>
+<x-wirekit::text size="sm" muted>Help copy</x-wirekit::text>
+<x-wirekit::link href="/docs">Read docs</x-wirekit::link>
+<x-wirekit::code>$variable</x-wirekit::code>
+<x-wirekit::code-block lang="php">{{ $snippet }}</x-wirekit::code-block>
+<x-wirekit::kbd>Cmd</x-wirekit::kbd> + <x-wirekit::kbd>K</x-wirekit::kbd>
+```
+
+## Modal / Drawer / Dropdown trigger pattern
+
+NEVER place a `<x-wirekit::modal.trigger>` (or drawer/dropdown
+equivalents) outside its parent overlay component. The trigger reads
+its target via the named slot context — orphaned triggers do nothing
+and create silent bugs.
+
+```blade
+{{-- ✅ RIGHT --}}
+<x-wirekit::modal>
+    <x-slot:trigger>
+        <x-wirekit::button>Open</x-wirekit::button>
+    </x-slot:trigger>
+    <x-slot:body>…</x-slot:body>
+</x-wirekit::modal>
+```
+
+## Accessibility defaults
+
+- Icons: `aria-hidden="true"` by default (decorative use). If the icon
+  carries meaning (icon-only button), set `aria-label` on the
+  surrounding `<button>`.
+- `target="_blank"` links: WireKit auto-injects
+  `rel="noopener noreferrer"` plus a screen-reader hint. NEVER add
+  `rel="noopener"` manually — the auto-inject overrides caller `rel`
+  values intentionally for security.
+- Forms: pair every `<x-wirekit::input>` with a
+  `<x-wirekit::label for="...">`. The `field` wrapper is preferred:
+  `<x-wirekit::field label="Email" name="email" />`.
+
+## Livewire integration
+
+- `wire:model.live` on every keystroke is anti-pattern for prose
+  inputs and large option lists. Default to `wire:model.blur`.
+- `wire:click` MUST NOT be added directly to overlay triggers
+  (`<x-wirekit::modal.trigger>`, etc.) — the Alpine handler dispatches
+  the open event; competing `wire:click` will race.
+- `<x-wirekit::chart>` re-creates the Chart.js instance on every
+  data change — bind via `$wire.set()` and refresh on a debounced
+  trigger.
+
+## Browser support
+
+Tailwind CSS v4 baseline: Chrome 111+, Edge 111+, Safari 16.4+,
+Firefox 128+. Use any CSS feature in this baseline freely
+(`color-mix()`, `@property`, `@starting-style`, `field-sizing`,
+native CSS nesting, `min()/max()/round()`). NEVER add polyfills for
+older browsers.
+
+## CLI commands
+
+```bash
+php artisan wirekit:install              # one-command bootstrap
+php artisan wirekit:verify               # diagnose integration health
+php artisan wirekit:doctor               # alias for wirekit:verify
+php artisan wirekit:list                 # every component
+php artisan wirekit:show button          # props + slots + docs URL
+php artisan wirekit:theme cupertino      # inject theme preset CSS
+php artisan wirekit:make page:dashboard  # scaffold Livewire page
+php artisan wirekit:component my-button --base=button  # fork a component
+php artisan wirekit:publish-icons heroicons --force    # publish icons
+php artisan wirekit:glass install        # publish Liquid Glass extension
+php artisan wirekit:export-json          # machine-readable component manifest
+php artisan wirekit:export-api-map       # AI-friendly hierarchical sitemap
+php artisan wirekit:export-blocks        # layout + blueprint manifest
+php artisan wirekit:cursor-rules         # publish this file
+php artisan wirekit:generate-changelogs  # per-component changelogs
+```
+
+## Reference
+
+- Components catalogue: <https://docs.wirekit.app>
+- JSON manifest: <https://docs.wirekit.app/components.json>
+- LLM-friendly index: <https://docs.wirekit.app/llms.txt>
+- API sitemap: <https://docs.wirekit.app/api-map.json>
+- GitHub: <https://github.com/pushery/wirekit>

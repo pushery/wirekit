@@ -1,28 +1,33 @@
 /*!
- * WireKit CSS v1.2.1 — MIT License
+ * WireKit CSS v1.3.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
  * Design Tokens for WireKit UI Components.
- * No third-party CSS dependencies bundled.
+ * Self-contained: no third-party CSS dependencies bundled, every token
+ * lives inside a standard `:root {}` (light) and `.dark {}` (dark) block
+ * so the file works as plain CSS in EVERY consumption path:
  *
- * ⚠️  DO NOT @import this file in your app.css!
- *     Use the @wirekitStyles Blade directive instead:
+ *   1. `<link rel="stylesheet">` via the `@wirekitStyles` Blade directive
+ *      (the documented "fastest path" — works because every token is
+ *      inside `:root`, no Tailwind compiler needed).
  *
- *     <head>
- *         @wirekitStyles
- *         @vite(['resources/css/app.css', 'resources/js/app.js'])
- *         @wirekitScripts
- *     </head>
- *
- *     This file contains Tailwind v4 directives (@theme, @custom-variant)
- *     that conflict with Tailwind's Vite plugin when processed via @import.
+ *   2. `@import` from your `resources/css/app.css` (Tailwind v4 picks up
+ *      the `:root` variables automatically; you also get the
+ *      `@custom-variant dark` directive so `.dark:` Tailwind variants
+ *      work alongside WireKit's `.dark` selector). Either path resolves.
  *
  * To customize tokens, override CSS variables in your app.css:
  *
  *     @layer base {
  *         :root { --color-wk-accent: oklch(54.6% 0.245 262.881); }
  *     }
+ *
+ * History: prior versions used Tailwind v4's `@theme {}` compiler
+ * directive, which browsers correctly skip as an unknown at-rule when
+ * the file is loaded via `<link>`. That broke the `@wirekitStyles`
+ * documented setup path — fixed in v1.3.0 by emitting `:root {}` /
+ * `.dark {}` directly.
  */
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -31,7 +36,7 @@
 /* Self-contained OKLCH values — no Tailwind var() dependencies.*/
 /* Verified against Tailwind CSS v4 source. WCAG ratios intact. */
 
-@theme {
+:root {
     /* ─── Accent Colors ─── */
     --color-wk-accent: oklch(20.5% 0 0);
     --color-wk-accent-hover: oklch(26.9% 0 0);
@@ -39,19 +44,26 @@
     --color-wk-accent-fg: oklch(98.5% 0 0);  /* ~18:1 on neutral-900 */
 
     /* ─── Danger Colors ─── */
+    /* danger-text is the foreground-on-soft-bg variant — calibrated to ≥4.5:1
+       against soft-danger bg (12% red-500 + 88% white ≈ #fadcdc).
+       red-500 (#e7000b) on that bg only reaches 3.89:1 — fails AA.
+       Tailwind red-700 (oklch 50.5%) lands at ~5.13:1 on soft-danger and
+       6.16:1 on white. */
     --color-wk-danger: oklch(57.7% 0.245 27.325);
     --color-wk-danger-hover: oklch(50.5% 0.213 27.518);
     --color-wk-danger-fg: #fff;
-    --color-wk-danger-text: oklch(57.7% 0.245 27.325);
+    --color-wk-danger-text: oklch(50.5% 0.213 27.518);
 
     /* ─── Success Colors ─── */
     /* fg is dark-on-green (zinc-900 on green-600 = 6.35:1) because white-on-green-600
-       only reaches 3.30:1 and fails WCAG 2.2 AA for normal text. success-text is the
-       "text label" variant used on white/elevated surfaces, bumped to green-700 for 5.52:1. */
+       only reaches 3.30:1 and fails WCAG 2.2 AA for normal text. success-text is
+       the foreground-on-soft-bg variant — calibrated to ≥4.5:1 on the 12%
+       color-mix soft-success background (#d2efd9). Tailwind green-700 only
+       reaches 4.33:1 there; green-800 (oklch 45.6%) lands at ~6.17:1. */
     --color-wk-success: oklch(62.7% 0.194 149.214);
     --color-wk-success-hover: oklch(52.7% 0.154 150.069);
     --color-wk-success-fg: oklch(21% 0.006 285.885);
-    --color-wk-success-text: oklch(52.7% 0.154 150.069);
+    --color-wk-success-text: oklch(45.6% 0.17 149.7);
 
     /* ─── Warning Colors ─── */
     /* fg is dark-on-amber (zinc-900 on amber-500 = 9.03:1) — white-on-amber-500 only
@@ -59,9 +71,22 @@
     --color-wk-warning: oklch(76.9% 0.188 70.08);
     --color-wk-warning-hover: oklch(66.6% 0.179 58.318);
     --color-wk-warning-fg: oklch(21% 0.006 285.885);
+    /* warning-text is the foreground-on-soft-bg variant — calibrated to ≥4.5:1
+       against soft-warning bg (12% amber-500 + 88% white ≈ #feefdd).
+       amber-700 (oklch 55.5%) only reaches 4.41:1 there; amber-800
+       (oklch 47.6%) lands at ~6.04:1 on soft-warning and 6.99:1 on white. */
+    --color-wk-warning-text: oklch(47.6% 0.158 65);
 
     /* ─── Warning Background ─── */
     --color-wk-warning-bg: oklch(96.4% 0.058 102.1);
+
+    /* ─── Info / Accent text-on-soft-bg variants ─── */
+    /* Calibrated for ≥4.5:1 contrast on the 12% color-mix soft-tone backgrounds.
+       See badge/alert/callout where the soft variant uses
+       color-mix(in srgb, var(--color-wk-{tone}) 12%, var(--color-wk-bg))
+       as bg and pairs it with var(--color-wk-{tone}-text) as fg. */
+    --color-wk-info-text: var(--color-wk-accent-content);
+    --color-wk-accent-text: var(--color-wk-accent-content);
 
     /* ─── Neutral Colors (Backgrounds) ─── */
     --color-wk-bg: #fff;
@@ -72,10 +97,13 @@
     --color-wk-bg-inverse: oklch(14.5% 0 0);
 
     /* ─── Neutral Colors (Text) ─── */
-    /* text-subtle/text-placeholder use neutral-500 for 4.74:1 on white —
-       neutral-400 only reaches 2.52:1 which fails AA for placeholder/helper copy. */
+    /* text-muted is foreground-on-bg-muted (oklch 97% ≈ #f7f7f7). neutral-500
+       (oklch 55.6% ≈ #737373) only reaches 4.26:1 on bg-muted — fails AA by 0.24.
+       neutral-600-ish (oklch 47%) lands at ~6.13:1 on bg-muted and 6.56:1 on white.
+       text-subtle/text-placeholder appear on white only and stay at neutral-500
+       for visual hierarchy (4.74:1 on white passes AA). */
     --color-wk-text: oklch(14.5% 0 0); /* ~19:1 on white */
-    --color-wk-text-muted: oklch(55.6% 0 0); /* 4.74:1 on white — AA minimum */
+    --color-wk-text-muted: oklch(47% 0 0);
     --color-wk-text-subtle: oklch(55.6% 0 0);
     --color-wk-text-placeholder: oklch(55.6% 0 0);
     --color-wk-text-inverse: #fff;
@@ -217,77 +245,81 @@
 
 /* ─── Dark mode overrides ──────────────────────────────────── */
 
-@layer theme {
-    .dark {
-        /* Accent — inverted */
-        --color-wk-accent: oklch(98.5% 0 0);
-        --color-wk-accent-hover: oklch(92.2% 0 0);
-        --color-wk-accent-content: oklch(98.5% 0 0);
-        --color-wk-accent-fg: oklch(20.5% 0 0); /* ~18.4:1 on neutral-50 */
+.dark {
+    /* Accent — inverted */
+    --color-wk-accent: oklch(98.5% 0 0);
+    --color-wk-accent-hover: oklch(92.2% 0 0);
+    --color-wk-accent-content: oklch(98.5% 0 0);
+    --color-wk-accent-fg: oklch(20.5% 0 0); /* ~18.4:1 on neutral-50 */
 
-        /* Danger — both base (red-600) and hover (red-700) keep white-on-red ≥ 4.83:1
-           for WCAG AA. Previous red-500/red-600 combo failed white-fg contrast (3.76:1). */
-        --color-wk-danger: oklch(57.7% 0.245 27.325);
-        --color-wk-danger-hover: oklch(50.5% 0.213 27.518);
-        --color-wk-danger-fg: #fff;
-        --color-wk-danger-text: oklch(70.4% 0.191 22.216);
+    /* Danger — both base (red-600) and hover (red-700) keep white-on-red ≥ 4.83:1
+       for WCAG AA. Previous red-500/red-600 combo failed white-fg contrast (3.76:1). */
+    --color-wk-danger: oklch(57.7% 0.245 27.325);
+    --color-wk-danger-hover: oklch(50.5% 0.213 27.518);
+    --color-wk-danger-fg: #fff;
+    --color-wk-danger-text: oklch(70.4% 0.191 22.216);
 
-        /* Success — success-fg inherits zinc-900 from light mode.
-           zinc-900 on green-500 = 6.99:1 (AA ✓). */
-        --color-wk-success: oklch(72.3% 0.219 149.579);
-        --color-wk-success-hover: oklch(79.2% 0.209 151.711);
-        --color-wk-success-text: oklch(79.2% 0.209 151.711);
+    /* Success — success-fg inherits zinc-900 from light mode.
+       zinc-900 on green-500 = 6.99:1 (AA ✓). */
+    --color-wk-success: oklch(72.3% 0.219 149.579);
+    --color-wk-success-hover: oklch(79.2% 0.209 151.711);
+    --color-wk-success-text: oklch(79.2% 0.209 151.711);
 
-        /* Warning — warning-fg inherits zinc-900 from light mode.
-           zinc-900 on amber-400 = 11.88:1 (AAA ✓). */
-        --color-wk-warning: oklch(82.8% 0.189 84.429);
-        --color-wk-warning-hover: oklch(87.9% 0.169 91.605);
+    /* Warning — warning-fg inherits zinc-900 from light mode.
+       zinc-900 on amber-400 = 11.88:1 (AAA ✓). */
+    --color-wk-warning: oklch(82.8% 0.189 84.429);
+    --color-wk-warning-hover: oklch(87.9% 0.169 91.605);
+    /* Lighter on dark — calibrated for ≥4.5:1 on dark soft-tone bg. */
+    --color-wk-warning-text: oklch(85.4% 0.183 81.0);
 
-        /* Warning Background */
-        --color-wk-warning-bg: oklch(32% 0.06 80);
+    /* Warning Background */
+    --color-wk-warning-bg: oklch(32% 0.06 80);
 
-        /* Neutral Backgrounds — elevation via contrast, not blur */
-        --color-wk-bg: oklch(14.5% 0 0);
-        --color-wk-bg-elevated: oklch(20.5% 0 0);
-        --color-wk-bg-subtle: oklch(20.5% 0 0);
-        --color-wk-bg-muted: oklch(26.9% 0 0);
-        --color-wk-bg-input: oklch(14.5% 0 0);
-        --color-wk-bg-inverse: oklch(98.5% 0 0);
+    /* Dark-mode info/accent text-on-soft-bg variants */
+    --color-wk-info-text: var(--color-wk-accent-content);
+    --color-wk-accent-text: var(--color-wk-accent-content);
 
-        /* Neutral Text — subtle/placeholder use neutral-400 on neutral-950 for ~7.82:1.
-           neutral-500 only reaches 4.18:1 on neutral-950 — below AA. */
-        --color-wk-text: oklch(98.5% 0 0);  /* ~18.4:1 on neutral-950 */
-        --color-wk-text-muted: oklch(70.8% 0 0); /* ~7.82:1 */
-        --color-wk-text-subtle: oklch(70.8% 0 0);
-        --color-wk-text-placeholder: oklch(70.8% 0 0);
-        --color-wk-text-inverse: oklch(14.5% 0 0);
+    /* Neutral Backgrounds — elevation via contrast, not blur */
+    --color-wk-bg: oklch(14.5% 0 0);
+    --color-wk-bg-elevated: oklch(20.5% 0 0);
+    --color-wk-bg-subtle: oklch(20.5% 0 0);
+    --color-wk-bg-muted: oklch(26.9% 0 0);
+    --color-wk-bg-input: oklch(14.5% 0 0);
+    --color-wk-bg-inverse: oklch(98.5% 0 0);
 
-        /* Borders — neutral-600 on neutral-950 ≈ 2.53:1 (UI decorative OK,
-           inputs pair with bg-input differentiation for compound cue).
-           Previous neutral-800 was 1.31:1 — too low even for decorative use. */
-        --color-wk-border: oklch(43.9% 0 0);
-        --color-wk-border-hover: oklch(55.6% 0 0);
-        --color-wk-border-subtle: oklch(37.1% 0 0);
-        --color-wk-border-error: oklch(70.4% 0.191 22.216);
-        --color-wk-border-strong: oklch(55.6% 0 0);
+    /* Neutral Text — subtle/placeholder use neutral-400 on neutral-950 for ~7.82:1.
+       neutral-500 only reaches 4.18:1 on neutral-950 — below AA. */
+    --color-wk-text: oklch(98.5% 0 0);  /* ~18.4:1 on neutral-950 */
+    --color-wk-text-muted: oklch(70.8% 0 0); /* ~7.82:1 */
+    --color-wk-text-subtle: oklch(70.8% 0 0);
+    --color-wk-text-placeholder: oklch(70.8% 0 0);
+    --color-wk-text-inverse: oklch(14.5% 0 0);
 
-        /* Focus Ring */
-        --color-wk-ring: oklch(98.5% 0 0);
-        --color-wk-ring-offset: oklch(14.5% 0 0);
+    /* Borders — neutral-600 on neutral-950 ≈ 2.53:1 (UI decorative OK,
+       inputs pair with bg-input differentiation for compound cue).
+       Previous neutral-800 was 1.31:1 — too low even for decorative use. */
+    --color-wk-border: oklch(43.9% 0 0);
+    --color-wk-border-hover: oklch(55.6% 0 0);
+    --color-wk-border-subtle: oklch(37.1% 0 0);
+    --color-wk-border-error: oklch(70.4% 0.191 22.216);
+    --color-wk-border-strong: oklch(55.6% 0 0);
 
-        /* Backdrop — stronger opacity in dark mode */
-        --color-wk-overlay: oklch(0% 0 0 / 0.7);
+    /* Focus Ring */
+    --color-wk-ring: oklch(98.5% 0 0);
+    --color-wk-ring-offset: oklch(14.5% 0 0);
 
-        /* Shadows — higher opacity needed on near-black backgrounds */
-        --shadow-wk-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.20);
-        --shadow-wk-md: 0 4px 12px -2px rgba(0, 0, 0, 0.30), 0 2px 4px -1px rgba(0, 0, 0, 0.20);
-        --shadow-wk-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.40), 0 4px 10px -2px rgba(0, 0, 0, 0.25);
+    /* Backdrop — stronger opacity in dark mode */
+    --color-wk-overlay: oklch(0% 0 0 / 0.7);
 
-        /* Scrollbar — lighter thumb on dark backgrounds */
-        --color-wk-scrollbar-thumb: oklch(43.9% 0 0);
-        --color-wk-scrollbar-thumb-hover: oklch(55.6% 0 0);
+    /* Shadows — higher opacity needed on near-black backgrounds */
+    --shadow-wk-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.20);
+    --shadow-wk-md: 0 4px 12px -2px rgba(0, 0, 0, 0.30), 0 2px 4px -1px rgba(0, 0, 0, 0.20);
+    --shadow-wk-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.40), 0 4px 10px -2px rgba(0, 0, 0, 0.25);
+
+    /* Scrollbar — lighter thumb on dark backgrounds */
+    --color-wk-scrollbar-thumb: oklch(43.9% 0 0);
+    --color-wk-scrollbar-thumb-hover: oklch(55.6% 0 0);
     }
-}
 
 /* ─── Scrollbar Utility ────────────────────────────────────── */
 /* Apply .wk-scrollbar to any scrollable container for a slim, */
@@ -445,6 +477,14 @@
 }
 [data-wk-resizable][data-wk-direction="vertical"] {
     contain: size;
+    /* `contain: size` requires the wrapper to have an explicit size — */
+    /* without it the height collapses to 0 because the panels' percent */
+    /* heights resolve against a 0-height container. Default min-height */
+    /* of 16rem keeps unstyled vertical wrappers rendering visibly.    */
+    /* Consumers needing a different baseline override via inline       */
+    /* style="min-height: …" or a parent container query (CSS specificity */
+    /* favours the inline style + the consumer's own selector).        */
+    min-height: 16rem;
 }
 
 /* All panels — `overflow: hidden` is mandatory for two reasons:  */

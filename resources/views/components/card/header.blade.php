@@ -18,6 +18,15 @@
     ]), $scope);
 @endphp
 
-<div {{ $attributes->class([$classes]) }}>
-    {{ $slot }}
+@php
+    // — iconSlot symmetry: optional named slot for a header
+    // icon/avatar/illustration. Renders before the default slot content.
+    $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty();
+@endphp
+
+<div {{ $attributes->class([$classes, 'flex items-center gap-[var(--gap-wk-sm)]']) }}>
+    @if($hasIconSlot)
+        <div class="shrink-0">{{ $iconSlot }}</div>
+    @endif
+    <div class="flex-1 min-w-0">{{ $slot }}</div>
 </div>

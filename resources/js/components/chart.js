@@ -43,8 +43,9 @@ export default function wirekitChartJs(config) {
             this.$nextTick(() => {
                 const ctx = this.$refs.canvas.getContext('2d');
 
-                // Read WireKit CSS variables for theming
-                const style = getComputedStyle(document.documentElement);
+                // Read CSS variables from the canvas element — this resolves
+                // correctly regardless of whether .dark is on <html> or <body>.
+                const style = getComputedStyle(this.$refs.canvas);
                 const colors = this._resolveThemeColors(style);
 
                 // Font family from WireKit theming
@@ -110,9 +111,17 @@ export default function wirekitChartJs(config) {
                 // Debounce: coalesce rapid toggles into one update
                 clearTimeout(this._darkModeDebounce);
                 this._darkModeDebounce = setTimeout(() => {
-                    if (!this.chart) return; // Re-check after debounce
+                    if (!this.chart || !this.$refs.canvas) return;
 
-                    const style = getComputedStyle(document.documentElement);
+                    // Alpine.raw() strips the reactive Proxy wrapper.
+                    // Without this, mutating chart.options triggers Alpine's
+                    // Proxy getter recursively through Chart.js's internal
+                    // option-resolver Proxies → infinite call stack.
+                    const chart = Alpine.raw(this.chart);
+
+                    // Read from canvas element — resolves correctly regardless
+                    // of whether .dark is on <html>, <body>, or a wrapper.
+                    const style = getComputedStyle(this.$refs.canvas);
                     const colors = this._resolveThemeColors(style);
                     const fontFamily = style.getPropertyValue('--font-wk-sans').trim()
                         || 'ui-sans-serif, system-ui, sans-serif';
@@ -129,20 +138,25 @@ export default function wirekitChartJs(config) {
                     // this, grid / tick / legend / tooltip colors stay frozen
                     // on whatever was resolved at `new Chart(...)` time — the
                     // exact "requires page refresh to see new colors" bug.
-                    this._applyThemeToChartOptions(this.chart, colors, fontFamily);
+                    this._applyThemeToChartOptions(chart, colors, fontFamily);
 
                     // Re-apply dataset colors (skip manually colored datasets)
-                    this._reapplyThemeToDatasets(this.chart.config, colors);
+                    this._reapplyThemeToDatasets(chart.config, colors);
 
-                    // Redraw with new colors — skip animation for instant feedback
-                    this.chart.update('none');
+                    // Redraw with new colors. Using update() (not "none") forces
+                    // Chart.js v4 to run the full style-resolver pass, which picks
+                    // up mutated dataset colors. "none" skips that pass when only
+                    // style properties changed (no data/layout change), leaving old
+                    // colors on the canvas. The animation transition is a UX win.
+                    chart.update();
                 }, 50);
             });
 
-            this._darkModeObserver.observe(document.documentElement, {
-                attributes: true,
-                attributeFilter: ['class'],
-            });
+            // Observe both <html> and <body> — different apps place .dark
+            // on different elements. Tailwind's dark variant matches either.
+            const observerOpts = { attributes: true, attributeFilter: ['class'] };
+            this._darkModeObserver.observe(document.documentElement, observerOpts);
+            this._darkModeObserver.observe(document.body, observerOpts);
         },
 
         /**
@@ -177,13 +191,17 @@ export default function wirekitChartJs(config) {
          * always resolves to rgb()/rgba() regardless of the input format.
          */
         _resolveThemeColors(style) {
-            const isDark = document.documentElement.classList.contains('dark');
+            const isDark = document.documentElement.classList.contains('dark')
+                || document.body.classList.contains('dark');
 
-            // Probe element: hidden div inside <html> so var() resolves
-            // through the correct cascade (including .dark overrides).
+            // Probe element: hidden div inside <body> so var() resolves
+            // through the correct cascade. .dark can be on <html> OR <body>
+            // (both work because the probe inherits from its ancestors).
+            // Appending to <html> would fail if .dark is on <body> only,
+            // since the probe would be a sibling of <body> outside the cascade.
             const probe = document.createElement('div');
             probe.style.display = 'none';
-            document.documentElement.appendChild(probe);
+            document.body.appendChild(probe);
 
             const resolve = (varName, fallbackLight, fallbackDark) => {
                 // Check if the variable is defined at all
@@ -344,7 +362,8 @@ export default function wirekitChartJs(config) {
          */
         _applyThemeToChartOptions(chart, colors, fontFamily) {
             const options = chart.options;
-            const isDark = document.documentElement.classList.contains('dark');
+            const isDark = document.documentElement.classList.contains('dark')
+                || document.body.classList.contains('dark');
 
             // Global text color + font family
             options.color = colors.textMuted;
@@ -432,7 +451,8 @@ export default function wirekitChartJs(config) {
          * re-themed via _applyThemeToChartOptions() instead.
          */
         _applyGlobalDefaults(colors, fontFamily) {
-            const isDark = document.documentElement.classList.contains('dark');
+            const isDark = document.documentElement.classList.contains('dark')
+                || document.body.classList.contains('dark');
 
             // Global text color and font
             Chart.defaults.color = colors.textMuted;

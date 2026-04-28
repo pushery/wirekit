@@ -90,8 +90,8 @@
         barColor(index) {
             if (index >= this.strength) return 'var(--color-wk-bg-muted)';
             if (this.strength <= 1) return 'var(--color-wk-danger)';
-            if (this.strength === 2) return 'var(--color-wk-warning, #f59e0b)';
-            if (this.strength === 3) return 'var(--color-wk-warning, #f59e0b)';
+            if (this.strength === 2) return 'var(--color-wk-warning)';
+            if (this.strength === 3) return 'var(--color-wk-warning)';
             return 'var(--color-wk-success)';
         },
     @endif
@@ -117,6 +117,9 @@
                 type="button"
                 class="absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)] transition-colors duration-[var(--transition-wk-duration)]"
                 @click="showPassword = !showPassword"
+                {{-- Static aria-label guards pre-Alpine render (axe scans DOM
+                     before hydration may complete). :aria-label overrides live. --}}
+                aria-label="Show password"
                 :aria-label="showPassword ? 'Hide password' : 'Show password'"
             >
                 {{-- Eye icon (show) --}}

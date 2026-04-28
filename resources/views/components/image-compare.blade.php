@@ -185,6 +185,7 @@
             : `left: ${value}%; top: 50%; transform: translate(-50%, -50%)`"
         role="slider"
         aria-label="{{ $ariaLabel }}"
+        aria-valuenow="{{ (int) $clampedValue }}"
         :aria-valuenow="value"
         aria-valuemin="0"
         aria-valuemax="100"

@@ -53,11 +53,33 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
     </svg>
 
-    {{-- $root finds the <button x-data> so we can locate the hidden label sibling --}}
-    <span x-text="copied ? '{{ $copiedText }}' : $root.querySelector('[data-wk-clipboard-label]')?.textContent">
-        {{ $slot }}
+    {{--
+        Stable-width label: stack the default slot and the "Copied!" label
+        in the same grid cell. The grid cell auto-sizes to the WIDER of its
+        two children — but ONLY if both children stay in the layout. We
+        therefore toggle visibility (NOT display) so each label keeps its
+        layout slot regardless of which one is currently visible. Using
+        x-show / display:none would collapse the cell to whichever child
+        is rendered, defeating the stable-width goal — that was the
+        regression in the first iteration of this fix.
+
+        Pre-Alpine init the second span carries a static
+        `style="visibility: hidden"` so its space is reserved before
+        Alpine evaluates :style. Once Alpine init runs, :style takes
+        over and toggles visibility on copy state changes.
+    --}}
+    <span class="grid items-center">
+        <span
+            class="col-start-1 row-start-1"
+            :style="{ visibility: copied ? 'hidden' : 'visible' }"
+        >{{ $slot }}</span>
+        <span
+            class="col-start-1 row-start-1"
+            style="visibility: hidden"
+            :style="{ visibility: copied ? 'visible' : 'hidden' }"
+            aria-hidden="true"
+        >{{ $copiedText }}</span>
     </span>
-    <span data-wk-clipboard-label class="hidden">{{ $slot }}</span>
 
     {{-- Screen reader announcement --}}
     <span x-show="copied" class="sr-only" role="status" aria-live="polite">Copied to clipboard</span>

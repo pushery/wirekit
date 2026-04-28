@@ -7,8 +7,15 @@ namespace Pushery\WireKit\Contracts;
 interface IconPreset
 {
     /**
-     * Mapping of semantic alias names to actual Blade Icon identifiers.
-     * Must contain exactly 26 entries (all aliases from the specification).
+     * Mapping of semantic alias names to Blade Icon identifiers.
+     *
+     * Base presets (heroicons, lucide, phosphor, tabler) MUST contain the
+     * 26 standard aliases — enforced by IconSystemTest.
+     *
+     * Stackable extension presets (e.g. heroicons-marketing) may define any
+     * aliases. Multiple presets can be active simultaneously via the
+     * `wirekit.icons.presets` config array; later entries override earlier
+     * ones, and consumer aliases override all presets.
      *
      * @return array<string, string>
      */

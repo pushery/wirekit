@@ -37,13 +37,18 @@
     // Render as <a> when href is provided, otherwise <button>
     $tag = $href ? 'a' : 'button';
 
-    // Auto-inject rel="noopener noreferrer" and SR hint when target="_blank"
+    // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
+    // CAREFUL: $attributes->merge(['rel' => ...]) treats rel as a DEFAULT —
+    // if caller passed rel="prev", theirs wins and our auto-injection is lost,
+    // silently re-introducing the tabnabbing vulnerability. Hence except('rel')
+    // + explicit rel attribute render.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
-        ? trim($relAttr . ' noopener noreferrer')
+        ? trim($relAttr.' noopener noreferrer')
         : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
 <{{ $tag }}
@@ -52,7 +57,8 @@
     role="menuitem"
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
-    {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$classes, $colorClasses, $disabledClasses]) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->class([$classes, $colorClasses, $disabledClasses]) }}
 >
     {{-- Optional icon (resolved via WireKit icon system) --}}
     @if($icon)
