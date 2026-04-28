@@ -105,29 +105,35 @@
             ></div>
         </div>
 
-        {{-- Min thumb --}}
+        {{-- Min thumb. Static aria-valuenow / aria-valuemax mirror the
+             initial state so axe-core's pre-Alpine-init scan sees a
+             complete slider; Alpine then overrides reactively. --}}
         <div
             class="{{ $thumbClasses }} z-10"
             :style="`left: ${minPercent}%`"
             tabindex="0"
             role="slider"
             aria-label="Minimum"
+            aria-valuenow="{{ $initialMin }}"
             :aria-valuenow="minVal"
             aria-valuemin="{{ $min }}"
+            aria-valuemax="{{ $initialMax }}"
             :aria-valuemax="maxVal"
             @keydown.arrow-right.prevent="stepMin(1)"
             @keydown.arrow-left.prevent="stepMin(-1)"
             @pointerdown="startDrag('min', $event)"
         ></div>
 
-        {{-- Max thumb --}}
+        {{-- Max thumb. Same static-fallback pattern as the min thumb. --}}
         <div
             class="{{ $thumbClasses }} z-20"
             :style="`left: ${maxPercent}%`"
             tabindex="0"
             role="slider"
             aria-label="Maximum"
+            aria-valuenow="{{ $initialMax }}"
             :aria-valuenow="maxVal"
+            aria-valuemin="{{ $initialMin }}"
             :aria-valuemin="minVal"
             aria-valuemax="{{ $max }}"
             @keydown.arrow-right.prevent="stepMax(1)"

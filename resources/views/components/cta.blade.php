@@ -16,7 +16,7 @@
     $variantClasses = match ($variant) {
         'default' => 'bg-[var(--color-wk-bg-muted)] text-[var(--color-wk-text)]',
         'dark' => 'bg-[var(--color-wk-bg-inverse)] text-[var(--color-wk-text-inverse)]',
-        'accent' => 'bg-[var(--color-wk-accent)] text-white',
+        'accent' => 'bg-[var(--color-wk-accent)] text-[var(--color-wk-accent-fg)]',
         default => WireKit::validateProp('cta', 'variant', $variant, ['default', 'dark', 'accent']),
     };
 @endphp

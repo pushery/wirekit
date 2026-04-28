@@ -10,10 +10,18 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Compilers\BladeCompiler;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
+use Pushery\WireKit\Console\ComponentMakeCommand;
+use Pushery\WireKit\Console\CursorRulesCommand;
+use Pushery\WireKit\Console\DoctorCommand;
+use Pushery\WireKit\Console\ExportApiMapCommand;
+use Pushery\WireKit\Console\ExportBlocksCommand;
+use Pushery\WireKit\Console\ExportJsonCommand;
+use Pushery\WireKit\Console\GenerateChangelogsCommand;
 use Pushery\WireKit\Console\GlassInstallCommand;
 use Pushery\WireKit\Console\InstallCommand;
 use Pushery\WireKit\Console\ListComponentsCommand;
 use Pushery\WireKit\Console\MakeCommand;
+use Pushery\WireKit\Console\PublishIconsCommand;
 use Pushery\WireKit\Console\ShowComponentCommand;
 use Pushery\WireKit\Console\ThemeCommand;
 use Pushery\WireKit\Console\VerifyInstallationCommand;
@@ -44,10 +52,18 @@ class WireKitServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             // Register artisan commands
             $this->commands([
+                ComponentMakeCommand::class,
+                CursorRulesCommand::class,
+                DoctorCommand::class,
+                ExportApiMapCommand::class,
+                ExportBlocksCommand::class,
+                ExportJsonCommand::class,
+                GenerateChangelogsCommand::class,
                 GlassInstallCommand::class,
                 InstallCommand::class,
                 ListComponentsCommand::class,
                 MakeCommand::class,
+                PublishIconsCommand::class,
                 ShowComponentCommand::class,
                 ThemeCommand::class,
                 VerifyInstallationCommand::class,

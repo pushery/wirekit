@@ -5,6 +5,7 @@
     'trend' => null, // 'up' | 'down' | 'neutral' | null
     'icon' => null,
     'description' => null,
+    'citation' => null,
     'scope' => null,
 ])
 
@@ -24,7 +25,7 @@
 
     // Trend color + arrow glyph — mapped to semantic tokens
     [$trendColor, $trendIcon, $trendLabel] = match ($trend) {
-        'up' => ['text-[var(--color-wk-success)]', '▲', 'increased'],
+        'up' => ['text-[var(--color-wk-success-text)]', '▲', 'increased'],
         'down' => ['text-[var(--color-wk-danger-text)]', '▼', 'decreased'],
         'neutral' => ['text-[var(--color-wk-text-muted)]', '→', 'unchanged'],
         default => [null, null, null],
@@ -40,23 +41,34 @@
             </span>
         @endif
         @if($icon)
-            <x-wirekit::icon :name="$icon" class="h-4 w-4 text-[var(--color-wk-text-subtle)]" />
+            <x-wirekit::icon :name="$icon" size="sm" class="text-[var(--color-wk-text-subtle)]" />
         @elseif(isset($iconSlot))
             <div class="text-[var(--color-wk-text-subtle)]">{{ $iconSlot }}</div>
         @endif
     </div>
 
-    {{-- Main metric value — large, heading-weight for visual emphasis --}}
+    {{-- Main metric value — large, heading-weight for visual emphasis.: replaced inline style="font-size:1.5rem;line-height:2rem"
+         with token-based --text-wk-2xl (1.5rem) + heading line-height. --}}
     @if($value !== null)
-        <div class="text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] tabular-nums" style="font-size: 1.5rem; line-height: 2rem;">
+        <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] tabular-nums">
             {{ $value }}
         </div>
     @elseif(trim($slot->toHtml()) !== '')
         {{-- Fallback: slot allows rich value rendering (e.g. mixed currency + icon) --}}
-        <div class="text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">
+        <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">
             {{ $slot }}
         </div>
     @endif
+
+    {{--: structural slots between the value and the change row.
+         Pure pass-through — no styling, no Alpine. Use these to inject sparklines,
+         progress bars, or any inline visualization without rebuilding the card. --}}
+    @isset($sparkline)
+        <div>{{ $sparkline }}</div>
+    @endisset
+    @isset($progress)
+        <div>{{ $progress }}</div>
+    @endisset
 
     {{-- Bottom row: change indicator + optional description --}}
     @if($change !== null || $description)
@@ -75,5 +87,12 @@
                 <span class="text-[var(--color-wk-text-muted)]">{{ $description }}</span>
             @endif
         </div>
+    @endif
+
+    {{--: optional citation footnote (smaller + subtle). --}}
+    @if($citation)
+        <span class="text-[length:var(--text-wk-xs)] text-[var(--color-wk-text-subtle)]">
+            {{ $citation }}
+        </span>
     @endif
 </div>

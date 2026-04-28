@@ -74,8 +74,13 @@
     {{-- Left accent stripe — 3px colored bar for visual prominence --}}
     <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-[var(--radius-wk-lg)] {{ $variantColors['stripe'] }}" aria-hidden="true"></div>
 
-    {{-- Variant icon --}}
-    @if($icon !== false)
+    {{-- Variant icon —: iconSlot named slot wins over the
+         variant-derived auto icon. The bool $icon prop continues to toggle
+         the auto-icon path off when explicitly set false. --}}
+    @php $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty(); @endphp
+    @if($hasIconSlot)
+        <div class="shrink-0 mt-0.5">{{ $iconSlot }}</div>
+    @elseif($icon !== false)
         <div @class(['shrink-0 mt-0.5', $variantColors['icon']]) aria-hidden="true">
             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">{!! $defaultIcon !!}</svg>
         </div>

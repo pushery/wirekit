@@ -125,14 +125,25 @@ class ComponentRegistry
             'stat' => ['category' => 'Display', 'description' => 'Single statistic display'],
             'stats' => ['category' => 'Display', 'description' => 'Statistics group container'],
             'table' => ['category' => 'Display', 'description' => 'Data table with sorting and styling options'],
+            'ticker' => ['category' => 'Display', 'description' => 'Compact label + value + delta widget for dashboards'],
             'timeline' => ['category' => 'Display', 'description' => 'Vertical timeline of events'],
             'tree-view' => ['category' => 'Display', 'description' => 'Hierarchical tree view'],
+
+            // ── Blueprint Primitives ──
+            'date-separator' => ['category' => 'Display', 'description' => 'Horizontal divider with centered date label'],
+            'kanban' => ['category' => 'Display', 'description' => 'Horizontal scrollable board of status columns'],
+            'kanban-column' => ['category' => 'Display', 'description' => 'Single column within a kanban board'],
+            'message' => ['category' => 'Display', 'description' => 'Chat/comment message bubble with author and timestamp'],
+            'price' => ['category' => 'Display', 'description' => 'Locale-aware currency display with optional discount'],
+            'reaction' => ['category' => 'Display', 'description' => 'Emoji reaction pill with count and toggle state'],
+            'toolbar' => ['category' => 'Navigation', 'description' => 'Horizontal bar with search, filters, and action buttons'],
 
             // ── System ──
             'chart' => ['category' => 'System', 'description' => 'Chart.js wrapper component'],
             'fonts' => ['category' => 'System', 'description' => 'GDPR-compliant font loader'],
             'glass' => ['category' => 'System', 'description' => 'Liquid Glass glassmorphism extension'],
             'icon' => ['category' => 'System', 'description' => 'SVG icon with preset support'],
+            'structured-data' => ['category' => 'System', 'description' => 'JSON-LD script block emitter (XSS-safe via JSON_HEX_TAG)'],
         ];
     }
 

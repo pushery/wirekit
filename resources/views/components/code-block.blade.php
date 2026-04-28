@@ -17,9 +17,21 @@
         'overflow-hidden',
     ]), $scope);
 
+    // The wrapper supplies bg / border / radius. The inner <pre> + <code>
+    // explicitly null those properties to neutralise generic prose
+    // stylesheets that target raw markdown code blocks (e.g. the docs-app's
+    // prose.css adds bg-white + radius + padding to every <pre>) — without
+    // this defence the consumer sees a white box nested inside our muted
+    // container.
+    $preClasses = implode(' ', [
+        'm-0 p-0',
+        'bg-transparent border-0 rounded-none',
+    ]);
+
     $codeClasses = implode(' ', [
         'block overflow-x-auto',
         'p-[var(--space-wk-md,1rem)]',
+        'bg-transparent border-0 rounded-none',
         'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',
         'text-[length:var(--text-wk-sm)]',
         'leading-relaxed',
@@ -29,7 +41,11 @@
 
 <div {{ $attributes->class([$wrapperClasses]) }} data-wk-code-block>
     @if($filename || $copy)
-        <div class="flex items-center justify-between border-b border-[var(--color-wk-border)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-xs,0.25rem)]">
+        {{-- x-data lifted to toolbar so the live-region span can read `copied` (WCAG 2.2 SC 4.1.3). --}}
+        <div
+            class="flex items-center justify-between border-b border-[var(--color-wk-border)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-xs,0.25rem)]"
+            @if($copy) x-data="{ copied: false }" @endif
+        >
             @if($filename)
                 <span class="text-[length:var(--text-wk-xs,0.75rem)] text-[var(--color-wk-text-muted)] font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]">{{ $filename }}</span>
             @else
@@ -39,7 +55,6 @@
             @if($copy)
                 <button
                     type="button"
-                    x-data="{ copied: false }"
                     x-on:click="
                         navigator.clipboard.writeText($el.closest('[data-wk-code-block]').querySelector('code').textContent);
                         copied = true;
@@ -47,6 +62,7 @@
                     "
                     class="text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)] transition-colors p-1"
                     aria-label="Copy to clipboard"
+                    :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
                 >
                     <template x-if="!copied">
                         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
@@ -59,9 +75,11 @@
                         </svg>
                     </template>
                 </button>
+                {{-- Live region must be in DOM at first paint; x-text toggles content so SR announces on copy. --}}
+                <span class="sr-only" role="status" aria-live="polite" x-text="copied ? 'Code copied to clipboard' : ''"></span>
             @endif
         </div>
     @endif
 
-    <pre class="m-0"><code @class([$codeClasses]) @if($language) data-language="{{ $language }}" @endif>{{ $slot }}</code></pre>
+    <pre @class([$preClasses])><code @class([$codeClasses]) @if($language) data-language="{{ $language }}" @endif>{{ $slot }}</code></pre>
 </div>

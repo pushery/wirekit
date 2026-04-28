@@ -35,7 +35,7 @@
             aria-hidden="true"
         >
             @if($icon)
-                <x-wirekit::icon :name="$icon" class="h-3 w-3 text-[var(--color-wk-accent-fg)]" />
+                <x-wirekit::icon :name="$icon" size="xs" class="text-[var(--color-wk-accent-fg)]" />
             @else
                 {{-- Default inner dot --}}
                 <div style="height: 0.5rem; width: 0.5rem; border-radius: 9999px; background: var(--color-wk-accent-fg);"></div>

@@ -5,6 +5,10 @@
     'responsive' => config('wirekit.components.table.responsive', true),
     'stickyHeader' => false,
     'alpineSort' => false, // enable client-side Alpine sorting (no Livewire needed)
+    // WCAG 2.1.1 (Keyboard) — when stickyHeader makes the table body
+    // scroll-confined, the wrapper becomes a focusable scrollable region
+    // and gets a name so screen-reader users can recognise it.
+    'tableLabel' => null,
     'scope' => null,
 ])
 
@@ -41,7 +45,14 @@
 
 {{-- Wrap in responsive container for horizontal scroll on narrow screens --}}
 @if($responsive)
-<div class="w-full overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'max-h-96 overflow-y-auto' : '' }}">
+<div
+    class="w-full overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'max-h-96 overflow-y-auto' : '' }}"
+    @if($stickyHeader)
+        tabindex="0"
+        role="region"
+        aria-label="{{ $tableLabel ?? 'Scrollable table' }}"
+    @endif
+>
 @endif
     <table {{ $attributes->class([$classes]) }} @foreach($tableAttrs as $attr) {{ $attr }} @endforeach @if($alpineSort) x-data="wirekitTableSort()" @endif>
         {{ $slot }}

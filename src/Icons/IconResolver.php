@@ -6,6 +6,8 @@ namespace Pushery\WireKit\Icons;
 
 use InvalidArgumentException;
 use Pushery\WireKit\Contracts\IconPreset;
+use Pushery\WireKit\Icons\Presets\HeroiconsAppPreset;
+use Pushery\WireKit\Icons\Presets\HeroiconsMarketingPreset;
 use Pushery\WireKit\Icons\Presets\HeroiconsPreset;
 use Pushery\WireKit\Icons\Presets\LucidePreset;
 use Pushery\WireKit\Icons\Presets\PhosphorPreset;
@@ -27,12 +29,19 @@ final class IconResolver
      */
     private const BUILT_IN_PRESETS = [
         'heroicons' => HeroiconsPreset::class,
+        'heroicons-app' => HeroiconsAppPreset::class,
+        'heroicons-marketing' => HeroiconsMarketingPreset::class,
         'lucide' => LucidePreset::class,
         'phosphor' => PhosphorPreset::class,
         'tabler' => TablerPreset::class,
     ];
 
-    private ?IconPreset $preset = null;
+    /**
+     * Cached active presets, in resolution order (later wins).
+     *
+     * @var list<IconPreset>|null
+     */
+    private ?array $presets = null;
 
     /**
      * Resolve a semantic alias to the actual Blade Icon identifier.
@@ -46,12 +55,12 @@ final class IconResolver
     }
 
     /**
-     * Validate that the configured preset is valid (without resolving any icons).
-     * Throws InvalidArgumentException if the preset does not exist.
+     * Validate that the configured preset(s) exist (without resolving any icons).
+     * Throws InvalidArgumentException if a preset key cannot be loaded.
      */
     public function validatePreset(): void
     {
-        $this->getPreset();
+        $this->getPresets();
     }
 
     /**
@@ -65,69 +74,101 @@ final class IconResolver
     }
 
     /**
-     * Internal lookup: config override -> preset mapping -> exception.
+     * Internal lookup: consumer aliases -> preset chain (later wins) -> exception.
      */
     private function lookup(string $alias): string
     {
-        // 1. Check user-level alias overrides (individual alias replacements)
+        // 1. Consumer-level alias overrides always win
         $aliases = config('wirekit.icons.aliases', []);
-        $override = $aliases[$alias] ?? null;
-
-        if ($override !== null) {
-            return $override;
+        if (isset($aliases[$alias])) {
+            return $aliases[$alias];
         }
 
-        // 2. Preset mapping
-        $preset = $this->getPreset();
-        $icons = $preset->icons();
-
-        if (! isset($icons[$alias])) {
-            throw new InvalidArgumentException(
-                "WireKit: Unknown icon alias '{$alias}'. "
-                .'Available aliases: '.implode(', ', array_keys($icons))
-            );
+        // 2. Walk presets right-to-left so later (extension) presets override earlier ones
+        $presets = $this->getPresets();
+        for ($i = count($presets) - 1; $i >= 0; $i--) {
+            $icons = $presets[$i]->icons();
+            if (isset($icons[$alias])) {
+                return $icons[$alias];
+            }
         }
 
-        return $icons[$alias];
+        // 3. Surface every alias from every active preset for a useful error
+        $available = [];
+        foreach ($presets as $preset) {
+            $available = array_merge($available, array_keys($preset->icons()));
+        }
+        $available = array_values(array_unique($available));
+        sort($available);
+
+        throw new InvalidArgumentException(
+            "WireKit: Unknown icon alias '{$alias}'. "
+            .'Available aliases: '.implode(', ', $available)
+        );
     }
 
     /**
-     * Resolve and cache the active preset instance.
+     * Resolve and cache the active preset chain.
+     *
+     * Config priority (highest to lowest):
+     *   1. wirekit.icons.presets — array of preset keys / class names
+     *   2. wirekit.icons.preset  — single preset key / class name (back-compat)
+     *   3. fallback: ['heroicons']
+     *
+     * @return list<IconPreset>
      */
-    private function getPreset(): IconPreset
+    private function getPresets(): array
     {
-        if ($this->preset !== null) {
-            return $this->preset;
+        if ($this->presets !== null) {
+            return $this->presets;
         }
 
-        $presetConfig = config('wirekit.icons.preset', 'heroicons');
+        // New plural form takes precedence when explicitly configured
+        $multi = config('wirekit.icons.presets');
+        if (is_array($multi) && $multi !== []) {
+            $this->presets = array_values(array_map(
+                fn ($entry) => $this->instantiatePreset($entry),
+                $multi
+            ));
 
-        // String -> built-in preset
-        if (is_string($presetConfig) && isset(self::BUILT_IN_PRESETS[$presetConfig])) {
-            $class = self::BUILT_IN_PRESETS[$presetConfig];
-            $this->preset = new $class;
-
-            return $this->preset;
+            return $this->presets;
         }
 
-        // Class-string -> custom preset
-        if (is_string($presetConfig) && class_exists($presetConfig)) {
-            $instance = new $presetConfig;
+        // Back-compat: single string preset, normalized into a one-element array
+        $single = config('wirekit.icons.preset', 'heroicons');
+        $this->presets = [$this->instantiatePreset($single)];
+
+        return $this->presets;
+    }
+
+    /**
+     * Resolve a preset key or class name to an IconPreset instance.
+     */
+    private function instantiatePreset(mixed $entry): IconPreset
+    {
+        if (is_string($entry) && isset(self::BUILT_IN_PRESETS[$entry])) {
+            $class = self::BUILT_IN_PRESETS[$entry];
+
+            return new $class;
+        }
+
+        if (is_string($entry) && class_exists($entry)) {
+            $instance = new $entry;
 
             if (! $instance instanceof IconPreset) {
                 throw new InvalidArgumentException(
-                    "WireKit: Custom icon preset '{$presetConfig}' must implement "
+                    "WireKit: Custom icon preset '{$entry}' must implement "
                     .IconPreset::class
                 );
             }
 
-            $this->preset = $instance;
-
-            return $this->preset;
+            return $instance;
         }
 
+        $value = is_string($entry) ? $entry : get_debug_type($entry);
+
         throw new InvalidArgumentException(
-            "WireKit: Unknown icon preset '{$presetConfig}'. "
+            "WireKit: Unknown icon preset '{$value}'. "
             .'Available: '.implode(', ', array_keys(self::BUILT_IN_PRESETS))
             .' or a fully qualified class name implementing '.IconPreset::class
         );

@@ -32,18 +32,36 @@
         'text-[var(--color-wk-text)]',
         'font-[number:var(--font-wk-body-weight)]',
     ]), $scope);
+
+    // Auto-inject rel="noopener noreferrer" and SR hint when target="_blank".
+    // CAREFUL: $attributes->merge(['rel' => ...]) treats rel as a DEFAULT —
+    // if the caller passed their own rel (even rel="prev"), theirs wins and
+    // our auto-injection would silently fail, re-introducing tabnabbing.
+    // To force-override, we remove rel from the bag and render it separately
+    // whenever we have a computed value.
+    $targetAttr = $attributes->get('target', '');
+    $opensNewTab = str_contains($targetAttr, '_blank');
+    $relAttr = $attributes->get('rel', '');
+    $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr.' noopener noreferrer')
+        : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
 <a
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
-    {{ $attributes->class([$classes, $activeClasses => $active]) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->class([$classes, $activeClasses => $active]) }}
 >
     @if($icon)
         {{-- Icon slot — decorative; the label is the accessible name. --}}
         <span class="shrink-0" aria-hidden="true">{{ $icon }}</span>
     @endif
     <span class="flex-1 truncate">{{ $slot }}</span>
+    @if($opensNewTab)
+        <span class="sr-only">(opens in new tab)</span>
+    @endif
     @if($submenu)
         {{-- Submenu indicator — signals a flyout or sub-navigation exists.
              Purely visual hint; only shown when the developer opts in via :submenu="true". --}}

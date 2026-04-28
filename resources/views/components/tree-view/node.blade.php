@@ -65,7 +65,7 @@
 
         {{-- Optional icon --}}
         @if($icon)
-            <x-wirekit::icon :name="$icon" class="h-4 w-4 shrink-0" />
+            <x-wirekit::icon :name="$icon" size="sm" class="shrink-0" />
         @endif
 
         {{-- Node label text --}}

@@ -56,6 +56,7 @@
 {{-- Alpine: listens to scroll events and shows button after threshold.
      Uses requestAnimationFrame to avoid jank on frequent scroll events. --}}
 <button
+    type="button"
     x-data="{
         visible: {{ $forceVisible ? 'true' : 'false' }},
         threshold: {{ (float) $threshold }},

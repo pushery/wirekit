@@ -22,9 +22,25 @@
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr . ' noopener noreferrer')
         : $relAttr;
+
+    // Accessibility — when the brand renders as a link (it always does, via
+    // the `<a href>` root) AND the only visible content is the logo image
+    // (no name, no slot content), the link has no accessible name. The img
+    // is decorative (`alt=""` + `aria-hidden`) by design — the URL alone
+    // doesn't describe the destination. We auto-inject `aria-label="Home"`
+    // for the logo-only case so screen readers announce a usable target.
+    // Caller-provided `aria-label` always wins (`merge()` treats it as
+    // default). Empty `name` + empty slot = logo-only; presence of either
+    // means an accessible name is already provided by the visible text.
+    $hasVisibleName = $name !== null || trim((string) $slot) !== '';
+    $logoOnlyNeedsLabel = $logo && ! $hasVisibleName && ! $attributes->has('aria-label');
 @endphp
 
-<a href="{{ $href }}" {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$classes]) }}>
+<a
+    href="{{ $href }}"
+    @if($logoOnlyNeedsLabel) aria-label="Home" @endif
+    {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$classes]) }}
+>
     @if($logo)
         <img src="{{ $logo }}" alt="" class="h-8 w-auto" aria-hidden="true" />
     @endif

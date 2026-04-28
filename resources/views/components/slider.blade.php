@@ -1,6 +1,7 @@
 @props([
     'name' => null,
     'id' => null,
+    'label' => null,
     'min' => config('wirekit.components.slider.min', 0),
     'max' => config('wirekit.components.slider.max', 100),
     'step' => config('wirekit.components.slider.step', 1),
@@ -53,6 +54,14 @@
         'min-w-[2.5ch]',
         'text-right',
     ]), $scope);
+
+    // Accessible-name fallback. WCAG 2.1 (4.1.2) — every form input must
+    // have a programmatically-determinable name. When no visible `label`
+    // prop is set AND no `aria-label` / `aria-labelledby` is passed via
+    // attributes, derive a sr-only fallback from `name` (humanized).
+    $hasExplicitAriaName = $attributes->has('aria-label') || $attributes->has('aria-labelledby');
+    $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
+    $fallbackLabel = $name ? Str::headline((string) $name) : 'Slider';
 @endphp
 
 {{-- Alpine tracks the current value so the display updates on input.
@@ -61,6 +70,14 @@
     x-data="{ current: @js((string) $currentValue) }"
     class="{{ $wrapperClasses }}"
 >
+    @if($label)
+        <label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text)]">{{ $label }}</label>
+    @elseif($needsSrOnlyFallback)
+        {{-- sr-only label fallback so the input always has an accessible
+             name (axe rule "label" / WCAG 4.1.2). --}}
+        <label for="{{ $sliderId }}" class="sr-only">{{ $fallbackLabel }}</label>
+    @endif
+
     <input
         type="range"
         @if($name) name="{{ $name }}" @endif

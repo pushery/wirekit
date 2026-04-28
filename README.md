@@ -93,6 +93,11 @@ Add WireKit's Blade source path to your `resources/css/app.css`:
 | Alert | `<x-wirekit::alert>` | [Docs](https://docs.wirekit.app/components/alert) |
 | Callout | `<x-wirekit::callout>` | [Docs](https://docs.wirekit.app/components/callout) |
 | Image Compare | `<x-wirekit::image-compare>` | [Docs](https://docs.wirekit.app/components/image-compare) |
+| Reaction | `<x-wirekit::reaction>` | [Docs](https://docs.wirekit.app/components/reaction) |
+| Message | `<x-wirekit::message>` | [Docs](https://docs.wirekit.app/components/message) |
+| Date Separator | `<x-wirekit::date-separator>` | [Docs](https://docs.wirekit.app/components/date-separator) |
+| Kanban | `<x-wirekit::kanban>` | [Docs](https://docs.wirekit.app/components/kanban) |
+| Kanban Column | `<x-wirekit::kanban-column>` | [Docs](https://docs.wirekit.app/components/kanban) |
 
 ### Data Display Components
 
@@ -109,6 +114,8 @@ Add WireKit's Blade source path to your `resources/css/app.css`:
 | Data List | `<x-wirekit::data-list>` | [Docs](https://docs.wirekit.app/components/data-list) |
 | Timeline | `<x-wirekit::timeline>` | [Docs](https://docs.wirekit.app/components/timeline) |
 | Tree View | `<x-wirekit::tree-view>` | [Docs](https://docs.wirekit.app/components/tree-view) |
+| Ticker | `<x-wirekit::ticker>` | [Docs](https://docs.wirekit.app/components/ticker) |
+| Price | `<x-wirekit::price>` | [Docs](https://docs.wirekit.app/components/price) |
 
 ### Feedback Components
 
@@ -142,6 +149,7 @@ Add WireKit's Blade source path to your `resources/css/app.css`:
 | Navbar | `<x-wirekit::navbar>` | [Docs](https://docs.wirekit.app/components/navbar) |
 | Menubar | `<x-wirekit::menubar>` | [Docs](https://docs.wirekit.app/components/menubar) |
 | Navigation Menu | `<x-wirekit::navigation-menu>` | [Docs](https://docs.wirekit.app/components/navigation-menu) |
+| Toolbar | `<x-wirekit::toolbar>` | [Docs](https://docs.wirekit.app/components/toolbar) |
 
 ### Layout Components
 
@@ -198,6 +206,7 @@ Add WireKit's Blade source path to your `resources/css/app.css`:
 | Scroll Area | `<x-wirekit::scroll-area>` | [Docs](https://docs.wirekit.app/components/scroll-area) |
 | Scrollbar | `.wk-scrollbar` (CSS class) | [Docs](https://docs.wirekit.app/components/scrollbar) |
 | Scroll to Top | `<x-wirekit::scroll-to-top>` | [Docs](https://docs.wirekit.app/components/scroll-to-top) |
+| Structured Data | `<x-wirekit::structured-data>` | [Docs](https://docs.wirekit.app/components/structured-data) |
 
 ### Specialized Components
 
@@ -258,11 +267,17 @@ Then publish and include: `php artisan vendor:publish --tag=wirekit-fonts` + `<x
 
 ## Icon Presets
 
-Swap icon sets with one config change. 26 semantic aliases, 4 built-in presets:
+Swap icon sets with one config change. 26 semantic aliases, four base presets (`heroicons`, `lucide`, `phosphor`, `tabler`) plus two stackable extension presets (`heroicons-app`, `heroicons-marketing`) that add app-state and marketing aliases on top of a base:
 
 ```php
+// Single base preset
 'icons' => [
     'preset' => 'heroicons',  // or 'lucide', 'phosphor', 'tabler'
+],
+
+// Or stack a base + one or both extensions
+'icons' => [
+    'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
 ],
 ```
 
@@ -331,6 +346,18 @@ php artisan vendor:publish --tag=wirekit-views
 
 See the full [Customization Guide](https://docs.wirekit.app/customization) and [Theming Guide](https://docs.wirekit.app/theming) for details.
 
+## Recipes
+
+Focused composition snippets between full-page blueprints and full layouts. Each recipe is a 30–60 line preview demonstrating one pattern with copy-paste source code.
+
+| Recipe | Demonstrates |
+|--------|--------------|
+| [Stat with Sparkline](https://docs.wirekit.app/recipes/stat-with-sparkline) | Stat citation + sparkline named slots |
+| [Feature with Numbered Marker](https://docs.wirekit.app/recipes/feature-numbered-marker) | Feature `iconSlot` for custom step markers |
+| [Hero with Code Aside](https://docs.wirekit.app/recipes/hero-with-code-aside) | Hero `aside` slot + accessible code-block |
+| [Toolbar Filter Bar](https://docs.wirekit.app/recipes/toolbar-filter-bar) | Toolbar + filter selects + bulk actions |
+| [Live KPI Strip](https://docs.wirekit.app/recipes/live-kpi-strip) | Ticker + `wire:poll` auto-refresh |
+
 ## Documentation
 
 Full documentation is available at **[docs.wirekit.app](https://docs.wirekit.app)**.
@@ -340,6 +367,7 @@ Full documentation is available at **[docs.wirekit.app](https://docs.wirekit.app
 | [Getting Started](https://docs.wirekit.app/getting-started) | Installation and first steps |
 | [Theming](https://docs.wirekit.app/theming) | CSS variable theming system |
 | [Customization](https://docs.wirekit.app/customization) | 4-level customization guide |
+| [CLI Reference](https://docs.wirekit.app/cli) | All ten `wirekit:*` Artisan commands |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contribution guidelines and component conventions |
 | [CHANGELOG.md](CHANGELOG.md) | Release history |
 | [LICENSE](LICENSE) | MIT License |

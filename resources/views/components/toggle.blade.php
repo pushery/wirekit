@@ -13,6 +13,14 @@
     $id = $attributes->get('id', $attributes->get('name', 'toggle-' . \Illuminate\Support\Str::random(6)));
     $name = $attributes->get('name', $id);
 
+    // Accessible name fallback: if the caller provided neither a visible `label`
+    // prop nor an `aria-label` attribute, generate a humanized label from the
+    // `name` attribute so axe-core and screen readers still announce the switch
+    // correctly. Visible labels still win when present (they'll use `<label
+    // for="...">` instead of aria-label).
+    $hasAccessibleName = $label !== null || $attributes->has('aria-label') || $attributes->has('aria-labelledby');
+    $fallbackAriaLabel = $hasAccessibleName ? null : ucfirst(str_replace(['-', '_'], ' ', (string) $name));
+
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
@@ -83,6 +91,7 @@
                 name="{{ $name }}"
                 role="switch"
                 class="peer sr-only"
+                @if($fallbackAriaLabel) aria-label="{{ $fallbackAriaLabel }}" @endif
                 @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
                 @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
                 {{ $attributes->except(['id', 'name']) }}

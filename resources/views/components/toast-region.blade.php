@@ -4,7 +4,12 @@
     'max' => config('wirekit.components.toast-region.max', 5),
     'name' => null, // scoped name — when set, listens on 'wirekit-toast-{name}' instead of global
     'filled' => false, // when true, toast uses full variant background color (like callout)
-    'scope' => null,
+    'scope' => null, // class-personalization scope — passed to WireKit::resolveClasses
+    'eventScope' => null, // CSS selector for DOM-containment event filtering
+    // (e.g. '[data-wk-toast-scope]') — when set, only events whose
+    // dispatching element is inside an ancestor matching the selector
+    // are handled. Useful for "per-section toast surfaces" where multiple
+    // toast regions on the same page must not cross-talk.
 ])
 
 @php
@@ -123,8 +128,9 @@
      Toasts are dispatched via: $dispatch('wirekit-toast', { title, message, variant })
      With name prop: $dispatch('wirekit-toast-{name}', { ... }) for scoped regions. --}}
 <div
-    x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: @js($name) })"
+    x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: @js($name), scope: @js($eventScope) })"
     {{ $attributes->class([$containerClasses, $positionClasses]) }}
+    role="region"
     aria-label="Notifications"
 >
     <template x-for="toast in toasts" :key="toast.id">

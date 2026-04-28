@@ -24,7 +24,7 @@
         'muted' => 'bg-[var(--color-wk-bg-muted)]',
         'subtle' => 'bg-[var(--color-wk-bg-subtle)]',
         'inverse' => 'bg-[var(--color-wk-bg-inverse)] text-[var(--color-wk-text-inverse)]',
-        'accent' => 'bg-[var(--color-wk-primary)]',
+        'accent' => 'bg-[var(--color-wk-accent)] text-[var(--color-wk-accent-fg)]',
         default => WireKit::validateProp('section', 'background', $background, ['default', 'muted', 'subtle', 'inverse', 'accent']),
     };
 

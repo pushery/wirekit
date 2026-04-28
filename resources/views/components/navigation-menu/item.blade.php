@@ -40,19 +40,33 @@
 
     $hasPanel = !$href;
 
-    // Auto-inject rel="noopener noreferrer" when target="_blank"
+    // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
+    // See dropdown/item.blade.php for rationale on except('rel') + explicit
+    // rel render (avoids $attributes->merge treating rel as a default).
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
-        ? trim($relAttr . ' noopener noreferrer')
+        ? trim($relAttr.' noopener noreferrer')
         : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
 @if($href)
-    {{-- Simple link item (no flyout) --}}
-    <a href="{{ $href }}" class="{{ $triggerClasses }}" {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : []) }}>
-        {{ $trigger }}
+    {{-- Simple link item (no flyout). The link text comes from the slot
+         (the canonical pattern: `<x-wirekit::navigation-menu.item href="/x">Label</x-wirekit::navigation-menu.item>`)
+         OR from the `trigger` prop (legacy / explicit-prop pattern). One
+         of the two must be non-empty — otherwise the link has no
+         accessible name and axe-core's "link-name" rule fails. We fall
+         back from $slot to $trigger so authors who pass either form
+         get a working link. --}}
+    <a
+        href="{{ $href }}"
+        class="{{ $triggerClasses }}"
+        @if($computedRel) rel="{{ $computedRel }}" @endif
+        {{ $attributes->except('rel') }}
+    >
+        {{ trim((string) $slot) !== '' ? $slot : $trigger }}
         @if($opensNewTab)
             <span class="sr-only">(opens in new tab)</span>
         @endif

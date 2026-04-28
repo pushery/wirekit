@@ -43,12 +43,14 @@
         ]),
         'success' => implode(' ', [
             'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]',
-            'text-[var(--color-wk-success)]',
+            // -text variant calibrated for ≥4.5:1 on the soft-tone bg
+            'text-[var(--color-wk-success-text)]',
             'border-[color-mix(in_srgb,var(--color-wk-success)_25%,transparent)]',
         ]),
         'warning' => implode(' ', [
             'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))]',
-            'text-[var(--color-wk-warning)]',
+            // -text variant calibrated for ≥4.5:1 on the soft-tone bg
+            'text-[var(--color-wk-warning-text)]',
             'border-[color-mix(in_srgb,var(--color-wk-warning)_25%,transparent)]',
         ]),
         'danger' => implode(' ', [

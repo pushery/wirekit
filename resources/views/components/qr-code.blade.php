@@ -5,6 +5,11 @@
     'background' => '#ffffff',
     'errorCorrection' => 'L',
     'margin' => 4,
+    // Accessible name for the QR code. Defaults to a generic "QR code"
+    // string; authors should pass a descriptive label like "Scan to install
+    // WireKit" via this prop. WCAG 1.1.1 — non-text content needs a
+    // text alternative; encourage purpose-describing labels over raw URLs.
+    'accessibleLabel' => null,
     'scope' => null,
 ])
 
@@ -16,6 +21,11 @@
     $classes = WireKit::resolveClasses('qr-code', 'base', implode(' ', [
         'inline-block',
     ]), $scope);
+
+    // Resolve the accessible name. Fall back to 'QR code' rather than echoing
+    // the raw $value, which is often a URL — leaking it as the screen-reader
+    // announcement is rarely useful and can be a privacy concern.
+    $resolvedLabel = $accessibleLabel ?: 'QR code';
 
     $hasQrLibrary = class_exists('\BaconQrCode\Renderer\ImageRenderer');
     $svgContent = null;
@@ -61,6 +71,21 @@
 
             $writer = new \BaconQrCode\Writer($renderer);
             $svgContent = $writer->writeString($value, 'UTF-8', $ecLevel);
+
+            // Mark the inner <svg> as decorative for assistive tech — the
+            // accessible name lives on the wrapper <div role="img"> above
+            // it, so the SVG itself should be skipped. Without this,
+            // axe-core flags every QR-code SVG as a separate "image without
+            // text alternative" violation. `focusable="false"` keeps it out
+            // of the keyboard tab order on legacy browsers (IE/Edge < 18).
+            if (str_contains($svgContent, '<svg ') && ! str_contains($svgContent, 'aria-hidden=')) {
+                $svgContent = preg_replace(
+                    '/<svg\b/',
+                    '<svg aria-hidden="true" focusable="false"',
+                    $svgContent,
+                    1,
+                );
+            }
         } catch (\Throwable $e) {
             $svgContent = null;
         }
@@ -70,7 +95,7 @@
 @if($svgContent)
     <div
         role="img"
-        aria-label="QR code for {{ $value }}"
+        aria-label="{{ $resolvedLabel }}"
         {{ $attributes->class([$classes]) }}
     >
         {!! $svgContent !!}
@@ -79,11 +104,11 @@
     {{-- Fallback placeholder when QR library is not available --}}
     <div
         role="img"
-        aria-label="QR code for {{ $value }}"
+        aria-label="{{ $resolvedLabel }}"
         {{ $attributes->class([$classes]) }}
         style="width: {{ (int) $size }}px; height: {{ (int) $size }}px;"
     >
-        <div class="flex items-center justify-center w-full h-full bg-[var(--color-wk-bg-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">
+        <div aria-hidden="true" class="flex items-center justify-center w-full h-full bg-[var(--color-wk-bg-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">
             <span>QR Code</span>
         </div>
     </div>

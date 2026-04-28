@@ -27,7 +27,32 @@ export default function wirekitToast(config = {}) {
                 ? `wirekit-toast-${config.name}`
                 : 'wirekit-toast';
 
-            this._handler = (event) => this.add(event.detail);
+            // Optional DOM-containment scope. When set to a CSS selector,
+            // only events whose dispatching element matches `closest(scope)`
+            // are handled — useful for "per-section toast surfaces" where
+            // multiple toast regions share the same event name but each
+            // owns a portion of the DOM tree (e.g. the docs-app live-preview
+            // pattern, or a real app with per-card local toast queues).
+            //
+            // Falsy / missing → no containment filter, every dispatched
+            // event is handled (current behaviour, fully back-compat).
+            this._scope = typeof config.scope === 'string' && config.scope !== ''
+                ? config.scope
+                : null;
+
+            this._handler = (event) => {
+                // Containment filter: if a scope is set, the dispatching
+                // element must be inside an ancestor matching the selector.
+                // event.target is the element on which $dispatch was called;
+                // closest() walks up to find a match (or returns null).
+                if (this._scope) {
+                    const target = event.target;
+                    if (! target || typeof target.closest !== 'function' || ! target.closest(this._scope)) {
+                        return;
+                    }
+                }
+                this.add(event.detail);
+            };
             window.addEventListener(this._eventName, this._handler);
 
             // Livewire hook: bridge session flash toasts on navigate

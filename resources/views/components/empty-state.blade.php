@@ -16,16 +16,21 @@
     ]), $scope);
 @endphp
 
+@php
+    // — iconSlot symmetry: slot wins over icon prop when
+    // both supplied. Matches feature pattern + stat behavior.
+    $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty();
+@endphp
+
 <div {{ $attributes->class([$classes]) }}>
-    {{-- Icon: either passed via "icon" prop (semantic alias) OR rendered via the icon slot --}}
-    @if($icon)
-        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[var(--color-wk-text-muted)]">
-            <x-wirekit::icon :name="$icon" class="h-6 w-6" />
-        </div>
-    @elseif(isset($iconSlot))
-        {{-- Named slot allows callers to supply custom SVG / illustration --}}
+    {{-- Icon: iconSlot (if provided) takes priority; else string $icon prop. --}}
+    @if($hasIconSlot)
         <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[var(--color-wk-text-muted)]">
             {{ $iconSlot }}
+        </div>
+    @elseif($icon)
+        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[var(--color-wk-text-muted)]">
+            <x-wirekit::icon :name="$icon" size="lg" />
         </div>
     @endif
 
