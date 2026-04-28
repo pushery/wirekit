@@ -9,7 +9,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
-Post-1.3.0 maintenance pass. No breaking changes — every entry is fully backward-compatible with 1.3.0.x.
+### Added
+
+- **Syntax-highlighter contract** documented in `docs/theming.md` under "Accessibility & Contrast" — describes the WCAG 4.5:1 token-contrast obligation for any highlight.js / Prism / Shiki theme loaded on top of `<x-wirekit::code-block>`, and the two foot-guns (unscoped light-mode WCAG overrides bleeding into dark mode; per-theme `--color-wk-bg-elevated` variations breaking single-pair audits).
+
+---
+
+## [1.4.0] — 2026-04-28
+
+Minor release covering accessibility, sandbox-schema, and component-render fixes that surfaced after v1.3.0 shipped, plus three additive opt-in prop additions: `<x-wirekit::action-bar mode="static">`, `<x-wirekit::toast-region eventScope>`, and the new `SandboxRenderer::BODY_WRAPPERS` map.
+
+No breaking changes — fully backward-compatible with v1.3.0.
 
 ### Added
 
