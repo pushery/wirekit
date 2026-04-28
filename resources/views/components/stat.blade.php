@@ -6,6 +6,11 @@
     'icon' => null,
     'description' => null,
     'citation' => null,
+    // Opt-in counter animation. When true, the value text is wrapped in
+    // an Alpine x-data="wirekitStatAnimate" handler that animates 0 → value
+    // over 1.2s once the stat scrolls into view. Respects
+    // prefers-reduced-motion (snaps to value, no animation).
+    'animate' => false,
     'scope' => null,
 ])
 
@@ -47,12 +52,24 @@
         @endif
     </div>
 
-    {{-- Main metric value — large, heading-weight for visual emphasis.: replaced inline style="font-size:1.5rem;line-height:2rem"
-         with token-based --text-wk-2xl (1.5rem) + heading line-height. --}}
+    {{-- Main metric value — large, heading-weight for visual emphasis.
+         When animate=true, wrap in x-data="wirekitStatAnimate" with the
+         target value on data-target so the Alpine plugin can read it +
+         animate 0 → target on scroll-into-view. --}}
     @if($value !== null)
-        <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] tabular-nums">
-            {{ $value }}
-        </div>
+        @if($animate)
+            <div
+                x-data="wirekitStatAnimate"
+                data-target="{{ $value }}"
+                class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] tabular-nums"
+            >
+                <span x-text="value">{{ $value }}</span>
+            </div>
+        @else
+            <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] tabular-nums">
+                {{ $value }}
+            </div>
+        @endif
     @elseif(trim($slot->toHtml()) !== '')
         {{-- Fallback: slot allows rich value rendering (e.g. mixed currency + icon) --}}
         <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">

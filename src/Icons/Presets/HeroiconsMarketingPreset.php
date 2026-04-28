@@ -70,6 +70,19 @@ final class HeroiconsMarketingPreset implements IconPreset
             'arrow-right' => 'heroicon-m-arrow-right',
             'arrow-left' => 'heroicon-m-arrow-left',
             'arrow-up-right' => 'heroicon-m-arrow-top-right-on-square',
+
+            // Marketing-copy semantic aliases. Names map to landing-page
+            // bullet copy ("live status", "AI feature", "open source") rather
+            // than to the underlying icon name. Anti-collision verified by
+            // IconSystemTest — none of these shadow a base alias.
+            'live' => 'heroicon-m-signal',
+            'pulse' => 'heroicon-m-arrow-path-rounded-square',
+            'a11y' => 'heroicon-m-finger-print',
+            'sparkle' => 'heroicon-m-sparkles',
+            'security' => 'heroicon-m-lock-closed',
+            'speed' => 'heroicon-m-bolt',
+            'open-source' => 'heroicon-m-code-bracket',
+            'ai' => 'heroicon-m-cpu-chip',
         ];
     }
 

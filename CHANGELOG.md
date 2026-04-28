@@ -9,9 +9,31 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+---
+
+## [1.5.0] — 2026-04-28
+
+Minor release covering a consumer-polish wave from real-world field-testing on a downstream landing-page build. Eight items in scope: a code-block screen-reader announcement fix, a `wirekit:doctor` post-build CSS sanity check, a hero-row `xl` size on `<x-wirekit::feature>`, a counter-animation `animate` prop on `<x-wirekit::stat>`, an `asideWidth` ratio refinement on `<x-wirekit::hero>`, eight new marketing-copy semantic aliases on `heroicons-marketing`, plus the syntax-highlighter contract documented in `docs/theming.md`.
+
+No breaking changes — fully backward-compatible with v1.4.0.
+
 ### Added
 
-- **Syntax-highlighter contract** documented in `docs/theming.md` under "Accessibility & Contrast" — describes the WCAG 4.5:1 token-contrast obligation for any highlight.js / Prism / Shiki theme loaded on top of `<x-wirekit::code-block>`, and the two foot-guns (unscoped light-mode WCAG overrides bleeding into dark mode; per-theme `--color-wk-bg-elevated` variations breaking single-pair audits).
+- **`<x-wirekit::stat animate>`** — opt-in counter-animation prop. When set, the value text wraps in an Alpine `wirekitStatAnimate` data handler that animates 0 → target over 1.2s (ease-out cubic) once the stat scrolls 40% into view (`IntersectionObserver`). Respects `prefers-reduced-motion: reduce` — the value snaps to target with no animation if the OS-level setting is enabled. Static value remains visible inside the `<span x-text="value">` fallback so search engines, no-JS browsers, and Alpine-pre-init paint all see the real number. Default `false` preserves v1.4.x output. Numeric prefixes / suffixes (`$`, `%`, etc.) are preserved through the animation; `toLocaleString()` formats the in-flight value with locale-aware thousand-separators.
+
+- **`<x-wirekit::hero asideWidth>`** — opt-in copy:aside ratio refinement under `layout="balanced"`. Five values: `1/3` (aside ⅓), `2/5` (aside ⅖), `1/2` (50/50, matches default), `3/5` (aside ⅗), `2/3` (aside ⅔). Under any non-balanced layout (`lead` / `centered` / `stacked`) `asideWidth` throws via `WireKit::validateProp` in debug mode and is silently ignored in production. Default `null` preserves v1.4.x balanced 50/50.
+
+- **`<x-wirekit::feature size="xl">`** — fourth chip-size value for hero-row features. Renders a 64×64 chip with a 32×32 inner icon. Existing `sm` / `md` / `lg` values keep their semantics; `md` remains the default.
+
+- **Eight semantic copy aliases on the `heroicons-marketing` preset** — `live` (signal), `pulse` (arrow-path-rounded-square), `a11y` (finger-print), `sparkle` (sparkles), `security` (lock-closed), `speed` (bolt), `open-source` (code-bracket), `ai` (cpu-chip). Names map to landing-page bullet copy rather than to the underlying icon name. Anti-collision verified by existing test suite — none of these shadow a base or `heroicons-app` alias.
+
+- **Post-build CSS sanity check on `wirekit:doctor` / `wirekit:verify`** — final check after the existing source-side `@source` verification. If `public/build/manifest.json` exists, the doctor walks every CSS file in the manifest and looks for any `--color-wk-*` token reference. Fails with a "run `npm run build`" hint if no CSS bundle in the manifest references WireKit tokens — catches the silent-failure mode where a consumer adds the `@source` line to `app.css` but forgets to rebuild. Skips silently in environments without a manifest (dev / pre-build / package-test scenarios).
+
+- **`docs/theming.md` "Syntax-highlighter contract" subsection** — under Accessibility & Contrast. Tells consumers wiring their own `highlight.js` / Prism / Shiki theme that token-level contrast must hit ≥4.5:1 against the active `--color-wk-bg-elevated`, in BOTH light and dark mode, across every theme preset. Documents the two foot-guns (unscoped WCAG overrides bleeding cross-mode; per-theme `bg-elevated` variations breaking single-pair audits) with a sketch of a Playwright contrast-audit recipe.
+
+### Fixed
+
+- **`<x-wirekit::code-block copy>` symmetric screen-reader announcements.** The polite live region (`<span role="status" aria-live="polite">`) was already in DOM but only spoke on success; the error path was silent (clipboard.writeText() rejection on non-secure-context or denied-permission cases threw an unhandled rejection and the user heard nothing). Click handler now wraps the clipboard write in `.then()/.catch()` so success AND failure each set a distinct, polite SR-only string: "Code copied to clipboard" / "Copy failed". WCAG 2.2 SC 4.1.3 (Status Messages) — both code paths now satisfy.
 
 ---
 

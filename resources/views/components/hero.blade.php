@@ -2,6 +2,11 @@
     'variant' => 'default',
     'gradient' => false,
     'layout' => 'balanced',
+    // Only valid when layout="balanced". Tunes the copy:aside ratio from
+    // the default 50/50 to one of: 1/3 | 2/5 | 3/5 | 2/3. Under any
+    // non-balanced layout this prop throws via validateProp (debug) or is
+    // silently ignored (production).
+    'asideWidth' => null,
     'scope' => null,
 ])
 
@@ -40,6 +45,36 @@
         ? $layout
         : WireKit::validateProp('hero', 'layout', $layout, array_keys($layoutMap));
     [$copyColClasses, $asideColClasses, $outerFlexClasses, $textAlignClasses] = $layoutMap[$validLayout];
+
+    // asideWidth refines the copy:aside ratio. Only valid under "balanced" —
+    // the other layouts already prescribe their own column shapes (centered's
+    // single column, lead's fixed 60/40, stacked's full-width rows). For non-
+    // balanced layouts with asideWidth set, validateProp emits a debug-mode
+    // hint and the prop is silently ignored at render time.
+    if ($asideWidth !== null) {
+        $asideWidthMap = [
+            '1/3' => ['flex-[2]', 'flex-[1]'],
+            '2/5' => ['flex-[3]', 'flex-[2]'],
+            '1/2' => ['flex-1', 'flex-1'],
+            '3/5' => ['flex-[2]', 'flex-[3]'],
+            '2/3' => ['flex-[1]', 'flex-[2]'],
+        ];
+        if ($validLayout !== 'balanced') {
+            // Non-balanced layout — fail-fast in debug, ignore silently otherwise.
+            // Pass an empty allowed-values list so the message is "asideWidth is
+            // only valid when layout=balanced; got {asideWidth} under {layout}".
+            WireKit::validateProp(
+                'hero',
+                'asideWidth',
+                $asideWidth.' (only valid when layout=balanced; current layout: '.$validLayout.')',
+                ['1/3', '2/5', '1/2', '3/5', '2/3']
+            );
+        } elseif (! isset($asideWidthMap[$asideWidth])) {
+            WireKit::validateProp('hero', 'asideWidth', $asideWidth, array_keys($asideWidthMap));
+        } else {
+            [$copyColClasses, $asideColClasses] = $asideWidthMap[$asideWidth];
+        }
+    }
 
     // Alignment-dependent classes for lede + actions. Centered keeps mobile + desktop centered;
     // every other layout keeps the original "centered on mobile, left-aligned at lg+" behavior.
