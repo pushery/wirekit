@@ -26,19 +26,41 @@
  */
 export default () => ({
     value: '0',
+    // animating: true while counter is running (used by descriptionDeferred Option A
+    // to hide/show the description span via x-show).
+    animating: false,
+    // progress: 0 (start) → 1 (settled), eased. Used by descriptionAnimate Option C
+    // to interpolate the description text colour synchronously with the count-up.
+    progress: 1,
 
     init() {
         const target = this.$root.dataset.target ?? '0';
 
+        const numeric = parseFloat(String(target).replace(/[^\d.-]/g, '')) || 0;
+        const suffix = String(target).replace(/[\d.,\s-]/g, '');
+
+        // Format helper — used both for the reduced-motion snap and for
+        // the in-flight animation tick. Keeps display consistent (locale-
+        // formatted thousands-separators + suffix preservation) regardless
+        // of which path resolves the value.
+        const formatValue = (current) => {
+            const rounded = Number.isInteger(numeric) ? Math.round(current) : current.toFixed(2);
+            return (typeof rounded === 'number' ? rounded.toLocaleString() : rounded) + suffix;
+        };
+
         // Reduced-motion shortcut: snap to target immediately, no animation.
-        // Single source of truth is the OS-level setting.
+        // Both `animating` and `progress` resolve to settled state for SR/CLS contract.
         if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            this.value = target;
+            this.value = formatValue(numeric);
+            this.animating = false;
+            this.progress = 1;
             return;
         }
 
-        const numeric = parseFloat(String(target).replace(/[^\d.-]/g, '')) || 0;
-        const suffix = String(target).replace(/[\d.,\s-]/g, '');
+        // Pre-flight reactive state — counter is "about to start" but not yet ticking.
+        // Description Option A reads animating=false here, so description is visible
+        // until intersection fires; that's intentional (no flash before the user sees it).
+        this.progress = 0;
 
         // Wait for scroll-into-view, then animate once. Threshold 0.4 means
         // the animation starts when 40% of the element is in viewport — a
@@ -49,18 +71,22 @@ export default () => ({
                 if (! entries[0].isIntersecting) return;
                 observer.disconnect();
 
+                this.animating = true;
                 const start = performance.now();
                 const duration = 1200;
                 const ease = (t) => 1 - Math.pow(1 - t, 3); // ease-out cubic
 
                 const tick = (now) => {
                     const t = Math.min(1, (now - start) / duration);
-                    const current = ease(t) * numeric;
-                    // Round and format. toLocaleString gives thousand-separators
-                    // matching the browser locale; suffix ($, %, etc.) re-appended.
-                    const rounded = Number.isInteger(numeric) ? Math.round(current) : current.toFixed(2);
-                    this.value = (typeof rounded === 'number' ? rounded.toLocaleString() : rounded) + suffix;
-                    if (t < 1) requestAnimationFrame(tick);
+                    const eased = ease(t);
+                    this.value = formatValue(eased * numeric);
+                    this.progress = eased;
+                    if (t < 1) {
+                        requestAnimationFrame(tick);
+                    } else {
+                        this.animating = false;
+                        this.progress = 1;
+                    }
                 };
 
                 requestAnimationFrame(tick);

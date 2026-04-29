@@ -11,6 +11,62 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.6.0] — 2026-04-29
+
+Minor release covering a downstream field-test brief, the brief's deferred extensions, and a unified motion subsystem. Twelve chunks shipped together so the topic — fonts, doctor diagnostics, stat description options, and a real animation system — can be closed in one release. No breaking changes; every new flag, prop, opt-in surface defaults to off so v1.5.0 consumers see byte-identical output.
+
+### Added
+
+- **`wirekit:install --font=<sans-key>`, `--font-serif=<key>`, `--font-mono=<key>`** — three optional flags for choosing which bundled WireKit font your project uses. Resolves the key against the bundled `FontRegistry` (21 GDPR-compliant local font CSS files), validates the category, and idempotently injects an override block into `resources/css/app.css` setting BOTH `--font-{cat}` (drives Tailwind `font-{cat}` utilities) AND `--font-wk-{cat}` (drives WireKit chrome). The two stay aligned automatically — closes the foot­gun where Tailwind utilities and WireKit chrome rendered different families. All three flags combinable; re-running with the same key produces byte-identical output. Wrong-category passes throw with a list of valid keys for the right category. Local fonts only — nothing is fetched from a CDN.
+
+- **`wirekit:install` Tailwind config writer detection** — the install command detects whether your project uses CSS-first Tailwind v4 config (`@theme` block in `app.css`) or the legacy JS-config (`tailwind.config.js theme.extend.fontFamily`) and writes the font override to the right destination. CSS-first wins on tie (Tailwind v4 deprecates JS config). Custom config shapes that the auto-edit can't safely match log an actionable manual-edit hint instead of risking AST corruption.
+
+- **`wirekit:install` interactive mode** — running the command without flags in an interactive TTY opens a guided setup prompting for theme preset + sans/serif/mono font selection. CI / `--no-interaction` / scripted contexts skip prompts and run with v1.5.0-identical defaults.
+
+- **`wirekit:doctor` token-alignment diagnostic** — new section comparing seven Tailwind tokens against their matching WireKit tokens: `--font-sans/serif/mono`, `--color-accent`, `--color-accent-foreground`, `--radius`, `--shadow`. Each pair emits `✓ aligned`, `⚠ mismatch` (with actionable fix hint), or `i skipped` (var() reference or unset). Surfaces token drift at install-time rather than letting it ship to production.
+
+- **`docs/cli/wirekit-doctor.md`** — dedicated documentation page for the doctor command. Covers all twelve diagnostic checks with example output, three "Common failures and fixes" walkthroughs (font mismatch, accent-colour mismatch, var() skip), CI integration recipes (GitHub Actions + Claude Code stop-hook).
+
+- **`<x-wirekit::stat animate>` Three Description Options** — three opt-in props govern how the description text behaves during the value count-up animation. Option A `descriptionDeferred` defers the description fade-in until the counter settles (200ms ease-out), with `aria-hidden` mirroring visibility for screen-reader contract. Option B (default, status quo) renders the description statically. Option C `descriptionAnimate` animates the description text colour from `--color-wk-text-muted` → `--color-wk-text` synchronously with the value count-up. Options A and C are mutually exclusive — passing both throws. All three honour `prefers-reduced-motion: reduce`. New `### Animation Scope` subsection in `docs/components/stat.md` documents the contract.
+
+- **`<x-wirekit::reveal>` component** — NEW thin Blade wrapper that animates its slot content into view. One `preset` prop selects from 11 bases × in/out variants (`fade`, `slide-up`, `slide-down`, `slide-left`, `slide-right`, `scale`, `zoom`, `flip`, `rotate`, `bounce`, `spring`). Three trigger modes: `viewport` (default, IntersectionObserver), `click`, `manual` (consumer dispatches `wirekit:reveal` event). Three duration tokens: `fast` (150ms), `normal` (300ms, default), `slow` (600ms). Full `prefers-reduced-motion: reduce` honoring — element snaps to final state. New docs page `docs/components/reveal.md` with eight live preview blocks.
+
+- **`docs/animations.md`** — NEW reference page covering the entire motion subsystem: six new design tokens, 22 keyframes (11 bases × in/out), 22 utility classes (`.wk-animate-{preset}-{in|out}` plus three duration modifiers `.wk-animate-{fast|normal|slow}`), the `wirekitAnimate` Alpine helper API, and the reduced-motion contract.
+
+- **Six new motion design tokens** in `dist/wirekit.css`: `--motion-wk-duration-fast: 150ms`, `--motion-wk-duration-normal: 300ms`, `--motion-wk-duration-slow: 600ms`, `--motion-wk-easing-out` (decelerating cubic), `--motion-wk-easing-in` (accelerating cubic), `--motion-wk-easing-spring` (overshoot). The legacy `--transition-wk-duration` is aliased to `--motion-wk-duration-fast` for back-compat.
+
+- **`animateIn` prop on 7 marketing components** — `<x-wirekit::card>`, `<x-wirekit::feature>`, `<x-wirekit::hero>`, `<x-wirekit::stat>`, `<x-wirekit::callout>`, `<x-wirekit::alert>`, and `<x-wirekit::empty-state>` accept an optional `animateIn` prop that wires the `wirekitAnimate` Alpine helper to the root. Pass a base name (`fade`, `slide-up`, `bounce`, …) or a full preset name (`fade-in`, `slide-up-out`). Default `null` preserves v1.5.0 render exactly. Components with built-in entrance transitions (`modal`, `drawer`, `toast`, `tooltip`, `dropdown`, `popover`) deliberately skip this prop to avoid double-motion conflicts.
+
+- **`wirekit:export-api-map`** — new top-level `helpers` group covering Alpine helpers exposed by the WireKit JS bundle. `wirekitAnimate` lists its full 22-preset enum, three trigger modes, three duration tokens, reduced-motion contract, and Blade-wrapper hint. `wirekitStatAnimate` documents its reactive state catalog (`value`, `animating`, `progress`). MCP servers + AI tooling consume this map to suggest correct `x-data="…"` shapes without grepping the source.
+
+- **`<x-wirekit::list>` four new ordered marker types** — `lower-roman` (i, ii, iii), `upper-roman` (I, II, III), `lower-alpha` (a, b, c), `upper-alpha` (A, B, C) join the existing `disc`, `decimal`, `none` set. All four render as `<ol>` with Tailwind v4 arbitrary-value `list-style-type` utilities. Mix freely across nested levels for legal-contract / academic / spec-style outlines.
+
+### Changed
+
+- **`<x-wirekit::main>` horizontal padding aligned with `<x-wirekit::header>`.** Previously `padding="lg"` produced 1.5rem all around (via `--space-wk-lg`); now uses `--padding-wk-x-{size}` for the horizontal axis (1rem at `lg`) — matching the same-name token used by Header. A sibling Header + Main pair (the canonical app-shell layout) now shares one vertical alignment line. Vertical padding stays on the generic `--space-wk-{size}` scale for breathing room. Applies to all five sizes (`none`/`sm`/`md`/`lg`/`xl`); `none` unchanged.
+
+- **`<x-wirekit::app-shell>` sidebar breathing room.** Sidebar `<aside>` wrapper gained `lg:mt-[var(--space-wk-md,1rem)] lg:ml-[var(--padding-wk-x-lg)]` so the in-flow column position at `lg+` no longer sits flush against the header divider. Mobile / off-canvas behavior unchanged.
+
+- **`dist/wirekit.js`** bundle grew by ~0.4 KB (the `wirekitAnimate` Alpine helper, ~1 KB minified). Full bundle is 78.0 KB. Core bundle (chart-only) unchanged.
+
+- **`docs/cli.md`** documents all new install flags + the interactive mode + the new doctor token-alignment section + a cross-link to the dedicated `wirekit:doctor` reference page.
+
+- **`docs/animations.md` interactive preset gallery** — fifteen click-triggered preview blocks covering all eleven `<x-wirekit::reveal>` presets (fade, slide-up, slide-down, slide-left, slide-right, scale, zoom, flip, rotate, bounce, spring) plus a duration comparison row (fast / normal / slow). Each block uses `trigger="click"` so the animation re-fires on demand instead of waiting for scroll-into-view. Reduced-motion users see the final state immediately.
+
+- **`docs/dependencies.md` bundle sizes refreshed** to reflect the v1.6.0 additions: full bundle now ~23 KB gzip (78 KB raw, +`wirekitAnimate` Alpine helper), core unchanged at ~2 KB gzip (8 KB raw), ESM ~23 KB gzip (76 KB raw). Verified via `gzip -c | wc -c`.
+
+- **Public package archive** no longer ships `.gitattributes` or `.gitignore`. Both were dev-tooling artifacts whose only purpose was to filter the source tree at archive time; once the package is installed via `composer require pushery/wirekit`, neither file has a downstream role. Their absence from the published tarball makes consumer installs marginally cleaner. v1.6.0 is the first release where this applies.
+
+### Fixed
+
+- **`<x-wirekit::stat animate>` reduced-motion display formatting.** Previously the reduced-motion code path snapped `value` to the raw `data-target` string (e.g. `"12500"`); the in-flight animation tick formatted via `toLocaleString()` (e.g. `"12,500"`). Result: a user with `prefers-reduced-motion: reduce` saw a different format than a user without. Both paths now share a `formatValue()` helper so display is locale-consistent regardless of motion preference. Suffix preservation (`$`, `%`, etc.) also unified across paths.
+
+- **Sandbox `code-block` schema — `language` is now an enum** with 20 highlight.js-aligned grammar values (`bash`, `php`, `blade`, `html`, `javascript`, `typescript`, `python`, `ruby`, `go`, `rust`, `sql`, `yaml`, `markdown`, `dockerfile`, …). The `wirekit:export-api-map` output and any Sandbox-driven UI now expose the discoverable allowed-values list instead of leaving consumers to guess what the syntax-highlighter accepts.
+
+- **Sandbox `PropsValidator` — HTML-form scalar coercion** for `type: int` / `type: bool` / `type: float`. HTML form submissions are always strings (`"4"` from a `<select>`, `""` from an unchecked checkbox); previously the strict type check rejected with `expected int, got string`. The validator now conservatively coerces unambiguous string shapes into the declared scalar type before the type check, while preserving rejection for non-numeric strings against `int`. Makes every schema with a typed-int / typed-bool prop usable from a Live-Sandbox UI without consumers needing to coerce client-side.
+
+---
+
 ## [1.5.0] — 2026-04-28
 
 Minor release covering a consumer-polish wave from real-world field-testing on a downstream landing-page build. Eight items in scope: a code-block screen-reader announcement fix, a `wirekit:doctor` post-build CSS sanity check, a hero-row `xl` size on `<x-wirekit::feature>`, a counter-animation `animate` prop on `<x-wirekit::stat>`, an `asideWidth` ratio refinement on `<x-wirekit::hero>`, eight new marketing-copy semantic aliases on `heroicons-marketing`, plus the syntax-highlighter contract documented in `docs/theming.md`.

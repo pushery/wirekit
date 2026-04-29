@@ -104,6 +104,15 @@ return [
 
         // Feature card icon-chip tone + size
         'feature' => ['tone' => 'accent', 'size' => 'md'],
+
+        // Reveal animation wrapper — defaults for `<x-wirekit::reveal>`
+        'reveal' => [
+            'preset' => 'fade-in',
+            'trigger' => 'viewport',
+            'duration' => 'normal',
+            'once' => true,
+            'threshold' => 0.4,
+        ],
     ],
 
     /*

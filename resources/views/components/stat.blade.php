@@ -11,11 +11,34 @@
     // over 1.2s once the stat scrolls into view. Respects
     // prefers-reduced-motion (snaps to value, no animation).
     'animate' => false,
+    // Description animation Option A — defer fade-in. When true AND animate=true,
+    // the description span is hidden via x-show while the counter runs (~1.2s)
+    // and fades in once the animation settles. Mutually exclusive with descriptionAnimate.
+    'descriptionDeferred' => false,
+    // Description animation Option C — synchronous colour count-up. When true AND animate=true,
+    // the description text colour interpolates from --color-wk-text-muted → --color-wk-text
+    // on the same 1.2s timeline as the value. Mutually exclusive with descriptionDeferred.
+    'descriptionAnimate' => false,
+    // Optional reveal animation when stat scrolls into view (separate from
+    // the value count-up `animate` prop). Null = no reveal (default).
+    'animateIn' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    $animateAttr = WireKit::resolveAnimateIn($animateIn, 'stat');
+
+    // Mutual exclusion check — Option A and Option C cannot combine.
+    if ($descriptionDeferred && $descriptionAnimate) {
+        throw new \InvalidArgumentException(
+            '<x-wirekit::stat> descriptionDeferred and descriptionAnimate are mutually exclusive. Pick one (or neither for the static default).'
+        );
+    }
+
+    // Animation wiring is gated on animate=true — Options A/C are no-ops if the parent counter isn't running.
+    $hasDescriptionAnim = $animate && ($descriptionDeferred || $descriptionAnimate);
 
     // Container: card-like surface with padding + elevated background + border
     $classes = WireKit::resolveClasses('stat', 'base', implode(' ', [
@@ -37,7 +60,15 @@
     };
 @endphp
 
-<div {{ $attributes->class([$classes]) }}>
+<div
+    {{ $attributes->class([$classes]) }}
+    @if($hasDescriptionAnim)
+        x-data="wirekitStatAnimate"
+        data-target="{{ $value }}"
+    @elseif($animateAttr)
+        {!! $animateAttr !!}
+    @endif
+>
     {{-- Top row: label + optional icon --}}
     <div class="flex items-center justify-between gap-2">
         @if($label)
@@ -55,12 +86,21 @@
     {{-- Main metric value — large, heading-weight for visual emphasis.
          When animate=true, wrap in x-data="wirekitStatAnimate" with the
          target value on data-target so the Alpine plugin can read it +
-         animate 0 → target on scroll-into-view. --}}
+         animate 0 → target on scroll-into-view.
+
+         When descriptionDeferred OR descriptionAnimate is also true,
+         the WHOLE stat root receives x-data so the description span
+         can read `animating` from $root scope. --}}
     @if($value !== null)
         @if($animate)
+            {{-- When description anim is on, the parent root carries x-data; value div skips it
+                 to avoid double-binding. When description is static (default), the value div
+                 owns its own scope (v1.5.0-identical render). --}}
             <div
-                x-data="wirekitStatAnimate"
-                data-target="{{ $value }}"
+                @if(! $hasDescriptionAnim)
+                    x-data="wirekitStatAnimate"
+                    data-target="{{ $value }}"
+                @endif
                 class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] tabular-nums"
             >
                 <span x-text="value">{{ $value }}</span>
@@ -101,7 +141,25 @@
                 </span>
             @endif
             @if($description)
-                <span class="text-[var(--color-wk-text-muted)]">{{ $description }}</span>
+                @if($descriptionDeferred && $animate)
+                    {{-- Option A — defer fade-in. Description hides while counter runs;
+                         fades in after settle. aria-hidden mirrors visibility for SR contract. --}}
+                    <span
+                        x-show="!animating"
+                        x-transition.opacity.duration.200ms
+                        x-bind:aria-hidden="animating ? 'true' : null"
+                        class="text-[var(--color-wk-text-muted)]"
+                    >{{ $description }}</span>
+                @elseif($descriptionAnimate && $animate)
+                    {{-- Option C — synchronous colour count-up. Text colour interpolates
+                         from muted → text on the same 1.2s timeline as the value via
+                         the `progress` reactive (0 = start, 1 = settled). --}}
+                    <span
+                        x-bind:style="'color: color-mix(in srgb, var(--color-wk-text-muted) ' + ((1 - progress) * 100) + '%, var(--color-wk-text) ' + (progress * 100) + '%)'"
+                    >{{ $description }}</span>
+                @else
+                    <span class="text-[var(--color-wk-text-muted)]">{{ $description }}</span>
+                @endif
             @endif
         </div>
     @endif

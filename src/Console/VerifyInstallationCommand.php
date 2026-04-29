@@ -56,6 +56,7 @@ class VerifyInstallationCommand extends Command
         $this->checkCssImportAntiPattern();
         $this->checkOptionalDependencies();
         $this->checkBuiltCssHasWireKitUtilities();
+        $this->checkTokenAlignment();
 
         // ── Summary ──
         $this->line('');
@@ -623,5 +624,120 @@ class VerifyInstallationCommand extends Command
     {
         $this->line("  <fg=yellow>!</> {$message}");
         $this->warned++;
+    }
+
+    /**
+     * Token-alignment diagnostic — compares Tailwind tokens against WireKit
+     * tokens in `resources/css/app.css`. Closes the brief's "WireKit chrome
+     * was Inter while copy was Instrument Sans" footgun by surfacing the
+     * mismatch at install-time rather than letting it ship to production.
+     *
+     * Checks:
+     *   --font-sans   ↔ --font-wk-sans
+     *   --font-serif  ↔ --font-wk-serif
+     *   --font-mono   ↔ --font-wk-mono
+     *   --color-accent ↔ --color-wk-accent
+     *   --color-accent-foreground ↔ --color-wk-accent-fg
+     *   --radius      ↔ --radius-wk
+     *   --shadow      ↔ --shadow-wk
+     *
+     * Skips any pair where either side is a `var(...)` reference (the consumer
+     * is intentionally aliasing) or unset. Emits ✓ when families match, ⚠ when
+     * they differ with actionable hint.
+     */
+    private function checkTokenAlignment(): void
+    {
+        $this->line('');
+        $this->line('  Token alignment:');
+
+        $appCss = resource_path('css/app.css');
+
+        if (! file_exists($appCss)) {
+            $this->reportWarn('  resources/css/app.css not found — skipping token-alignment checks');
+
+            return;
+        }
+
+        $content = (string) file_get_contents($appCss);
+
+        $checks = [
+            ['Sans font', '--font-sans', '--font-wk-sans', 'php artisan wirekit:install --font=<key>'],
+            ['Serif font', '--font-serif', '--font-wk-serif', 'php artisan wirekit:install --font-serif=<key>'],
+            ['Mono font', '--font-mono', '--font-wk-mono', 'php artisan wirekit:install --font-mono=<key>'],
+            ['Accent colour', '--color-accent', '--color-wk-accent', 'set --color-accent in @theme to match WireKit accent'],
+            ['Accent foreground', '--color-accent-foreground', '--color-wk-accent-fg', 'set --color-accent-foreground in @theme'],
+            ['Border radius', '--radius', '--radius-wk', 'set --radius in @theme to match --radius-wk'],
+            ['Shadow', '--shadow', '--shadow-wk', 'set --shadow in @theme to match --shadow-wk'],
+        ];
+
+        foreach ($checks as [$label, $tw, $wk, $hint]) {
+            $this->compareTokenPair($content, $label, $tw, $wk, $hint);
+        }
+    }
+
+    /**
+     * Compares one Tailwind token vs. WireKit token pair and reports outcome.
+     */
+    private function compareTokenPair(string $cssContent, string $label, string $twToken, string $wkToken, string $hint): void
+    {
+        $twValue = $this->extractTokenValue($cssContent, $twToken);
+        $wkValue = $this->extractTokenValue($cssContent, $wkToken);
+
+        // Skip if either token is unset
+        if ($twValue === null || $wkValue === null) {
+            $this->line("    <fg=blue>i</> {$label}: skipped (token unset on consumer side)");
+
+            return;
+        }
+
+        // Skip if either side is a var(...) reference (intentional aliasing)
+        if (str_contains($twValue, 'var(') || str_contains($wkValue, 'var(')) {
+            $this->line("    <fg=blue>i</> {$label}: skipped (var(...) reference — intentional alias)");
+
+            return;
+        }
+
+        $twNormalised = $this->normaliseTokenValue($twValue);
+        $wkNormalised = $this->normaliseTokenValue($wkValue);
+
+        if ($twNormalised === $wkNormalised) {
+            $this->line("    <fg=green>✓</> {$label}: aligned ({$twNormalised})");
+            $this->passed++;
+        } else {
+            $this->reportWarn("  {$label}: mismatch — Tailwind `{$twValue}` vs WireKit `{$wkValue}`. Fix: {$hint}");
+        }
+    }
+
+    /**
+     * Extracts the value of a CSS custom property from the content.
+     *
+     * Returns null if the token is not found (consumer hasn't set it).
+     */
+    private function extractTokenValue(string $cssContent, string $token): ?string
+    {
+        $pattern = '/'.preg_quote($token, '/').'\s*:\s*([^;\n]+)/';
+
+        if (preg_match($pattern, $cssContent, $matches) === 1) {
+            return trim($matches[1]);
+        }
+
+        return null;
+    }
+
+    /**
+     * Normalises a token value for cross-comparison.
+     *
+     * For font families: extracts the first comma-separated token, lowercases,
+     * trims quotes. So `'Inter', ui-sans-serif` and `"Inter", ui-sans` both
+     * normalise to `inter`.
+     *
+     * For other values: lowercases + trims whitespace.
+     */
+    private function normaliseTokenValue(string $value): string
+    {
+        $first = trim(explode(',', $value)[0]);
+        $first = trim($first, "'\"");
+
+        return mb_strtolower($first);
     }
 }

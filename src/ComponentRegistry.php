@@ -136,6 +136,7 @@ class ComponentRegistry
             'message' => ['category' => 'Display', 'description' => 'Chat/comment message bubble with author and timestamp'],
             'price' => ['category' => 'Display', 'description' => 'Locale-aware currency display with optional discount'],
             'reaction' => ['category' => 'Display', 'description' => 'Emoji reaction pill with count and toggle state'],
+            'reveal' => ['category' => 'Display', 'description' => 'Animation wrapper — viewport / click / manual triggers, 11 in/out presets'],
             'toolbar' => ['category' => 'Navigation', 'description' => 'Horizontal bar with search, filters, and action buttons'],
 
             // ── System ──

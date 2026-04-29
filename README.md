@@ -98,6 +98,7 @@ Add WireKit's Blade source path to your `resources/css/app.css`:
 | Callout | `<x-wirekit::callout>` | [Docs](https://docs.wirekit.app/components/callout) |
 | Image Compare | `<x-wirekit::image-compare>` | [Docs](https://docs.wirekit.app/components/image-compare) |
 | Reaction | `<x-wirekit::reaction>` | [Docs](https://docs.wirekit.app/components/reaction) |
+| Reveal | `<x-wirekit::reveal>` | [Docs](https://docs.wirekit.app/components/reveal) |
 | Message | `<x-wirekit::message>` | [Docs](https://docs.wirekit.app/components/message) |
 | Date Separator | `<x-wirekit::date-separator>` | [Docs](https://docs.wirekit.app/components/date-separator) |
 | Kanban | `<x-wirekit::kanban>` | [Docs](https://docs.wirekit.app/components/kanban) |

@@ -3,11 +3,16 @@
     'title' => null,
     'tone' => null,
     'size' => null,
+    // Optional reveal animation when the feature card scrolls into view.
+    // Null = no animation (default, v1.5.0-identical).
+    'animateIn' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    $animateAttr = WireKit::resolveAnimateIn($animateIn, 'feature');
 
     // Feature — individual feature card for feature-grid.
     $classes = WireKit::resolveClasses('feature', 'base', implode(' ', [
@@ -54,7 +59,7 @@
     $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty();
 @endphp
 
-<div {{ $attributes->class([$classes]) }}>
+<div {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     @if($hasIconSlot)
         {{-- Escape hatch: caller supplied their own marker (custom SVG, illustration, badge, …). --}}
         {{ $iconSlot }}

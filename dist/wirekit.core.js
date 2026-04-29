@@ -1,4 +1,4 @@
-/*! WireKit Core v1.5.0 | MIT License | https://wirekit.app */
+/*! WireKit Core v1.6.0 | MIT License | https://wirekit.app */
 (()=>{function d(a){return{chart:null,_navCleanup:null,_darkModeObserver:null,_darkModeDebounce:null,_manualColorIndices:new Set,init(){if(typeof Chart>"u"){console.error(`WireKit: Chart.js is not loaded. Install it via npm:
   npm install chart.js
 And import it in your app.js:

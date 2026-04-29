@@ -66,6 +66,7 @@ class ExportApiMapCommand extends Command
                 $this->blueprintsGroup($packageRoot),
                 $this->recipesGroup($packageRoot),
                 $this->commandsGroup(),
+                $this->helpersGroup(),
             ],
         ];
 
@@ -272,5 +273,67 @@ class ExportApiMapCommand extends Command
         ], $commands);
 
         return ['id' => 'commands', 'count' => count($items), 'items' => $items];
+    }
+
+    /**
+     * Alpine helpers exposed by the WireKit JS bundle (full bundle only).
+     *
+     * Each entry describes a `x-data="…"` magic — its preset / parameter
+     * surface, trigger options, and the reduced-motion contract. Useful
+     * for MCP servers / AI tooling that wants to suggest the right
+     * `<div x-data="...">` shape without grepping the source.
+     *
+     * @return array{id: string, count: int, items: array<int, array<string, mixed>>}
+     */
+    private function helpersGroup(): array
+    {
+        $items = [
+            [
+                'id' => 'wirekitAnimate',
+                'description' => 'Reveal-animation Alpine helper. Adds a wk-animate-{preset} class to its host element when a configured trigger fires.',
+                'parameters' => [
+                    ['name' => 'preset', 'type' => 'enum', 'required' => true],
+                    ['name' => 'options.trigger', 'type' => 'enum', 'default' => 'viewport'],
+                    ['name' => 'options.once', 'type' => 'bool', 'default' => true],
+                    ['name' => 'options.threshold', 'type' => 'float', 'default' => 0.4],
+                    ['name' => 'options.duration', 'type' => 'enum', 'default' => 'normal'],
+                ],
+                'preset_enum' => [
+                    'fade-in', 'fade-out',
+                    'slide-up-in', 'slide-up-out',
+                    'slide-down-in', 'slide-down-out',
+                    'slide-left-in', 'slide-left-out',
+                    'slide-right-in', 'slide-right-out',
+                    'scale-in', 'scale-out',
+                    'zoom-in', 'zoom-out',
+                    'flip-in', 'flip-out',
+                    'rotate-in', 'rotate-out',
+                    'bounce-in', 'bounce-out',
+                    'spring-in', 'spring-out',
+                ],
+                'trigger_enum' => ['viewport', 'click', 'manual'],
+                'duration_enum' => ['fast', 'normal', 'slow'],
+                'respects_reduced_motion' => true,
+                'docs_url' => 'https://docs.wirekit.app/animations#wirekit-animate',
+                'blade_wrapper' => '<x-wirekit::reveal preset="…">',
+            ],
+            [
+                'id' => 'wirekitStatAnimate',
+                'description' => 'Counter-animation Alpine helper for `<x-wirekit::stat animate>`. Animates the bound `value` from 0 to a `data-target` over 1.2s ease-out cubic. Exposes `animating` + `progress` reactive state for description-fade-in / description-colour-count-up opt-ins.',
+                'parameters' => [
+                    ['name' => 'data-target', 'type' => 'string (numeric or numeric+suffix)', 'required' => true],
+                ],
+                'reactive_state' => [
+                    ['name' => 'value', 'type' => 'string', 'description' => 'Current eased value, locale-formatted'],
+                    ['name' => 'animating', 'type' => 'bool', 'description' => 'true while counter runs'],
+                    ['name' => 'progress', 'type' => 'float', 'description' => '0..1 eased progress'],
+                ],
+                'respects_reduced_motion' => true,
+                'docs_url' => 'https://docs.wirekit.app/components/stat#counter-animation',
+                'blade_wrapper' => '<x-wirekit::stat animate>',
+            ],
+        ];
+
+        return ['id' => 'helpers', 'count' => count($items), 'items' => $items];
     }
 }

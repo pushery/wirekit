@@ -2,11 +2,15 @@
     'variant' => config('wirekit.components.callout.variant', 'info'),
     'icon' => true,
     'bordered' => true,
+    // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
+    'animateIn' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    $animateAttr = WireKit::resolveAnimateIn($animateIn, 'callout');
 
     // Callout is visually denser than Alert, designed for inline documentation
     // notices. It is persistent (no dismiss), supports title+body+action slots.
@@ -70,7 +74,7 @@
 {{-- Callout: persistent inline notice for documentation-style content.
      Uses <aside> for semantic landmark (complementary content).
      Visually denser than Alert with left accent stripe. --}}
-<aside {{ $attributes->class([$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden']) }}>
+<aside {{ $attributes->class([$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden']) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     {{-- Left accent stripe — 3px colored bar for visual prominence --}}
     <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-[var(--radius-wk-lg)] {{ $variantColors['stripe'] }}" aria-hidden="true"></div>
 
