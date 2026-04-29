@@ -49,10 +49,14 @@
                 x-cloak
             ></div>
 
-            {{-- Sidebar --}}
+            {{-- Sidebar — `lg:mt-{md}` adds breathing room between the header
+                 divider and the sidebar's inner card. Stays unset on mobile
+                 (the off-canvas overlay anchors flush from the top) and
+                 only applies once the sidebar is in its in-flow column
+                 position at lg+. --}}
             <aside
                 x-bind:class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-                class="fixed inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-64 transform transition-transform duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto"
+                class="fixed inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-64 transform transition-transform duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:mt-[var(--space-wk-md,1rem)] lg:ml-[var(--padding-wk-x-lg)]"
                 x-cloak
                 class:lg="!x-cloak"
             >

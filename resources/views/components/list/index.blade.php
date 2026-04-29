@@ -8,14 +8,24 @@
 @php
     use Pushery\WireKit\WireKit;
 
-    // Determine tag based on type: ordered types use <ol>, unordered use <ul>
-    $tag = $as ?? ($type === 'decimal' ? 'ol' : 'ul');
+    // Ordered types render as <ol>; everything else (incl. 'disc' / 'none') uses <ul>.
+    $orderedTypes = ['decimal', 'lower-roman', 'upper-roman', 'lower-alpha', 'upper-alpha'];
+    $tag = $as ?? (in_array($type, $orderedTypes, true) ? 'ol' : 'ul');
 
     $typeClasses = match ($type) {
         'disc' => 'list-disc',
         'decimal' => 'list-decimal',
         'none' => 'list-none',
-        default => WireKit::validateProp('list', 'type', $type, ['disc', 'decimal', 'none']),
+        // Roman / alpha types use Tailwind v4's arbitrary-value syntax; the
+        // CSS list-style-type property has supported these values since IE6.
+        'lower-roman' => 'list-[lower-roman]',
+        'upper-roman' => 'list-[upper-roman]',
+        'lower-alpha' => 'list-[lower-alpha]',
+        'upper-alpha' => 'list-[upper-alpha]',
+        default => WireKit::validateProp('list', 'type', $type, [
+            'disc', 'decimal', 'none',
+            'lower-roman', 'upper-roman', 'lower-alpha', 'upper-alpha',
+        ]),
     };
 
     $spacingClasses = match ($spacing) {

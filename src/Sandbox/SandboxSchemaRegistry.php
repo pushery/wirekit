@@ -160,7 +160,26 @@ final class SandboxSchemaRegistry
         ]);
 
         self::register('code-block', [
-            'language' => ['type' => 'string', 'default' => 'php'],
+            // `language` is a hint for consumer-side syntax highlighters
+            // (Prism / Shiki / highlight.js). The component itself does NOT
+            // ship a highlighter — it just emits `data-language` for consumers
+            // to pick up. The allowed_values list mirrors the highlighter
+            // grammars most consumers actually wire (matches the highlight.js
+            // common bundle). Keeps the docs Sandbox surface beginner-discoverable
+            // by rendering a `<select>` instead of a free-text input.
+            'language' => [
+                'type' => 'string',
+                'default' => 'php',
+                'allowed_values' => [
+                    'bash', 'shell', 'plaintext',
+                    'php', 'blade',
+                    'html', 'xml',
+                    'css', 'scss',
+                    'javascript', 'typescript', 'json',
+                    'python', 'ruby', 'go', 'rust',
+                    'sql', 'yaml', 'markdown', 'dockerfile',
+                ],
+            ],
             'body' => ['type' => 'string', 'default' => "<?php\necho 'hello';"],
         ]);
 

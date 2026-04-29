@@ -2,6 +2,8 @@
     'icon' => null,
     'title' => null,
     'description' => null,
+    // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
+    'animateIn' => null,
     'scope' => null,
 ])
 
@@ -14,6 +16,8 @@
         'px-[var(--padding-wk-x-xl)] py-[var(--padding-wk-y-xl)]',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
+
+    $animateAttr = WireKit::resolveAnimateIn($animateIn, 'empty-state');
 @endphp
 
 @php
@@ -22,7 +26,7 @@
     $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty();
 @endphp
 
-<div {{ $attributes->class([$classes]) }}>
+<div {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     {{-- Icon: iconSlot (if provided) takes priority; else string $icon prop. --}}
     @if($hasIconSlot)
         <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[var(--color-wk-text-muted)]">

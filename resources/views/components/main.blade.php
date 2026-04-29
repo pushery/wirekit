@@ -13,12 +13,16 @@
         'overflow-y-auto',
     ]), $scope);
 
+    // Horizontal padding uses the same `--padding-wk-x-{size}` tokens as
+    // `<x-wirekit::header>`, so a sibling Header + Main pair (the canonical
+    // app-shell layout) shares one vertical alignment line. Vertical padding
+    // stays on the generic `--space-wk-{size}` scale for breathing room.
     $paddingClasses = match ($padding) {
         'none' => '',
-        'sm' => 'p-[var(--space-wk-sm,0.5rem)]',
-        'md' => 'p-[var(--space-wk-md,1rem)]',
-        'lg' => 'p-[var(--space-wk-lg,1.5rem)]',
-        'xl' => 'p-[var(--space-wk-xl,2.5rem)]',
+        'sm' => 'px-[var(--padding-wk-x-sm)] py-[var(--space-wk-sm,0.5rem)]',
+        'md' => 'px-[var(--padding-wk-x-md)] py-[var(--space-wk-md,1rem)]',
+        'lg' => 'px-[var(--padding-wk-x-lg)] py-[var(--space-wk-lg,1.5rem)]',
+        'xl' => 'px-[var(--padding-wk-x-xl)] py-[var(--space-wk-xl,2.5rem)]',
         default => WireKit::validateProp('main', 'padding', $padding, ['none', 'sm', 'md', 'lg', 'xl']),
     };
 @endphp

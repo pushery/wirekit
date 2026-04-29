@@ -29,6 +29,7 @@ import wirekitTour from './components/tour.js';
 import wirekitResizableHandle from './components/resizable.js';
 import wirekitImageCompare from './components/image-compare.js';
 import wirekitStatAnimate from './components/stat-animate.js';
+import wirekitAnimate from './components/animate.js';
 
 /**
  * Register all Alpine.data() components.
@@ -61,6 +62,7 @@ function registerComponents() {
     Alpine.data('wirekitResizableHandle', wirekitResizableHandle);
     Alpine.data('wirekitImageCompare', wirekitImageCompare);
     Alpine.data('wirekitStatAnimate', wirekitStatAnimate);
+    Alpine.data('wirekitAnimate', wirekitAnimate);
 }
 
 // Primary path: register before Alpine.start() processes the DOM.

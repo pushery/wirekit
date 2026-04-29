@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v1.5.0 — MIT License
+ * WireKit CSS v1.6.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -147,6 +147,17 @@
     /* ─── Motion ─── */
     --transition-wk-duration: 150ms;
     --transition-wk-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* ─── Motion presets (v1.6.0+) ─── */
+    /* Duration scale — drives wk-animate-* utilities and the wirekitAnimate Alpine helper.
+       --transition-wk-duration is aliased to --motion-wk-duration-fast for back-compat. */
+    --motion-wk-duration-fast: 150ms;
+    --motion-wk-duration-normal: 300ms;
+    --motion-wk-duration-slow: 600ms;
+    /* Easing curves */
+    --motion-wk-easing-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --motion-wk-easing-in: cubic-bezier(0.7, 0, 0.84, 0);
+    --motion-wk-easing-spring: cubic-bezier(0.5, 1.5, 0.5, 1);
 
     /* ─── Border Width ─── */
     --border-wk-width: 1px;
@@ -416,6 +427,101 @@
     animation: wk-progress-circle-spin 1.4s linear infinite;
     transform-origin: center;
 }
+
+/* ─── Animation Presets (v1.6.0+) ───────────────────────── */
+/* 11 in-presets + 11 matching out-presets = 22 keyframes. All use
+   transform (not layout properties) to keep CLS clean. Driven by
+   the wirekitAnimate Alpine helper or the .wk-animate-{name}-{in|out}
+   utility classes directly.
+
+   The global prefers-reduced-motion: reduce block at the bottom of
+   this file snaps animation-duration to 0.01ms — these keyframes
+   inherit that gate automatically.
+
+   Easing: most presets use --motion-wk-easing-out for natural
+   reveal; bounce/spring use --motion-wk-easing-spring for overshoot. */
+
+@keyframes wk-fade-in   { from { opacity: 0;   } to { opacity: 1;   } }
+@keyframes wk-fade-out  { from { opacity: 1;   } to { opacity: 0;   } }
+
+@keyframes wk-slide-up-in    { from { opacity: 0; transform: translateY(1rem);  } to { opacity: 1; transform: translateY(0); } }
+@keyframes wk-slide-up-out   { from { opacity: 1; transform: translateY(0);     } to { opacity: 0; transform: translateY(-1rem); } }
+@keyframes wk-slide-down-in  { from { opacity: 0; transform: translateY(-1rem); } to { opacity: 1; transform: translateY(0); } }
+@keyframes wk-slide-down-out { from { opacity: 1; transform: translateY(0);     } to { opacity: 0; transform: translateY(1rem); } }
+@keyframes wk-slide-left-in  { from { opacity: 0; transform: translateX(1rem);  } to { opacity: 1; transform: translateX(0); } }
+@keyframes wk-slide-left-out { from { opacity: 1; transform: translateX(0);     } to { opacity: 0; transform: translateX(-1rem); } }
+@keyframes wk-slide-right-in { from { opacity: 0; transform: translateX(-1rem); } to { opacity: 1; transform: translateX(0); } }
+@keyframes wk-slide-right-out{ from { opacity: 1; transform: translateX(0);     } to { opacity: 0; transform: translateX(1rem); } }
+
+@keyframes wk-scale-in  { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+@keyframes wk-scale-out { from { opacity: 1; transform: scale(1);    } to { opacity: 0; transform: scale(0.92); } }
+
+@keyframes wk-zoom-in   { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+@keyframes wk-zoom-out  { from { opacity: 1; transform: scale(1);   } to { opacity: 0; transform: scale(0.5); } }
+
+@keyframes wk-flip-in   { from { opacity: 0; transform: rotateY(-90deg); } to { opacity: 1; transform: rotateY(0); } }
+@keyframes wk-flip-out  { from { opacity: 1; transform: rotateY(0);     } to { opacity: 0; transform: rotateY(90deg); } }
+
+@keyframes wk-rotate-in  { from { opacity: 0; transform: rotate(-12deg) scale(0.9); } to { opacity: 1; transform: rotate(0) scale(1); } }
+@keyframes wk-rotate-out { from { opacity: 1; transform: rotate(0) scale(1);        } to { opacity: 0; transform: rotate(12deg) scale(0.9); } }
+
+@keyframes wk-bounce-in {
+    0%   { opacity: 0; transform: scale(0.3); }
+    50%  { opacity: 1; transform: scale(1.05); }
+    70%  {              transform: scale(0.9); }
+    100% {              transform: scale(1); }
+}
+@keyframes wk-bounce-out {
+    0%   {              transform: scale(1); }
+    20%  {              transform: scale(0.9); }
+    100% { opacity: 0; transform: scale(1.1); }
+}
+
+@keyframes wk-spring-in {
+    0%   { opacity: 0; transform: translateY(0.75rem) scale(0.95); }
+    60%  { opacity: 1; transform: translateY(-0.25rem) scale(1.02); }
+    100% {              transform: translateY(0) scale(1); }
+}
+@keyframes wk-spring-out {
+    0%   {              transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-0.5rem) scale(0.98); }
+}
+
+/* Utility classes — apply directly OR via the wirekitAnimate Alpine helper.
+   animation-fill-mode: both keeps the final state after the animation ends. */
+[class*='wk-animate-'] {
+    animation-duration: var(--motion-wk-duration-normal);
+    animation-timing-function: var(--motion-wk-easing-out);
+    animation-fill-mode: both;
+}
+
+.wk-animate-fade-in        { animation-name: wk-fade-in; }
+.wk-animate-fade-out       { animation-name: wk-fade-out; }
+.wk-animate-slide-up-in    { animation-name: wk-slide-up-in; }
+.wk-animate-slide-up-out   { animation-name: wk-slide-up-out; }
+.wk-animate-slide-down-in  { animation-name: wk-slide-down-in; }
+.wk-animate-slide-down-out { animation-name: wk-slide-down-out; }
+.wk-animate-slide-left-in  { animation-name: wk-slide-left-in; }
+.wk-animate-slide-left-out { animation-name: wk-slide-left-out; }
+.wk-animate-slide-right-in { animation-name: wk-slide-right-in; }
+.wk-animate-slide-right-out{ animation-name: wk-slide-right-out; }
+.wk-animate-scale-in       { animation-name: wk-scale-in; }
+.wk-animate-scale-out      { animation-name: wk-scale-out; }
+.wk-animate-zoom-in        { animation-name: wk-zoom-in; }
+.wk-animate-zoom-out       { animation-name: wk-zoom-out; }
+.wk-animate-flip-in        { animation-name: wk-flip-in; animation-timing-function: var(--motion-wk-easing-spring); }
+.wk-animate-flip-out       { animation-name: wk-flip-out; animation-timing-function: var(--motion-wk-easing-spring); }
+.wk-animate-rotate-in      { animation-name: wk-rotate-in; animation-timing-function: var(--motion-wk-easing-spring); }
+.wk-animate-rotate-out     { animation-name: wk-rotate-out; animation-timing-function: var(--motion-wk-easing-spring); }
+.wk-animate-bounce-in      { animation-name: wk-bounce-in; animation-timing-function: var(--motion-wk-easing-spring); animation-duration: var(--motion-wk-duration-slow); }
+.wk-animate-bounce-out     { animation-name: wk-bounce-out; animation-timing-function: var(--motion-wk-easing-in); }
+.wk-animate-spring-in      { animation-name: wk-spring-in; animation-timing-function: var(--motion-wk-easing-spring); animation-duration: var(--motion-wk-duration-slow); }
+.wk-animate-spring-out     { animation-name: wk-spring-out; animation-timing-function: var(--motion-wk-easing-in); }
+
+/* Duration modifiers — pair with any wk-animate-* class to override default. */
+.wk-animate-fast   { animation-duration: var(--motion-wk-duration-fast); }
+.wk-animate-normal { animation-duration: var(--motion-wk-duration-normal); }
+.wk-animate-slow   { animation-duration: var(--motion-wk-duration-slow); }
 
 @keyframes wk-progress-circle-spin {
     0% { transform: rotate(0deg); }

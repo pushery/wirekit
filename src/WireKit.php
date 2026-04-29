@@ -178,4 +178,39 @@ class WireKit
         static::$scoped = [];
         static::$personalizations = [];
     }
+
+    /**
+     * Resolves the `animateIn` prop on marketing components into an x-data
+     * attribute string for the wirekitAnimate Alpine helper, or null when
+     * the prop is unset (default — no animation, byte-identical to v1.5.0).
+     *
+     * Accepts both base names (`fade` → `fade-in`) and full preset names
+     * (`fade-in`, `slide-up-in`, etc). Unknown values throw via validateProp
+     * in debug mode, fall back to the first allowed in production.
+     */
+    public static function resolveAnimateIn(?string $value, string $component): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $bases = ['fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right',
+            'scale', 'zoom', 'flip', 'rotate', 'bounce', 'spring'];
+
+        // Auto-suffix base names so consumers can write `animateIn="fade"`.
+        if (in_array($value, $bases, true)) {
+            $value = $value.'-in';
+        }
+
+        $allowed = array_merge(
+            array_map(fn ($p) => $p.'-in', $bases),
+            array_map(fn ($p) => $p.'-out', $bases)
+        );
+
+        $validated = in_array($value, $allowed, true)
+            ? $value
+            : self::validateProp($component, 'animateIn', $value, $allowed);
+
+        return sprintf('x-data="wirekitAnimate(\'%s\')"', $validated);
+    }
 }

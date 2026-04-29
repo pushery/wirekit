@@ -3,11 +3,15 @@
     'title' => null,
     'dismissible' => false,
     'icon' => true,
+    // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
+    'animateIn' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    $animateAttr = WireKit::resolveAnimateIn($animateIn, 'alert');
 
     // Base classes: flex layout with icon + content columns, tinted background via color-mix
     $baseClasses = WireKit::resolveClasses('alert', 'base', implode(' ', [
@@ -76,10 +80,14 @@
 
 <div
     @if($dismissible)
-        {{-- No x-cloak: starts visible (shown: true), only hides on user dismiss --}}
+        {{-- No x-cloak: starts visible (shown: true), only hides on user dismiss.
+             animateIn is silently skipped on dismissible alerts to avoid
+             double-x-data conflicts; wrap in <x-wirekit::reveal> instead. --}}
         x-data="{ shown: true }"
         x-show="shown"
         x-transition.opacity
+    @elseif($animateAttr)
+        {!! $animateAttr !!}
     @endif
     role="{{ $role }}"
     {{ $attributes->class([$baseClasses, $variantColors['border'], $variantColors['bg']]) }}

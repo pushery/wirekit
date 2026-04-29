@@ -7,11 +7,15 @@
     // non-balanced layout this prop throws via validateProp (debug) or is
     // silently ignored (production).
     'asideWidth' => null,
+    // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
+    'animateIn' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    $animateAttr = WireKit::resolveAnimateIn($animateIn, 'hero');
 
     // Hero — landing page hero section with title, lede, actions, and optional aside.
     $classes = WireKit::resolveClasses('hero', 'base', implode(' ', [
@@ -88,7 +92,7 @@
     $gradientClasses = $gradient ? 'bg-gradient-to-br from-transparent to-black/10' : '';
 @endphp
 
-<section {{ $attributes->class([$classes, $variantClasses]) }}>
+<section {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     @if($gradient)
         <div class="absolute inset-0 {{ $gradientClasses }}" aria-hidden="true"></div>
     @endif

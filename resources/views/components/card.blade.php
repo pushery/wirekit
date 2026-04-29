@@ -2,11 +2,16 @@
     'variant' => config('wirekit.components.card.variant', 'outlined'),
     'as' => 'div',
     'href' => null,
+    // Optional reveal animation when card scrolls into view. One of 11 base presets
+    // (or any -in / -out variant). Null = no animation (default, v1.5.0-identical).
+    'animateIn' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    $animateAttr = WireKit::resolveAnimateIn($animateIn, 'card');
 
     // Base classes: radius, overflow, transition for interactive cards
     $baseClasses = WireKit::resolveClasses('card', 'base', implode(' ', [
@@ -58,6 +63,7 @@
 <{{ $tag }}
     data-wk-card
     @if($href) href="{{ $href }}" @endif
+    @if($animateAttr) {!! $animateAttr !!} @endif
     {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$baseClasses, $variantClasses, $interactiveClasses]) }}
 >
     {{ $slot }}

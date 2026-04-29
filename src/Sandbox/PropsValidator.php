@@ -63,6 +63,16 @@ final class PropsValidator
             $value = $payload[$name];
             $expectedType = (string) ($spec['type'] ?? 'string');
 
+            // Coerce HTML-form-derived strings into their declared scalar
+            // types BEFORE the strict type check. Docs-app Sandbox `<select>`
+            // / `<input type="number">` / `<input type="checkbox">` all send
+            // string values over POST; without coercion, schemas with
+            // `type: int` (e.g. heading.level) reject every form submission
+            // with "expected int, got string". Coercion is conservative —
+            // only fires when the declared type unambiguously implies the
+            // target shape AND the input matches that shape.
+            $value = self::coerceScalar($value, $expectedType);
+
             if (! self::typeMatches($value, $expectedType)) {
                 $violations[] = "prop '{$name}' expected {$expectedType}, got ".gettype($value);
 
@@ -95,6 +105,40 @@ final class PropsValidator
             'array' => is_array($value),
             'mixed' => true,
             default => false,
+        };
+    }
+
+    /**
+     * Conservative scalar coercion for HTML-form-derived input.
+     *
+     * Coerces ONLY when the value is a string that unambiguously matches
+     * the declared target shape:
+     *   - 'int':   /^-?\d+$/ → (int) cast
+     *   - 'float': numeric (PHP's is_numeric) → (float) cast
+     *   - 'bool':  exact 'true' / 'false' / '1' / '0' / 'on' → bool cast
+     *
+     * Anything else passes through unchanged so the strict type check that
+     * follows still catches genuine mismatches (e.g. `body: 42` against
+     * `type: string` — value is int, doesn't match the coercion shape, falls
+     * through to the type check which then rejects). Direct-PHP callers
+     * sending properly-typed values are unaffected (the value is already
+     * the right type, coercion is a no-op).
+     */
+    private static function coerceScalar(mixed $value, string $expectedType): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        return match ($expectedType) {
+            'int' => preg_match('/^-?\d+$/', $value) === 1 ? (int) $value : $value,
+            'float' => is_numeric($value) ? (float) $value : $value,
+            'bool' => match (strtolower($value)) {
+                'true', '1', 'on' => true,
+                'false', '0', 'off', '' => false,
+                default => $value,
+            },
+            default => $value,
         };
     }
 
