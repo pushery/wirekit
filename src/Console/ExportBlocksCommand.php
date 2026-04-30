@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 
 /**
  * emit a `/blocks.json` machine-readable manifest of every
- * layout + blueprint with its frontmatter metadata. Consumed by the docs-app's
+ * layout + blueprint with its frontmatter metadata. Consumed by the docs site's
  * `/blocks` gallery UI for filterable browsing.
  *
  * Output shape:
@@ -126,7 +126,7 @@ class ExportBlocksCommand extends Command
                 'dependencies' => $frontmatter['dependencies'] ?? [],
                 'responsive' => $frontmatter['responsive'] ?? null,
                 'dark_compatible' => $frontmatter['dark_compatible'] ?? null,
-                // Surfaced so the docs-app can filter the gallery by per-request
+                // Surfaced so the docs site can filter the gallery by per-request
                 // session tier (guest sessions never see admin-only blocks).
                 'visibility' => $frontmatter['visibility'] ?? 'guest',
                 'draft' => $frontmatter['draft'] ?? false,

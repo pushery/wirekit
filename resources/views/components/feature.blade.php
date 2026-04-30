@@ -43,8 +43,8 @@
 
     // Size map → [chipDimensionClasses, iconSizeProp].
     // The icon size prop replaces the icon's default h-5 w-5 cleanly.
-    // xl is for hero-row features (64×64 chip, 32×32 icon) per the briefing's
-    // proposed scale; sm covers dense feature lists; md is the historical default.
+    // xl is for hero-row features (64×64 chip, 32×32 icon); sm covers dense
+    // feature lists; md is the historical default.
     $sizeMap = [
         'sm' => ['w-8 h-8 rounded-[var(--radius-wk-sm)]', 'sm'],
         'md' => ['w-10 h-10 rounded-[var(--radius-wk-md)]', 'md'],

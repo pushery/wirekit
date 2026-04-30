@@ -11,9 +11,33 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.6.1] — 2026-04-30
+
+Patch release covering five consumer-visible fixes plus a README restructure and badge expansion. No new API surface; no breaking changes; every component renders byte-identical to v1.6.0 unless its specific bug applied.
+
+### Fixed
+
+- **`prefers-reduced-motion: reduce` now actually honored on `<x-wirekit::reveal>` and `wk-animate-*` utilities (WCAG 2.3.3).** The component documentation and helper docblock claimed the OS-level reduced-motion preference was respected, but the global `@media (prefers-reduced-motion: reduce)` block in `dist/wirekit.css` only gated `[x-transition]` selectors — the 22 keyframe animations driving every preset ran at full speed regardless of user preference. The block now gates `[class*='wk-animate-']` as well, snapping `animation-duration` to `0.01ms` so reduced-motion users see an instant snap-to-final state. Behavior now matches the documented contract.
+
+- **Nested `<x-wirekit::list>` margins no longer accumulate inside typography wrappers.** When the component is rendered inside a consumer's `.prose` / `.docs-prose` / `@tailwindcss/typography` context, the wrapper's `<ol>` / `<ul>` / `<li>` rules injected `margin: 1em 0` onto every level — and the previous Tailwind-utility approach was too low-specificity to win the cascade. Nested lists looked progressively more spaced out at deeper levels regardless of the `spacing` prop. The component now ships with a `wk-list` marker class plus dedicated `wk-list-spacing-{none,sm,md}` rules in `dist/wirekit.css` whose doubled-class selectors win on specificity alone (no `!important`, so consumers can still override with even-higher-specificity rules when they explicitly need to). The `spacing` prop is now the single source of truth for inter-item vertical rhythm at every nesting depth.
+
+- **`bounce` and `spring` reveal presets — final state no longer fades back to invisible.** The `wk-bounce-in` and `wk-spring-in` keyframes declared `opacity: 1` only at the 50% / 60% peaks; the 70% and 100% frames left opacity unspecified. With `animation-fill-mode: both`, some browser implementations held opacity at 1 from the last specified frame, but others interpolated back toward the underlying inline `opacity: 0` after the animation settled — the element became visible briefly, then vanished. All four `bounce` / `spring` keyframe blocks now declare `opacity` at every frame, so the final-state behavior is browser-independent.
+
+- **Source-file comment cleanup.** PHP, Blade, and Alpine JS files in `src/`, `resources/views/`, and `resources/js/` no longer carry internal-only project terminology in their inline comments and strings. Consumer-facing source now uses consistent product-public language throughout. No functional changes to any component, command, or helper.
+
+- **`wirekit:generate-changelogs` sanitizer — broader pattern coverage.** The codegen's commit-subject sanitizer (`GenerateChangelogsCommand::sanitizeSubject()`) now strips a wider set of internal-only phrasing before writing per-component changelog entries, plus a verb-prefix early-return that drops bullets which would otherwise reduce to bare verb stubs (`fix:`, `security:`, etc.). See the method docblock for the exhaustive pattern list.
+
+### Changed
+
+- **`README.md` restructured from a comprehensive standalone reference to a concise getting-started overview.** Installation walkthrough, Quick Start example, and the browser-support table are retained on the GitHub landing page; extended component tables and the customisation reference now live at docs.wirekit.app where they're searchable and link-rich. Net effect: the README acts as a 30-second "what is this and how do I install it" landing page; docs.wirekit.app remains the authoritative reference for everything else.
+
+- **`README.md` badge row expanded from 3 to 11 badges across two visual rows.** Row 1 (project status): Packagist version, Total Downloads, GitHub Actions test status, MIT licence, GitHub Stars, component count. Row 2 (stack): PHP ≥ 8.4, Laravel 12+, Livewire 4+, Tailwind CSS v4, Alpine.js. The CI badge in particular gives evaluators an at-a-glance signal that the build is green on `main`. Component-count badge auto-validates against `ComponentRegistry` via a Pest sync guard so the displayed number can never drift from the actual registry size.
+
+---
+
 ## [1.6.0] — 2026-04-29
 
-Minor release covering a downstream field-test brief, the brief's deferred extensions, and a unified motion subsystem. Twelve chunks shipped together so the topic — fonts, doctor diagnostics, stat description options, and a real animation system — can be closed in one release. No breaking changes; every new flag, prop, opt-in surface defaults to off so v1.5.0 consumers see byte-identical output.
+Minor release covering font-installation flags, doctor-command token diagnostics, three new opt-in props on `<x-wirekit::stat>`, a complete motion subsystem with the new `<x-wirekit::reveal>` component, and supporting CLI helpers. No breaking changes; every new flag, prop, and opt-in surface defaults to off so v1.5.0 consumers see byte-identical output.
 
 ### Added
 
@@ -51,7 +75,7 @@ Minor release covering a downstream field-test brief, the brief's deferred exten
 
 - **`docs/cli.md`** documents all new install flags + the interactive mode + the new doctor token-alignment section + a cross-link to the dedicated `wirekit:doctor` reference page.
 
-- **`docs/animations.md` interactive preset gallery** — fifteen click-triggered preview blocks covering all eleven `<x-wirekit::reveal>` presets (fade, slide-up, slide-down, slide-left, slide-right, scale, zoom, flip, rotate, bounce, spring) plus a duration comparison row (fast / normal / slow). Each block uses `trigger="click"` so the animation re-fires on demand instead of waiting for scroll-into-view. Reduced-motion users see the final state immediately.
+- **`docs/animations.md` interactive preset gallery** — fourteen toggle-button preview blocks covering all eleven `<x-wirekit::reveal>` presets (fade, slide-up, slide-down, slide-left, slide-right, scale, zoom, flip, rotate, bounce, spring) plus a duration comparison row (fast / normal / slow). Each block has a button that toggles between the `-in` and `-out` variants on successive clicks; clicks during an animation are ignored until `animationend` fires. Reduced-motion users see the final state immediately.
 
 - **`docs/dependencies.md` bundle sizes refreshed** to reflect the v1.6.0 additions: full bundle now ~23 KB gzip (78 KB raw, +`wirekitAnimate` Alpine helper), core unchanged at ~2 KB gzip (8 KB raw), ESM ~23 KB gzip (76 KB raw). Verified via `gzip -c | wc -c`.
 
@@ -69,7 +93,7 @@ Minor release covering a downstream field-test brief, the brief's deferred exten
 
 ## [1.5.0] — 2026-04-28
 
-Minor release covering a consumer-polish wave from real-world field-testing on a downstream landing-page build. Eight items in scope: a code-block screen-reader announcement fix, a `wirekit:doctor` post-build CSS sanity check, a hero-row `xl` size on `<x-wirekit::feature>`, a counter-animation `animate` prop on `<x-wirekit::stat>`, an `asideWidth` ratio refinement on `<x-wirekit::hero>`, eight new marketing-copy semantic aliases on `heroicons-marketing`, plus the syntax-highlighter contract documented in `docs/theming.md`.
+Minor release with eight consumer-facing improvements: a code-block screen-reader announcement fix, a `wirekit:doctor` post-build CSS sanity check, a hero-row `xl` size on `<x-wirekit::feature>`, a counter-animation `animate` prop on `<x-wirekit::stat>`, an `asideWidth` ratio refinement on `<x-wirekit::hero>`, eight new marketing-copy semantic aliases on `heroicons-marketing`, plus the syntax-highlighter contract documented in `docs/theming.md`.
 
 No breaking changes — fully backward-compatible with v1.4.0.
 

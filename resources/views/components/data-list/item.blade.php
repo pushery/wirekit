@@ -7,8 +7,9 @@
     use Pushery\WireKit\WireKit;
 
     // Each item is a <dt>/<dd> pair displayed side-by-side.
-    // Uses inline styles for layout to guarantee rendering in docs-app
-    // where Tailwind JIT may not compile sm: responsive classes.
+    // Uses inline styles for layout to guarantee rendering on
+    // docs.wirekit.app where Tailwind JIT may not compile sm: responsive
+    // classes.
     $itemClasses = WireKit::resolveClasses('data-list', 'item', implode(' ', [
         'py-[var(--padding-wk-y-sm)]',
     ]), $scope);

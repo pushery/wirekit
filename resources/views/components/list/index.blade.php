@@ -28,10 +28,14 @@
         ]),
     };
 
+    // wk-list-spacing-{sm|md|none} pairs with the CSS rules in wirekit.css
+    // that use `!important` to win over consumer typography wrappers
+    // (`.prose`, `.docs-prose`, etc.) which otherwise inject vertical
+    // margin into <ol>/<ul>/<li> and compound across nesting depth.
     $spacingClasses = match ($spacing) {
-        'none' => 'space-y-0',
-        'sm' => 'space-y-1',
-        'md' => 'space-y-2',
+        'none' => 'wk-list-spacing-none',
+        'sm' => 'wk-list-spacing-sm',
+        'md' => 'wk-list-spacing-md',
         default => WireKit::validateProp('list', 'spacing', $spacing, ['none', 'sm', 'md']),
     };
 
@@ -40,6 +44,11 @@
         'text-[var(--color-wk-text)]',
         'text-[length:var(--text-wk-md)]',
         'tracking-[var(--font-wk-letter-spacing)]',
+        // `wk-list` is the marker class that the wirekit.css override
+        // rules target. Resets browser-default + consumer typography
+        // margins on <ol>/<ul>/<li> so the spacing prop is the single
+        // source of truth for inter-item vertical rhythm at every depth.
+        'wk-list',
         $type !== 'none' ? 'pl-[var(--space-wk-lg,1.5rem)]' : '',
         $typeClasses,
         $spacingClasses,
