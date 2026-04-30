@@ -11,6 +11,22 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [1.6.2] — 2026-04-30
+
+Patch release covering three small surface-polish fixes spotted in the v1.6.1 README + docs walk. No new API surface; no breaking changes; every component renders byte-identical to v1.6.1.
+
+### Changed
+
+- **`README.md` — removed the "Tests" CI badge.** The badge URL pointed at `pushery/wirekit/actions/workflows/tests.yml`, but the public Packagist repo doesn't carry the test suite (`tests/` is `export-ignore` in `.gitattributes`), so the badge image returned 404 and rendered as broken on every README view. The actual test suite (1686 tests, all green) runs on the development repo. The badge will return in a future release once a public-facing CI surface exists; for now, removing the broken image is the honest choice.
+
+### Fixed
+
+- **`<x-wirekit::code-block>` copy-button cursor.** The toolbar copy button rendered without a `cursor: pointer` on hover, leaving keyboard / mouse users unsure whether it was clickable. Added `cursor-pointer` to the button class — hover state now signals interactivity unambiguously, matching every other interactive control in WireKit.
+
+- **`docs/cli/wirekit-doctor.md` — "Common failures and fixes" section restructured.** The four subsection headings previously embedded the literal doctor command output (with `⚠` / `i` glyphs and inline-code backticks at H3 size), which rendered awkwardly on docs.wirekit.app — small icons forced to heading scale, monospace at heading weight. Each subsection now uses a descriptive title (e.g. "Sans font mismatch") and quotes the exact doctor line in a `text` code block in the body. Reads cleanly at every viewport.
+
+---
+
 ## [1.6.1] — 2026-04-30
 
 Patch release covering five consumer-visible fixes plus a README restructure and badge expansion. No new API surface; no breaking changes; every component renders byte-identical to v1.6.0 unless its specific bug applied.
