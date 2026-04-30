@@ -6,7 +6,6 @@
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/pushery/wirekit.svg)](https://packagist.org/packages/pushery/wirekit)
 [![Total Downloads](https://img.shields.io/packagist/dt/pushery/wirekit.svg)](https://packagist.org/packages/pushery/wirekit)
-[![Tests](https://github.com/pushery/wirekit/actions/workflows/tests.yml/badge.svg)](https://github.com/pushery/wirekit/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/pushery/wirekit?style=flat&logo=github)](https://github.com/pushery/wirekit/stargazers)
 [![Components](https://img.shields.io/badge/components-110-5046e5)](https://docs.wirekit.app/components)

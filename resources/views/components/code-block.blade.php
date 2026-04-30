@@ -69,7 +69,7 @@
                                 setTimeout(() => { srMessage = ''; }, 2000);
                             });
                     "
-                    class="text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)] transition-colors p-1"
+                    class="cursor-pointer text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)] transition-colors p-1"
                     aria-label="Copy to clipboard"
                     :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
                 >
