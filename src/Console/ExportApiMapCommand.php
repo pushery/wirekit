@@ -265,7 +265,6 @@ class ExportApiMapCommand extends Command
             'wirekit:export-json',
             'wirekit:export-api-map',
             'wirekit:cursor-rules',
-            'wirekit:generate-changelogs',
         ];
         $items = array_map(fn (string $c): array => [
             'id' => $c,

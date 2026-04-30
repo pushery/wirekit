@@ -58,7 +58,6 @@ class WireKitServiceProvider extends ServiceProvider
                 ExportApiMapCommand::class,
                 ExportBlocksCommand::class,
                 ExportJsonCommand::class,
-                GenerateChangelogsCommand::class,
                 GlassInstallCommand::class,
                 InstallCommand::class,
                 ListComponentsCommand::class,
@@ -68,6 +67,14 @@ class WireKitServiceProvider extends ServiceProvider
                 ThemeCommand::class,
                 VerifyInstallationCommand::class,
             ]);
+
+            // Maintainer-only command — the source file is `export-ignore`d
+            // from the public Packagist artifact, so this class only exists
+            // in the development environment. class_exists() makes the
+            // registration a silent no-op for public installs.
+            if (class_exists(GenerateChangelogsCommand::class)) {
+                $this->commands([GenerateChangelogsCommand::class]);
+            }
 
             $this->publishes([
                 __DIR__.'/../config/wirekit.php' => config_path('wirekit.php'),

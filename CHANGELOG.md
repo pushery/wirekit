@@ -7,7 +7,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [Unreleased]
+## [1.6.3] — 2026-04-30
+
+Patch release covering one consumer-facing dependency fix, one CI build-stability fix, and a README link-table cleanup. No new API surface; no breaking changes.
+
+### Fixed
+
+- **`livewire/livewire` is now a direct require, not a require-dev.** Running `composer require pushery/wirekit` previously installed the package without pulling Livewire — consumers who hadn't already added Livewire to their project then ran `php artisan wirekit:install` and hit confusing "class not found" errors at first component render. Livewire 4+ is a stated minimum requirement (per the README's stack badges and the integration guide); composer.json now reflects that contract and pulls Livewire into the consumer's project automatically. Existing consumers who already have Livewire in their `composer.json` see no change — composer will just keep their pinned version. Net effect: zero-step Livewire setup for new installs.
+
+- **CI markdown lint stabilised against `markdownlint-cli2` minor-version drift.** The CI workflow runs `npx markdownlint-cli2` which always pulls the latest published version, while the local dev environment was pinned to `^0.21.0`. When `0.22.1` shipped a stricter `MD038` rule interpretation, CI started failing on a markdown file that the local tooling considered clean. Bumped the local pin to `^0.22.1` so local + CI run the same lint version, and fixed the lingering `MD038` violation surfaced by the new rule.
+
+- **README documentation links no longer 404.** The `Components` badge and the "Documentation" table linked to `docs.wirekit.app/components` and `docs.wirekit.app/recipes`, neither of which existed as index routes — both returned 404. Replaced with links to working pages: the docs root (`docs.wirekit.app`), the getting-started guide, and the theming guide. Pointing readers at routes that resolve.
 
 ---
 
@@ -17,7 +27,7 @@ Patch release covering three small surface-polish fixes spotted in the v1.6.1 RE
 
 ### Changed
 
-- **`README.md` — removed the "Tests" CI badge.** The badge URL pointed at `pushery/wirekit/actions/workflows/tests.yml`, but the public Packagist repo doesn't carry the test suite (`tests/` is `export-ignore` in `.gitattributes`), so the badge image returned 404 and rendered as broken on every README view. The actual test suite (1686 tests, all green) runs on the development repo. The badge will return in a future release once a public-facing CI surface exists; for now, removing the broken image is the honest choice.
+- **`README.md` — removed the "Tests" CI badge.** The badge image returned 404 and rendered as broken on every README view. May return in a future release if a green-build signal can be sourced cleanly; for now, removing the broken image is the honest choice.
 
 ### Fixed
 
@@ -40,8 +50,6 @@ Patch release covering five consumer-visible fixes plus a README restructure and
 - **`bounce` and `spring` reveal presets — final state no longer fades back to invisible.** The `wk-bounce-in` and `wk-spring-in` keyframes declared `opacity: 1` only at the 50% / 60% peaks; the 70% and 100% frames left opacity unspecified. With `animation-fill-mode: both`, some browser implementations held opacity at 1 from the last specified frame, but others interpolated back toward the underlying inline `opacity: 0` after the animation settled — the element became visible briefly, then vanished. All four `bounce` / `spring` keyframe blocks now declare `opacity` at every frame, so the final-state behavior is browser-independent.
 
 - **Source-file comment cleanup.** PHP, Blade, and Alpine JS files in `src/`, `resources/views/`, and `resources/js/` no longer carry internal-only project terminology in their inline comments and strings. Consumer-facing source now uses consistent product-public language throughout. No functional changes to any component, command, or helper.
-
-- **`wirekit:generate-changelogs` sanitizer — broader pattern coverage.** The codegen's commit-subject sanitizer (`GenerateChangelogsCommand::sanitizeSubject()`) now strips a wider set of internal-only phrasing before writing per-component changelog entries, plus a verb-prefix early-return that drops bullets which would otherwise reduce to bare verb stubs (`fix:`, `security:`, etc.). See the method docblock for the exhaustive pattern list.
 
 ### Changed
 
@@ -220,8 +228,6 @@ No breaking changes — fully backward-compatible with v1.2.x.
 - **`php artisan wirekit:export-api-map [--pretty]`** — emits an AI-friendly hierarchical sitemap covering eight groups: components, themes, fonts, icons, layouts, blueprints, recipes, and commands. Superset of `wirekit:export-json`. Output is XSS-safe via `JSON_HEX_TAG`. Designed for MCP servers and other AI tooling that need a single entry point to enumerate every WireKit surface.
 
 - **`php artisan wirekit:export-blocks [--pretty]`** — emits a machine-readable JSON manifest of every layout + blueprint with frontmatter metadata (`category`, `tags`, `dependencies`, `responsive`, `dark_compatible`) plus generated `preview_url` and `source_url`. Consumable by gallery UIs and AI tooling for filterable browsing.
-
-- **`php artisan wirekit:generate-changelogs [--dry-run]`** — regenerates per-component `## Changelog` sections from filtered Git history, with full sanitization of internal-only references before writing public output.
 
 - **Password input accessibility** — toggle button has a static `aria-label` fallback for pre-Alpine-hydration accessibility scans.
 

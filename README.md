@@ -8,7 +8,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/pushery/wirekit.svg)](https://packagist.org/packages/pushery/wirekit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/pushery/wirekit?style=flat&logo=github)](https://github.com/pushery/wirekit/stargazers)
-[![Components](https://img.shields.io/badge/components-110-5046e5)](https://docs.wirekit.app/components)
+[![Components](https://img.shields.io/badge/components-110-5046e5)](https://docs.wirekit.app)
 
 [![PHP ≥ 8.4](https://img.shields.io/packagist/dependency-v/pushery/wirekit/php?logo=php&logoColor=white&color=777BB4&label=PHP)](https://www.php.net)
 [![Laravel 12+](https://img.shields.io/badge/Laravel-12+-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
@@ -90,7 +90,7 @@ Full setup walkthrough: **[Getting Started](https://docs.wirekit.app/getting-sta
 
 ## What's Included
 
-110 components organised into 11 categories. Browse, search, and try every component live on **[docs.wirekit.app/components](https://docs.wirekit.app/components)**.
+110 components organised into 11 categories. Browse, search, and try every component live on **[docs.wirekit.app](https://docs.wirekit.app)**.
 
 | Category | Examples |
 |----------|----------|
@@ -133,8 +133,8 @@ WireKit ships with a **4-level customization system** — from CSS-variable them
 | Resource | Where |
 |----------|-------|
 | Full documentation | [docs.wirekit.app](https://docs.wirekit.app) |
-| Component reference | [docs.wirekit.app/components](https://docs.wirekit.app/components) |
-| Recipes & blueprints | [docs.wirekit.app/recipes](https://docs.wirekit.app/recipes) |
+| Getting started | [docs.wirekit.app/getting-started](https://docs.wirekit.app/getting-started) |
+| Theming | [docs.wirekit.app/theming](https://docs.wirekit.app/theming) |
 | CLI reference | [docs.wirekit.app/cli](https://docs.wirekit.app/cli) |
 | Contribution guide | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Release history | [CHANGELOG.md](CHANGELOG.md) |
