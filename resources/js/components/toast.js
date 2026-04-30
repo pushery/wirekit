@@ -31,7 +31,7 @@ export default function wirekitToast(config = {}) {
             // only events whose dispatching element matches `closest(scope)`
             // are handled — useful for "per-section toast surfaces" where
             // multiple toast regions share the same event name but each
-            // owns a portion of the DOM tree (e.g. the docs-app live-preview
+            // owns a portion of the DOM tree (e.g. an embedded live-preview
             // pattern, or a real app with per-card local toast queues).
             //
             // Falsy / missing → no containment filter, every dispatched

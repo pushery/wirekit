@@ -339,6 +339,84 @@ class GenerateChangelogsCommand extends Command
             // Cross-repo automation-actor mentions. `docs[-]agent` matches
             // the same string but defeats literal-substring grep.
             '~\s*\b(?:wirekit-docs\s+agent|docs[-]agent|agent)\b~i',
+            // Lowercase 'chunks N, M, P' enumerations — internal Plan/Chunk
+            // bookkeeping in commit subjects that escapes the singular-form
+            // pattern above. Catches 'chunks 2,5,6,7' / 'chunk 1, 3, 4'.
+            '~\s*\bchunks?\s+\d+(?:\s*,\s*\d+){1,}~i',
+            // Internal vendor↔consumer split scopes (e.g.
+            // `fix(vendor-side-workarounds): …`). Strip the parenthetical
+            // scope and any bare compound form in the subject body.
+            '~\s*\(vendor-side[-]\w+(?:[-]\w+)*\)~i',
+            '~\s*\bvendor-side[-]\w+(?:[-]\w+)*\b~i',
+            // Bookkeeping-style compound idioms — 'ship N source-fixes
+            // (chunks A,B,C)' / 'confirm N already-clean (A,B,C)' /
+            // 'acknowledge N keep-as-exception (A,B,C)'. Strip each whole
+            // compound greedily UP TO AND INCLUDING the optional '+ '
+            // connector that follows, so empty parens / orphan number
+            // lists / orphan '+' connectors never linger as residue.
+            '~\s*\bship\s+\d+\s+source[- ]fixes?\b[^+]*(?:\+\s*)?~i',
+            '~\s*\bconfirm\s+\d+\s+already[- ]clean\b[^+]*(?:\+\s*)?~i',
+            '~\s*\backnowledge\s+\d+\s+keep[- ]as[- ]exception\b[^+]*(?:\+\s*)?~i',
+            // Defensive fallbacks if the compound idiom appears in a
+            // different surrounding shape (defense in depth).
+            '~\s*\bsource-fixes?\b~i',
+            '~\s*\balready-clean\b~i',
+            '~\s*\bkeep-as-exception\b~i',
+            // Orphan empty parens '()' and pure-number paren lists
+            // '(1,3,4)' that may remain after the strips above.
+            '~\s*\(\s*\)~',
+            '~\s*\(\s*\d+(?:\s*,\s*\d+)*\s*\)~',
+            // Orphan '+' connectors that linger when both sides got
+            // stripped. Require whitespace on BOTH sides AND another
+            // orphan '+' or end-of-string in lookahead — avoids
+            // false-positives on adjacent literal '+' chars (e.g.
+            // a commit subject quoting "++8.4%" must keep both '+'s).
+            '~\s+\+(?=\s+\+|\s*$)~',
+            // Briefing-system / field-testing idioms. The briefing system
+            // is internal cross-repo communication; 'field-test brief' /
+            // 'consumer-polish wave' / 'downstream landing-page rebuild'
+            // betray the agent-driven development workflow.
+            '~\s*\bbriefing\b[\w\s-]*~i',
+            '~\s*\bconsumer-polish\s+wave\b~i',
+            '~\s*\bfield[- ]test(?:ing|ed|s)?\s+(?:brief|wave|window)?~i',
+            '~\s*\bclosing[- ]loop\s+ack\b~i',
+            // Internal codename for docs.wirekit.app.
+            '~\s*\bdocs-app\b~i',
+            // Internal scope name: '(public-surface)' as commit scope reveals
+            // the internal vendor↔consumer split language. Strip the parens
+            // form; bare 'public surface' as English prose is fine.
+            '~\s*\(public[- ]surface\)~i',
+            // Compound phrase patterns — strip the whole bookkeeping shape
+            // BEFORE narrow word-strips destroy the surrounding context.
+            // Order matters: most-specific compound first, narrow word-strip
+            // last as a defensive fallback.
+            //
+            // 'close N internal-jargon leaks' — verb + count + meta-internal
+            // compound + leaks-noun. Strip the whole shape AND the trailing
+            // ' + N enforcement layers' bookkeeping (greedy through the '+').
+            '~\s*\bclose\s+\d+\s+internal[- ]jargon(?:\s+leaks?)?(?:\s*\+\s*\d+\s+enforcement\s+layers?)?\b~i',
+            // 'remove ALL internal Plan/Chunk/ leaks from PUBLIC files' /
+            // similar phrasings — describes the bug-class being fixed but
+            // reveals the Plan/Chunk system itself. Strip whole body.
+            '~\s*\bremove\s+(?:ALL\s+)?internal\s+Plan/Chunk[/\s][^.]*~i',
+            '~\s*\bPlan/Chunk\b[/\s\w]*\bleaks?\b[^.]*~i',
+            '~\s*\bPlan/Chunk[/\s]+~i',
+            // Defensive fallbacks — narrower word-strips that catch any
+            // remnant after the compound strip above ran.
+            '~\s*\binternal[- ]jargon(?:\s+leaks?)?\b~i',
+            '~\s*\+?\s*\d+\s+enforcement\s+layers?\b~i',
+            '~\s*\bclose\s+\d+\s+\w+(?:[-]\w+)*\s+leaks?\b[^+.]*~i',
+            // Briefing-retrospective phrasing — 'brief from', 'downstream
+            // landing-page rebuild' / 'downstream brief'. Reads as "I'm
+            // writing about a meeting we had", not user-facing prose.
+            '~\s*\b(?:the\s+)?brief\s+from\b[\w\s-]*~i',
+            '~\s*\bdownstream\s+(?:brief|landing[- ]page|rebuild|build)\b[^.]*~i',
+            '~\s*\b(?:brief|briefing)\s+(?:flagged|reported|captured)\b[^.]*~i',
+            '~\s*\bcaught\s+at\s+user\s+QA\b~i',
+            // Internal version markers (e.g. 'post-1.5.0') used in headings
+            // / parentheticals to communicate "released after vX.Y.Z".
+            '~\s*\(\s*post-[1-9]\.\d+(?:\.\d+)?\s*\)~i',
+            '~\s*\bpost-[1-9]\.\d+(?:\.\d+)?\b~i',
         ];
 
         $clean = preg_replace($patterns, '', $subject);
@@ -356,6 +434,16 @@ class GenerateChangelogsCommand extends Command
         // class matches the whole codepoint atomically.
         $clean = preg_replace('/^((?:feat|fix|refactor|perf|a11y|security)(?:\([^)]+\))?):\s*[\x{2014}\x{2013}\-]\s*/u', '$1: ', (string) $clean);
         $clean = trim((string) $clean, " \t\n.,;:");
+
+        // If after every strip-pass the only thing left is a bare verb
+        // prefix ('fix', 'feat', 'refactor', 'perf', 'a11y', 'security')
+        // — optionally with a scope — treat the bullet as content-empty
+        // so the caller drops it. The original commit body was nothing
+        // BUT internal jargon; emitting `- fix` as the public-facing
+        // changelog line is worse than emitting nothing.
+        if (preg_match('~^(?:feat|fix|refactor|perf|a11y|security)(?:\s*\([^)]*\))?\s*:?\s*$~i', (string) $clean)) {
+            return '';
+        }
 
         return $clean;
     }

@@ -19,10 +19,10 @@
 
     // The wrapper supplies bg / border / radius. The inner <pre> + <code>
     // explicitly null those properties to neutralise generic prose
-    // stylesheets that target raw markdown code blocks (e.g. the docs-app's
-    // prose.css adds bg-white + radius + padding to every <pre>) — without
-    // this defence the consumer sees a white box nested inside our muted
-    // container.
+    // stylesheets that target raw markdown code blocks (e.g. a host
+    // prose.css that adds bg-white + radius + padding to every <pre>) —
+    // without this defence the consumer sees a white box nested inside
+    // our muted container.
     $preClasses = implode(' ', [
         'm-0 p-0',
         'bg-transparent border-0 rounded-none',

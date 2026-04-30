@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v1.6.0 — MIT License
+ * WireKit CSS v1.6.1 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -468,22 +468,22 @@
 @keyframes wk-bounce-in {
     0%   { opacity: 0; transform: scale(0.3); }
     50%  { opacity: 1; transform: scale(1.05); }
-    70%  {              transform: scale(0.9); }
-    100% {              transform: scale(1); }
+    70%  { opacity: 1; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
 }
 @keyframes wk-bounce-out {
-    0%   {              transform: scale(1); }
-    20%  {              transform: scale(0.9); }
+    0%   { opacity: 1; transform: scale(1); }
+    20%  { opacity: 1; transform: scale(0.9); }
     100% { opacity: 0; transform: scale(1.1); }
 }
 
 @keyframes wk-spring-in {
     0%   { opacity: 0; transform: translateY(0.75rem) scale(0.95); }
     60%  { opacity: 1; transform: translateY(-0.25rem) scale(1.02); }
-    100% {              transform: translateY(0) scale(1); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes wk-spring-out {
-    0%   {              transform: translateY(0) scale(1); }
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
     100% { opacity: 0; transform: translateY(-0.5rem) scale(0.98); }
 }
 
@@ -888,6 +888,32 @@
     --wk-image-compare-handle-size: 2.5rem;
 }
 
+/* List component — neutralize consumer typography wrappers (`.prose`,      */
+/* `.docs-prose`, `@tailwindcss/typography`) that would otherwise inject    */
+/* margin onto nested `<ol>`/`<ul>`/`<li>` and compound across depth.       */
+/*                                                                          */
+/* Specificity strategy (no `!important`): every rule selector starts with  */
+/* `.wk-list.wk-list` — class doubling is a valid CSS pattern that adds an  */
+/* extra class slot to the selector specificity (0,2,X instead of 0,1,X).   */
+/* Typical typography rules cap out at 0,1,1 (`.prose ol`, `.prose li`), so */
+/* 0,2,1 always wins on equal element specificity. Source order between us */
+/* and the consumer becomes irrelevant — specificity carries the decision. */
+/*                                                                          */
+/* Why doubling instead of `!important`: `!important` is a sledgehammer that*/
+/* the consumer can't override even when they explicitly need to (e.g.      */
+/* their own theming). Specificity is the right cascade tool here.          */
+.wk-list.wk-list,
+.wk-list.wk-list ol,
+.wk-list.wk-list ul {
+    margin-block: 0;
+}
+.wk-list.wk-list > li {
+    margin-block: 0;
+}
+.wk-list.wk-list-spacing-none > li + li { margin-top: 0; }
+.wk-list.wk-list-spacing-sm   > li + li { margin-top: 0.25rem; }
+.wk-list.wk-list-spacing-md   > li + li { margin-top: 0.5rem; }
+
 /* Accessibility: disable/shorten all WireKit animations & transitions for */
 /* users who request reduced motion (OS-level setting). Covers keyframe    */
 /* animations AND Alpine x-transition durations on WireKit components.     */
@@ -913,5 +939,13 @@
     [x-data*="wirekitImageCompare"],
     [x-data*="wirekitImageCompare"] * {
         transition: none !important;
+    }
+    /* wk-animate-* utility classes (driven by the wirekitAnimate Alpine    */
+    /* helper / <x-wirekit::reveal> wrapper). The 22 keyframe animations    */
+    /* keep their classes applied so the final-state is visible (animation- */
+    /* fill-mode: both), but duration collapses to 0.01ms so users with     */
+    /* prefers-reduced-motion see an instant snap-to-final, no motion.     */
+    [class*='wk-animate-'] {
+        animation-duration: 0.01ms !important;
     }
 }

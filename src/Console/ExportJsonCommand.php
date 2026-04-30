@@ -13,10 +13,10 @@ use Pushery\WireKit\ComponentRegistry;
  * Emits a machine-readable manifest of every WireKit component, including
  * category, description, props (parsed from @props([...]) blocks in the
  * Blade file), and slot names (parsed from $slot / @isset($slotName)
- * references). Designed to be consumed by the docs-app's
+ * references). Designed to be consumed by the docs site's
  * /components.json endpoint, AI tooling, and design-system audits.
  *
- * The docs-app's wrapper (BuildComponentsJsonCommand) calls us twice:
+ * The docs site's wrapper (BuildComponentsJsonCommand) calls us twice:
  * once with --pretty, once without. We support both by accepting --pretty
  * and pretty-printing whenever it's set; without the flag we emit
  * minified JSON. Either way: stdout-only, exit 0 on success, JSON
@@ -77,7 +77,7 @@ class ExportJsonCommand extends Command
             return self::FAILURE;
         }
 
-        // Write to stdout — the docs-app captures whatever we emit and
+        // Write to stdout — the docs site captures whatever we emit and
         // serves it from /components.json. Use $this->line() with empty
         // verbosity guard so the JSON stays the only thing on stdout.
         $this->output->write($json);

@@ -64,7 +64,7 @@ final class PropsValidator
             $expectedType = (string) ($spec['type'] ?? 'string');
 
             // Coerce HTML-form-derived strings into their declared scalar
-            // types BEFORE the strict type check. Docs-app Sandbox `<select>`
+            // types BEFORE the strict type check. Sandbox `<select>`
             // / `<input type="number">` / `<input type="checkbox">` all send
             // string values over POST; without coercion, schemas with
             // `type: int` (e.g. heading.level) reject every form submission
@@ -95,6 +95,7 @@ final class PropsValidator
         return new ValidationResult($clean, $violations);
     }
 
+    /** mixed: accepts any PHP value — the purpose of this method is to check that ANY value satisfies a named type spec. */
     private static function typeMatches(mixed $value, string $expected): bool
     {
         return match ($expected) {
@@ -145,6 +146,7 @@ final class PropsValidator
     /**
      * @param  array<int, string>  $violations
      */
+    /** mixed: recursively sanitizes any PHP value (string, bool, int, float, null, array). */
     private static function sanitize(mixed $value, string $propName, array &$violations, int $depth = 0): mixed
     {
         if ($depth > self::MAX_ARRAY_DEPTH) {
