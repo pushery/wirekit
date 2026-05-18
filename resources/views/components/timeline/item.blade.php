@@ -35,7 +35,7 @@
             aria-hidden="true"
         >
             @if($icon)
-                <x-wirekit::icon :name="$icon" size="xs" class="text-[var(--color-wk-accent-fg)]" />
+                <x-wirekit::icon :name="$icon" size="xs" class="text-[color:var(--color-wk-accent-fg)]" />
             @else
                 {{-- Default inner dot --}}
                 <div style="height: 0.5rem; width: 0.5rem; border-radius: 9999px; background: var(--color-wk-accent-fg);"></div>
@@ -64,19 +64,19 @@
          both cases cleanly. --}}
     <div data-wk-timeline-item-content>
         @if(isset($title))
-            <div class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">
+            <div class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
                 {{ $title }}
             </div>
         @endif
 
         @if($time)
-            <time class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">
+            <time class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
                 {{ $time }}
             </time>
         @endif
 
         @if($slot->isNotEmpty())
-            <div style="margin-top: 0.25rem;" class="text-[length:var(--text-wk-md)] text-[var(--color-wk-text)]">
+            <div style="margin-top: 0.25rem;" class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]">
                 {{ $slot }}
             </div>
         @endif

@@ -23,7 +23,7 @@
     $baseClasses = WireKit::resolveClasses('avatar', 'base', implode(' ', [
         'relative inline-flex items-center justify-center',
         'bg-[var(--color-wk-bg-muted)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'font-[family-name:var(--font-wk-sans)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'border-[length:var(--border-wk-width)]',
@@ -118,7 +118,7 @@
             @else
                 aria-hidden="true"
             @endif
-            class="w-3/5 h-3/5 text-[var(--color-wk-text-muted)]"
+            class="w-3/5 h-3/5 text-[color:var(--color-wk-text-muted)]"
             fill="currentColor"
             viewBox="0 0 24 24"
         >

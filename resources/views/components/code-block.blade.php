@@ -35,7 +35,7 @@
         'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',
         'text-[length:var(--text-wk-sm)]',
         'leading-relaxed',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]);
 @endphp
 
@@ -49,7 +49,7 @@
             @if($copy) x-data="{ copied: false, srMessage: '' }" @endif
         >
             @if($filename)
-                <span class="text-[length:var(--text-wk-xs,0.75rem)] text-[var(--color-wk-text-muted)] font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]">{{ $filename }}</span>
+                <span class="text-[length:var(--text-wk-xs,0.75rem)] text-[color:var(--color-wk-text-muted)] font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]">{{ $filename }}</span>
             @else
                 <span></span>
             @endif
@@ -69,7 +69,7 @@
                                 setTimeout(() => { srMessage = ''; }, 2000);
                             });
                     "
-                    class="cursor-pointer text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)] transition-colors p-1"
+                    class="cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors p-1"
                     aria-label="Copy to clipboard"
                     :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
                 >
@@ -79,7 +79,7 @@
                         </svg>
                     </template>
                     <template x-if="copied">
-                        <svg class="h-4 w-4 text-[var(--color-wk-success)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <svg class="h-4 w-4 text-[color:var(--color-wk-success)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                         </svg>
                     </template>

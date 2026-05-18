@@ -22,13 +22,13 @@
         'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'text-[length:var(--text-wk-sm)]',
-        'text-[var(--color-wk-text-muted)]',
+        'text-[color:var(--color-wk-text-muted)]',
         'whitespace-nowrap',
         $alignClass,
         // Compact variant: reduce vertical padding
         '[table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)]',
         // Sortable headers get pointer cursor + hover color
-        $sortable ? 'cursor-pointer select-none hover:text-[var(--color-wk-text)]' : '',
+        $sortable ? 'cursor-pointer select-none hover:text-[color:var(--color-wk-text)]' : '',
     ]), $scope);
 
     // ARIA: sortable columns expose their current sort state

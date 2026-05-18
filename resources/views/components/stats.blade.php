@@ -1,5 +1,8 @@
 @props([
     'cols' => null,
+    // Cascade entrance animations across direct children.
+    // null = no stagger (default), true = 75ms step, int = custom ms step.
+    'stagger' => null,
     'scope' => null,
 ])
 
@@ -16,14 +19,22 @@
         default => 'grid-cols-[repeat(auto-fit,minmax(200px,1fr))]',
     };
 
+    // Stagger — see dist/wirekit.css `.wk-stagger` rules.
+    $hasStagger = $stagger !== null && $stagger !== false;
+    $staggerStep = is_int($stagger) ? $stagger : 75;
+
     $classes = WireKit::resolveClasses('stats', 'base', implode(' ', [
         'grid',
         'gap-4',
         'font-[family-name:var(--font-wk-sans)]',
+        $hasStagger ? 'wk-stagger' : '',
     ]), $scope);
 @endphp
 
 {{-- Stats grid: wraps multiple <x-wirekit::stat> children in a responsive grid --}}
-<div {{ $attributes->class([$classes, $colClasses]) }}>
+<div
+    {{ $attributes->class([$classes, $colClasses]) }}
+    @if($hasStagger) style="--wk-stagger-step: {{ $staggerStep }}ms" @endif
+>
     {{ $slot }}
 </div>

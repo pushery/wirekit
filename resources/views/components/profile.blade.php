@@ -19,7 +19,7 @@
         <img src="{{ $avatar }}" alt="" class="h-8 w-8 rounded-full object-cover" />
     @endif
     @if($name)
-        <span class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text)] font-[number:var(--font-wk-body-weight)]">{{ $name }}</span>
+        <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)]">{{ $name }}</span>
     @endif
     {{ $slot }}
 </div>

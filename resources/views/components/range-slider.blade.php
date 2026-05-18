@@ -143,12 +143,12 @@
     </div>
 
     {{-- Value display --}}
-    <div class="flex justify-between text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)] tabular-nums" aria-live="polite">
+    <div class="flex justify-between text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-live="polite">
         <span x-text="minVal">{{ $initialMin }}</span>
         <span x-text="maxVal">{{ $initialMax }}</span>
     </div>
 
     @if($hint)
-        <p class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

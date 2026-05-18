@@ -40,7 +40,7 @@
         'pointer-events-auto',
         'w-80 max-w-[calc(100vw-2rem)]',
         'flex items-start gap-3',
-        'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
+        'p-[var(--padding-wk-y-md)]',
         'rounded-[var(--radius-wk-md)]',
         'border-[length:var(--border-wk-width)]',
         'shadow-[var(--shadow-wk-lg)]',
@@ -55,29 +55,29 @@
             'success' => [
                 'border' => 'border-[var(--color-wk-success)]',
                 'bg' => 'bg-[var(--color-wk-success)]',
-                'icon' => 'text-[var(--color-wk-accent-fg)]',
-                'text' => 'text-[var(--color-wk-accent-fg)]',
+                'icon' => 'text-[color:var(--color-wk-accent-fg)]',
+                'text' => 'text-[color:var(--color-wk-accent-fg)]',
                 'muted' => 'text-[color-mix(in_srgb,var(--color-wk-accent-fg)_80%,transparent)]',
             ],
             'warning' => [
                 'border' => 'border-[var(--color-wk-warning)]',
                 'bg' => 'bg-[var(--color-wk-warning)]',
-                'icon' => 'text-[var(--color-wk-accent-fg)]',
-                'text' => 'text-[var(--color-wk-accent-fg)]',
+                'icon' => 'text-[color:var(--color-wk-accent-fg)]',
+                'text' => 'text-[color:var(--color-wk-accent-fg)]',
                 'muted' => 'text-[color-mix(in_srgb,var(--color-wk-accent-fg)_80%,transparent)]',
             ],
             'danger' => [
                 'border' => 'border-[var(--color-wk-danger)]',
                 'bg' => 'bg-[var(--color-wk-danger)]',
-                'icon' => 'text-[var(--color-wk-accent-fg)]',
-                'text' => 'text-[var(--color-wk-accent-fg)]',
+                'icon' => 'text-[color:var(--color-wk-accent-fg)]',
+                'text' => 'text-[color:var(--color-wk-accent-fg)]',
                 'muted' => 'text-[color-mix(in_srgb,var(--color-wk-accent-fg)_80%,transparent)]',
             ],
             'info' => [
                 'border' => 'border-[var(--color-wk-accent)]',
                 'bg' => 'bg-[var(--color-wk-accent)]',
-                'icon' => 'text-[var(--color-wk-accent-fg)]',
-                'text' => 'text-[var(--color-wk-accent-fg)]',
+                'icon' => 'text-[color:var(--color-wk-accent-fg)]',
+                'text' => 'text-[color:var(--color-wk-accent-fg)]',
                 'muted' => 'text-[color-mix(in_srgb,var(--color-wk-accent-fg)_80%,transparent)]',
             ],
         ];
@@ -86,30 +86,30 @@
             'success' => [
                 'border' => 'border-[color-mix(in_srgb,var(--color-wk-success)_35%,var(--color-wk-border))]',
                 'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_10%,var(--color-wk-bg-elevated))]',
-                'icon' => 'text-[var(--color-wk-success)]',
-                'text' => 'text-[var(--color-wk-text)]',
-                'muted' => 'text-[var(--color-wk-text-muted)]',
+                'icon' => 'text-[color:var(--color-wk-success)]',
+                'text' => 'text-[color:var(--color-wk-text)]',
+                'muted' => 'text-[color:var(--color-wk-text-muted)]',
             ],
             'warning' => [
                 'border' => 'border-[color-mix(in_srgb,var(--color-wk-warning)_35%,var(--color-wk-border))]',
                 'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_10%,var(--color-wk-bg-elevated))]',
-                'icon' => 'text-[var(--color-wk-warning)]',
-                'text' => 'text-[var(--color-wk-text)]',
-                'muted' => 'text-[var(--color-wk-text-muted)]',
+                'icon' => 'text-[color:var(--color-wk-warning)]',
+                'text' => 'text-[color:var(--color-wk-text)]',
+                'muted' => 'text-[color:var(--color-wk-text-muted)]',
             ],
             'danger' => [
                 'border' => 'border-[color-mix(in_srgb,var(--color-wk-danger)_35%,var(--color-wk-border))]',
                 'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_10%,var(--color-wk-bg-elevated))]',
-                'icon' => 'text-[var(--color-wk-danger)]',
-                'text' => 'text-[var(--color-wk-text)]',
-                'muted' => 'text-[var(--color-wk-text-muted)]',
+                'icon' => 'text-[color:var(--color-wk-danger)]',
+                'text' => 'text-[color:var(--color-wk-text)]',
+                'muted' => 'text-[color:var(--color-wk-text-muted)]',
             ],
             'info' => [
                 'border' => 'border-[color-mix(in_srgb,var(--color-wk-accent)_35%,var(--color-wk-border))]',
                 'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_10%,var(--color-wk-bg-elevated))]',
-                'icon' => 'text-[var(--color-wk-accent)]',
-                'text' => 'text-[var(--color-wk-text)]',
-                'muted' => 'text-[var(--color-wk-text-muted)]',
+                'icon' => 'text-[color:var(--color-wk-accent)]',
+                'text' => 'text-[color:var(--color-wk-text)]',
+                'muted' => 'text-[color:var(--color-wk-text-muted)]',
             ],
         ];
     }
@@ -166,18 +166,17 @@
                 }"
             >
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                    <template x-if="toast.variant === 'success'">
-                        <g>{!! $iconMap['success'] !!}</g>
-                    </template>
-                    <template x-if="toast.variant === 'warning'">
-                        <g>{!! $iconMap['warning'] !!}</g>
-                    </template>
-                    <template x-if="toast.variant === 'danger'">
-                        <g>{!! $iconMap['danger'] !!}</g>
-                    </template>
-                    <template x-if="toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant)">
-                        <g>{!! $iconMap['info'] !!}</g>
-                    </template>
+                    {{-- SVG namespace gotcha: <template> elements inside <svg>
+                         are NOT treated as HTML template elements (no .content
+                         property). Alpine's x-if then crashes with
+                         "Cannot read properties of undefined (reading 'cloneNode')"
+                         on every page load — even with toasts:[]. Use <g x-show>
+                         instead: x-show only toggles display, no template cloning,
+                         no SVG-namespace pitfalls. --}}
+                    <g x-show="toast.variant === 'success'">{!! $iconMap['success'] !!}</g>
+                    <g x-show="toast.variant === 'warning'">{!! $iconMap['warning'] !!}</g>
+                    <g x-show="toast.variant === 'danger'">{!! $iconMap['danger'] !!}</g>
+                    <g x-show="toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant)">{!! $iconMap['info'] !!}</g>
                 </svg>
             </div>
 
@@ -211,7 +210,7 @@
                 type="button"
                 @click="remove(toast.id)"
                 aria-label="Dismiss notification"
-                class="shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[var(--color-wk-accent-fg)] hover:opacity-80' : 'text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)]' }} focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[color:var(--color-wk-accent-fg)] hover:opacity-80' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

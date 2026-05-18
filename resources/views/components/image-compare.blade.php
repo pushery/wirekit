@@ -86,7 +86,7 @@
         'px-2 py-1 rounded-[var(--radius-wk-sm)]',
         'text-[length:var(--text-wk-xs)] font-medium',
         'bg-[var(--color-wk-bg-elevated)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'border border-[var(--color-wk-border)]',
         'shadow-[var(--shadow-wk-sm)]',
     ]), $scope);
@@ -126,7 +126,31 @@
         draggable="false"
     />
 
-    {{-- After image (top layer, clipped by clip-path driven by `value`). --}}
+    {{--
+        After image (top layer, clipped by clip-path driven by `value`).
+
+        The clip insets from the LEFT edge in horizontal mode (and the TOP
+        edge in vertical mode), so as `value` grows from 0 → 100 the AFTER
+        image is "wiped in" from the trailing side toward the slider — the
+        universal before/after-slider convention.
+
+        At `value = 50` (default) the AFTER image's RIGHT half is visible
+        (horizontal) or BOTTOM half is visible (vertical), matching the
+        label-anchor positions on the BEFORE side: `before-label` sits at
+        bottom-LEFT (horizontal) / top-LEFT (vertical) — directly over
+        the BEFORE image — and `after-label` sits at top-RIGHT (horizontal)
+        / bottom-RIGHT (vertical) — directly over the AFTER image.
+
+        The previous implementation clipped from the RIGHT edge (and from
+        the BOTTOM in vertical mode), which inverted the visible halves
+        relative to the label anchors: at value=50 the LEFT half showed
+        AFTER and the RIGHT half showed BEFORE, but `before-label` was
+        still anchored at bottom-LEFT. Result: every image-compare with
+        the default labels rendered "Before" floating over the AFTER image
+        and "After" floating over the BEFORE image. Reported on
+        /components/image-compare#wide-aspect-ratio where the wide 21:9
+        crop made the misalignment unmissable.
+    --}}
     <img
         src="{{ $after }}"
         alt="{{ $effectiveAfterAlt }}"
@@ -134,8 +158,8 @@
         class="{{ $imgClasses }}"
         draggable="false"
         :style="orientation === 'vertical'
-            ? `clip-path: inset(0 0 ${100 - value}% 0)`
-            : `clip-path: inset(0 ${100 - value}% 0 0)`"
+            ? `clip-path: inset(${100 - value}% 0 0 0)`
+            : `clip-path: inset(0 0 0 ${100 - value}%)`"
     />
 
     {{-- Labels — optional; controlled by `labels` master toggle + individual props. --}}
@@ -203,7 +227,7 @@
         {{-- Default handle icon: two chevrons pointing outward. Rotated 90° for vertical. --}}
         <svg
             aria-hidden="true"
-            class="w-5 h-5 text-[var(--color-wk-text-muted)]"
+            class="w-5 h-5 text-[color:var(--color-wk-text-muted)]"
             :class="orientation === 'vertical' ? 'rotate-90' : ''"
             viewBox="0 0 24 24"
             fill="none"

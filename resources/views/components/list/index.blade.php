@@ -41,7 +41,7 @@
 
     $classes = WireKit::resolveClasses('list', 'base', implode(' ', [
         'font-[family-name:var(--font-wk-sans)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'text-[length:var(--text-wk-md)]',
         'tracking-[var(--font-wk-letter-spacing)]',
         // `wk-list` is the marker class that the wirekit.css override

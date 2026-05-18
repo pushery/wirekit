@@ -16,7 +16,7 @@
         'py-[var(--padding-wk-y-sm)]',
         'cursor-pointer',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'rounded-[var(--radius-wk-sm)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
@@ -89,7 +89,7 @@
         >
             {{ $trigger }}
             {{-- Chevron indicator --}}
-            <svg class="w-4 h-4 text-[var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]" :class="activeItem === '{{ $name }}' && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <svg class="w-4 h-4 text-[color:var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]" :class="activeItem === '{{ $name }}' && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
             </svg>
         </button>

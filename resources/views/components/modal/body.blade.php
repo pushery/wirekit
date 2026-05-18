@@ -10,7 +10,7 @@
         'px-[var(--padding-wk-x-xl)] py-[var(--padding-wk-y-xl)]',
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 @endphp
 

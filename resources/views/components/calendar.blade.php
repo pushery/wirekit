@@ -20,7 +20,7 @@
         'p-[var(--padding-wk-x-md)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
     $headerClasses = WireKit::resolveClasses('calendar', 'header', implode(' ', [
@@ -32,7 +32,7 @@
         'p-1',
         'cursor-pointer',
         'rounded-[var(--radius-wk-sm)]',
-        'text-[var(--color-wk-text-muted)]',
+        'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-subtle)]',
         'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
@@ -79,7 +79,7 @@
         <thead>
             <tr>
                 @foreach(['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'] as $day)
-                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[var(--color-wk-text-muted)]" scope="col">{{ $day }}</th>
+                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col">{{ $day }}</th>
                 @endforeach
             </tr>
         </thead>
@@ -97,10 +97,10 @@
                                 :disabled="!day.isCurrentMonth"
                                 class="{{ $dayBtnClasses }}"
                                 :class="{
-                                    'bg-[var(--color-wk-accent)] text-[var(--color-wk-accent-fg)]': day.isSelected,
+                                    'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]': day.isSelected,
                                     'font-[number:var(--font-wk-heading-weight)] ring-1 ring-[var(--color-wk-accent)]': day.isToday && !day.isSelected,
                                     'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected,
-                                    'text-[var(--color-wk-text-muted)] opacity-40 cursor-default': !day.isCurrentMonth,
+                                    'text-[color:var(--color-wk-text-muted)] opacity-40 cursor-default': !day.isCurrentMonth,
                                     'cursor-pointer': day.isCurrentMonth && day.isSelected,
                                 }"
                                 x-text="day.dayOfMonth"

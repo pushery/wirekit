@@ -40,6 +40,12 @@
     // Animation wiring is gated on animate=true — Options A/C are no-ops if the parent counter isn't running.
     $hasDescriptionAnim = $animate && ($descriptionDeferred || $descriptionAnimate);
 
+    // When animate (counter) AND animateIn (entrance reveal) are BOTH set,
+    // two Alpine x-data scopes are needed — they cannot share one element.
+    // Wrap the existing root in an outer <div> carrying the entrance
+    // reveal; the inner root keeps the counter scope.
+    $needsEntranceWrapper = $animate && $animateAttr;
+
     // Container: card-like surface with padding + elevated background + border
     $classes = WireKit::resolveClasses('stat', 'base', implode(' ', [
         'flex flex-col gap-1',
@@ -53,33 +59,49 @@
 
     // Trend color + arrow glyph — mapped to semantic tokens
     [$trendColor, $trendIcon, $trendLabel] = match ($trend) {
-        'up' => ['text-[var(--color-wk-success-text)]', '▲', 'increased'],
-        'down' => ['text-[var(--color-wk-danger-text)]', '▼', 'decreased'],
-        'neutral' => ['text-[var(--color-wk-text-muted)]', '→', 'unchanged'],
+        'up' => ['text-[color:var(--color-wk-success-text)]', '▲', 'increased'],
+        'down' => ['text-[color:var(--color-wk-danger-text)]', '▼', 'decreased'],
+        'neutral' => ['text-[color:var(--color-wk-text-muted)]', '→', 'unchanged'],
         default => [null, null, null],
     };
 @endphp
 
+@if($needsEntranceWrapper)
+    {{-- Outer wrapper: owns the entrance reveal (wirekitAnimate scope) when
+         animate=true AND animateIn is set. Inner root keeps the counter
+         scope (wirekitStatAnimate). Two scopes, two elements — Alpine's
+         contract is one x-data per element. The replayable contract
+         attaches here too so the docs site can re-mount the entrance
+         animation on click of the replay button. --}}
+    <div {!! $animateAttr !!} data-replayable="true">
+@endif
+
 <div
     {{ $attributes->class([$classes]) }}
-    @if($hasDescriptionAnim)
+    @if($animate)
+        {{-- Counter scope on root. Description spans inside read $root.animating
+             / $root.progress. When $needsEntranceWrapper is also true, the
+             outer wrapper carries the entrance animateAttr — separate scope. --}}
         x-data="wirekitStatAnimate"
         data-target="{{ $value }}"
+        @unless($needsEntranceWrapper) data-replayable="true" @endunless
     @elseif($animateAttr)
+        {{-- animateIn only (no counter): root carries the entrance reveal directly. --}}
         {!! $animateAttr !!}
+        data-replayable="true"
     @endif
 >
     {{-- Top row: label + optional icon --}}
     <div class="flex items-center justify-between gap-2">
         @if($label)
-            <span class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)] font-[number:var(--font-wk-heading-weight)]">
+            <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] font-[number:var(--font-wk-heading-weight)]">
                 {{ $label }}
             </span>
         @endif
         @if($icon)
-            <x-wirekit::icon :name="$icon" size="sm" class="text-[var(--color-wk-text-subtle)]" />
+            <x-wirekit::icon :name="$icon" size="sm" class="text-[color:var(--color-wk-text-subtle)]" />
         @elseif(isset($iconSlot))
-            <div class="text-[var(--color-wk-text-subtle)]">{{ $iconSlot }}</div>
+            <div class="text-[color:var(--color-wk-text-subtle)]">{{ $iconSlot }}</div>
         @endif
     </div>
 
@@ -93,26 +115,22 @@
          can read `animating` from $root scope. --}}
     @if($value !== null)
         @if($animate)
-            {{-- When description anim is on, the parent root carries x-data; value div skips it
-                 to avoid double-binding. When description is static (default), the value div
-                 owns its own scope (v1.5.0-identical render). --}}
+            {{-- Counter scope is on the root. Value div stays as the typography
+                 wrapper; the <span x-text="value"> reads the root's
+                 wirekitStatAnimate state. --}}
             <div
-                @if(! $hasDescriptionAnim)
-                    x-data="wirekitStatAnimate"
-                    data-target="{{ $value }}"
-                @endif
-                class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] tabular-nums"
+                class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums"
             >
                 <span x-text="value">{{ $value }}</span>
             </div>
         @else
-            <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] tabular-nums">
+            <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums">
                 {{ $value }}
             </div>
         @endif
     @elseif(trim($slot->toHtml()) !== '')
         {{-- Fallback: slot allows rich value rendering (e.g. mixed currency + icon) --}}
-        <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">
+        <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $slot }}
         </div>
     @endif
@@ -132,7 +150,7 @@
         <div class="flex items-center gap-2 text-[length:var(--text-wk-sm)]">
             @if($change !== null)
                 {{-- sr-only label expands the arrow glyph for screen readers --}}
-                <span class="inline-flex items-center gap-1 {{ $trendColor ?? 'text-[var(--color-wk-text-muted)]' }} font-[number:var(--font-wk-heading-weight)]">
+                <span class="inline-flex items-center gap-1 {{ $trendColor ?? 'text-[color:var(--color-wk-text-muted)]' }} font-[number:var(--font-wk-heading-weight)]">
                     @if($trendIcon)
                         <span aria-hidden="true">{{ $trendIcon }}</span>
                         <span class="sr-only">{{ $trendLabel }}</span>
@@ -148,7 +166,7 @@
                         x-show="!animating"
                         x-transition.opacity.duration.200ms
                         x-bind:aria-hidden="animating ? 'true' : null"
-                        class="text-[var(--color-wk-text-muted)]"
+                        class="text-[color:var(--color-wk-text-muted)]"
                     >{{ $description }}</span>
                 @elseif($descriptionAnimate && $animate)
                     {{-- Option C — synchronous colour count-up. Text colour interpolates
@@ -158,7 +176,7 @@
                         x-bind:style="'color: color-mix(in srgb, var(--color-wk-text-muted) ' + ((1 - progress) * 100) + '%, var(--color-wk-text) ' + (progress * 100) + '%)'"
                     >{{ $description }}</span>
                 @else
-                    <span class="text-[var(--color-wk-text-muted)]">{{ $description }}</span>
+                    <span class="text-[color:var(--color-wk-text-muted)]">{{ $description }}</span>
                 @endif
             @endif
         </div>
@@ -166,8 +184,12 @@
 
     {{--: optional citation footnote (smaller + subtle). --}}
     @if($citation)
-        <span class="text-[length:var(--text-wk-xs)] text-[var(--color-wk-text-subtle)]">
+        <span class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]">
             {{ $citation }}
         </span>
     @endif
 </div>
+
+@if($needsEntranceWrapper)
+    </div>
+@endif

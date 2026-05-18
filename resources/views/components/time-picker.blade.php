@@ -23,7 +23,7 @@
         'font-[family-name:var(--font-wk-sans)]',
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'tabular-nums',
         'border-[length:var(--border-wk-width)]',
         'shadow-[var(--shadow-wk-sm)]',
@@ -101,8 +101,8 @@
     />
 
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

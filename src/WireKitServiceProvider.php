@@ -10,13 +10,13 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Compilers\BladeCompiler;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
+use Pushery\WireKit\Console\ClassByAreaCommand;
 use Pushery\WireKit\Console\ComponentMakeCommand;
 use Pushery\WireKit\Console\CursorRulesCommand;
 use Pushery\WireKit\Console\DoctorCommand;
 use Pushery\WireKit\Console\ExportApiMapCommand;
 use Pushery\WireKit\Console\ExportBlocksCommand;
 use Pushery\WireKit\Console\ExportJsonCommand;
-use Pushery\WireKit\Console\GenerateChangelogsCommand;
 use Pushery\WireKit\Console\GlassInstallCommand;
 use Pushery\WireKit\Console\InstallCommand;
 use Pushery\WireKit\Console\ListComponentsCommand;
@@ -52,6 +52,7 @@ class WireKitServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             // Register artisan commands
             $this->commands([
+                ClassByAreaCommand::class,
                 ComponentMakeCommand::class,
                 CursorRulesCommand::class,
                 DoctorCommand::class,
@@ -67,14 +68,6 @@ class WireKitServiceProvider extends ServiceProvider
                 ThemeCommand::class,
                 VerifyInstallationCommand::class,
             ]);
-
-            // Maintainer-only command — the source file is `export-ignore`d
-            // from the public Packagist artifact, so this class only exists
-            // in the development environment. class_exists() makes the
-            // registration a silent no-op for public installs.
-            if (class_exists(GenerateChangelogsCommand::class)) {
-                $this->commands([GenerateChangelogsCommand::class]);
-            }
 
             $this->publishes([
                 __DIR__.'/../config/wirekit.php' => config_path('wirekit.php'),
@@ -94,6 +87,8 @@ class WireKitServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../dist/wirekit.js' => public_path('vendor/wirekit/wirekit.js'),
                 __DIR__.'/../dist/wirekit.core.js' => public_path('vendor/wirekit/wirekit.core.js'),
+                __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
+                __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
             ], 'wirekit-scripts');
 
             // All assets (CSS + JS) — convenience tag for publishing everything at once
@@ -101,6 +96,8 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../dist/wirekit.css' => public_path('vendor/wirekit/wirekit.css'),
                 __DIR__.'/../dist/wirekit.js' => public_path('vendor/wirekit/wirekit.js'),
                 __DIR__.'/../dist/wirekit.core.js' => public_path('vendor/wirekit/wirekit.core.js'),
+                __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
+                __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
             ], 'wirekit-assets');
         }
 
@@ -184,6 +181,32 @@ class WireKitServiceProvider extends ServiceProvider
                     $__wk_v = filemtime($__wk_published);
                     echo \'<script src="\' . asset("vendor/wirekit/" . $__wk_file) . \'?v=\' . $__wk_v . \'" defer></script>\' . "\n";
                 }
+
+                // Force Livewire to inject its asset stack on this page even
+                // when no Livewire component renders. WireKit components use
+                // Alpine.js directives (x-data / x-bind / x-on) and Livewire
+                // v3+ bundles Alpine — without forced injection, a pure-Blade
+                // page (marketing / showcase / static) ships without Alpine
+                // and every WireKit interactive component throws
+                // "wirekitTableSort is not defined" in the console.
+                //
+                // Livewire only auto-injects when at least one Livewire
+                // component renders (per SupportAutoInjectedAssets::shouldInjectLivewireAssets).
+                // Calling forceAssetInjection() flips that flag so the
+                // consumer no longer needs @livewireScripts in the layout —
+                // @wirekitStyles + @wirekitScripts is enough, and Alpine
+                // arrives automatically via Livewire bundle.
+                //
+                // Guarded by class_exists() + method_exists() so installs
+                // without Livewire OR with older Livewire versions silently
+                // skip rather than crashing.
+                if (class_exists(\Livewire\Livewire::class) && method_exists(\Livewire\Livewire::class, "forceAssetInjection")) {
+                    try {
+                        \Livewire\Livewire::forceAssetInjection();
+                    } catch (\Throwable $__wk_e) {
+                        // Swallow — defensive against future API changes.
+                    }
+                }
             ?>';
         });
 
@@ -264,6 +287,8 @@ class WireKitServiceProvider extends ServiceProvider
             'wirekit/wirekit.css' => ['file' => 'wirekit.css', 'type' => 'text/css'],
             'wirekit/wirekit.js' => ['file' => 'wirekit.js', 'type' => 'application/javascript'],
             'wirekit/wirekit.core.js' => ['file' => 'wirekit.core.js', 'type' => 'application/javascript'],
+            'wirekit/wirekit-apex.js' => ['file' => 'wirekit-apex.js', 'type' => 'application/javascript'],
+            'wirekit/wirekit-alpine.js' => ['file' => 'wirekit-alpine.js', 'type' => 'application/javascript'],
         ];
 
         Route::group(['middleware' => 'web'], function () use ($assets): void {

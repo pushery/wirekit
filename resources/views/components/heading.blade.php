@@ -42,8 +42,8 @@
     };
 
     $colorClasses = $accent
-        ? 'text-[var(--color-wk-primary)]'
-        : 'text-[var(--color-wk-text)]';
+        ? 'text-[color:var(--color-wk-accent)]'
+        : 'text-[color:var(--color-wk-text)]';
 
     $classes = WireKit::resolveClasses('heading', 'base', implode(' ', [
         'font-[family-name:var(--font-wk-sans)]',

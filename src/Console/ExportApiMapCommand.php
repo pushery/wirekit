@@ -8,13 +8,14 @@ use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\VersionResolver;
 
 /**
  * emit a hierarchical AI-friendly site sitemap covering
  * components, tokens, fonts, icon presets, layouts, blueprints, and CLI
  * commands. Superset of `/components.json` ( F2) — designed for
- * MCP servers, Cursor, Claude, and other AI tooling that needs a single
- * entry point to enumerate every WireKit surface.
+ * MCP servers, Claude Code, ChatGPT Codex, Cursor, Aider, and other AI
+ * tooling that needs a single entry point to enumerate every WireKit surface.
  *
  * Output shape:
  *   {
@@ -80,16 +81,17 @@ class ExportApiMapCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Resolve the running WireKit version. Delegates to VersionResolver so
+     * the three export commands stay in lockstep — see VersionResolver for
+     * the priority order. `$packageRoot` is preserved for backward-compat
+     * with the existing call site but no longer consulted directly.
+     */
     private function detectVersion(string $packageRoot): string
     {
-        $composerPath = $packageRoot.'/composer.json';
-        if (! file_exists($composerPath)) {
-            return 'unknown';
-        }
+        unset($packageRoot);
 
-        $manifest = json_decode((string) file_get_contents($composerPath), true);
-
-        return is_array($manifest) && isset($manifest['version']) ? (string) $manifest['version'] : 'dev-develop';
+        return VersionResolver::resolve();
     }
 
     /**

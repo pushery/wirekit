@@ -47,8 +47,8 @@
         'px-[var(--padding-wk-x-lg)]',
         'py-[var(--padding-wk-y-md)]',
         'text-[length:var(--text-wk-lg)]',
-        'text-[var(--color-wk-text)]',
-        'placeholder:text-[var(--color-wk-text-placeholder)]',
+        'text-[color:var(--color-wk-text)]',
+        'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'focus:outline-none',
     ]), $scope);
 @endphp
@@ -115,7 +115,7 @@
                     {{-- Search input --}}
                     <div class="flex items-center gap-[var(--gap-wk-sm)]">
                         {{-- Search icon --}}
-                        <div class="pl-[var(--padding-wk-x-lg)] text-[var(--color-wk-text-muted)]" aria-hidden="true">
+                        <div class="pl-[var(--padding-wk-x-lg)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
                             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                             </svg>
@@ -147,7 +147,7 @@
 
                     {{-- Optional footer slot --}}
                     @isset($footer)
-                        <div class="border-t border-[var(--color-wk-border)] px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">
+                        <div class="border-t border-[var(--color-wk-border)] p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
                             {{ $footer }}
                         </div>
                     @endisset

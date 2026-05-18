@@ -28,9 +28,9 @@
         'font-[family-name:var(--font-wk-sans)]',
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'text-center tabular-nums',
-        'placeholder:text-[var(--color-wk-text-placeholder)]',
+        'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-y-[length:var(--border-wk-width)]',
         'border-x-0',
         'shadow-[var(--shadow-wk-sm)]',
@@ -81,11 +81,11 @@
     $buttonClasses = implode(' ', [
         'inline-flex items-center justify-center',
         'bg-[var(--color-wk-bg-subtle)]',
-        'text-[var(--color-wk-text-muted)]',
+        'text-[color:var(--color-wk-text-muted)]',
         'border-[length:var(--border-wk-width)]',
         $buttonBorderColor,
         'hover:bg-[var(--color-wk-bg-muted)]',
-        'hover:text-[var(--color-wk-text)]',
+        'hover:text-[color:var(--color-wk-text)]',
         'cursor-pointer',
         'transition-colors duration-[var(--transition-wk-duration)]',
         'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
@@ -107,7 +107,17 @@
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
 @endphp
 
-{{-- Alpine tracks the current value to reactively disable stepper buttons at min/max boundaries. --}}
+{{--
+    Alpine tracks the current value to reactively disable stepper buttons
+    at min/max boundaries. The `precision` getter pulls the decimal-place
+    count out of the step value's string representation so we can snap the
+    result of every increment / decrement back to that precision — without
+    this, JS binary floating-point arithmetic produces drift like
+    19.01 + 0.01 = 19.020000000000003 (visible as "19,02000…" on the German
+    locale display) and the same value oscillates between displayed
+    representations on every click. Snapping with `Number(next.toFixed(p))`
+    is the canonical fix.
+--}}
 <div
     class="space-y-1.5"
     x-data="{
@@ -115,14 +125,29 @@
         min: {{ $min !== null ? $min : 'null' }},
         max: {{ $max !== null ? $max : 'null' }},
         step: {{ $step }},
+        get precision() {
+            // Decimal places implied by the step value. `5` → 0, `0.1` → 1,
+            // `0.01` → 2, `0.001` → 3. Falls back to 0 for non-fractional
+            // or scientific-notation step values; the round() below is a
+            // no-op when precision is 0 so integer steps stay exact.
+            const s = String(this.step);
+            const dot = s.indexOf('.');
+            return dot === -1 ? 0 : s.length - dot - 1;
+        },
+        round(n) {
+            // toFixed() returns a string; Number() converts it back so
+            // the input element displays the unpadded representation
+            // (e.g. `19.02` not `19.020000000000003`).
+            return Number(n.toFixed(this.precision));
+        },
         get atMin() { return this.min !== null && this.value <= this.min; },
         get atMax() { return this.max !== null && this.value >= this.max; },
         decrease() {
-            const next = this.value - this.step;
+            const next = this.round(this.value - this.step);
             this.value = this.min !== null ? Math.max(this.min, next) : next;
         },
         increase() {
-            const next = this.value + this.step;
+            const next = this.round(this.value + this.step);
             this.value = this.max !== null ? Math.min(this.max, next) : next;
         },
         clamp(val) {
@@ -130,7 +155,7 @@
             if (isNaN(v)) v = this.min ?? 0;
             if (this.min !== null) v = Math.max(this.min, v);
             if (this.max !== null) v = Math.min(this.max, v);
-            return v;
+            return this.round(v);
         }
     }"
 >
@@ -141,7 +166,7 @@
     <div class="flex items-center">
         {{-- Prefix — inline before the stepper group --}}
         @if($prefix)
-            <span class="shrink-0 pr-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]" aria-hidden="true">{{ $prefix }}</span>
+            <span class="shrink-0 pr-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $prefix }}</span>
         @endif
 
         {{-- Decrease button — disabled at min boundary --}}
@@ -185,13 +210,13 @@
 
         {{-- Suffix — inline after the stepper group --}}
         @if($suffix)
-            <span class="shrink-0 pl-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]" aria-hidden="true">{{ $suffix }}</span>
+            <span class="shrink-0 pl-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $suffix }}</span>
         @endif
     </div>
 
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

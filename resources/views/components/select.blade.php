@@ -25,7 +25,7 @@
         'font-[family-name:var(--font-wk-sans)]',
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'border-[length:var(--border-wk-width)]',
         'shadow-[var(--shadow-wk-sm)]',
         'transition-colors',
@@ -99,7 +99,7 @@
 
         {{-- Dropdown arrow indicator — color via design token for automatic dark mode --}}
         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
-            <svg class="h-4 w-4 text-[var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <svg class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
             </svg>
         </div>
@@ -107,8 +107,8 @@
 
     {{-- Error message and hint text use design tokens for automatic dark mode --}}
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

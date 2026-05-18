@@ -14,7 +14,7 @@
         'tracking-[var(--font-wk-letter-spacing)]',
         'text-[length:var(--text-wk-md)]',
         'font-medium',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 @endphp
 
@@ -22,6 +22,6 @@
     {{ $slot }}
     {{-- Required indicator uses danger-text variable (auto dark mode, no dark: needed) --}}
     @if($required)
-        <span class="text-[var(--color-wk-danger-text)] ml-0.5" aria-hidden="true">*</span>
+        <span class="text-[color:var(--color-wk-danger-text)] ml-0.5" aria-hidden="true">*</span>
     @endif
 </label>

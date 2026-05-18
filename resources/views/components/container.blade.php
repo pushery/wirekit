@@ -19,12 +19,19 @@
         default => WireKit::validateProp('container', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full']),
     };
 
+    // Inline padding reads from `--padding-wk-x-*` so a
+    // `<x-wirekit::container>` nested inside `<x-wirekit::main padding="lg">`
+    // (which uses the same `--padding-wk-x-lg` token) inherits a single
+    // content-edge spine — the inner content's visible-text left edge
+    // sits exactly where main's would. Vertical section padding still
+    // reads from `--space-wk-*` (consumers apply `py-*` themselves on
+    // the container when they want a section rhythm).
     $paddingClasses = match ($padding) {
         'none' => '',
-        'sm' => 'px-[var(--space-wk-sm,0.5rem)]',
-        'md' => 'px-[var(--space-wk-md,1rem)]',
-        'lg' => 'px-[var(--space-wk-lg,1.5rem)]',
-        'xl' => 'px-[var(--space-wk-xl,2.5rem)]',
+        'sm' => 'px-[var(--padding-wk-x-sm,0.625rem)]',
+        'md' => 'px-[var(--padding-wk-x-md,0.75rem)]',
+        'lg' => 'px-[var(--padding-wk-x-lg,1rem)]',
+        'xl' => 'px-[var(--padding-wk-x-xl,1.5rem)]',
         default => WireKit::validateProp('container', 'padding', $padding, ['none', 'sm', 'md', 'lg', 'xl']),
     };
 

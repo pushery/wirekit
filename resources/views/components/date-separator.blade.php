@@ -49,7 +49,7 @@
         WireKit::resolveClasses('date-separator', 'base', implode(' ', [
             'flex items-center',
             'text-[length:var(--text-wk-xs)]',
-            'text-[var(--color-wk-text-muted)]',
+            'text-[color:var(--color-wk-text-muted)]',
             'font-[family-name:var(--font-wk-sans)]',
             $stickyClasses,
         ]), $scope),

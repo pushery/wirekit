@@ -12,12 +12,15 @@
     $navClasses = WireKit::resolveClasses('breadcrumb', 'nav', 'flex', $scope);
 
     // Ordered list — the semantic container for breadcrumb items.
-    $listClasses = WireKit::resolveClasses('breadcrumb', 'list', 'flex items-center gap-[var(--padding-wk-x-xs)] text-[length:var(--text-wk-sm)]', $scope);
+    // list-none + m-0 + p-0 strip the browser-default <ol> decimal markers
+    // and the marker-indent (browser default ~40px). Without these the
+    // breadcrumb would render "1. Home / 2. Section / 3. Item".
+    $listClasses = WireKit::resolveClasses('breadcrumb', 'list', 'list-none m-0 p-0 flex items-center gap-[var(--padding-wk-x-xs)] text-[length:var(--text-wk-sm)]', $scope);
 
     // Link classes (for non-final items with href).
     $linkClasses = WireKit::resolveClasses('breadcrumb', 'link', implode(' ', [
-        'text-[var(--color-wk-text-muted)]',
-        'hover:text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text-muted)]',
+        'hover:text-[color:var(--color-wk-text)]',
         'hover:underline',
         'underline-offset-2',
         'focus-visible:outline-none',
@@ -29,11 +32,11 @@
     ]), $scope);
 
     // Current page: rendered as <span> with aria-current, slightly emphasized.
-    $currentClasses = WireKit::resolveClasses('breadcrumb', 'current', 'text-[var(--color-wk-text)] font-[number:var(--font-wk-body-weight)]', $scope);
+    $currentClasses = WireKit::resolveClasses('breadcrumb', 'current', 'text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)]', $scope);
 
     // Separator glyph between items. Decorative — aria-hidden so AT doesn't
     // read "chevron" or "slash" between crumb labels.
-    $separatorClasses = 'text-[var(--color-wk-text-subtle)] select-none';
+    $separatorClasses = 'text-[color:var(--color-wk-text-subtle)] select-none';
 
     // Separator character mapping. `slot` means: use the {{ $separator }} slot
     // that the caller may provide (custom SVG/icon), fallback to chevron.
@@ -47,7 +50,7 @@
 @endphp
 
 <nav aria-label="Breadcrumb" {{ $attributes->class([$navClasses]) }}>
-    <ol class="{{ $listClasses }}">
+    <ol class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($items as $i => $item)
             @php
                 // Normalize item: accept ['label' => .., 'href' => ..] or just a string label.

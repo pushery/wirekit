@@ -22,7 +22,7 @@
         'border-[var(--color-wk-border)]',
         'border-b-2',
         'bg-[var(--color-wk-bg-muted)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'leading-none',
         $sizeClasses,
     ]), $scope);

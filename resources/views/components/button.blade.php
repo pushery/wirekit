@@ -1,7 +1,6 @@
 @props([
-    'variant' => config('wirekit.components.button.variant', 'primary'),
-    'intent' => null,
-    'surface' => null,
+    'intent' => config('wirekit.components.button.intent', 'primary'),
+    'surface' => config('wirekit.components.button.surface', 'filled'),
     'size' => config('wirekit.components.button.size', 'md'),
     'type' => 'button',
     'href' => null,
@@ -16,7 +15,14 @@
     // Base classes: layout, typography, transitions, focus ring, disabled state
     // All values reference design tokens — no hardcoded colors, sizes, or durations
     $baseClasses = WireKit::resolveClasses('button', 'base', implode(' ', [
-        'inline-flex items-center justify-center gap-x-2',
+        // `whitespace-nowrap` keeps the button's text on a single line
+        // alongside the loading-spinner / icon slots. Without it, a
+        // narrow button width (or a long label like "Saving…") flexes
+        // the text into a second line BELOW the spinner — visually the
+        // spinner stacks above the text. `inline-flex` alone does not
+        // prevent the inner TEXT NODE from soft-wrapping at its own
+        // whitespace; `whitespace-nowrap` clamps the text to one line.
+        'inline-flex items-center justify-center gap-x-2 whitespace-nowrap',
         'cursor-pointer',
         'font-[family-name:var(--font-wk-sans)]',
         'font-[number:var(--font-wk-body-weight)]',
@@ -35,61 +41,15 @@
         'disabled:pointer-events-none',
     ]), $scope);
 
-    // Variant resolution: intent × surface (v2.0) takes precedence over legacy variant
-    if ($intent !== null || $surface !== null) {
-        $resolvedIntent = $intent ?? 'primary';
-        $resolvedSurface = $surface ?? 'filled';
-        $variantClasses = \Pushery\WireKit\VariantResolver::resolve($resolvedIntent, $resolvedSurface);
-    } else {
-        $variantClasses = match ($variant) {
-            'primary' => implode(' ', [
-                'bg-[var(--color-wk-accent)]',
-                'text-[var(--color-wk-accent-fg)]',
-                'border-[var(--color-wk-accent)]',
-                'hover:bg-[var(--color-wk-accent-hover)]',
-                'hover:border-[var(--color-wk-accent-hover)]',
-                'shadow-[var(--shadow-wk-sm)]',
-            ]),
-            'secondary' => implode(' ', [
-                'bg-[var(--color-wk-bg-muted)]',
-                'text-[var(--color-wk-text)]',
-                'border-[var(--color-wk-bg-muted)]',
-                'hover:bg-[var(--color-wk-bg-subtle)]',
-                'shadow-[var(--shadow-wk-sm)]',
-            ]),
-            'outline' => implode(' ', [
-                'bg-[var(--color-wk-bg)]',
-                'text-[var(--color-wk-text)]',
-                'border-[var(--color-wk-border)]',
-                'hover:bg-[var(--color-wk-bg-subtle)]',
-                'hover:border-[var(--color-wk-border-hover)]',
-                'shadow-[var(--shadow-wk-sm)]',
-            ]),
-            'ghost' => implode(' ', [
-                'bg-transparent',
-                'text-[var(--color-wk-text)]',
-                'border-transparent',
-                'hover:bg-[var(--color-wk-bg-subtle)]',
-                'shadow-[var(--shadow-wk-none)]',
-            ]),
-            'danger' => implode(' ', [
-                'bg-[var(--color-wk-danger)]',
-                'text-[var(--color-wk-danger-fg)]',
-                'border-[var(--color-wk-danger)]',
-                'hover:bg-[var(--color-wk-danger-hover)]',
-                'hover:border-[var(--color-wk-danger-hover)]',
-                'shadow-[var(--shadow-wk-sm)]',
-            ]),
-            'link' => implode(' ', [
-                'text-[var(--color-wk-accent-content)]',
-                'border-transparent',
-                'underline-offset-4',
-                'hover:underline',
-                'p-0 h-auto',
-            ]),
-            default => WireKit::validateProp('button', 'variant', $variant, ['primary', 'secondary', 'outline', 'ghost', 'danger', 'link']),
-        };
+    // Validate intent + surface (debug mode raises on unknown values).
+    if (! in_array($intent, \Pushery\WireKit\VariantResolver::INTENTS, true)) {
+        WireKit::validateProp('button', 'intent', $intent, \Pushery\WireKit\VariantResolver::INTENTS);
     }
+    if (! in_array($surface, \Pushery\WireKit\VariantResolver::SURFACES, true)) {
+        WireKit::validateProp('button', 'surface', $surface, \Pushery\WireKit\VariantResolver::SURFACES);
+    }
+
+    $variantClasses = \Pushery\WireKit\VariantResolver::resolve($intent, $surface);
 
     // Size classes: height, padding, font size, radius — all from sizing tokens
     $sizeClasses = match ($size) {

@@ -21,7 +21,7 @@
         'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
         'text-left',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'hover:bg-[var(--color-wk-bg-muted)]',
         'focus-visible:outline-none',
@@ -38,14 +38,17 @@
     $panelClasses = WireKit::resolveClasses('accordion.item', 'panel', implode(' ', [
         'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
         'text-[length:var(--text-wk-sm)]',
-        'text-[var(--color-wk-text-muted)]',
+        'text-[color:var(--color-wk-text-muted)]',
         'border-t-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
     ]), $scope);
 
     // Decorative chevron — rotates 180° when item is open. aria-hidden
     // because the open state is already conveyed by aria-expanded on the button.
-    $chevronClasses = 'w-4 h-4 text-[var(--color-wk-text-subtle)] transition-transform duration-[var(--transition-wk-duration)]';
+    // shrink-0 pins the icon at its intrinsic 16x16 even when the title text
+    // wraps to multiple lines (without it, flexbox shrinks the SVG to a sliver
+    // because <svg> has no min-width constraint).
+    $chevronClasses = 'shrink-0 w-4 h-4 text-[color:var(--color-wk-text-subtle)] transition-transform duration-[var(--transition-wk-duration)]';
 @endphp
 
 <div {{ $attributes }}>
@@ -60,7 +63,10 @@
             @click="toggle(@js($itemId))"
             class="{{ $buttonClasses }}"
         >
-            <span>{{ $title !== '' ? $title : ($header ?? '') }}</span>
+            {{-- Title takes the remaining row width and wraps; min-w-0 unlocks
+                 text wrapping inside a flex child (default min-content prevents
+                 break inside long unbroken words). --}}
+            <span class="flex-1 min-w-0">{{ $title !== '' ? $title : ($header ?? '') }}</span>
             <svg
                 class="{{ $chevronClasses }}"
                 :class="isOpen(@js($itemId)) ? 'rotate-180' : ''"

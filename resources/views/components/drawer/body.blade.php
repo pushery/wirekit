@@ -11,7 +11,7 @@
         'flex-1 overflow-y-auto',
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 @endphp
 

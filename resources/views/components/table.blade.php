@@ -22,7 +22,7 @@
         'text-left',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
     // Flag classes passed via data attributes so sub-components (row, td, th) can

@@ -26,7 +26,7 @@
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'shadow-[var(--shadow-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'transition-opacity',
         'duration-[var(--transition-wk-duration)]',
         'hover:bg-[var(--color-wk-bg-subtle)]',

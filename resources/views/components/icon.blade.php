@@ -10,13 +10,27 @@
     // Resolve the semantic alias to the actual Blade Icon identifier
     $resolved = app(IconResolver::class)->resolve($name);
 
-    // Check if blade-icons is installed (provides the svg() helper function)
+    // Check if blade-icons is installed (provides the svg() helper function).
+    // Graceful degradation: if the package is missing, render an inert SVG
+    // placeholder + emit a one-time framework log entry so the rest of the
+    // page still loads. Throwing a hard RuntimeException would kill any
+    // page that uses an icon — including pages that use icons transitively
+    // through other WireKit components (button close-icons, dropdown
+    // chevrons, modal close buttons). The placeholder keeps the layout
+    // intact and the dev sees the warning in storage/logs/laravel.log.
     if (! function_exists('svg')) {
-        throw new \RuntimeException(
-            'WireKit: The icon system requires blade-ui-kit/blade-icons. ' . PHP_EOL
-            . 'Run: composer require blade-ui-kit/blade-icons' . PHP_EOL
-            . 'Then install your preferred icon set, e.g.: composer require blade-ui-kit/blade-heroicons'
-        );
+        if (! defined('WIREKIT_BLADE_ICONS_WARNED')) {
+            define('WIREKIT_BLADE_ICONS_WARNED', true);
+            try {
+                logger()->warning(
+                    '[WireKit] <x-wirekit::icon> requires blade-ui-kit/blade-icons. '.
+                    'Run: composer require blade-ui-kit/blade-icons blade-ui-kit/blade-heroicons. '.
+                    'Rendering an empty placeholder until installed.'
+                );
+            } catch (\Throwable $e) {
+                // Logger may not be bootstrapped (e.g. early console). Silent fallback.
+            }
+        }
     }
 
     // Size map. null preserves the historical h-5 w-5 default — non-null
@@ -58,5 +72,11 @@
     }
 @endphp
 
-{{-- Render the SVG icon via blade-icons, passing all merged attributes through --}}
-{{ svg($resolved, $mergedAttributes->getAttributes()) }}
+{{-- Render the SVG icon via blade-icons, OR a placeholder when blade-icons
+     isn't installed yet. The placeholder preserves layout (same h/w as the
+     real icon would have) and stays inert (aria-hidden, no glyph). --}}
+@if (function_exists('svg'))
+    {{ svg($resolved, $mergedAttributes->getAttributes()) }}
+@else
+    <span {{ $mergedAttributes->merge(['aria-hidden' => 'true', 'data-wk-icon-missing' => $name]) }} style="display:inline-block;"></span>
+@endif

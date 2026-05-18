@@ -40,9 +40,9 @@
     // foundation tokens are surface colors (button bg etc.) and fail
     // WCAG 1.4.3 when used as small text on dark backgrounds.
     $deltaClasses = match ($resolvedIntent) {
-        'success' => 'text-[var(--color-wk-success-text)]',
-        'danger' => 'text-[var(--color-wk-danger-text)]',
-        default => 'text-[var(--color-wk-text-muted)]',
+        'success' => 'text-[color:var(--color-wk-success-text)]',
+        'danger' => 'text-[color:var(--color-wk-danger-text)]',
+        default => 'text-[color:var(--color-wk-text-muted)]',
     };
 
     // Value size
@@ -73,14 +73,14 @@
     {{-- Label --}}
     <span
         id="{{ $tickerId }}-label"
-        class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)] font-[number:var(--font-wk-body-weight)]"
+        class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] font-[number:var(--font-wk-body-weight)]"
     >
         {{ $label }}
     </span>
 
     {{-- Value + delta row --}}
     <span class="flex items-baseline gap-[var(--space-wk-sm,0.5rem)]">
-        <span class="{{ $valueSizeClass }} font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] tabular-nums">
+        <span class="{{ $valueSizeClass }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums">
             {{ $value }}
         </span>
         @if($formattedDelta !== null)
@@ -102,7 +102,7 @@
 
     {{-- Footer slot --}}
     @if(isset($footer))
-        <span class="text-[length:var(--text-wk-xs)] text-[var(--color-wk-text-muted)]">
+        <span class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
             {{ $footer }}
         </span>
     @endif

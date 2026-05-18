@@ -50,7 +50,7 @@
     $valueClasses = WireKit::resolveClasses('slider', 'value', implode(' ', [
         'tabular-nums',
         'text-[length:var(--text-wk-sm)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'min-w-[2.5ch]',
         'text-right',
     ]), $scope);
@@ -71,7 +71,7 @@
     class="{{ $wrapperClasses }}"
 >
     @if($label)
-        <label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text)]">{{ $label }}</label>
+        <label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</label>
     @elseif($needsSrOnlyFallback)
         {{-- sr-only label fallback so the input always has an accessible
              name (axe rule "label" / WCAG 4.1.2). --}}

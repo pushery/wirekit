@@ -16,7 +16,7 @@
     // Base classes: radius, overflow, transition for interactive cards
     $baseClasses = WireKit::resolveClasses('card', 'base', implode(' ', [
         'bg-[var(--color-wk-bg-elevated)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'rounded-[var(--radius-wk-lg)]',
         'overflow-hidden',
         'transition-shadow',

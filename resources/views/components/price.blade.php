@@ -3,6 +3,8 @@
     'currency' => config('wirekit.currency', 'USD'),
     'locale' => null,
     'base' => null,
+    'unitPrice' => null,
+    'unitMeasure' => null,
     'delta' => null,
     'deltaFormat' => 'percent',
     'size' => config('wirekit.components.price.size', 'md'),
@@ -18,12 +20,25 @@
     // Convert minor units (cents) to major units
     $displayAmount = $minorUnits ? $amount / 100 : $amount;
     $displayBase = ($base !== null && $minorUnits) ? $base / 100 : $base;
+    $displayUnitPrice = ($unitPrice !== null && $minorUnits) ? $unitPrice / 100 : $unitPrice;
 
     // Format using PHP NumberFormatter for locale-aware currency display
     $formatter = new \NumberFormatter($locale, \NumberFormatter::CURRENCY);
     $formattedAmount = $formatter->formatCurrency((float) $displayAmount, $currency);
     $formattedBase = $displayBase !== null
         ? $formatter->formatCurrency((float) $displayBase, $currency)
+        : null;
+
+    // Unit price (Grundpreis) — required by EU Price Indication Directive
+    // 98/6/EC and German PAngV (Preisangabenverordnung) for pre-packaged
+    // goods sold by weight / volume / length / area. Reference units are
+    // kg, L, m, m² (or 100 g / 100 ml for nominal quantities ≤ 250 g/ml).
+    // Format: "(€8.99 / L)" alongside the main price, in same currency,
+    // same field of vision, clearly readable. The component does NOT
+    // enforce or validate the chosen reference unit — that is the
+    // consumer's call based on the jurisdiction and product type.
+    $formattedUnitPrice = ($displayUnitPrice !== null && $unitMeasure)
+        ? $formatter->formatCurrency((float) $displayUnitPrice, $currency)
         : null;
 
     // Delta formatting
@@ -46,6 +61,9 @@
         $deltaLabel = $deltaFormat === 'percent' ? abs($delta) . ' percent' : abs($delta);
         $ariaLabel .= $delta < 0 ? ", {$deltaLabel} off" : ", {$deltaLabel} more";
     }
+    if ($formattedUnitPrice !== null) {
+        $ariaLabel .= ", {$formattedUnitPrice} per {$unitMeasure}";
+    }
 
     // Size classes for the primary amount
     $sizeClasses = match ($size) {
@@ -66,30 +84,37 @@
     // Delta intent classes
     $deltaClasses = match ($deltaIntent) {
         'success' => implode(' ', [
-            'text-[var(--color-wk-success-text)]',
+            'text-[color:var(--color-wk-success-text)]',
             'font-[number:var(--font-wk-heading-weight)]',
         ]),
         'danger' => implode(' ', [
-            'text-[var(--color-wk-danger-text)]',
+            'text-[color:var(--color-wk-danger-text)]',
             'font-[number:var(--font-wk-heading-weight)]',
         ]),
         default => implode(' ', [
-            'text-[var(--color-wk-text-muted)]',
+            'text-[color:var(--color-wk-text-muted)]',
             'font-[number:var(--font-wk-heading-weight)]',
         ]),
     };
 @endphp
 
 <span {{ $attributes->class([$baseClasses]) }} aria-label="{{ $ariaLabel }}">
-    {{-- Strike-through original price --}}
+    {{-- Strike-through compare-at price (UVP / RRP / MSRP).
+         Uses inline `text-decoration` to bypass Tailwind v4 class-ordering
+         where `no-underline` could shadow `line-through` on the same element,
+         and to pin the decoration colour to text-muted (border-token is too
+         faint at 91% lightness to read as a strike). --}}
     @if($formattedBase !== null)
-        <del class="text-[var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)] no-underline line-through decoration-[var(--color-wk-border)]">
+        <del
+            class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]"
+            style="text-decoration: line-through; text-decoration-color: var(--color-wk-text-muted); text-decoration-thickness: from-font;"
+        >
             <bdi>{{ $formattedBase }}</bdi>
         </del>
     @endif
 
     {{-- Primary price --}}
-    <bdi class="{{ $sizeClasses }} font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">
+    <bdi class="{{ $sizeClasses }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
         {{ $formattedAmount }}
     </bdi>
 
@@ -102,8 +127,21 @@
 
     {{-- Suffix slot (e.g. "per month") --}}
     @if(isset($suffix))
-        <span class="text-[var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]">
+        <span class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]">
             {{ $suffix }}
+        </span>
+    @endif
+
+    {{-- Unit price (Grundpreis) — formatted as "(€8.99 / L)" alongside the
+         main price. Marked aria-hidden because the same information is
+         already woven into the wrapper's aria-label, so screen readers
+         hear it once instead of twice. --}}
+    @if($formattedUnitPrice !== null)
+        <span
+            class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]"
+            aria-hidden="true"
+        >
+            ({{ $formattedUnitPrice }} / {{ $unitMeasure }})
         </span>
     @endif
 </span>

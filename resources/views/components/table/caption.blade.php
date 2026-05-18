@@ -10,7 +10,7 @@
         'caption-bottom',
         'mt-2',
         'text-[length:var(--text-wk-sm)]',
-        'text-[var(--color-wk-text-muted)]',
+        'text-[color:var(--color-wk-text-muted)]',
         'text-left',
     ]), $scope);
 @endphp

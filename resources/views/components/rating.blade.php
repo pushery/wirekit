@@ -102,18 +102,18 @@
                         {{-- Partial icon: two overlapping SVGs — empty behind, filled clipped in front --}}
                         <span class="relative inline-block {{ $iconSize }}">
                             {{-- Empty icon background --}}
-                            <svg aria-hidden="true" class="{{ $iconSize }} text-[var(--color-wk-text-subtle)] fill-none absolute inset-0" viewBox="{{ $shape['viewBox'] }}" stroke="currentColor" stroke-width="1.5">
+                            <svg aria-hidden="true" class="{{ $iconSize }} text-[color:var(--color-wk-text-subtle)] fill-none absolute inset-0" viewBox="{{ $shape['viewBox'] }}" stroke="currentColor" stroke-width="1.5">
                                 <path d="{{ $shape['path'] }}"/>
                             </svg>
                             {{-- Filled icon foreground, clipped to the fractional width --}}
-                            <svg aria-hidden="true" class="{{ $iconSize }} text-[var(--color-wk-warning)] fill-[var(--color-wk-warning)] absolute inset-0" viewBox="{{ $shape['viewBox'] }}" stroke="currentColor" stroke-width="1.5" style="clip-path: inset(0 {{ (1 - $fraction) * 100 }}% 0 0)">
+                            <svg aria-hidden="true" class="{{ $iconSize }} text-[color:var(--color-wk-warning)] fill-[var(--color-wk-warning)] absolute inset-0" viewBox="{{ $shape['viewBox'] }}" stroke="currentColor" stroke-width="1.5" style="clip-path: inset(0 {{ (1 - $fraction) * 100 }}% 0 0)">
                                 <path d="{{ $shape['path'] }}"/>
                             </svg>
                         </span>
                     @else
                         <svg
                             aria-hidden="true"
-                            class="{{ $iconSize }} {{ $isFull ? 'text-[var(--color-wk-warning)] fill-[var(--color-wk-warning)]' : 'text-[var(--color-wk-text-subtle)] fill-none' }}"
+                            class="{{ $iconSize }} {{ $isFull ? 'text-[color:var(--color-wk-warning)] fill-[var(--color-wk-warning)]' : 'text-[color:var(--color-wk-text-subtle)] fill-none' }}"
                             viewBox="{{ $shape['viewBox'] }}"
                             stroke="currentColor"
                             stroke-width="1.5"
@@ -144,8 +144,8 @@
                         aria-hidden="true"
                         class="{{ $iconSize }} transition-colors duration-[var(--transition-wk-duration)]"
                         :class="(hovered >= {{ $i }} || (!hovered && rating >= {{ $i }}))
-                            ? 'text-[var(--color-wk-warning)] fill-[var(--color-wk-warning)]'
-                            : 'text-[var(--color-wk-text-subtle)] fill-none'"
+                            ? 'text-[color:var(--color-wk-warning)] fill-[var(--color-wk-warning)]'
+                            : 'text-[color:var(--color-wk-text-subtle)] fill-none'"
                         viewBox="{{ $shape['viewBox'] }}"
                         stroke="currentColor"
                         stroke-width="1.5"

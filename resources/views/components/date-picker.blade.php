@@ -40,8 +40,8 @@
         'w-full',
         'px-[var(--padding-wk-x-md)]',
         'bg-[var(--color-wk-bg-input)]',
-        'text-[var(--color-wk-text)]',
-        'placeholder:text-[var(--color-wk-text-placeholder)]',
+        'text-[color:var(--color-wk-text)]',
+        'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-[length:var(--border-wk-width)]',
         $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-md)]',
@@ -72,9 +72,9 @@
 
 <div class="w-full">
     @if($label)
-        <label for="{{ $dateId }}" class="block mb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[var(--color-wk-text)]">
+        <label for="{{ $dateId }}" class="block mb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
             {{ $label }}
-            @if($required)<span aria-hidden="true" class="text-[var(--color-wk-danger-text)]">&nbsp;*</span>@endif
+            @if($required)<span aria-hidden="true" class="text-[color:var(--color-wk-danger-text)]">&nbsp;*</span>@endif
         </label>
     @elseif($needsSrOnlyFallback)
         {{-- Screen-reader-only label fallback. Visible-label-less demos still
@@ -99,11 +99,11 @@
     />
 
     @if($hint && !$hasError)
-        <p id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @if($hasError)
         {{-- Error message linked via aria-describedby for assistive tech. --}}
-        <p id="{{ $errorId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $errorId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 </div>

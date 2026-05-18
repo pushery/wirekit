@@ -29,7 +29,7 @@
         'shadow-[var(--shadow-wk-lg)]',
         'p-[var(--padding-wk-x-md)]',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 @endphp
 

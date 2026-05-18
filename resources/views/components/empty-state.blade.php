@@ -29,23 +29,23 @@
 <div {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     {{-- Icon: iconSlot (if provided) takes priority; else string $icon prop. --}}
     @if($hasIconSlot)
-        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[var(--color-wk-text-muted)]">
+        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">
             {{ $iconSlot }}
         </div>
     @elseif($icon)
-        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[var(--color-wk-text-muted)]">
+        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]">
             <x-wirekit::icon :name="$icon" size="lg" />
         </div>
     @endif
 
     @if($title)
-        <h3 class="mb-1 text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">
+        <h3 class="mb-1 text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $title }}
         </h3>
     @endif
 
     @if($description)
-        <p class="mb-4 max-w-md text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">
+        <p class="mb-4 max-w-md text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $description }}
         </p>
     @endif

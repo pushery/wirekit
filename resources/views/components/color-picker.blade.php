@@ -57,7 +57,7 @@
     $valueClasses = WireKit::resolveClasses('color-picker', 'value', implode(' ', [
         'font-[family-name:var(--font-wk-mono)]',
         'text-[length:var(--text-wk-sm)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'uppercase tracking-wider',
     ]), $scope);
 @endphp

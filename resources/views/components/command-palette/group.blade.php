@@ -12,7 +12,7 @@
         'py-[var(--padding-wk-y-xs)]',
         'text-[length:var(--text-wk-xs)]',
         'font-[number:var(--font-wk-heading-weight)]',
-        'text-[var(--color-wk-text-muted)]',
+        'text-[color:var(--color-wk-text-muted)]',
         'uppercase tracking-wider',
     ]), $scope);
 @endphp

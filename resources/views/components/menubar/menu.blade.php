@@ -14,7 +14,7 @@
         'py-[var(--padding-wk-y-xs)]',
         'cursor-pointer',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'rounded-[var(--radius-wk-sm)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',

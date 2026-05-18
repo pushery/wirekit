@@ -17,7 +17,7 @@
         'inline-flex items-center justify-center',
         'rounded-full',
         'bg-[var(--color-wk-accent)]',
-        'text-[var(--color-wk-accent-fg)]',
+        'text-[color:var(--color-wk-accent-fg)]',
         'shadow-[var(--shadow-wk-lg)]',
         'cursor-pointer',
         'transition-all',

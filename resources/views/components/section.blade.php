@@ -23,8 +23,8 @@
         'default' => '',
         'muted' => 'bg-[var(--color-wk-bg-muted)]',
         'subtle' => 'bg-[var(--color-wk-bg-subtle)]',
-        'inverse' => 'bg-[var(--color-wk-bg-inverse)] text-[var(--color-wk-text-inverse)]',
-        'accent' => 'bg-[var(--color-wk-accent)] text-[var(--color-wk-accent-fg)]',
+        'inverse' => 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]',
+        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
         default => WireKit::validateProp('section', 'background', $background, ['default', 'muted', 'subtle', 'inverse', 'accent']),
     };
 
@@ -40,7 +40,14 @@
         default => '',
     };
 
+    // `wk-section` marker — load-bearing against consumer prose
+    // `max-width: 75ch` clamps (see footer.blade.php for the full
+    // rationale).
     $classes = WireKit::resolveClasses('section', 'base', implode(' ', array_filter([
+        'wk-section',
+        // `w-full` keeps the section full-width inside the docs-site
+        // flex-row preview wrapper (see footer.blade.php for rationale).
+        'w-full',
         $paddingClasses,
         $bgClasses,
         $dividerClasses,

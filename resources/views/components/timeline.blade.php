@@ -12,12 +12,16 @@
     // No margin between items (space-y) — spacing comes from content padding
     // inside each item, so the vertical connector line stays continuous.
     $classes = WireKit::resolveClasses('timeline', 'base', implode(' ', [
+        // list-none + m-0 + p-0 strip the browser-default <ol> decimal markers
+        // and marker indent. Timeline renders its own visual markers per item
+        // (dots and connectors); UA "1. 2. 3." prefixes would clash.
+        'list-none m-0 p-0',
         'relative',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 @endphp
 
-<ol {{ $attributes->class([$classes]) }} data-wk-timeline="{{ $variant }}">
+<ol {{ $attributes->class([$classes]) }} data-wk-timeline="{{ $variant }}" style="list-style: none; margin: 0; padding: 0;">
     {{-- Optional "before" continuation line — indicates earlier events exist --}}
     @if($before)
         <li aria-hidden="true" style="display: flex; justify-content: center; width: var(--size-wk-xs, 1.5rem);">

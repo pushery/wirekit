@@ -9,7 +9,7 @@
         'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',
         'text-[length:0.875em]',
         'bg-[var(--color-wk-bg-muted)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'rounded-[var(--radius-wk-sm)]',
         'px-1.5 py-0.5',
         'border-[length:var(--border-wk-width)]',

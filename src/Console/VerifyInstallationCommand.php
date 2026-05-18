@@ -57,6 +57,7 @@ class VerifyInstallationCommand extends Command
         $this->checkOptionalDependencies();
         $this->checkBuiltCssHasWireKitUtilities();
         $this->checkTokenAlignment();
+        $this->checkRootDarkSymmetry();
 
         // ── Summary ──
         $this->line('');
@@ -93,18 +94,42 @@ class VerifyInstallationCommand extends Command
      */
     private function checkPublishedAssets(): void
     {
-        if (file_exists(public_path('vendor/wirekit/wirekit.css'))) {
-            $this->reportPass('wirekit.css published');
-        } else {
+        $vendorDir = public_path('vendor/wirekit');
+        // The vendor directory exists but the JS/CSS files don't — strong signal
+        // that the consumer ran `wirekit:install` once (which created the dir
+        // and added it to .gitignore), then deployed without `vendor:publish
+        // --force` in the post-deploy hook (or pulled with the dir gitignored
+        // and the deploy stripped the contents). Different from the
+        // never-installed case: the first-time-install fix is a single
+        // `vendor:publish`; the missed-deploy-hook fix is wiring the publish
+        // into every future deploy.
+        $vendorDirExists = is_dir($vendorDir);
+
+        $cssMissing = ! file_exists(public_path('vendor/wirekit/wirekit.css'));
+        $jsMissing = ! file_exists(public_path('vendor/wirekit/wirekit.js'));
+
+        if ($cssMissing) {
             $this->reportFail('wirekit.css not found in public/vendor/wirekit/');
-            $this->line('  Fix: php artisan vendor:publish --tag=wirekit-assets');
+        } else {
+            $this->reportPass('wirekit.css published');
         }
 
-        if (file_exists(public_path('vendor/wirekit/wirekit.js'))) {
-            $this->reportPass('wirekit.js published');
-        } else {
+        if ($jsMissing) {
             $this->reportFail('wirekit.js not found in public/vendor/wirekit/');
-            $this->line('  Fix: php artisan vendor:publish --tag=wirekit-assets');
+        } else {
+            $this->reportPass('wirekit.js published');
+        }
+
+        // Only emit the consolidated fix hint once (not twice for css+js).
+        if ($cssMissing || $jsMissing) {
+            $this->line('  Fix: php artisan vendor:publish --tag=wirekit-assets --force');
+            if ($vendorDirExists) {
+                // Empty-but-existing directory — point at the deploy-hook scenario.
+                $this->line('  Hint: public/vendor/wirekit/ exists but is empty.');
+                $this->line('        Wire `vendor:publish --tag=wirekit-assets --force` into your post-deploy hook.');
+                $this->line('        Default `wirekit:install` adds the dir to .gitignore, so deploys strip it.');
+                $this->line('        See docs/integration.md "Deploy Checklist" for Forge / Envoyer / GitHub Actions snippets.');
+            }
         }
     }
 
@@ -202,9 +227,18 @@ class VerifyInstallationCommand extends Command
         $foundStyles = false;
         $foundScripts = false;
         $orderOk = true;
+        $orderFailedFile = null;
 
         foreach ($bladeFiles as $file) {
-            $content = file_get_contents($file);
+            $rawContent = file_get_contents($file);
+            // Strip Blade comments before scanning — otherwise a comment
+            // containing the literal text `@livewireScripts` (e.g.
+            // `{{-- Note: @livewireScripts must come AFTER @wirekitScripts --}}`)
+            // makes strpos() return the comment's position, producing a
+            // false-positive on the order check. Strip Blade comments
+            // before scanning so an inline annotation referencing the
+            // directive name doesn't mis-cue the order check.
+            $content = preg_replace('/\{\{--.*?--\}\}/s', '', $rawContent) ?? $rawContent;
 
             if (str_contains($content, '@wirekitStyles')) {
                 $foundStyles = true;
@@ -220,16 +254,27 @@ class VerifyInstallationCommand extends Command
 
                     if ($wirekitPos > $livewirePos) {
                         $orderOk = false;
+                        $orderFailedFile ??= $file;
                     }
                 }
             }
         }
 
+        // The @wirekitStyles directive is one of two valid setup paths;
+        // the OTHER valid path is `@import 'wirekit.css'` in app.css.
+        // checkCssImportAntiPattern() detects the second path and reports
+        // it as PASS. To avoid a contradictory FAIL/PASS pair on the same
+        // install, only fail @wirekitStyles when neither path is present.
+        $hasImportPath = $this->hasWirekitCssImportInAppCss();
+
         if ($foundStyles) {
             $this->reportPass('@wirekitStyles directive found');
+        } elseif ($hasImportPath) {
+            $this->reportPass('@wirekitStyles not used (covered by `@import wirekit.css` in app.css — valid alternative)');
         } else {
             $this->reportFail('@wirekitStyles not found in any Blade file');
             $this->line('  Fix: Add @wirekitStyles in <head> of your layout');
+            $this->line('  Or: @import \'../../vendor/pushery/wirekit/dist/wirekit.css\' in resources/css/app.css');
         }
 
         if ($foundScripts) {
@@ -242,9 +287,29 @@ class VerifyInstallationCommand extends Command
         if ($foundScripts && ! $orderOk) {
             $this->reportFail('@wirekitScripts must appear BEFORE @livewireScripts');
             $this->line('  Reason: WireKit Alpine components must register before Livewire starts Alpine');
+            if ($orderFailedFile !== null) {
+                $this->line('  Found in: '.str_replace(base_path().DIRECTORY_SEPARATOR, '', $orderFailedFile));
+            }
         } elseif ($foundScripts) {
             $this->reportPass('@wirekitScripts is before @livewireScripts (or no explicit @livewireScripts)');
         }
+    }
+
+    /**
+     * Detect whether resources/css/app.css imports wirekit.css via a CSS
+     * `@import` rule. This is the alternative-but-equivalent setup path
+     * to the `@wirekitStyles` Blade directive — see the integration docs
+     * "Tip: Both setup paths work in v1.3.0+".
+     */
+    private function hasWirekitCssImportInAppCss(): bool
+    {
+        $appCss = resource_path('css/app.css');
+        if (! file_exists($appCss)) {
+            return false;
+        }
+        $content = file_get_contents($appCss);
+
+        return (bool) preg_match('/@import\b[^;]*wirekit\.css/', $content);
     }
 
     /**
@@ -417,16 +482,83 @@ class VerifyInstallationCommand extends Command
     private function checkOptionalDependencies(): void
     {
         $chartConfig = config('wirekit.charts.library');
+
         if ($chartConfig === 'chartjs') {
             $this->reportPass('Chart.js adapter configured');
+        } elseif ($chartConfig === 'apexcharts') {
+            $this->checkApexChartsAdapter();
         } else {
-            $this->line('  <fg=cyan>i</> Chart.js not configured (optional — only needed for <x-wirekit::chart>)');
+            $this->line('  <fg=cyan>i</> Chart adapter not configured (optional — set charts.library to "chartjs" or "apexcharts" in config/wirekit.php to enable <x-wirekit-chart>)');
         }
 
         if (class_exists(ImageRenderer::class)) {
             $this->reportPass('bacon/bacon-qr-code installed');
         } else {
             $this->line('  <fg=cyan>i</> bacon/bacon-qr-code not installed (optional — only needed for <x-wirekit::qr-code>)');
+        }
+    }
+
+    /**
+     * Three-step ApexCharts adapter check:
+     *   1. Confirm the apexcharts npm package is installed (FAIL on absence —
+     *      otherwise the chart renders blank with a console.error).
+     *   2. License-tier reminder — WARN when apex_license is unset / 'community';
+     *      PASS when 'commercial' / 'oem'. Never FAIL purely on tier choice
+     *      (license compliance is the consumer's responsibility, not a config
+     *      error).
+     *   3. Adapter-bundle presence — confirm dist/wirekit-apex.js was published
+     *      to the public/vendor folder. WARN on absence with a republish hint.
+     */
+    private function checkApexChartsAdapter(): void
+    {
+        $this->reportPass('ApexCharts adapter configured');
+
+        // Step 1: verify the apexcharts npm package is installed.
+        $packageJsonPath = base_path('package.json');
+        if (file_exists($packageJsonPath)) {
+            $packageJson = json_decode((string) file_get_contents($packageJsonPath), true) ?: [];
+            $deps = array_merge(
+                $packageJson['dependencies'] ?? [],
+                $packageJson['devDependencies'] ?? [],
+            );
+            if (! isset($deps['apexcharts'])) {
+                $this->reportFail(
+                    'apexcharts npm package not found in package.json. '
+                    .'Install with `npm install apexcharts` and import it in resources/js/app.js: '
+                    .'`import ApexCharts from "apexcharts"; window.ApexCharts = ApexCharts;`'
+                );
+            } else {
+                $this->reportPass('apexcharts npm package installed');
+            }
+        } else {
+            $this->line('  <fg=cyan>i</> package.json not found — skipping apexcharts npm presence check');
+        }
+
+        // Step 2: license-tier reminder. WARN-only; never FAIL on this.
+        $tier = config('wirekit.charts.apex_license');
+        if ($tier === 'commercial' || $tier === 'oem') {
+            $this->reportPass(sprintf('ApexCharts license tier declared: %s', $tier));
+        } else {
+            $this->reportWarn(
+                'ApexCharts is non-MIT. Confirm your organisation is below the '
+                .'$2M USD revenue threshold for the Community License, or purchase a '
+                .'Commercial License at https://apexcharts.com/license/. '
+                .'Record your tier via `charts.apex_license` in config/wirekit.php '
+                .'(values: community / commercial / oem) to silence this reminder.'
+            );
+        }
+
+        // Step 3: adapter-bundle presence — wirekit-apex.js needs to be
+        // accessible at the public asset path.
+        $publishedAdapterBundle = public_path('vendor/wirekit/wirekit-apex.js');
+        if (file_exists($publishedAdapterBundle)) {
+            $this->reportPass('dist/wirekit-apex.js published to public/vendor/wirekit/');
+        } else {
+            $this->reportWarn(
+                'dist/wirekit-apex.js not found at '.$publishedAdapterBundle.'. '
+                .'Run `php artisan vendor:publish --tag=wirekit-assets --force` to publish '
+                .'the ApexCharts adapter bundle alongside the main bundle.'
+            );
         }
     }
 
@@ -583,20 +715,43 @@ class VerifyInstallationCommand extends Command
     /**
      * Detect Livewire major version from composer.lock.
      * Livewire v4+ bundles Alpine.js, so a separate Alpine check is unnecessary.
+     *
+     * Composer's `version` field uses several string shapes:
+     *   - "4.1.0"      → 4   (plain SemVer)
+     *   - "v4.1.0"     → 4   (v-prefixed — common from git tags)
+     *   - "dev-main"   → 0   (branch alias — caller treats as "unknown major")
+     *   - "4.x-dev"    → 4   (branch alias of a major line)
+     *   - "4.1.0-RC1"  → 4   (pre-release)
+     *
+     * The previous implementation `(int) $version[0]` returned 0 for every
+     * v-prefixed string because `(int)"v" === 0` — flagging Alpine as
+     * missing on every install where Composer kept the v prefix in the lock
+     * file. The regex below scans for the first integer run anywhere in the
+     * version string, so all five shapes above resolve correctly.
      */
-    private function detectLivewireVersion(): int
+    public function detectLivewireVersion(?string $lockPath = null): int
     {
-        $lockPath = base_path('composer.lock');
+        $lockPath ??= base_path('composer.lock');
 
         if (! file_exists($lockPath)) {
             return 0;
         }
 
         $lock = json_decode(file_get_contents($lockPath), true);
+        if (! is_array($lock)) {
+            return 0;
+        }
 
         foreach (array_merge($lock['packages'] ?? [], $lock['packages-dev'] ?? []) as $package) {
-            if ($package['name'] === 'livewire/livewire') {
-                return (int) ($package['version'][0] ?? 0);
+            if (($package['name'] ?? null) === 'livewire/livewire') {
+                $version = (string) ($package['version'] ?? '');
+                // Match the FIRST run of digits anywhere in the version string.
+                // Handles "v4.1.0", "4.1.0", "4.x-dev", "4.1.0-RC1".
+                if (preg_match('/(\d+)/', $version, $m)) {
+                    return (int) $m[1];
+                }
+
+                return 0;
             }
         }
 
@@ -685,7 +840,7 @@ class VerifyInstallationCommand extends Command
 
         // Skip if either token is unset
         if ($twValue === null || $wkValue === null) {
-            $this->line("    <fg=blue>i</> {$label}: skipped (token unset on consumer side)");
+            $this->line("    <fg=blue>i</> {$label}: skipped (Tailwind-side token unset)");
 
             return;
         }
@@ -739,5 +894,120 @@ class VerifyInstallationCommand extends Command
         $first = trim($first, "'\"");
 
         return mb_strtolower($first);
+    }
+
+    /**
+     * Detect `:root` ↔ `.dark` color-token override asymmetry.
+     *
+     * If a consumer overrides `--color-wk-accent` in `:root` but DOES NOT
+     * provide a matching declaration in `.dark`, dark mode silently falls
+     * back to WireKit's default. The existing checkTokenAlignment()
+     * compares Tailwind↔WireKit pairs, not the consumer's own root vs
+     * dark blocks — so this complementary check fills that gap.
+     *
+     * Restricts to `--color-wk-*` family. Font / radius / shadow / motion
+     * tokens are typically theme-agnostic (same value in both modes), so
+     * asymmetry there is not a bug. Reads `resources/css/app.css` only —
+     * the source of truth for consumer overrides; the built bundle aggregates
+     * Tailwind output with the consumer's source so reading the source is
+     * cleaner.
+     */
+    private function checkRootDarkSymmetry(): void
+    {
+        $appCss = resource_path('css/app.css');
+        if (! file_exists($appCss)) {
+            return;
+        }
+        $content = file_get_contents($appCss);
+        if ($content === false) {
+            return;
+        }
+
+        $rootBlock = $this->extractCssBlock($content, ':root');
+        $darkBlock = $this->extractCssBlock($content, '.dark');
+
+        if ($rootBlock === '' || $darkBlock === '') {
+            // No :root or no .dark — no asymmetry to report. The user
+            // either has neither (clean default) or has only :root with
+            // no dark intention (also fine — they're light-only).
+            return;
+        }
+
+        $rootTokens = $this->parseColorTokens($rootBlock);
+        $darkTokens = $this->parseColorTokens($darkBlock);
+
+        if ($rootTokens === []) {
+            return;
+        }
+
+        $asymmetric = array_diff_key($rootTokens, $darkTokens);
+
+        if ($asymmetric === []) {
+            $this->reportPass('Token symmetry: every overridden `--color-wk-*` token has a matching `.dark` declaration');
+
+            return;
+        }
+
+        $this->reportWarn('Token symmetry: '.count($asymmetric).' colour token(s) overridden in `:root` but not in `.dark`');
+        foreach (array_keys($asymmetric) as $token) {
+            $this->line("    <fg=gray>•</> {$token}");
+        }
+        $this->line('    <fg=gray>Dark mode falls back to WireKit defaults for these tokens.</>');
+        $this->line('    <fg=gray>Add matching declarations to your `.dark { … }` block.</>');
+    }
+
+    /**
+     * Extract the body of a CSS rule like `:root { ... }` or `.dark { ... }`.
+     * Returns the inner text (without the wrapping braces) or empty string.
+     * Naive — assumes no rule nesting; consumer overrides almost never nest.
+     */
+    private function extractCssBlock(string $css, string $selector): string
+    {
+        $pos = strpos($css, $selector);
+        if ($pos === false) {
+            return '';
+        }
+        $brace = strpos($css, '{', $pos);
+        if ($brace === false) {
+            return '';
+        }
+        $depth = 1;
+        $i = $brace + 1;
+        $start = $i;
+        $len = strlen($css);
+        while ($i < $len && $depth > 0) {
+            if ($css[$i] === '{') {
+                $depth++;
+            } elseif ($css[$i] === '}') {
+                $depth--;
+            }
+            $i++;
+        }
+
+        return substr($css, $start, ($i - 1) - $start);
+    }
+
+    /**
+     * Parse `--color-wk-*: value;` declarations from a CSS block body.
+     * Returns ['--color-wk-name' => 'value', ...]. Comments stripped first.
+     * Restricted to the color-wk family — font/radius/shadow/motion tokens
+     * are theme-agnostic and don't need .dark counterparts.
+     */
+    private function parseColorTokens(string $block): array
+    {
+        $block = preg_replace('~/\*.*?\*/~s', '', $block) ?? '';
+        $tokens = [];
+        foreach (explode(';', $block) as $decl) {
+            $decl = trim($decl);
+            if ($decl === '' || ! str_starts_with($decl, '--color-wk-')) {
+                continue;
+            }
+            [$name, $value] = array_pad(array_map('trim', explode(':', $decl, 2)), 2, '');
+            if ($name !== '') {
+                $tokens[$name] = $value;
+            }
+        }
+
+        return $tokens;
     }
 }

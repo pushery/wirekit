@@ -12,6 +12,14 @@
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'callout');
 
+    // Validate variant against the canonical intent set. 'primary' and 'info'
+    // are visual synonyms on callout (both use --color-wk-accent — there is
+    // no separate --color-wk-info token in the WireKit token surface).
+    $variantValue = match ($variant) {
+        'primary', 'neutral', 'info', 'success', 'warning', 'danger' => $variant,
+        default => WireKit::validateProp('callout', 'variant', $variant, ['primary', 'neutral', 'info', 'success', 'warning', 'danger']),
+    };
+
     // Callout is visually denser than Alert, designed for inline documentation
     // notices. It is persistent (no dismiss), supports title+body+action slots.
     // When bordered=false, only the left accent stripe is shown (no all-around border).
@@ -23,46 +31,46 @@
         $bordered ? 'border-[length:var(--border-wk-width)]' : 'border-0',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
     // Variant colors with stronger background tint than Alert (15% vs 10%)
     // for visual density distinction
-    $variantColors = match ($variant) {
+    $variantColors = match ($variantValue) {
         'success' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-success)_40%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_15%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[var(--color-wk-success)]',
+            'icon' => 'text-[color:var(--color-wk-success)]',
             'stripe' => 'bg-[var(--color-wk-success)]',
         ],
         'warning' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-warning)_40%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_15%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[var(--color-wk-warning)]',
+            'icon' => 'text-[color:var(--color-wk-warning)]',
             'stripe' => 'bg-[var(--color-wk-warning)]',
         ],
         'danger' => [
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-danger)_40%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_15%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[var(--color-wk-danger)]',
+            'icon' => 'text-[color:var(--color-wk-danger)]',
             'stripe' => 'bg-[var(--color-wk-danger)]',
         ],
         'neutral' => [
             'border' => 'border-[var(--color-wk-border)]',
             'bg' => 'bg-[var(--color-wk-bg-subtle)]',
-            'icon' => 'text-[var(--color-wk-text-muted)]',
+            'icon' => 'text-[color:var(--color-wk-text-muted)]',
             'stripe' => 'bg-[var(--color-wk-text-muted)]',
         ],
-        default => [ // info
+        default => [ // primary, info
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-accent)_40%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_15%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[var(--color-wk-accent)]',
+            'icon' => 'text-[color:var(--color-wk-accent)]',
             'stripe' => 'bg-[var(--color-wk-accent)]',
         ],
     };
 
     // Default inline SVG icons per variant (reused from Alert)
-    $defaultIcon = match ($variant) {
+    $defaultIcon = match ($variantValue) {
         'success' => '<path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />',
         'warning' => '<path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />',
         'danger' => '<path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-5a.75.75 0 01.75.75v4.5a.75.75 0 01-1.5 0v-4.5A.75.75 0 0110 5zm0 10a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" />',
@@ -93,9 +101,9 @@
     {{-- Body: title (named slot) + message (default slot) + actions (named slot) --}}
     <div class="flex-1 min-w-0">
         @isset($title)
-            <div class="font-[number:var(--font-wk-heading-weight)] mb-1 text-[var(--color-wk-text)]">{{ $title }}</div>
+            <div class="font-[number:var(--font-wk-heading-weight)] mb-1 text-[color:var(--color-wk-text)]">{{ $title }}</div>
         @endisset
-        <div class="text-[var(--color-wk-text-muted)]">{{ $slot }}</div>
+        <div class="text-[color:var(--color-wk-text-muted)]">{{ $slot }}</div>
         @isset($actions)
             <div class="mt-3 flex items-center gap-2">{{ $actions }}</div>
         @endisset

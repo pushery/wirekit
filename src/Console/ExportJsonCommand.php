@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
+use Pushery\WireKit\Support\VersionResolver;
 
 /**
  * components.json export.
@@ -231,14 +232,13 @@ class ExportJsonCommand extends Command
         return array_values(array_unique($slotNames));
     }
 
+    /**
+     * Resolve the running WireKit version. Delegates to VersionResolver so
+     * `wirekit:export-json` / `wirekit:export-api-map` / `wirekit:export-blocks`
+     * stay in lockstep — see VersionResolver for the priority order.
+     */
     private function packageVersion(): string
     {
-        $composerPath = __DIR__.'/../../composer.json';
-        if (! file_exists($composerPath)) {
-            return 'unknown';
-        }
-        $composer = json_decode(file_get_contents($composerPath), true);
-
-        return $composer['version'] ?? 'dev';
+        return VersionResolver::resolve();
     }
 }

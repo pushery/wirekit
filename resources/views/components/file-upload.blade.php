@@ -48,17 +48,19 @@
     ]), $scope);
 
     // Icon + label text styling.
-    $iconClasses = 'w-8 h-8 text-[var(--color-wk-text-subtle)]';
-    $labelClasses = 'text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]';
+    $iconClasses = 'w-8 h-8 text-[color:var(--color-wk-text-subtle)]';
+    $labelClasses = 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]';
 
     // File list below the dropzone — w-full prevents long filenames from
     // growing beyond the dropzone width; gap-sm for comfortable vertical spacing.
-    $listClasses = WireKit::resolveClasses('file-upload', 'list', 'w-full mt-[var(--padding-wk-y-sm)] flex flex-col gap-[var(--padding-wk-y-sm)]', $scope);
+    // list-none + m-0 + p-0 strip the browser-default <ul> disc markers and
+    // marker indent; the file list renders icon + filename rows, bullets would clutter.
+    $listClasses = WireKit::resolveClasses('file-upload', 'list', 'list-none m-0 p-0 w-full mt-[var(--padding-wk-y-sm)] flex flex-col gap-[var(--padding-wk-y-sm)]', $scope);
     // min-w-0 prevents flex children from overflowing when filenames are long.
     // group class enables hover-reveal of the remove button.
     $fileItemClasses = implode(' ', [
         'group flex items-center gap-[var(--padding-wk-x-sm)] min-w-0',
-        'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
+        'p-[var(--padding-wk-y-xs)]',
         'text-[length:var(--text-wk-sm)]',
         'bg-[var(--color-wk-bg-muted)]',
         'rounded-[var(--radius-wk-md)]',
@@ -141,19 +143,19 @@
 
     {{-- Selected files list — rendered only when files exist.
          Each item shows filename (truncated), size, and a remove button on hover. --}}
-    <ul class="{{ $listClasses }}" x-show="files.length > 0" x-cloak>
+    <ul class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;" x-show="files.length > 0" x-cloak>
         <template x-for="(file, index) in files" :key="file.name">
             <li class="{{ $fileItemClasses }}">
                 {{-- Filename — min-w-0 + truncate prevents long names from expanding the container --}}
                 <span class="truncate min-w-0" x-text="file.name"></span>
                 {{-- File size — fixed width so it doesn't shift when remove button appears --}}
-                <span class="text-[var(--color-wk-text-muted)] tabular-nums shrink-0" x-text="formatBytes(file.size)"></span>
+                <span class="text-[color:var(--color-wk-text-muted)] tabular-nums shrink-0" x-text="formatBytes(file.size)"></span>
                 {{-- Remove button — chip-style X aligned with <x-wirekit::tags-input>:
                      always visible, subtle rounded background on hover, danger text on hover. --}}
                 <button
                     type="button"
                     @click="removeFile(index)"
-                    class="shrink-0 p-0.5 rounded-[var(--radius-wk-sm)] text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                    class="shrink-0 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                     :aria-label="'Remove ' + file.name"
                 >
                     {{-- X icon — decorative, label is on the button. Matches the
@@ -167,11 +169,11 @@
     </ul>
 
     @if($hint && !$hasError)
-        <p id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @if($hasError)
         {{-- Error message — aria-describedby'd above, and visually distinguished. --}}
-        <p id="{{ $errorId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $errorId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 </div>

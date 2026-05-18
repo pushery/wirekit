@@ -2,7 +2,7 @@
  * WireKit Core Bundle (IIFE).
  *
  * Contains only the chart Alpine component — no overlay dependencies.
- * For projects that only use Phase 1 form components + charts.
+ * For projects that only use the core form components + charts.
  */
 import wirekitChartJs from './components/chart.js';
 import wirekitImageCompare from './components/image-compare.js';

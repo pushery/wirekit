@@ -25,7 +25,7 @@
         'shadow-[var(--shadow-wk-lg)]',
         'p-[var(--padding-wk-x-md)]',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 @endphp
 
@@ -45,24 +45,24 @@
     @endisset
 
     {{-- Step body --}}
-    <div class="text-[var(--color-wk-text-muted)] mb-[var(--padding-wk-y-md)]">
+    <div class="text-[color:var(--color-wk-text-muted)] mb-[var(--padding-wk-y-md)]">
         {{ $slot }}
     </div>
 
     {{-- Step footer — navigation + progress --}}
     <div class="flex items-center justify-between">
-        <span class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)] tabular-nums" x-text="progressText"></span>
+        <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" x-text="progressText"></span>
         <div class="flex items-center gap-[var(--gap-wk-sm)]">
             <button
                 type="button"
                 x-show="currentStep > 0"
                 x-on:click="prev()"
-                class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)] rounded-[var(--radius-wk-sm)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-sm)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >Back</button>
             <button
                 type="button"
                 x-on:click="next()"
-                class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer bg-[var(--color-wk-accent)] text-[var(--color-wk-accent-fg)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-accent-hover)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-accent-hover)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 x-text="currentStep === totalSteps - 1 ? 'Finish' : 'Next'"
             ></button>
         </div>

@@ -29,12 +29,12 @@
         ? implode(' ', [
             'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))]',
             'border-[color-mix(in_srgb,var(--color-wk-accent)_35%,transparent)]',
-            'text-[var(--color-wk-accent-content)]',
+            'text-[color:var(--color-wk-accent-content)]',
         ])
         : implode(' ', [
             'bg-[var(--color-wk-bg-muted)]',
             'border-transparent',
-            'text-[var(--color-wk-text-muted)]',
+            'text-[color:var(--color-wk-text-muted)]',
             'hover:border-[var(--color-wk-border)]',
             'hover:bg-[var(--color-wk-bg-elevated)]',
         ]);

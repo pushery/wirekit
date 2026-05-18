@@ -14,7 +14,7 @@
         'font-[family-name:var(--font-wk-sans)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'text-[length:var(--text-wk-lg)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 @endphp
 

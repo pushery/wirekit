@@ -40,7 +40,7 @@
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
         'bg-[var(--color-wk-bg-elevated)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'hover:bg-[var(--color-wk-bg-muted)]',
@@ -61,7 +61,7 @@
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border-subtle)]',
         'bg-[var(--color-wk-bg-subtle)]',
-        'text-[var(--color-wk-text-subtle)]',
+        'text-[color:var(--color-wk-text-subtle)]',
         'cursor-not-allowed',
         'opacity-[var(--opacity-wk-disabled)]',
     ]);
@@ -75,7 +75,7 @@
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-accent)]',
         'bg-[var(--color-wk-accent)]',
-        'text-[var(--color-wk-accent-fg)]',
+        'text-[color:var(--color-wk-accent-fg)]',
         'font-[number:var(--font-wk-heading-weight)]',
     ]);
 @endphp
@@ -93,7 +93,7 @@
 
         @if($variant === 'simple')
             {{-- Centered "Page X of Y" label — hidden on mini variant for tighter footprint --}}
-            <span class="text-[var(--color-wk-text-muted)]">
+            <span class="text-[color:var(--color-wk-text-muted)]">
                 Page {{ $paginator->currentPage() }} of {{ $paginator->lastPage() }}
             </span>
         @endif
@@ -107,13 +107,13 @@
         </div>
     @else
         {{-- Full: prev + numbered pages + next (standard Laravel paginator links) --}}
-        <div class="text-[var(--color-wk-text-muted)]">
+        <div class="text-[color:var(--color-wk-text-muted)]">
             Showing
-            <span class="font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">{{ $paginator->firstItem() ?? 0 }}</span>
+            <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $paginator->firstItem() ?? 0 }}</span>
             to
-            <span class="font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">{{ $paginator->lastItem() ?? 0 }}</span>
+            <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $paginator->lastItem() ?? 0 }}</span>
             of
-            <span class="font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">{{ $paginator->total() }}</span>
+            <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $paginator->total() }}</span>
             results
         </div>
 

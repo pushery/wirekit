@@ -8,7 +8,11 @@
     use Pushery\WireKit\WireKit;
 
     // Main — primary content area in app-shell layouts.
+    // `wk-main` marker — load-bearing against consumer prose
+    // `max-width: 75ch` clamps (see footer.blade.php for the full
+    // rationale).
     $classes = WireKit::resolveClasses('main', 'base', implode(' ', [
+        'wk-main',
         'flex-1',
         'overflow-y-auto',
     ]), $scope);
