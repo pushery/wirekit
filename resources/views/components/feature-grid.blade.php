@@ -1,6 +1,11 @@
 @props([
     'cols' => config('wirekit.components.feature-grid.cols', '1 sm:2 lg:3'),
     'gap' => 'lg',
+    // Cascade entrance animations across direct children.
+    // null = no stagger (default — each child animates simultaneously)
+    // true = enable with default 75ms step
+    // int  = explicit ms step (e.g. 125)
+    'stagger' => null,
     'scope' => null,
 ])
 
@@ -36,13 +41,24 @@
         default => WireKit::validateProp('feature-grid', 'gap', $gap, ['none', 'sm', 'md', 'lg', 'xl']),
     };
 
+    // Stagger logic — see dist/wirekit.css `.wk-stagger` rules. The Blade
+    // wrapper sets the per-step ms value via inline custom property; CSS
+    // `:nth-child` rules walk the index up to a cap of 8 to keep long
+    // grids from producing runaway delays.
+    $hasStagger = $stagger !== null && $stagger !== false;
+    $staggerStep = is_int($stagger) ? $stagger : 75;
+
     $classes = WireKit::resolveClasses('feature-grid', 'base', implode(' ', [
         'grid',
         $colsClasses,
         $gapClasses,
+        $hasStagger ? 'wk-stagger' : '',
     ]), $scope);
 @endphp
 
-<div {{ $attributes->class([$classes]) }}>
+<div
+    {{ $attributes->class([$classes]) }}
+    @if($hasStagger) style="--wk-stagger-step: {{ $staggerStep }}ms" @endif
+>
     {{ $slot }}
 </div>

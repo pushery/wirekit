@@ -16,7 +16,7 @@
     $classes = WireKit::resolveClasses('table.td', 'base', implode(' ', [
         'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'font-[number:var(--font-wk-body-weight)]',
         $alignClass,
         // Compact variant: reduce vertical padding to match th

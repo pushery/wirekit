@@ -25,9 +25,18 @@
         'end' => 'justify-end',
     };
 
+    /*
+     * Equal horizontal + vertical inset so the leading button doesn't
+     * sit flush against the container edge. Without `px-*` the first
+     * action (typically a "Save" / "Filter" button) ended up touching
+     * the toolbar's left border — visually broken on every sticky-
+     * pinned variant where the left border is a strong scroll-track
+     * edge. Sized off the same density token as `py-*` so the
+     * button-cluster sits in a uniform inset frame.
+     */
     $paddingClass = match ($densityValue) {
-        'compact' => 'py-[var(--space-wk-xs,0.25rem)]',
-        default => 'py-[var(--space-wk-sm,0.5rem)]',
+        'compact' => 'px-[var(--space-wk-xs,0.25rem)] py-[var(--space-wk-xs,0.25rem)]',
+        default => 'px-[var(--space-wk-sm,0.5rem)] py-[var(--space-wk-sm,0.5rem)]',
     };
 
     $gapClass = match ($densityValue) {

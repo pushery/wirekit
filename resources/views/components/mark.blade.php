@@ -7,7 +7,7 @@
 
     $classes = WireKit::resolveClasses('mark', 'base', implode(' ', [
         'bg-[var(--color-wk-warning-bg,oklch(0.905 0.093 102.1))]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'rounded-[var(--radius-wk-sm)]',
         'px-0.5',
     ]), $scope);

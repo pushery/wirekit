@@ -31,21 +31,21 @@
     $tabBase = 'inline-flex items-center gap-2 font-[number:var(--font-wk-body-weight)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed cursor-pointer';
 
     $tabVariantClasses = match ($variant) {
-        'pills' => 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] rounded-[var(--radius-wk-md)]',
-        'bordered' => 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)] last:border-r-0',
-        default => 'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] -mb-[length:var(--border-wk-width)] border-b-2 border-transparent',
+        'pills' => 'p-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-md)]',
+        'bordered' => 'p-[var(--padding-wk-x-sm)] border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)] last:border-r-0',
+        default => 'p-[var(--padding-wk-x-sm)] -mb-[length:var(--border-wk-width)] border-b-[3px] border-transparent',
     };
 
     $tabClasses = WireKit::resolveClasses('tabs', 'tab', $tabBase . ' ' . $tabVariantClasses, $scope);
 
     // Active-state classes applied conditionally via Alpine :class binding.
     $tabActiveClasses = match ($variant) {
-        'pills' => 'bg-[var(--color-wk-bg-elevated)] text-[var(--color-wk-text)] shadow-[var(--shadow-wk-sm)]',
-        'bordered' => 'bg-[var(--color-wk-accent)] text-[var(--color-wk-accent-fg)]',
-        default => 'border-[var(--color-wk-accent)] text-[var(--color-wk-text)]',
+        'pills' => 'bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-sm)]',
+        'bordered' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+        default => 'border-[var(--color-wk-accent)] text-[color:var(--color-wk-text)]',
     };
 
-    $tabInactiveClasses = 'text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)]';
+    $tabInactiveClasses = 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]';
 
     // Panel container — the area below the tablist that shows the active panel.
     $panelClasses = WireKit::resolveClasses('tabs', 'panel', 'pt-[var(--padding-wk-y-md)]', $scope);

@@ -53,7 +53,7 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'cursor-pointer',
-        'text-[var(--color-wk-accent-fg)]',
+        'text-[color:var(--color-wk-accent-fg)]',
     ]), $scope);
 
     if ($hasError) {
@@ -82,14 +82,14 @@
         {{-- Checkmark overlay — absolutely positioned ON TOP of the box.
              Must also be a sibling of .peer (not nested in the box) so peer-checked matches. --}}
         <svg
-            class="hidden peer-checked:block pointer-events-none absolute left-0 top-0 w-5 h-5 p-0.5 text-[var(--color-wk-accent-fg)]"
+            class="hidden peer-checked:block pointer-events-none absolute left-0 top-0 w-5 h-5 p-0.5 text-[color:var(--color-wk-accent-fg)]"
             fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"
         >
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
         </svg>
         {{-- Indeterminate dash overlay — same positioning, visible only when input.indeterminate is true --}}
         <svg
-            class="hidden peer-indeterminate:block pointer-events-none absolute left-0 top-0 w-5 h-5 p-0.5 text-[var(--color-wk-accent-fg)]"
+            class="hidden peer-indeterminate:block pointer-events-none absolute left-0 top-0 w-5 h-5 p-0.5 text-[color:var(--color-wk-accent-fg)]"
             fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"
         >
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
@@ -97,16 +97,16 @@
 
         @if($slot->isNotEmpty())
             {{-- Slot-based label: supports rich HTML (links, formatting) for use cases like GDPR consent --}}
-            <span class="text-[length:var(--text-wk-md)] text-[var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $slot }}</span>
+            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $slot }}</span>
         @elseif($label)
-            <span class="text-[length:var(--text-wk-md)] text-[var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $label }}</span>
+            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $label }}</span>
         @endif
     </label>
 
     {{-- Error message or hint text --}}
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

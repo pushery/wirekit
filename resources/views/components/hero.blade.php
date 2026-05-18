@@ -18,17 +18,24 @@
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'hero');
 
     // Hero — landing page hero section with title, lede, actions, and optional aside.
+    // `wk-hero` marker — load-bearing against consumer prose
+    // `max-width: 75ch` clamps (see footer.blade.php for the full
+    // rationale on this defensive pattern).
     $classes = WireKit::resolveClasses('hero', 'base', implode(' ', [
+        'wk-hero',
+        // `w-full` keeps the hero full-width inside the docs-site
+        // flex-row preview wrapper (see footer.blade.php for rationale).
+        'w-full',
         'relative overflow-hidden',
         'py-[var(--space-wk-section-lg,7rem)]',
         'px-[var(--padding-wk-x-lg)]',
     ]), $scope);
 
     $variantClasses = match ($variant) {
-        'default' => 'bg-[var(--color-wk-bg)] text-[var(--color-wk-text)]',
-        'dark' => 'bg-[var(--color-wk-bg-inverse)] text-[var(--color-wk-text-inverse)]',
-        'accent' => 'bg-[var(--color-wk-accent)] text-[var(--color-wk-accent-fg)]',
-        'muted' => 'bg-[var(--color-wk-bg-muted)] text-[var(--color-wk-text)]',
+        'default' => 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
+        'dark' => 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]',
+        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+        'muted' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
         default => WireKit::validateProp('hero', 'variant', $variant, ['default', 'dark', 'accent', 'muted']),
     };
 
@@ -89,7 +96,21 @@
     // for column layouts (centered/stacked) the natural flow is fine — items-center centers them in the cross-axis.
     $outerItemsClasses = $outerFlexClasses === 'flex-col' ? 'items-stretch' : 'items-center';
 
-    $gradientClasses = $gradient ? 'bg-gradient-to-br from-transparent to-black/10' : '';
+    // Gradient overlay direction is variant-aware so the effect stays visible
+    // regardless of the underlying background luminance:
+    //   - default (light surface): 10 % BLACK at the bottom-right corner reads
+    //     as a subtle vignette darkening.
+    //   - muted (subtle-tinted surface): same as default — a touch of black
+    //     adds depth without competing.
+    //   - dark / accent (saturated or near-black surface in WireKit's neutral
+    //     default theme): black-on-near-black is invisible. Switch to a 12 %
+    //     WHITE overlay so the corner LIGHTENS instead, producing a
+    //     comparable depth cue against dark backgrounds.
+    $gradientOverlayClass = match ($variant) {
+        'dark', 'accent' => 'bg-gradient-to-br from-transparent to-white/30',
+        default => 'bg-gradient-to-br from-transparent to-black/20',
+    };
+    $gradientClasses = $gradient ? $gradientOverlayClass : '';
 @endphp
 
 <section {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} @endif>

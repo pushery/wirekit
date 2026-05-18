@@ -10,7 +10,7 @@
     $classes = WireKit::resolveClasses('alert-dialog.title', 'base', implode(' ', [
         'text-[length:var(--text-wk-lg)]',
         'font-[number:var(--font-wk-heading-weight)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'leading-[var(--leading-wk-tight)]',
     ]), $scope);
 @endphp

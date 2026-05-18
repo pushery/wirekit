@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
+use Pushery\WireKit\Support\VersionResolver;
 
 /**
  * emit a `/blocks.json` machine-readable manifest of every
@@ -35,6 +36,14 @@ class ExportBlocksCommand extends Command
         {--pretty : Pretty-print (multi-line) output}';
 
     protected $description = 'Emit a machine-readable JSON manifest of every layout + blueprint';
+
+    /**
+     * Hidden from `php artisan list` and from the public CLI reference doc
+     * until the docs site's `/blocks` gallery flips from `visibility: admin`
+     * to `visibility: guest`. The command itself works fine — it just
+     * doesn't surface in consumer-facing tooling yet.
+     */
+    protected $hidden = true;
 
     public function handle(): int
     {
@@ -69,15 +78,17 @@ class ExportBlocksCommand extends Command
         return self::SUCCESS;
     }
 
+    /**
+     * Resolve the running WireKit version. Delegates to VersionResolver so
+     * the three export commands stay in lockstep — see VersionResolver for
+     * the priority order. `$packageRoot` is preserved for backward-compat
+     * with the existing call site but no longer consulted directly.
+     */
     private function detectVersion(string $packageRoot): string
     {
-        $composerPath = $packageRoot.'/composer.json';
-        if (! file_exists($composerPath)) {
-            return 'unknown';
-        }
-        $manifest = json_decode((string) file_get_contents($composerPath), true);
+        unset($packageRoot);
 
-        return is_array($manifest) && isset($manifest['version']) ? (string) $manifest['version'] : 'dev-develop';
+        return VersionResolver::resolve();
     }
 
     /**

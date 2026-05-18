@@ -12,6 +12,11 @@
     'once' => null,
     // IntersectionObserver threshold (only used when trigger='viewport'). 0..1.
     'threshold' => null,
+    // Delay before the entrance animation begins. One of:
+    //   null   — no delay (default — animation begins immediately on trigger)
+    //   'none'/'sm'/'md'/'lg'/'xl' — token name → maps to --motion-wk-delay-* var
+    //   int    — raw milliseconds (e.g. delay="125" for a custom rhythm)
+    'delay' => null,
     'scope' => null,
 ])
 
@@ -58,11 +63,27 @@
         'threshold' => (float) $threshold,
         'duration' => $validatedDuration,
     ], JSON_HEX_TAG | JSON_UNESCAPED_SLASHES);
+
+    // Delay resolution:
+    //   null  → no animation-delay style emitted
+    //   int   → '125ms' (raw)
+    //   token → 'var(--motion-wk-delay-{token})'
+    // The CSS `animation-delay` is set via inline style on the root, so the
+    // browser composes it with the wk-animate-{preset} class the moment
+    // the Alpine helper adds the class. No JS plugin change needed.
+    $delay ??= config('wirekit.components.reveal.delay', null);
+    $delayValue = match (true) {
+        $delay === null => null,
+        is_int($delay) && $delay >= 0 => $delay.'ms',
+        in_array($delay, ['none', 'sm', 'md', 'lg', 'xl'], true) => "var(--motion-wk-delay-{$delay})",
+        default => WireKit::validateProp('reveal', 'delay', $delay, ['none', 'sm', 'md', 'lg', 'xl']),
+    };
 @endphp
 
 <div
-    {{ $attributes }}
+    {{ $attributes->merge(['data-replayable' => 'true', 'class' => 'w-full']) }}
     x-data="wirekitAnimate('{{ $validatedPreset }}', {{ $optionsJson }})"
+    @if($delayValue) style="animation-delay: {{ $delayValue }}" @endif
 >
     {{ $slot }}
 </div>

@@ -14,8 +14,7 @@
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-md)]',
-        'px-[var(--padding-wk-x-sm)]',
-        'py-[var(--padding-wk-y-xs)]',
+        'p-[var(--padding-wk-y-xs)]',
         'shadow-[var(--shadow-wk-sm)]',
     ]), $scope);
 @endphp

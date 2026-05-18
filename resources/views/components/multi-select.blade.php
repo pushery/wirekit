@@ -16,11 +16,14 @@
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
 
-    // Container classes — styled like an input field, wraps pills + filter input
+    // Container classes — styled like an input field, wraps pills + filter input.
+    // py-y-sm (0.375rem ≈ 6px) for visually balanced top/bottom padding around
+    // the wrapped pills — py-1 (4px) reads as too tight against the
+    // px-x-md (12px) horizontal padding on the sides.
     $containerClasses = WireKit::resolveClasses('multi-select', 'base', implode(' ', [
         'flex flex-wrap items-center gap-1',
         'min-h-[var(--size-wk-md)]',
-        'px-[var(--padding-wk-x-md)] py-1',
+        'p-[var(--padding-wk-y-sm)]',
         'font-[family-name:var(--font-wk-sans)]',
         'bg-[var(--color-wk-bg-input)]',
         'rounded-[var(--radius-wk-md)]',
@@ -41,15 +44,15 @@
         'pl-[var(--padding-wk-x-sm)] pr-1 py-1',
         'text-[length:var(--text-wk-sm)]',
         'bg-[var(--color-wk-bg-muted)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'rounded-[var(--radius-wk-sm)]',
     ]);
 
     // Dropdown option classes
     $optionClasses = implode(' ', [
-        'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]',
+        'p-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'cursor-pointer',
         'hover:bg-[var(--color-wk-bg-muted)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
@@ -93,7 +96,7 @@
                         type="button"
                         @click.stop="deselect(val)"
                         :aria-label="'Remove ' + getLabel(val)"
-                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                     >
                         <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                     </button>
@@ -118,7 +121,7 @@
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 :placeholder="selected.length === 0 ? '{{ $placeholder }}' : ''"
-                class="flex-1 min-w-[80px] bg-transparent text-[var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[var(--color-wk-text-placeholder)] outline-none"
+                class="flex-1 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] outline-none"
             />
         </div>
 
@@ -152,8 +155,8 @@
     </div>
 
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

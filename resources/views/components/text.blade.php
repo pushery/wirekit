@@ -22,13 +22,13 @@
     };
 
     $variantClasses = match ($variant) {
-        'default' => 'text-[var(--color-wk-text)]',
-        'muted' => 'text-[var(--color-wk-text-muted)]',
-        'subtle' => 'text-[var(--color-wk-text-subtle)]',
-        'accent' => 'text-[var(--color-wk-primary)]',
-        'success' => 'text-[var(--color-wk-success-text)]',
-        'warning' => 'text-[var(--color-wk-warning-text)]',
-        'danger' => 'text-[var(--color-wk-danger-text)]',
+        'default' => 'text-[color:var(--color-wk-text)]',
+        'muted' => 'text-[color:var(--color-wk-text-muted)]',
+        'subtle' => 'text-[color:var(--color-wk-text-subtle)]',
+        'accent' => 'text-[color:var(--color-wk-accent)]',
+        'success' => 'text-[color:var(--color-wk-success-text)]',
+        'warning' => 'text-[color:var(--color-wk-warning-text)]',
+        'danger' => 'text-[color:var(--color-wk-danger-text)]',
         default => WireKit::validateProp('text', 'variant', $variant, ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger']),
     };
 

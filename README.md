@@ -8,7 +8,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/pushery/wirekit.svg)](https://packagist.org/packages/pushery/wirekit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/pushery/wirekit?style=flat&logo=github)](https://github.com/pushery/wirekit/stargazers)
-[![Components](https://img.shields.io/badge/components-110-5046e5)](https://docs.wirekit.app)
+[![Components](https://img.shields.io/badge/components-browse-5046e5)](https://docs.wirekit.app)
 
 [![PHP ≥ 8.4](https://img.shields.io/packagist/dependency-v/pushery/wirekit/php?logo=php&logoColor=white&color=777BB4&label=PHP)](https://www.php.net)
 [![Laravel 12+](https://img.shields.io/badge/Laravel-12+-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
@@ -18,7 +18,7 @@
 
 A free, open-source UI component library for **Laravel Livewire** — build app dashboards and marketing pages with **Tailwind CSS v4** and **Alpine.js**, zero utility-class soup.
 
-**110 components** across forms, navigation, overlays, layout, marketing, data display, and more — fully themeable, accessible by default, and dark-mode aware.
+A comprehensive component library covering forms, navigation, overlays, layout, marketing, data display, and more — fully themeable, accessible by default, and dark-mode aware.
 
 → **Full documentation: [docs.wirekit.app](https://docs.wirekit.app)**
 
@@ -90,7 +90,7 @@ Full setup walkthrough: **[Getting Started](https://docs.wirekit.app/getting-sta
 
 ## What's Included
 
-110 components organised into 11 categories. Browse, search, and try every component live on **[docs.wirekit.app](https://docs.wirekit.app)**.
+A wide catalogue of components organised by category. Browse, search, and try every component live on **[docs.wirekit.app](https://docs.wirekit.app)**.
 
 | Category | Examples |
 |----------|----------|
@@ -98,12 +98,14 @@ Full setup walkthrough: **[Getting Started](https://docs.wirekit.app/getting-sta
 | **Display** | badge, card, avatar, alert, callout, image-compare, kanban, reveal, … |
 | **Data Display** | table, pagination, stat, progress, skeleton, timeline, tree-view, ticker, price, … |
 | **Overlays** | dropdown, tooltip, modal, drawer, popover, hover-card, command-palette, alert-dialog, … |
-| **Navigation** | tabs, breadcrumb, accordion, sidebar, navbar, menubar, navigation-menu, stepper, … |
+| **Navigation** | tabs, breadcrumb, accordion, sidebar, navbar, brand-bar, menubar, navigation-menu, stepper, … |
 | **Layout** | app-shell, header, main, container, stack, grid, section, divider, … |
 | **Typography** | heading, text, link, code, code-block, kbd, list, blockquote, mark, … |
 | **Marketing** | hero, feature-grid, feature, cta, footer |
-| **Utilities** | fonts, icon, chart, scroll-area, scroll-to-top, structured-data |
+| **Utilities** | fonts, icon, chart, chart-mixed, sparkline, scroll-area, scroll-to-top, structured-data |
 | **Specialized** | resizable, carousel, calendar, tour, qr-code, action-bar, prose, liquid-glass |
+| **Reading** | reading-progress, reading-spine, reading-toc, reading-minimap, reading-bookmark, reading-meta, reading-shell |
+| **Animation** | reveal, replay-button |
 | **Feedback** | toast |
 
 ## Theming & Customization
@@ -122,9 +124,9 @@ WireKit ships with a **4-level customization system** — from CSS-variable them
 
 ## Optional Integrations
 
-- **Fonts** — 21 Google Fonts bundled locally (GDPR-compliant). Configure via `config/wirekit.php`.
-- **Icons** — Stackable presets for `heroicons`, `lucide`, `phosphor`, `tabler` plus app/marketing extensions. 26 semantic aliases.
-- **Charts** — Optional Chart.js integration with automatic WireKit theming and dark-mode reactivity.
+- **Fonts** — Curated Google Fonts bundled locally for GDPR compliance. Configure via `config/wirekit.php`.
+- **Icons** — Stackable presets for `heroicons`, `lucide`, `phosphor`, `tabler` plus app/marketing extensions, with semantic aliases for common UI intents.
+- **Charts** — Optional chart system with a Chart.js (MIT) adapter and an ApexCharts adapter. Switch with one line: `'charts' => ['library' => 'apexcharts']` in `config/wirekit.php`. ApexCharts is **non-MIT** (free Community License under $2M USD revenue, Commercial License above) — WireKit ships only the adapter glue. See [Chart docs](https://docs.wirekit.app/components/chart) for the full terms.
 
 → **[Theming Guide](https://docs.wirekit.app/theming)** for fonts and presets · **[Icon docs](https://docs.wirekit.app/components/icon)** · **[Chart docs](https://docs.wirekit.app/components/chart)**
 

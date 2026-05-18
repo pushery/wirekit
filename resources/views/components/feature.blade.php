@@ -29,12 +29,12 @@
     // soft / success / warning / danger use color-mix(in_srgb, …) tinted backgrounds, the
     // same pattern already proven in alert/badge/callout/message/reaction/toast-region.
     $toneMap = [
-        'accent' => 'bg-[var(--color-wk-accent)] text-[var(--color-wk-accent-fg)]',
-        'neutral' => 'bg-[var(--color-wk-bg-muted)] text-[var(--color-wk-text)]',
-        'soft' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))] text-[var(--color-wk-accent)]',
-        'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))] text-[var(--color-wk-success-text)]',
-        'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))] text-[var(--color-wk-warning-text)]',
-        'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))] text-[var(--color-wk-danger-text)]',
+        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+        'neutral' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
+        'soft' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-accent)]',
+        'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-success-text)]',
+        'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-warning-text)]',
+        'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-danger-text)]',
     ];
     $validTone = isset($toneMap[$tone])
         ? $tone
@@ -70,13 +70,13 @@
     @endif
 
     @if($title)
-        <h3 class="text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]">
+        <h3 class="text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $title }}
         </h3>
     @endif
 
     @if($slot->isNotEmpty())
-        <p class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)] leading-relaxed">
+        <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] leading-relaxed">
             {{ $slot }}
         </p>
     @endif

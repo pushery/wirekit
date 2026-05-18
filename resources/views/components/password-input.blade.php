@@ -23,8 +23,8 @@
         'font-[family-name:var(--font-wk-sans)]',
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
-        'text-[var(--color-wk-text)]',
-        'placeholder:text-[var(--color-wk-text-placeholder)]',
+        'text-[color:var(--color-wk-text)]',
+        'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-[length:var(--border-wk-width)]',
         'shadow-[var(--shadow-wk-sm)]',
         'transition-colors',
@@ -115,7 +115,7 @@
         @if($toggle)
             <button
                 type="button"
-                class="absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)] transition-colors duration-[var(--transition-wk-duration)]"
+                class="absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors duration-[var(--transition-wk-duration)]"
                 @click="showPassword = !showPassword"
                 {{-- Static aria-label guards pre-Alpine render (axe scans DOM
                      before hydration may complete). :aria-label overrides live. --}}
@@ -151,8 +151,8 @@
     @endif
 
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

@@ -80,7 +80,7 @@
             // of the keyboard tab order on legacy browsers (IE/Edge < 18).
             if (str_contains($svgContent, '<svg ') && ! str_contains($svgContent, 'aria-hidden=')) {
                 $svgContent = preg_replace(
-                    '/<svg\b/',
+                    '/<svg\b/u',
                     '<svg aria-hidden="true" focusable="false"',
                     $svgContent,
                     1,
@@ -108,7 +108,7 @@
         {{ $attributes->class([$classes]) }}
         style="width: {{ (int) $size }}px; height: {{ (int) $size }}px;"
     >
-        <div aria-hidden="true" class="flex items-center justify-center w-full h-full bg-[var(--color-wk-bg-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">
+        <div aria-hidden="true" class="flex items-center justify-center w-full h-full bg-[var(--color-wk-bg-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             <span>QR Code</span>
         </div>
     </div>

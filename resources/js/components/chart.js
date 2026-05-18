@@ -1,3 +1,5 @@
+import { resolveThemeColors, palette, withOpacity } from '../utils/chart-theme-colors.js';
+
 /**
  * WireKit Chart.js Alpine Component.
  *
@@ -16,6 +18,80 @@
  * Cleanup is automatic on Livewire SPA navigation (livewire:navigating)
  * and Alpine component teardown (destroy() lifecycle hook).
  */
+/**
+ * Global registry of every Chart.js instance created by `wirekitChartJs`.
+ * Maintained on `window` so the proactive-sweep sees stale instances from
+ * earlier Alpine mounts on this page (a docs-site preview-replay button can
+ * replace its iframe's innerHTML in place, which detaches the old canvas
+ * without firing Alpine's `destroy()` hook — Chart.js's per-chart RAF loop
+ * survives
+ * and crashes on the next frame when `chart.ctx` resolves null against the
+ * detached canvas). On every fresh init, we sweep the registry and destroy
+ * any chart whose canvas is no longer in the document BEFORE the new chart's
+ * animator schedules its first RAF — preventing the "two charts racing on
+ * the same global Chart.animator" crash class that the per-instance
+ * beforeDraw plugin alone can't catch (the stale chart's animator has
+ * already queued multiple RAFs before any draw hook can fire).
+ */
+const REGISTRY_KEY = '__wirekit_chartjs_registry__';
+function getRegistry() {
+    if (typeof window === 'undefined') return new Set();
+    if (!window[REGISTRY_KEY]) window[REGISTRY_KEY] = new Set();
+    return window[REGISTRY_KEY];
+}
+
+/**
+ * One-shot global patch of `Chart.prototype.draw`. The native draw method
+ * dereferences `this.ctx` deep inside `_drawDataset` via `ctx.save()`. If
+ * `chart.destroy()` set `ctx = null` between an animator-scheduled RAF and
+ * the RAF callback firing, the next draw call crashes with `Cannot read
+ * properties of null (reading 'save')`. The registry-sweep + per-chart
+ * `beforeDraw` plugin handle the common case but race with the animator
+ * on the rapid-multi-replay path (every fresh `new Chart()` schedules a
+ * cascade of RAF callbacks via `animator.start()`; if any of them target
+ * a previous-mount chart whose destroy is in-flight, they slip past the
+ * plugin guard because plugin hooks run AFTER `draw()` already entered).
+ *
+ * Wrapping `Chart.prototype.draw` at the prototype level catches every
+ * draw entry-point, regardless of how the animator scheduled it. Null-ctx
+ * → early-return + cleanup the animator registration. Non-null ctx →
+ * delegate to native draw. The patch installs once per page; subsequent
+ * Alpine inits see `Chart.__wirekitDrawPatched` and skip re-patching.
+ * Pie / doughnut charts didn't crash before this patch only because
+ * their renderer doesn't enter the bar / line-stroke code path that
+ * touches `ctx.save()` per-element — the underlying race was identical.
+ */
+function patchChartDrawOnce() {
+    if (typeof Chart === 'undefined') return;
+    if (Chart.__wirekitDrawPatched) return;
+    if (typeof Chart.prototype !== 'object' || typeof Chart.prototype.draw !== 'function') return;
+    Chart.__wirekitDrawPatched = true;
+    const originalDraw = Chart.prototype.draw;
+    Chart.prototype.draw = function (...args) {
+        if (!this.ctx || (this.canvas && !this.canvas.isConnected)) {
+            try { Chart.animator?.remove?.(this); } catch (e) { /* defensive */ }
+            return;
+        }
+        return originalDraw.apply(this, args);
+    };
+}
+
+function sweepStaleCharts() {
+    if (typeof Chart === 'undefined') return;
+    const registry = getRegistry();
+    // Two-pass to avoid mutating the Set during iteration on some engines.
+    const stale = [];
+    for (const c of registry) {
+        if (!c.canvas || !c.canvas.isConnected) stale.push(c);
+    }
+    for (const c of stale) {
+        try { Chart.animator?.remove?.(c); } catch (e) { /* defensive */ }
+        try { c.stop?.(); } catch (e) { /* defensive */ }
+        try { c.destroy?.(); } catch (e) { /* defensive */ }
+        registry.delete(c);
+    }
+}
+
 export default function wirekitChartJs(config) {
     return {
         chart: null,
@@ -40,8 +116,32 @@ export default function wirekitChartJs(config) {
                 return;
             }
 
+            // One-shot prototype patch — defensive race-condition guard.
+            patchChartDrawOnce();
+
+            // Sweep ANY stale chart from a previous mount whose canvas got
+            // detached (replay-button flow). Doing this BEFORE the new
+            // chart's constructor runs is critical: once `new Chart()`
+            // schedules its first RAF the global animator is iterating
+            // every active chart per frame, so a stale chart's null-ctx
+            // crash takes the whole animator down (including the new
+            // chart's render). Plus: hand the new canvas to `Chart.getChart`
+            // first — if Chart.js already has an instance on this exact
+            // canvas (rare, but possible in HMR / hot-reload contexts),
+            // destroy that one too.
+            sweepStaleCharts();
+
             this.$nextTick(() => {
-                const ctx = this.$refs.canvas.getContext('2d');
+                const canvas = this.$refs.canvas;
+                if (!canvas) return;
+                const existing = Chart.getChart?.(canvas);
+                if (existing) {
+                    try { Chart.animator?.remove?.(existing); } catch (e) { /* defensive */ }
+                    try { existing.stop?.(); } catch (e) { /* defensive */ }
+                    try { existing.destroy?.(); } catch (e) { /* defensive */ }
+                    getRegistry().delete(existing);
+                }
+                const ctx = canvas.getContext('2d');
 
                 // Read CSS variables from the canvas element — this resolves
                 // correctly regardless of whether .dark is on <html> or <body>.
@@ -78,7 +178,31 @@ export default function wirekitChartJs(config) {
                 // Apply theme colors to datasets (only if not manually set)
                 this._applyThemeToDatasets(rawConfig, colors);
 
+                // Defensive detach-guard plugin. The docs-site replay button
+                // replaces the preview frame's HTML in-place (innerHTML
+                // reassignment, NOT Alpine teardown), which severs our
+                // canvas from the document without firing the Alpine
+                // `destroy()` lifecycle hook. Chart.js's animation loop
+                // keeps running on the detached canvas, and on the next
+                // requestAnimationFrame it crashes with
+                // `Cannot read properties of null (reading 'save')` in
+                // `_drawDataset` — the 2D context returns null once the
+                // canvas leaves the document. A per-draw plugin hook
+                // tests `canvas.isConnected` and tears the chart down
+                // BEFORE the broken save() call is reached.
+                rawConfig.plugins = (rawConfig.plugins || []).concat([{
+                    id: 'wirekit-detach-guard',
+                    beforeDraw(chart) {
+                        if (!chart.canvas || !chart.canvas.isConnected) {
+                            try { chart.stop(); } catch (e) { /* idempotent */ }
+                            try { chart.destroy(); } catch (e) { /* idempotent */ }
+                            return false;
+                        }
+                    },
+                }]);
+
                 this.chart = new Chart(ctx, rawConfig);
+                getRegistry().add(this.chart);
 
                 // Set up dark mode observer AFTER chart is created.
                 // This avoids the race condition where the observer fires
@@ -89,6 +213,67 @@ export default function wirekitChartJs(config) {
             // Cleanup on Livewire navigation (SPA mode)
             this._navCleanup = () => this.destroy();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+
+            // Wire-streaming setup (Extension 12.3) — read data-wire-stream-*
+            // attributes off the root and register a window listener so
+            // Livewire $dispatch('<event>', { point }) calls feed the live chart.
+            this._setupWireStream();
+
+            // Annotations plugin warning (Extension 12.4) — Chart.js requires
+            // chartjs-plugin-annotation. Emit a console.warn at init time when
+            // annotations are present but the plugin is missing, so consumers
+            // see the cause without a silent visual no-op.
+            if (config.options?.plugins?.annotation && typeof Chart !== 'undefined' && !Chart.registry?.plugins?.get?.('annotation')) {
+                console.warn(
+                    'WireKit: chart annotations supplied but chartjs-plugin-annotation is not registered. '
+                    + 'Install via npm i chartjs-plugin-annotation and register: '
+                    + 'import annotationPlugin from "chartjs-plugin-annotation"; '
+                    + 'Chart.register(annotationPlugin);'
+                );
+            }
+        },
+
+        /**
+         * Read data-wire-stream-* attributes off the root element and register
+         * a window-level listener for the configured event. Each event delivers
+         * a `point` payload (or { datasetIndex, point }) that is appended to
+         * the active chart via Chart.js's data.datasets[i].data.push +
+         * chart.update('none') (no animation; the new point appears at the
+         * far right of the visible window).
+         *
+         * 'strict' mode (default) shifts FIFO at wireStreamCap data points.
+         * 'stream' mode grows unboundedly — consumer's responsibility to
+         * trim or rotate.
+         */
+        _setupWireStream() {
+            const root = this.$el;
+            const eventName = root?.dataset?.wireStreamEvent;
+            if (!eventName) return;
+
+            const mode = root.dataset.wireStreamMode || 'strict';
+            const cap = parseInt(root.dataset.wireStreamCap, 10) || 100;
+
+            this._wireStreamHandler = (event) => {
+                if (!this.chart) return;
+                const detail = event.detail || {};
+                const datasetIndex = detail.datasetIndex ?? 0;
+                const point = detail.point;
+                if (point === undefined) return;
+
+                const dataset = this.chart.data.datasets[datasetIndex];
+                if (!dataset) return;
+
+                dataset.data.push(point);
+                if (mode === 'strict' && dataset.data.length > cap) {
+                    dataset.data.shift();
+                    if (Array.isArray(this.chart.data.labels) && this.chart.data.labels.length > cap) {
+                        this.chart.data.labels.shift();
+                    }
+                }
+                this.chart.update('none');
+            };
+
+            window.addEventListener(eventName, this._wireStreamHandler);
         },
 
         /**
@@ -175,108 +360,31 @@ export default function wirekitChartJs(config) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
                 this._navCleanup = null;
             }
+            if (this._wireStreamHandler) {
+                const eventName = this.$el?.dataset?.wireStreamEvent;
+                if (eventName) {
+                    window.removeEventListener(eventName, this._wireStreamHandler);
+                }
+                this._wireStreamHandler = null;
+            }
             if (this.chart) {
-                this.chart.destroy();
+                getRegistry().delete(this.chart);
+                try { Chart.animator?.remove?.(this.chart); } catch (e) { /* defensive */ }
+                try { this.chart.stop?.(); } catch (e) { /* defensive */ }
+                try { this.chart.destroy(); } catch (e) { /* defensive */ }
                 this.chart = null;
             }
         },
 
         /**
-         * Read WireKit CSS variables and return a color object.
-         *
-         * Tailwind v4 stores colors as oklch() values. Canvas 2D does NOT
-         * reliably support oklch() — Chart.js silently falls back to black.
-         * We solve this by setting each CSS variable as `color` on a temporary
-         * DOM element and reading `getComputedStyle().color`, which the browser
-         * always resolves to rgb()/rgba() regardless of the input format.
+         * Theme-colour readers — thin wrappers around the shared util in
+         * resources/js/utils/chart-theme-colors.js — single source of truth.
+         * Both wirekitChartJs and wirekitApexChart consume the same helpers
+         * so dataset palettes, fallbacks, and probe behaviour stay in lockstep.
          */
-        _resolveThemeColors(style) {
-            const isDark = document.documentElement.classList.contains('dark')
-                || document.body.classList.contains('dark');
-
-            // Probe element: hidden div inside <body> so var() resolves
-            // through the correct cascade. .dark can be on <html> OR <body>
-            // (both work because the probe inherits from its ancestors).
-            // Appending to <html> would fail if .dark is on <body> only,
-            // since the probe would be a sibling of <body> outside the cascade.
-            const probe = document.createElement('div');
-            probe.style.display = 'none';
-            document.body.appendChild(probe);
-
-            const resolve = (varName, fallbackLight, fallbackDark) => {
-                // Check if the variable is defined at all
-                const raw = style.getPropertyValue(varName).trim();
-                if (!raw) {
-                    return isDark ? fallbackDark : fallbackLight;
-                }
-
-                // Set the variable as color on the probe element.
-                // getComputedStyle().color always returns rgb()/rgba().
-                probe.style.color = `var(${varName})`;
-                const rgb = getComputedStyle(probe).color;
-                probe.style.color = '';
-                return rgb;
-            };
-
-            const colors = {
-                accent:      resolve('--color-wk-accent', '#3b82f6', '#60a5fa'),
-                danger:      resolve('--color-wk-danger', '#ef4444', '#f87171'),
-                success:     resolve('--color-wk-success', '#22c55e', '#4ade80'),
-                warning:     resolve('--color-wk-warning', '#f59e0b', '#fbbf24'),
-                info:        resolve('--color-wk-info', '#06b6d4', '#22d3ee'),
-                textPrimary: resolve('--color-wk-text', '#18181b', '#f4f4f5'),
-                textMuted:   resolve('--color-wk-text-muted', '#71717a', '#a1a1aa'),
-                border:      resolve('--color-wk-border', '#e4e4e7', '#52525b'),
-            };
-
-            probe.remove();
-            return colors;
-        },
-
-        /**
-         * Color palette for multiple datasets. Cycles when more datasets than colors.
-         */
-        _palette(colors) {
-            return [
-                colors.accent,
-                colors.danger,
-                colors.success,
-                colors.warning,
-                colors.info,
-                '#8b5cf6', // purple fallback
-                '#ec4899', // pink fallback
-                '#f97316', // orange fallback
-            ];
-        },
-
-        /**
-         * Create a transparent variant of a color.
-         *
-         * Works with hex (#rrggbb) and rgb() colors.
-         * Returns rgba() which works in all contexts.
-         */
-        _withOpacity(color, opacity) {
-            // Hex -> rgba
-            if (color.startsWith('#')) {
-                const r = parseInt(color.slice(1, 3), 16);
-                const g = parseInt(color.slice(3, 5), 16);
-                const b = parseInt(color.slice(5, 7), 16);
-                return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-            }
-
-            // rgb(r, g, b) -> rgba(r, g, b, opacity)
-            if (color.startsWith('rgb(')) {
-                return color.replace('rgb(', 'rgba(').replace(')', `, ${opacity})`);
-            }
-
-            // rgba already — replace opacity
-            if (color.startsWith('rgba(')) {
-                return color.replace(/,\s*[\d.]+\)$/, `, ${opacity})`);
-            }
-
-            // Fallback: return as-is (hsl etc.)
-            return color;
-        },
+        _resolveThemeColors(style) { return resolveThemeColors(style); },
+        _palette(colors)           { return palette(colors); },
+        _withOpacity(color, op)    { return withOpacity(color, op); },
 
         /**
          * Apply theme colors to datasets that don't have manual colors set.
@@ -292,19 +400,38 @@ export default function wirekitChartJs(config) {
                 const color = palette[i % palette.length];
 
                 if (!dataset.backgroundColor) {
-                    if (['pie', 'doughnut', 'polarArea'].includes(config.type)) {
-                        // Pie-like: each data point gets its own color
+                    if (['pie', 'doughnut'].includes(config.type)) {
+                        // Pie / doughnut: each slice is a flat colour wedge.
+                        // Solid (no opacity) keeps adjacent wedges crisply
+                        // distinguishable; pie charts have no gridlines for
+                        // transparency to reveal.
+                        const len = dataset.data?.length || 1;
+                        dataset.backgroundColor = palette.slice(0, len);
+                        dataset.borderColor = palette.slice(0, len);
+                    } else if (config.type === 'polarArea') {
+                        // Polar area: segments overlay a radial gridline
+                        // backdrop. Drop fill opacity to ~0.55 so the
+                        // gridline rings stay visible behind each segment.
                         const len = dataset.data?.length || 1;
                         dataset.backgroundColor = palette.slice(0, len)
-                            .map(c => this._withOpacity(c, 0.5));
+                            .map(c => this._withOpacity(c, 0.55));
                         dataset.borderColor = palette.slice(0, len);
                     } else if (config.type === 'bar') {
-                        dataset.backgroundColor = this._withOpacity(color, 0.5);
+                        dataset.backgroundColor = this._withOpacity(color, 0.6);
                         dataset.borderColor = color;
                         dataset.borderWidth = 1;
+                    } else if (config.type === 'radar') {
+                        // Radar: polygon fill MUST stay translucent so the
+                        // axial gridlines + value rings remain visible
+                        // through the polygon. 0.18 gives a noticeable
+                        // hue tint without obscuring the chart structure.
+                        dataset.backgroundColor = this._withOpacity(color, 0.18);
+                        dataset.borderColor = color;
+                        dataset.borderWidth = 2;
+                        dataset.pointBackgroundColor = color;
                     } else {
-                        // Line, radar, area, scatter, etc.
-                        dataset.backgroundColor = this._withOpacity(color, 0.12);
+                        // Line, area, scatter, etc.
+                        dataset.backgroundColor = this._withOpacity(color, 0.18);
                         dataset.borderColor = color;
                         dataset.borderWidth = 2;
                         dataset.pointBackgroundColor = color;
@@ -328,17 +455,25 @@ export default function wirekitChartJs(config) {
 
                 const color = palette[i % palette.length];
 
-                if (['pie', 'doughnut', 'polarArea'].includes(type)) {
+                if (['pie', 'doughnut'].includes(type)) {
+                    const len = dataset.data?.length || 1;
+                    dataset.backgroundColor = palette.slice(0, len);
+                    dataset.borderColor = palette.slice(0, len);
+                } else if (type === 'polarArea') {
                     const len = dataset.data?.length || 1;
                     dataset.backgroundColor = palette.slice(0, len)
-                        .map(c => this._withOpacity(c, 0.5));
+                        .map(c => this._withOpacity(c, 0.55));
                     dataset.borderColor = palette.slice(0, len);
                 } else if (type === 'bar') {
-                    dataset.backgroundColor = this._withOpacity(color, 0.5);
+                    dataset.backgroundColor = this._withOpacity(color, 0.6);
                     dataset.borderColor = color;
+                } else if (type === 'radar') {
+                    dataset.backgroundColor = this._withOpacity(color, 0.18);
+                    dataset.borderColor = color;
+                    dataset.pointBackgroundColor = color;
                 } else {
-                    // Line, radar, area, scatter, etc.
-                    dataset.backgroundColor = this._withOpacity(color, 0.12);
+                    // Line, area, scatter, etc.
+                    dataset.backgroundColor = this._withOpacity(color, 0.18);
                     dataset.borderColor = color;
                     dataset.pointBackgroundColor = color;
                 }

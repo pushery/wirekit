@@ -9,7 +9,7 @@
 
     $variantClasses = match ($variant) {
         'default' => 'border-[var(--color-wk-border)]',
-        'accent' => 'border-[var(--color-wk-primary)]',
+        'accent' => 'border-[var(--color-wk-accent)]',
         default => WireKit::validateProp('blockquote', 'variant', $variant, ['default', 'accent']),
     };
 
@@ -18,7 +18,7 @@
         'pl-[var(--space-wk-md,1rem)]',
         'py-[var(--space-wk-xs,0.25rem)]',
         'font-[family-name:var(--font-wk-sans)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'text-[length:var(--text-wk-md)]',
         'italic',
         $variantClasses,
@@ -28,7 +28,7 @@
 <blockquote {{ $attributes->class([$classes]) }}>
     {{ $slot }}
     @if($cite)
-        <footer class="mt-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)] not-italic">
+        <footer class="mt-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] not-italic">
             — {{ $cite }}
         </footer>
     @endif

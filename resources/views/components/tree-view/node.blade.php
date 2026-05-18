@@ -16,7 +16,10 @@
         'list-none',
     ]), $scope);
 
-    // The clickable label row
+    // The clickable label row. Uniform padding matches the
+    // `sidebar/item.blade.php` sibling shape (same internal-element
+    // visual rhythm for any list-style item inside a navigation
+    // wrapper).
     $labelClasses = implode(' ', [
         'flex items-center gap-1',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
@@ -54,7 +57,7 @@
         @if($hasChildren)
             <svg
                 aria-hidden="true"
-                class="h-4 w-4 shrink-0 text-[var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]"
+                class="h-4 w-4 shrink-0 text-[color:var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]"
                 :class="nodeExpanded ? 'rotate-90' : ''"
                 viewBox="0 0 16 16"
                 fill="currentColor"
@@ -78,7 +81,8 @@
             role="group"
             x-show="nodeExpanded"
             x-collapse
-            class="pl-4"
+            class="list-none m-0 pl-4"
+            style="list-style: none; margin: 0; padding-left: 1rem;"
         >
             {{ $slot }}
         </ul>

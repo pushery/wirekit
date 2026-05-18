@@ -42,11 +42,11 @@
 
     {{-- Error takes precedence over hint — show one, not both --}}
     @if($hasError && $errorMessage)
-        <p @if($errorId) id="{{ $errorId }}" @endif class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-danger-text)]">
+        <p @if($errorId) id="{{ $errorId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
             {{ $errorMessage }}
         </p>
     @elseif($hint)
-        <p @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">
+        <p @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $hint }}
         </p>
     @endif

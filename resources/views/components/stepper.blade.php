@@ -18,6 +18,10 @@
     // Horizontal: no gap — connectors span the full distance between circles.
     // Vertical: gap between items provides visual spacing between steps.
     $listClasses = WireKit::resolveClasses('stepper', 'list', implode(' ', [
+        // list-none + m-0 + p-0 strip the browser-default <ol> decimal markers
+        // and marker indent. Stepper renders its own numbered circles per step,
+        // so the UA "1. 2. 3." prefixes would visually duplicate the step number.
+        'list-none m-0 p-0',
         $isVertical ? 'flex flex-col gap-[var(--padding-wk-y-md)]' : 'flex flex-row items-start gap-2',
         'w-full',
     ]), $scope);
@@ -53,12 +57,17 @@
     $labelClasses = WireKit::resolveClasses('stepper', 'label', implode(' ', [
         $isVertical ? '' : 'mt-[var(--padding-wk-y-xs)] text-center',
         'text-[length:var(--text-wk-sm)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 @endphp
 
-{{-- aria-label names the progress indicator; role=list is implicit on ol. --}}
-<ol aria-label="Progress" {{ $attributes->class([$listClasses]) }}>
+{{--
+    aria-label names the progress indicator; role=list is implicit on ol.
+    Inline style strips the UA decimal markers + indent because the docs
+    sandbox iframe runs WITHOUT Tailwind preflight; the `list-none m-0 p-0`
+    classes in $listClasses are decorative only and don't apply there.
+--}}
+<ol aria-label="Progress" {{ $attributes->class([$listClasses]) }} style="list-style: none; margin: 0; padding: 0;">
     @foreach($steps as $i => $step)
         @php
             // Normalize: accept a string (label only) or ['label' => .., 'description' => ..].
@@ -73,10 +82,10 @@
             // Visual treatment per state. Completed: filled accent. Current:
             // outlined accent (active ring). Upcoming: muted outline.
             $stateClasses = $isCompleted
-                ? 'bg-[var(--color-wk-accent)] text-[var(--color-wk-accent-fg)] border-[var(--color-wk-accent)]'
+                ? 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] border-[var(--color-wk-accent)]'
                 : ($isCurrent
-                    ? 'bg-[var(--color-wk-bg)] text-[var(--color-wk-accent)] border-[var(--color-wk-accent)]'
-                    : 'bg-[var(--color-wk-bg)] text-[var(--color-wk-text-muted)] border-[var(--color-wk-border)]');
+                    ? 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-accent)] border-[var(--color-wk-accent)]'
+                    : 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text-muted)] border-[var(--color-wk-border)]');
         @endphp
 
         <li
@@ -105,7 +114,7 @@
                     <div>{{ $label }}</div>
                     @if($description)
                         {{-- Optional helper text, small and muted. --}}
-                        <div class="text-[length:var(--text-wk-xs)] text-[var(--color-wk-text-muted)]">{{ $description }}</div>
+                        <div class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</div>
                     @endif
                 </div>
             </div>

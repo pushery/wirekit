@@ -102,7 +102,8 @@ final class SandboxSchemaRegistry
         $variantValues = ['primary', 'secondary', 'success', 'warning', 'danger', 'info', 'neutral', 'accent'];
 
         self::register('button', [
-            'variant' => ['type' => 'string', 'default' => 'primary', 'allowed_values' => $variantValues],
+            'intent' => ['type' => 'string', 'default' => 'primary', 'allowed_values' => ['primary', 'neutral', 'success', 'warning', 'danger', 'info']],
+            'surface' => ['type' => 'string', 'default' => 'filled', 'allowed_values' => ['filled', 'outline', 'soft', 'ghost', 'link']],
             'size' => ['type' => 'string', 'default' => 'md', 'allowed_values' => ['xs', 'sm', 'md', 'lg', 'xl']],
             'type' => ['type' => 'string', 'default' => 'button', 'allowed_values' => ['button', 'submit', 'reset']],
             'disabled' => ['type' => 'bool', 'default' => false],
@@ -115,7 +116,7 @@ final class SandboxSchemaRegistry
         ]);
 
         self::register('badge', [
-            'variant' => ['type' => 'string', 'default' => 'neutral', 'allowed_values' => $variantValues],
+            'intent' => ['type' => 'string', 'default' => 'neutral', 'allowed_values' => ['primary', 'success', 'warning', 'danger', 'info', 'neutral']],
             'size' => ['type' => 'string', 'default' => 'md', 'allowed_values' => ['sm', 'md', 'lg']],
             'dot' => ['type' => 'bool', 'default' => false],
             // See note on button.body — same slot-content convention.

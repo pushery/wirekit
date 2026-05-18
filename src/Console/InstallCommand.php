@@ -15,7 +15,10 @@ class InstallCommand extends Command
         {--preset=default : Theme preset (default, minimal, soft, material, brutalist, retro-terminal, cupertino)}
         {--font= : Inject sans font-family override (must be a sans-category key from FontRegistry)}
         {--font-serif= : Inject serif font-family override (must be a serif-category key from FontRegistry)}
-        {--font-mono= : Inject mono font-family override (must be a mono-category key from FontRegistry)}';
+        {--font-mono= : Inject mono font-family override (must be a mono-category key from FontRegistry)}
+        {--apex-license= : Set ApexCharts license tier when opting into the apexcharts adapter — accepts community, commercial, or oem. Sets charts.library => apexcharts AND charts.apex_license => <tier> in config/wirekit.php. ApexCharts is non-MIT; see https://apexcharts.com/license/ for terms.}
+        {--interactive : Force interactive prompts even when TTY detection misfires (Herd / Docker / WSL setups)}
+        {--no-gitignore : Skip auto-adding /public/vendor/wirekit to .gitignore (commit published assets to repo for environments without vendor:publish in deploy)}';
 
     protected $description = 'Install WireKit into your Laravel application';
 
@@ -30,12 +33,19 @@ class InstallCommand extends Command
         $this->publishAssets();
         $this->addTailwindSource();
         $this->addBladeDirectives();
-        $this->addGitignoreEntry();
+        if (! $this->option('no-gitignore')) {
+            $this->addGitignoreEntry();
+        }
         $this->processFontFlags();
 
         $preset = $this->option('preset');
         if ($preset !== 'default') {
             $this->call('wirekit:theme', ['preset' => $preset]);
+        }
+
+        $apexLicenseResult = $this->processApexLicenseFlag();
+        if ($apexLicenseResult !== self::SUCCESS) {
+            return $apexLicenseResult;
         }
 
         $this->line('');
@@ -75,14 +85,32 @@ class InstallCommand extends Command
             return;
         }
 
+        // The user can force interactive prompts even when Symfony's TTY
+        // detection misfires (common in Herd / Docker / WSL setups where the
+        // terminal stream goes through a wrapper that fails posix_isatty()).
+        // `--interactive` overrides every skip condition below.
+        $forceInteractive = (bool) $this->option('interactive');
+
         // Skip in non-interactive contexts (CI, --no-interaction, piped scripts)
-        if (! $this->input->isInteractive()) {
+        // unless --interactive is set.
+        if (! $forceInteractive && ! $this->input->isInteractive()) {
+            // Hint the consumer that prompts are available — without this line
+            // a user on Herd / Docker / WSL whose TTY detection misfires would
+            // see no prompts and assume "interactive mode is broken". The flag
+            // is the documented escape hatch for exactly this case. Suppress
+            // the hint when --no-interaction was passed explicitly (the user
+            // signalled they want a quiet scripted run).
+            if (! $this->option('no-interaction')) {
+                $this->line('  <fg=blue>i</> Interactive prompts skipped (no TTY detected). Re-run with <fg=cyan>--interactive</> to force the guided setup, or pass flags directly (e.g. <fg=cyan>--preset=cupertino</>).');
+            }
+
             return;
         }
 
         // Skip in unit tests — Laravel's artisan() test runner considers itself
         // interactive but doesn't forward real stdin. Without this guard, every
         // existing test that doesn't explicitly mock the prompts would fail.
+        // Honored even with --interactive — tests must pass flag values explicitly.
         if (app()->runningUnitTests()) {
             return;
         }
@@ -136,6 +164,105 @@ class InstallCommand extends Command
      * Centralised here so future multi-font flags (`--font-serif`,
      * `--font-mono`) can be added by extending the categories array.
      */
+    private function processApexLicenseFlag(): int
+    {
+        $tier = $this->option('apex-license');
+        if ($tier === null || $tier === '') {
+            return self::SUCCESS;
+        }
+
+        $allowedTiers = ['community', 'commercial', 'oem'];
+        if (! in_array($tier, $allowedTiers, true)) {
+            $this->error(sprintf(
+                'Invalid --apex-license value: "%s". Allowed values: %s.',
+                $tier,
+                implode(', ', $allowedTiers),
+            ));
+
+            return self::INVALID;
+        }
+
+        // Echo the License Notice once before mutating config/wirekit.php so
+        // every consumer who picks an apexcharts tier sees it AT LEAST ONCE.
+        // The notice is also rendered on docs/components/chart.md and emitted
+        // by wirekit:doctor; see Decision Log row "License-acceptance flag".
+        $this->line('');
+        $this->warn('ApexCharts License Notice');
+        $this->line('  ApexCharts is not MIT-licensed.');
+        $this->line('  - Community License (free): personal use, non-profits, education,');
+        $this->line('    AND organisations under $2 million USD annual revenue.');
+        $this->line('  - Commercial License (paid): organisations at or above the threshold.');
+        $this->line('  - OEM/Redistribution License (paid, separate): when embedding into a');
+        $this->line('    redistributed product. NOT applicable to a normal WireKit consumer install.');
+        $this->line('');
+        $this->line('  WireKit ships only the adapter glue (MIT). The ApexCharts JS library');
+        $this->line('  is your responsibility to install + license. See:');
+        $this->line('    https://apexcharts.com/license/');
+        $this->line('');
+        $this->line(sprintf('  You declared tier: %s', $tier));
+        $this->line('');
+
+        // Persist into config/wirekit.php — load existing config, merge,
+        // write back.
+        $this->writeApexConfig($tier);
+
+        $this->info(sprintf('Set charts.library => apexcharts and charts.apex_license => %s', $tier));
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Persist charts.library => 'apexcharts' AND charts.apex_license => <tier>
+     * to the consumer's config/wirekit.php. Falls back to a console hint when
+     * the file is unwritable (e.g. read-only deploy).
+     */
+    private function writeApexConfig(string $tier): void
+    {
+        $configPath = config_path('wirekit.php');
+        if (! file_exists($configPath)) {
+            $this->warn(sprintf(
+                'config/wirekit.php not found — please add manually: '
+                ."'charts' => ['library' => 'apexcharts', 'apex_license' => '%s'],",
+                $tier,
+            ));
+
+            return;
+        }
+
+        $contents = (string) file_get_contents($configPath);
+
+        // Replace the existing 'library' => '<value>' line within the charts
+        // block with apexcharts. Tolerates either single- or double-quoted
+        // values; the captured prefix preserves indentation.
+        $replaced = preg_replace(
+            "/('library'\s*=>\s*)('[^']*'|\"[^\"]*\"|null)/u",
+            "$1'apexcharts'",
+            $contents,
+            1,
+        ) ?? $contents;
+
+        // Add or replace 'apex_license' => '<tier>' inside the charts block.
+        if (preg_match("/'apex_license'\s*=>/u", $replaced)) {
+            $replaced = preg_replace(
+                "/('apex_license'\s*=>\s*)('[^']*'|\"[^\"]*\"|null)/u",
+                sprintf("$1'%s'", $tier),
+                $replaced,
+                1,
+            );
+        } else {
+            // Insert apex_license alongside library — match the quote style
+            // and indentation of the line we just edited.
+            $replaced = preg_replace(
+                "/('library'\s*=>\s*'apexcharts',?)/u",
+                "$1\n        'apex_license' => '".$tier."',",
+                $replaced,
+                1,
+            );
+        }
+
+        @file_put_contents($configPath, $replaced);
+    }
+
     private function processFontFlags(): void
     {
         $categories = [
@@ -235,7 +362,7 @@ class InstallCommand extends Command
         $startMarker = "/* wirekit:font-{$category}:start */";
         $endMarker = "/* wirekit:font-{$category}:end */";
 
-        $pattern = '/'.preg_quote($startMarker, '/').'.*?'.preg_quote($endMarker, '/').'/s';
+        $pattern = '/'.preg_quote($startMarker, '/').'.*?'.preg_quote($endMarker, '/').'/su';
 
         if (preg_match($pattern, $content) === 1) {
             $newContent = preg_replace($pattern, $block, $content, 1);
@@ -275,7 +402,7 @@ class InstallCommand extends Command
 
         // Match theme.extend.fontFamily.{cat}: [...] inside the config object
         $catKey = preg_quote($category, '/');
-        $existingPattern = '/(theme\s*:\s*\{[^}]*extend\s*:\s*\{[^}]*fontFamily\s*:\s*\{[^}]*)'.$catKey.'\s*:\s*\[[^\]]*\]/s';
+        $existingPattern = '/(theme\s*:\s*\{[^}]*extend\s*:\s*\{[^}]*fontFamily\s*:\s*\{[^}]*)'.$catKey.'\s*:\s*\[[^\]]*\]/su';
 
         if (preg_match($existingPattern, $content) === 1) {
             $newContent = preg_replace(
@@ -291,7 +418,7 @@ class InstallCommand extends Command
         }
 
         // Insert into existing fontFamily block (no key for this category yet)
-        $extendPattern = '/(fontFamily\s*:\s*\{)([^}]*)(\})/s';
+        $extendPattern = '/(fontFamily\s*:\s*\{)([^}]*)(\})/su';
         if (preg_match($extendPattern, $content) === 1) {
             $newContent = preg_replace(
                 $extendPattern,
@@ -400,7 +527,7 @@ CSS;
         // Insert after @import 'tailwindcss' if present, otherwise append
         if (str_contains($content, "@import 'tailwindcss'") || str_contains($content, '@import "tailwindcss"')) {
             $content = preg_replace(
-                '/(@import\s+[\'"]tailwindcss[\'"];?)/',
+                '/(@import\s+[\'"]tailwindcss[\'"];?)/u',
                 "$1\n{$sourceLine}",
                 $content,
                 1
@@ -479,5 +606,8 @@ CSS;
 
         File::append($gitignorePath, "\n/public/vendor/wirekit\n");
         $this->line('  <fg=green>✓</> Added public/vendor/wirekit to .gitignore');
+        $this->line('    <fg=gray>Published assets are auto-rebuilt on deploy via the route fallback —</>');
+        $this->line('    <fg=gray>no manual vendor:publish step required in your deploy script.</>');
+        $this->line('    <fg=gray>Use --no-gitignore on install if you prefer committing public/vendor/wirekit/.</>');
     }
 }

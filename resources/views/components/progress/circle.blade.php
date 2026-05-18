@@ -114,7 +114,7 @@
 
         {{-- Center value text (only when showValue and determinate) --}}
         @if($showValue && ! $isIndeterminate)
-            <div class="absolute inset-0 flex items-center justify-center {{ $textSize }} font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] tabular-nums" aria-hidden="true">
+            <div class="absolute inset-0 flex items-center justify-center {{ $textSize }} font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] tabular-nums" aria-hidden="true">
                 {{ (int) $percent }}%
             </div>
         @endif
@@ -122,7 +122,7 @@
 
     {{-- Optional visible label below the circle --}}
     @if($label)
-        <span id="{{ $labelId }}" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">
+        <span id="{{ $labelId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $label }}
         </span>
     @endif

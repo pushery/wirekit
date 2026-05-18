@@ -64,7 +64,7 @@
      modal is dismissible — non-dismissible modals must never close on ESC. --}}
 <div
     x-data="wirekitModal({ name: '{{ $name }}', dismissible: {{ $dismissible ? 'true' : 'false' }} })"
-    @if($dismissible) x-on:keydown.escape.window="open && close()" @endif
+    @if($dismissible) x-on:keydown.escape.window="open && isTopmost && close()" @endif
     {{ $attributes }}
 >
     {{-- Trigger slot — always visible, clicking opens the modal --}}
@@ -110,6 +110,9 @@
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"
                     role="dialog"
+                    {{-- Dynamic aria-modal so a stacked modal-over-modal pair only
+                         marks the topmost as modal — ARIA spec compliance. --}}
+                    :aria-modal="isTopmost ? 'true' : 'false'"
                     aria-modal="true"
                     aria-labelledby="{{ $titleId }}"
                     @if($describedby) aria-describedby="{{ $describedby }}" @endif

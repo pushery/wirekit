@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v1.6.3 — MIT License
+ * WireKit CSS — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -95,6 +95,16 @@
     --color-wk-bg-muted: oklch(97% 0 0);
     --color-wk-bg-input: #fff;
     --color-wk-bg-inverse: oklch(14.5% 0 0);
+    /* Dedicated skeleton placeholder bg — sits in gray-200 territory so the
+       loading state reads against a white page surface without forcing the
+       generic bg-muted token to grow darker (which would re-tint every
+       component that pairs against it). The shimmer overlay still uses
+       bg-elevated as a lighter band on top. */
+    --color-wk-bg-skeleton: oklch(93% 0 0);
+    /* Skeleton pulse-mode opacity floor — when :shimmer="false" the
+       base element pulses between opacity 1 and this value on a 1.6s
+       cycle. Lower = more dramatic dim. */
+    --reading-skeleton-pulse-opacity: 0.5;
 
     /* ─── Neutral Colors (Text) ─── */
     /* text-muted is foreground-on-bg-muted (oklch 97% ≈ #f7f7f7). neutral-500
@@ -109,9 +119,15 @@
     --color-wk-text-inverse: #fff;
 
     /* ─── Borders ─── */
-    --color-wk-border: oklch(87% 0 0);
-    --color-wk-border-hover: oklch(70.8% 0 0);
-    --color-wk-border-subtle: oklch(92.2% 0 0);
+    /* Calibrated against the soft-tinted variant backgrounds (12% color-mix
+       of accent / success / warning / danger): a heavier neutral border
+       reads as the dominant tone next to those tints and makes the default
+       theme feel grayer than its colourful tokens. Sitting at ~91-92%
+       lightness keeps the line visible without competing with the variant
+       palette — matches the band shadcn / Linear / Vercel etc. occupy. */
+    --color-wk-border: oklch(91.4% 0 0);
+    --color-wk-border-hover: oklch(80% 0 0);
+    --color-wk-border-subtle: oklch(94% 0 0);
     --color-wk-border-error: oklch(63.7% 0.237 25.331);
     --color-wk-border-strong: oklch(70.8% 0 0);
 
@@ -138,6 +154,12 @@
     --font-wk-mono: ui-monospace, 'Fira Code', 'Cascadia Code', monospace;
     --font-wk-heading-weight: 600;
     --font-wk-heading-line-height: 1.25;
+
+    /* Heading-display sizes — used by hero/cta for the on-page H1/H2.
+       The component's inner `class` chain steps from text-wk-2xl/3xl
+       (mobile) up to font-wk-heading-{xl,2xl} at the sm: breakpoint. */
+    --font-wk-heading-xl: 2.5rem;
+    --font-wk-heading-2xl: 3.5rem;
     --font-wk-body-weight: 400;
     --font-wk-letter-spacing: -0.01em;
     --font-wk-line-height: 1.5;
@@ -154,6 +176,13 @@
     --motion-wk-duration-fast: 150ms;
     --motion-wk-duration-normal: 300ms;
     --motion-wk-duration-slow: 600ms;
+    /* Delay tokens — used by <x-wirekit::reveal delay="..."> and authors who
+       need a consistent rhythm before an entrance animation begins. */
+    --motion-wk-delay-none: 0ms;
+    --motion-wk-delay-sm: 75ms;
+    --motion-wk-delay-md: 150ms;
+    --motion-wk-delay-lg: 300ms;
+    --motion-wk-delay-xl: 500ms;
     /* Easing curves */
     --motion-wk-easing-out: cubic-bezier(0.16, 1, 0.3, 1);
     --motion-wk-easing-in: cubic-bezier(0.7, 0, 0.84, 0);
@@ -203,6 +232,13 @@
     --space-wk-lg: 1.5rem;
     --space-wk-xl: 2.5rem;
     --space-wk-2xl: 4rem;
+
+    /* Section-level vertical spacing — used by hero/cta/footer for the
+       outer block padding. Sized for marketing pages: tighter on small
+       sections (footer), comfortable on medium (cta), generous on hero. */
+    --space-wk-section-sm: 3rem;
+    --space-wk-section-md: 5rem;
+    --space-wk-section-lg: 7rem;
 
     /* ─── Container Max Widths ─── */
     --size-wk-container-sm: 40rem;
@@ -297,6 +333,10 @@
     --color-wk-bg-muted: oklch(26.9% 0 0);
     --color-wk-bg-input: oklch(14.5% 0 0);
     --color-wk-bg-inverse: oklch(98.5% 0 0);
+    /* Skeleton placeholder bg — symmetric to light-mode (~7% step above the
+       generic muted bg) so the placeholder reads as a clear loading state
+       on dark surfaces. */
+    --color-wk-bg-skeleton: oklch(33% 0 0);
 
     /* Neutral Text — subtle/placeholder use neutral-400 on neutral-950 for ~7.82:1.
        neutral-500 only reaches 4.18:1 on neutral-950 — below AA. */
@@ -306,12 +346,13 @@
     --color-wk-text-placeholder: oklch(70.8% 0 0);
     --color-wk-text-inverse: oklch(14.5% 0 0);
 
-    /* Borders — neutral-600 on neutral-950 ≈ 2.53:1 (UI decorative OK,
-       inputs pair with bg-input differentiation for compound cue).
-       Previous neutral-800 was 1.31:1 — too low even for decorative use. */
-    --color-wk-border: oklch(43.9% 0 0);
-    --color-wk-border-hover: oklch(55.6% 0 0);
-    --color-wk-border-subtle: oklch(37.1% 0 0);
+    /* Borders — symmetric softening to match light mode's lighter neutral
+       palette. Inputs pair with bg-input differentiation for compound cue,
+       so border itself can step back. Previous neutral-600 (43.9%) read
+       too heavy against the deeper bg surfaces. */
+    --color-wk-border: oklch(32% 0 0);
+    --color-wk-border-hover: oklch(43.9% 0 0);
+    --color-wk-border-subtle: oklch(26.9% 0 0);
     --color-wk-border-error: oklch(70.4% 0.191 22.216);
     --color-wk-border-strong: oklch(55.6% 0 0);
 
@@ -385,6 +426,17 @@
 /* ─── Skeleton loader shimmer ──────────────────────────────── */
 /* Animated placeholder for content that is being loaded.       */
 /* Respects prefers-reduced-motion (falls back to solid color). */
+/*                                                              */
+/* PERF optimisations:                                          */
+/*   - `will-change: transform` on the ::after hints the        */
+/*     compositor to promote the layer eagerly with optimal     */
+/*     paint path                                                */
+/*   - `animation-play-state: paused` when aria-busy="false"   */
+/*     halts the animation once loading is done (consumers    */
+/*     who toggle aria-busy via Alpine get a free pause)       */
+/*   - The wrapper-level `content-visibility: auto` + intrinsic*/
+/*     size hint (applied via Blade inline style on the wrapper)*/
+/*     skips rendering for off-screen skeletons entirely.       */
 .wk-skeleton {
     position: relative;
     overflow: hidden;
@@ -402,10 +454,33 @@
         transparent 100%
     );
     animation: wk-shimmer 1.6s infinite;
+    will-change: transform;
+}
+
+/* Halt the shimmer once aria-busy flips to false. Consumers who
+   bind aria-busy via Alpine / Livewire get a zero-cost stop signal. */
+.wk-skeleton[aria-busy="false"]::after,
+[aria-busy="false"] .wk-skeleton::after {
+    animation-play-state: paused;
 }
 
 @keyframes wk-shimmer {
     100% { transform: translateX(100%); }
+}
+
+/* Pulse mode — opt-in via `:shimmer="false"` on the Blade component.
+   Hides the gradient ::after layer entirely + pulses the base element
+   opacity. Halves GPU layer count per skeleton; matches the GitHub /
+   Linear loading aesthetic. */
+.wk-skeleton[data-pulse="true"]::after {
+    display: none;
+}
+.wk-skeleton[data-pulse="true"] {
+    animation: wk-skeleton-pulse 1.6s ease-in-out infinite;
+}
+@keyframes wk-skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: var(--reading-skeleton-pulse-opacity, 0.5); }
 }
 
 /* ─── Progress bar indeterminate ───────────────────────────── */
@@ -914,11 +989,754 @@
 .wk-list.wk-list-spacing-sm   > li + li { margin-top: 0.25rem; }
 .wk-list.wk-list-spacing-md   > li + li { margin-top: 0.5rem; }
 
+/* ─── Reading: progress + spine + bookmark + meta + minimap + toc ─── */
+/* Tokens for the reading-* component family. Heights for the bar      */
+/* indicator (sm/md/lg map onto the `height` prop), dot-indicator size,*/
+/* and spine layout dimensions. All consumer-overridable via :root /   */
+/* component-instance CSS overrides. Doubled-class specificity on every*/
+/* component-base rule (e.g. `.wk-reading-spine.wk-reading-spine`) so  */
+/* consumer typography wrappers (.prose / .docs-prose) never beat us   */
+/* without using !important. Same pattern as wk-list.                  */
+:root {
+    /* reading-progress (bar) */
+    --reading-progress-height-sm: 2px;
+    --reading-progress-height-md: 3px;
+    --reading-progress-height-lg: 5px;
+    /* reading-progress (dot) */
+    --reading-progress-dot-size: 2.5rem;
+    /* reading-progress fill override — consumer-set to retheme every reading-progress
+       on the page without touching component props. Variants resolve to
+       var(--reading-progress-fill, var(--color-wk-X)) so this token wins when set.
+
+       MUST be `initial`, NOT empty (`--reading-progress-fill: ;`). A CSS
+       custom property declared with an EMPTY value is "valid but no
+       token" — `var(--x, fallback)` then skips the fallback and the
+       property falls through to its own initial-value (= transparent
+       for background-color, currentColor for stroke). The `initial`
+       keyword makes the declaration behave as if undeclared, so the
+       fallback chain works as intended. Confirmed by browser test in
+       sample/tests/Browser/ReadingProgressProductionIframeTest.php
+       "keeps fill background-color after Alpine writes transform". */
+    --reading-progress-fill: initial;
+    /* reading-spine */
+    --reading-spine-width-collapsed: 1.5rem;
+    --reading-spine-width-expanded: 16rem;
+    /* Gap between consecutive items. Smaller than the original 0.625rem to
+       compress the vertical list so 10-15 headings fit inside the spine's
+       max-h-[calc(100vh-8rem)] envelope without overflow-scrolling at
+       typical reading widths. */
+    --reading-spine-gap: 0.125rem;
+    /* Inner padding inside the spine's <ol> — gives the ticks + labels a
+       gutter from the aside's left/right edges AND symmetric vertical
+       breathing room from the panel's top/bottom borders. The vertical
+       padding is bumped versus the horizontal because the panel's vertical
+       extent is usually larger than its width (multiple headings stacked)
+       and a tighter top/bottom gutter reads as "menu items pressed against
+       the panel rim" — most visible on the expanded panel where the labels
+       grow the items' typographic height. */
+    --reading-spine-padding-x: 0.5rem;
+    --reading-spine-padding-y: 0.875rem;
+    --reading-spine-tick-height: 2px;
+    --reading-spine-color-idle: var(--color-wk-text-subtle);
+    --reading-spine-color-active: var(--color-wk-text);
+    --reading-spine-bg: color-mix(in srgb, var(--color-wk-bg-elevated) 92%, transparent);
+    /* Optional left-to-right edge gradient for the COLLAPSED spine state.
+       Default makes the collapsed strip readable against any page bg as
+       a hover affordance ("there's a menu here"). Set to `none` to opt
+       out entirely (the wrapper falls back to the plain --reading-spine-bg).
+       The gradient direction flips automatically when `side="left"` —
+       see the `.wk-reading-spine[data-side="left"]` rule below. */
+    --reading-spine-edge-gradient: linear-gradient(
+        to right,
+        color-mix(in srgb, var(--color-wk-bg-elevated) 0%, transparent),
+        color-mix(in srgb, var(--color-wk-bg-elevated) 35%, transparent) 50%,
+        color-mix(in srgb, var(--color-wk-bg-elevated) 65%, transparent)
+    );
+    /* Per-item vertical rhythm. Equalising padding-y top/bottom on the
+       <ol> means the visual gutter above the first label matches the
+       gutter below the last — previously the trailing margin from the
+       last <li>'s child <a> made the bottom gutter visibly larger. */
+    --reading-spine-list-padding-y: var(--reading-spine-padding-y);
+    --reading-spine-list-padding-x: var(--reading-spine-padding-x);
+    /* reading-bookmark */
+    --reading-bookmark-pill-bg: var(--color-wk-bg-elevated);
+    --reading-bookmark-pill-radius: var(--radius-wk-full, 9999px);
+    --reading-bookmark-pill-shadow: var(--shadow-wk-md);
+    /* reading-meta */
+    --reading-meta-text-size: 0.875rem;
+    --reading-meta-color: var(--color-wk-text-muted);
+    /* reading-meta perParagraph mode (Medium-style inline annotations) */
+    --reading-meta-paragraph-color: var(--color-wk-text-subtle);
+    --reading-meta-paragraph-spacing: 0.25em;
+    /* reading-minimap (every-item density overview) */
+    --reading-minimap-width: 60px;
+    --reading-minimap-stripe-height: 2px;
+    --reading-minimap-stripe-gap: 1px;
+    --reading-minimap-color-idle: var(--reading-spine-color-idle);
+    --reading-minimap-color-active: var(--reading-spine-color-active);
+    /* Rendered-mode (PhpStorm-style canvas) per-element-type colours. Each
+       category is alpha-modulated so the canvas reads as a translucent
+       texture; override these tokens at :root to retheme the minimap
+       without touching JS. */
+    --reading-minimap-color-h1: rgba(15, 23, 42, 0.85);
+    --reading-minimap-color-h2: rgba(15, 23, 42, 0.75);
+    --reading-minimap-color-h3: rgba(15, 23, 42, 0.65);
+    --reading-minimap-color-h4: rgba(15, 23, 42, 0.55);
+    --reading-minimap-color-h5: rgba(15, 23, 42, 0.48);
+    --reading-minimap-color-h6: rgba(15, 23, 42, 0.42);
+    --reading-minimap-color-code: rgba(99, 102, 241, 0.55);
+    --reading-minimap-color-table: rgba(244, 63, 94, 0.50);
+    --reading-minimap-color-blockquote: rgba(71, 85, 105, 0.55);
+    --reading-minimap-color-prose: rgba(71, 85, 105, 0.42);
+    --reading-minimap-color-wirekit: rgba(16, 185, 129, 0.50);
+    --reading-minimap-color-image: rgba(245, 158, 11, 0.55);
+    --reading-minimap-color-default: rgba(71, 85, 105, 0.32);
+    --reading-minimap-viewport-bg: color-mix(in oklab, var(--color-wk-accent) 25%, transparent);
+    --reading-minimap-viewport-border: 2px solid color-mix(in oklab, var(--color-wk-accent) 70%, transparent);
+    --reading-minimap-viewport-radius: var(--radius-wk-sm);
+    /* Block-style stripes (opt-in via `:itemStyle="block"`) — softer
+       rectangles whose height tracks each source item's natural
+       height, giving the minimap a content-texture instead of a
+       sparse list of lines. */
+    --reading-minimap-block-bg: color-mix(in srgb, var(--reading-minimap-color-idle) 25%, transparent);
+    --reading-minimap-block-radius: 2px;
+    --reading-minimap-block-gap: 2px;
+
+    /* reading-minimap rendered-mode — PhpStorm-style canvas minimap.
+       Opt-in via `mode="rendered"`. Default mode is `stripes` so
+       existing consumers see zero behavioural drift. */
+    --reading-minimap-rendered-placeholder-bg: var(--color-wk-bg-elevated);
+    --reading-minimap-rendered-radius: var(--radius-wk-sm);
+
+    /* Extension E1 — hover preview popover (magnified region near cursor) */
+    --reading-minimap-preview-scale: 0.25;
+    --reading-minimap-preview-size: 200px;
+    --reading-minimap-preview-bg: var(--color-wk-bg-elevated);
+    --reading-minimap-preview-border: 1px solid var(--color-wk-border);
+    --reading-minimap-preview-shadow: var(--shadow-wk-md);
+
+    /* Extension E2 — bookmark marker on the minimap */
+    --reading-minimap-bookmark-marker-color: var(--color-wk-accent);
+    --reading-minimap-bookmark-marker-height: 2px;
+
+    /* Extension E3 — heading anchors on the outboard edge */
+    --reading-minimap-anchor-text-color: var(--color-wk-text-muted);
+    --reading-minimap-anchor-text-color-hover: var(--color-wk-text);
+    --reading-minimap-anchor-font-size: 0.625rem;
+
+    /* Extension E4 — auto-fade idle */
+    --reading-minimap-idle-opacity: 0.3;
+    --reading-minimap-idle-delay: 3s;
+    --reading-minimap-idle-transition: 250ms;
+
+    /* Opaque by default — earlier `color-mix(... 92%, transparent)` paired
+       with backdrop-filter for a frosted-glass look, but the 8% transparency
+       let article text scroll-through the strip visibly (worst when
+       backdrop-filter is unsupported or attenuated). Consumers wanting
+       the frosted look can override this token to a translucent value;
+       the `backdrop-filter: blur(6px)` rule on .wk-reading-toc stays as
+       defence-in-depth for that case. */
+    --reading-toc-bg: var(--color-wk-bg-elevated);
+    --reading-toc-color-idle: var(--reading-spine-color-idle);
+    --reading-toc-color-active: var(--reading-spine-color-active);
+    --reading-toc-padding-y: 0.5rem;
+    --reading-toc-padding-x: 1rem;
+    --reading-toc-gap: 1rem;
+    --reading-toc-link-max-width: 24ch;
+}
+
+/* reading-spine base — collapsed by default, expands on hover/focus.  */
+/* Width animation runs in compositor (GPU); label opacity follows     */
+/* with a 50ms delay so the width transition begins first.             */
+.wk-reading-spine {
+    transition: width 200ms ease-out, background 200ms ease-out;
+    width: var(--reading-spine-width-collapsed);
+    /* Layered background: the optional edge-gradient SITS ON TOP OF the
+       base bg so the collapsed-state panel reads as a soft swipe toward
+       the page edge — a more discoverable hover affordance than a flat
+       semi-transparent strip. Consumers who want a flat surface set
+       `--reading-spine-edge-gradient: none` in their `:root {}`. */
+    background: var(--reading-spine-edge-gradient, none), var(--reading-spine-bg);
+    border-left: 1px solid var(--color-wk-border);
+    border-top-left-radius: var(--radius-wk-md);
+    border-bottom-left-radius: var(--radius-wk-md);
+}
+/* When the spine sits on the LEFT side, the gradient must run the
+   other direction so the soft swipe still points toward the page edge
+   (away from the reader's gaze toward the article). The component sets
+   `data-side="left"` from the Blade `side` prop — see reading-spine.blade.php. */
+.wk-reading-spine[data-side="left"] {
+    background: linear-gradient(
+        to left,
+        color-mix(in srgb, var(--color-wk-bg-elevated) 0%, transparent),
+        color-mix(in srgb, var(--color-wk-bg-elevated) 35%, transparent) 50%,
+        color-mix(in srgb, var(--color-wk-bg-elevated) 65%, transparent)
+    ), var(--reading-spine-bg);
+    border-left: 0;
+    border-right: 1px solid var(--color-wk-border);
+    border-radius: 0;
+    border-top-right-radius: var(--radius-wk-md);
+    border-bottom-right-radius: var(--radius-wk-md);
+}
+.wk-reading-spine[data-expand="true"] {
+    width: var(--reading-spine-width-expanded);
+}
+/* Strip the default <ol> decimal markers + the browser's default          */
+/* padding-inline-start (40px reserved for the markers). The spine uses    */
+/* <ol> for the semantic-ordered-list a11y signal (headings are            */
+/* positionally meaningful), but visually it renders ticks + labels,       */
+/* never numbered markers. Without this reset the browser draws "1.",      */
+/* "2.", ... outside each <li>, overflowing the narrow collapsed spine     */
+/* and visually duplicating the optional `numbered` prop output. We do     */
+/* NOT zero `padding` outright — the spine's Tailwind utility `py-2 px-2`  */
+/* on the <ol> intentionally provides internal padding for the items.     */
+.wk-reading-spine ol {
+    list-style: none;
+    padding-inline-start: 0;
+    margin: 0;
+    /* Top padding gives breathing room from the spine wrapper's top
+       edge; bottom is ZERO so the last item sits flush against the
+       container bottom (no visible margin below the trailing item).
+       Earlier symmetric `padding-block` created visible dead space
+       below the last item in overflow contexts. */
+    padding-block-start: var(--reading-spine-list-padding-y);
+    padding-block-end: 0;
+    padding-inline: var(--reading-spine-list-padding-x);
+}
+.wk-reading-spine ol > li:last-child {
+    /* Belt-and-suspenders against a child `<a>`'s computed line-height
+       leaking an extra block-end gap beyond the `<ol>`'s padding. Some
+       consumer prose stylesheets give links a `margin-block-end` we
+       can't predict; zero it on the trailing item explicitly. */
+    margin-block-end: 0;
+}
+.wk-reading-spine .wk-reading-spine__label {
+    opacity: 0;
+    transition: opacity 150ms ease-out 50ms;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.wk-reading-spine[data-expand="true"] .wk-reading-spine__label {
+    opacity: 1;
+}
+.wk-reading-spine .wk-reading-spine__tick {
+    background-color: var(--reading-spine-color-idle);
+    transition: background-color 150ms ease-out, width 200ms ease-out;
+}
+/* Tick width per heading level. Mirrors the Tailwind utility classes
+   emitted by reading-spine.js's `tickWidthClass()` but with CSS attribute
+   selectors so the widths still apply in the docs-sandbox iframe (where
+   consumer Tailwind isn't loaded — the utility classes resolve to no rule
+   and every tick ends up at its default 0 width, making nesting depth
+   invisible). H2 = wider, H3 = narrower, H4+ = narrowest. */
+.wk-reading-spine .wk-reading-spine__link[data-level="2"] .wk-reading-spine__tick { width: 0.75rem; }
+.wk-reading-spine .wk-reading-spine__link[data-level="3"] .wk-reading-spine__tick { width: 0.5rem; }
+.wk-reading-spine .wk-reading-spine__link[data-level="4"] .wk-reading-spine__tick { width: 0.375rem; }
+.wk-reading-spine .wk-reading-spine__link[data-level="5"] .wk-reading-spine__tick,
+.wk-reading-spine .wk-reading-spine__link[data-level="6"] .wk-reading-spine__tick { width: 0.25rem; }
+/* No underline on spine links. The docs-sandbox iframe inherits the UA
+   default `<a>` underline since consumer Tailwind's preflight reset isn't
+   loaded — the spine's link labels render with a stark underline that
+   conflicts with the tick + label visual rhythm. Belt-and-suspenders to
+   the inline-style override on the link element. */
+.wk-reading-spine .wk-reading-spine__link {
+    text-decoration: none;
+}
+.wk-reading-spine .wk-reading-spine__link[data-active="true"] .wk-reading-spine__tick,
+.wk-reading-spine .wk-reading-spine__link[aria-current="location"] .wk-reading-spine__tick {
+    background-color: var(--reading-spine-color-active);
+    /* Active tick gets a 1.5x scale-x so the change reads at a glance.
+       Combined with the colour shift + bold label below, the active row
+       is unmistakeable against the dim idle stack. */
+    transform: scaleX(1.5);
+    transform-origin: left center;
+}
+.wk-reading-spine .wk-reading-spine__link[data-active="true"] .wk-reading-spine__label,
+.wk-reading-spine .wk-reading-spine__link[aria-current="location"] .wk-reading-spine__label {
+    color: var(--reading-spine-color-active);
+    /* Bumped weight (was 500 — failed the contrast bar against consumer
+       prose surfaces that already weight ~450). 600 gives an obvious
+       jump even on display fonts that compress the 400/500 difference. */
+    font-weight: 600;
+}
+
+/* reading-bookmark resume-pill — z-index above sticky chrome but below  */
+/* modal overlay (z-wk-overlay). Pulse-in animation gated by reduced-    */
+/* motion below.                                                         */
+.wk-reading-bookmark {
+    background: var(--reading-bookmark-pill-bg);
+    border-radius: var(--reading-bookmark-pill-radius);
+    box-shadow: var(--reading-bookmark-pill-shadow);
+}
+
+/* reading-meta perParagraph annotations — Medium-style "X min" hints     */
+/* injected by the component before each <p> in the target. Default       */
+/* rendering is small subtle text; consumers fully restyle via the marker */
+/* class and the two --reading-meta-paragraph-* tokens.                   */
+.wk-reading-meta-paragraph {
+    display: block;
+    color: var(--reading-meta-paragraph-color);
+    font-size: var(--text-wk-xs);
+    margin-bottom: var(--reading-meta-paragraph-spacing);
+}
+
+/* reading-minimap — every-item density overview. Component is aria-hidden */
+/* (alternative view of nav). Structural layout authored as raw CSS so     */
+/* consumers without our resources/views/ in their Tailwind scan still get */
+/* correct positioning — the previous build relied on Tailwind utilities   */
+/* baked into the Blade output, which left consumers seeing full-width     */
+/* stripes when their Tailwind compile didn't include our vendor folder.   */
+/* The data-side attribute drives left vs right placement; the JS          */
+/* controller writes top: <percent>% inline on each stripe + viewport.     */
+.wk-reading-minimap {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: var(--reading-minimap-width);
+    z-index: var(--z-wk-sticky);
+    pointer-events: none;
+}
+.wk-reading-minimap[data-side="right"] {
+    right: 0;
+}
+.wk-reading-minimap[data-side="left"] {
+    left: 0;
+}
+.wk-reading-minimap__stripes {
+    position: relative;
+    height: 100%;
+    pointer-events: auto;
+    line-height: 0; /* eliminate inline-baseline gap so stripe positions are exact */
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.wk-reading-minimap__stripe {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--reading-minimap-stripe-height);
+    margin-bottom: var(--reading-minimap-stripe-gap);
+    background: var(--reading-minimap-color-idle);
+    cursor: pointer;
+    transition: background-color 0.15s ease-out;
+    /* top: <percent>% written inline by the JS controller */
+}
+.wk-reading-minimap__stripe:hover {
+    background: color-mix(in oklab, var(--reading-minimap-color-active) 70%, var(--reading-minimap-color-idle));
+}
+.wk-reading-minimap__stripe--active {
+    background: var(--reading-minimap-color-active);
+}
+
+/* Block-style stripes — opt-in via `:itemStyle="block"`. Each stripe
+   becomes a skeleton-style rectangle whose height tracks the source
+   item's natural height (Blade emits `height: <heightFraction*100>%`
+   inline). Adds a softer rounded-corner + subtle inset so the
+   rectangles read as content placeholders rather than hard rules.
+   Active state stays the same colour token but with extra contrast
+   so it still pops against the surrounding muted blocks. */
+.wk-reading-minimap[data-item-style="block"] .wk-reading-minimap__stripe {
+    background: var(--reading-minimap-block-bg, color-mix(in srgb, var(--reading-minimap-color-idle) 25%, transparent));
+    border-radius: var(--reading-minimap-block-radius, 2px);
+    margin-bottom: var(--reading-minimap-block-gap, 2px);
+}
+.wk-reading-minimap[data-item-style="block"] .wk-reading-minimap__stripe:hover {
+    background: color-mix(in srgb, var(--reading-minimap-color-active) 40%, transparent);
+}
+.wk-reading-minimap[data-item-style="block"] .wk-reading-minimap__stripe--active {
+    background: var(--reading-minimap-color-active);
+}
+.wk-reading-minimap__viewport {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: var(--reading-minimap-viewport-bg);
+    border: var(--reading-minimap-viewport-border);
+    border-radius: var(--reading-minimap-viewport-radius);
+    cursor: grab;
+    pointer-events: auto;
+    z-index: 1;
+    /* top + height written inline by the JS controller */
+}
+.wk-reading-minimap__viewport:active {
+    cursor: grabbing;
+}
+
+/* reading-minimap rendered-mode — scaled-down literal preview.            */
+/* The whole source article is scaled down so the entire scroll surface   */
+/* fits inside the minimap. The minimap itself is fixed to the viewport   */
+/* (full-height column on the inboard edge) so it stays in view while the */
+/* article scrolls; only the viewport-overlay rectangle moves as the     */
+/* reader progresses.                                                     */
+/* Both modes pin to the viewport edge so the reader always sees "where
+   am I". The earlier stripe-mode default (`position: absolute; top:0;
+   bottom:0`) stretched the minimap to the article container's full
+   height — when the container scrolled past viewport the minimap
+   scrolled with it, defeating the always-visible "where am I"
+   affordance. Both modes now share `position: fixed; top: 1rem` with
+   `bottom: 1rem` so the column fills the viewport height. Earlier
+   `height: max-content` collapsed stripes-mode to 0 because the
+   stripe <li> children are `position: absolute` and don't contribute
+   to max-content sizing — the wrapper rendered as a 0-height bar
+   visible only as a thin marker at the top. */
+.wk-reading-minimap[data-mode="rendered"],
+.wk-reading-minimap[data-mode="stripes"] {
+    position: fixed;
+    top: 1rem;
+    bottom: 1rem;
+    height: auto;
+    max-height: calc(100vh - 2rem);
+}
+.wk-reading-minimap[data-mode="rendered"][data-side="right"],
+.wk-reading-minimap[data-mode="stripes"][data-side="right"] {
+    right: 1rem;
+    left: auto;
+}
+.wk-reading-minimap[data-mode="rendered"][data-side="left"],
+.wk-reading-minimap[data-mode="stripes"][data-side="left"] {
+    left: 1rem;
+    right: auto;
+}
+/* Both modes now use `top: 1rem; bottom: 1rem; height: auto` from the
+   shared rule above (no per-mode override needed). Earlier this block
+   carried a stripes-mode override that broke the column visibility —
+   the override is dead and removed. */
+.wk-reading-minimap[data-mode="rendered"] .wk-reading-minimap__stripes {
+    /* In rendered mode the stripe column is hidden — the iframe-clone IS
+       the visual representation of content distribution. */
+    display: none;
+}
+.wk-reading-minimap__rendered {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: var(--reading-minimap-rendered-radius);
+    background: var(--reading-minimap-rendered-placeholder-bg);
+    /* pointer-events: auto so hover-preview (E1) extension can fire
+       pointermove on the canvas surface. Without this, the wrapper's
+       inherited `pointer-events: none` (from .wk-reading-minimap)
+       blocks pointer events on the canvas — and the hover-preview
+       popover never appears when hovering the bulk of the rendered-
+       mode minimap, only when the cursor lands inside the small
+       viewport-overlay rectangle. */
+    pointer-events: auto;
+    z-index: 0;
+}
+.wk-reading-minimap__rendered-canvas {
+    /* PhpStorm / VS Code-style minimap canvas. The Alpine controller
+       paints abstract content-texture rectangles onto this canvas at
+       DPR-aware resolution, one per rendered text line. Element types
+       (heading / prose / code / default) get distinct alpha-modulated
+       colours so structural anchors pop against prose density. No
+       transform-scale needed — the canvas already draws at minimap
+       coordinates. */
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: transparent;
+}
+
+/* Extension E1 — hover preview popover. Hidden by default; shown via      */
+/* `data-visible="true"` written inline by the controller on pointermove. */
+.wk-reading-minimap__preview {
+    position: fixed;
+    width: var(--reading-minimap-preview-size);
+    height: var(--reading-minimap-preview-size);
+    overflow: hidden;
+    background: var(--reading-minimap-preview-bg);
+    border: var(--reading-minimap-preview-border);
+    border-radius: var(--reading-minimap-rendered-radius);
+    box-shadow: var(--reading-minimap-preview-shadow);
+    opacity: 0;
+    pointer-events: none;
+    z-index: var(--z-wk-tooltip);
+    transition: opacity 150ms ease-out;
+}
+.wk-reading-minimap__preview[data-visible="true"] {
+    opacity: 1;
+}
+
+/* Extension E2 — bookmark marker. Single horizontal line at the saved    */
+/* offset percentage. Renders above the iframe-clone via z-index.         */
+.wk-reading-minimap__bookmark-marker {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--reading-minimap-bookmark-marker-height);
+    background: var(--reading-minimap-bookmark-marker-color);
+    pointer-events: none;
+    z-index: 2;
+    /* top written inline (percentage) */
+}
+
+/* Extension E3 — heading anchors strip. Sits on the outboard edge of the */
+/* minimap (right by default, left when data-side="left"). Anchors are    */
+/* keyboard-reachable; their parent <nav> carries an aria-label.          */
+.wk-reading-minimap__anchors {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    z-index: 3;
+}
+.wk-reading-minimap[data-side="right"] .wk-reading-minimap__anchors {
+    left: 100%;
+    margin-left: 0.5rem;
+    align-items: flex-start;
+}
+.wk-reading-minimap[data-side="left"] .wk-reading-minimap__anchors {
+    right: 100%;
+    margin-right: 0.5rem;
+    align-items: flex-end;
+}
+.wk-reading-minimap__anchor {
+    position: absolute;
+    font-size: var(--reading-minimap-anchor-font-size);
+    line-height: 1.2;
+    color: var(--reading-minimap-anchor-text-color);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 150ms ease-out;
+    /* top written inline (percentage) */
+}
+.wk-reading-minimap__anchor:hover,
+.wk-reading-minimap__anchor:focus-visible {
+    color: var(--reading-minimap-anchor-text-color-hover);
+}
+.wk-reading-minimap__anchor[data-collapsed="true"] {
+    opacity: 0;
+    pointer-events: none;
+}
+.wk-reading-minimap:hover .wk-reading-minimap__anchor[data-collapsed="true"] {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Extension E4 — auto-fade idle. Triggered by data-idle="true" written   */
+/* inline by the controller after the idle timer fires. Hover overrides   */
+/* the idle state (returns to full opacity instantly).                    */
+.wk-reading-minimap[data-auto-fade="true"] {
+    transition: opacity var(--reading-minimap-idle-transition) ease-out;
+}
+.wk-reading-minimap[data-auto-fade="true"][data-idle="true"] {
+    opacity: var(--reading-minimap-idle-opacity);
+}
+.wk-reading-minimap[data-auto-fade="true"]:hover {
+    opacity: 1;
+}
+
+/* reading-toc — horizontal sticky-strip TOC for marketing landing pages. */
+/* Sibling to reading-spine but flat: a row of <a> links across the top   */
+/* (or bottom) of the article container. Sticky positioning honours the   */
+/* --reading-toc-offset inline style set by Blade so consumers can clear  */
+/* their own fixed nav above the strip.                                   */
+.wk-reading-toc {
+    /* Sticky positioning is LOAD-BEARING for the TOC's intended UX —
+       the strip pins at the consumer-supplied `--reading-toc-offset`
+       once the reader scrolls past it. Encoded directly here (not via
+       the Tailwind `sticky` utility on the Blade root) because
+       consumer setups that render previews without a full consumer-
+       side Tailwind compile (iframe-srcdoc sandboxes, dev-server
+       partial builds) would otherwise lose `.sticky { position: sticky }`
+       and fall back to `position: static` — the TOC then sits at its
+       initial document position and scrolls away with content instead
+       of pinning. Same lesson as the sparkline-inline / chart-wrapper-
+       width fixes: utility classes for decoration, base CSS for
+       layout primitives. */
+    position: sticky;
+    top: var(--reading-toc-offset, 0);
+    z-index: var(--z-wk-sticky);
+    background: var(--reading-toc-bg);
+    border-bottom: 1px solid var(--color-wk-border);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+/* Bottom-position variant — consumer passes `position="bottom"` and the
+   strip pins at the bottom of the viewport instead of the top. Toggled
+   via the `data-position="bottom"` attribute the Blade template emits
+   alongside the `wk-reading-toc` marker class. */
+.wk-reading-toc[data-position="bottom"] {
+    top: auto;
+    bottom: var(--reading-toc-offset, 0);
+}
+/* Strip the default <ol> decimal markers + padding-inline-start on the    */
+/* toc's link list. The toc uses <ol> for the semantic-ordered-list a11y   */
+/* signal but visually renders a flat row of <a> links; default markers    */
+/* would prepend "1.", "2.", ... to each link and push them past the       */
+/* strip's horizontal edge. We do NOT zero the toc's padding outright —    */
+/* the toc's own Tailwind utilities supply axis padding on the <ol>.      */
+.wk-reading-toc__list {
+    list-style: none;
+    margin: 0;
+    /* Slim 0.25 rem block padding. The +1 px on padding-block-start
+       compensates for the typographic ascender offset: system-ui fonts
+       at line-height: 1 render the capital-letter top roughly 1 px
+       below the line-box top (the line-box reserves a hair of ascender
+       space above the cap-height that `getBoundingClientRect` doesn't
+       see), which made the visible space-above-text measure 1 px less
+       than the space-below-text even when block padding was symmetric.
+       The extra 1 px on top brings the measured above/below visible-
+       text distances to exact equality.
+
+       Inline padding 0.25 rem on each side gives the strip a hairline
+       of "list-edge" indent. An earlier defence-in-depth `!important`
+       on these two declarations was removed in v2.0.0; consumers
+       running a typography prose-wrapper (e.g. `body.{prose-class}`)
+       should carve out `[class*="wk-"]` from their `ol/ul/li` rules so
+       prose typography never shoves WireKit list-based components off
+       the content-edge spine — same defensive pattern they typically
+       use for `max-width: 65ch` typography clamps. The doubled-class
+       `wk-list` pattern at line 999 documents the same strategy for
+       `<x-wirekit::list>`. */
+    padding-block-start: calc(0.25rem + 1px);
+    padding-block-end: 0.25rem;
+    padding-inline-start: 0.25rem;
+    padding-inline-end: 0.25rem;
+}
+
+/* `:flush` modifier — when the consumer wants the TOC's first / last
+   link visible text to sit flush with the strip's content edges (i.e.
+   on the same X-coordinate as the surrounding brand-bar logo and h2
+   headings), the modifier class zeroes the inline padding on the OL
+   and removes the first/last link's symmetric `px-2` on the relevant
+   edge. The hover-state background keeps its internal padding on the
+   OPPOSITE edge so the rounded background still has breathing room
+   around the rendered text. Used by `<x-wirekit::reading-toc :flush>`
+   and any consumer that wants edge-aligned navigation. */
+.wk-reading-toc--flush {
+    /* `flush` aligns the first/last visible LINK with the surrounding
+       content-edge spine. Matches `--padding-wk-x-sm` (= 0.625 rem
+       = 10 px) — the same value docs-site renders the article body
+       at by default inside iframe-srcdoc previews. Background +
+       border-bottom still span the full viewport-width because
+       padding doesn't shrink the box. */
+    padding-inline: var(--padding-wk-x-sm);
+}
+.wk-reading-toc--flush .wk-reading-toc__list {
+    padding-inline-start: 0;
+    padding-inline-end: 0;
+}
+.wk-reading-toc--flush .wk-reading-toc__list > li:first-child > .wk-reading-toc__link {
+    padding-left: 0;
+}
+.wk-reading-toc--flush .wk-reading-toc__list > li:last-child > .wk-reading-toc__link {
+    padding-right: 0;
+}
+.wk-reading-toc__item {
+    /* Item height = exact font-height (line-height: 1) so the symmetric
+       padding on the <a> child renders mathematically equal above and
+       below the visible text — collapsing the default 1.25 leading
+       gives true symmetric padding without optical-balance hacks.
+
+       margin: 0 reset defeats consumer-side typography rules that apply
+       `margin-bottom` to every `<li>` (the @tailwindcss/typography
+       pattern + custom docs-prose patterns). Without this reset every
+       TOC item would carry its consumer's li-bottom-margin, producing
+       an asymmetric gap at the strip's bottom edge. */
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+    margin: 0;
+}
+.wk-reading-toc__item > a.wk-reading-toc__link {
+    line-height: 1;
+}
+.wk-reading-toc__link {
+    color: var(--reading-toc-color-idle);
+    /* Strip underline on idle links — consumer prose stylesheets often
+       default `<a>` to underlined, which makes every link look "active".
+       `!important` is necessary here: consumer prose rules can win on
+       specificity (e.g. `.prose a` is more specific than
+       `.wk-reading-toc__link` and reaches inside our component's class
+       boundary). The active state below relies on font-weight + colour
+       only — never on underline — so dropping underlines globally on
+       this surface preserves the active-vs-idle contrast cleanly. */
+    text-decoration: none !important;
+    font-weight: 400;
+    transition: color 150ms ease-out, background-color 150ms ease-out, font-weight 0ms;
+}
+.wk-reading-toc__link:hover {
+    color: var(--reading-toc-color-active);
+    background: color-mix(in srgb, var(--color-wk-bg-elevated) 60%, transparent);
+}
+.wk-reading-toc__link[data-active="true"],
+.wk-reading-toc__link[aria-current="location"] {
+    color: var(--reading-toc-color-active);
+    /* Active state = bold weight + accent colour only. The idle state
+       ships with `text-decoration: none !important` above, so the active
+       state can rely on font-weight + colour alone for differentiation
+       against the rest of the row — no underline shift, which would
+       cause a sub-pixel reflow as the reader scrolls between sections. */
+    font-weight: 700;
+}
+
+/* Print stylesheet: every reading-* component is screen-only chrome.    */
+/* Hiding them keeps blog-to-PDF / browser-print clean — readers don't   */
+/* want a fixed bar overprinted on the first page nor a sidebar of ticks */
+/* taking up margin space on every printed page.                         */
+@media print {
+    .wk-reading-progress,
+    .wk-reading-spine,
+    .wk-reading-minimap,
+    .wk-reading-toc,
+    .wk-reading-bookmark,
+    .wk-reading-meta {
+        display: none !important;
+    }
+}
+
+/* `<x-wirekit::brand>` — defensive `text-decoration: none` against
+   consumer prose stylesheets that style `<a>` with an underline
+   (the typical `@tailwindcss/typography` pattern: `.prose a {
+   text-decoration: underline }`). The Tailwind `no-underline`
+   utility on the brand's class list loses on specificity to
+   `.{prose-class} a` (specificity (0,1,0) vs (0,1,1)). The
+   doubled-class `.wk-brand.wk-brand` selector wins on specificity
+   (0,2,0) without resorting to `!important`. Same defence
+   strategy as `.wk-reading-toc__link[text-decoration: none !important]`
+   above — but with the more elegant doubled-class shape that
+   doesn't escalate the cascade to !important. */
+.wk-brand.wk-brand {
+    text-decoration: none;
+}
+
+/* Stagger — cascade entrance animations across direct children of a       */
+/* `.wk-stagger`-marked wrapper (e.g. <x-wirekit::feature-grid stagger>    */
+/* / <x-wirekit::stats stagger>). Reads `--wk-stagger-step` (set inline    */
+/* by the Blade wrapper) and uses :nth-child to compute a per-child       */
+/* index, then multiplies for the cumulative animation-delay. Capped at   */
+/* index 8 so long grids don't produce runaway delays.                    */
+.wk-stagger > * {
+    animation-delay: calc(var(--wk-stagger-step, 0ms) * var(--wk-stagger-index, 0));
+}
+.wk-stagger > *:nth-child(1) { --wk-stagger-index: 0; }
+.wk-stagger > *:nth-child(2) { --wk-stagger-index: 1; }
+.wk-stagger > *:nth-child(3) { --wk-stagger-index: 2; }
+.wk-stagger > *:nth-child(4) { --wk-stagger-index: 3; }
+.wk-stagger > *:nth-child(5) { --wk-stagger-index: 4; }
+.wk-stagger > *:nth-child(6) { --wk-stagger-index: 5; }
+.wk-stagger > *:nth-child(7) { --wk-stagger-index: 6; }
+.wk-stagger > *:nth-child(8) { --wk-stagger-index: 7; }
+.wk-stagger > *:nth-child(n + 9) { --wk-stagger-index: 8; }
+
 /* Accessibility: disable/shorten all WireKit animations & transitions for */
 /* users who request reduced motion (OS-level setting). Covers keyframe    */
 /* animations AND Alpine x-transition durations on WireKit components.     */
 @media (prefers-reduced-motion: reduce) {
+    /* Stagger: collapse all per-child delays so children animate */
+    /* simultaneously (which combined with wk-animate-* duration  */
+    /* collapse below produces a no-motion snap-to-final).        */
+    .wk-stagger > * {
+        animation-delay: 0ms !important;
+    }
     .wk-skeleton::after,
+    .wk-skeleton[data-pulse="true"],
     .wk-progress-indeterminate,
     .wk-progress-circle-indeterminate {
         animation: none;
@@ -947,5 +1765,60 @@
     /* prefers-reduced-motion see an instant snap-to-final, no motion.     */
     [class*='wk-animate-'] {
         animation-duration: 0.01ms !important;
+        /* Also collapse any author-supplied --motion-wk-delay-* delay so the
+           snap-to-final happens immediately instead of after the rhythm. */
+        animation-delay: 0ms !important;
     }
+    /* Reading-* family: every transition (bar fill scaleX, dot stroke-     */
+    /* dashoffset, spine width / label opacity / tick colour-fade,         */
+    /* bookmark pill fade-in) collapses to 0.01ms so users with             */
+    /* prefers-reduced-motion see an instant state change, no motion.      */
+    /* Bar progress and dot stroke still UPDATE on scroll — only the inter-*/
+    /* polating transition is removed; the value itself jumps to current.  */
+    .wk-reading-progress .wk-reading-progress__fill,
+    .wk-reading-progress--dot circle,
+    .wk-reading-spine,
+    .wk-reading-spine .wk-reading-spine__label,
+    .wk-reading-spine .wk-reading-spine__tick,
+    .wk-reading-bookmark,
+    .wk-reading-minimap,
+    .wk-reading-minimap__stripe,
+    .wk-reading-minimap__preview,
+    .wk-reading-minimap__anchor {
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ApexCharts tooltip — close the gap to the hovered data point.            */
+/* ApexCharts positions its `.apexcharts-tooltip` element via JS-computed   */
+/* inline `top:` / `left:` values relative to the chart canvas. The native  */
+/* algorithm leaves ~20-30 px of empty gutter between the data point and    */
+/* the tooltip panel, which reads as "tooltip floating disconnected" on     */
+/* the docs-apex demos. A CSS `transform: translateY(15px)` shifts the     */
+/* rendered tooltip element 15 px in the direction OF the data point —    */
+/* for the default "above the point" placement this closes about half the */
+/* gap.                                                                    */
+.apexcharts-tooltip {
+    transform: translateY(15px);
+}
+
+/* Cursor affordance — every hoverable shape inside an ApexCharts SVG      */
+/* (bars, slices, line/area points, scatter/bubble markers, heatmap +     */
+/* treemap cells) gets `cursor: pointer` so consumers see the click /     */
+/* hover-affordance their mouse-shape signals on every other interactive */
+/* element on the docs site. ApexCharts internally adds `cursor: default`*/
+/* to most shapes — this rule wins by being later in the cascade and     */
+/* using the standard selector path through `.apexcharts-canvas`. The    */
+/* affordance applies even when the chart isn't actually click-handled    */
+/* — hover IS the interactive event for chart elements, and a pointer    */
+/* cursor signals "more info on hover" to the user.                       */
+.apexcharts-canvas .apexcharts-series path,
+.apexcharts-canvas .apexcharts-series rect,
+.apexcharts-canvas .apexcharts-series circle,
+.apexcharts-canvas .apexcharts-marker,
+.apexcharts-canvas .apexcharts-heatmap rect,
+.apexcharts-canvas .apexcharts-treemap rect,
+.apexcharts-canvas .apexcharts-pie-area,
+.apexcharts-canvas .apexcharts-radar-series path {
+    cursor: pointer;
 }

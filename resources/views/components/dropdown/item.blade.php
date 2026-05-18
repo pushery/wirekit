@@ -26,8 +26,8 @@
 
     // Color classes — danger variant or default neutral text
     $colorClasses = $danger
-        ? 'text-[var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)]'
-        : 'text-[var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]';
+        ? 'text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)]'
+        : 'text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]';
 
     // Disabled state — muted appearance, no pointer events
     $disabledClasses = $disabled

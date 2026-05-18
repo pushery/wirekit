@@ -72,8 +72,8 @@
                 @keydown.arrow-left.prevent="$el.previousElementSibling?.focus(); $el.previousElementSibling?.click()"
                 class="{{ $segmentClasses }} {{ $sizeClasses }}"
                 :class="selected === '{{ $optValue }}'
-                    ? 'bg-[var(--color-wk-bg-elevated)] text-[var(--color-wk-text)] shadow-[var(--shadow-wk-sm)] font-[number:var(--font-wk-heading-weight)]'
-                    : 'text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-text)]'"
+                    ? 'bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-sm)] font-[number:var(--font-wk-heading-weight)]'
+                    : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]'"
             >
                 {{ $optLabel }}
             </button>

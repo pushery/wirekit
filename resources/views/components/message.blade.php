@@ -3,7 +3,6 @@
     'timestamp' => null,
     'side' => 'left',
     'intent' => 'neutral',
-    'surface' => 'soft',
     'edited' => false,
     'scope' => null,
 ])
@@ -17,9 +16,13 @@
         default => WireKit::validateProp('message', 'side', $side, ['left', 'right']),
     };
 
+    // 'primary' aligns the intent enum with <x-wirekit::button> and the
+    // canonical VariantResolver::INTENTS set. Visually equivalent to 'info'
+    // on message bubbles (both tint with --color-wk-accent) — pick whichever
+    // expresses your intent semantically.
     $intentValue = match ($intent) {
-        'neutral', 'info', 'success', 'warning', 'danger' => $intent,
-        default => WireKit::validateProp('message', 'intent', $intent, ['neutral', 'info', 'success', 'warning', 'danger']),
+        'neutral', 'primary', 'info', 'success', 'warning', 'danger' => $intent,
+        default => WireKit::validateProp('message', 'intent', $intent, ['neutral', 'primary', 'info', 'success', 'warning', 'danger']),
     };
 
     // Parse author data
@@ -39,16 +42,21 @@
     $alignClass = $sideValue === 'right' ? 'flex-row-reverse' : 'flex-row';
     $textAlign = $sideValue === 'right' ? 'items-end' : 'items-start';
 
-    // Bubble background based on side and intent
+    // Bubble background + border based on side and intent.
+    // 'primary' and 'info' both tint with --color-wk-accent — they are visual
+    // synonyms here, distinguished only by the prop value the consumer passed.
+    // Non-neutral intents tint BOTH the background AND the border (mirrors the
+    // callout palette) so a system message reads as a coloured callout rather
+    // than a tinted bubble inside a generic gray frame.
     $bubbleClasses = match (true) {
         $intentValue !== 'neutral' => match ($intentValue) {
-            'info' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg-elevated))]',
-            'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_8%,var(--color-wk-bg-elevated))]',
-            'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_8%,var(--color-wk-bg-elevated))]',
-            'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_8%,var(--color-wk-bg-elevated))]',
+            'primary', 'info' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-accent)_40%,var(--color-wk-border))]',
+            'success' => 'bg-[color-mix(in_srgb,var(--color-wk-success)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-success)_40%,var(--color-wk-border))]',
+            'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-warning)_40%,var(--color-wk-border))]',
+            'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_8%,var(--color-wk-bg-elevated))] border-[color-mix(in_srgb,var(--color-wk-danger)_40%,var(--color-wk-border))]',
         },
-        $sideValue === 'right' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_10%,var(--color-wk-bg-elevated))]',
-        default => 'bg-[var(--color-wk-bg-elevated)]',
+        $sideValue === 'right' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_10%,var(--color-wk-bg-elevated))] border-[var(--color-wk-border-subtle)]',
+        default => 'bg-[var(--color-wk-bg-elevated)] border-[var(--color-wk-border-subtle)]',
     };
 
     $baseClasses = WireKit::resolveClasses('message', 'base', implode(' ', [
@@ -80,27 +88,28 @@
     <div class="flex flex-col {{ $textAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0 max-w-[42ch]">
         {{-- Header: name + timestamp --}}
         <span id="{{ $messageId }}-header" class="flex items-center gap-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-sm)]">
-            <span class="font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)] truncate">
+            <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] truncate">
                 {{ $authorName }}
             </span>
             @if($authorRole)
-                <x-wirekit::badge size="sm" variant="neutral">{{ $authorRole }}</x-wirekit::badge>
+                <x-wirekit::badge size="sm" intent="neutral">{{ $authorRole }}</x-wirekit::badge>
             @endif
             @if($carbonTimestamp)
                 <time
                     datetime="{{ $carbonTimestamp->toIso8601String() }}"
-                    class="text-[var(--color-wk-text-muted)] whitespace-nowrap"
+                    class="text-[color:var(--color-wk-text-muted)] whitespace-nowrap"
                 >
                     {{ $formattedTime }}
                 </time>
             @endif
             @if($edited)
-                <span class="text-[var(--color-wk-text-muted)] italic">{{ __('(edited)') }}</span>
+                <span class="text-[color:var(--color-wk-text-muted)] italic">{{ __('(edited)') }}</span>
             @endif
         </span>
 
-        {{-- Body bubble --}}
-        <div class="{{ $bubbleClasses }} rounded-[var(--radius-wk-lg)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-md)] text-[var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-subtle)]">
+        {{-- Body bubble — border colour comes from $bubbleClasses (intent-tinted for
+             non-neutral, neutral border for plain chat bubbles). --}}
+        <div class="{{ $bubbleClasses }} rounded-[var(--radius-wk-lg)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)]">
             {{ $slot }}
         </div>
 

@@ -68,8 +68,21 @@ export default function wirekitDropdown(config = {}) {
 
         /**
          * Close dropdown and return focus to trigger.
+         *
+         * The leading `if (!this.open) return;` guard is REQUIRED, not optional.
+         * Every <x-wirekit::dropdown> wrapper carries an `x-on:click.outside="close()"`
+         * listener that fires for EVERY dropdown on EVERY click anywhere on the page.
+         * Without the guard, three dropdowns + one click on an unrelated input means
+         * three close() invocations, three trigger.focus() calls, and the last one
+         * wins — silently stealing focus from whatever element the user actually
+         * clicked. Inputs lose focus mid-typing, dropdowns flicker open-then-shut,
+         * any focusable element next to a dropdown is collateral damage.
+         *
+         * Matches the same guard pattern used in popover.js, command-palette.js,
+         * and overlay.js (modal / drawer / alert-dialog).
          */
         close() {
+            if (!this.open) return;
             this.open = false;
             // Return focus to the trigger button. Use preventScroll so the page
             // does not jump to the trigger when the dropdown closes — the trigger

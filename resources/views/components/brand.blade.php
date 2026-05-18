@@ -9,10 +9,19 @@
     use Pushery\WireKit\WireKit;
 
     // Brand — logo + name combo for header and sidebar.
+    // The `wk-brand` marker class drives the doubled-class anti-prose-
+    // typography selector in `dist/wirekit.css` that defeats consumer
+    // prose `<a>` styling (typical pattern: `.{prose-class} a { text-
+    // decoration: underline }`) without resorting to `!important`. The
+    // Tailwind `no-underline` utility alone loses on specificity to a
+    // consumer prose-stylesheet rule that targets `<a>` inside a prose
+    // wrapper — the doubled-class `.wk-brand.wk-brand` selector wins
+    // on specificity (0,2,0) against `.{prose-class} a` (0,1,1).
     $classes = WireKit::resolveClasses('brand', 'base', implode(' ', [
+        'wk-brand',
         'flex items-center shrink-0',
         'gap-[var(--gap-wk-sm)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'no-underline',
     ]), $scope);
     // Auto-inject rel="noopener noreferrer" when target="_blank"

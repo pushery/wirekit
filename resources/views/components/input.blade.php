@@ -37,8 +37,8 @@
         'font-[family-name:var(--font-wk-sans)]',
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
-        'text-[var(--color-wk-text)]',
-        'placeholder:text-[var(--color-wk-text-placeholder)]',
+        'text-[color:var(--color-wk-text)]',
+        'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-[length:var(--border-wk-width)]',
         'shadow-[var(--shadow-wk-sm)]',
         'transition-colors',
@@ -120,7 +120,7 @@
             },
         ])>
             @if($prefix)
-                <span class="shrink-0 select-none pl-[var(--padding-wk-x-md)] text-[var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $prefix }}</span>
+                <span class="shrink-0 select-none pl-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $prefix }}</span>
             @endif
 
             <input
@@ -132,8 +132,8 @@
                 {{ $attributes->class([
                     'block w-full h-full bg-transparent border-none shadow-none',
                     'font-[family-name:var(--font-wk-sans)]',
-                    'text-[var(--color-wk-text)]',
-                    'placeholder:text-[var(--color-wk-text-placeholder)]',
+                    'text-[color:var(--color-wk-text)]',
+                    'placeholder:text-[color:var(--color-wk-text-placeholder)]',
                     'focus:outline-none focus:ring-0',
                     'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed',
                     match ($size) {
@@ -147,7 +147,7 @@
             />
 
             @if($suffix)
-                <span class="shrink-0 select-none pr-[var(--padding-wk-x-md)] text-[var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $suffix }}</span>
+                <span class="shrink-0 select-none pr-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $suffix }}</span>
             @endif
         </div>
     @else
@@ -164,8 +164,8 @@
 
     {{-- Error message and hint text use design tokens for automatic dark mode --}}
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

@@ -82,7 +82,7 @@
      drawer is dismissible — non-dismissible drawers must never close on ESC. --}}
 <div
     x-data="wirekitDrawer({ name: '{{ $name }}', dismissible: {{ $dismissible ? 'true' : 'false' }} })"
-    @if($dismissible) x-on:keydown.escape.window="open && close()" @endif
+    @if($dismissible) x-on:keydown.escape.window="open && isTopmost && close()" @endif
     {{ $attributes }}
 >
     {{-- Drawer overlay and panel — teleported to body --}}
@@ -112,6 +112,9 @@
                 x-transition:enter-start="{{ $enterStart }}"
                 x-transition:enter-end="{{ $enterEnd }}"
                 role="dialog"
+                {{-- Dynamic aria-modal so a stacked drawer-over-modal (or
+                     nested drawer) pair only marks the topmost as modal. --}}
+                :aria-modal="isTopmost ? 'true' : 'false'"
                 aria-modal="true"
                 aria-labelledby="{{ $titleId }}"
                 @if($describedby) aria-describedby="{{ $describedby }}" @endif

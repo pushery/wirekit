@@ -35,7 +35,7 @@
             WireKit::resolveClasses('divider', 'base', implode(' ', [
                 'flex items-center',
                 'text-[length:var(--text-wk-sm)]',
-                'text-[var(--color-wk-text-muted)]',
+                'text-[color:var(--color-wk-text-muted)]',
                 'font-[family-name:var(--font-wk-sans)]',
             ]), $scope),
         ]) }}

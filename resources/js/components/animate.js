@@ -41,6 +41,10 @@ export default (preset, options = {}) => ({
     },
     fired: false,
 
+    _observer: null,
+    _clickHandler: null,
+    _manualHandler: null,
+
     init() {
         const { trigger } = this.options;
 
@@ -53,36 +57,70 @@ export default (preset, options = {}) => ({
         }
     },
 
+    /**
+     * Alpine teardown hook — disconnect the observer / remove handlers.
+     * Without this, components torn down BEFORE their trigger fired
+     * (Livewire morph that removes the host element while it's still
+     * off-screen, or before the user clicked, or before the manual
+     * event was dispatched) leaked the observer/listener references
+     * forever — the Alpine instance was eligible for GC, but the
+     * observer's $root reference + the document-scoped event listener
+     * kept it alive.
+     */
+    destroy() {
+        if (this._observer) {
+            this._observer.disconnect();
+            this._observer = null;
+        }
+        if (this._clickHandler) {
+            this.$root.removeEventListener('click', this._clickHandler);
+            this._clickHandler = null;
+        }
+        if (this._manualHandler) {
+            window.removeEventListener('wirekit:reveal', this._manualHandler);
+            this._manualHandler = null;
+        }
+    },
+
     bindViewport() {
         // Reduced-motion: still trigger (so final state is visible) but the
         // global @media block snaps duration to 0.01ms — visually identical
         // to no-animation. The opacity-from-0 keyframes would otherwise leave
         // the element invisible if we skipped triggering entirely.
-        const observer = new IntersectionObserver(
+        this._observer = new IntersectionObserver(
             (entries) => {
                 if (! entries[0].isIntersecting) return;
                 this.fire();
-                if (this.options.once) observer.disconnect();
+                if (this.options.once) {
+                    this._observer.disconnect();
+                    this._observer = null;
+                }
             },
             { threshold: this.options.threshold }
         );
-        observer.observe(this.$root);
+        this._observer.observe(this.$root);
     },
 
     bindClick() {
-        const handler = () => {
+        this._clickHandler = () => {
             this.fire();
-            if (this.options.once) this.$root.removeEventListener('click', handler);
+            if (this.options.once) {
+                this.$root.removeEventListener('click', this._clickHandler);
+                this._clickHandler = null;
+            }
         };
-        this.$root.addEventListener('click', handler);
+        this.$root.addEventListener('click', this._clickHandler);
     },
 
     bindManual() {
-        const handler = () => {
+        this._manualHandler = () => {
             this.fire();
-            if (this.options.once) window.removeEventListener('wirekit:reveal', handler);
+            if (this.options.once) {
+                window.removeEventListener('wirekit:reveal', this._manualHandler);
+                this._manualHandler = null;
+            }
         };
-        window.addEventListener('wirekit:reveal', handler);
+        window.addEventListener('wirekit:reveal', this._manualHandler);
     },
 
     fire() {

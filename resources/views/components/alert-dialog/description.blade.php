@@ -9,7 +9,7 @@
     // Provides context about what will happen if the user confirms.
     $classes = WireKit::resolveClasses('alert-dialog.description', 'base', implode(' ', [
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text-muted)]',
+        'text-[color:var(--color-wk-text-muted)]',
         'mt-2',
     ]), $scope);
 @endphp

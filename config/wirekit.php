@@ -27,15 +27,15 @@ return [
     */
 
     'components' => [
-        // Phase 1 — Form Components
-        'button' => ['variant' => 'primary', 'size' => 'md'],
+        // Form components
+        'button' => ['intent' => 'primary', 'surface' => 'filled', 'size' => 'md'],
         'input' => ['size' => 'md'],
         'label' => [],
         'select' => ['size' => 'md'],
         'textarea' => ['size' => 'md', 'rows' => 3],
 
-        // Phase 3 — Display Components
-        'badge' => ['variant' => 'neutral', 'size' => 'md'],
+        // Display components
+        'badge' => ['intent' => 'neutral', 'size' => 'md'],
         'card' => ['variant' => 'outlined'],
         'card.header' => [],
         'card.body' => [],
@@ -47,7 +47,7 @@ return [
         'radio' => [],
         'field' => [],
 
-        // Phase B — Data Display Components
+        // Data display components
         'table' => ['striped' => false, 'hoverable' => false, 'compact' => false, 'responsive' => true],
         'table.head' => [],
         'table.body' => [],
@@ -57,11 +57,11 @@ return [
         'table.td' => [],
         'pagination' => ['variant' => 'full'],
         'empty-state' => [],
-        'progress' => ['variant' => 'accent', 'size' => 'md', 'circle-size' => 'md'],
+        'progress' => ['variant' => 'accent', 'size' => 'md'],
         'stat' => ['animate' => false],
         'skeleton' => [],
 
-        // Phase 2 — Overlay Components
+        // Overlay components
         'dropdown' => ['placement' => 'bottom-start', 'offset' => 8],
         'dropdown.panel' => ['width' => 'auto'],
         'dropdown.item' => [],
@@ -69,7 +69,7 @@ return [
         'modal' => ['size' => 'md', 'dismissible' => true],
         'drawer' => ['position' => 'right', 'size' => 'md', 'dismissible' => true],
 
-        // Phase C — Navigation Components
+        // Navigation components
         'tabs' => ['variant' => 'underline'],
         'breadcrumb' => ['separator' => 'chevron'],
         'accordion' => ['mode' => 'single'],
@@ -79,7 +79,7 @@ return [
         'sidebar.item' => [],
         'stepper' => ['orientation' => 'horizontal'],
 
-        // Phase D — Advanced Form Components
+        // Advanced form components
         'date-picker' => ['size' => 'md', 'format' => 'Y-m-d'],
         'file-upload' => ['size' => 'md', 'multiple' => false, 'accept' => null],
         'combobox' => ['size' => 'md', 'placeholder' => 'Select...'],
@@ -89,7 +89,7 @@ return [
         'password-input' => ['size' => 'md'],
         'time-picker' => ['size' => 'md'],
 
-        // Phase E — Additional Components
+        // Additional components
         'navbar' => ['variant' => 'default'],
         'rating' => ['size' => 'md'],
         'callout' => ['variant' => 'info'],

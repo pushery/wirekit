@@ -9,10 +9,13 @@
     // Uses role="tree" with keyboard navigation handled by Alpine.
     // Padding prevents node hover backgrounds from overlapping container borders.
     $classes = WireKit::resolveClasses('tree-view', 'base', implode(' ', [
+        // list-none strips the browser-default <ul> disc markers; the tree
+        // renders its own indent + chevron affordances per node.
+        'list-none m-0',
         'p-[var(--padding-wk-x-sm)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 @endphp
 
@@ -21,6 +24,7 @@
     role="tree"
     x-data="wirekitTreeView()"
     {{ $attributes->class([$classes]) }}
+    style="list-style: none; margin: 0; padding: 0;"
     @keydown.arrow-down.prevent="focusNext()"
     @keydown.arrow-up.prevent="focusPrev()"
     @keydown.arrow-right.prevent="expandOrChild()"

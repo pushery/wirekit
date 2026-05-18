@@ -17,7 +17,7 @@
         'text-[length:var(--text-wk-xs)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'uppercase tracking-wider',
-        'text-[var(--color-wk-text-subtle)]',
+        'text-[color:var(--color-wk-text-subtle)]',
     ]), $scope);
 @endphp
 

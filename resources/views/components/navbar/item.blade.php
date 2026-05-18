@@ -21,8 +21,8 @@
     ]), $scope);
 
     $colorClasses = $active
-        ? 'text-[var(--color-wk-accent)] font-[number:var(--font-wk-heading-weight)]'
-        : 'text-[var(--color-wk-text)]';
+        ? 'text-[color:var(--color-wk-accent)] font-[number:var(--font-wk-heading-weight)]'
+        : 'text-[color:var(--color-wk-text)]';
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // See sidebar/item.blade.php for the rationale on except('rel') + explicit

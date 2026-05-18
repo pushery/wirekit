@@ -9,12 +9,12 @@
 
     $classes = WireKit::resolveClasses('highlight', 'base', implode(' ', [
         'font-[family-name:var(--font-wk-sans)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
     ]), $scope);
 
     $markClasses = implode(' ', [
         'bg-[var(--color-wk-warning-bg,oklch(0.905_0.093_102.1))]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'rounded-[var(--radius-wk-sm)]',
         'px-0.5',
     ]);

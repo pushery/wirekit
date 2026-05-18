@@ -66,10 +66,11 @@ export default () => ({
         // the animation starts when 40% of the element is in viewport — a
         // sweet spot between "too eager" (10%, fires before user reads
         // surrounding context) and "too late" (90%, fires only at full view).
-        const observer = new IntersectionObserver(
+        this._observer = new IntersectionObserver(
             (entries) => {
                 if (! entries[0].isIntersecting) return;
-                observer.disconnect();
+                this._observer.disconnect();
+                this._observer = null;
 
                 this.animating = true;
                 const start = performance.now();
@@ -94,6 +95,19 @@ export default () => ({
             { threshold: 0.4 }
         );
 
-        observer.observe(this.$root);
+        this._observer.observe(this.$root);
+    },
+
+    /**
+     * Alpine teardown hook — disconnect the IntersectionObserver if the
+     * stat is removed from the DOM before scrolling into view
+     * (Livewire morph, conditional render, navigation). Without this
+     * the observer holds a reference to the detached $root indefinitely.
+     */
+    destroy() {
+        if (this._observer) {
+            this._observer.disconnect();
+            this._observer = null;
+        }
     },
 });

@@ -20,6 +20,7 @@ final class ChartManager
      */
     private const ADAPTERS = [
         'chartjs' => ChartJsAdapter::class,
+        'apexcharts' => ApexChartsAdapter::class,
     ];
 
     private ?ChartAdapter $adapter = null;

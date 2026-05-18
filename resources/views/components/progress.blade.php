@@ -3,13 +3,20 @@
     'max' => 100,                // max value the bar represents
     'label' => null,             // visible label rendered above the bar
     'showValue' => false,        // show "42 / 100" next to label
-    'variant' => config('wirekit.components.progress.variant', 'accent'), // accent | success | warning | danger
+    'variant' => config('wirekit.components.progress.variant', 'primary'), // primary | accent (alias of primary) | success | warning | danger
     'size' => config('wirekit.components.progress.size', 'md'),           // sm | md | lg
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    // Validate variant against the canonical intent set + the legacy 'accent'
+    // synonym (kept working so existing consumer code doesn't break).
+    $variantValue = match ($variant) {
+        'primary', 'accent', 'success', 'warning', 'danger' => $variant,
+        default => WireKit::validateProp('progress', 'variant', $variant, ['primary', 'accent', 'success', 'warning', 'danger']),
+    };
 
     // Clamp the value to [0, max] and compute percentage for fill width
     $isIndeterminate = $value === null;
@@ -30,12 +37,13 @@
         default => 'h-2',
     };
 
-    // Fill color changes with semantic variant — always via design tokens
-    $fillColor = match ($variant) {
+    // Fill color changes with semantic variant — always via design tokens.
+    // 'primary' is the canonical name; 'accent' kept as alias for back-compat.
+    $fillColor = match ($variantValue) {
         'success' => 'bg-[var(--color-wk-success)]',
         'warning' => 'bg-[var(--color-wk-warning)]',
         'danger' => 'bg-[var(--color-wk-danger)]',
-        default => 'bg-[var(--color-wk-accent)]',
+        default => 'bg-[var(--color-wk-accent)]', // primary + accent
     };
 
     // Determinate: animate width transitions for smooth updates.
@@ -60,12 +68,12 @@
     @if($label || $showValue)
         <div class="mb-1 flex items-center justify-between text-[length:var(--text-wk-sm)]">
             @if($label)
-                <span id="{{ $labelId }}" class="text-[var(--color-wk-text)]">{{ $label }}</span>
+                <span id="{{ $labelId }}" class="text-[color:var(--color-wk-text)]">{{ $label }}</span>
             @else
                 <span></span>
             @endif
             @if($showValue && ! $isIndeterminate)
-                <span class="text-[var(--color-wk-text-muted)] tabular-nums">
+                <span class="text-[color:var(--color-wk-text-muted)] tabular-nums">
                     {{ (int) $clamped }} / {{ (int) $max }}
                 </span>
             @endif

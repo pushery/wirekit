@@ -10,7 +10,7 @@
         'py-[var(--padding-wk-y-xl)]',
         'text-center',
         'text-[length:var(--text-wk-md)]',
-        'text-[var(--color-wk-text-muted)]',
+        'text-[color:var(--color-wk-text-muted)]',
     ]), $scope);
 @endphp
 

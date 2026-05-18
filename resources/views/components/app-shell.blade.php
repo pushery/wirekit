@@ -19,7 +19,7 @@
         'flex flex-col w-full',
         'min-h-screen',
         'bg-[var(--color-wk-bg)]',
-        'text-[var(--color-wk-text)]',
+        'text-[color:var(--color-wk-text)]',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 @endphp

@@ -23,15 +23,21 @@
     $errorId = $comboId . '-error';
 
     // Normalize options: accept ['key' => 'label'] assoc or list of
-    // ['value' => .., 'label' => ..] or plain strings.
+    // ['value' => .., 'label' => .., 'disabled' => bool] or plain strings.
+    // The `disabled` flag (default false) renders the option visually
+    // dimmed + not-allowed cursor and prevents click + keyboard activation.
     $normalized = [];
     foreach ($options as $key => $opt) {
         if (is_array($opt)) {
-            $normalized[] = ['value' => (string) ($opt['value'] ?? $key), 'label' => (string) ($opt['label'] ?? $opt['value'] ?? $key)];
+            $normalized[] = [
+                'value' => (string) ($opt['value'] ?? $key),
+                'label' => (string) ($opt['label'] ?? $opt['value'] ?? $key),
+                'disabled' => (bool) ($opt['disabled'] ?? false),
+            ];
         } elseif (is_int($key)) {
-            $normalized[] = ['value' => (string) $opt, 'label' => (string) $opt];
+            $normalized[] = ['value' => (string) $opt, 'label' => (string) $opt, 'disabled' => false];
         } else {
-            $normalized[] = ['value' => (string) $key, 'label' => (string) $opt];
+            $normalized[] = ['value' => (string) $key, 'label' => (string) $opt, 'disabled' => false];
         }
     }
 
@@ -51,8 +57,8 @@
         'px-[var(--padding-wk-x-md)]',
         'pr-[var(--size-wk-md)]',
         'bg-[var(--color-wk-bg-input)]',
-        'text-[var(--color-wk-text)]',
-        'placeholder:text-[var(--color-wk-text-placeholder)]',
+        'text-[color:var(--color-wk-text)]',
+        'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-[length:var(--border-wk-width)]',
         $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-md)]',
@@ -81,7 +87,10 @@
         'py-1',
     ]), $scope);
 
-    $optionBase = 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer';
+    // Shared padding/typography for the empty-state row. Option <li>
+    // entries inline their own classes since they need conditional cursor
+    // rules (cursor-pointer for enabled, cursor-not-allowed for disabled).
+    $emptyRowClasses = 'p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)]';
 @endphp
 
 {{-- Alpine state: `query` mirrors the text input, `open` controls visibility,
@@ -105,6 +114,7 @@
             if (match) this.query = match.label;
         },
         selectOption(opt) {
+            if (opt.disabled) return;
             this.selected = opt.value;
             this.query = opt.label;
             this.open = false;
@@ -112,10 +122,25 @@
         moveHighlight(delta) {
             const max = this.filtered.length - 1;
             if (max < 0) return;
-            this.highlight = Math.max(0, Math.min(max, this.highlight + delta));
+            // Skip disabled options when navigating with arrow keys.
+            // Walk in `delta` direction until we find an enabled option
+            // or wrap-back to where we started (no enabled options →
+            // bail without changing highlight).
+            let next = this.highlight;
+            for (let step = 0; step < this.filtered.length; step++) {
+                next = Math.max(0, Math.min(max, next + delta));
+                if (! this.filtered[next].disabled) {
+                    this.highlight = next;
+                    return;
+                }
+                if (next === 0 && delta < 0) return;
+                if (next === max && delta > 0) return;
+            }
         },
         activateHighlighted() {
-            if (this.filtered[this.highlight]) this.selectOption(this.filtered[this.highlight]);
+            if (this.filtered[this.highlight] && ! this.filtered[this.highlight].disabled) {
+                this.selectOption(this.filtered[this.highlight]);
+            }
         },
         clearSelection() {
             this.selected = null;
@@ -139,6 +164,7 @@
          satisfies the WAI-ARIA 1.2 combobox pattern. --}}
     <input
         type="text"
+        x-ref="cbxInput"
         id="{{ $comboId }}"
         role="combobox"
         aria-expanded="false"
@@ -167,7 +193,7 @@
             x-show="selected"
             x-cloak
             @click.stop="clearSelection()"
-            class="absolute right-8 top-1/2 -translate-y-1/2 p-0.5 rounded-[var(--radius-wk-sm)] text-[var(--color-wk-text-muted)] hover:text-[var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+            class="absolute right-8 top-1/2 -translate-y-1/2 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
             aria-label="Clear selection"
         >
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -176,10 +202,25 @@
         </button>
     @endif
 
-    {{-- Chevron — decorative, rotates when open. --}}
-    <svg class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-wk-text-muted)] pointer-events-none transition-transform" :class="open ? 'rotate-180' : ''" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-        <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
-    </svg>
+    {{-- Chevron — clickable button that toggles the dropdown. Carries
+         `cursor-pointer` so the user gets the right hover affordance, and
+         delegates focus to the input on click so the input's keyboard
+         contract continues to work. tabindex="-1" keeps the chevron out
+         of the natural tab order — the input itself is the focusable
+         control per the WAI-ARIA combobox pattern. --}}
+    <button
+        type="button"
+        @click.stop="open = ! open; if (open) $refs.cbxInput?.focus();"
+        @if($disabled) disabled @endif
+        tabindex="-1"
+        aria-hidden="true"
+        class="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-transform duration-[var(--transition-wk-duration)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-[var(--opacity-wk-disabled)]"
+        :class="open ? 'rotate-180' : ''"
+    >
+        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+        </svg>
+    </button>
 
     {{-- Listbox — filtered options rendered via x-for. Each option gets a
          unique id + role=option so AT can announce them as the user navigates. --}}
@@ -187,6 +228,7 @@
         id="{{ $listId }}"
         role="listbox"
         class="{{ $listClasses }}"
+        style="list-style: none; margin: 0; padding: 0;"
         x-show="open && filtered.length > 0"
         x-cloak
     >
@@ -195,12 +237,15 @@
                 role="option"
                 :id="'{{ $listId }}-opt-' + idx"
                 :aria-selected="selected === opt.value"
-                :class="idx === highlight
-                    ? 'bg-[var(--color-wk-bg-muted)] text-[var(--color-wk-text)]'
-                    : 'text-[var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[var(--color-wk-text)]'"
-                class="{{ $optionBase }}"
+                :aria-disabled="opt.disabled ? 'true' : null"
+                :class="opt.disabled
+                    ? 'text-[color:var(--color-wk-text-muted)] opacity-[var(--opacity-wk-disabled)] cursor-not-allowed'
+                    : (idx === highlight
+                        ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] cursor-pointer'
+                        : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
+                class="p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)]"
                 @click="selectOption(opt)"
-                @mouseenter="highlight = idx"
+                @mouseenter="if (! opt.disabled) highlight = idx"
                 x-text="opt.label"
             ></li>
         </template>
@@ -212,10 +257,10 @@
         x-show="open && filtered.length === 0 && query !== ''"
         x-cloak
     >
-        <p class="{{ $optionBase }} text-[var(--color-wk-text-muted)]">No results</p>
+        <p class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]">No results</p>
     </div>
 
     @if($hasError)
-        <p id="{{ $errorId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $errorId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 </div>

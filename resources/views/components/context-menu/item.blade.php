@@ -31,8 +31,8 @@
     ]), $scope);
 
     $colorClasses = $danger
-        ? 'text-[var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)]'
-        : 'text-[var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]';
+        ? 'text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)]'
+        : 'text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]';
 
     $disabledClasses = $disabled
         ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none'

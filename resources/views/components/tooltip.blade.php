@@ -25,7 +25,7 @@
         'px-[var(--padding-wk-x-sm)]',
         'py-[var(--padding-wk-y-xs)]',
         'bg-[var(--color-wk-tooltip-bg)]',
-        'text-[var(--color-wk-tooltip-text)]',
+        'text-[color:var(--color-wk-tooltip-text)]',
         'text-[length:var(--text-wk-sm)]',
         'font-[family-name:var(--font-wk-sans)]',
         'rounded-[var(--radius-wk-sm)]',

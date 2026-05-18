@@ -38,7 +38,7 @@
         'border-[var(--color-wk-border-subtle)]',
         'border-t-2',
         $headerAccentClass,
-        'scroll-snap-align-start',
+        'snap-start',
     ]), $scope);
 @endphp
 
@@ -56,12 +56,12 @@
             <span class="flex items-center gap-[var(--space-wk-sm,0.5rem)]">
                 <span
                     id="{{ $columnId }}-label"
-                    class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[var(--color-wk-text)]"
+                    class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]"
                 >
                     {{ $label }}
                 </span>
                 @if($count !== null)
-                    <x-wirekit::badge size="sm" :variant="$isOverLimit ? 'danger' : 'neutral'">
+                    <x-wirekit::badge size="sm" :intent="$isOverLimit ? 'danger' : 'neutral'">
                         {{ $count }}@if($limit)/{{ $limit }}@endif
                     </x-wirekit::badge>
                 @endif
