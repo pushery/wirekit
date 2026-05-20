@@ -1,3 +1,4 @@
+{{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
     'container' => false,
     'padding' => config('wirekit.components.main.padding', 'lg'),
@@ -8,7 +9,7 @@
     use Pushery\WireKit\WireKit;
 
     // Main — primary content area in app-shell layouts.
-    // `wk-main` marker — load-bearing against consumer prose
+    // `wk-main` marker — load-bearing against developer prose
     // `max-width: 75ch` clamps (see footer.blade.php for the full
     // rationale).
     $classes = WireKit::resolveClasses('main', 'base', implode(' ', [

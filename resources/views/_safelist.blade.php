@@ -8,7 +8,7 @@
     pointing at WireKit's design tokens. Examples include the danger-fg text
     colour, the success-hover background, the accent fill, and the soft tint
     color-mix expressions.
-    Tailwind v4 only scans the file paths the consumer declares via `@source`;
+    Tailwind v4 only scans the file paths the developer declares via `@source`;
     the canonical integration declares `@source 'vendor/pushery/wirekit/resources/views/**/*.blade.php'`,
     which scans BLADE templates only — Tailwind never reads `src/VariantResolver.php`,
     so any class that exists ONLY in the resolver and never appears literally in a
@@ -22,11 +22,11 @@
     This file contains every dynamic class VariantResolver may emit, written
     literally so Tailwind's candidate scanner picks them up via the same
     `@source 'vendor/pushery/wirekit/resources/views/**/*.blade.php'` glob the
-    consumer already configured. The classes live inside a Blade `{{-- … --}}`
+    developer already configured. The classes live inside a Blade `{{-- … --}}`
     comment, so they DO NOT render to HTML — but Tailwind reads the raw file
     contents and finds the candidates regardless of Blade syntax.
 
-    NO consumer-side configuration change is required: every WireKit consumer's
+    NO developer-side configuration change is required: every WireKit developer's
     Tailwind setup already scans `resources/views/**/*.blade.php` per the
     integration docs, so this file is automatically picked up.
 
@@ -35,7 +35,7 @@
     When `Pushery\WireKit\VariantResolver` adds a new intent, surface, or class
     string, add the resulting literal classes here in the same group. Removed
     classes can be deleted; orphaned classes only waste a few bytes in the
-    compiled CSS until the consumer rebuilds.
+    compiled CSS until the developer rebuilds.
 
     The PreviewDemonstratesFunctionTest plus the existing axe-core browser
     sweep on `bg-[var(--color-wk-danger)]` buttons act as the regression test:

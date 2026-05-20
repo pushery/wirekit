@@ -4,12 +4,13 @@
     'position' => 'top',
     'offset' => '0',
     'hideBelow' => 'sm',
-    // `flush` — when true, the first link's left-edge padding and the
-    // last link's right-edge padding are zeroed so the visible text
-    // aligns flush with the strip's content edges. Use when the TOC is
-    // nested directly under a main wrapper / brand-bar and the consumer
-    // wants the strip's first link to sit on the same vertical content-
-    // edge spine as the brand logo and the article h2 headings. The
+    // `flush` — when true, the strip runs viewport-edge-to-viewport-edge:
+    // zero horizontal padding on the nav AND the inner list AND the
+    // first / last link. The strip's chrome (background + bottom border)
+    // and the visible "Features" / "Pricing" / "…" text both run flush
+    // to the viewport boundary. Use when the TOC sits below an
+    // edge-to-edge marketing-page chrome (brand-bar with no `padding="lg"`
+    // setting, or sandwiched between a hero and the article body). The
     // hover-state background keeps its internal padding on the opposite
     // edge so the rounded background still has breathing room around
     // the rendered text. Default `false` keeps backward-compatible
@@ -36,7 +37,7 @@
 
     // levels: comma-separated string -> int[] for the plugin. Default '2' for
     // landing-page flat structure (Hero / Features / Pricing / FAQ all <h2>);
-    // consumers opt into nested levels via levels="2,3" explicitly.
+    // developers opt into nested levels via levels="2,3" explicitly.
     $levelsArray = collect(explode(',', (string) $levels))
         ->map(fn ($v) => (int) trim($v))
         ->filter(fn ($v) => $v >= 1 && $v <= 6)
@@ -75,13 +76,13 @@
 
     // CSS-side offset string passed through as-is so `'4rem'`, `'72px'`, etc.
     // all work. Validated above to be a numeric+unit shape; defensively
-    // fall back to '0' if the consumer passed garbage.
+    // fall back to '0' if the developer passed garbage.
     $offsetCss = preg_match('/^([\d.]+)\s*(px|rem|em)?$/', (string) $offset)
         ? (string) $offset
         : '0';
 
     // Marker class — drives the print-stylesheet hide rule + reduced-motion
-    // gating + doubled-class specificity for any consumer overrides.
+    // gating + doubled-class specificity for any developer overrides.
     // Sticky positioning + top/bottom offset are owned by the
     // `.wk-reading-toc` rule in `dist/wirekit.css` (selected per
     // `data-position` attribute below).
@@ -113,10 +114,10 @@
     style="--reading-toc-offset: {{ $offsetCss }};"
 >
     {{--
-        Inline-style the load-bearing list primitives because the docs-site
-        sandbox iframe renders previews WITHOUT consumer Tailwind. The
+        Inline-style the load-bearing list primitives because docs.wirekit.app
+        sandbox iframe renders previews WITHOUT developer Tailwind. The
         Tailwind utility classes (`list-none` via preflight, `flex flex-row`,
-        the spacing values) only apply when the consumer's compiled CSS is in
+        the spacing values) only apply when the developer's compiled CSS is in
         scope — without it, the browser falls back to `<ol>`'s defaults
         (`list-style: decimal`, `padding-inline-start: 40px`, block layout)
         and the TOC strip renders as a vertical numbered list with massive

@@ -24,8 +24,10 @@
     };
 
     // Base container classes — w-full ensures justify-* has room to spread.
+    // `flex-wrap` lets the summary + button-row wrap onto multiple lines
+    // on narrow viewports instead of overflowing the page horizontally.
     $navClasses = WireKit::resolveClasses('pagination', 'base', implode(' ', [
-        'flex items-center w-full gap-2',
+        'flex flex-wrap items-center w-full gap-2',
         $justifyClass,
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-sm)]',
@@ -117,7 +119,7 @@
             results
         </div>
 
-        <div class="flex items-center gap-1">
+        <div class="flex flex-wrap items-center gap-1">
             @if($paginator->onFirstPage())
                 <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="Previous">&larr;</span>
             @else

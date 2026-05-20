@@ -69,6 +69,13 @@ export default () => ({
         this._observer = new IntersectionObserver(
             (entries) => {
                 if (! entries[0].isIntersecting) return;
+                // Null-guard against post-destroy fire — browser-queued callbacks
+                // can execute after Alpine teardown set this._observer to null
+                // (Livewire morph removing host element pre-intersection is the
+                // canonical trigger). Without the guard, `this._observer.disconnect()`
+                // throws TypeError("Cannot read properties of null") and reds every
+                // developer's assertNoSmoke() / assertNoJavascriptErrors().
+                if (! this._observer) return;
                 this._observer.disconnect();
                 this._observer = null;
 

@@ -10,11 +10,11 @@
 
     // Brand — logo + name combo for header and sidebar.
     // The `wk-brand` marker class drives the doubled-class anti-prose-
-    // typography selector in `dist/wirekit.css` that defeats consumer
+    // typography selector in `dist/wirekit.css` that defeats developer
     // prose `<a>` styling (typical pattern: `.{prose-class} a { text-
     // decoration: underline }`) without resorting to `!important`. The
     // Tailwind `no-underline` utility alone loses on specificity to a
-    // consumer prose-stylesheet rule that targets `<a>` inside a prose
+    // developer prose-stylesheet rule that targets `<a>` inside a prose
     // wrapper — the doubled-class `.wk-brand.wk-brand` selector wins
     // on specificity (0,2,0) against `.{prose-class} a` (0,1,1).
     $classes = WireKit::resolveClasses('brand', 'base', implode(' ', [

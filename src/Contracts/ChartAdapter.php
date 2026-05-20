@@ -10,7 +10,7 @@ namespace Pushery\WireKit\Contracts;
  *
  * Two built-in adapters: `ChartJsAdapter` (raster / Chart.js) and
  * `ApexChartsAdapter` (SVG / ApexCharts). Custom adapters implement this
- * interface directly; the consumer sets `config('wirekit.charts.library')`
+ * interface directly; the developer sets `config('wirekit.charts.library')`
  * to either a built-in key or a fully-qualified class name.
  *
  * Seven methods total — every implementation declares all seven explicitly
@@ -21,15 +21,15 @@ interface ChartAdapter
     /**
      * Stable library identifier used in error messages, license-tier guards,
      * and config-comparison shortcuts. MUST be stable across patch releases —
-     * consumer config compatibility depends on it.
+     * developer config compatibility depends on it.
      *
-     * Examples: 'chartjs' / 'apexcharts' / consumer-defined slug.
+     * Examples: 'chartjs' / 'apexcharts' / developer-defined slug.
      */
     public function name(): string;
 
     /**
      * JavaScript assets that must be loaded in the <head>.
-     * Returns URLs or asset() paths. Empty array when the consumer installs
+     * Returns URLs or asset() paths. Empty array when the developer installs
      * the JS library themselves via npm (current built-in adapters return []).
      *
      * @return array<string>
@@ -83,7 +83,7 @@ interface ChartAdapter
      * Canonical type list this adapter can render. The Chart component
      * validates `type=` against this list at construction time and throws
      * `Pushery\WireKit\Charts\TypeNotSupportedException` with a helpful
-     * library-switch hint when the consumer requests something the active
+     * library-switch hint when the developer requests something the active
      * adapter cannot handle.
      *
      * @return array<int, string>

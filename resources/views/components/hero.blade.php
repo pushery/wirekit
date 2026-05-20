@@ -1,3 +1,4 @@
+{{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
     'variant' => 'default',
     'gradient' => false,
@@ -9,6 +10,13 @@
     'asideWidth' => null,
     // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
     'animateIn' => null,
+    // `size` — vertical-rhythm tier. One of `sm` / `md` / `lg`. Default
+    // `lg` (= `--space-wk-section-lg` at `sm+` viewports). Mobile viewport
+    // (< sm breakpoint) automatically drops one tier — `lg` becomes
+    // `md` (= 5rem each side) so the bottom-empty-area-with-gradient
+    // class of bug (developer brief 2026-05-19 § B.2) doesn't recur.
+    // Pass `size="sm"` for the tightest spacing across every viewport.
+    'size' => 'lg',
     'scope' => null,
 ])
 
@@ -17,17 +25,45 @@
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'hero');
 
+    // Validate `size` against the three-tier enum. Off-enum values
+    // surface debug-mode validation; production silently falls back
+    // to `lg` (the safest default).
+    $validSize = in_array($size, ['sm', 'md', 'lg'], true)
+        ? $size
+        : WireKit::validateProp('hero', 'size', $size, ['sm', 'md', 'lg']);
+
+    // Responsive vertical-padding utility — combines per-component opt-in
+    // responsive utility with the `size` prop for explicit override.
+    // Mobile (below sm breakpoint) uses one tier smaller than the named
+    // size; `sm+` uses the named size directly. This collapses the
+    // historical "14rem vertical padding on every viewport" footgun into
+    // a viewport-aware contract.
+    //
+    // The class strings below are STATIC (no string interpolation) so
+    // Tailwind's source-detection picks them up cleanly. Dynamically-
+    // constructed arbitrary values (Blade-interpolated into the class
+    // attribute) would be invisible to Tailwind and the drift-audit
+    // would flag them. NOTE: do not write the literal pattern here as
+    // an example, even in a comment — Tailwind's source scanner reads
+    // raw .blade.php files and would emit invalid CSS for any
+    // bracket-wrapped value containing a PHP-style variable token.
+    $heroVerticalPadding = match ($validSize) {
+        'sm' => 'py-[var(--space-wk-section-sm)] sm:py-[var(--space-wk-section-sm)]',
+        'md' => 'py-[var(--space-wk-section-sm)] sm:py-[var(--space-wk-section-md)]',
+        'lg' => 'py-[var(--space-wk-section-md)] sm:py-[var(--space-wk-section-lg)]',
+    };
+
     // Hero — landing page hero section with title, lede, actions, and optional aside.
-    // `wk-hero` marker — load-bearing against consumer prose
+    // `wk-hero` marker — load-bearing against developer prose
     // `max-width: 75ch` clamps (see footer.blade.php for the full
     // rationale on this defensive pattern).
     $classes = WireKit::resolveClasses('hero', 'base', implode(' ', [
         'wk-hero',
-        // `w-full` keeps the hero full-width inside the docs-site
+        // `w-full` keeps the hero full-width inside docs.wirekit.app
         // flex-row preview wrapper (see footer.blade.php for rationale).
         'w-full',
         'relative overflow-hidden',
-        'py-[var(--space-wk-section-lg,7rem)]',
+        $heroVerticalPadding,
         'px-[var(--padding-wk-x-lg)]',
     ]), $scope);
 
@@ -115,9 +151,21 @@
 
 <section {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     @if($gradient)
-        <div class="absolute inset-0 {{ $gradientClasses }}" aria-hidden="true"></div>
+        {{-- Gradient overlay is anchored to the outer <section> so it
+             fills the section edge-to-edge (visually clean across the
+             side padding as well as the content area). The original
+             B.2-class bug from developer brief 2026-05-19 (empty
+             dark area below content on mobile under variant="dark" +
+             gradient) is now mitigated separately by the responsive
+             py- mapping above — mobile drops one tier so size="lg"
+             gets the section-md padding tier (5rem) instead of lg
+             (7rem), keeping the gradient-extension below content
+             visually short enough that it reads as depth, not empty
+             space. `pointer-events-none` so the overlay never
+             intercepts clicks on the action buttons it visually
+             covers. --}}
+        <div class="absolute inset-0 pointer-events-none {{ $gradientClasses }}" aria-hidden="true"></div>
     @endif
-
     <div class="relative max-w-[var(--size-wk-container-xl,80rem)] mx-auto">
         <div class="flex {{ $outerFlexClasses }} {{ $outerItemsClasses }} gap-[var(--space-wk-xl,2.5rem)]">
             <div class="{{ $copyColClasses }} {{ $textAlignClasses }}">

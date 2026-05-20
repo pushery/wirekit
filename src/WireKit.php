@@ -6,6 +6,7 @@ namespace Pushery\WireKit;
 
 use Closure;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\SuggestSimilar;
 
 class WireKit
 {
@@ -142,6 +143,18 @@ class WireKit
         $list = implode(', ', $allowed);
         $message = "WireKit [{$component}]: Invalid {$prop} \"{$value}\". Allowed: {$list}.";
 
+        // Cross-cutting Did-you-mean — same Levenshtein helper as the CLI
+        // surface (ShowComponentCommand, ThemeCommand, ListComponentsCommand,
+        // PublishIconsCommand, ComponentMakeCommand, InstallCommand preset
+        // validation). Reusing the helper keeps the suggestion contract
+        // uniform across runtime + CLI.
+        $hint = SuggestSimilar::format(
+            SuggestSimilar::byLevenshtein($value, $allowed)
+        );
+        if ($hint !== null) {
+            $message .= ' '.$hint;
+        }
+
         if (config('app.debug')) {
             throw new \InvalidArgumentException($message);
         }
@@ -165,6 +178,41 @@ class WireKit
     public static function prefix(): string
     {
         return config('wirekit.prefix', 'wirekit');
+    }
+
+    /**
+     * Return the Tailwind utility string for inline padding at the
+     * named tier — the canonical spine-padding emission for components
+     * that want to join the page-edge content spine without hand-typing
+     * `px-[var(--padding-wk-x-lg)]` (or risking a tier typo).
+     *
+     * Usage in developer-authored Blade components:
+     *
+     *     <div class="{{ \Pushery\WireKit\WireKit::spinePadding('lg') }}">
+     *         {{-- spine-aligned content --}}
+     *     </div>
+     *
+     * Tiers map 1:1 to the `--padding-wk-x-{tier}` token family. The
+     * `lg` tier (default) is the canonical page-edge spine; other
+     * tiers (sm / md / xl) are documented in
+     * [Theming → Design Token Reference](docs/theming.md).
+     *
+     * See [Content-Edge Spine](docs/extending/spine-contract.md) for the
+     * full participation contract.
+     */
+    public static function spinePadding(string $tier = 'lg'): string
+    {
+        $allowed = ['sm', 'md', 'lg', 'xl'];
+        $validated = in_array($tier, $allowed, true)
+            ? $tier
+            : self::validateProp('spinePadding', 'tier', $tier, $allowed);
+
+        return match ($validated) {
+            'sm' => 'px-[var(--padding-wk-x-sm)]',
+            'md' => 'px-[var(--padding-wk-x-md)]',
+            'lg' => 'px-[var(--padding-wk-x-lg)]',
+            'xl' => 'px-[var(--padding-wk-x-xl)]',
+        };
     }
 
     /**
@@ -197,7 +245,7 @@ class WireKit
         $bases = ['fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right',
             'scale', 'zoom', 'flip', 'rotate', 'bounce', 'spring'];
 
-        // Auto-suffix base names so consumers can write `animateIn="fade"`.
+        // Auto-suffix base names so developers can write `animateIn="fade"`.
         if (in_array($value, $bases, true)) {
             $value = $value.'-in';
         }

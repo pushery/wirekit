@@ -110,7 +110,7 @@
 >
     {{-- Hidden input so plain-HTML form submission works without Livewire.
          The Alpine factory dispatches `input` events on this element so
-         wire:model-less consumers still get form value updates. --}}
+         wire:model-less developers still get form value updates. --}}
     <input
         type="hidden"
         x-ref="hiddenInput"

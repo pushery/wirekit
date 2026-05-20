@@ -28,13 +28,13 @@
     // Two rendering modes:
     //
     //   mode="stripes" (default) — one coloured stripe per matched item.
-    //     Lightweight, no iframe, suitable for any consumer.
+    //     Lightweight, no iframe, suitable for any developer.
     //
     //   mode="rendered" — abstract content-texture canvas (PhpStorm /
     //     VS Code-style minimap). Walks the source DOM via TreeWalker,
     //     draws per-line rectangles on a DPR-aware canvas at minimap
     //     scale. Visually mirrors the source page's content rhythm so
-    //     consumers read "where am I in THIS specific layout" rather
+    //     developers read "where am I in THIS specific layout" rather
     //     than "what's the abstract content distribution".
     //
     // Four optional extensions layer on top of either mode:
@@ -78,7 +78,7 @@
     // hideBelow — Tailwind responsive prefix that toggles display.
     // Mobile (< breakpoint) never sees the minimap — it's a desktop
     // affordance; fingers don't have hover and the column would crowd
-    // narrow viewports. 'none' opts out for consumers who want to manage
+    // narrow viewports. 'none' opts out for developers who want to manage
     // visibility themselves.
     $hideBelowClass = match ($hideBelow) {
         'sm' => 'hidden sm:block',

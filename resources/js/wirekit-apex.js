@@ -1,12 +1,12 @@
 /**
  * WireKit ApexCharts Bundle (IIFE).
  *
- * A separate bundle from `wirekit.js` (the main bundle) so consumers who
+ * A separate bundle from `wirekit.js` (the main bundle) so developers who
  * don't use ApexCharts pay zero bytes. Imports a single Alpine factory and
  * registers it under `wirekitApexChart` — the name ApexChartsAdapter.alpineComponent()
  * returns and the chart Blade template wires into x-data.
  *
- * This bundle ships ZERO ApexCharts code. The consumer installs apexcharts
+ * This bundle ships ZERO ApexCharts code. The developer installs apexcharts
  * via npm and exposes it on window before this script loads:
  *
  *   import ApexCharts from 'apexcharts';

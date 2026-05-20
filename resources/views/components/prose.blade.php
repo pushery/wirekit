@@ -11,7 +11,7 @@
     //       `--padding-wk-y-md` (0.75 rem) top-margin on h2, smaller
     //       heading sizes, `--padding-wk-y-sm` (0.5 rem) paragraph
     //       bottom-margin. Reaches for the tight rhythm a marketing
-    //       page wants without forcing the consumer to write
+    //       page wants without forcing the developer to write
     //       `.ml h2 { margin: ... }` overrides.
     'density' => 'comfortable',
     'scope' => null,
@@ -27,7 +27,7 @@
     // Density-aware heading + paragraph rules. `comfortable` keeps the
     // pre-v2.0.0 scale (back-compat default); `compact` tightens the
     // h2/h3 mt + p mb tokens so the prose fits marketing-page rhythm
-    // without consumer-side overrides.
+    // without developer-side overrides.
     $densityClasses = match ($density) {
         'comfortable' => [
             '[&_h1]:text-[length:var(--text-wk-2xl)] [&_h1]:mt-0 [&_h1]:mb-[var(--padding-wk-y-md)]',
@@ -47,7 +47,7 @@
     };
 
     $classes = WireKit::resolveClasses('prose', 'base', implode(' ', array_merge([
-        // `wk-prose` marker — load-bearing against consumer prose
+        // `wk-prose` marker — load-bearing against developer prose
         // wrappers (typical pattern: `.docs-prose > :not([class*="wk-"])
         // { max-width: 75ch }`) that clamp every direct child of a
         // typography body to ~75ch line-length. Without the marker
@@ -56,7 +56,7 @@
         // sibling that IS exempted by the same `wk-*` carve-out spans
         // visibly wider than the article body — a visible right-edge
         // mismatch that reads as "content broken" inside iframe-srcdoc
-        // previews and any consumer who renders a WireKit prose wrapper
+        // previews and any developer who renders a WireKit prose wrapper
         // inside a Tailwind-typography body.
         'wk-prose',
         'font-[family-name:var(--font-wk-sans)]',

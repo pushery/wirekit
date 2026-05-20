@@ -151,7 +151,7 @@ export default function wirekitResizableHandle() {
             // the selection mid-drag — visible as a "flicker" and a
             // confusing UX. Restored on pointerUp / lostpointercapture.
             // We capture the prior inline value (NOT the computed style)
-            // so a consumer who already set `body { user-select: ... }`
+            // so a developer who already set `body { user-select: ... }`
             // via stylesheet keeps that rule on restore.
             this._priorBodyUserSelect = document.body.style.userSelect;
             document.body.style.userSelect = 'none';
@@ -196,7 +196,7 @@ export default function wirekitResizableHandle() {
             // Restore the prior body user-select value (see onPointerDown
             // for the rationale). If the value was empty (no inline rule
             // before the drag), we set it back to '' which removes the
-            // inline override entirely so the consumer's stylesheet wins.
+            // inline override entirely so the developer's stylesheet wins.
             document.body.style.userSelect = this._priorBodyUserSelect ?? '';
             this._priorBodyUserSelect = null;
         },

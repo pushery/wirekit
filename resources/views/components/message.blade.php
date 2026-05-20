@@ -44,7 +44,7 @@
 
     // Bubble background + border based on side and intent.
     // 'primary' and 'info' both tint with --color-wk-accent — they are visual
-    // synonyms here, distinguished only by the prop value the consumer passed.
+    // synonyms here, distinguished only by the prop value the developer passed.
     // Non-neutral intents tint BOTH the background AND the border (mirrors the
     // callout palette) so a system message reads as a coloured callout rather
     // than a tinted bubble inside a generic gray frame.

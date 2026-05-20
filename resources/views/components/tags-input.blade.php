@@ -20,7 +20,7 @@
     // Normalise the initial value into an array of strings. Accepts a real
     // array (e.g. `:value="['Laravel', 'Livewire']"`) or a comma-separated
     // string (e.g. `value="Laravel,Livewire"`); both shapes appear in
-    // existing consumer codebases.
+    // existing developer codebases.
     if (is_string($value)) {
         $initialTags = array_values(array_filter(array_map('trim', explode(',', $value)), fn ($t) => $t !== ''));
     } elseif (is_array($value)) {

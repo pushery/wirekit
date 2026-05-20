@@ -28,7 +28,7 @@
     /*
      * Wrapper width MUST be inline `width: 100%` — NOT the Tailwind
      * `w-full` utility we used to set on this element. In every
-     * rendering context that doesn't load the consumer's Tailwind
+     * rendering context that doesn't load the developer's Tailwind
      * bundle (the docs-preview iframe-srcdoc is the canonical
      * example, but any tenant-isolated context with its own CSS
      * scope hits the same gap) the `.w-full` class doesn't match
@@ -60,7 +60,7 @@
     $mergedStyle = trim($defaultStyle.' '.$callerStyle);
     $chartAttributes = $attributes->except(['aria-label', 'style']);
 
-    // Default the mountElement prop to 'canvas' so existing consumers / direct
+    // Default the mountElement prop to 'canvas' so existing developers / direct
     // Blade-string tests that don't go through the Component class keep working.
     $resolvedMountElement = $mountElement ?? 'canvas';
 
@@ -90,9 +90,9 @@
     $needsReplayWrapper = $emitReplayable || $callerReplayable !== null;
 @endphp
 @if ($needsReplayWrapper)
-    {{-- Outer wrapper carries `data-replayable="true"` for the docs-site
+    {{-- Outer wrapper carries `data-replayable="true"` for docs.wirekit.app
          replay button. CRITICAL: the attribute MUST sit on a DIFFERENT
-         element than the chart's `x-data` scope. The docs-site replay
+         element than the chart's `x-data` scope. The docs.wirekit.app replay
          path does `target.innerHTML = ''; target.innerHTML = saved;
          Alpine.initTree(target)` — if `target` is the same element that
          carries `x-data`, the wrapper itself persists with its already-
@@ -115,11 +115,11 @@
         data-wire-stream-mode="{{ $wireStreamModeAttr }}"
         data-wire-stream-cap="{{ $wireStreamCapAttr }}"
     @endif
-    {{-- Tailwind utilities still applied as a courtesy for consumers
+    {{-- Tailwind utilities still applied as a courtesy for developers
          whose CSS bundle DOES load `relative` / `w-full` (the inline
          style above is the source of truth for either class's behaviour;
          these merely keep the rendered class= tidy for any styling that
-         consumers might want to override on top). --}}
+         developers might want to override on top). --}}
     {{ $chartAttributes->class(['relative w-full']) }}
     style="{{ $mergedStyle }}"
     wire:ignore
@@ -134,7 +134,7 @@
         Inline `width: 100%; height: 100%;` on the SVG-mount div instead of
         Tailwind utilities so the height resolves CORRECTLY in every
         rendering context — including a docs-preview iframe-srcdoc where
-        the consumer's Tailwind utilities aren't necessarily loaded. With
+        the developer's Tailwind utilities aren't necessarily loaded. With
         the previous `class="h-full w-full"`, the mount div ended up at 0
         px tall whenever Tailwind wasn't in the bundle (no `.h-full` rule
         to resolve), which made ApexCharts' `height: '100%'` setting fall

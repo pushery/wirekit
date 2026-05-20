@@ -41,7 +41,7 @@ class ExportBlocksCommand extends Command
      * Hidden from `php artisan list` and from the public CLI reference doc
      * until the docs site's `/blocks` gallery flips from `visibility: admin`
      * to `visibility: guest`. The command itself works fine — it just
-     * doesn't surface in consumer-facing tooling yet.
+     * doesn't surface in developer-facing tooling yet.
      */
     protected $hidden = true;
 

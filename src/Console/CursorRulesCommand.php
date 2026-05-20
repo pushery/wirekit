@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\File;
 
 /**
  * copy the package's `.cursor/rules/wirekit.mdc` file
- * into the consumer's `.cursor/rules/` directory so AI tooling running
- * inside the consumer's project picks up WireKit's authoring conventions.
+ * into the developer's `.cursor/rules/` directory so AI tooling running
+ * inside the developer's project picks up WireKit's authoring conventions.
  *
  * Usage:
  *   php artisan wirekit:cursor-rules

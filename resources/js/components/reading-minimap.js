@@ -346,7 +346,7 @@ export default (options = {}) => ({
         // and if the two ratios differ they perceive the minimap as
         // "scrolling faster" (the minimap column is shorter than the
         // viewport — top:1rem; bottom:1rem subtracts 32 px, plus any
-        // consumer-side padding/border). Matching the scrollbar's
+        // developer-side padding/border). Matching the scrollbar's
         // translation gives consistent muscle memory across both
         // surfaces. Trade-off: the overlay's centre lags the finger
         // slightly during drag (by 1 - minimapHeight/clientHeight) —
@@ -358,7 +358,7 @@ export default (options = {}) => ({
         const ratio = scrollHeight / clientHeight;
         const delta = (event.clientY - this._dragStartY) * ratio;
         const targetScroll = Math.max(0, this._dragStartScroll + delta);
-        // `behavior: 'instant'` (CSSOM spec 2023+) overrides consumer-side
+        // `behavior: 'instant'` (CSSOM spec 2023+) overrides developer-side
         // CSS `scroll-behavior: smooth` on html/body — without the
         // override, modern browsers ease every imperative scroll over
         // ~400 ms, which the user perceived as the drag "lag/delay".
@@ -397,6 +397,11 @@ export default (options = {}) => ({
         }
         this._intersectionObserver = new IntersectionObserver((entries) => {
             if (entries.some((e) => e.isIntersecting)) {
+                // Null-guard against post-destroy fire — Alpine teardown may
+                // have nulled this._intersectionObserver via destroy() before
+                // the browser-queued callback executes. Same race class as
+                // wirekitStatAnimate / wirekitAnimate's IO callbacks.
+                if (! this._intersectionObserver) return;
                 this._intersectionObserver.disconnect();
                 this._intersectionObserver = null;
                 this._buildCanvas();
@@ -478,7 +483,7 @@ export default (options = {}) => ({
         ctx.scale(dpr, dpr);
 
         // Element-type → colour palette. Each category is overridable
-        // via a CSS custom property on the minimap root, so consumers
+        // via a CSS custom property on the minimap root, so developers
         // can re-theme without touching JS. Defaults are alpha-modulated
         // so the canvas reads as a translucent texture over whatever
         // background the surrounding minimap surface paints.
@@ -750,7 +755,7 @@ export default (options = {}) => ({
         // `target="#scrollable-wrapper"`), headings OUTSIDE the article
         // but INSIDE the scroll container are intentionally dropped —
         // the rendered-mode canvas shows the article only, so anchors
-        // should match that scope. Consumers wanting full-host anchor
+        // should match that scope. Developers wanting full-host anchor
         // coverage should leave `renderTarget` undefined.
         const sel = this.headingLevels.map((l) => `h${l}`).join(', ');
         const headings = Array.from(this._renderHost.querySelectorAll(sel));
@@ -849,12 +854,12 @@ export default (options = {}) => ({
                 })
                 .map((l) => `<link rel="stylesheet" href="${l.href}">`)
                 .join('\n');
-            // Parse the consumer-set token through parseFloat so non-
+            // Parse the developer-set token through parseFloat so non-
             // numeric junk (e.g. an attacker-controlled
             // `--reading-minimap-preview-scale: 0.25}body{background:url(...);`)
             // can't break out of the <style> block. The sandbox already
             // forbids scripts, but a CSS-injection through the iframe
-            // srcdoc would still let consumer-controlled CSS exfiltrate
+            // srcdoc would still let developer-controlled CSS exfiltrate
             // via background-image url() requests. Number stringify
             // produces a guaranteed-numeric output.
             const rawScale = getComputedStyle(this.$el).getPropertyValue('--reading-minimap-preview-scale').trim();

@@ -40,12 +40,12 @@
         default => '',
     };
 
-    // `wk-section` marker — load-bearing against consumer prose
+    // `wk-section` marker — load-bearing against developer prose
     // `max-width: 75ch` clamps (see footer.blade.php for the full
     // rationale).
     $classes = WireKit::resolveClasses('section', 'base', implode(' ', array_filter([
         'wk-section',
-        // `w-full` keeps the section full-width inside the docs-site
+        // `w-full` keeps the section full-width inside docs.wirekit.app
         // flex-row preview wrapper (see footer.blade.php for rationale).
         'w-full',
         $paddingClasses,

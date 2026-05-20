@@ -15,10 +15,10 @@ namespace Pushery\WireKit\Sandbox;
  *
  * Caller maps to HTTP status: 200 for success, 422 for rejection.
  *
- * Public-readable property contract — downstream consumers (e.g. the docs
+ * Public-readable property contract — downstream developers (e.g. the docs
  * site's `SandboxController`) read `ok`, `violations`, `html`, `schema` off
  * the object via `get_object_vars()`. Any rename here is a breaking change
- * for those consumers.
+ * for those developers.
  */
 final class RenderResult
 {

@@ -96,12 +96,12 @@ A wide catalogue of components organised by category. Browse, search, and try ev
 |----------|----------|
 | **Forms** | button, input, select, textarea, combobox, multi-select, date-picker, slider, color-picker, otp-input, … |
 | **Display** | badge, card, avatar, alert, callout, image-compare, kanban, reveal, … |
-| **Data Display** | table, pagination, stat, progress, skeleton, timeline, tree-view, ticker, price, … |
+| **Data Display** | table, pagination, stat, stats, progress, skeleton, timeline, tree-view, ticker, price, … |
 | **Overlays** | dropdown, tooltip, modal, drawer, popover, hover-card, command-palette, alert-dialog, … |
 | **Navigation** | tabs, breadcrumb, accordion, sidebar, navbar, brand-bar, menubar, navigation-menu, stepper, … |
-| **Layout** | app-shell, header, main, container, stack, grid, section, divider, … |
+| **Layout** | app-shell, header, main, footer, container, stack, grid, section, divider, spine-aware, … |
 | **Typography** | heading, text, link, code, code-block, kbd, list, blockquote, mark, … |
-| **Marketing** | hero, feature-grid, feature, cta, footer |
+| **Marketing** | hero, feature-grid, feature, cta |
 | **Utilities** | fonts, icon, chart, chart-mixed, sparkline, scroll-area, scroll-to-top, structured-data |
 | **Specialized** | resizable, carousel, calendar, tour, qr-code, action-bar, prose, liquid-glass |
 | **Reading** | reading-progress, reading-spine, reading-toc, reading-minimap, reading-bookmark, reading-meta, reading-shell |

@@ -69,7 +69,7 @@
     }
 
     // Marker class drives the print-stylesheet hide rule + reduced-motion
-    // gating + doubled-class specificity for any consumer overrides.
+    // gating + doubled-class specificity for any developer overrides.
     // `tabindex="0"` + `focus-visible:` ring on the scroll-overflow
     // container satisfies WCAG 2.1.1 (keyboard operability) — when the
     // navigation links overflow vertically, the spine itself is reachable
@@ -87,7 +87,7 @@
     ]), $scope);
 
     // target=null resolves to the family default 'main, article' (first-match
-    // wins). Consumer-passed selector wins over the default. Documented under
+    // wins). Developer-passed selector wins over the default. Documented under
     // "Family contracts → target prop convention" in docs/components/reading.md.
     $resolvedTarget = $target ?? 'main, article';
 
@@ -121,8 +121,8 @@
     x-cloak
     {{ $attributes->class([$rootClass])->merge(['aria-label' => 'Page contents', 'tabindex' => '0']) }}
 >
-    {{-- Optional consumer-supplied filter input slot. Two-way-binds to
-         `filter` Alpine state via `x-model` on the consumer's input. --}}
+    {{-- Optional developer-supplied filter input slot. Two-way-binds to
+         `filter` Alpine state via `x-model` on the developer's input. --}}
     @if (isset($filter))
         <div class="wk-reading-spine__filter px-2 pb-2 border-b border-[var(--color-wk-border)]">
             {{ $filter }}
@@ -132,7 +132,7 @@
     <nav>
         {{--
             Inline-style the list primitives so the spine renders correctly
-            in the docs sandbox iframe, where consumer Tailwind isn't loaded
+            in the docs sandbox iframe, where developer Tailwind isn't loaded
             — `<ol>` would otherwise show its UA decimal markers and 40px
             indent. See the sibling reading-toc note for the full rationale.
         --}}
@@ -146,7 +146,7 @@
         --}}
         <ol
             class="flex flex-col py-[var(--reading-spine-padding-y)] px-[var(--reading-spine-padding-x)]"
-            style="list-style: none; margin: 0; padding-top: var(--reading-spine-padding-y); padding-right: var(--reading-spine-padding-x); padding-bottom: 0; padding-left: var(--reading-spine-padding-x); display: flex; flex-direction: column; gap: var(--reading-spine-gap);"
+            style="list-style: none; margin: 0; padding-top: var(--reading-spine-padding-y); padding-right: var(--reading-spine-padding-x); padding-bottom: var(--reading-spine-padding-y); padding-left: var(--reading-spine-padding-x); display: flex; flex-direction: column; gap: var(--reading-spine-gap);"
         >
             <template x-for="item in items" :key="item.id">
                 <li

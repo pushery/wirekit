@@ -74,11 +74,11 @@ final class IconResolver
     }
 
     /**
-     * Internal lookup: consumer aliases -> preset chain (later wins) -> exception.
+     * Internal lookup: developer aliases -> preset chain (later wins) -> exception.
      */
     private function lookup(string $alias): string
     {
-        // 1. Consumer-level alias overrides always win
+        // 1. Developer-level alias overrides always win
         $aliases = config('wirekit.icons.aliases', []);
         if (isset($aliases[$alias])) {
             return $aliases[$alias];

@@ -128,7 +128,10 @@
     --color-wk-border: oklch(91.4% 0 0);
     --color-wk-border-hover: oklch(80% 0 0);
     --color-wk-border-subtle: oklch(94% 0 0);
-    --color-wk-border-error: oklch(63.7% 0.237 25.331);
+    /* border-error matches --color-wk-danger-text so error-state border and
+       error-message text read as a coherent visual pair. Dark theme has the
+       same alignment (both at oklch(70.4% 0.191 22.216)). */
+    --color-wk-border-error: oklch(50.5% 0.213 27.518);
     --color-wk-border-strong: oklch(70.8% 0 0);
 
     /* ─── Focus Ring ─── */
@@ -183,6 +186,13 @@
     --motion-wk-delay-md: 150ms;
     --motion-wk-delay-lg: 300ms;
     --motion-wk-delay-xl: 500ms;
+    /* `--wk-stagger-step` — per-child increment driving the
+       `.wk-stagger > *:nth-child(N)` animation-delay cascade emitted
+       by `<x-wirekit::feature-grid stagger>` and `<x-wirekit::stats stagger>`.
+       Developers override per-instance via `style="--wk-stagger-step: …"`
+       OR globally via `:root {}` for design-system-wide cascade rhythm.
+       Default 75ms matches the prop's bare-`stagger` semantic. */
+    --wk-stagger-step: 75ms;
     /* Easing curves */
     --motion-wk-easing-out: cubic-bezier(0.16, 1, 0.3, 1);
     --motion-wk-easing-in: cubic-bezier(0.7, 0, 0.84, 0);
@@ -194,7 +204,7 @@
     /* ─── State Opacity ─── */
     --opacity-wk-hover: 0.8;
     --opacity-wk-disabled: 0.5;
-    --opacity-wk-loading: 0.7; /* Consumer-facing token — not used in built-in components */
+    --opacity-wk-loading: 0.7; /* Developer-facing token — not used in built-in components */
 
     /* ─── Focus Ring Dimensions ─── */
     --ring-wk-width: 2px;
@@ -432,7 +442,7 @@
 /*     compositor to promote the layer eagerly with optimal     */
 /*     paint path                                                */
 /*   - `animation-play-state: paused` when aria-busy="false"   */
-/*     halts the animation once loading is done (consumers    */
+/*     halts the animation once loading is done (developers    */
 /*     who toggle aria-busy via Alpine get a free pause)       */
 /*   - The wrapper-level `content-visibility: auto` + intrinsic*/
 /*     size hint (applied via Blade inline style on the wrapper)*/
@@ -457,7 +467,7 @@
     will-change: transform;
 }
 
-/* Halt the shimmer once aria-busy flips to false. Consumers who
+/* Halt the shimmer once aria-busy flips to false. Developers who
    bind aria-busy via Alpine / Livewire get a zero-cost stop signal. */
 .wk-skeleton[aria-busy="false"]::after,
 [aria-busy="false"] .wk-skeleton::after {
@@ -662,9 +672,9 @@
     /* without it the height collapses to 0 because the panels' percent */
     /* heights resolve against a 0-height container. Default min-height */
     /* of 16rem keeps unstyled vertical wrappers rendering visibly.    */
-    /* Consumers needing a different baseline override via inline       */
+    /* Developers needing a different baseline override via inline       */
     /* style="min-height: …" or a parent container query (CSS specificity */
-    /* favours the inline style + the consumer's own selector).        */
+    /* favours the inline style + the developer's own selector).        */
     min-height: 16rem;
 }
 
@@ -955,7 +965,7 @@
 
 /* Image Compare component tokens. Both are optional overrides — the Blade */
 /* template uses var(..., <fallback>) so the component keeps working even  */
-/* when a consumer ships an older CSS file than the current template.      */
+/* when a developer ships an older CSS file than the current template.      */
 :root {
     /* Width (horizontal) or height (vertical) of the reveal divider line. */
     --wk-image-compare-divider-size: 2px;
@@ -963,7 +973,7 @@
     --wk-image-compare-handle-size: 2.5rem;
 }
 
-/* List component — neutralize consumer typography wrappers (`.prose`,      */
+/* List component — neutralize developer typography wrappers (`.prose`,      */
 /* `.docs-prose`, `@tailwindcss/typography`) that would otherwise inject    */
 /* margin onto nested `<ol>`/`<ul>`/`<li>` and compound across depth.       */
 /*                                                                          */
@@ -972,10 +982,10 @@
 /* extra class slot to the selector specificity (0,2,X instead of 0,1,X).   */
 /* Typical typography rules cap out at 0,1,1 (`.prose ol`, `.prose li`), so */
 /* 0,2,1 always wins on equal element specificity. Source order between us */
-/* and the consumer becomes irrelevant — specificity carries the decision. */
+/* and the developer becomes irrelevant — specificity carries the decision. */
 /*                                                                          */
 /* Why doubling instead of `!important`: `!important` is a sledgehammer that*/
-/* the consumer can't override even when they explicitly need to (e.g.      */
+/* the developer can't override even when they explicitly need to (e.g.      */
 /* their own theming). Specificity is the right cascade tool here.          */
 .wk-list.wk-list,
 .wk-list.wk-list ol,
@@ -992,10 +1002,10 @@
 /* ─── Reading: progress + spine + bookmark + meta + minimap + toc ─── */
 /* Tokens for the reading-* component family. Heights for the bar      */
 /* indicator (sm/md/lg map onto the `height` prop), dot-indicator size,*/
-/* and spine layout dimensions. All consumer-overridable via :root /   */
+/* and spine layout dimensions. All developer-overridable via :root /   */
 /* component-instance CSS overrides. Doubled-class specificity on every*/
 /* component-base rule (e.g. `.wk-reading-spine.wk-reading-spine`) so  */
-/* consumer typography wrappers (.prose / .docs-prose) never beat us   */
+/* developer typography wrappers (.prose / .docs-prose) never beat us   */
 /* without using !important. Same pattern as wk-list.                  */
 :root {
     /* reading-progress (bar) */
@@ -1004,7 +1014,7 @@
     --reading-progress-height-lg: 5px;
     /* reading-progress (dot) */
     --reading-progress-dot-size: 2.5rem;
-    /* reading-progress fill override — consumer-set to retheme every reading-progress
+    /* reading-progress fill override — developer-set to retheme every reading-progress
        on the page without touching component props. Variants resolve to
        var(--reading-progress-fill, var(--color-wk-X)) so this token wins when set.
 
@@ -1104,7 +1114,7 @@
 
     /* reading-minimap rendered-mode — PhpStorm-style canvas minimap.
        Opt-in via `mode="rendered"`. Default mode is `stripes` so
-       existing consumers see zero behavioural drift. */
+       existing developers see zero behavioural drift. */
     --reading-minimap-rendered-placeholder-bg: var(--color-wk-bg-elevated);
     --reading-minimap-rendered-radius: var(--radius-wk-sm);
 
@@ -1132,7 +1142,7 @@
     /* Opaque by default — earlier `color-mix(... 92%, transparent)` paired
        with backdrop-filter for a frosted-glass look, but the 8% transparency
        let article text scroll-through the strip visibly (worst when
-       backdrop-filter is unsupported or attenuated). Consumers wanting
+       backdrop-filter is unsupported or attenuated). Developers wanting
        the frosted look can override this token to a translucent value;
        the `backdrop-filter: blur(6px)` rule on .wk-reading-toc stays as
        defence-in-depth for that case. */
@@ -1154,7 +1164,7 @@
     /* Layered background: the optional edge-gradient SITS ON TOP OF the
        base bg so the collapsed-state panel reads as a soft swipe toward
        the page edge — a more discoverable hover affordance than a flat
-       semi-transparent strip. Consumers who want a flat surface set
+       semi-transparent strip. Developers who want a flat surface set
        `--reading-spine-edge-gradient: none` in their `:root {}`. */
     background: var(--reading-spine-edge-gradient, none), var(--reading-spine-bg);
     border-left: 1px solid var(--color-wk-border);
@@ -1206,7 +1216,7 @@
 .wk-reading-spine ol > li:last-child {
     /* Belt-and-suspenders against a child `<a>`'s computed line-height
        leaking an extra block-end gap beyond the `<ol>`'s padding. Some
-       consumer prose stylesheets give links a `margin-block-end` we
+       developer prose stylesheets give links a `margin-block-end` we
        can't predict; zero it on the trailing item explicitly. */
     margin-block-end: 0;
 }
@@ -1227,7 +1237,7 @@
 /* Tick width per heading level. Mirrors the Tailwind utility classes
    emitted by reading-spine.js's `tickWidthClass()` but with CSS attribute
    selectors so the widths still apply in the docs-sandbox iframe (where
-   consumer Tailwind isn't loaded — the utility classes resolve to no rule
+   developer Tailwind isn't loaded — the utility classes resolve to no rule
    and every tick ends up at its default 0 width, making nesting depth
    invisible). H2 = wider, H3 = narrower, H4+ = narrowest. */
 .wk-reading-spine .wk-reading-spine__link[data-level="2"] .wk-reading-spine__tick { width: 0.75rem; }
@@ -1236,7 +1246,7 @@
 .wk-reading-spine .wk-reading-spine__link[data-level="5"] .wk-reading-spine__tick,
 .wk-reading-spine .wk-reading-spine__link[data-level="6"] .wk-reading-spine__tick { width: 0.25rem; }
 /* No underline on spine links. The docs-sandbox iframe inherits the UA
-   default `<a>` underline since consumer Tailwind's preflight reset isn't
+   default `<a>` underline since developer Tailwind's preflight reset isn't
    loaded — the spine's link labels render with a stark underline that
    conflicts with the tick + label visual rhythm. Belt-and-suspenders to
    the inline-style override on the link element. */
@@ -1255,7 +1265,7 @@
 .wk-reading-spine .wk-reading-spine__link[data-active="true"] .wk-reading-spine__label,
 .wk-reading-spine .wk-reading-spine__link[aria-current="location"] .wk-reading-spine__label {
     color: var(--reading-spine-color-active);
-    /* Bumped weight (was 500 — failed the contrast bar against consumer
+    /* Bumped weight (was 500 — failed the contrast bar against developer
        prose surfaces that already weight ~450). 600 gives an obvious
        jump even on display fonts that compress the 400/500 difference. */
     font-weight: 600;
@@ -1272,7 +1282,7 @@
 
 /* reading-meta perParagraph annotations — Medium-style "X min" hints     */
 /* injected by the component before each <p> in the target. Default       */
-/* rendering is small subtle text; consumers fully restyle via the marker */
+/* rendering is small subtle text; developers fully restyle via the marker */
 /* class and the two --reading-meta-paragraph-* tokens.                   */
 .wk-reading-meta-paragraph {
     display: block;
@@ -1283,9 +1293,9 @@
 
 /* reading-minimap — every-item density overview. Component is aria-hidden */
 /* (alternative view of nav). Structural layout authored as raw CSS so     */
-/* consumers without our resources/views/ in their Tailwind scan still get */
+/* developers without our resources/views/ in their Tailwind scan still get */
 /* correct positioning — the previous build relied on Tailwind utilities   */
-/* baked into the Blade output, which left consumers seeing full-width     */
+/* baked into the Blade output, which left developers seeing full-width     */
 /* stripes when their Tailwind compile didn't include our vendor folder.   */
 /* The data-side attribute drives left vs right placement; the JS          */
 /* controller writes top: <percent>% inline on each stripe + viewport.     */
@@ -1534,14 +1544,14 @@
 /* reading-toc — horizontal sticky-strip TOC for marketing landing pages. */
 /* Sibling to reading-spine but flat: a row of <a> links across the top   */
 /* (or bottom) of the article container. Sticky positioning honours the   */
-/* --reading-toc-offset inline style set by Blade so consumers can clear  */
+/* --reading-toc-offset inline style set by Blade so developers can clear  */
 /* their own fixed nav above the strip.                                   */
 .wk-reading-toc {
     /* Sticky positioning is LOAD-BEARING for the TOC's intended UX —
-       the strip pins at the consumer-supplied `--reading-toc-offset`
+       the strip pins at the developer-supplied `--reading-toc-offset`
        once the reader scrolls past it. Encoded directly here (not via
        the Tailwind `sticky` utility on the Blade root) because
-       consumer setups that render previews without a full consumer-
+       developer setups that render previews without a full developer-
        side Tailwind compile (iframe-srcdoc sandboxes, dev-server
        partial builds) would otherwise lose `.sticky { position: sticky }`
        and fall back to `position: static` — the TOC then sits at its
@@ -1557,7 +1567,7 @@
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
 }
-/* Bottom-position variant — consumer passes `position="bottom"` and the
+/* Bottom-position variant — developer passes `position="bottom"` and the
    strip pins at the bottom of the viewport instead of the top. Toggled
    via the `data-position="bottom"` attribute the Blade template emits
    alongside the `wk-reading-toc` marker class. */
@@ -1574,19 +1584,18 @@
 .wk-reading-toc__list {
     list-style: none;
     margin: 0;
-    /* Slim 0.25 rem block padding. The +1 px on padding-block-start
-       compensates for the typographic ascender offset: system-ui fonts
-       at line-height: 1 render the capital-letter top roughly 1 px
-       below the line-box top (the line-box reserves a hair of ascender
-       space above the cap-height that `getBoundingClientRect` doesn't
-       see), which made the visible space-above-text measure 1 px less
-       than the space-below-text even when block padding was symmetric.
-       The extra 1 px on top brings the measured above/below visible-
-       text distances to exact equality.
+    /* Symmetric slim 0.25 rem block padding. An earlier revision shipped
+       padding-block-start at calc(0.25rem + 1px) as an optical-balance
+       hack against the system-ui ascender offset, but the asymmetric
+       numbers showed up in DevTools and read as a layout bug to anyone
+       inspecting the strip. We now keep the numbers symmetric and rely
+       on the link's own `line-height: 1` (set in `.wk-reading-toc__item
+       > a.wk-reading-toc__link`) to give the visible cap-height-to-
+       descender column a clean optical centre inside the padding box.
 
        Inline padding 0.25 rem on each side gives the strip a hairline
        of "list-edge" indent. An earlier defence-in-depth `!important`
-       on these two declarations was removed in v2.0.0; consumers
+       on these two declarations was removed in v2.0.0; developers
        running a typography prose-wrapper (e.g. `body.{prose-class}`)
        should carve out `[class*="wk-"]` from their `ol/ul/li` rules so
        prose typography never shoves WireKit list-based components off
@@ -1594,33 +1603,36 @@
        use for `max-width: 65ch` typography clamps. The doubled-class
        `wk-list` pattern at line 999 documents the same strategy for
        `<x-wirekit::list>`. */
-    padding-block-start: calc(0.25rem + 1px);
-    padding-block-end: 0.25rem;
-    padding-inline-start: 0.25rem;
-    padding-inline-end: 0.25rem;
+    padding-block: 0.25rem;
+    padding-inline: 0.25rem;
 }
 
-/* `:flush` modifier — when the consumer wants the TOC's first / last
-   link visible text to sit flush with the strip's content edges (i.e.
-   on the same X-coordinate as the surrounding brand-bar logo and h2
-   headings), the modifier class zeroes the inline padding on the OL
-   and removes the first/last link's symmetric `px-2` on the relevant
-   edge. The hover-state background keeps its internal padding on the
-   OPPOSITE edge so the rounded background still has breathing room
-   around the rendered text. Used by `<x-wirekit::reading-toc :flush>`
-   and any consumer that wants edge-aligned navigation. */
+/* `:flush` modifier — when the developer wants the TOC strip to run
+   viewport-edge-to-viewport-edge as a chrome surface (no horizontal
+   padding on the nav, the inner list, or the first / last link), the
+   modifier class zeroes inline padding at every layer. The
+   hover-state background keeps its internal padding on the OPPOSITE
+   edge of each end-link so the rounded background still has breathing
+   room around the rendered text. Used by
+   `<x-wirekit::reading-toc :flush>` on marketing-page compositions
+   that sit between edge-to-edge chrome surfaces (brand-bar above, hero
+   or article below). */
 .wk-reading-toc--flush {
-    /* `flush` aligns the first/last visible LINK with the surrounding
-       content-edge spine. Matches `--padding-wk-x-sm` (= 0.625 rem
-       = 10 px) — the same value docs-site renders the article body
-       at by default inside iframe-srcdoc previews. Background +
-       border-bottom still span the full viewport-width because
-       padding doesn't shrink the box. */
-    padding-inline: var(--padding-wk-x-sm);
+    /* `flush` mode = zero horizontal padding on the nav AND the list AND
+       the first/last link. The visible "Features" / "…" text sits flush
+       with the strip's viewport-edge content boundary. Background +
+       border-bottom still span the full viewport-width because the
+       chrome is on the nav element itself, not on a padded inner wrapper.
+       Earlier revisions kept the nav at `--padding-wk-x-sm` (10 px) to
+       align with the article body's content-edge spine — but the surplus
+       padding produced a visible gap between the strip's left edge and
+       the first link's hover-pill, which read as broken on edge-to-edge
+       marketing-page compositions. Developers who want spine alignment
+       should drop `flush` and let the default symmetric padding render. */
+    padding-inline: 0;
 }
 .wk-reading-toc--flush .wk-reading-toc__list {
-    padding-inline-start: 0;
-    padding-inline-end: 0;
+    padding-inline: 0;
 }
 .wk-reading-toc--flush .wk-reading-toc__list > li:first-child > .wk-reading-toc__link {
     padding-left: 0;
@@ -1634,10 +1646,10 @@
        below the visible text — collapsing the default 1.25 leading
        gives true symmetric padding without optical-balance hacks.
 
-       margin: 0 reset defeats consumer-side typography rules that apply
+       margin: 0 reset defeats developer-side typography rules that apply
        `margin-bottom` to every `<li>` (the @tailwindcss/typography
        pattern + custom docs-prose patterns). Without this reset every
-       TOC item would carry its consumer's li-bottom-margin, producing
+       TOC item would carry its developer's li-bottom-margin, producing
        an asymmetric gap at the strip's bottom edge. */
     display: inline-flex;
     align-items: center;
@@ -1649,9 +1661,9 @@
 }
 .wk-reading-toc__link {
     color: var(--reading-toc-color-idle);
-    /* Strip underline on idle links — consumer prose stylesheets often
+    /* Strip underline on idle links — developer prose stylesheets often
        default `<a>` to underlined, which makes every link look "active".
-       `!important` is necessary here: consumer prose rules can win on
+       `!important` is necessary here: developer prose rules can win on
        specificity (e.g. `.prose a` is more specific than
        `.wk-reading-toc__link` and reaches inside our component's class
        boundary). The active state below relies on font-weight + colour
@@ -1692,7 +1704,7 @@
 }
 
 /* `<x-wirekit::brand>` — defensive `text-decoration: none` against
-   consumer prose stylesheets that style `<a>` with an underline
+   developer prose stylesheets that style `<a>` with an underline
    (the typical `@tailwindcss/typography` pattern: `.prose a {
    text-decoration: underline }`). The Tailwind `no-underline`
    utility on the brand's class list loses on specificity to
@@ -1804,7 +1816,7 @@
 
 /* Cursor affordance — every hoverable shape inside an ApexCharts SVG      */
 /* (bars, slices, line/area points, scatter/bubble markers, heatmap +     */
-/* treemap cells) gets `cursor: pointer` so consumers see the click /     */
+/* treemap cells) gets `cursor: pointer` so developers see the click /     */
 /* hover-affordance their mouse-shape signals on every other interactive */
 /* element on the docs site. ApexCharts internally adds `cursor: default`*/
 /* to most shapes — this rule wins by being later in the cascade and     */

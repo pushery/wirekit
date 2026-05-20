@@ -36,7 +36,7 @@
     // Format: "(€8.99 / L)" alongside the main price, in same currency,
     // same field of vision, clearly readable. The component does NOT
     // enforce or validate the chosen reference unit — that is the
-    // consumer's call based on the jurisdiction and product type.
+    // developer's call based on the jurisdiction and product type.
     $formattedUnitPrice = ($displayUnitPrice !== null && $unitMeasure)
         ? $formatter->formatCurrency((float) $displayUnitPrice, $currency)
         : null;

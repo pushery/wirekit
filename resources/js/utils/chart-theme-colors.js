@@ -138,7 +138,7 @@ export function resolveThemeColors(style) {
     // for UI chrome) which would render a chart polygon as a black blob
     // on a white background. Detect that case via isGrayscale() and
     // substitute the softer fallback so out-of-the-box chart legibility
-    // doesn't depend on the consumer overriding the accent token. Themes
+    // doesn't depend on the developer overriding the accent token. Themes
     // that DO want neutral charts can override with a chroma > 0 oklch
     // (e.g. oklch(50% 0.01 250) — a near-neutral with just enough chroma
     // to register as non-grayscale) or with a hex/rgb declaration.
@@ -163,7 +163,7 @@ export function resolveThemeColors(style) {
         // rose replaces red for a less-alarming negative signal that still
         // reads as semantic. The light/dark pair is deliberate — a chart
         // toggling between modes MUST visibly recolour to signal the theme
-        // change, otherwise dark-mode regression tests fail and consumers
+        // change, otherwise dark-mode regression tests fail and developers
         // perceive the chart as not theme-aware.
         accent:      resolveChartColor('--color-wk-accent', '#7dd3fc', '#bae6fd'),
         danger:      resolveChartColor('--color-wk-danger', '#fda4af', '#fecdd3'),

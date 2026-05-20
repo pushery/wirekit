@@ -21,7 +21,7 @@
     // explicitly null those properties to neutralise generic prose
     // stylesheets that target raw markdown code blocks (e.g. a host
     // prose.css that adds bg-white + radius + padding to every <pre>) —
-    // without this defence the consumer sees a white box nested inside
+    // without this defence the developer sees a white box nested inside
     // our muted container.
     $preClasses = implode(' ', [
         'm-0 p-0',

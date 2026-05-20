@@ -6,98 +6,30 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Pushery\WireKit\Support\SuggestSimilar;
+use Pushery\WireKit\Theming\ThemePresetRegistry;
 
 class ThemeCommand extends Command
 {
-    protected $signature = 'wirekit:theme {preset : Theme preset name}';
+    protected $signature = 'wirekit:theme {preset : Theme preset name — see ThemePresetRegistry::keys() for the canonical list (default, minimal, soft, material, brutalist, retro-terminal, cupertino at v2.1.0; downstream packages may register additional presets via ThemePresetRegistry::register()).}';
 
     protected $description = 'Apply a WireKit theme preset to your app.css';
 
-    /** @var array<string, array{label: string, vars: string}> */
-    private const PRESETS = [
-        'minimal' => [
-            'label' => 'Minimal',
-            'vars' => <<<'CSS'
-    /* Minimal — clean, borderless aesthetic */
-    --radius-wk-sm: 0px;
-    --radius-wk-md: 0px;
-    --radius-wk-lg: 0px;
-    --radius-wk-xl: 0px;
-    --radius-wk-full: 0px;
-    --ring-wk-width: 2px;
-    --shadow-wk-sm: none;
-    --shadow-wk-md: none;
-    --shadow-wk-lg: none;
-CSS,
-        ],
-        'soft' => [
-            'label' => 'Soft',
-            'vars' => <<<'CSS'
-    /* Soft — rounded, gentle shadows */
-    --radius-wk-sm: 0.5rem;
-    --radius-wk-md: 0.75rem;
-    --radius-wk-lg: 1rem;
-    --radius-wk-xl: 1.5rem;
-    --color-wk-accent: oklch(0.541 0.281 293.009);
-CSS,
-        ],
-        'material' => [
-            'label' => 'Material',
-            'vars' => <<<'CSS'
-    /* Material — Google Material Design 3 inspired */
-    --radius-wk-sm: 0.25rem;
-    --radius-wk-md: 0.5rem;
-    --radius-wk-lg: 0.75rem;
-    --color-wk-accent: oklch(0.457 0.24 277.023);
-    --transition-wk-easing: cubic-bezier(0, 0, 0.2, 1);
-CSS,
-        ],
-        'brutalist' => [
-            'label' => 'Brutalist',
-            'vars' => <<<'CSS'
-    /* Brutalist — bold borders, no shadows */
-    --radius-wk-sm: 0px;
-    --radius-wk-md: 0px;
-    --radius-wk-lg: 0px;
-    --radius-wk-xl: 0px;
-    --border-wk-width: 2px;
-    --shadow-wk-sm: none;
-    --shadow-wk-md: none;
-    --shadow-wk-lg: none;
-CSS,
-        ],
-        'retro-terminal' => [
-            'label' => 'Retro Terminal',
-            'vars' => <<<'CSS'
-    /* Retro Terminal — green-on-black hacker aesthetic */
-    --color-wk-accent: oklch(0.723 0.219 149.579);
-    --radius-wk-sm: 0px;
-    --radius-wk-md: 0px;
-    --radius-wk-lg: 0px;
-    --radius-wk-xl: 0px;
-CSS,
-        ],
-        'cupertino' => [
-            'label' => 'Cupertino',
-            'vars' => <<<'CSS'
-    /* Cupertino — Apple HIG inspired */
-    --radius-wk-sm: 0.375rem;
-    --radius-wk-md: 0.625rem;
-    --radius-wk-lg: 0.875rem;
-    --radius-wk-xl: 1.75rem;
-    --color-wk-accent: oklch(0.546 0.245 262.881);
-    --transition-wk-easing: cubic-bezier(0, 0, 0.58, 1);
-CSS,
-        ],
-    ];
-
     public function handle(): int
     {
-        $preset = $this->argument('preset');
+        $preset = (string) $this->argument('preset');
 
-        if (! isset(self::PRESETS[$preset])) {
+        if (! ThemePresetRegistry::isValid($preset)) {
             $this->error("Unknown preset: {$preset}");
-            $this->line('  Available: '.implode(', ', array_keys(self::PRESETS)));
+            $available = ThemePresetRegistry::keys();
+            $this->line('  Available: '.implode(', ', $available));
+
+            $suggestion = SuggestSimilar::format(
+                SuggestSimilar::byLevenshtein($preset, $available)
+            );
+            if ($suggestion !== null) {
+                $this->line('  '.$suggestion);
+            }
 
             return self::FAILURE;
         }
@@ -110,28 +42,68 @@ CSS,
             return self::FAILURE;
         }
 
-        $content = file_get_contents($appCss);
-        $theme = self::PRESETS[$preset];
+        $content = (string) file_get_contents($appCss);
 
-        // Remove existing WireKit theme block if present
-        $content = preg_replace('/\/\* wirekit:theme start \*\/.*?\/\* wirekit:theme end \*\/\n?/s', '', $content);
+        // Remove existing WireKit theme block if present. This branch is
+        // shared by `default` (the "return to bundled values" preset) and
+        // by every other preset (so re-applying a new preset doesn't
+        // accumulate stacked theme blocks). Idempotent — running the same
+        // preset twice produces byte-identical output.
+        $newContent = (string) preg_replace(
+            '/\/\* wirekit:theme start \*\/.*?\/\* wirekit:theme end \*\/\n?/s',
+            '',
+            $content
+        );
 
-        $themeBlock = "\n/* wirekit:theme start */\n@theme {\n{$theme['vars']}\n}\n/* wirekit:theme end */\n";
-        $content .= $themeBlock;
+        $themeMeta = ThemePresetRegistry::get($preset);
+        if ($themeMeta === null) {
+            // Defensive: isValid() above already filtered. This branch
+            // can only trigger if the registry shape mutates mid-call,
+            // which shouldn't happen but keeps the type checker happy.
+            return self::FAILURE;
+        }
 
-        File::put($appCss, $content);
+        if (ThemePresetRegistry::isDefault($preset)) {
+            // `default` is a no-op apart from the block-removal above.
+            // Always succeeds — whether or not a preset block existed.
+            if ($newContent !== $content) {
+                File::put($appCss, $newContent);
+                $this->info('Reverted to default theme — previous preset block removed.');
+            } else {
+                $this->info('Already on default theme — no preset block to remove.');
+            }
 
-        $this->info("Applied theme: {$theme['label']}");
+            return self::SUCCESS;
+        }
+
+        // Append the new preset block. The empty dark_vars case skips the
+        // .dark block emission entirely so developers running the registry
+        // through a strict CSS linter don't see an empty selector.
+        $vars = $themeMeta['vars'];
+        $darkVars = $themeMeta['dark_vars'];
+        $themeBlock = "\n/* wirekit:theme start */\n@theme {\n{$vars}\n}\n";
+        if ($darkVars !== null && $darkVars !== '') {
+            $themeBlock .= "\n.dark {\n{$darkVars}\n}\n";
+        }
+        $themeBlock .= "/* wirekit:theme end */\n";
+
+        File::put($appCss, $newContent.$themeBlock);
+
+        $this->info("Applied theme: {$themeMeta['label']}");
         $this->line('  Theme variables injected into resources/css/app.css');
 
         return self::SUCCESS;
     }
 
     /**
-     * @return string[]
+     * @return list<string>
+     *
+     * @deprecated v2.1.0 — use ThemePresetRegistry::keys() directly.
+     *             Retained as a thin shim because the public-API export
+     *             surface advertises this method.
      */
     public static function availablePresets(): array
     {
-        return array_keys(self::PRESETS);
+        return ThemePresetRegistry::keys();
     }
 }

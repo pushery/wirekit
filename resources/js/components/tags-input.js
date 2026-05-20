@@ -11,7 +11,7 @@
  */
 export default function wirekitTagsInput(config = {}) {
     return {
-        // Seed with consumer-supplied initial tags. Defensive Array.from
+        // Seed with developer-supplied initial tags. Defensive Array.from
         // accepts both plain arrays and array-like inputs (e.g. when the
         // Blade-side @js() encoding produces an iterable proxy). Empty
         // array if no seed provided.

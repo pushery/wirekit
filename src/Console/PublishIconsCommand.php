@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\SuggestSimilar;
 
 /**
  * Publish a specific icon-set's blade-icons SVG directory
@@ -66,6 +67,13 @@ class PublishIconsCommand extends Command
         if (! in_array($preset, IconResolver::availablePresets(), true)) {
             $this->error("Unknown preset '{$preset}'.");
             $this->line('  Available: '.implode(', ', IconResolver::availablePresets()));
+
+            $hint = SuggestSimilar::format(
+                SuggestSimilar::byLevenshtein((string) $preset, IconResolver::availablePresets())
+            );
+            if ($hint !== null) {
+                $this->line('  '.$hint);
+            }
 
             return self::FAILURE;
         }

@@ -33,7 +33,7 @@ namespace Pushery\WireKit\Support;
  * field, every helper fell straight to `'dev'` / `'dev-develop'` even on
  * tagged releases consumed via Composer — visible on `/components.json`
  * and `/api-map.json` as `version: "dev"` instead of `version: "1.x.y"`
- * on docs.wirekit.app and any consumer's deployment.
+ * on docs.wirekit.app and any developer's deployment.
  */
 final class VersionResolver
 {

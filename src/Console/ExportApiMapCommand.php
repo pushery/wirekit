@@ -9,6 +9,7 @@ use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\VersionResolver;
+use Pushery\WireKit\Theming\ThemePresetRegistry;
 
 /**
  * emit a hierarchical AI-friendly site sitemap covering
@@ -68,6 +69,7 @@ class ExportApiMapCommand extends Command
                 $this->recipesGroup($packageRoot),
                 $this->commandsGroup(),
                 $this->helpersGroup(),
+                $this->cssClassesGroup($packageRoot),
             ],
         ];
 
@@ -118,7 +120,7 @@ class ExportApiMapCommand extends Command
      */
     private function themesGroup(): array
     {
-        $presets = ['default', 'minimal', 'soft', 'material', 'brutalist', 'retro-terminal', 'cupertino'];
+        $presets = ThemePresetRegistry::keys();
         $items = array_map(fn (string $p): array => [
             'id' => $p,
             'install' => 'php artisan wirekit:theme '.$p,
@@ -254,24 +256,38 @@ class ExportApiMapCommand extends Command
      */
     private function commandsGroup(): array
     {
-        $commands = [
-            'wirekit:install',
-            'wirekit:verify',
-            'wirekit:doctor',
-            'wirekit:list',
-            'wirekit:show',
-            'wirekit:theme',
-            'wirekit:make',
-            'wirekit:component',
-            'wirekit:publish-icons',
-            'wirekit:export-json',
-            'wirekit:export-api-map',
-            'wirekit:cursor-rules',
+        // Discover commands dynamically from Symfony's Application — the
+        // service provider's registered command list IS the source of
+        // truth. A hardcoded inventory drifts every time a new command
+        // ships (the cross-plan audit caught wirekit:class-by-area +
+        // wirekit:glass missing from a stale literal list).
+        $application = $this->getApplication();
+        $commands = [];
+        if ($application !== null) {
+            foreach ($application->all() as $name => $command) {
+                if (str_starts_with($name, 'wirekit:')) {
+                    $commands[] = $name;
+                }
+            }
+        }
+        sort($commands);
+
+        // Symfony aliases share the canonical command's docs anchor —
+        // wirekit:doctor IS wirekit:verify, so its docs_url points at the
+        // verify anchor (not a separate doctor anchor that would 404).
+        // The alias map stays static here because Symfony's reflection
+        // surface for aliases is per-instance and noisier than worth.
+        $aliasOf = [
+            'wirekit:doctor' => 'wirekit:verify',
         ];
-        $items = array_map(fn (string $c): array => [
-            'id' => $c,
-            'docs_url' => 'https://docs.wirekit.app/cli#'.str_replace(':', '', $c),
-        ], $commands);
+        $items = array_map(function (string $c) use ($aliasOf): array {
+            $canonical = $aliasOf[$c] ?? $c;
+
+            return [
+                'id' => $c,
+                'docs_url' => 'https://docs.wirekit.app/cli#'.str_replace(':', '', $canonical),
+            ];
+        }, $commands);
 
         return ['id' => 'commands', 'count' => count($items), 'items' => $items];
     }
@@ -336,5 +352,116 @@ class ExportApiMapCommand extends Command
         ];
 
         return ['id' => 'helpers', 'count' => count($items), 'items' => $items];
+    }
+
+    /**
+     * Public-CSS-API class catalog — every `wk-*` class WireKit emits
+     * either via `dist/wirekit.css` or via Blade-template static
+     * strings. Mirrors `docs/extending/public-css-api.md`. The drift-audit guard
+     * `tests/Feature/PublicCssApiDriftTest.php` ensures the catalog
+     * and this emission stay in lockstep with the actual shipped CSS.
+     *
+     * @return array{id: string, count: int, items: array<int, array<string, string>>}
+     */
+    private function cssClassesGroup(string $packageRoot): array
+    {
+        $classes = [];
+
+        // (1) Compiled CSS selectors.
+        $css = (string) file_get_contents($packageRoot.'/dist/wirekit.css');
+        $css = (string) preg_replace('~/\*.*?\*/~s', '', $css);
+        preg_match_all('/(?<=^|\s|,)\.(\bwk-[a-z][a-z0-9_-]*(?:__[a-z][a-z0-9_-]*)?(?:--[a-z][a-z0-9_-]*)?)\b/m', $css, $cssMatches);
+        foreach ($cssMatches[1] as $class) {
+            $classes[$class] = true;
+        }
+
+        // (2) Static-string emissions in Blade.
+        $bladeDir = $packageRoot.'/resources/views/components';
+        if (is_dir($bladeDir)) {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($bladeDir, \RecursiveDirectoryIterator::SKIP_DOTS)
+            );
+            foreach ($iterator as $file) {
+                if (! $file->isFile() || $file->getExtension() !== 'php') {
+                    continue;
+                }
+                $source = (string) file_get_contents($file->getPathname());
+                preg_match_all(
+                    '/(?<![-a-z0-9])(\bwk-[a-z][a-z0-9_-]*(?:__[a-z][a-z0-9_-]*)?(?:--[a-z][a-z0-9_-]*)?)(?=[\s\'">,])/',
+                    $source,
+                    $bladeMatches
+                );
+                foreach ($bladeMatches[1] as $class) {
+                    if (str_ends_with($class, '-')) {
+                        continue;
+                    }
+                    $classes[$class] = true;
+                }
+            }
+        }
+
+        $list = array_keys($classes);
+        sort($list);
+
+        // Per-class metadata. Tier reflects the catalog in
+        // docs/extending/public-css-api.md — wk-animate-* state classes
+        // carry the "Internal-with-exception" tier per the catalog's
+        // Stability tiers section, every other class is "Stable".
+        //
+        // docs_url anchors to the SUB-SECTION heading inside the
+        // catalog (Animation / Motion, Layout / Chrome Markers, etc.)
+        // so AI tooling lands the developer at the relevant table row
+        // instead of the page top. The catalog's H3 sub-section
+        // anchors derive from the Markdown heading text via standard
+        // slugification — `### Animation / motion` → `#animation--motion`.
+        $items = array_map(function (string $class): array {
+            $isAnimation = preg_match('/^wk-animate-/', $class) === 1;
+
+            return [
+                'id' => $class,
+                'tier' => $isAnimation ? 'Internal-with-exception' : 'Stable',
+                'docs_url' => 'https://docs.wirekit.app/extending/public-css-api#'.$this->cssClassSection($class),
+            ];
+        }, $list);
+
+        return ['id' => 'css-classes', 'count' => count($items), 'items' => $items];
+    }
+
+    /**
+     * Maps a wk-* class to the docs/extending/public-css-api.md sub-section anchor
+     * it lives under. Mirrors the catalog's 4-group structure so the
+     * AI-tooling docs_url lands at the relevant table.
+     */
+    private function cssClassSection(string $class): string
+    {
+        if (preg_match('/^wk-animate-/', $class) || $class === 'wk-stagger' || $class === 'wk-transition') {
+            return 'animation--motion';
+        }
+        if (preg_match('/^wk-reading-/', $class)) {
+            return 'reading-family';
+        }
+        // Display / loading classes (chart-mixed, command-list, glass-refract,
+        // progress-*, replay-button, skeleton, slider, sparkline,
+        // submenu-indicator).
+        $displayClasses = [
+            'wk-chart-mixed',
+            'wk-command-list',
+            'wk-glass-refract',
+            'wk-progress-indeterminate',
+            'wk-progress-circle-indeterminate',
+            'wk-replay-button',
+            'wk-skeleton',
+            'wk-slider',
+            'wk-sparkline',
+            'wk-submenu-indicator',
+        ];
+        if (in_array($class, $displayClasses, true)) {
+            return 'display--loading';
+        }
+
+        // Default — Layout / chrome markers (brand, brand-bar, cta,
+        // footer, header, hero, list, list-spacing-*, main,
+        // navbar-mobile, prose, scrollbar, section, spine-aware).
+        return 'layout--chrome-markers';
     }
 }
