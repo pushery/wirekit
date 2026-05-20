@@ -74,7 +74,7 @@
     // at every data point dominate the visual when the chart is only
     // 1.25em × 4rem (inline mode) or 2.5rem tall (block mode). Both adapters
     // get marker size 0 (line-only) so the rendered output is a clean line.
-    // Hover-state markers are kept tiny so consumers who add a tooltip slot
+    // Hover-state markers are kept tiny so developers who add a tooltip slot
     // still see a focus indicator at the active point.
     $sparkOptions = [
         // ApexCharts native sparkline mode + marker stripping.
@@ -136,8 +136,8 @@
 
     // Inline-mode `display` MUST be set via inline style, NOT just the Tailwind
     // class. The Tailwind `inline-block` utility only applies when Tailwind has
-    // generated a corresponding rule for it (i.e. the consumer's compiled CSS
-    // is in scope). Docs-site sandbox previews render WITHOUT consumer Tailwind,
+    // generated a corresponding rule for it (i.e. the developer's compiled CSS
+    // is in scope). docs.wirekit.app sandbox previews render WITHOUT developer Tailwind,
     // so an inline-sparkline that relies on `inline-block` alone falls back to
     // `<div>`'s default `display: block` — taking a full line and breaking the
     // surrounding paragraph's flow. /components/sparkline#inline-mode surfaced

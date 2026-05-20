@@ -1,3 +1,4 @@
+{{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
     // `as` — the semantic element. Defaults to `header` for page chrome
     // (the brand-bar sits at the top of a section / page and announces
@@ -9,34 +10,32 @@
     // backgrounds that already provide separation.
     'divider' => 'bottom',
     // `padding` — inline padding tier from the `--padding-wk-x-*`
-    // content-edge spine. Defaults to `lg` (= 1 rem) to match the
-    // main wrapper and header chrome at the same tier — the brand's
-    // visible-text edge aligns with the article body and TOC strip
-    // below.
+    // content-edge spine. Defaults to `lg` to match the main wrapper
+    // and header chrome at the same tier — the brand's visible-text
+    // edge aligns with the article body and TOC strip below.
     'padding' => 'lg',
     // `sticky` — when true, pins the bar to the top of the scroll
-    // container via `position: sticky; top: 0`. The bar stays visible
-    // during scroll without leaving its in-flow vertical space, so the
-    // article body below doesn't need a matching `padding-top`
-    // reservation. Default `false` keeps the bar in normal flow
-    // (scrolls away with content).
+    // container via `position: sticky; top: 0`. Default false.
     'sticky' => false,
+    // `container` — when true, wraps the inner flex-row in a max-width
+    // container so the brand-bar's CHROME (background, border, sticky
+    // behaviour) stays edge-to-edge while the CONTENT (brand, tagline,
+    // actions) aligns with the body's container-wrapped column. Default
+    // false preserves the v2.0.0 edge-to-edge content behaviour.
+    'container' => false,
+    // `max` — container max-width tier when `container=true`. One of
+    // `sm/md/lg/xl/2xl/full`. Defaults to `xl` (the most common
+    // marketing-landing-page content width). Reads the same
+    // `--size-wk-container-*` tokens as the container component so
+    // brand-bar + body align on the same vertical content-edge spine.
+    'max' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
 
-    // Brand-bar — page-chrome wrapper for the canonical "logo + name +
-    // (optional tagline) + (optional actions)" header pattern. Sits at
-    // a page edge, carries the content-edge spine padding, optionally
-    // sticky during scroll.
-    //
-    // Composition contract: the brand-bar exposes three named slots in
-    // a flex-row layout (`brand`, `tagline`, `actions`), with the default
-    // slot acting as additional flex children if the consumer needs
-    // custom layout. Slot ordering is deterministic — brand → tagline →
-    // spacer (via `margin-left: auto` on actions) → actions.
+    $max ??= config('wirekit.components.brand-bar.max', 'xl');
 
     $paddingClass = match ($padding) {
         'none' => '',
@@ -61,51 +60,43 @@
         ? 'sticky top-0 z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg)]'
         : '';
 
+    $isContainerWrapped = filter_var($container, FILTER_VALIDATE_BOOL);
+    // No hardcoded fallback values — the `--size-wk-container-*` tokens
+    // are the canonical source of truth and ship in dist/wirekit.css.
+    $maxClass = match ($max) {
+        'sm' => 'max-w-[var(--size-wk-container-sm)]',
+        'md' => 'max-w-[var(--size-wk-container-md)]',
+        'lg' => 'max-w-[var(--size-wk-container-lg)]',
+        'xl' => 'max-w-[var(--size-wk-container-xl)]',
+        '2xl' => 'max-w-[var(--size-wk-container-2xl)]',
+        'full' => 'max-w-full',
+        default => WireKit::validateProp('brand-bar', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full']),
+    };
+
+    // When container-wrapped, the OUTER element keeps the chrome
+    // (background, border, sticky behaviour, padding) but loses the
+    // flex-row layout — the INNER container takes the layout and the
+    // max-width. When edge-to-edge (default), the OUTER element is
+    // the flex parent directly.
     $rootClass = WireKit::resolveClasses('brand-bar', 'base', implode(' ', array_filter([
         'wk-brand-bar',
-        // `w-full` keeps the brand-bar full-width inside the docs-site
-        // flex-row preview wrapper (see footer.blade.php for rationale).
         'w-full',
-        'flex flex-row items-center',
-        'gap-[var(--space-wk-md)]',
+        $isContainerWrapped ? '' : 'flex flex-row items-center',
+        $isContainerWrapped ? '' : 'gap-[var(--space-wk-md)]',
         'py-[var(--padding-wk-y-md)]',
         $paddingClass,
         $dividerClass,
         $stickyClass,
     ])), $scope);
+
+    $innerWrapperClass = "flex flex-row items-center gap-[var(--space-wk-md)] w-full {$maxClass} mx-auto";
 @endphp
 
 <{{ $as }} {{ $attributes->class([$rootClass]) }}>
-    {{-- Brand slot — logo + name combo. Defaults to the `<x-wirekit::brand>`
-         primitive composition if the consumer doesn't override. When the
-         brand slot is empty AND the default slot is empty, the bar still
-         renders so it can be composed declaratively from a parent
-         template that injects the brand later via slot stacking. --}}
-    @isset($brand)
-        {{ $brand }}
-    @endisset
-
-    {{-- Tagline slot — secondary descriptive text after the brand, e.g.
-         "Ship faster, in less time." or a customer-quote pull. Renders
-         only when the consumer fills it. Uses `--color-wk-text-muted`
-         for visual hierarchy below the brand name. --}}
-    @isset($tagline)
-        <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $tagline }}</span>
-    @endisset
-
-    {{-- Default slot — additional flex children between tagline and
-         actions. Use for inline content the consumer wants centered in
-         the bar that isn't strictly brand / tagline / actions. --}}
+    @if($isContainerWrapped)<div class="{{ $innerWrapperClass }}">@endif
+    @isset($brand){{ $brand }}@endisset
+    @isset($tagline)<span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $tagline }}</span>@endisset
     {{ $slot }}
-
-    {{-- Actions slot — right-edge anchored via `margin-left: auto` on a
-         wrapper div so the actions always sit at the bar's content
-         right-edge regardless of how much brand / tagline content
-         precedes them. Sign-in links, theme toggles, account widgets,
-         etc. live here. --}}
-    @isset($actions)
-        <div class="ml-auto flex flex-row items-center gap-[var(--space-wk-sm)]">
-            {{ $actions }}
-        </div>
-    @endisset
+    @isset($actions)<div class="ml-auto flex flex-row items-center gap-[var(--space-wk-sm)]">{{ $actions }}</div>@endisset
+    @if($isContainerWrapped)</div>@endif
 </{{ $as }}>

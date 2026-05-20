@@ -103,7 +103,7 @@ export default function wirekitImageCompare(config = {}) {
         _emit() {
             // Custom DOM event for listeners that want to observe slide
             // changes without a Livewire round-trip. Detail carries the
-            // current value + orientation so consumers can react polymorphically.
+            // current value + orientation so developers can react polymorphically.
             const detail = { value: this.value, orientation: this.orientation };
             this.$el.dispatchEvent(
                 new CustomEvent('slide', { detail, bubbles: true })

@@ -4,7 +4,7 @@
     //   scale, zoom, flip, rotate, bounce, spring
     'preset' => null,
     // Trigger mode: 'viewport' (IntersectionObserver), 'click', or 'manual'
-    // (consumer dispatches Alpine.$dispatch('wirekit:reveal')).
+    // (developer dispatches Alpine.$dispatch('wirekit:reveal')).
     'trigger' => null,
     // Duration token: 'fast' (150ms), 'normal' (300ms, default), 'slow' (600ms).
     'duration' => null,

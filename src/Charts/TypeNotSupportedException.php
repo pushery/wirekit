@@ -12,7 +12,7 @@ use Pushery\WireKit\Contracts\ChartAdapter;
  * active adapter cannot render.
  *
  * The exception message includes the adapter name, the unsupported type,
- * the canonical supported list, and a switch-library hint so consumers
+ * the canonical supported list, and a switch-library hint so developers
  * can either pick a different type or change `config('wirekit.charts.library')`.
  */
 final class TypeNotSupportedException extends InvalidArgumentException

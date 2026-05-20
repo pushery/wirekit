@@ -168,7 +168,7 @@ return [
     |
     | Stacking presets (opt-in):
     |   To compose multiple presets, use 'presets' instead of 'preset'. Later
-    |   entries override earlier ones; consumer 'aliases' override all presets.
+    |   entries override earlier ones; developer 'aliases' override all presets.
     |
     |   'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
     |

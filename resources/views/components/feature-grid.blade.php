@@ -54,11 +54,28 @@
         $gapClasses,
         $hasStagger ? 'wk-stagger' : '',
     ]), $scope);
+
+    // Merge the auto-emitted `--wk-stagger-step` with any developer-
+    // supplied `style=""` attribute so a single style attribute is
+    // emitted — duplicate `style=` attributes would silently let the
+    // browser drop our auto-default and undermine the developer's
+    // intentional override (or vice versa). Developer style comes
+    // SECOND so later-declaration-wins lets `style="--wk-stagger-step:
+    // 200ms"` override our default in the canonical cascade order.
+    $stylePieces = [];
+    if ($hasStagger) {
+        $stylePieces[] = "--wk-stagger-step: {$staggerStep}ms";
+    }
+    $developerStyle = trim((string) $attributes->get('style', ''));
+    if ($developerStyle !== '') {
+        $stylePieces[] = rtrim($developerStyle, '; ');
+    }
+    $mergedStyle = implode('; ', $stylePieces);
 @endphp
 
 <div
-    {{ $attributes->class([$classes]) }}
-    @if($hasStagger) style="--wk-stagger-step: {{ $staggerStep }}ms" @endif
+    {{ $attributes->except('style')->class([$classes]) }}
+    @if($mergedStyle !== '') style="{{ $mergedStyle }}" @endif
 >
     {{ $slot }}
 </div>

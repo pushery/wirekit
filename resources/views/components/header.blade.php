@@ -1,3 +1,4 @@
+{{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
     'sticky' => false,
     'container' => false,
@@ -12,7 +13,7 @@
     // Inline `display: flex; align-items: center` is the load-bearing layout
     // primitive — same lesson as the chart-wrapper, sparkline, reading-spine
     // fixes: utility classes for decoration, inline style for layout that
-    // must work even when consumer Tailwind isn't in scope (the docs-sandbox
+    // must work even when developer Tailwind isn't in scope (the docs-sandbox
     // iframe is the canonical example, but any tenant-isolated CSS context
     // hits the same gap). Without `display: flex` inline, the slot children
     // stack vertically in the sandbox and `<x-wirekit::spacer />` /
@@ -20,10 +21,10 @@
     // the container isn't actually a flex parent.
     $headerStyle = 'display: flex; align-items: center; width: 100%; gap: var(--gap-wk-md);';
     // `wk-header` marker — see `dist/wirekit.css` notes for why this is
-    // load-bearing against consumer prose `max-width: 75ch` clamps.
+    // load-bearing against developer prose `max-width: 75ch` clamps.
     $classes = WireKit::resolveClasses('header', 'base', implode(' ', [
         'wk-header',
-        // `w-full` keeps the header full-width inside the docs-site
+        // `w-full` keeps the header full-width inside docs.wirekit.app
         // flex-row preview wrapper (see footer.blade.php for full rationale).
         'w-full',
         'flex items-center',

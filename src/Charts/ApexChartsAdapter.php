@@ -13,10 +13,10 @@ use Pushery\WireKit\Contracts\ChartAdapter;
  * covers personal use, non-profits, education, and organisations under
  * $2M USD annual revenue. Above that threshold a Commercial License must be
  * purchased directly from ApexCharts. WireKit ships only this adapter glue
- * (MIT); the JS library is the consumer's responsibility to install + license.
+ * (MIT); the JS library is the developer's responsibility to install + license.
  * See https://apexcharts.com/license/ for the current terms.
  *
- * The consumer installs `apexcharts` via npm; WireKit does not bundle it.
+ * The developer installs `apexcharts` via npm; WireKit does not bundle it.
  */
 final class ApexChartsAdapter implements ChartAdapter
 {
@@ -212,7 +212,7 @@ final class ApexChartsAdapter implements ChartAdapter
             'mixed' => 'line',
             'annotated' => 'line',
             // Vertical-bar chart — ApexCharts has no native `column` type. Maps
-            // to `bar` and the consumer sets plotOptions.bar.horizontal: false
+            // to `bar` and the developer sets plotOptions.bar.horizontal: false
             // (the default, so most demos require no extra options).
             'column' => 'bar',
             default => $type,
@@ -221,7 +221,7 @@ final class ApexChartsAdapter implements ChartAdapter
 
     /**
      * Type-specific stroke defaults. Lines/areas get a smooth curve; bars
-     * get no stroke (default). Consumer overrides win via array_replace_recursive
+     * get no stroke (default). Developer overrides win via array_replace_recursive
      * in the Chart component.
      */
     /**
@@ -279,7 +279,7 @@ final class ApexChartsAdapter implements ChartAdapter
         // series catches all hover events while the line series sits
         // unhoverable. Forcing shared cursor-x tracking makes hovering
         // ANYWHERE on the chart show ALL series' values at that x,
-        // matching the consumer expectation for combined-series charts.
+        // matching the developer expectation for combined-series charts.
         $sharedCursorTypes = ['mixed', 'annotated'];
 
         if (in_array($type, $perElementTypes, true)) {

@@ -12,7 +12,7 @@
     use Pushery\WireKit\WireKit;
 
     // Validate variant against the canonical intent set + the legacy 'accent'
-    // synonym (kept working so existing consumer code doesn't break).
+    // synonym (kept working so existing developer code doesn't break).
     $variantValue = match ($variant) {
         'primary', 'accent', 'success', 'warning', 'danger' => $variant,
         default => WireKit::validateProp('progress', 'variant', $variant, ['primary', 'accent', 'success', 'warning', 'danger']),

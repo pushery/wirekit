@@ -13,7 +13,6 @@ use Pushery\WireKit\Components\Chart;
 use Pushery\WireKit\Console\ClassByAreaCommand;
 use Pushery\WireKit\Console\ComponentMakeCommand;
 use Pushery\WireKit\Console\CursorRulesCommand;
-use Pushery\WireKit\Console\DoctorCommand;
 use Pushery\WireKit\Console\ExportApiMapCommand;
 use Pushery\WireKit\Console\ExportBlocksCommand;
 use Pushery\WireKit\Console\ExportJsonCommand;
@@ -55,7 +54,6 @@ class WireKitServiceProvider extends ServiceProvider
                 ClassByAreaCommand::class,
                 ComponentMakeCommand::class,
                 CursorRulesCommand::class,
-                DoctorCommand::class,
                 ExportApiMapCommand::class,
                 ExportBlocksCommand::class,
                 ExportJsonCommand::class,
@@ -193,7 +191,7 @@ class WireKitServiceProvider extends ServiceProvider
                 // Livewire only auto-injects when at least one Livewire
                 // component renders (per SupportAutoInjectedAssets::shouldInjectLivewireAssets).
                 // Calling forceAssetInjection() flips that flag so the
-                // consumer no longer needs @livewireScripts in the layout —
+                // developer no longer needs @livewireScripts in the layout —
                 // @wirekitStyles + @wirekitScripts is enough, and Alpine
                 // arrives automatically via Livewire bundle.
                 //

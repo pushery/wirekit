@@ -120,7 +120,7 @@ export default (options = {}) => ({
      * pushing a new history entry. Honors prefers-reduced-motion.
      *
      * Target math accounts for:
-     *   - `offset` prop — pixels of consumer chrome ABOVE the TOC
+     *   - `offset` prop — pixels of developer chrome ABOVE the TOC
      *     (e.g. a fixed top nav). Empty by default.
      *   - The TOC's OWN height — the strip is `position: sticky;
      *     top: offset`, so it occupies the viewport band from
@@ -162,7 +162,7 @@ export default (options = {}) => ({
         // `origin: null` and reject replaceState calls against the
         // parent page's URL with a SecurityError. The smooth-scroll has
         // already happened by this point, so swallowing the URL-sync
-        // failure is the correct degradation — the consumer still sees
+        // failure is the correct degradation — the developer still sees
         // the visual jump, just without the URL hash mirror.
         try {
             history.replaceState(null, '', `#${id}`);

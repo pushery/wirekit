@@ -12,7 +12,7 @@
     // bare block-level `display:flex` div collapses to its intrinsic
     // content width inside prose / preview ancestors — making the
     // header + main visually too narrow with a wide gutter on the right.
-    // `min-h-screen` stays for real-page usage; consumers wanting to
+    // `min-h-screen` stays for real-page usage; developers wanting to
     // contain the shell to a fixed height (e.g. doc previews) still pass
     // an explicit `style="min-height: auto; height: ..."` override.
     $classes = WireKit::resolveClasses('app-shell', 'base', implode(' ', [

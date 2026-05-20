@@ -29,12 +29,26 @@
         'font-[family-name:var(--font-wk-sans)]',
         $hasStagger ? 'wk-stagger' : '',
     ]), $scope);
+
+    // Merge auto-emitted `--wk-stagger-step` with developer `style=""`
+    // so the rendered <div> has ONE style attribute — see feature-grid
+    // for the full rationale. Developer style comes second so
+    // later-declaration-wins lets explicit overrides take effect.
+    $stylePieces = [];
+    if ($hasStagger) {
+        $stylePieces[] = "--wk-stagger-step: {$staggerStep}ms";
+    }
+    $developerStyle = trim((string) $attributes->get('style', ''));
+    if ($developerStyle !== '') {
+        $stylePieces[] = rtrim($developerStyle, '; ');
+    }
+    $mergedStyle = implode('; ', $stylePieces);
 @endphp
 
 {{-- Stats grid: wraps multiple <x-wirekit::stat> children in a responsive grid --}}
 <div
-    {{ $attributes->class([$classes, $colClasses]) }}
-    @if($hasStagger) style="--wk-stagger-step: {{ $staggerStep }}ms" @endif
+    {{ $attributes->except('style')->class([$classes, $colClasses]) }}
+    @if($mergedStyle !== '') style="{{ $mergedStyle }}" @endif
 >
     {{ $slot }}
 </div>

@@ -1,8 +1,14 @@
+{{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
     'variant' => 'default',
     // Optional reveal animation when the CTA scrolls into view.
     // Null = no animation (default — CTA renders without an entrance reveal).
     'animateIn' => null,
+    // `size` — vertical-rhythm tier (mirrors hero's prop). One of `sm` /
+    // `md` / `lg`. Default `md` (= `--space-wk-section-md` at sm+
+    // viewports). Mobile viewport (< sm breakpoint) drops one tier so
+    // the cta never overshoots vertical-padding budget on small screens.
+    'size' => 'md',
     'scope' => null,
 ])
 
@@ -11,16 +17,30 @@
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'cta');
 
+    // Validate `size` against the three-tier enum (debug-mode validation,
+    // production silent fallback to `md`).
+    $validSize = in_array($size, ['sm', 'md', 'lg'], true)
+        ? $size
+        : WireKit::validateProp('cta', 'size', $size, ['sm', 'md', 'lg']);
+
+    // Responsive vertical-padding (same shape as hero). Static class
+    // strings keep Tailwind source-detection happy.
+    $ctaVerticalPadding = match ($validSize) {
+        'sm' => 'py-[var(--space-wk-section-sm)] sm:py-[var(--space-wk-section-sm)]',
+        'md' => 'py-[var(--space-wk-section-sm)] sm:py-[var(--space-wk-section-md)]',
+        'lg' => 'py-[var(--space-wk-section-md)] sm:py-[var(--space-wk-section-lg)]',
+    };
+
     // CTA — call-to-action banner section.
-    // `wk-cta` marker — load-bearing against consumer prose
+    // `wk-cta` marker — load-bearing against developer prose
     // `max-width: 75ch` clamps (see footer.blade.php for the full
     // rationale).
     $classes = WireKit::resolveClasses('cta', 'base', implode(' ', [
         'wk-cta',
-        // `w-full` keeps the CTA full-width inside the docs-site
+        // `w-full` keeps the CTA full-width inside docs.wirekit.app
         // flex-row preview wrapper (see footer.blade.php for rationale).
         'w-full',
-        'py-[var(--space-wk-section-md,5rem)]',
+        $ctaVerticalPadding,
         'px-[var(--padding-wk-x-lg)]',
         'text-center',
     ]), $scope);
@@ -34,7 +54,7 @@
 @endphp
 
 <section {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
-    <div class="max-w-[var(--size-wk-container-md,48rem)] mx-auto">
+    <div class="max-w-[var(--size-wk-container-md)] mx-auto">
         @isset($title)
             <h2 class="text-[length:var(--text-wk-2xl,1.5rem)] sm:text-[length:var(--font-wk-heading-xl,2.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] mb-[var(--space-wk-md,1rem)]">
                 {{ $title }}

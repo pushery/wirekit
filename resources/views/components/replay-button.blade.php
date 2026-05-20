@@ -19,12 +19,12 @@
     animation-capable WireKit component (reveal, stat[animate],
     stat[animateIn]). The docs site's preview wrapper sets
     data-replay-target on the iframe / preview root and uses this
-    button to give consumers a "↻" affordance to re-run the demo.
+    button to give developers a "↻" affordance to re-run the demo.
 
     Style hooks via `wk-replay-button` BEM root — matches the existing
     `wk-*` namespace convention used by reading-progress, scrollbar etc.
 
-    Default icon: a circular-arrow glyph (16×16). Consumers can override
+    Default icon: a circular-arrow glyph (16×16). Developers can override
     by passing slot content.
 --}}
 <button

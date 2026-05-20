@@ -5,7 +5,7 @@
  * Threat model:
  *
  *  The cloned source HTML may contain user-generated content the
- *  consumer hasn't sanitised (CMS posts, comment threads, markdown-
+ *  developer hasn't sanitised (CMS posts, comment threads, markdown-
  *  rendered articles). Cloning into a srcdoc iframe carries that HTML
  *  into the iframe context — and `srcdoc` iframes inherit the parent's
  *  same-origin context, so any script that runs inside has full DOM
@@ -34,7 +34,7 @@
  *  CSS @import + url() can fetch resources from arbitrary origins,
  *  which under some browser configurations leaks the parent's
  *  authenticated cookie state to a third-party server. We strip
- *  inline <style> on the way in; consumer CSS arrives in the iframe
+ *  inline <style> on the way in; developer CSS arrives in the iframe
  *  via explicit <link rel="stylesheet"> injection of the parent's
  *  same-origin stylesheets (see reading-minimap.js _buildIframe()).
  *
@@ -47,7 +47,7 @@
  *  aggressive than a general sanitiser would be (e.g. we strip ALL
  *  form-related elements because the minimap never accepts input).
  *
- *  For general-purpose HTML sanitisation in WireKit, use the consumer
+ *  For general-purpose HTML sanitisation in WireKit, use the developer
  *  Laravel app's server-side sanitisation (e.g. `Str::stripTags`,
  *  `HTMLPurifier`). This module is a defence-in-depth for the
  *  minimap-rendered render path specifically.
@@ -78,7 +78,7 @@ const DATA_URI_SRC_RE = /\s+src\s*=\s*(?:"\s*data:[\s\S]*?"|'\s*data:[\s\S]*?')/
 const NESTED_EMBED_RE = /<(iframe|object|embed|applet|frame|frameset)\b[\s\S]*?<\/\1>/gi;
 const NESTED_EMBED_SELF_CLOSING_RE = /<(iframe|object|embed|applet|frame|frameset)\b[^>]*\/?>/gi;
 
-// Inline <style> tags. Stripped — consumer CSS arrives via <link> injection.
+// Inline <style> tags. Stripped — developer CSS arrives via <link> injection.
 const STYLE_TAG_RE = /<style[\s\S]*?<\/style>/gi;
 
 // `style="…"` inline attributes ARE preserved — they carry layout that the

@@ -18,7 +18,7 @@
  *   wirekit.core.js     — you only need the chart component, no overlays.
  *
  * The two bundles are mutually compatible (loading both is a no-op once
- * Alpine is detected) but consumers should pick exactly one. Loading
+ * Alpine is detected) but developers should pick exactly one. Loading
  * wirekit-alpine.js when Alpine is already on the page produces a console
  * warning and skips the second registration.
  *
@@ -60,7 +60,7 @@ import wirekitReadingToc from './components/reading-toc.js';
 
 /**
  * Detect a pre-existing Alpine instance. Loading wirekit-alpine.js when
- * the consumer's app ALSO loaded its own Alpine produces a "double
+ * the developer's app ALSO loaded its own Alpine produces a "double
  * Alpine" runtime warning that's hard to debug — better to log a clean
  * console hint and skip our registration in that case.
  */
@@ -107,7 +107,7 @@ if (alreadyHasAlpine()) {
     Alpine.data('wirekitReadingMinimap', wirekitReadingMinimap);
     Alpine.data('wirekitReadingToc', wirekitReadingToc);
 
-    // Expose Alpine on window so consumers (and the docs site's replay
+    // Expose Alpine on window so developers (and the docs site's replay
     // button) can call Alpine.initTree(element) for re-mounting.
     window.Alpine = Alpine;
 

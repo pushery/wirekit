@@ -32,7 +32,7 @@ final class ChartJsAdapter implements ChartAdapter
         // WireKit's simplified format -> Chart.js format. The mapType()
         // detour handles WireKit-canonical types that Chart.js doesn't have a
         // native equivalent for (e.g. 'sparkline' → 'line' rendered without
-        // axis chrome via consumer-supplied options).
+        // axis chrome via developer-supplied options).
         //
         // Per-dataset type normalization: chart-mixed lets each dataset carry
         // its own `type` field. ApexCharts accepts `column` (vertical bar)
@@ -156,7 +156,7 @@ final class ChartJsAdapter implements ChartAdapter
             // Native Chart.js types
             'bar', 'line', 'area', 'pie', 'doughnut', 'radar', 'polarArea', 'scatter', 'bubble',
             // WireKit canonical types that map onto Chart.js natives via mapType()
-            'sparkline', // → line (chrome stripped via consumer options)
+            'sparkline', // → line (chrome stripped via developer options)
             'annotated', // → line (annotation layer adds via chartjs-plugin-annotation)
             'mixed',     // → bar  (per-dataset type field carries the actual render shape)
         ];

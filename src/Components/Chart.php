@@ -41,7 +41,7 @@ final class Chart extends Component
      *                                   ApexCharts: chart.appendSeries / chart.appendData). When null
      *                                   (default), the chart renders normally with no streaming behaviour.
      * @param  string  $wireStreamMode  'strict' (default — caps the dataset at wireStreamCap points
-     *                                  FIFO) or 'stream' (unbounded growth — consumer responsibility).
+     *                                  FIFO) or 'stream' (unbounded growth — developer responsibility).
      * @param  int  $wireStreamCap  Max data-point count per dataset under 'strict' mode. Default 100.
      * @param  array<int, array<string, mixed>>  $annotations  Annotation specs passed through to the
      *                                                         chart options. ApexCharts: maps to options.annotations.
@@ -53,8 +53,8 @@ final class Chart extends Component
      *                            is bound (every streaming chart is replay-worthy — clicking replay
      *                            resets the live ticker). For non-streaming charts, set explicitly
      *                            when the entrance animation is worth re-watching (bar-grow / line-
-     *                            trace / slice-sweep). On a consumer app the prop is a no-op unless
-     *                            the consumer has wired its own replay-button surface; the prop only
+     *                            trace / slice-sweep). On a developer app the prop is a no-op unless
+     *                            the developer has wired its own replay-button surface; the prop only
      *                            changes the rendered HTML to include the data attribute.
      */
     public function __construct(
@@ -90,7 +90,7 @@ final class Chart extends Component
 
         // Validate the requested type against the active adapter's surface.
         // Throws TypeNotSupportedException with a switch-library hint when the
-        // consumer requests something the active library cannot render.
+        // developer requests something the active library cannot render.
         if (! in_array($type, $adapter->supportedTypes(), true)) {
             throw TypeNotSupportedException::for($adapter, $type);
         }
@@ -106,7 +106,7 @@ final class Chart extends Component
 
         // Annotations passthrough — the adapters consume the options.annotations
         // (ApexCharts native) / options.plugins.annotation (Chart.js plugin)
-        // shapes via different keys, but the consumer feeds a single array of
+        // shapes via different keys, but the developer feeds a single array of
         // specs. We attach to BOTH locations so whichever adapter is active
         // picks it up; the inactive shape is harmless.
         if (! empty($annotations)) {

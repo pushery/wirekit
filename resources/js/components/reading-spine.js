@@ -4,7 +4,7 @@
  * Drives the `<x-wirekit::reading-spine>` Blade component. Builds a TOC
  * from headings inside a target container, renders them as ticks,
  * tracks the active heading via IntersectionObserver, and exposes
- * hover/focus expansion + an optional consumer-supplied filter input.
+ * hover/focus expansion + an optional developer-supplied filter input.
  *
  * Why a separate plugin (not inline x-data): the helper carries enough
  * state and methods (~180 lines) to warrant a Blade-friendly named
@@ -321,7 +321,7 @@ export default (options = {}) => ({
     },
 
     /**
-     * Filter predicate. When the consumer composed a filter slot and
+     * Filter predicate. When the developer composed a filter slot and
      * the input two-way-bound to `this.filter`, this returns whether
      * the item's text matches the search. Empty filter = always show.
      */

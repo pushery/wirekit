@@ -25,7 +25,7 @@
     // Massive CPU/GPU savings on long lists. The intrinsic-size hint
     // prevents the page from jumping when a skeleton scrolls into view.
     // Per-type intrinsic-size defaults are tuned for the variant shape;
-    // consumers can override via the `style` attribute on the wrapper.
+    // developers can override via the `style` attribute on the wrapper.
     $intrinsicSize = match ($type) {
         'avatar' => 'auto 60px',
         'card' => 'auto 200px',

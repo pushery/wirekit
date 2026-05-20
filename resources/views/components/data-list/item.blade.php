@@ -8,7 +8,7 @@
 
     // Each item is a <dt>/<dd> pair displayed side-by-side.
     // Uses inline styles for layout to guarantee rendering in environments
-    // where the consumer's Tailwind JIT may not see vendor view classes
+    // where the developer's Tailwind JIT may not see vendor view classes
     // (preview iframes, SSR without a Tailwind build step, embeds).
     $itemClasses = WireKit::resolveClasses('data-list', 'item', implode(' ', [
         'py-[var(--padding-wk-y-sm)]',

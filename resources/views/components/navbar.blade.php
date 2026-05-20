@@ -6,14 +6,29 @@
     // desktop item row hidden). Useful for (a) previewing the mobile state
     // in docs without resizing the browser, (b) dedicated mobile app views,
     // and (c) embedding the navbar inside a container that is narrower than
-    // the 768px breakpoint. Defaults to `false` so existing consumers keep
+    // the 768px breakpoint. Defaults to `false` so existing developers keep
     // the responsive behavior.
     'forceMobile' => false,
+    // `container` — when true, wraps the inner flex-row in a max-width
+    // container so the navbar's CHROME (background, border, sticky
+    // behaviour) stays edge-to-edge while the CONTENT (brand, nav items,
+    // actions) aligns with the body's container-wrapped column. Mirrors
+    // the brand-bar `container` prop. Default false preserves the prior
+    // edge-to-edge content behaviour.
+    'container' => false,
+    // `max` — container max-width tier when `container=true`. One of
+    // `sm/md/lg/xl/2xl/full`. Defaults to `xl` (the most common
+    // marketing-landing-page content width). Reads the same
+    // `--size-wk-container-*` tokens as the container component so
+    // navbar + body align on the same vertical content-edge spine.
+    'max' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    $max ??= config('wirekit.components.navbar.max', 'xl');
 
     // Navbar — opinionated top navigation bar with responsive mobile menu.
     // Variants: default (with bottom border), bordered, transparent, sticky.
@@ -31,18 +46,35 @@
 
     $stickyClasses = $sticky ? 'sticky top-0 z-[var(--z-wk-sticky)]' : '';
 
-    $containerClasses = WireKit::resolveClasses('navbar', 'container', implode(' ', [
+    $isContainerWrapped = filter_var($container, FILTER_VALIDATE_BOOL);
+    // No hardcoded fallback values — the `--size-wk-container-*` tokens
+    // are the canonical source of truth and ship in dist/wirekit.css.
+    $maxClass = $isContainerWrapped
+        ? match ($max) {
+            'sm' => 'max-w-[var(--size-wk-container-sm)] mx-auto',
+            'md' => 'max-w-[var(--size-wk-container-md)] mx-auto',
+            'lg' => 'max-w-[var(--size-wk-container-lg)] mx-auto',
+            'xl' => 'max-w-[var(--size-wk-container-xl)] mx-auto',
+            '2xl' => 'max-w-[var(--size-wk-container-2xl)] mx-auto',
+            'full' => 'max-w-full',
+            default => WireKit::validateProp('navbar', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full']),
+        }
+        : '';
+
+    $containerClasses = WireKit::resolveClasses('navbar', 'container', implode(' ', array_filter([
         'flex items-center justify-between',
         'px-[var(--padding-wk-x-lg)]',
         'h-16',
-    ]), $scope);
+        $maxClass,
+    ])), $scope);
 
-    $mobileMenuClasses = WireKit::resolveClasses('navbar', 'mobile-menu', implode(' ', [
+    $mobileMenuClasses = WireKit::resolveClasses('navbar', 'mobile-menu', implode(' ', array_filter([
         'border-t border-[var(--color-wk-border)]',
         'px-[var(--padding-wk-x-lg)]',
         'py-[var(--padding-wk-y-md)]',
         'space-y-1',
-    ]), $scope);
+        $maxClass,
+    ])), $scope);
 
     // When $forceMobile is on the desktop row is always hidden and the
     // hamburger is always shown; otherwise we use the `md:` breakpoint

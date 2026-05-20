@@ -21,7 +21,7 @@ import { resolveThemeColors, palette, withOpacity } from '../utils/chart-theme-c
 /**
  * Global registry of every Chart.js instance created by `wirekitChartJs`.
  * Maintained on `window` so the proactive-sweep sees stale instances from
- * earlier Alpine mounts on this page (a docs-site preview-replay button can
+ * earlier Alpine mounts on this page (a docs.wirekit.app preview-replay button can
  * replace its iframe's innerHTML in place, which detaches the old canvas
  * without firing Alpine's `destroy()` hook — Chart.js's per-chart RAF loop
  * survives
@@ -178,7 +178,7 @@ export default function wirekitChartJs(config) {
                 // Apply theme colors to datasets (only if not manually set)
                 this._applyThemeToDatasets(rawConfig, colors);
 
-                // Defensive detach-guard plugin. The docs-site replay button
+                // Defensive detach-guard plugin. The docs.wirekit.app replay button
                 // replaces the preview frame's HTML in-place (innerHTML
                 // reassignment, NOT Alpine teardown), which severs our
                 // canvas from the document without firing the Alpine
@@ -221,7 +221,7 @@ export default function wirekitChartJs(config) {
 
             // Annotations plugin warning (Extension 12.4) — Chart.js requires
             // chartjs-plugin-annotation. Emit a console.warn at init time when
-            // annotations are present but the plugin is missing, so consumers
+            // annotations are present but the plugin is missing, so developers
             // see the cause without a silent visual no-op.
             if (config.options?.plugins?.annotation && typeof Chart !== 'undefined' && !Chart.registry?.plugins?.get?.('annotation')) {
                 console.warn(
@@ -242,7 +242,7 @@ export default function wirekitChartJs(config) {
          * far right of the visible window).
          *
          * 'strict' mode (default) shifts FIFO at wireStreamCap data points.
-         * 'stream' mode grows unboundedly — consumer's responsibility to
+         * 'stream' mode grows unboundedly — developer's responsibility to
          * trim or rotate.
          */
         _setupWireStream() {

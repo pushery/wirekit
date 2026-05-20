@@ -15,7 +15,7 @@ interface IconPreset
      * Stackable extension presets (e.g. heroicons-marketing) may define any
      * aliases. Multiple presets can be active simultaneously via the
      * `wirekit.icons.presets` config array; later entries override earlier
-     * ones, and consumer aliases override all presets.
+     * ones, and developer aliases override all presets.
      *
      * @return array<string, string>
      */

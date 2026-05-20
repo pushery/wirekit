@@ -23,9 +23,28 @@ use Illuminate\Support\Facades\File;
  */
 class VerifyInstallationCommand extends Command
 {
-    protected $signature = 'wirekit:verify';
+    protected $signature = 'wirekit:verify {--tier= : Filter to a single check tier — "package" (asset / config / directive checks for the WireKit install itself) or "environment" (Laravel-level state checks like compiled-view freshness). Default = run every check.}';
 
     protected $description = 'Verify WireKit integration (assets, directives, Tailwind @source, optional deps)';
+
+    /**
+     * Register the `wirekit:doctor` alias on the SAME Symfony command
+     * instance. v2.0.0 shipped a separate DoctorCommand subclass which
+     * appeared as TWO entries in `php artisan list wirekit`; v2.1.0
+     * collapses both names to one canonical entry — `php artisan list`
+     * now shows `wirekit:verify` with `Aliases: wirekit:doctor` underneath,
+     * matching the de-facto Laravel ecosystem norm for diagnostic
+     * commands.
+     *
+     * Existing CI scripts and docs that reference `wirekit:doctor`
+     * continue to work — Symfony Console routes alias invocations to
+     * the canonical command without behaviour change.
+     */
+    protected function configure(): void
+    {
+        parent::configure();
+        $this->setAliases(['wirekit:doctor']);
+    }
 
     private int $passed = 0;
 
@@ -41,23 +60,45 @@ class VerifyInstallationCommand extends Command
 
     public function handle(): int
     {
+        $tier = $this->option('tier');
+        if ($tier !== null && ! in_array($tier, ['package', 'environment'], true)) {
+            $this->error("Unknown tier '{$tier}'. Available: package, environment.");
+
+            return self::INVALID;
+        }
+
         $this->info('WireKit Integration Check');
         $this->line('');
 
-        $this->checkPublishedAssets();
-        $this->checkAssetFreshness();
-        $this->checkTailwindSource();
-        $this->checkConfigPublished();
-        $this->checkBladeDirectives();
-        $this->checkAlpineJs();
-        $this->checkBundleConfig();
-        $this->checkPublishedViewsStaleness();
-        $this->checkFontAssets();
-        $this->checkCssImportAntiPattern();
-        $this->checkOptionalDependencies();
-        $this->checkBuiltCssHasWireKitUtilities();
-        $this->checkTokenAlignment();
-        $this->checkRootDarkSymmetry();
+        // Package-tier checks — verify the WireKit install itself
+        // (assets, config, directives, optional deps). These bite when
+        // the package's own install / upgrade misfires.
+        if ($tier === null || $tier === 'package') {
+            $this->checkPublishedAssets();
+            $this->checkAssetFreshness();
+            $this->checkTailwindSource();
+            $this->checkConfigPublished();
+            $this->checkBladeDirectives();
+            $this->checkAlpineJs();
+            $this->checkBundleConfig();
+            $this->checkPublishedViewsStaleness();
+            $this->checkFontAssets();
+            $this->checkCssImportAntiPattern();
+            $this->checkOptionalDependencies();
+            $this->checkBuiltCssHasWireKitUtilities();
+            $this->checkTokenAlignment();
+            $this->checkRootDarkSymmetry();
+            $this->checkAlpinePluginCleanupHygiene();
+        }
+
+        // Environment-tier checks — verify the Laravel host environment
+        // (compiled-view freshness, config-cache vs source drift, etc.).
+        // These bite during interactive dev / CI even when the package
+        // install is clean. Run `wirekit:doctor --tier=environment` to
+        // get only these without the package-tier noise.
+        if ($tier === null || $tier === 'environment') {
+            $this->checkCompiledViewsFreshness();
+        }
 
         // ── Summary ──
         $this->line('');
@@ -96,7 +137,7 @@ class VerifyInstallationCommand extends Command
     {
         $vendorDir = public_path('vendor/wirekit');
         // The vendor directory exists but the JS/CSS files don't — strong signal
-        // that the consumer ran `wirekit:install` once (which created the dir
+        // that the developer ran `wirekit:install` once (which created the dir
         // and added it to .gitignore), then deployed without `vendor:publish
         // --force` in the post-deploy hook (or pulled with the dir gitignored
         // and the deploy stripped the contents). Different from the
@@ -446,14 +487,14 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Report which CSS-loading path the consumer's app.css uses for wirekit.css.
+     * Report which CSS-loading path the developer's app.css uses for wirekit.css.
      *
      * Both paths work as of v1.3.0 (the file ships with `:root {}` / `.dark {}`
      * blocks that resolve in any consumption context):
      *   1. @wirekitStyles Blade directive — emits a `<link>` tag (the
      *      "fastest" path, no Tailwind compile step required).
      *   2. @import from app.css — Tailwind v4 picks up the variables;
-     *      slightly slower compile but useful when consumers want a single
+     *      slightly slower compile but useful when developers want a single
      *      bundled CSS file from Vite.
      *
      * Pre-v1.3.0 versions used `@theme {}` which browsers skipped as an
@@ -504,7 +545,7 @@ class VerifyInstallationCommand extends Command
      *      otherwise the chart renders blank with a console.error).
      *   2. License-tier reminder — WARN when apex_license is unset / 'community';
      *      PASS when 'commercial' / 'oem'. Never FAIL purely on tier choice
-     *      (license compliance is the consumer's responsibility, not a config
+     *      (license compliance is the developer's responsibility, not a config
      *      error).
      *   3. Adapter-bundle presence — confirm dist/wirekit-apex.js was published
      *      to the public/vendor folder. WARN on absence with a republish hint.
@@ -565,7 +606,7 @@ class VerifyInstallationCommand extends Command
     /**
      * Final post-build sanity: if a Vite manifest exists, the BUILT app CSS
      * should reference at least one WireKit token. Catches the silent-failure
-     * mode where a consumer adds the @source line to app.css but forgets to
+     * mode where a developer adds the @source line to app.css but forgets to
      * run `npm run build` — the source-side check would still pass while the
      * page renders without WireKit utilities.
      *
@@ -615,7 +656,7 @@ class VerifyInstallationCommand extends Command
         $walk($manifest);
 
         if (empty($cssEntries)) {
-            // No CSS in the build output at all — likely a JS-only consumer.
+            // No CSS in the build output at all — likely a JS-only developer.
             // Not necessarily a problem; skip silently.
             return;
         }
@@ -796,7 +837,7 @@ class VerifyInstallationCommand extends Command
      *   --radius      ↔ --radius-wk
      *   --shadow      ↔ --shadow-wk
      *
-     * Skips any pair where either side is a `var(...)` reference (the consumer
+     * Skips any pair where either side is a `var(...)` reference (the developer
      * is intentionally aliasing) or unset. Emits ✓ when families match, ⚠ when
      * they differ with actionable hint.
      */
@@ -866,7 +907,7 @@ class VerifyInstallationCommand extends Command
     /**
      * Extracts the value of a CSS custom property from the content.
      *
-     * Returns null if the token is not found (consumer hasn't set it).
+     * Returns null if the token is not found (developer hasn't set it).
      */
     private function extractTokenValue(string $cssContent, string $token): ?string
     {
@@ -899,17 +940,17 @@ class VerifyInstallationCommand extends Command
     /**
      * Detect `:root` ↔ `.dark` color-token override asymmetry.
      *
-     * If a consumer overrides `--color-wk-accent` in `:root` but DOES NOT
+     * If a developer overrides `--color-wk-accent` in `:root` but DOES NOT
      * provide a matching declaration in `.dark`, dark mode silently falls
      * back to WireKit's default. The existing checkTokenAlignment()
-     * compares Tailwind↔WireKit pairs, not the consumer's own root vs
+     * compares Tailwind↔WireKit pairs, not the developer's own root vs
      * dark blocks — so this complementary check fills that gap.
      *
      * Restricts to `--color-wk-*` family. Font / radius / shadow / motion
      * tokens are typically theme-agnostic (same value in both modes), so
      * asymmetry there is not a bug. Reads `resources/css/app.css` only —
-     * the source of truth for consumer overrides; the built bundle aggregates
-     * Tailwind output with the consumer's source so reading the source is
+     * the source of truth for developer overrides; the built bundle aggregates
+     * Tailwind output with the developer's source so reading the source is
      * cleaner.
      */
     private function checkRootDarkSymmetry(): void
@@ -957,9 +998,116 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
+     * Static analysis for Alpine-plugin defensive-cleanup hygiene.
+     *
+     * Scans the developer's `resources/js/` tree (the canonical location for
+     * custom Alpine plugins extending WireKit) and flags two anti-patterns
+     * that historically pollute developer browser-test console-error
+     * assertions:
+     *
+     *  - **Observer instantiation WITHOUT a `destroy()` cleanup hook.** A
+     *    `new IntersectionObserver(...)` / `new MutationObserver(...)` /
+     *    `new ResizeObserver(...)` stored on `this` survives the Alpine
+     *    instance's GC eligibility because the observer holds a reference
+     *    to the host element. Memory leak + future-callback timing
+     *    surface. Without `destroy()` the observer is never disconnected.
+     *
+     *  - **`disconnect()` call inside an observer callback WITHOUT a
+     *    null-guard on the observer reference.** Browser-queued callbacks
+     *    can execute AFTER Alpine teardown set `this._observer = null`
+     *    (Livewire morph removing the host element pre-intersection is
+     *    the canonical trigger). Without the guard, the callback throws
+     *    `TypeError: Cannot read properties of null` — the bug class
+     *    that WireKit's own `wirekitStatAnimate` / `wirekitAnimate`
+     *    plugins shipped in earlier versions and patched in v2.0.0.
+     *
+     * Heuristic — not a perfect AST analysis, but covers the canonical
+     * shape WireKit's own plugins follow. Edge cases (callback bound via
+     * `.bind(this)`, observer reference held under a different name like
+     * `this._intersectionObserver`) emit a soft WARN with a
+     * docs-cross-link instead of a hard FAIL so developers can opt out
+     * with a `// wirekit-doctor: cleanup-ok` comment when their pattern
+     * is intentionally different.
+     */
+    private function checkAlpinePluginCleanupHygiene(): void
+    {
+        $developerJsDir = resource_path('js');
+        if (! is_dir($developerJsDir)) {
+            // Developers without custom Alpine plugins skip this check.
+            return;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($developerJsDir, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        $issues = [];
+
+        foreach ($iterator as $file) {
+            if (! $file->isFile() || $file->getExtension() !== 'js') {
+                continue;
+            }
+            $path = $file->getPathname();
+            $source = (string) file_get_contents($path);
+            if ($source === '') {
+                continue;
+            }
+
+            // Opt-out comment lets developers acknowledge intentional patterns.
+            if (str_contains($source, '// wirekit-doctor: cleanup-ok')) {
+                continue;
+            }
+
+            $relativePath = str_replace($developerJsDir.'/', '', $path);
+
+            // Anti-pattern 1: observer instantiation without destroy()
+            $hasObserver = preg_match(
+                '/new\s+(?:IntersectionObserver|MutationObserver|ResizeObserver)\s*\(/',
+                $source
+            ) === 1;
+            $hasDestroy = (
+                preg_match('/\bdestroy\s*\(\s*\)\s*\{/', $source) === 1
+                || preg_match('/\bdestroy\s*:\s*(?:function\s*)?\(/', $source) === 1
+            );
+
+            if ($hasObserver && ! $hasDestroy) {
+                $issues[$relativePath][] = 'observer-without-destroy';
+            }
+
+            // Anti-pattern 2: disconnect() inside an observer callback
+            // without a preceding null-guard. We detect any
+            // `.disconnect()` call AND the absence of either:
+            //   - `if (! this._<obs>) return;` somewhere in the same file
+            //   - `this._<obs>?.disconnect()` optional-chaining form
+            $hasDisconnect = preg_match('/\.disconnect\s*\(\s*\)/', $source) === 1;
+            $hasGuard = (
+                preg_match('/if\s*\(\s*!\s*this\._\w*[Oo]bserver\s*\)/', $source) === 1
+                || preg_match('/this\._\w*[Oo]bserver\?\.disconnect\s*\(/', $source) === 1
+            );
+
+            if ($hasDisconnect && $hasObserver && ! $hasGuard) {
+                $issues[$relativePath][] = 'disconnect-without-null-guard';
+            }
+        }
+
+        if ($issues === []) {
+            $this->reportPass('Alpine plugin cleanup hygiene: no developer-side observer-leak or null-guard anti-patterns detected');
+
+            return;
+        }
+
+        $this->reportWarn('Alpine plugin cleanup hygiene: '.count($issues).' file(s) with potential anti-patterns');
+        foreach ($issues as $relativePath => $detected) {
+            $this->line("    <fg=gray>•</> {$relativePath}: ".implode(', ', $detected));
+        }
+        $this->line('    <fg=gray>See: vendor/pushery/wirekit/docs/extending/authoring-custom-alpine-plugins.md</>');
+        $this->line('    <fg=gray>Opt out per-file with a `// wirekit-doctor: cleanup-ok` comment if intentional.</>');
+    }
+
+    /**
      * Extract the body of a CSS rule like `:root { ... }` or `.dark { ... }`.
      * Returns the inner text (without the wrapping braces) or empty string.
-     * Naive — assumes no rule nesting; consumer overrides almost never nest.
+     * Naive — assumes no rule nesting; developer overrides almost never nest.
      */
     private function extractCssBlock(string $css, string $selector): string
     {
@@ -1009,5 +1157,118 @@ class VerifyInstallationCommand extends Command
         }
 
         return $tokens;
+    }
+
+    /**
+     * Detects compiled-view staleness — the canonical reason a developer
+     * test sees "the new prop isn't there" even after their Blade source
+     * carries it. Laravel's `storage/framework/views/` retains pre-edit
+     * compiled templates whose filemtime granularity (1-second) AND
+     * filesystem-cache lag can let stale output survive a fast file-edit
+     * cycle. The first diagnostic chain a developer walks is "did I wire
+     * the prop?" — this check short-circuits that and points at
+     * `php artisan view:clear`.
+     *
+     * Threshold: 60-second buffer between newest source mtime and
+     * newest compiled-view mtime. Below the threshold = no warning
+     * (normal fast-edit window). Above = WARN with the actionable hint.
+     *
+     * False-positive mitigation: this is WARN (not FAIL), the recommended
+     * action is non-destructive, and slow filesystems (NFS / Docker on
+     * macOS) get the same advice they'd give themselves anyway. The
+     * threshold is tuned to bite on "I edited an hour ago and the test
+     * still fails" — not on "I just hit save".
+     */
+    private function checkCompiledViewsFreshness(): void
+    {
+        $compiledDir = storage_path('framework/views');
+        $sourceDir = resource_path('views');
+
+        // No compiled views = fresh state (Laravel will compile on the
+        // next render). Silent skip — nothing meaningful to report.
+        if (! is_dir($compiledDir) || ! is_dir($sourceDir)) {
+            return;
+        }
+
+        $newestCompiled = $this->newestMtimeUnder($compiledDir);
+        if ($newestCompiled === 0) {
+            // Compiled directory exists but is empty. Same fresh-state semantics.
+            return;
+        }
+
+        $newestSource = $this->newestMtimeUnder($sourceDir, ['php']);
+        if ($newestSource === 0) {
+            return;
+        }
+
+        $lagSeconds = $newestSource - $newestCompiled;
+        $thresholdSeconds = 60;
+
+        if ($lagSeconds < $thresholdSeconds) {
+            $this->reportPass('Compiled views are fresh (no staleness detected)');
+
+            return;
+        }
+
+        $this->reportWarn(sprintf(
+            'Compiled views may be stale (resources/views/ has files newer than storage/framework/views/ by %s).',
+            $this->humanDuration($lagSeconds)
+        ));
+        $this->line('  Run: php artisan view:clear');
+        $this->line('  This is the canonical fix when a developer test asserts a Blade prop / class that');
+        $this->line('  was just wired in source but the assertion still fails — the compiled-view cache');
+        $this->line('  retained the pre-edit template.');
+    }
+
+    /**
+     * Recursive newest-mtime scanner with an optional extension filter.
+     * Used by checkCompiledViewsFreshness() for both the source and
+     * compiled directory traversals.
+     *
+     * @param  list<string>  $extensionsAllowlist  Empty = every file qualifies.
+     */
+    private function newestMtimeUnder(string $dir, array $extensionsAllowlist = []): int
+    {
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        $newest = 0;
+        foreach ($iterator as $file) {
+            if (! $file->isFile()) {
+                continue;
+            }
+            if ($extensionsAllowlist !== [] && ! in_array($file->getExtension(), $extensionsAllowlist, true)) {
+                continue;
+            }
+            $mtime = $file->getMTime();
+            if ($mtime > $newest) {
+                $newest = $mtime;
+            }
+        }
+
+        return $newest;
+    }
+
+    /**
+     * Pretty-print a duration in seconds as "Xh Ym" / "Xm Ys" / "Xs".
+     * Used by the compiled-views-staleness check to produce the
+     * actionable lag-amount in the WARN message.
+     */
+    private function humanDuration(int $seconds): string
+    {
+        if ($seconds < 60) {
+            return $seconds.'s';
+        }
+        if ($seconds < 3600) {
+            $minutes = (int) floor($seconds / 60);
+            $remainder = $seconds % 60;
+
+            return $remainder > 0 ? "{$minutes}m {$remainder}s" : "{$minutes}m";
+        }
+        $hours = (int) floor($seconds / 3600);
+        $minutes = (int) floor(($seconds % 3600) / 60);
+
+        return $minutes > 0 ? "{$hours}h {$minutes}m" : "{$hours}h";
     }
 }

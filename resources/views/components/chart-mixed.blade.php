@@ -18,10 +18,10 @@
     //   - ApexCharts: maps to series[].type via the adapter normalizer.
     //
     // Multi-axis: when datasets carry yAxisID values like 'y1' / 'y2',
-    // the consumer-supplied $options must include matching scale entries
+    // the developer-supplied $options must include matching scale entries
     // (Chart.js shape) or yaxis entries (ApexCharts shape). The component
     // does NOT auto-create them — multi-axis configuration is library-
-    // specific and benefits from explicit consumer control.
+    // specific and benefits from explicit developer control.
     //
     // Delegates to <x-wirekit-chart type="mixed"> which both adapters'
     // supportedTypes() include. Per-dataset type fields pass through the

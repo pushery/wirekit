@@ -2,7 +2,7 @@
     'bookmarkKey' => null,
     // Toggles default to null so the density preset's per-primitive default
     // wins. An explicit bool (`:spine="false"`) overrides the density's
-    // baseline. Net effect for the consumer: `density="minimal"` actually
+    // baseline. Net effect for the developer: `density="minimal"` actually
     // hides things; passing the toggle explicitly always wins.
     'progress' => null,
     'spine' => null,

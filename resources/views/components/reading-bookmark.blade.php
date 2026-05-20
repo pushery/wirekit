@@ -22,7 +22,7 @@
 
     // In previewMode, the component renders an inert placeholder — no
     // localStorage reads/writes, no scroll listener, no resume-prompt
-    // pill. Used inside docs-site preview iframes where (a) multiple
+    // pill. Used inside docs.wirekit.app preview iframes where (a) multiple
     // bookmarks on one page would all surface their pills simultaneously
     // (one per localStorage key), and (b) the preview iframe is too
     // narrow to demo the production UX anyway.
@@ -31,7 +31,7 @@
     }
 
     if (! $key) {
-        // Fail loud in dev — `key` is required and consumer-supplied (slug
+        // Fail loud in dev — `key` is required and developer-supplied (slug
         // of the article). Without it we can't disambiguate per-article
         // bookmarks. Same shape as scope-required props elsewhere.
         throw new \InvalidArgumentException('<x-wirekit::reading-bookmark> requires a `key` prop (e.g. key="article-{{ $post->slug }}").');

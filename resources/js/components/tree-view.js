@@ -140,7 +140,7 @@ export default function wirekitTreeView() {
                 focused.click();
             }
 
-            // Dispatch selection event for consumers
+            // Dispatch selection event for developers
             this.$dispatch('tree-node-select', {
                 label: focused.querySelector('span.truncate')?.textContent?.trim(),
             });

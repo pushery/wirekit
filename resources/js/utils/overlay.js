@@ -13,7 +13,7 @@ import { createFocusTrap } from './focus-trap.js';
  */
 let scrollLockCount = 0;
 // Snapshot of style values we mutated, so unlockScroll can restore the page
-// to its exact pre-lock state instead of clearing inline styles the consumer
+// to its exact pre-lock state instead of clearing inline styles the developer
 // might have relied on.
 let scrollLockSnapshot = null;
 
@@ -118,7 +118,7 @@ function unlockScroll() {
     if (scrollLockCount === 0 && scrollLockSnapshot) {
         const { scrollY, bodyOverflow, bodyPosition, bodyTop, bodyWidth, bodyPaddingRight } = scrollLockSnapshot;
         // Restore the inline-style values we captured at lock time. Setting
-        // them back to '' (empty string) where the consumer had no inline
+        // them back to '' (empty string) where the developer had no inline
         // style preserves the cascade — class-based overrides keep working.
         document.body.style.overflow = bodyOverflow;
         document.body.style.position = bodyPosition;

@@ -55,7 +55,7 @@
     // growing beyond the dropzone width; gap-sm for comfortable vertical spacing.
     // list-none + m-0 + p-0 strip the browser-default <ul> disc markers and
     // marker indent; the file list renders icon + filename rows, bullets would clutter.
-    $listClasses = WireKit::resolveClasses('file-upload', 'list', 'list-none m-0 p-0 w-full mt-[var(--padding-wk-y-sm)] flex flex-col gap-[var(--padding-wk-y-sm)]', $scope);
+    $listClasses = WireKit::resolveClasses('file-upload', 'list', 'list-none m-0 p-0 w-full mt-[var(--padding-wk-y-sm)] flex flex-col gap-[var(--space-wk-sm)]', $scope);
     // min-w-0 prevents flex children from overflowing when filenames are long.
     // group class enables hover-reveal of the remove button.
     $fileItemClasses = implode(' ', [

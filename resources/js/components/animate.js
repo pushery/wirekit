@@ -1,7 +1,7 @@
 /**
  * Animation helper Alpine plugin.
  *
- * Drives the `<x-wirekit::reveal>` Blade wrapper and any consumer that
+ * Drives the `<x-wirekit::reveal>` Blade wrapper and any developer that
  * adds `<div x-data="wirekitAnimate('fade-in')">` directly. Triggers an
  * animation by adding the matching `.wk-animate-{preset}` utility class
  * to the host element when a configured trigger fires.
@@ -9,7 +9,7 @@
  * Three trigger modes:
  *   'viewport' — IntersectionObserver, threshold 0.4. (Default.)
  *   'click'    — wait for click on the host element.
- *   'manual'   — consumer dispatches `Alpine.$dispatch('wirekit:reveal')`
+ *   'manual'   — developer dispatches `Alpine.$dispatch('wirekit:reveal')`
  *                from anywhere; the helper listens for that custom event.
  *
  * Honors `prefers-reduced-motion: reduce` — when the OS-level setting is
@@ -92,6 +92,11 @@ export default (preset, options = {}) => ({
                 if (! entries[0].isIntersecting) return;
                 this.fire();
                 if (this.options.once) {
+                    // Null-guard against post-destroy fire — same race condition
+                    // as wirekitStatAnimate. Without the guard, late-fire
+                    // callbacks throw on destroyed observers and pollute
+                    // developer browser-test console-error assertions.
+                    if (! this._observer) return;
                     this._observer.disconnect();
                     this._observer = null;
                 }

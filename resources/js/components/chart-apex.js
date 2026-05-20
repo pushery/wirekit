@@ -160,11 +160,11 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
  * variables. A MutationObserver on <html> + <body> watches for .dark class
  * toggles and re-applies theme colors via chart.updateOptions().
  *
- * License notice — ApexCharts is non-MIT. Consumers below the $2M USD
- * annual-revenue threshold use the Community License (free); consumers
+ * License notice — ApexCharts is non-MIT. Developers below the $2M USD
+ * annual-revenue threshold use the Community License (free); developers
  * above must purchase a Commercial License from ApexCharts. WireKit ships
  * only this Alpine glue (MIT); the JS library (apexcharts npm package) is
- * the consumer's install + license responsibility.
+ * the developer's install + license responsibility.
  *
  * @param {Object} config - ApexCharts options object (chart, series, xaxis,
  *   etc.) emitted by ApexChartsAdapter.normalizeData() + defaultOptions().
@@ -188,7 +188,7 @@ export default function wirekitApexChart(config) {
 
         init() {
             // ApexCharts peer-dependency guard. WireKit ships only the
-            // adapter glue (`dist/wirekit-apex.js`, ~2 KB) — the consumer
+            // adapter glue (`dist/wirekit-apex.js`, ~2 KB) — the developer
             // installs `apexcharts` via npm and exposes it on
             // `window.ApexCharts` per the chart-component docs.
             //
@@ -198,7 +198,7 @@ export default function wirekitApexChart(config) {
             // a blank white box that's indistinguishable from a styling
             // bug). The on-screen panel surfaces the install command, the
             // license reminder, and a link to apexcharts.com/license so
-            // the consumer can act without opening DevTools first.
+            // the developer can act without opening DevTools first.
             if (typeof ApexCharts === 'undefined') {
                 console.error(
                     'WireKit: ApexCharts is not loaded. Install it via npm:\n' +
@@ -217,7 +217,7 @@ export default function wirekitApexChart(config) {
                     }
 
                     // Inline styles only — no Tailwind utilities, no CSS-
-                    // variable lookups (the consumer might have a misconfig
+                    // variable lookups (the developer might have a misconfig
                     // there too; the fallback must paint reliably no matter
                     // what state the surrounding theme is in). Reads as a
                     // muted-yellow advisory panel on light backgrounds and
@@ -285,7 +285,7 @@ window.ApexCharts = ApexCharts;</pre>
 
                 // Track datasets that carry user-supplied colours BEFORE we apply
                 // theme defaults — those are excluded from dark-mode re-theming
-                // so the consumer's explicit colour choices stay frozen across
+                // so the developer's explicit colour choices stay frozen across
                 // the toggle.
                 (rawConfig.series || []).forEach((series, i) => {
                     if (series && series.color) this._manualColorIndices.add(i);
@@ -294,7 +294,7 @@ window.ApexCharts = ApexCharts;</pre>
                 const themed = this._themeApexConfig(rawConfig, colors, fontFamily);
 
                 // Swap the PHP sentinel for the unified tooltip renderer.
-                // Consumer-supplied `tooltip.custom` (a function) wins.
+                // Developer-supplied `tooltip.custom` (a function) wins.
                 if (themed.tooltip && themed.tooltip.custom === 'WIREKIT_DEFAULT_TOOLTIP') {
                     themed.tooltip.custom = renderUnifiedTooltip;
                 }
@@ -304,8 +304,8 @@ window.ApexCharts = ApexCharts;</pre>
                 // gracefully — range-bar shows a raw timestamp,
                 // boxplot collapses the 5-tuple into a single value.
                 // No PHP path exists to pass a JS formatter function
-                // via the consumer's `:options`, so we auto-install
-                // sensible defaults here. Consumer overrides win
+                // via the developer's `:options`, so we auto-install
+                // sensible defaults here. Developer overrides win
                 // (we only install when no formatter / custom is
                 // already set).
                 const apexType = themed.chart?.type;
@@ -690,13 +690,13 @@ window.ApexCharts = ApexCharts;</pre>
                 // state, so the second mount rendered against corrupted
                 // numbers (visible as: bars shrunk to half-height,
                 // legend colours scrambled, axis labels wrong). The
-                // docs-site replay button already reloads the preview
+                // docs.wirekit.app replay button already reloads the preview
                 // iframe — same effect as a fresh page-load, identical
                 // behaviour to every other replayable component — so
                 // the right fix is to NOT intercept the event here and
                 // let the iframe reload take over. `<x-wirekit-chart
                 // data-replayable="true">` continues to opt INTO the
-                // docs-site's button surface; we just don't fight the
+                // docs.wirekit.app's button surface; we just don't fight the
                 // standard reload behaviour with broken in-place logic.
 
                 this._hoverPaused = false;
@@ -723,7 +723,7 @@ window.ApexCharts = ApexCharts;</pre>
                     mount.addEventListener('mouseleave', this._hoverLeaveHandler);
                 }
 
-                // Detach-guard — the docs-site replay button reassigns the
+                // Detach-guard — docs.wirekit.app replay button reassigns the
                 // preview frame's innerHTML, which severs our mount node
                 // without firing Alpine's destroy() hook. ApexCharts'
                 // internal ResizeObserver and animation loop then run on a
@@ -763,7 +763,7 @@ window.ApexCharts = ApexCharts;</pre>
             // `wireStreamMode` / `wireStreamCap` are read but no longer drive
             // an in-line trim — every dispatch flows through `appendData`
             // for smooth slide-in animation. The props remain part of the
-            // public Blade API for consumer-side memory management
+            // public Blade API for developer-side memory management
             // (e.g. periodic `chart.resetSeries()` triggered when the cap
             // is exceeded — left to userland because the trim-via-
             // updateSeries path produces a per-position-Y wobble that
@@ -773,7 +773,7 @@ window.ApexCharts = ApexCharts;</pre>
             // eslint-disable-next-line no-unused-vars
             const _cap = parseInt(root.dataset.wireStreamCap, 10) || 100;
 
-            // Per-microtask batching queue. Streaming-demo / consumer code
+            // Per-microtask batching queue. Streaming-demo / developer code
             // often dispatches ONE event per series per tick (3 events for
             // a 3-series chart at 750 ms cadence). Without batching, each
             // event triggered its own `updateSeries(next, true)` call —
@@ -831,7 +831,7 @@ window.ApexCharts = ApexCharts;</pre>
                 // (~30 seconds of ticks → max ~60 points at 1 Hz) is
                 // cheap, and avoids the per-position-Y-interpolation
                 // wobble that any updateSeries-based trim re-introduces.
-                // Real consumers managing a long-running stream can
+                // Real developers managing a long-running stream can
                 // periodically call `chart.resetSeries()` or attach
                 // `xaxis.range` to bound the VISIBLE window without
                 // touching the underlying series state.
@@ -1018,8 +1018,8 @@ window.ApexCharts = ApexCharts;</pre>
         },
 
         /**
-         * Build a fully-themed ApexCharts options object from the consumer's
-         * raw config + the resolved theme colours. Preserves consumer-supplied
+         * Build a fully-themed ApexCharts options object from the developer's
+         * raw config + the resolved theme colours. Preserves developer-supplied
          * fields (color, type, plotOptions, etc.) — the merge prefers caller
          * values where present.
          */
@@ -1028,7 +1028,7 @@ window.ApexCharts = ApexCharts;</pre>
                 || document.body.classList.contains('dark');
 
             // Auto-fill series-level colors when not user-set. _manualColorIndices
-            // captures consumer choices at init time so dark-mode re-theme skips them.
+            // captures developer choices at init time so dark-mode re-theme skips them.
             //
             // pie / donut / radialBar / polarArea expect `series` as an array of
             // raw numbers (`[10, 20, 30]`), NOT an array of objects. Wrapping a
@@ -1056,7 +1056,7 @@ window.ApexCharts = ApexCharts;</pre>
             // breaking the "I can read magnitude from colour" affordance
             // that's the whole point of a treemap. Skip the colours
             // override for these types so ApexCharts' native shading
-            // kicks in. Consumer-supplied `colors` still wins.
+            // kicks in. Developer-supplied `colors` still wins.
             const apexChartType = rawConfig?.chart?.type;
             const colourScaleTypes = ['treemap', 'heatmap'];
             const resolvedColors = rawConfig.colors
@@ -1158,10 +1158,10 @@ window.ApexCharts = ApexCharts;</pre>
         /**
          * yaxis can be either a single object (one y-axis) or an array
          * (multi-axis charts). We theme each axis individually and preserve
-         * the array shape when the consumer passed one. The themed result
+         * the array shape when the developer passed one. The themed result
          * also gets a default integer-friendly label formatter so a
          * dataset of `[42, 58, 71, 89]` renders y-axis ticks as
-         * `42 / 58 / 71 / 89` instead of `42.00000000000000 …`. Consumer-
+         * `42 / 58 / 71 / 89` instead of `42.00000000000000 …`. Developer-
          * supplied formatters always win.
          */
         _themeYaxis(yaxis, colors, fontFamily) {

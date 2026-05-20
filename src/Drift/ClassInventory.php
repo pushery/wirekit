@@ -103,6 +103,7 @@ final class ClassInventory
         'src/Icons/',
         'src/Sandbox/',
         'src/Support/',
+        'src/Theming/',
         'src/WireKit.php',
         'src/WireKitServiceProvider.php',
     ];
@@ -145,13 +146,13 @@ final class ClassInventory
      *   {root}/resources/js/**\/*.js            → jsEmittedClasses()
      *
      * PHP files under `{root}/app` or `{root}/src` are intentionally NOT
-     * scanned — consumer Laravel apps store domain identifiers, route
+     * scanned — developer Laravel apps store domain identifiers, route
      * names, and seeder strings in those files, not Tailwind class
      * literals. The strict class-shape filter cannot tell `'support-team'`
      * (a team-slug seeder string) apart from `'support-team-50'` (a
-     * hypothetical Tailwind utility), so scanning consumer PHP would
+     * hypothetical Tailwind utility), so scanning developer PHP would
      * round-trip every hyphenated identifier back as a forward-drift
-     * false positive. Consumer apps that DO emit Tailwind classes from
+     * false positive. Developer apps that DO emit Tailwind classes from
      * PHP (via `match` arms or `implode(' ', [...])`) carry that emission
      * in the Blade layer for WireKit's Livewire-page convention; they
      * already get scanned via {root}/resources/views.
@@ -174,7 +175,7 @@ final class ClassInventory
     /**
      * Project-relative subpaths to scan for each extra root, indexed by
      * inventory layer. Blade + JS only — see the constructor docblock
-     * for why consumer PHP scanning is intentionally skipped.
+     * for why developer PHP scanning is intentionally skipped.
      *
      * @return array{blade: list<string>, js: list<string>}
      */
@@ -1093,7 +1094,7 @@ final class ClassInventory
          * defined in dist/wirekit.css (e.g. `.wk-reading-progress__fill`,
          * `.wk-scrollbar`) and shipped as static class strings, NOT as
          * Tailwind utilities. The compiled-CSS-diff would correctly note
-         * they're not in the consumer's Tailwind output, but that's
+         * they're not in the developer's Tailwind output, but that's
          * because they live in dist/wirekit.css, not because they drifted.
          */
         if (str_starts_with($candidate, 'wk-') || str_starts_with($candidate, 'wirekit-')) {

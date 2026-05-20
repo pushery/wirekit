@@ -1,3 +1,4 @@
+{{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
     'max' => config('wirekit.components.container.max', 'xl'),
     'padding' => config('wirekit.components.container.padding', 'md'),
@@ -24,7 +25,7 @@
     // (which uses the same `--padding-wk-x-lg` token) inherits a single
     // content-edge spine — the inner content's visible-text left edge
     // sits exactly where main's would. Vertical section padding still
-    // reads from `--space-wk-*` (consumers apply `py-*` themselves on
+    // reads from `--space-wk-*` (developers apply `py-*` themselves on
     // the container when they want a section rhythm).
     $paddingClasses = match ($padding) {
         'none' => '',

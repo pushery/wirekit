@@ -33,8 +33,8 @@
     // Variant validation — gates against the canonical 6-set + the auto value.
     // 'accent' (legacy) and 'inverse' (legacy) explicitly throw — both were
     // dropped during the family's first public release, no alias preserved
-    // (the family was visibility:admin so no public consumers existed to
-    // break). Consumers wanting the old 'inverse' behaviour set
+    // (the family was visibility:admin so no public developers existed to
+    // break). Developers wanting the old 'inverse' behaviour set
     // `--reading-progress-fill: var(--color-wk-text)` in their :root {} block.
     $variantValue = match ($variant) {
         'primary', 'neutral', 'success', 'warning', 'danger', 'info', 'auto' => $variant,
@@ -47,12 +47,12 @@
     };
 
     // Variant rendering — every variant respects the --reading-progress-fill
-    // token override (consumer-set in :root {} for theme-wide retheming).
+    // token override (developer-set in :root {} for theme-wide retheming).
     // 'info' aliases 'primary' (consistent with alert/callout's primary==info
     // visual-synonym semantic).
-    // 'auto' falls back to currentColor when the consumer hasn't set the fill
+    // 'auto' falls back to currentColor when the developer hasn't set the fill
     // token — useful for embedded contexts (iframes, browser extensions) where
-    // the consumer wants the bar to match the surrounding text color.
+    // the developer wants the bar to match the surrounding text color.
     $variantColor = match ($variantValue) {
         'success' => 'var(--reading-progress-fill, var(--color-wk-success))',
         'warning' => 'var(--reading-progress-fill, var(--color-wk-warning))',
@@ -70,7 +70,7 @@
 
     // Marker class — used by reduced-motion gating in dist/wirekit.css, and by
     // print-stylesheet rules. Doubled-class specificity (`.wk-reading-progress.wk-reading-progress`)
-    // wins over consumer typography wrappers without using `!important`.
+    // wins over developer typography wrappers without using `!important`.
     $rootClass = WireKit::resolveClasses('reading-progress', 'base', implode(' ', [
         'wk-reading-progress',
         $indicator === 'dot'
@@ -102,7 +102,7 @@
 
     // Milestones — Alpine $dispatch boundaries fired ONCE per session at each
     // 25/50/75/100% threshold. Disabled by default (`milestones=false`); when true,
-    // the consumer can listen via `x-on:wirekit:reading-progress:milestone.window`.
+    // the developer can listen via `x-on:wirekit:reading-progress:milestone.window`.
     $milestonesEnabled = filter_var($milestones, FILTER_VALIDATE_BOOL);
 @endphp
 
@@ -242,7 +242,7 @@
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
         {{ $attributes->class([$rootClass, 'wk-reading-progress--dot'])->merge(['aria-label' => 'Reading progress']) }}
         {{-- Inline-style the positioning + sizing so the dot pins to the
-             viewport corner even in environments where the consumer's
+             viewport corner even in environments where the developer's
              Tailwind compile doesn't generate the arbitrary-value
              classes from $rootClass (docs-sandbox iframe-srcdoc,
              standalone HTML, browser extensions). Same regression class
@@ -403,7 +403,7 @@
         x-bind:aria-valuenow="Math.round(progress)"
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
         {{ $attributes->class([$rootClass])->merge(['aria-label' => 'Reading progress']) }}
-        {{-- `max-width: none` defeats consumer-side typography CSS that
+        {{-- `max-width: none` defeats developer-side typography CSS that
              applies a max-width to direct children of a prose wrapper
              (the `@tailwindcss/typography` plugin's `.prose > * {
              max-width: 65ch }` pattern, or any equivalent custom

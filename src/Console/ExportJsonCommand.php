@@ -6,6 +6,8 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
+use Pushery\WireKit\Support\BladeParser;
+use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\VersionResolver;
 
 /**
@@ -41,7 +43,12 @@ class ExportJsonCommand extends Command
 
         foreach (ComponentRegistry::all() as $name => $meta) {
             $bladePath = $this->resolveBladePath($name);
-            $props = $bladePath !== null ? $this->extractProps($bladePath) : [];
+            // PropsParser is the canonical @props extractor. Routes through
+            // the same token-stream parser used by every CLI developer +
+            // the drift-audit guard. Replaces the historical inline regex
+            // parser that silently truncated config(...) defaults and
+            // leaked trailing inline comments.
+            $props = $bladePath !== null ? PropsParser::parseBlade($bladePath) : [];
             $slots = $bladePath !== null ? $this->extractSlots($bladePath) : [];
 
             $components[] = [
@@ -112,124 +119,16 @@ class ExportJsonCommand extends Command
     }
 
     /**
-     * Parse @props([...]) block from a Blade file.
-     * Returns a list of {name, default} objects. Default values are
-     * captured as raw PHP-source strings (not evaluated) so the consumer
-     * can render them faithfully.
-     *
-     * @return list<array{name: string, default: string|null}>
-     */
-    private function extractProps(string $bladePath): array
-    {
-        $contents = file_get_contents($bladePath);
-
-        if (! preg_match('/@props\s*\(\s*\[(.*?)\]\s*\)/s', $contents, $match)) {
-            return [];
-        }
-
-        $body = $match[1];
-
-        // Each line is roughly:  'name' => default,
-        // The default may be a complex expression — capture the raw source up
-        // to the trailing comma at the line's logical end. We split on
-        // top-level commas (not commas inside () or []).
-        $entries = $this->splitTopLevel($body);
-
-        $props = [];
-        foreach ($entries as $entry) {
-            $entry = trim($entry);
-            if ($entry === '') {
-                continue;
-            }
-            if (! preg_match('/^[\'"]([a-zA-Z_][a-zA-Z0-9_-]*)[\'"]\s*(?:=>\s*(.*))?$/s', $entry, $m)) {
-                continue;
-            }
-            $props[] = [
-                'name' => $m[1],
-                'default' => isset($m[2]) ? trim($m[2]) : null,
-            ];
-        }
-
-        return $props;
-    }
-
-    /**
-     * Split a string on top-level commas (not inside parens/brackets).
-     *
-     * @return list<string>
-     */
-    private function splitTopLevel(string $input): array
-    {
-        $parts = [];
-        $current = '';
-        $depth = 0;
-        $len = strlen($input);
-        for ($i = 0; $i < $len; $i++) {
-            $ch = $input[$i];
-            if ($ch === '(' || $ch === '[' || $ch === '{') {
-                $depth++;
-            } elseif ($ch === ')' || $ch === ']' || $ch === '}') {
-                $depth--;
-            }
-            if ($ch === ',' && $depth === 0) {
-                $parts[] = $current;
-                $current = '';
-
-                continue;
-            }
-            $current .= $ch;
-        }
-        if (trim($current) !== '') {
-            $parts[] = $current;
-        }
-
-        return $parts;
-    }
-
-    /**
-     * Parse named-slot references from a Blade file.
-     *
-     * Detection strategy: slots are reliably identified by `@isset($name)`
-     * checks — that's the canonical "is this slot supplied?" pattern.
-     * Bare `$slot` (the default slot) is always included if the file
-     * references it. Bare `{{ $name }}` is too noisy to use as a signal
-     * (catches every prop interpolation and Blade local), so we ignore it
-     * for slot detection.
-     *
-     * Filtering: known prop names from the same component's @props block
-     * are removed, and Blade-reserved names (loop, attributes, errors,
-     * slot) are excluded from the @isset capture but `slot` is added back
-     * if the file uses {{ $slot }}.
+     * Parse named-slot references from a Blade file. Delegates to
+     * `BladeParser::extractSlots()` which is the canonical
+     * Blade-content-as-data surface alongside PropsParser. Kept as a
+     * thin wrapper so the surrounding `handle()` reads cleanly.
      *
      * @return list<string>
      */
     private function extractSlots(string $bladePath): array
     {
-        $contents = file_get_contents($bladePath);
-        $slots = [];
-
-        // Primary signal: isset($name) blocks identify slot-presence checks.
-        // Matches both @isset(...) Blade directive AND isset(...) inside
-        // @if / @elseif clauses (e.g. stat uses @elseif(isset($iconSlot))).
-        if (preg_match_all('/\bisset\s*\(\s*\$([a-zA-Z][a-zA-Z0-9]*)\s*\)/', $contents, $matches)) {
-            foreach ($matches[1] as $name) {
-                $slots[$name] = true;
-            }
-        }
-
-        // Default slot: include 'slot' if the file outputs {{ $slot }} or
-        // checks $slot->isNotEmpty(). Some components use the default slot
-        // without an isset check (it's always defined).
-        if (preg_match('/\$slot\b/', $contents)) {
-            $slots['slot'] = true;
-        }
-
-        // Drop prop names and Blade-reserved names.
-        $propNames = array_column($this->extractProps($bladePath), 'name');
-        $reserved = ['loop', 'attributes', 'errors'];
-        $slotNames = array_diff(array_keys($slots), $propNames, $reserved);
-
-        return array_values(array_unique($slotNames));
+        return BladeParser::extractSlots($bladePath);
     }
 
     /**

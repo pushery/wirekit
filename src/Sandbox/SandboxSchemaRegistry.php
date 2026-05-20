@@ -161,11 +161,11 @@ final class SandboxSchemaRegistry
         ]);
 
         self::register('code-block', [
-            // `language` is a hint for consumer-side syntax highlighters
+            // `language` is a hint for developer-side syntax highlighters
             // (Prism / Shiki / highlight.js). The component itself does NOT
-            // ship a highlighter — it just emits `data-language` for consumers
+            // ship a highlighter — it just emits `data-language` for developers
             // to pick up. The allowed_values list mirrors the highlighter
-            // grammars most consumers actually wire (matches the highlight.js
+            // grammars most developers actually wire (matches the highlight.js
             // common bundle). Keeps the docs Sandbox surface beginner-discoverable
             // by rendering a `<select>` instead of a free-text input.
             'language' => [

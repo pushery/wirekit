@@ -42,7 +42,7 @@ final class SandboxAuditLog
 
     private static function resolveLogDir(): ?string
     {
-        // Use Laravel's storage_path() if available (consumer app);
+        // Use Laravel's storage_path() if available (developer app);
         // otherwise fall back to a sandbox-tests temp dir.
         if (function_exists('storage_path')) {
             return storage_path('logs/sandbox');

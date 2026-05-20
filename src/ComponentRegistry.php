@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit;
 
 use Illuminate\Support\Facades\File;
+use Pushery\WireKit\Support\PropsParser;
 
 class ComponentRegistry
 {
@@ -97,11 +98,17 @@ class ComponentRegistry
             'tour' => ['category' => 'Overlay', 'description' => 'Guided product tour with steps'],
 
             // ── Marketing ──
-            'cta' => ['category' => 'Display', 'description' => 'Call-to-action banner section'],
-            'feature' => ['category' => 'Display', 'description' => 'Individual feature card for feature grids'],
-            'feature-grid' => ['category' => 'Display', 'description' => 'Responsive grid for feature cards'],
+            // Four canonical conversion-focused primitives. `footer` stays
+            // Layout (structural primitive used on any page); `reveal` stays
+            // Display (generic animation primitive); `brand-bar` stays
+            // Navigation (header chrome). The Marketing category is reserved
+            // for components whose PRIMARY purpose is marketing / conversion
+            // — narrow scope, clear semantic.
+            'cta' => ['category' => 'Marketing', 'description' => 'Call-to-action banner section'],
+            'feature' => ['category' => 'Marketing', 'description' => 'Individual feature card for feature grids'],
+            'feature-grid' => ['category' => 'Marketing', 'description' => 'Responsive grid for feature cards'],
             'footer' => ['category' => 'Layout', 'description' => 'Landing page footer with columns and legal'],
-            'hero' => ['category' => 'Display', 'description' => 'Landing page hero with title, lede, and actions'],
+            'hero' => ['category' => 'Marketing', 'description' => 'Landing page hero with title, lede, and actions'],
 
             // ── Display ──
             'accordion' => ['category' => 'Display', 'description' => 'Collapsible content panels'],
@@ -133,6 +140,7 @@ class ComponentRegistry
             'skeleton' => ['category' => 'Display', 'description' => 'Loading placeholder skeleton'],
             'chart-mixed' => ['category' => 'Display', 'description' => 'Multi-type / multi-axis chart (per-dataset type field, dual y-axis)'],
             'sparkline' => ['category' => 'Display', 'description' => 'Inline trend sparkline (axis-less line/area chart)'],
+            'spine-aware' => ['category' => 'Layout', 'description' => 'Opt-in wrapper that joins the page-edge content spine via WireKit::spinePadding()'],
             'stat' => ['category' => 'Display', 'description' => 'Single statistic display'],
             'stats' => ['category' => 'Display', 'description' => 'Statistics group container'],
             'table' => ['category' => 'Display', 'description' => 'Data table with sorting and styling options'],
@@ -192,35 +200,21 @@ class ComponentRegistry
     /**
      * Extract props from a component's blade file by parsing the @props directive.
      *
-     * @return array<string, mixed>
+     * Returns the structured shape emitted by `PropsParser::parseBlade()`:
+     * a list of records with `name`, `default`, `default_normalized`,
+     * `type_hint`, and `comment` fields. **Breaking change in v2.0.0** —
+     * the prior return shape (flat name→default-string map) is gone.
+     * Developers reading the old shape must migrate; the new fields make
+     * inline-comment metadata available without source-grepping AND
+     * close two data-corruption bug classes (truncated `config(...)`
+     * defaults, leaked inline comments) that the prior regex parser
+     * silently shipped.
+     *
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string}>
      */
     public static function extractProps(string $name): array
     {
-        $path = self::bladeFilePath($name);
-
-        if (! file_exists($path)) {
-            return [];
-        }
-
-        $content = file_get_contents($path);
-
-        if (! preg_match('/@props\(\[(.*?)\]\)/s', $content, $match)) {
-            return [];
-        }
-
-        $props = [];
-        // Match 'propName' => value or 'propName' patterns
-        preg_match_all("/['\"]([^'\"]+)['\"]\s*=>\s*(.+?)(?=,\s*['\"]|\s*\])/s", $match[1], $propMatches, PREG_SET_ORDER);
-
-        foreach ($propMatches as $propMatch) {
-            $propName = $propMatch[1];
-            $default = trim($propMatch[2]);
-            // Clean trailing commas and whitespace
-            $default = rtrim($default, ", \t\n\r");
-            $props[$propName] = $default;
-        }
-
-        return $props;
+        return PropsParser::parseBlade(self::bladeFilePath($name));
     }
 
     /**
