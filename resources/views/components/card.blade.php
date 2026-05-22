@@ -63,7 +63,7 @@
 <{{ $tag }}
     data-wk-card
     @if($href) href="{{ $href }}" @endif
-    @if($animateAttr) {!! $animateAttr !!} @endif
+    @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif
     {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$baseClasses, $variantClasses, $interactiveClasses]) }}
 >
     {{ $slot }}

@@ -24,6 +24,39 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
+    // wire:model integration (Strategy B — split-min/split-max):
+    //
+    // Livewire only watches wire:model on <input> / <select> /
+    // <textarea> — not on a generic <div> attribute bag. We extract
+    // any wire:model* directive from the component's outer attributes
+    // and re-emit it on the two hidden inputs as
+    // `wire:model{modifiers}="prop.min"` / `wire:model{modifiers}="prop.max"`.
+    //
+    // The developer side then declares:
+    //
+    //     public array $priceRange = ['min' => 20, 'max' => 80];
+    //
+    // And gets live two-way binding without any inline JS wiring.
+    //
+    // Modifiers (.live, .lazy, .debounce.500ms, .blur) flow through
+    // verbatim — Livewire parses them on the input element the same
+    // way it would on the component tag.
+    $wireModel = null;
+    $wireModelKey = null;
+    foreach ($attributes->getAttributes() as $key => $val) {
+        if (! is_string($key) || ! str_starts_with($key, 'wire:model')) {
+            continue;
+        }
+        $wireModel = $key;          // e.g. 'wire:model' or 'wire:model.live'
+        $wireModelKey = (string) $val; // e.g. 'priceRange'
+        break;
+    }
+    // Strip wire:model* from the outer attribute bag so it doesn't
+    // double-render on the wrapper <div>. Livewire would ignore it
+    // there anyway, but the duplicate read costs perf + clutters the
+    // DOM.
+    $attributes = $wireModel !== null ? $attributes->except($wireModel) : $attributes;
+
     // Thumb classes — shared for both handles
     $thumbClasses = implode(' ', [
         'absolute top-1/2 -translate-y-1/2 -translate-x-1/2',
@@ -92,9 +125,24 @@
         }"
         class="relative"
     >
-        {{-- Hidden inputs for form submission --}}
-        <input type="hidden" name="{{ $name }}[min]" :value="minVal" x-ref="minInput" />
-        <input type="hidden" name="{{ $name }}[max]" :value="maxVal" x-ref="maxInput" />
+        {{-- Hidden inputs for form submission. When the caller passed
+             wire:model* on the component tag, also bind the matching
+             nested-key directive to each input so Livewire picks up
+             value updates as the user drags. --}}
+        <input
+            type="hidden"
+            name="{{ $name }}[min]"
+            :value="minVal"
+            @if($wireModel) {{ $wireModel }}="{{ $wireModelKey }}.min" @endif
+            x-ref="minInput"
+        />
+        <input
+            type="hidden"
+            name="{{ $name }}[max]"
+            :value="maxVal"
+            @if($wireModel) {{ $wireModel }}="{{ $wireModelKey }}.max" @endif
+            x-ref="maxInput"
+        />
 
         {{-- Track --}}
         <div class="relative h-2 rounded-full bg-[var(--color-wk-bg-muted)]" x-ref="track">
@@ -140,12 +188,17 @@
             @keydown.arrow-left.prevent="stepMax(-1)"
             @pointerdown="startDrag('max', $event)"
         ></div>
-    </div>
 
-    {{-- Value display --}}
-    <div class="flex justify-between text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-live="polite">
-        <span x-text="minVal">{{ $initialMin }}</span>
-        <span x-text="maxVal">{{ $initialMax }}</span>
+        {{-- Value display. Lives INSIDE the x-data scope so the
+             x-text bindings reach minVal / maxVal at runtime.
+             Pre-fix the spans rendered OUTSIDE the closed x-data
+             div, producing `Alpine Expression Error: minVal is not
+             defined` (twice per render) AND the displayed numbers
+             never updated on drag. --}}
+        <div class="mt-2 flex justify-between text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-live="polite">
+            <span x-text="minVal">{{ $initialMin }}</span>
+            <span x-text="maxVal">{{ $initialMax }}</span>
+        </div>
     </div>
 
     @if($hint)

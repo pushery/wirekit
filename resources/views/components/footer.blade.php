@@ -63,7 +63,7 @@
     ]), $scope);
 @endphp
 
-<footer {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
+<footer {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     <div class="{{ $innerMaxClass }} mx-auto">
         @isset($columns)
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-[var(--space-wk-xl)] mb-[var(--space-wk-xl)]">

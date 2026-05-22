@@ -43,13 +43,20 @@ namespace Pushery\WireKit\Support;
  *   - `comment` — the trailing same-line `// …` comment after the prop's
  *     comma, if present. The leading `//` is stripped and the value is
  *     trimmed. Null when no comment.
+ *   - `examples` — `@example "value"` annotations extracted from the
+ *     trailing comment. List of string examples; empty list when none.
+ *     Each annotation must follow the shape `@example "..."` (double-
+ *     quoted; backslash-escaped quotes supported). Multiple annotations
+ *     in the same comment are all captured. Surfaces in the schema as
+ *     `examples: ["1 md:2 lg:4"]` for props whose value-shape is
+ *     non-obvious from the default alone (grid's `cols`, etc).
  */
 final class PropsParser
 {
     /**
      * Parse the `@props([…])` block from a Blade file on disk.
      *
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string}>
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
      */
     public static function parseBlade(string $bladePath): array
     {
@@ -73,7 +80,7 @@ final class PropsParser
      * use case demands multi-block parsing, extend the regex below to
      * `preg_match_all` and aggregate the results.
      *
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string}>
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
      */
     public static function parseSource(string $source): array
     {
@@ -158,7 +165,7 @@ final class PropsParser
      * Walk the PHP token stream and extract array entries.
      *
      * @param  list<array{0: int, 1: string, 2: int}|string>  $tokens
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string}>
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
      */
     private static function walkTokens(array $tokens): array
     {
@@ -343,7 +350,7 @@ final class PropsParser
 
     /**
      * @param  array{name: ?string, default_tokens: list<mixed>, comment: ?string, state: string}  $current
-     * @return array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string}
+     * @return array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}
      */
     private static function finalizeEntry(array $current): array
     {
@@ -389,7 +396,43 @@ final class PropsParser
             // field exists today so the return shape is stable from v2.0.0.
             'type_hint' => null,
             'comment' => $current['comment'],
+            'examples' => self::extractExamples($current['comment']),
         ];
+    }
+
+    /**
+     * Extract every `@example "value"` annotation from a trailing comment.
+     *
+     * Pattern: `@example "..."` — double-quoted, backslash-escaped quotes
+     * supported. Annotations are documented in the per-component
+     * `@props([...])` blocks for props whose accepted value-shape is
+     * non-obvious from the default alone (grid's `cols` accepts
+     * `"1 md:2 lg:4"` Tailwind-style breakpoint-tokens, for example).
+     *
+     * Returns an empty list when no comment, or when the comment has no
+     * `@example` annotations.
+     *
+     * @return list<string>
+     */
+    private static function extractExamples(?string $comment): array
+    {
+        if ($comment === null || $comment === '') {
+            return [];
+        }
+        // Match every `@example "..."` with non-greedy capture + backslash-
+        // escape support. The `(?:\\.|[^"\\])*` pattern accepts any
+        // character except an unescaped quote OR any backslash-escaped
+        // character (including escaped quotes).
+        if (! preg_match_all('/@example\s+"((?:\\\\.|[^"\\\\])*)"/', $comment, $matches)) {
+            return [];
+        }
+
+        // Un-escape the captured strings: backslash-escaped quotes become
+        // literal quotes (`\"` → `"`).
+        return array_map(
+            fn (string $raw): string => str_replace(['\\"', '\\\\'], ['"', '\\'], $raw),
+            $matches[1]
+        );
     }
 
     /**

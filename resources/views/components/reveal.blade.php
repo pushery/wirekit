@@ -78,12 +78,27 @@
         in_array($delay, ['none', 'sm', 'md', 'lg', 'xl'], true) => "var(--motion-wk-delay-{$delay})",
         default => WireKit::validateProp('reveal', 'delay', $delay, ['none', 'sm', 'md', 'lg', 'xl']),
     };
+
+    // Compose caller's `style=…` with our internal `animation-delay` into
+    // a SINGLE style attribute. Without this, the template emitted two
+    // style attributes on the same <div> — caller-passed (e.g.
+    // `style="--wk-stagger-step: 0ms"`) plus our @if-rendered
+    // `style="animation-delay: 1000ms"`. Per HTML5 parsing, duplicate
+    // attributes resolve to the FIRST and silently drop the second, so
+    // the animation-delay was never applied whenever a caller passed
+    // any inline style — and every gallery preview in animations.md
+    // does, so the delay was universally dropped on the gallery (and
+    // by extension every developer composition that passed inline
+    // style for any reason).
+    $callerStyle = trim((string) $attributes->get('style', ''), '; ');
+    $internalStyle = $delayValue ? "animation-delay: {$delayValue}" : '';
+    $mergedStyle = trim(implode('; ', array_filter([$callerStyle, $internalStyle], fn ($s) => $s !== '')));
 @endphp
 
 <div
-    {{ $attributes->merge(['data-replayable' => 'true', 'class' => 'w-full']) }}
+    {{ $attributes->except('style')->merge(['data-replayable' => 'true', 'class' => 'w-full']) }}
     x-data="wirekitAnimate('{{ $validatedPreset }}', {{ $optionsJson }})"
-    @if($delayValue) style="animation-delay: {{ $delayValue }}" @endif
+    @if($mergedStyle !== '') style="{{ $mergedStyle }}" @endif
 >
     {{ $slot }}
 </div>

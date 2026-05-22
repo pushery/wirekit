@@ -1,5 +1,5 @@
 @props([
-    'cols' => config('wirekit.components.grid.cols', 1),
+    'cols' => config('wirekit.components.grid.cols', 1), // @example "1 md:2 lg:4" @example "1 sm:2 md:3 lg:4 xl:6"
     'gap' => config('wirekit.components.grid.gap', 'md'),
     'align' => null,
     'as' => 'div',

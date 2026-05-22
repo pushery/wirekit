@@ -3,6 +3,17 @@
     'datasets' => [],
     'options' => [],
     'height' => '380px',
+    // Pass-through props that flow into the underlying class-based
+    // chart delegate. Without these declared here, attribute-bag
+    // would NOT carry them onto the inner chart — the chart-mixed wrapper
+    // is anonymous Blade, so attributes only flow where explicitly
+    // bound. Each prop mirrors the Chart class constructor (src/Components/Chart.php).
+    'wireStream' => null,
+    'wireStreamMode' => 'strict',
+    'wireStreamCap' => 100,
+    'annotations' => [],
+    'inline' => false,
+    'replayable' => false,
     'scope' => null,
 ])
 
@@ -72,5 +83,11 @@
         :datasets="$datasets"
         :options="$options"
         :height="$height"
+        :wireStream="$wireStream"
+        :wireStreamMode="$wireStreamMode"
+        :wireStreamCap="$wireStreamCap"
+        :annotations="$annotations"
+        :inline="$inline"
+        :replayable="$replayable"
     />
 </div>

@@ -149,7 +149,7 @@
     $gradientClasses = $gradient ? $gradientOverlayClass : '';
 @endphp
 
-<section {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
+<section {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     @if($gradient)
         {{-- Gradient overlay is anchored to the outer <section> so it
              fills the section edge-to-edge (visually clean across the
@@ -168,7 +168,15 @@
     @endif
     <div class="relative max-w-[var(--size-wk-container-xl,80rem)] mx-auto">
         <div class="flex {{ $outerFlexClasses }} {{ $outerItemsClasses }} gap-[var(--space-wk-xl,2.5rem)]">
-            <div class="{{ $copyColClasses }} {{ $textAlignClasses }}">
+            {{-- min-w-0 escapes flex-shrink's default min-content floor;
+                 w-full lg:w-auto makes the column take parent's full
+                 inline-size on flex-col, then revert to content-sized on
+                 lg:flex-row. Without these, a wide unbreakable child (a
+                 long URL in the lede, a wide ascii-art header) drives the
+                 column's min-content past the section's edge on <lg
+                 viewports, overflowing the page. Same shape applied to
+                 the aside column below for symmetry. --}}
+            <div class="{{ $copyColClasses }} {{ $textAlignClasses }} min-w-0 w-full lg:w-auto">
                 @isset($eyebrow)
                     <div class="mb-[var(--space-wk-md,1rem)]">{{ $eyebrow }}</div>
                 @endisset
@@ -193,7 +201,17 @@
             </div>
 
             @isset($aside)
-                <div class="{{ $asideColClasses }}">{{ $aside }}</div>
+                {{-- min-w-0 w-full lg:w-auto — see rationale on the copy
+                     column above. The aside is the higher-risk side
+                     because developers commonly drop a
+                     <x-wirekit::code-block> into the aside; <pre>'s
+                     white-space: pre keeps the LONGEST line non-breakable,
+                     which without min-w-0 escapes the column's intrinsic
+                     min-content sizing and overflows the page on narrow
+                     viewports. The code-block's own overflow-x-auto then
+                     handles intra-line horizontal scrolling within the
+                     column's now-constrained inline-size. --}}
+                <div class="{{ $asideColClasses }} min-w-0 w-full lg:w-auto">{{ $aside }}</div>
             @endisset
         </div>
     </div>

@@ -26,6 +26,16 @@
             'text-[color:var(--color-wk-accent-content)]',
             'border-[color-mix(in_srgb,var(--color-wk-accent)_25%,transparent)]',
         ]),
+        // 'accent' is the high-contrast filled variant — the developer asks
+        // for the badge to stand out against surrounding chrome (CTA hero,
+        // pricing-card "Most popular" pill, marketing "New" eyebrow). Uses
+        // the canonical accent fill + accent-fg foreground for maximum
+        // contrast in both light and dark themes.
+        'accent' => implode(' ', [
+            'bg-[var(--color-wk-accent)]',
+            'text-[color:var(--color-wk-accent-fg)]',
+            'border-[var(--color-wk-accent)]',
+        ]),
         'success' => implode(' ', [
             'bg-[color-mix(in_srgb,var(--color-wk-success)_12%,var(--color-wk-bg))]',
             // -text variant calibrated for ≥4.5:1 on the soft-tone bg
@@ -53,7 +63,7 @@
             'text-[color:var(--color-wk-text)]',
             'border-[var(--color-wk-border-subtle)]',
         ]),
-        default => WireKit::validateProp('badge', 'intent', $intent, ['primary', 'success', 'warning', 'danger', 'info', 'neutral']),
+        default => WireKit::validateProp('badge', 'intent', $intent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']),
     };
 
     // Size classes: height, padding, font size, radius
@@ -79,6 +89,9 @@
 
     // Dot indicator color matches intent text color for cohesion
     $dotColorClass = match ($intent) {
+        // For 'accent' (the filled-background variant), the dot reads on a
+        // colored field — use accent-fg so it contrasts with the bg.
+        'accent' => 'bg-[var(--color-wk-accent-fg)]',
         'primary', 'info' => 'bg-[var(--color-wk-accent)]',
         'success' => 'bg-[var(--color-wk-success)]',
         'warning' => 'bg-[var(--color-wk-warning)]',

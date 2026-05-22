@@ -4,6 +4,7 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\TourStepCounter;
     use Pushery\WireKit\WireKit;
 
     // Tour — step-by-step product tour overlay.
@@ -11,6 +12,15 @@
     $classes = WireKit::resolveClasses('tour', 'base', implode(' ', [
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
+
+    // Reset the per-render sequential counter so every child
+    // `<x-wirekit::tour.step>` whose `$index` is null gets auto-
+    // assigned 0, 1, 2, … in document order. Without this, every
+    // step defaulted to `data-wk-tour-step="0"` and the tour's
+    // next() JS could only locate the first step. See
+    // `Pushery\WireKit\Support\TourStepCounter` for the full
+    // mechanism + multi-tour-on-same-page rationale.
+    TourStepCounter::reset();
 @endphp
 
 <div

@@ -15,6 +15,6 @@
     ]), $scope);
 @endphp
 
-<thead {{ $attributes->class([$classes]) }}>
+<thead data-wk-table-head {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </thead>

@@ -17,10 +17,15 @@ import { createOverlay } from '../utils/overlay.js';
 export default function wirekitAlertDialog(config = {}) {
     const overlay = createOverlay({
         name: config.name || '',
-        // Alert dialogs are non-dismissible by default for safety
+        // Alert dialogs are non-dismissible by default for safety —
+        // a stray backdrop click should NOT approve a destructive action.
         dismissible: config.dismissible === true,
         showEvent: 'wirekit-alert-dialog-show',
         closeEvent: 'wirekit-alert-dialog-close',
+        // ESC is a deliberate user action — even non-dismissible dialogs
+        // need a keyboard escape hatch so users aren't trapped. Backdrop
+        // click stays gated by `dismissible` (the safety-strict half).
+        escapeAlwaysCloses: true,
     });
 
     return {

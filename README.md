@@ -105,7 +105,7 @@ A wide catalogue of components organised by category. Browse, search, and try ev
 | **Utilities** | fonts, icon, chart, chart-mixed, sparkline, scroll-area, scroll-to-top, structured-data |
 | **Specialized** | resizable, carousel, calendar, tour, qr-code, action-bar, prose, liquid-glass |
 | **Reading** | reading-progress, reading-spine, reading-toc, reading-minimap, reading-bookmark, reading-meta, reading-shell |
-| **Animation** | reveal, replay-button |
+| **Animation** | reveal |
 | **Feedback** | toast |
 
 ## Theming & Customization

@@ -85,6 +85,8 @@ class VerifyInstallationCommand extends Command
             $this->checkFontAssets();
             $this->checkCssImportAntiPattern();
             $this->checkOptionalDependencies();
+            $this->checkChartUsageWithoutAdapter();
+            $this->checkChartJsRegistration();
             $this->checkBuiltCssHasWireKitUtilities();
             $this->checkTokenAlignment();
             $this->checkRootDarkSymmetry();
@@ -256,6 +258,22 @@ class VerifyInstallationCommand extends Command
      */
     private function checkBladeDirectives(): void
     {
+        // Bare-install INFO: when no layout file exists at any canonical
+        // install path AND no @import alternative is configured in
+        // app.css, emit a single INFO hint and skip the directive scan.
+        // The natural state right after `wirekit:install` on a fresh
+        // Laravel skeleton is "layout not yet written" — emitting two
+        // FAIL lines plus the "Built app CSS" FAIL reads as if the
+        // install failed, when actually the developer's next step is
+        // simply to write the layout. Subsumes the historical "No Blade
+        // files found" WARN because the empty-views-dir case is a
+        // strict subset of "no canonical layout".
+        if (! $this->hasAnyLayoutFile() && ! $this->hasWirekitCssImportInAppCss()) {
+            $this->reportInfo('Layout file not yet created — `wirekit:install` injects @wirekitStyles + @wirekitScripts on a re-run once you add `resources/views/components/layouts/app.blade.php` (or `resources/views/layouts/app.blade.php`)');
+
+            return;
+        }
+
         $bladeFiles = $this->findAllBladeFiles();
 
         if ($bladeFiles === []) {
@@ -481,9 +499,72 @@ class VerifyInstallationCommand extends Command
                 $this->line('  Fix: php artisan vendor:publish --tag=wirekit-fonts --force');
             }
         } else {
-            $this->reportWarn('Custom fonts configured but font assets not published');
-            $this->line('  Fix: php artisan vendor:publish --tag=wirekit-fonts');
+            // Package-default font configuration ('sans' => 'inter' shipped
+            // in config/wirekit.php) + no published assets is the natural
+            // state of a fresh install — emit an INFO hint, not a WARN,
+            // so the doctor summary doesn't read as if something failed.
+            // Anything OTHER than the package default IS a real warning
+            // (the developer asked for a non-default font but the assets
+            // never got published, which means it won't render).
+            if ($this->isPackageDefaultFontConfig($fontConfig)) {
+                $this->reportInfo("Default 'inter' sans font configured (system-ui fallback works out of the box)");
+                $this->line('  To self-host: php artisan vendor:publish --tag=wirekit-fonts');
+            } else {
+                $this->reportWarn('Custom fonts configured but font assets not published');
+                $this->line('  Fix: php artisan vendor:publish --tag=wirekit-fonts');
+            }
         }
+    }
+
+    /**
+     * Detect whether the font config matches the package-shipped default
+     * (config/wirekit.php → 'sans' => 'inter', serif + mono null). When
+     * true, the "assets not published" state is a natural bare-install
+     * condition, not a warning.
+     */
+    private function isPackageDefaultFontConfig(array $fontConfig): bool
+    {
+        return ($fontConfig['sans'] ?? null) === 'inter'
+            && empty($fontConfig['serif'] ?? null)
+            && empty($fontConfig['mono'] ?? null);
+    }
+
+    /**
+     * Mirror of InstallCommand::addBladeDirectives() layout-path detection.
+     * Used by checkBladeDirectives() to distinguish "no layout file yet"
+     * (INFO — bare install, next step is on the developer) from "layout
+     * exists but directives missing" (FAIL — real misconfiguration).
+     *
+     * Returns true when EITHER a single conventional layout file exists
+     * (`views/components/layout.blade.php`) OR any `.blade.php` file lives
+     * inside one of the conventional layout DIRECTORIES (Laravel 12's
+     * `views/components/layouts/` or the legacy `views/layouts/`).
+     * The directory-scan flavour matches real-world projects that ship
+     * multiple sibling layouts (`app.blade.php`, `guest.blade.php`, etc.).
+     */
+    private function hasAnyLayoutFile(): bool
+    {
+        $singleFile = resource_path('views/components/layout.blade.php');
+        if (file_exists($singleFile)) {
+            return true;
+        }
+
+        $layoutDirs = [
+            resource_path('views/components/layouts'),
+            resource_path('views/layouts'),
+        ];
+
+        foreach ($layoutDirs as $dir) {
+            if (! is_dir($dir)) {
+                continue;
+            }
+            $files = glob($dir.'/*.blade.php');
+            if ($files !== false && count($files) > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -601,6 +682,119 @@ class VerifyInstallationCommand extends Command
                 .'the ApexCharts adapter bundle alongside the main bundle.'
             );
         }
+    }
+
+    /**
+     * Catches the first-run-chart-crash UX: a developer drops
+     * `<x-wirekit-chart>` (or `<x-wirekit::chart-mixed>` / a sparkline)
+     * into a fresh app but `config('wirekit.charts.library')` is still
+     * the package default of `null`. Without this check, the symptom is
+     * either a 500 (production) or a placeholder div (debug) — both
+     * land on the developer with no upstream signal that the doctor
+     * could have caught the misconfiguration. Emits a single WARN
+     * naming the first file the chart-tag is referenced in.
+     */
+    private function checkChartUsageWithoutAdapter(): void
+    {
+        // Adapter already configured — nothing to surface.
+        if (config('wirekit.charts.library') !== null) {
+            return;
+        }
+
+        $offenders = [];
+        foreach ($this->findAllBladeFiles() as $file) {
+            $content = (string) file_get_contents($file);
+            // Strip Blade comments first — same comment-leakage class
+            // the directive-order check guards against. A docs page
+            // describing the chart tag inside `{{-- ... --}}` should
+            // not count as a real usage.
+            $stripped = preg_replace('/\{\{--.*?--\}\}/s', '', $content) ?? $content;
+            if (
+                str_contains($stripped, '<x-wirekit-chart')
+                || str_contains($stripped, '<x-wirekit::chart-mixed')
+                || str_contains($stripped, '<x-wirekit::chart-spark')
+            ) {
+                $offenders[] = $file;
+            }
+        }
+
+        if ($offenders === []) {
+            return;
+        }
+
+        $first = $offenders[0];
+        $count = count($offenders);
+        $extraSuffix = $count > 1 ? sprintf(' (+%d more)', $count - 1) : '';
+
+        $this->reportWarn('<x-wirekit-chart> used but charts.library is null'.$extraSuffix);
+        $this->line("  First reference: {$first}");
+        $this->line('  Fix: set `\'charts\' => [\'library\' => \'chartjs\']` in config/wirekit.php, then `npm install chart.js`.');
+        $this->line('  In APP_DEBUG=true the chart renders a placeholder div instead of crashing the page.');
+    }
+
+    /**
+     * The "config says chartjs but the JS bundle never registered it"
+     * gap: developer flipped `charts.library` to `chartjs` AND ran
+     * `npm install chart.js` BUT didn't add the
+     * `Chart.register(...registerables)` line to `resources/js/app.js`.
+     * The chart component renders + mounts; the Alpine adapter runs;
+     * Chart.js then prints a friendly "Chart.js is not loaded" error
+     * to the browser console (chart.js:107) and silently fails to draw.
+     *
+     * Doctor catches this UPSTREAM by scanning `resources/js/app.js`
+     * for the canonical registration pattern. WARN with the actionable
+     * snippet when:
+     *   - `config('wirekit.charts.library') === 'chartjs'` (developer
+     *     enabled the chartjs adapter)
+     *   - `resources/js/app.js` exists
+     *   - The file does NOT contain BOTH an `import ... chart.js` AND
+     *     a `Chart.register(` call.
+     *
+     * Silently skip in every other scenario:
+     *   - chartjs not selected → no JS bootstrap needed
+     *   - resources/js/app.js missing → bare-install path (handled by
+     *     other checks)
+     *   - registration already present → developer has done the right
+     *     thing; nothing to surface.
+     */
+    private function checkChartJsRegistration(): void
+    {
+        if (config('wirekit.charts.library') !== 'chartjs') {
+            return;
+        }
+
+        $appJsPath = resource_path('js/app.js');
+        if (! file_exists($appJsPath)) {
+            return;
+        }
+
+        $contents = (string) file_get_contents($appJsPath);
+
+        // Strip JS // comments before scanning so a "// Missing:
+        // Chart.register(...)" hint comment doesn't false-pass the
+        // detection. Block comments are left as-is (rare in the
+        // register-snippet area; treating them naively would risk
+        // stripping legitimate code inside a `/* */` block).
+        $stripped = preg_replace('~//[^\n]*~', '', $contents) ?? $contents;
+
+        // Match the canonical patterns the chart.js documentation
+        // recommends. Be lenient on whitespace and quote style.
+        $hasImport = (bool) preg_match('/import\s+.*\s+from\s+[\'"]chart\.js[\'"]/', $stripped);
+        $hasRegister = str_contains($stripped, 'Chart.register(');
+
+        if ($hasImport && $hasRegister) {
+            return;
+        }
+
+        $this->reportWarn('Chart.js adapter selected but resources/js/app.js is missing the registration snippet');
+        $this->line('  Fix: add the following to resources/js/app.js, then `npm run build`:');
+        $this->line('');
+        $this->line('    import { Chart, registerables } from \'chart.js\';');
+        $this->line('    Chart.register(...registerables);');
+        $this->line('');
+        $this->line('  Without this, every <x-wirekit-chart> renders but draws nothing — chart.js logs a friendly');
+        $this->line('  console.error at runtime and gives up. See https://docs.wirekit.app/integration#optional-dependencies');
+        $this->line('  for the full setup walkthrough.');
     }
 
     /**
@@ -820,6 +1014,20 @@ class VerifyInstallationCommand extends Command
     {
         $this->line("  <fg=yellow>!</> {$message}");
         $this->warned++;
+    }
+
+    /**
+     * INFO tier — informational, expected on bare installs, NOT a problem.
+     * Distinct from PASS (everything's fine) and WARN (something the
+     * developer should look at). INFO is "this is the natural state of a
+     * fresh install; here's the next step if you want to act on it."
+     * Counts as PASS in the summary tally so the summary line doesn't
+     * read as if something failed.
+     */
+    private function reportInfo(string $message): void
+    {
+        $this->line("  <fg=blue>i</> {$message}");
+        $this->passed++;
     }
 
     /**

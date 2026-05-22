@@ -1243,20 +1243,26 @@ CSS;
             $components = [];
             foreach (ComponentRegistry::all() as $name => $meta) {
                 $bladePath = $this->resolveBladePathForSchema($name);
-                $props = $bladePath !== null
-                    ? PropsParser::parseBlade($bladePath)
-                    : [];
+                // Single source of truth — handles both anonymous-Blade
+                // (PropsParser) and class-based (ClassPropsExtractor)
+                // components uniformly.
+                $props = ComponentRegistry::extractProps($name);
                 $slots = $bladePath !== null
-                    ? BladeParser::extractSlots($bladePath)
+                    ? BladeParser::extractSlotsWithMetadataFromSource(
+                        (string) file_get_contents($bladePath),
+                        $bladePath
+                    )
                     : [];
+                $subComponents = $this->discoverSubComponentsForSchema($name);
                 $components[] = [
                     'name' => $name,
-                    'tag' => "<x-wirekit::{$name}>",
+                    'tag' => ComponentRegistry::tag($name),
                     'category' => $meta['category'],
                     'description' => $meta['description'],
                     'docs_url' => "https://docs.wirekit.app/components/{$name}",
                     'props' => $props,
                     'slots' => $slots,
+                    'sub_components' => $subComponents,
                 ];
             }
 
@@ -1302,5 +1308,34 @@ CSS;
         }
 
         return null;
+    }
+
+    /**
+     * Mirror of ExportJsonCommand::discoverSubComponents() — kept
+     * inline here so the .wirekit-schema.json writer doesn't have to
+     * spawn a sub-process. Same heuristic: scan the sibling
+     * `resources/views/components/<name>/` directory, skip
+     * `index.blade.php`, return sorted dot-separated qualified names.
+     *
+     * @return list<string>
+     */
+    private function discoverSubComponentsForSchema(string $name): array
+    {
+        $subDir = __DIR__.'/../../resources/views/components/'.$name;
+        if (! is_dir($subDir)) {
+            return [];
+        }
+        $subFiles = glob($subDir.'/*.blade.php') ?: [];
+        $subs = [];
+        foreach ($subFiles as $file) {
+            $subName = basename($file, '.blade.php');
+            if ($subName === 'index') {
+                continue;
+            }
+            $subs[] = $name.'.'.$subName;
+        }
+        sort($subs);
+
+        return $subs;
     }
 }

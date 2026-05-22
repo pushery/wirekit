@@ -39,9 +39,10 @@ class ExportBlocksCommand extends Command
 
     /**
      * Hidden from `php artisan list` and from the public CLI reference doc
-     * until the docs site's `/blocks` gallery flips from `visibility: admin`
-     * to `visibility: guest`. The command itself works fine — it just
-     * doesn't surface in developer-facing tooling yet.
+     * — the command itself works fine but its companion docs catalog is
+     * still in pre-release staging. Once the catalog is published, flip
+     * to `protected $hidden = false;` and add a `## wirekit:export-blocks`
+     * section to `docs/cli-reference.md`.
      */
     protected $hidden = true;
 

@@ -12,6 +12,6 @@
     ]), $scope);
 @endphp
 
-<tbody {{ $attributes->class([$classes]) }}>
+<tbody data-wk-table-body {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </tbody>

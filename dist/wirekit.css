@@ -608,6 +608,31 @@
 .wk-animate-normal { animation-duration: var(--motion-wk-duration-normal); }
 .wk-animate-slow   { animation-duration: var(--motion-wk-duration-slow); }
 
+/* Pre-hide elements waiting for an entrance (-in) animation.                */
+/* Without this rule, elements that are ALREADY IN VIEWPORT at page-load    */
+/* (the marketing-landing-page hero is the canonical case) render at        */
+/* opacity 1, then IntersectionObserver fires almost immediately, then JS   */
+/* adds `wk-animate-{preset}-in` which snaps the element to its `from`     */
+/* state (opacity 0) via animation-fill-mode: backwards — producing a      */
+/* perceptible "flash to invisible" before the animation runs. Elements    */
+/* not initially in viewport never showed the flash because they animated  */
+/* cleanly from the from-state on scroll-into-view.                        */
+/*                                                                         */
+/* Scope (the four :not() clauses, in order):                              */
+/*  - exclude `trigger:"click"`  — click-trigger elements must stay        */
+/*    visible until the user clicks; pre-hiding would render a permanent   */
+/*    invisible target with no affordance to interact.                     */
+/*  - exclude `trigger:"manual"` — manual-trigger elements (Alpine         */
+/*    $dispatch from elsewhere) are visible until the developer fires.    */
+/*  - require the preset name contains `-in` (excludes `-out` presets,    */
+/*    which start visible and animate to invisible on trigger).           */
+/*  - require the wk-animate-* class is NOT YET present (deactivates the  */
+/*    rule the moment Alpine fires, so the keyframe `from` opacity takes  */
+/*    over).                                                              */
+[x-data*="wirekitAnimate('"]:not([x-data*='"trigger":"click"']):not([x-data*='"trigger":"manual"'])[x-data*="-in"]:not([class*="wk-animate-"]) {
+    opacity: 0;
+}
+
 @keyframes wk-progress-circle-spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
@@ -1024,9 +1049,7 @@
        property falls through to its own initial-value (= transparent
        for background-color, currentColor for stroke). The `initial`
        keyword makes the declaration behave as if undeclared, so the
-       fallback chain works as intended. Confirmed by browser test in
-       sample/tests/Browser/ReadingProgressProductionIframeTest.php
-       "keeps fill background-color after Alpine writes transform". */
+       fallback chain works as intended. */
     --reading-progress-fill: initial;
     /* reading-spine */
     --reading-spine-width-collapsed: 1.5rem;

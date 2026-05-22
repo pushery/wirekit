@@ -175,7 +175,18 @@ export default (options = {}) => ({
      */
     resolveTarget() {
         if (this.target) {
-            return document.querySelector(this.target);
+            const el = document.querySelector(this.target);
+            if (!el) {
+                // The minimap's `target` prop is `null` by default — only
+                // a developer-supplied selector reaches this branch. A
+                // miss is therefore always a typo worth surfacing.
+                // eslint-disable-next-line no-console
+                console.warn(
+                    `[wirekit] reading-minimap: target selector "${this.target}" matched no element. ` +
+                    `Minimap will not render. Check the selector on <x-wirekit::reading-minimap target="${this.target}" />.`
+                );
+            }
+            return el;
         }
         let el = this.$el?.parentElement;
         while (el && el !== document.body) {

@@ -18,6 +18,35 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Runtime Validation Strictness
+    |--------------------------------------------------------------------------
+    |
+    | Decides how WireKit reacts when a component is rendered with a value
+    | outside the allowed list — invalid prop value, unknown icon alias,
+    | etc. See `Pushery\WireKit\Support\StrictnessGate` for the gate's
+    | central decision.
+    |
+    | null  — Default. Strict in debug (APP_DEBUG=true), lenient in prod.
+    |         Most apps want this — invalid props blow up in development
+    |         where the developer can fix them, but a typo doesn't crash
+    |         a customer-facing page in production.
+    |
+    | true  — Force strict everywhere (CI / staging hardening).
+    |         InvalidArgumentException is thrown with a Did-you-mean hint
+    |         on every miss, in dev AND in prod.
+    |
+    | false — Force lenient everywhere (snapshot CI, deliberate fallback).
+    |         The first allowed value is returned silently after a
+    |         logger->warning() call. No exception, even in debug.
+    |
+    */
+
+    'validation' => [
+        'strict' => env('WIREKIT_STRICT_VALIDATION'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Component Defaults
     |--------------------------------------------------------------------------
     |

@@ -12,6 +12,7 @@ use Pushery\WireKit\Icons\Presets\HeroiconsPreset;
 use Pushery\WireKit\Icons\Presets\LucidePreset;
 use Pushery\WireKit\Icons\Presets\PhosphorPreset;
 use Pushery\WireKit\Icons\Presets\TablerPreset;
+use Pushery\WireKit\Support\SuggestSimilar;
 
 final class IconResolver
 {
@@ -101,10 +102,21 @@ final class IconResolver
         $available = array_values(array_unique($available));
         sort($available);
 
-        throw new InvalidArgumentException(
-            "WireKit: Unknown icon alias '{$alias}'. "
-            .'Available aliases: '.implode(', ', $available)
+        // Cross-cutting Did-you-mean — same Levenshtein helper as
+        // WireKit::validateProp() and every wirekit:* CLI surface.
+        // Aliases routinely collide on close typos (`bolt` vs `bell`,
+        // `close` vs `clock`, `chevron-down` vs `chevron-up`), so a
+        // ranked suggestion turns the exception into an actionable hint.
+        $message = "WireKit: Unknown icon alias '{$alias}'. ";
+        $hint = SuggestSimilar::format(
+            SuggestSimilar::byLevenshtein($alias, $available)
         );
+        if ($hint !== null) {
+            $message .= $hint.' ';
+        }
+        $message .= 'Available aliases: '.implode(', ', $available);
+
+        throw new InvalidArgumentException($message);
     }
 
     /**
@@ -167,10 +179,17 @@ final class IconResolver
 
         $value = is_string($entry) ? $entry : get_debug_type($entry);
 
-        throw new InvalidArgumentException(
-            "WireKit: Unknown icon preset '{$value}'. "
-            .'Available: '.implode(', ', array_keys(self::BUILT_IN_PRESETS))
-            .' or a fully qualified class name implementing '.IconPreset::class
+        $available = array_keys(self::BUILT_IN_PRESETS);
+        $message = "WireKit: Unknown icon preset '{$value}'. ";
+        $hint = SuggestSimilar::format(
+            SuggestSimilar::byLevenshtein($value, $available)
         );
+        if ($hint !== null) {
+            $message .= $hint.' ';
+        }
+        $message .= 'Available: '.implode(', ', $available)
+            .' or a fully qualified class name implementing '.IconPreset::class;
+
+        throw new InvalidArgumentException($message);
     }
 }

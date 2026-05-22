@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Pushery\WireKit;
 
 use Illuminate\Support\Facades\File;
+use Pushery\WireKit\Components\Chart;
+use Pushery\WireKit\Support\ClassPropsExtractor;
 use Pushery\WireKit\Support\PropsParser;
 
 class ComponentRegistry
@@ -178,6 +180,52 @@ class ComponentRegistry
     }
 
     /**
+     * Registered Blade-tag overrides for class-based components whose
+     * tag form differs from the anonymous `<x-wirekit::name>` convention.
+     *
+     * The anonymous form (default) reads `<x-wirekit::{name}>`.
+     * Class-based components registered via `loadViewComponentsAs(...)`
+     * use the alternate form `<x-wirekit-{name}>` — Laravel's prefixed-
+     * class-component shape. The two cannot be detected from
+     * ComponentRegistry::all() metadata alone (both ship a Blade file
+     * AND a PHP class); this map encodes the exception per component.
+     *
+     * Used by CLI surfaces (`wirekit:show`, `wirekit:list`,
+     * `wirekit:export-json`, `wirekit:install summary`,
+     * `wirekit:export-api-map`) so every "what tag do I use?" report
+     * prints the WORKING form. Without this map, `wirekit:show chart`
+     * previously printed `<x-wirekit::chart>` — which renders a 500
+     * because the anonymous Blade file references an undefined
+     * `$alpineComponent` variable (the class constructor populates it
+     * via the class-based path).
+     *
+     * @var array<string, string>
+     */
+    private const TAG_OVERRIDES = [
+        // Class-based via WireKitServiceProvider::registerComponents() —
+        // the anonymous file at resources/views/components/chart.blade.php
+        // exists but is meant to be reached via the class component, which
+        // injects the `$alpineComponent` variable into the view context.
+        'chart' => '<x-wirekit-chart>',
+    ];
+
+    /**
+     * Return the canonical Blade tag form for a registered component.
+     *
+     * Defaults to the anonymous `<x-wirekit::name>` shape. Components
+     * registered as class-based via `loadViewComponentsAs(...)` carry
+     * an override in `TAG_OVERRIDES` and use the prefixed-class shape
+     * (e.g. `<x-wirekit-chart>` for `chart`).
+     *
+     * The leading `<` and trailing `>` are part of the returned value —
+     * callers concatenate-ready.
+     */
+    public static function tag(string $name): string
+    {
+        return self::TAG_OVERRIDES[$name] ?? "<x-wirekit::{$name}>";
+    }
+
+    /**
      * Get all components in a given category.
      *
      * @return array<string, array{category: string, description: string}>
@@ -198,24 +246,48 @@ class ComponentRegistry
     }
 
     /**
-     * Extract props from a component's blade file by parsing the @props directive.
+     * Extract props from a component. Two flavours coexist:
      *
-     * Returns the structured shape emitted by `PropsParser::parseBlade()`:
-     * a list of records with `name`, `default`, `default_normalized`,
-     * `type_hint`, and `comment` fields. **Breaking change in v2.0.0** —
-     * the prior return shape (flat name→default-string map) is gone.
-     * Developers reading the old shape must migrate; the new fields make
-     * inline-comment metadata available without source-grepping AND
-     * close two data-corruption bug classes (truncated `config(...)`
-     * defaults, leaked inline comments) that the prior regex parser
-     * silently shipped.
+     * 1. **Anonymous Blade component** (the 99% case): parse the
+     *    `@props([...])` directive from the Blade file via PropsParser.
+     * 2. **Class-based Blade component** (chart): walk the
+     *    constructor signature via Reflection (ClassPropsExtractor).
      *
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string}>
+     * The class-based path is selected when `CLASS_COMPONENTS` carries
+     * an entry mapping the component name → its class. Both paths
+     * return the same shape so downstream callers don't branch.
+     *
+     * **Breaking change in v2.0.0** — the prior return shape (flat
+     * name→default-string map) is gone. Developers reading the old
+     * shape must migrate; the new fields make inline-comment metadata
+     * available without source-grepping AND close two data-corruption
+     * bug classes (truncated `config(...)` defaults, leaked inline
+     * comments) that the prior regex parser silently shipped.
+     *
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
      */
     public static function extractProps(string $name): array
     {
+        if (isset(self::CLASS_COMPONENTS[$name])) {
+            return ClassPropsExtractor::extract(self::CLASS_COMPONENTS[$name]);
+        }
+
         return PropsParser::parseBlade(self::bladeFilePath($name));
     }
+
+    /**
+     * Class-based-component registry. Keyed by component name; value is
+     * the FQCN of the class registered via `loadViewComponentsAs(...)`
+     * in WireKitServiceProvider. Mirror of the
+     * `loadViewComponentsAs('wirekit', [...])` array — kept in sync
+     * manually because the service provider doesn't surface the list
+     * as data.
+     *
+     * @var array<string, class-string>
+     */
+    private const CLASS_COMPONENTS = [
+        'chart' => Chart::class,
+    ];
 
     /**
      * Get the blade file path for a component.

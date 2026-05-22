@@ -59,7 +59,7 @@
     $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty();
 @endphp
 
-<div {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
+<div {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     @if($hasIconSlot)
         {{-- Escape hatch: caller supplied their own marker (custom SVG, illustration, badge, …). --}}
         {{ $iconSlot }}

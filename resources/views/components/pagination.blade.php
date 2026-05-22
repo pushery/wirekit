@@ -128,7 +128,17 @@
 
             {{-- Numbered links: linkCollection() returns {url, label, active} per entry.
                  We skip the framework-generated prev/next (we render our own above) by
-                 filtering out entries whose label matches &laquo; / &raquo; glyphs. --}}
+                 filtering out entries whose label matches &laquo; / &raquo; glyphs.
+
+                 The `label` field is unescaped via {!! !!} below — safe because
+                 Laravel's paginator constructs `label` as a numeric page-index
+                 string OR a pre-encoded HTML entity (`&laquo;` / `&raquo;` /
+                 `…`). The value never originates from user input or query
+                 parameters — it's generated entirely from `$paginator->currentPage()`
+                 and the framework's internal range calculation. If a downstream
+                 developer ever extends the paginator to produce user-influenced
+                 labels, the unescaped render becomes an XSS vector and this
+                 emission must be wrapped in `e($link['label'])` or equivalent. --}}
             @foreach($paginator->linkCollection()->slice(1, -1) as $link)
                 @if($link['url'] === null)
                     {{-- null url = separator (ellipsis) --}}

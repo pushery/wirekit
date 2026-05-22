@@ -62,10 +62,71 @@ export default () => ({
         // until intersection fires; that's intentional (no flash before the user sees it).
         this.progress = 0;
 
-        // Wait for scroll-into-view, then animate once. Threshold 0.4 means
-        // the animation starts when 40% of the element is in viewport — a
-        // sweet spot between "too eager" (10%, fires before user reads
-        // surrounding context) and "too late" (90%, fires only at full view).
+        // Encapsulated run-the-counter helper so both the entrance-wrapper path
+        // and the standalone IntersectionObserver path can call it.
+        const runCounter = () => {
+            this.animating = true;
+            const start = performance.now();
+            const duration = 1200;
+            const ease = (t) => 1 - Math.pow(1 - t, 3); // ease-out cubic
+
+            const tick = (now) => {
+                const t = Math.min(1, (now - start) / duration);
+                const eased = ease(t);
+                this.value = formatValue(eased * numeric);
+                this.progress = eased;
+                if (t < 1) {
+                    requestAnimationFrame(tick);
+                } else {
+                    this.animating = false;
+                    this.progress = 1;
+                }
+            };
+
+            requestAnimationFrame(tick);
+        };
+
+        // Entrance-wrapper detection. The Blade template wraps the counter root
+        // in an outer <div x-data="wirekitAnimate('…')"> when BOTH animate and
+        // animateIn are set on <x-wirekit::stat>. The outer's entrance keyframe
+        // shifts geometry (e.g. wk-slide-up-in: translateY(1rem) → translateY(0))
+        // for the entire ~300ms entrance window. If the inner's own
+        // IntersectionObserver fires while the keyframe is active, the inner's
+        // bounding box is shifted out of threshold and the callback returns
+        // without starting the counter — the canonical race condition that
+        // leaves random stats stuck at "0" on hard refresh.
+        //
+        // Fix: when the entrance wrapper is present, defer the counter start
+        // until the entrance keyframe completes (`animationend` on the outer).
+        // The outer's wirekitAnimate plugin already owns scroll-into-view via
+        // its own IO; the counter just needs a deterministic "start" signal
+        // that doesn't depend on transform-affected geometry.
+        const outer = this.$root.parentElement;
+        const outerXData = outer?.getAttribute('x-data') ?? '';
+        const hasEntranceWrapper = outerXData.includes('wirekitAnimate(');
+
+        if (hasEntranceWrapper) {
+            this._entranceListener = (event) => {
+                // Only respond to the wk-animate-* entrance keyframe on the
+                // outer itself. Descendant animations would bubble up too
+                // (animationend is a bubbling event), but they don't carry
+                // the wk- prefix unless a developer named a custom keyframe
+                // identically. The event.target check pins us to the outer.
+                if (event.target !== outer) return;
+                if (! event.animationName?.startsWith('wk-')) return;
+                outer.removeEventListener('animationend', this._entranceListener);
+                this._entranceListener = null;
+                runCounter();
+            };
+            outer.addEventListener('animationend', this._entranceListener);
+            return;
+        }
+
+        // Standalone counter (no entrance wrapper): use IntersectionObserver
+        // on the root itself. Threshold 0.4 means the animation starts when
+        // 40% of the element is in viewport — a sweet spot between "too eager"
+        // (10%, fires before user reads surrounding context) and "too late"
+        // (90%, fires only at full view).
         this._observer = new IntersectionObserver(
             (entries) => {
                 if (! entries[0].isIntersecting) return;
@@ -78,26 +139,7 @@ export default () => ({
                 if (! this._observer) return;
                 this._observer.disconnect();
                 this._observer = null;
-
-                this.animating = true;
-                const start = performance.now();
-                const duration = 1200;
-                const ease = (t) => 1 - Math.pow(1 - t, 3); // ease-out cubic
-
-                const tick = (now) => {
-                    const t = Math.min(1, (now - start) / duration);
-                    const eased = ease(t);
-                    this.value = formatValue(eased * numeric);
-                    this.progress = eased;
-                    if (t < 1) {
-                        requestAnimationFrame(tick);
-                    } else {
-                        this.animating = false;
-                        this.progress = 1;
-                    }
-                };
-
-                requestAnimationFrame(tick);
+                runCounter();
             },
             { threshold: 0.4 }
         );
@@ -115,6 +157,11 @@ export default () => ({
         if (this._observer) {
             this._observer.disconnect();
             this._observer = null;
+        }
+        if (this._entranceListener) {
+            const outer = this.$root.parentElement;
+            outer?.removeEventListener('animationend', this._entranceListener);
+            this._entranceListener = null;
         }
     },
 });

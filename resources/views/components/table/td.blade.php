@@ -24,6 +24,6 @@
     ]), $scope);
 @endphp
 
-<td {{ $attributes->class([$classes]) }}>
+<td data-wk-table-td {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </td>
