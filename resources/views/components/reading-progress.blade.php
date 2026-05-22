@@ -32,9 +32,8 @@
 
     // Variant validation — gates against the canonical 6-set + the auto value.
     // 'accent' (legacy) and 'inverse' (legacy) explicitly throw — both were
-    // dropped during the family's first public release, no alias preserved
-    // (the family was visibility:admin so no public developers existed to
-    // break). Developers wanting the old 'inverse' behaviour set
+    // dropped during the family's first public release, no alias preserved.
+    // Developers wanting the old 'inverse' behaviour set
     // `--reading-progress-fill: var(--color-wk-text)` in their :root {} block.
     $variantValue = match ($variant) {
         'primary', 'neutral', 'success', 'warning', 'danger', 'info', 'auto' => $variant,
@@ -122,6 +121,25 @@
             init() {
                 const target = '{{ $target }}' || null;
                 const showAfter = {{ (int) $showAfter }};
+                // Warn-once when a developer-supplied target selector doesn't
+                // resolve. Without this signal the progress bar silently
+                // tracks viewport scroll instead of the scoped element,
+                // which looks correct on quick inspection but doesn't honor
+                // the developer's intent. Mirrors the same warn shape used
+                // in reading-spine / reading-toc / reading-minimap JS.
+                if (target && !document.querySelector(target)) {
+                    // Single-quote the interpolated value so the warning
+                    // string carries no literal double-quote that would
+                    // terminate the surrounding x-data HTML attribute
+                    // prematurely. An earlier form escaped the
+                    // double-quotes around the interpolation, which
+                    // worked at the JS layer but injected literal
+                    // attribute-terminating chars into the rendered HTML.
+                    console.warn(
+                        `[wirekit] reading-progress: target selector '${target}' matched no element. ` +
+                        `Falling back to viewport scroll. Check the target prop you passed to the reading-progress component.`
+                    );
+                }
                 const update = () => {
                     const scope = target ? document.querySelector(target) : null;
                     let scrollTop, scrollHeight, clientHeight;
@@ -284,6 +302,25 @@
             init() {
                 const target = '{{ $target }}' || null;
                 const showAfter = {{ (int) $showAfter }};
+                // Warn-once when a developer-supplied target selector doesn't
+                // resolve. Without this signal the progress bar silently
+                // tracks viewport scroll instead of the scoped element,
+                // which looks correct on quick inspection but doesn't honor
+                // the developer's intent. Mirrors the same warn shape used
+                // in reading-spine / reading-toc / reading-minimap JS.
+                if (target && !document.querySelector(target)) {
+                    // Single-quote the interpolated value so the warning
+                    // string carries no literal double-quote that would
+                    // terminate the surrounding x-data HTML attribute
+                    // prematurely. An earlier form escaped the
+                    // double-quotes around the interpolation, which
+                    // worked at the JS layer but injected literal
+                    // attribute-terminating chars into the rendered HTML.
+                    console.warn(
+                        `[wirekit] reading-progress: target selector '${target}' matched no element. ` +
+                        `Falling back to viewport scroll. Check the target prop you passed to the reading-progress component.`
+                    );
+                }
                 const update = () => {
                     const scope = target ? document.querySelector(target) : null;
                     let scrollTop, scrollHeight, clientHeight;

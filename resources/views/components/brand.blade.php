@@ -1,5 +1,11 @@
 @props([
     'logo' => null,
+    'mobileLogo' => null,
+    // Tailwind breakpoint at which the responsive-logo swap flips back to
+    // the full `$logo`. Values: 'sm' / 'md' / 'lg' / 'xl'. Default 'sm'
+    // (640px) — wide wordmark logos in a brand-bar typically clear sm+
+    // viewports. When `$mobileLogo` is null, this prop is a no-op.
+    'mobileBreakpoint' => 'sm',
     'name' => null,
     'href' => '/',
     'scope' => null,
@@ -43,6 +49,17 @@
     // means an accessible name is already provided by the visible text.
     $hasVisibleName = $name !== null || trim((string) $slot) !== '';
     $logoOnlyNeedsLabel = $logo && ! $hasVisibleName && ! $attributes->has('aria-label');
+
+    // Responsive-logo swap. When $mobileLogo is set, render TWO <img> tags:
+    //   - mobile <img>: visible below the breakpoint, hidden at + breakpoint
+    //   - main <img>:   hidden below the breakpoint, visible at + breakpoint
+    // When $mobileLogo is null, only the main <img> renders (back-compat).
+    // Validates the breakpoint against the Tailwind responsive enum;
+    // unknown values throw in debug, fall back to 'sm' in prod via the
+    // central strictness gate.
+    $resolvedBreakpoint = $logo && $mobileLogo
+        ? WireKit::validateProp('brand', 'mobileBreakpoint', $mobileBreakpoint, ['sm', 'md', 'lg', 'xl'])
+        : 'sm';
 @endphp
 
 <a
@@ -50,7 +67,14 @@
     @if($logoOnlyNeedsLabel) aria-label="Home" @endif
     {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$classes]) }}
 >
-    @if($logo)
+    @if($logo && $mobileLogo)
+        {{-- Responsive logo swap: mobile-first wordmark below the breakpoint,
+             full-width wordmark at + breakpoint. Both images carry the same
+             accessibility shape (alt="" + aria-hidden="true") — the <a>'s
+             aria-label handles the accessible name. --}}
+        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $resolvedBreakpoint }}:hidden" aria-hidden="true" />
+        <img src="{{ $logo }}" alt="" class="hidden h-8 w-auto {{ $resolvedBreakpoint }}:block" aria-hidden="true" />
+    @elseif($logo)
         <img src="{{ $logo }}" alt="" class="h-8 w-auto" aria-hidden="true" />
     @endif
     @if($name)

@@ -60,7 +60,7 @@
     // group class enables hover-reveal of the remove button.
     $fileItemClasses = implode(' ', [
         'group flex items-center gap-[var(--padding-wk-x-sm)] min-w-0',
-        'p-[var(--padding-wk-y-xs)]',
+        'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
         'text-[length:var(--text-wk-sm)]',
         'bg-[var(--color-wk-bg-muted)]',
         'rounded-[var(--radius-wk-md)]',
@@ -142,12 +142,22 @@
     </label>
 
     {{-- Selected files list — rendered only when files exist.
-         Each item shows filename (truncated), size, and a remove button on hover. --}}
-    <ul class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;" x-show="files.length > 0" x-cloak>
+         Each item shows filename (truncated), size, and a remove button on hover.
+         Inline style is REQUIRED for the sandbox-iframe rendering context
+         where Tailwind is out of scope — `list-none` / `m-0` / `p-0` classes
+         wouldn't resolve, browser UA disc bullets + UA margin would show.
+         Margin-top carries the dropzone-gap token directly via inline style so
+         the gap resolves in BOTH contexts (developer app + sandbox iframe; both
+         load wirekit.css so the CSS variable resolves). The class-based
+         `mt-[var(--padding-wk-y-sm)]` in $listClasses is now redundant but kept
+         for documentation parity. Enforced by ListStyleAntiDriftTest. --}}
+    <ul class="{{ $listClasses }}" style="list-style: none; padding: 0; margin: var(--padding-wk-y-sm) 0 0 0;" x-show="files.length > 0" x-cloak>
         <template x-for="(file, index) in files" :key="file.name">
             <li class="{{ $fileItemClasses }}">
-                {{-- Filename — min-w-0 + truncate prevents long names from expanding the container --}}
-                <span class="truncate min-w-0" x-text="file.name"></span>
+                {{-- Filename — flex-1 grows to fill available space so the size + X get
+                     pushed to the right edge of the row (standard file-uploader UX).
+                     min-w-0 + truncate prevents long names from blowing out the flex line. --}}
+                <span class="flex-1 truncate min-w-0" x-text="file.name"></span>
                 {{-- File size — fixed width so it doesn't shift when remove button appears --}}
                 <span class="text-[color:var(--color-wk-text-muted)] tabular-nums shrink-0" x-text="formatBytes(file.size)"></span>
                 {{-- Remove button — chip-style X aligned with <x-wirekit::tags-input>:

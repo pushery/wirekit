@@ -37,12 +37,11 @@
     classes can be deleted; orphaned classes only waste a few bytes in the
     compiled CSS until the developer rebuilds.
 
-    The PreviewDemonstratesFunctionTest plus the existing axe-core browser
-    sweep on `bg-[var(--color-wk-danger)]` buttons act as the regression test:
-    if a future VariantResolver change introduces a class that's missing from
-    this safelist, the contrast assertion in
-    `sample/tests/Browser/ComponentPreviewCoverageTest` will fail with the
-    same `foreground color: #0a0a0a` symptom and surface the gap.
+    Upstream axe-core regression coverage on `bg-[var(--color-wk-danger)]`
+    buttons surfaces gaps: if a future VariantResolver change introduces a
+    class that's missing from this safelist, the upstream contrast check
+    fails with the `foreground color: #0a0a0a` symptom and blocks the
+    regression from shipping.
 
     ────────────────────────────────────────────────────────────────────────
     filled() — six intents

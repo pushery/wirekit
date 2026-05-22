@@ -139,7 +139,7 @@
                     :data-active="item.index === activeIndex ? 'true' : 'false'"
                     :data-level="item.level"
                     :aria-current="item.index === activeIndex ? 'location' : null"
-                    class="wk-reading-toc__link inline-block max-w-[var(--reading-toc-link-max-width)] truncate text-sm rounded-[var(--radius-wk-sm)] px-2 py-1 focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="wk-reading-toc__link inline-block max-w-[var(--reading-toc-link-max-width)] truncate text-sm rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     x-text="item.text"
                     @click="scrollTo(item.id, $event)"
                 ></a>

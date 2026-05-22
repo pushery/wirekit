@@ -142,12 +142,25 @@
         },
         get atMin() { return this.min !== null && this.value <= this.min; },
         get atMax() { return this.max !== null && this.value >= this.max; },
+        // Snap to the step grid anchored at `min` (or 0 when no min is set).
+        // Starting from an off-grid value (e.g. value=1.78, step=0.1), `+` must
+        // move to the next grid point ABOVE (1.8, not 1.78+0.1=1.88 which the
+        // old code then rounded to 1.9 via toFixed(1) — skipping 1.8 entirely).
+        // Matches the W3C native <input type=number> stepper contract.
+        // The 1e-10 tolerance absorbs binary-float drift so on-grid values
+        // like 1.8 (stored as 1.7999999998) advance to the correct next step.
         decrease() {
-            const next = this.round(this.value - this.step);
+            const origin = this.min !== null ? this.min : 0;
+            const ratio = (this.value - origin) / this.step;
+            const prevSteps = Math.ceil(ratio - 1e-10) - 1;
+            const next = this.round(origin + prevSteps * this.step);
             this.value = this.min !== null ? Math.max(this.min, next) : next;
         },
         increase() {
-            const next = this.round(this.value + this.step);
+            const origin = this.min !== null ? this.min : 0;
+            const ratio = (this.value - origin) / this.step;
+            const nextSteps = Math.floor(ratio + 1e-10) + 1;
+            const next = this.round(origin + nextSteps * this.step);
             this.value = this.max !== null ? Math.min(this.max, next) : next;
         },
         clamp(val) {

@@ -1,12 +1,24 @@
 @props([
     'target' => null,
     'placement' => 'bottom',
-    'index' => 0,
+    // When null (default), the index is auto-assigned via
+    // TourStepCounter::next() based on document order under the
+    // enclosing tour parent. Explicit :index="N" bypasses the
+    // auto-assignment — useful when steps render conditionally
+    // and the developer needs control over the numbering.
+    'index' => null,
     'scope' => null,
 ])
 
 @php
+    use Pushery\WireKit\Support\TourStepCounter;
     use Pushery\WireKit\WireKit;
+
+    // Auto-assign the index from the per-render counter when the
+    // developer didn't supply one. The parent tour component
+    // reset the counter to 0; sibling steps each pick the next
+    // integer in document-render order.
+    $resolvedIndex = $index ?? TourStepCounter::next();
 
     // Tour step — individual tooltip-like popup positioned near a target element.
     // The initial off-screen position (left/top: -9999px) is set via a CSS rule
@@ -30,12 +42,12 @@
 @endphp
 
 <div
-    x-show="currentStep === {{ (int) $index }}"
-    data-wk-tour-step="{{ (int) $index }}"
+    x-show="currentStep === {{ (int) $resolvedIndex }}"
+    data-wk-tour-step="{{ (int) $resolvedIndex }}"
     data-wk-target="{{ $target }}"
     data-wk-placement="{{ $placement }}"
     role="dialog"
-    aria-label="Tour step {{ $index + 1 }}"
+    aria-label="Tour step {{ $resolvedIndex + 1 }}"
     {{ $attributes->class([$panelClasses]) }}
     x-cloak
 >

@@ -6,7 +6,7 @@ namespace Pushery\WireKit;
 
 use Closure;
 use Pushery\WireKit\Icons\IconResolver;
-use Pushery\WireKit\Support\SuggestSimilar;
+use Pushery\WireKit\Support\StrictnessGate;
 
 class WireKit
 {
@@ -125,8 +125,17 @@ class WireKit
     /**
      * Validate a prop value against a list of allowed values.
      *
-     * In debug (APP_DEBUG=true): throws InvalidArgumentException.
-     * In production: logs a warning and falls back to the first allowed value.
+     * Delegates through `StrictnessGate` so the strict-vs-lenient
+     * decision is identical across every WireKit validation site
+     * (component props here, icon resolution in `IconResolver`).
+     *
+     * Default behaviour (no `wirekit.validation.strict` config):
+     *   - APP_DEBUG=true  → throws InvalidArgumentException with Did-you-mean.
+     *   - APP_DEBUG=false → logs warning + returns first allowed value.
+     *
+     * Explicit override: set `wirekit.validation.strict` to true / false
+     * (env `WIREKIT_STRICT_VALIDATION`) to force strict / lenient
+     * regardless of APP_DEBUG.
      *
      * @param  list<string>  $allowed
      */
@@ -136,32 +145,7 @@ class WireKit
         string $value,
         array $allowed,
     ): string {
-        if (in_array($value, $allowed, true)) {
-            return $value;
-        }
-
-        $list = implode(', ', $allowed);
-        $message = "WireKit [{$component}]: Invalid {$prop} \"{$value}\". Allowed: {$list}.";
-
-        // Cross-cutting Did-you-mean — same Levenshtein helper as the CLI
-        // surface (ShowComponentCommand, ThemeCommand, ListComponentsCommand,
-        // PublishIconsCommand, ComponentMakeCommand, InstallCommand preset
-        // validation). Reusing the helper keeps the suggestion contract
-        // uniform across runtime + CLI.
-        $hint = SuggestSimilar::format(
-            SuggestSimilar::byLevenshtein($value, $allowed)
-        );
-        if ($hint !== null) {
-            $message .= ' '.$hint;
-        }
-
-        if (config('app.debug')) {
-            throw new \InvalidArgumentException($message);
-        }
-
-        logger()->warning($message);
-
-        return $allowed[0];
+        return StrictnessGate::enforce($component, $prop, $value, $allowed);
     }
 
     /**

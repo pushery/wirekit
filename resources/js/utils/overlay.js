@@ -141,9 +141,14 @@ function unlockScroll() {
  * @param {boolean} options.dismissible - Whether ESC/backdrop close is allowed
  * @param {string} options.showEvent - Event name for showing (e.g. 'wirekit-modal-show')
  * @param {string} options.closeEvent - Event name for closing (e.g. 'wirekit-modal-close')
+ * @param {boolean} [options.escapeAlwaysCloses=false] - When true, ESC always
+ *   closes the overlay regardless of `dismissible`. Used by `alert-dialog`:
+ *   non-dismissible alert-dialogs still need an escape path so keyboard users
+ *   aren't trapped (backdrop click stays gated by `dismissible` for the
+ *   "don't approve destructive action by stray click" safety case).
  * @returns {Object} Alpine component data object with overlay methods
  */
-export function createOverlay({ name, dismissible, showEvent, closeEvent }) {
+export function createOverlay({ name, dismissible, showEvent, closeEvent, escapeAlwaysCloses = false }) {
     // Stable token identifying this overlay instance on the global stack —
     // not a string id, just an object reference equality check works.
     const stackToken = {};
@@ -260,7 +265,11 @@ export function createOverlay({ name, dismissible, showEvent, closeEvent }) {
                 const panelEl = this.$refs.panel;
                 if (panelEl) {
                     this._trap = createFocusTrap(panelEl, {
-                        escapeDeactivates: dismissible,
+                        // ESC closes when EITHER the overlay is generally
+                        // dismissible OR the caller opted into the
+                        // ESC-always-closes contract (alert-dialog's
+                        // escape hatch — see option doc above).
+                        escapeDeactivates: dismissible || escapeAlwaysCloses,
                         // onDeactivate fires when ESC is pressed — close without
                         // calling deactivate() again (it's already deactivating)
                         onDeactivate: () => this._closeFromTrap(),
@@ -268,6 +277,8 @@ export function createOverlay({ name, dismissible, showEvent, closeEvent }) {
                         // handlers (handleBackdropClick) can fire.
                         // Non-dismissible: block outside clicks entirely to
                         // prevent unintended page interaction behind the overlay.
+                        // escapeAlwaysCloses does NOT widen this — backdrop
+                        // click stays gated by the safety-strict `dismissible`.
                         allowOutsideClick: dismissible,
                     });
                     this._trap.activate();

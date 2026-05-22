@@ -7,6 +7,15 @@
     'prefix' => null,
     'suffix' => null,
     'scope' => null,
+    // HTML5 form-state props — surface in the schema so AI / IDE tools
+    // know about them, while preserving the pre-existing attribute-bag
+    // passthrough so the plain HTML-attribute form (required, disabled,
+    // readonly as bare attributes) keeps working byte-identically.
+    'required' => false,
+    'disabled' => false,
+    'readonly' => false,
+    'autocomplete' => null,
+    'placeholder' => null,
 ])
 
 @php
@@ -87,7 +96,7 @@
 
 <div class="space-y-1.5">
     @if($label)
-        <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$id" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     @if($prefix || $suffix)
@@ -127,6 +136,11 @@
                 id="{{ $id }}"
                 name="{{ $name }}"
                 type="{{ $type }}"
+                @if($required) required @endif
+                @if($disabled) disabled @endif
+                @if($readonly) readonly @endif
+                @if($autocomplete !== null) autocomplete="{{ $autocomplete }}" @endif
+                @if($placeholder !== null) placeholder="{{ $placeholder }}" @endif
                 @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
                 @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
                 {{ $attributes->class([
@@ -156,6 +170,11 @@
             id="{{ $id }}"
             name="{{ $name }}"
             type="{{ $type }}"
+            @if($required) required @endif
+            @if($disabled) disabled @endif
+            @if($readonly) readonly @endif
+            @if($autocomplete !== null) autocomplete="{{ $autocomplete }}" @endif
+            @if($placeholder !== null) placeholder="{{ $placeholder }}" @endif
             @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
             @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
             {{ $attributes->class([$inputClasses, $stateClasses, $sizeClasses]) }}

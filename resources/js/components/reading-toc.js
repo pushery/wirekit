@@ -52,7 +52,21 @@ export default (options = {}) => ({
      */
     collectHeadings() {
         const container = this.$el?.closest(this.target) ?? document.querySelector(this.target);
-        if (!container) return [];
+        if (!container) {
+            // Warn on missed non-default target — mirrors reading-spine's
+            // diagnostic. Default `'main, article'` stays silent because a
+            // miss there is a Blade-level concern (the page just doesn't
+            // have those landmarks); custom selectors that miss are almost
+            // always developer typos worth surfacing.
+            if (this.target !== 'main, article') {
+                // eslint-disable-next-line no-console
+                console.warn(
+                    `[wirekit] reading-toc: target selector "${this.target}" matched no element. ` +
+                    `TOC will render empty. Check the selector on <x-wirekit::reading-toc target="${this.target}" />.`
+                );
+            }
+            return [];
+        }
         const sel = this.levels.map((l) => `h${l}`).join(', ');
         return Array.from(container.querySelectorAll(sel)).map((el, idx) => ({
             id: el.id || '',

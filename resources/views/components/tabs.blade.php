@@ -9,6 +9,25 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Normalize $items at the template edge: accept BOTH historical shapes:
+    //   - Keyed-assoc (legacy):    ['profile' => 'Profile', 'billing' => 'Billing']
+    //   - Array-of-objects:        [['key' => 'profile', 'label' => 'Profile'], ...]
+    // After this block, $items is always the keyed-assoc form so the
+    // existing render loops + Alpine bindings stay byte-stable.
+    //
+    // Detection: PHP 8.1+ array_is_list() returns true for a zero-indexed
+    // sequential array (the shape of array-of-objects). Keyed-assoc
+    // returns false. Empty array stays empty.
+    if (is_array($items) && array_is_list($items)) {
+        $normalized = [];
+        foreach ($items as $item) {
+            if (is_array($item) && isset($item['key'])) {
+                $normalized[$item['key']] = $item['label'] ?? $item['key'];
+            }
+        }
+        $items = $normalized;
+    }
+
     // Resolve the initial active tab: explicit default, otherwise first key
     $activeTab = $default ?? (array_key_first($items) ?? '');
 
@@ -49,6 +68,21 @@
 
     // Panel container — the area below the tablist that shows the active panel.
     $panelClasses = WireKit::resolveClasses('tabs', 'panel', 'pt-[var(--padding-wk-y-md)]', $scope);
+
+    // Dev-mode warning: tabs are client-only Alpine state — wire:model
+    // passed on the component tag is silently dropped into the outer
+    // div's attribute bag (Livewire only watches input/select/textarea).
+    // Surface the silent-breakage at runtime via console.warn so the
+    // developer doesn't waste time wondering why their tab state isn't
+    // syncing to Livewire. Production stays silent.
+    $hasWireModel = false;
+    foreach ($attributes->getAttributes() as $key => $_) {
+        if (is_string($key) && str_starts_with($key, 'wire:model')) {
+            $hasWireModel = true;
+            break;
+        }
+    }
+    $warnWireModelInDebug = $hasWireModel && config('app.debug');
 @endphp
 
 {{-- Tabs root — holds shared Alpine state and ARIA wiring.
@@ -70,6 +104,9 @@
             buttons[next]?.focus();
         }
     }"
+    @if($warnWireModelInDebug)
+        x-init="console.warn('[wirekit] tabs: wire:model dropped — tabs are client-only Alpine state, not a Livewire input. Use named slots for content (<x-slot:keyname>...</x-slot:keyname>) per items[key]. See https://docs.wirekit.app/components/tabs for the contract.')"
+    @endif
     {{ $attributes }}
 >
     {{-- Tablist — horizontal list of tab buttons.

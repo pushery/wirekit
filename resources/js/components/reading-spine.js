@@ -82,7 +82,22 @@ export default (options = {}) => ({
      */
     collectHeadings() {
         const container = this.$el?.closest(this.target) ?? document.querySelector(this.target);
-        if (!container) return [];
+        if (!container) {
+            // Warn when a non-default custom target resolved to nothing.
+            // The default `'main, article'` is intentionally permissive —
+            // most apps have one or the other, and a Blade-level miss isn't
+            // a developer error. A custom selector that misses, however,
+            // almost always means the developer typo'd the id / class /
+            // ancestor name; surface it so they know why the spine is empty.
+            if (this.target !== 'main, article') {
+                // eslint-disable-next-line no-console
+                console.warn(
+                    `[wirekit] reading-spine: target selector "${this.target}" matched no element. ` +
+                    `Spine will render empty. Check the selector on <x-wirekit::reading-spine target="${this.target}" />.`
+                );
+            }
+            return [];
+        }
         const sel = this.levels.map((l) => `h${l}`).join(', ');
         return Array.from(container.querySelectorAll(sel)).map((el, idx) => ({
             id: el.id || '',

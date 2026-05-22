@@ -6,12 +6,13 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Pushery\WireKit\Support\SuggestSimilar;
 
 class MakeCommand extends Command
 {
-    protected $signature = 'wirekit:make {template : Template to scaffold (page:dashboard, page:settings, page:login)}';
+    protected $signature = 'wirekit:make {template : Template to scaffold — page:dashboard|page:settings|page:login OR recipe:<name> (see `wirekit:list --category=Marketing` or docs.wirekit.app/recipes for the catalogue)}';
 
-    protected $description = 'Scaffold a page using WireKit components';
+    protected $description = 'Scaffold a page or recipe using WireKit components';
 
     /** @var array<string, array{class: string, view: string}> */
     private const TEMPLATES = [
@@ -29,13 +30,40 @@ class MakeCommand extends Command
         ],
     ];
 
+    /**
+     * Recipe templates ship stubs under src/Console/stubs/recipes/<name>.blade.php
+     * — derived from the corresponding docs/recipes/<name>.md preview blocks.
+     * Each scaffold generates a Livewire class + Blade view; the developer
+     * adapts the recipe to their data shape.
+     *
+     * @var list<string>
+     */
+    private const RECIPES = [
+        'documentation-reader',
+        'feature-numbered-marker',
+        'hero-with-code-aside',
+        'live-kpi-strip',
+        'long-form-article',
+        'marketing-landing-page',
+        'marketing-landing-toc',
+        'stat-with-sparkline',
+        'toolbar-filter-bar',
+    ];
+
     public function handle(): int
     {
         $template = $this->argument('template');
 
+        // Recipe templates route through a separate scaffold path so the
+        // stub-file loader can read from src/Console/stubs/recipes/.
+        if (str_starts_with($template, 'recipe:')) {
+            return $this->scaffoldRecipe(substr($template, strlen('recipe:')));
+        }
+
         if (! isset(self::TEMPLATES[$template])) {
             $this->error("Unknown template: {$template}");
-            $this->line('  Available: '.implode(', ', array_keys(self::TEMPLATES)));
+            $this->line('  Available pages: '.implode(', ', array_keys(self::TEMPLATES)));
+            $this->line('  Available recipes: '.implode(', ', array_map(fn ($r) => "recipe:{$r}", self::RECIPES)));
 
             return self::FAILURE;
         }
@@ -147,5 +175,69 @@ class MakeCommand extends Command
 
             default => '<div>{{ $slot }}</div>',
         };
+    }
+
+    /**
+     * Scaffold a Livewire page from a shipped recipe stub.
+     *
+     * Each recipe corresponds to a `docs/recipes/<name>.md` page; the
+     * Blade stub under `src/Console/stubs/recipes/<name>.blade.php`
+     * captures the recipe's structural skeleton with cross-link to
+     * docs.wirekit.app for the full composition.
+     */
+    private function scaffoldRecipe(string $recipe): int
+    {
+        if (! in_array($recipe, self::RECIPES, true)) {
+            $this->error("Unknown recipe: {$recipe}");
+            $this->line('  Available: '.implode(', ', self::RECIPES));
+
+            $hint = SuggestSimilar::format(
+                SuggestSimilar::byLevenshtein($recipe, self::RECIPES)
+            );
+            if ($hint !== null) {
+                $this->line('  '.$hint);
+            }
+
+            return self::FAILURE;
+        }
+
+        // Derive the class name from the recipe slug — kebab to PascalCase.
+        $className = str_replace(' ', '', ucwords(str_replace('-', ' ', $recipe)));
+        $viewName = $recipe;
+
+        $livewireClassPath = app_path("Livewire/{$className}.php");
+        $viewPath = resource_path("views/livewire/{$viewName}.blade.php");
+
+        if (file_exists($livewireClassPath)) {
+            $this->error("File already exists: {$livewireClassPath}");
+
+            return self::FAILURE;
+        }
+        if (file_exists($viewPath)) {
+            $this->error("File already exists: {$viewPath}");
+
+            return self::FAILURE;
+        }
+
+        $stubPath = __DIR__.'/stubs/recipes/'.$recipe.'.blade.php';
+        if (! file_exists($stubPath)) {
+            $this->error("Recipe stub missing: {$stubPath}");
+            $this->line('  This is a packaging bug — please report at https://github.com/pushery/wirekit/issues.');
+
+            return self::FAILURE;
+        }
+        $viewBody = (string) file_get_contents($stubPath);
+
+        File::ensureDirectoryExists(dirname($livewireClassPath));
+        File::ensureDirectoryExists(dirname($viewPath));
+
+        File::put($livewireClassPath, $this->generateClass($className));
+        File::put($viewPath, $viewBody);
+
+        $this->info("Created: {$livewireClassPath}");
+        $this->info("Created: {$viewPath}");
+        $this->line("  Recipe reference: https://docs.wirekit.app/recipes/{$recipe}");
+
+        return self::SUCCESS;
     }
 }

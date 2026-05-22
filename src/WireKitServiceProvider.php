@@ -19,6 +19,8 @@ use Pushery\WireKit\Console\ExportJsonCommand;
 use Pushery\WireKit\Console\GlassInstallCommand;
 use Pushery\WireKit\Console\InstallCommand;
 use Pushery\WireKit\Console\ListComponentsCommand;
+use Pushery\WireKit\Console\ListFontsCommand;
+use Pushery\WireKit\Console\ListIconsCommand;
 use Pushery\WireKit\Console\MakeCommand;
 use Pushery\WireKit\Console\PublishIconsCommand;
 use Pushery\WireKit\Console\ShowComponentCommand;
@@ -60,6 +62,8 @@ class WireKitServiceProvider extends ServiceProvider
                 GlassInstallCommand::class,
                 InstallCommand::class,
                 ListComponentsCommand::class,
+                ListFontsCommand::class,
+                ListIconsCommand::class,
                 MakeCommand::class,
                 PublishIconsCommand::class,
                 ShowComponentCommand::class,
@@ -85,6 +89,7 @@ class WireKitServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../dist/wirekit.js' => public_path('vendor/wirekit/wirekit.js'),
                 __DIR__.'/../dist/wirekit.core.js' => public_path('vendor/wirekit/wirekit.core.js'),
+                __DIR__.'/../dist/wirekit.esm.js' => public_path('vendor/wirekit/wirekit.esm.js'),
                 __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
                 __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
             ], 'wirekit-scripts');
@@ -94,6 +99,7 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../dist/wirekit.css' => public_path('vendor/wirekit/wirekit.css'),
                 __DIR__.'/../dist/wirekit.js' => public_path('vendor/wirekit/wirekit.js'),
                 __DIR__.'/../dist/wirekit.core.js' => public_path('vendor/wirekit/wirekit.core.js'),
+                __DIR__.'/../dist/wirekit.esm.js' => public_path('vendor/wirekit/wirekit.esm.js'),
                 __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
                 __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
             ], 'wirekit-assets');
@@ -285,6 +291,7 @@ class WireKitServiceProvider extends ServiceProvider
             'wirekit/wirekit.css' => ['file' => 'wirekit.css', 'type' => 'text/css'],
             'wirekit/wirekit.js' => ['file' => 'wirekit.js', 'type' => 'application/javascript'],
             'wirekit/wirekit.core.js' => ['file' => 'wirekit.core.js', 'type' => 'application/javascript'],
+            'wirekit/wirekit.esm.js' => ['file' => 'wirekit.esm.js', 'type' => 'application/javascript'],
             'wirekit/wirekit-apex.js' => ['file' => 'wirekit-apex.js', 'type' => 'application/javascript'],
             'wirekit/wirekit-alpine.js' => ['file' => 'wirekit-alpine.js', 'type' => 'application/javascript'],
         ];

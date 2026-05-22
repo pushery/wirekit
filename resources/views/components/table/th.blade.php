@@ -41,6 +41,7 @@
 
 <th
     scope="col"
+    data-wk-table-th
     @if($column) data-wk-sort-column="{{ $column }}" @endif
     @if($sortable && $column)
         {{-- Alpine sort mode: bind click + aria-sort to parent wirekitTableSort state --}}

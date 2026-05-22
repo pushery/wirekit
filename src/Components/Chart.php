@@ -21,12 +21,21 @@ use RuntimeException;
 final class Chart extends Component
 {
     /** @var array<string, mixed> */
-    public array $chartConfig;
+    public array $chartConfig = [];
 
-    public string $alpineComponent;
+    public string $alpineComponent = '';
 
     /** Mount element: 'canvas' (Chart.js) or 'div' (ApexCharts). */
-    public string $mountElement;
+    public string $mountElement = 'canvas';
+
+    /**
+     * True when no chart adapter is configured AND the constructor took
+     * the debug-mode soft-fallback path (rendered a placeholder div
+     * instead of throwing). Used by render() to switch to the
+     * placeholder view. Always false in production (the constructor
+     * throws hard there).
+     */
+    public bool $chartsDisabled = false;
 
     /**
      * @param  string  $type  Chart type — validated against the active adapter's supportedTypes().
@@ -82,10 +91,25 @@ final class Chart extends Component
         $adapter = $manager->adapter();
 
         if ($adapter === null) {
-            throw new RuntimeException(
-                "WireKit: Charts are disabled. Set 'charts.library' in config/wirekit.php "
-                ."to enable charts. Example: 'charts' => ['library' => 'chartjs']"
-            );
+            // In production: throw hard. Silent fallback to a blank
+            // placeholder would hide a real misconfiguration from end
+            // users (charts that should render don't, and the developer
+            // has no signal).
+            if (! config('app.debug')) {
+                throw new RuntimeException(
+                    "WireKit: Charts are disabled. Set 'charts.library' in config/wirekit.php "
+                    ."to enable charts. Example: 'charts' => ['library' => 'chartjs']"
+                );
+            }
+
+            // In debug: render a developer-visible placeholder instead
+            // of crashing the whole page on first-run "I just dropped
+            // <x-wirekit-chart> into a fresh app" UX. The placeholder
+            // states the missing-config step inline. `wirekit:doctor`
+            // surfaces the same diagnostic at install time.
+            $this->chartsDisabled = true;
+
+            return;
         }
 
         // Validate the requested type against the active adapter's surface.
@@ -124,6 +148,13 @@ final class Chart extends Component
 
     public function render(): View
     {
+        if ($this->chartsDisabled) {
+            // Resolved via the `wirekit::internal.chart-disabled` view name —
+            // a purely internal render target, NOT exposed as a Blade
+            // component (`<x-wirekit::chart-disabled>` does not exist).
+            return view('wirekit::internal.chart-disabled');
+        }
+
         return view('wirekit::components.chart');
     }
 }

@@ -103,16 +103,59 @@ class ExportApiMapCommand extends Command
     {
         $items = [];
         foreach (ComponentRegistry::all() as $name => $meta) {
+            // Transform the canonical open-tag form (`<x-wirekit::name>`
+            // OR class-based override `<x-wirekit-chart>`) into the
+            // self-closing form expected by AI / IDE tooling
+            // (`<x-wirekit::name />`, `<x-wirekit-chart />`). One
+            // source of truth in ComponentRegistry::tag().
+            $openTag = ComponentRegistry::tag($name);
+            $selfClosingTag = substr($openTag, 0, -1).' />';
+
             $items[] = [
                 'id' => $name,
-                'tag' => '<x-wirekit::'.$name.' />',
+                'tag' => $selfClosingTag,
                 'category' => $meta['category'] ?? 'Other',
                 'description' => $meta['description'] ?? '',
-                'docs_url' => 'https://docs.wirekit.app/components/'.$name,
+                // docs_url drops to null when the docs page isn't publicly
+                // visitable — same contract as ExportJsonCommand. AI tooling
+                // consuming the api-map then knows the component exists
+                // (it's still a callable tag) but won't fetch a URL that
+                // resolves to no useful content.
+                'docs_url' => $this->hasPublicComponentDocs($name)
+                    ? 'https://docs.wirekit.app/components/'.$name
+                    : null,
             ];
         }
 
         return ['id' => 'components', 'count' => count($items), 'items' => $items];
+    }
+
+    /**
+     * Whether docs/components/{name}.md is publicly visitable. Reads YAML
+     * frontmatter for the `visibility:` field; only `guest` (or missing
+     * frontmatter / missing field, both defaulting to guest) counts as
+     * public. Mirrors ExportJsonCommand::hasPublicDocsPage().
+     */
+    private function hasPublicComponentDocs(string $name): bool
+    {
+        $path = dirname(__DIR__, 2)."/docs/components/{$name}.md";
+        if (! file_exists($path)) {
+            return false;
+        }
+        $content = (string) file_get_contents($path);
+        if (! str_starts_with($content, '---')) {
+            return true;
+        }
+        $closing = strpos($content, "\n---", 3);
+        if ($closing === false) {
+            return true;
+        }
+        $frontmatter = substr($content, 3, $closing - 3);
+        if (preg_match('/^\s*visibility\s*:\s*([a-z]+)\s*$/mi', $frontmatter, $m)) {
+            return strtolower($m[1]) === 'guest';
+        }
+
+        return true;
     }
 
     /**
@@ -357,9 +400,10 @@ class ExportApiMapCommand extends Command
     /**
      * Public-CSS-API class catalog — every `wk-*` class WireKit emits
      * either via `dist/wirekit.css` or via Blade-template static
-     * strings. Mirrors `docs/extending/public-css-api.md`. The drift-audit guard
-     * `tests/Feature/PublicCssApiDriftTest.php` ensures the catalog
-     * and this emission stay in lockstep with the actual shipped CSS.
+     * strings. Mirrors `docs/extending/public-css-api.md`. The catalog
+     * and this emission are anti-drift enforced to stay in lockstep with
+     * the actual shipped CSS — adding or removing a `wk-*` class without
+     * updating the catalog fails the upstream build.
      *
      * @return array{id: string, count: int, items: array<int, array<string, string>>}
      */

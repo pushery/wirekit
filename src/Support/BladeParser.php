@@ -60,38 +60,173 @@ final class BladeParser
      */
     public static function extractSlotsFromSource(string $contents, ?string $bladePathForPropExclusion = null): array
     {
+        $records = self::extractSlotsWithMetadataFromSource($contents, $bladePathForPropExclusion);
+
+        return array_values(array_map(fn (array $r) => $r['name'], $records));
+    }
+
+    /**
+     * Extract named slots with per-slot metadata (currently just
+     * `required: bool`). The metadata flavour catches a bug class the
+     * plain extraction misses: components that reference a named slot
+     * directly via `{{ $name }}` WITHOUT an `@isset($name)` guard
+     * render `Undefined variable $name` when the developer omits the
+     * slot. popover / hover-card / context-menu all do this for their
+     * `trigger` slot — schema previously reported them as default-slot
+     * only, hiding the requirement.
+     *
+     * Detection heuristic:
+     *   - A slot wrapped in `@isset($name)` / `isset($name)` is OPTIONAL
+     *     (the component explicitly checks presence before rendering).
+     *   - A slot referenced bare via `{{ $name }}` or `{!! $name !!}`
+     *     OR a method call (`$name->isNotEmpty()`) without an enclosing
+     *     `@isset` guard is REQUIRED.
+     *   - The default `$slot` is always REQUIRED when referenced (Laravel
+     *     provides it automatically, but the component's rendering
+     *     contract assumes it).
+     *
+     * Heuristic limitations: the scanner is line-aware, not
+     * AST-aware — a `{{ $trigger }}` reference inside an `@isset($trigger)`
+     * branch IS scanned as bare. For the current component catalogue
+     * this is correct because `@isset` blocks DON'T re-interpolate
+     * the slot inside themselves (they conditionally include OTHER
+     * markup based on slot presence). If a component starts doing
+     * `@isset($trigger) {{ $trigger }} @endisset`, this heuristic
+     * would mark it as required when it's optional — at that point
+     * the heuristic needs to widen, OR the component author should
+     * use the canonical `{{ $trigger ?? '' }}` shape.
+     *
+     * @return list<array{name: string, required: bool}>
+     */
+    public static function extractSlotsWithMetadataFromSource(string $contents, ?string $bladePathForPropExclusion = null): array
+    {
         // Strip Blade `{{-- … --}}` comments BEFORE scanning so phantom
         // slot signals inside documentation comments don't leak into
-        // the detected slot list. Without this, a `{{-- $foo is rendered
-        // below --}}` comment would surface `foo` as a real slot.
+        // the detected slot list.
         $contents = (string) preg_replace('/\{\{--.*?--\}\}/s', '', $contents);
 
-        $slots = [];
+        $issetNames = [];
+        $bareNames = [];
 
         // Primary signal: isset($name) blocks identify slot-presence checks.
-        // Matches both @isset(...) Blade directive AND isset(...) inside
-        // @if / @elseif clauses (e.g. stat uses @elseif(isset($iconSlot))).
         if (preg_match_all('/\bisset\s*\(\s*\$([a-zA-Z][a-zA-Z0-9]*)\s*\)/', $contents, $matches)) {
             foreach ($matches[1] as $name) {
-                $slots[$name] = true;
+                $issetNames[$name] = true;
             }
         }
 
-        // Default slot: include 'slot' if the file outputs {{ $slot }} or
-        // checks $slot->isNotEmpty(). Some components use the default
-        // slot without an isset check (it's always defined).
-        if (preg_match('/\$slot\b/', $contents)) {
-            $slots['slot'] = true;
+        // Bare references: `{{ $name }}`, `{!! $name !!}`, `$name->method()`,
+        // `$name->isEmpty()`. These signal a hard dependency — if the
+        // developer doesn't supply the slot, the component errors.
+        if (preg_match_all('/\{\{\s*\$([a-zA-Z][a-zA-Z0-9]*)\b/', $contents, $bareMatches)) {
+            foreach ($bareMatches[1] as $name) {
+                $bareNames[$name] = true;
+            }
+        }
+        if (preg_match_all('/\{!!\s*\$([a-zA-Z][a-zA-Z0-9]*)\b/', $contents, $rawMatches)) {
+            foreach ($rawMatches[1] as $name) {
+                $bareNames[$name] = true;
+            }
+        }
+        // Method calls on slot vars — e.g. `$slot->isEmpty()`,
+        // `$trigger->toHtml()`.
+        if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9]*)->[a-zA-Z]/', $contents, $methodMatches)) {
+            foreach ($methodMatches[1] as $name) {
+                $bareNames[$name] = true;
+            }
         }
 
-        // Drop prop names and Blade-reserved names.
+        // Drop props + reserved names + locals from @php blocks. Without
+        // the @php-local filter, every `@php $x = ... @endphp` followed
+        // by `{{ $x }}` would falsely surface `x` as a required slot.
         $propNames = $bladePathForPropExclusion !== null
             ? array_map(fn ($p) => $p['name'], PropsParser::parseBlade($bladePathForPropExclusion))
             : [];
-        $reserved = ['loop', 'attributes', 'errors'];
-        $slotNames = array_diff(array_keys($slots), $propNames, $reserved);
+        $reserved = ['loop', 'attributes', 'errors', 'this', 'errors', 'message'];
+        $phpLocals = self::extractPhpLocalsFromSource($contents);
 
-        return array_values(array_unique($slotNames));
+        $exclude = array_unique(array_merge($propNames, $reserved, $phpLocals));
+
+        // Build the merged slot set:
+        //   - Every isset-checked name → OPTIONAL.
+        //   - Every bare-referenced name NOT in the isset set → REQUIRED.
+        //   - Bare-referenced `slot` (the default) → REQUIRED when used.
+        $records = [];
+        foreach (array_keys($issetNames) as $name) {
+            if (in_array($name, $exclude, true)) {
+                continue;
+            }
+            $records[$name] = ['name' => $name, 'required' => false];
+        }
+        foreach (array_keys($bareNames) as $name) {
+            if (in_array($name, $exclude, true)) {
+                continue;
+            }
+            // A name that ALSO appears in isset stays optional — the
+            // explicit guard wins. Otherwise it's required.
+            if (! isset($records[$name])) {
+                $records[$name] = ['name' => $name, 'required' => true];
+            }
+        }
+
+        return array_values($records);
+    }
+
+    /**
+     * Best-effort extraction of `$name = ...` assignments inside
+     * `@php` blocks AND `@php(...)` inline directives. Used to filter
+     *
+     * @php-declared locals out of the slot-detection set so they don't
+     * false-positive as required slots.
+     *
+     * Heuristic only — captures the simple assignment shape; a
+     * destructuring assignment (`[$a, $b] = ...`) wouldn't be picked
+     * up. For the current component catalogue this covers every case.
+     *
+     * @return list<string>
+     */
+    private static function extractPhpLocalsFromSource(string $contents): array
+    {
+        $locals = [];
+
+        // @php blocks: `@php ... @endphp`.
+        if (preg_match_all('/@php\s*(.*?)@endphp/s', $contents, $blockMatches)) {
+            foreach ($blockMatches[1] as $body) {
+                self::collectAssignmentsFrom($body, $locals);
+            }
+        }
+        // @php(expr) inline: single statement.
+        if (preg_match_all('/@php\s*\((.*?)\)/s', $contents, $inlineMatches)) {
+            foreach ($inlineMatches[1] as $body) {
+                self::collectAssignmentsFrom($body, $locals);
+            }
+        }
+
+        return array_values(array_unique($locals));
+    }
+
+    /**
+     * Scan a PHP-source string for `$name = ...` assignments and
+     * append each captured name to the `$locals` accumulator. Catches
+     * the common `$foo = ...;` shape; nested-array / destructuring
+     * shapes fall through silently.
+     *
+     * @param  list<string>  $locals
+     */
+    private static function collectAssignmentsFrom(string $body, array &$locals): void
+    {
+        if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9]*)\s*=(?!=)/', $body, $matches)) {
+            foreach ($matches[1] as $name) {
+                $locals[] = $name;
+            }
+        }
+        // foreach (`@foreach($items as $item)`) declares $item locally;
+        // same risk class. Catch the obvious shape.
+        if (preg_match_all('/foreach\s*\(\s*[^\s]+\s+as\s+\$([a-zA-Z][a-zA-Z0-9]*)/', $body, $foreachMatches)) {
+            foreach ($foreachMatches[1] as $name) {
+                $locals[] = $name;
+            }
+        }
     }
 
     /**

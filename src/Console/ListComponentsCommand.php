@@ -140,7 +140,7 @@ class ListComponentsCommand extends Command
                         'name' => $name,
                         'category' => $meta['category'],
                         'description' => $meta['description'],
-                        'tag' => "<x-wirekit::{$name}>",
+                        'tag' => ComponentRegistry::tag($name),
                     ];
                 }
                 // JSON_HEX_TAG protects against `</script>` breakouts when

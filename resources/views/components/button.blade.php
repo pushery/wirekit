@@ -99,18 +99,44 @@
         ? trim($relAttr.' noopener noreferrer')
         : $relAttr;
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
+
+    // When `loading=true` is set without ANY `wire:*` action attribute
+    // (wire:click / wire:submit / wire:click.prevent / wire:keydown / etc.),
+    // the developer wants the DECLARATIVE loading state — the button stays
+    // in its loading look until they manually flip it. The pre-fix behaviour
+    // attached `wire:loading` to the spinner and `wire:loading.attr` to the
+    // button, both of which are no-ops outside a Livewire request — so the
+    // spinner never showed AND the button never disabled. We now distinguish:
+    //   - $loading + wire:*  → wire:loading.attr (current — implicit while
+    //                          a Livewire request is in flight)
+    //   - $loading + no wire:*  → unconditional spinner + native disabled
+    //                            (declarative — developer toggles `loading`)
+    $hasWireAction = false;
+    foreach ($attributes->getAttributes() as $key => $_) {
+        if (is_string($key) && str_starts_with($key, 'wire:')) {
+            $hasWireAction = true;
+            break;
+        }
+    }
+    $declarativeLoading = $loading && ! $hasWireAction;
 @endphp
 
 <{{ $tag }}
     @if($href) href="{{ $href }}" @endif
     @if($tag === 'button') type="{{ $type }}" @endif
-    @disabled($disabled)
+    @disabled($disabled || $declarativeLoading)
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{ $attributes->except('rel')->class([$baseClasses, $variantClasses, $sizeClasses]) }}
-    @if($loading) wire:loading.attr="disabled" @endif
+    @if($loading && ! $declarativeLoading) wire:loading.attr="disabled" @endif
 >
-    {{-- Loading spinner (visible during Livewire requests) --}}
-    @if($loading)
+    {{-- Loading spinner: declarative path renders always; wire:loading
+         path renders only while a Livewire request is in flight. --}}
+    @if($declarativeLoading)
+        <svg class="animate-spin -ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+    @elseif($loading)
         <svg wire:loading class="animate-spin -ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>

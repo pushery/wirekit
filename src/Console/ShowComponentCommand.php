@@ -65,7 +65,7 @@ class ShowComponentCommand extends Command
         $this->line('');
         $this->line("  <fg=yellow>Category:</>    {$meta['category']}");
         $this->line("  <fg=yellow>Description:</> {$meta['description']}");
-        $this->line("  <fg=yellow>Tag:</>         <x-wirekit::{$name}>");
+        $this->line('  <fg=yellow>Tag:</>         '.ComponentRegistry::tag($name));
         $this->line('');
 
         // Extract props from blade file — structured records with comment metadata.
@@ -105,7 +105,7 @@ class ShowComponentCommand extends Command
             }
         }
 
-        $this->line("  <fg=yellow>Docs:</> docs/components/{$name}.md");
+        $this->line("  <fg=yellow>Docs:</> https://docs.wirekit.app/components/{$name}");
 
         return self::SUCCESS;
     }
@@ -139,7 +139,7 @@ class ShowComponentCommand extends Command
 
         $payload = [
             'name' => $name,
-            'tag' => "<x-wirekit::{$name}>",
+            'tag' => ComponentRegistry::tag($name),
             'category' => $meta['category'],
             'description' => $meta['description'],
             'docs_url' => "https://docs.wirekit.app/components/{$name}",
