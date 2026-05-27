@@ -23,7 +23,9 @@ use Illuminate\Support\Facades\File;
  */
 class VerifyInstallationCommand extends Command
 {
-    protected $signature = 'wirekit:verify {--tier= : Filter to a single check tier — "package" (asset / config / directive checks for the WireKit install itself) or "environment" (Laravel-level state checks like compiled-view freshness). Default = run every check.}';
+    protected $signature = 'wirekit:verify
+        {--tier= : Filter to a single check tier — "package" (asset / config / directive checks for the WireKit install itself) or "environment" (Laravel-level state checks like compiled-view freshness). Default = run every check.}
+        {--fix : proactively self-heal missing public/vendor/wirekit/* assets by triggering `vendor:publish --tag=wirekit-assets --force`. Useful right after a fresh clone (where the assets are .gitignored) to avoid a red doctor on first run.}';
 
     protected $description = 'Verify WireKit integration (assets, directives, Tailwind @source, optional deps)';
 
@@ -151,6 +153,23 @@ class VerifyInstallationCommand extends Command
         $cssMissing = ! file_exists(public_path('vendor/wirekit/wirekit.css'));
         $jsMissing = ! file_exists(public_path('vendor/wirekit/wirekit.js'));
 
+        // --fix self-heal. When the
+        // developer runs `wirekit:verify --fix` right after a fresh
+        // clone (the common case where `public/vendor/wirekit/` is
+        // gitignored), proactively trigger the publish so the doctor
+        // can re-verify instead of just printing the publish command.
+        if (($cssMissing || $jsMissing) && $this->option('fix')) {
+            $this->line('  <fg=yellow>--fix:</> Publishing wirekit-assets...');
+            $this->call('vendor:publish', [
+                '--tag' => 'wirekit-assets',
+                '--force' => true,
+            ]);
+            // Re-test the asset paths after the publish — if they're
+            // now present, treat the check as a pass.
+            $cssMissing = ! file_exists(public_path('vendor/wirekit/wirekit.css'));
+            $jsMissing = ! file_exists(public_path('vendor/wirekit/wirekit.js'));
+        }
+
         if ($cssMissing) {
             $this->reportFail('wirekit.css not found in public/vendor/wirekit/');
         } else {
@@ -166,6 +185,7 @@ class VerifyInstallationCommand extends Command
         // Only emit the consolidated fix hint once (not twice for css+js).
         if ($cssMissing || $jsMissing) {
             $this->line('  Fix: php artisan vendor:publish --tag=wirekit-assets --force');
+            $this->line('  Or:  php artisan wirekit:verify --fix   (self-heal)');
             if ($vendorDirExists) {
                 // Empty-but-existing directory — point at the deploy-hook scenario.
                 $this->line('  Hint: public/vendor/wirekit/ exists but is empty.');

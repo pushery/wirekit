@@ -67,7 +67,20 @@
     @if($logoOnlyNeedsLabel) aria-label="Home" @endif
     {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$classes]) }}
 >
-    @if($logo && $mobileLogo)
+    @if($logo instanceof \Illuminate\View\ComponentSlot)
+        {{-- A NAMED slot `<x-slot:logo>...</x-slot:logo>` was passed
+             instead of the URL prop — render its raw markup so callers
+             can drop in a custom SVG / coloured div / icon without
+             being forced into the URL-string contract. Blueprint authors
+             routinely reach for this shape. Pre-fix this code path
+             crashed the <a>'s HTML because the @elseif below stringified
+             the slot inside <img src="..."> attribute, leaving the rest
+             of the attribute string visible as text in the rendered DOM.
+             Branch placed FIRST so it wins against the URL branches
+             below; the URL branches' `truthy-string` test no longer
+             matches a ComponentSlot when this @if eats it. --}}
+        {{ $logo }}
+    @elseif($logo && $mobileLogo)
         {{-- Responsive logo swap: mobile-first wordmark below the breakpoint,
              full-width wordmark at + breakpoint. Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s

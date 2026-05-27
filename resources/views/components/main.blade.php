@@ -2,11 +2,24 @@
 @props([
     'container' => false,
     'padding' => config('wirekit.components.main.padding', 'lg'),
+    // cap the content width by default so dashboards don't stretch
+    // edge-to-edge on 1900px+ monitors. Default '2xl' matches the
+    // container component's '2xl' tier — most full-page layouts
+    // already wrap the slot in a container with that cap, so adopting
+    // the same default here unifies the two surfaces. Opt out with
+    // max="none" to preserve the pre-2.3.0 unbounded behaviour.
+    // Reads from config to allow per-app overrides.
+    'max' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    // warn on unknown prop keys in dev.
+    WireKit::warnUnknownProps('main', $attributes->getAttributes(), [
+        'container', 'padding', 'max', 'scope',
+    ]);
 
     // Main — primary content area in app-shell layouts.
     // `wk-main` marker — load-bearing against developer prose
@@ -15,7 +28,7 @@
     $classes = WireKit::resolveClasses('main', 'base', implode(' ', [
         'wk-main',
         'flex-1',
-        'overflow-y-auto',
+        'wk-scrollbar overflow-y-auto',
     ]), $scope);
 
     // Horizontal padding uses the same `--padding-wk-x-{size}` tokens as
@@ -30,11 +43,27 @@
         'xl' => 'px-[var(--padding-wk-x-xl)] py-[var(--space-wk-xl,2.5rem)]',
         default => WireKit::validateProp('main', 'padding', $padding, ['none', 'sm', 'md', 'lg', 'xl']),
     };
+
+    // Resolve max-width tier. `null` reads config (default `2xl`);
+    // explicit `none` (or empty string) skips the cap wrapper entirely
+    // for back-compat. Anything else maps to a `--size-wk-container-*`
+    // token via the same scale as `<x-wirekit::container>`.
+    $resolvedMax = $max ?? config('wirekit.components.main.max', '2xl');
+    $maxClass = match ($resolvedMax) {
+        'none', '' => null,
+        'sm' => 'max-w-[var(--size-wk-container-sm)]',
+        'md' => 'max-w-[var(--size-wk-container-md)]',
+        'lg' => 'max-w-[var(--size-wk-container-lg)]',
+        'xl' => 'max-w-[var(--size-wk-container-xl)]',
+        '2xl' => 'max-w-[var(--size-wk-container-2xl,96rem)]',
+        'full' => 'max-w-full',
+        default => WireKit::validateProp('main', 'max', (string) $resolvedMax, ['none', 'sm', 'md', 'lg', 'xl', '2xl', 'full']),
+    };
 @endphp
 
 <main {{ $attributes->class([$classes, $paddingClasses]) }}>
-    @if($container)
-        <div class="max-w-[var(--size-wk-container-2xl,96rem)] mx-auto w-full">
+    @if($container || $maxClass !== null)
+        <div class="{{ $maxClass ?? 'max-w-[var(--size-wk-container-2xl,96rem)]' }} mx-auto w-full">
             {{ $slot }}
         </div>
     @else

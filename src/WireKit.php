@@ -149,6 +149,29 @@ class WireKit
     }
 
     /**
+     * Warn at log level when a component receives an unknown prop key
+     * (typo for a declared prop, or a use-after-rename). Silent
+     * passthrough of `<x-wirekit::button variant="ghost">` (the prop is
+     * `surface`, not `variant`) is the bug class — the button silently
+     * renders with the default surface and the developer gets no signal
+     * that their intended treatment didn't apply.
+     *
+     * Usage in a Blade component's @php block:
+     *
+     *     WireKit::warnUnknownProps('button', $attributes->getAttributes(), [
+     *         'intent', 'surface', 'size', 'type', 'href', 'disabled',
+     *         'loading', 'forceLoading', 'scope',
+     *     ]);
+     *
+     * @param  array<string, mixed>  $actual  The attribute bag (`$attributes->getAttributes()`).
+     * @param  list<string>  $declared  The list of declared `@props` keys.
+     */
+    public static function warnUnknownProps(string $component, array $actual, array $declared): void
+    {
+        StrictnessGate::warnUnknownProps($component, $actual, $declared);
+    }
+
+    /**
      * Resolve an icon alias to the actual Blade Icon identifier.
      *
      * Usage: WireKit::icon('close') -> 'heroicon-m-x-mark'
@@ -217,8 +240,13 @@ class WireKit
      * the prop is unset (default — no animation, byte-identical to v1.5.0).
      *
      * Accepts both base names (`fade` → `fade-in`) and full preset names
-     * (`fade-in`, `slide-up-in`, etc). Unknown values throw via validateProp
-     * in debug mode, fall back to the first allowed in production.
+     * (`fade-in`, `slide-up-in`, etc). Also accepts the Tailwind-UI naming
+     * convention `fade-up` / `fade-down` / `fade-left` / `fade-right` as
+     * aliases for the corresponding `slide-*-in` presets — the same map
+     * `<x-wirekit::reveal>` accepts, kept in lockstep by
+     * `FadePresetAliasConsistencyTest`. Unknown values throw via
+     * validateProp in debug mode, fall back to the first allowed in
+     * production.
      */
     public static function resolveAnimateIn(?string $value, string $component): ?string
     {
@@ -228,6 +256,18 @@ class WireKit
 
         $bases = ['fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right',
             'scale', 'zoom', 'flip', 'rotate', 'bounce', 'spring'];
+
+        // Tailwind-UI naming-convention aliases. Resolved BEFORE auto-suffix
+        // so `fade-up` resolves to `slide-up-in`, not the non-existent
+        // `fade-up-in`. Same map as resources/views/components/reveal.blade.php
+        // — divergence is blocked by FadePresetAliasConsistencyTest.
+        $aliases = [
+            'fade-up' => 'slide-up-in',
+            'fade-down' => 'slide-down-in',
+            'fade-left' => 'slide-left-in',
+            'fade-right' => 'slide-right-in',
+        ];
+        $value = $aliases[$value] ?? $value;
 
         // Auto-suffix base names so developers can write `animateIn="fade"`.
         if (in_array($value, $bases, true)) {

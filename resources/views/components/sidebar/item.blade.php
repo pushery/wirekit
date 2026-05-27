@@ -9,6 +9,22 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // also consume `data-current` /
+    // `data-current="true"` if the caller passed it via the attribute
+    // bag (Livewire 4 emits this on `wire:navigate` links automatically).
+    // Without this fallback the developer has to manually pass
+    // `:active="request()->is('posts*')"` on every sidebar item,
+    // duplicating routing knowledge that's already encoded in the
+    // route file. We OR-merge: explicit `:active` always wins; if the
+    // caller didn't pass `active` but did pass `data-current="true"`,
+    // the item highlights.
+    if (! $active) {
+        $dataCurrent = $attributes->get('data-current');
+        if ($dataCurrent === true || $dataCurrent === 'true' || $dataCurrent === '1' || $dataCurrent === 'page') {
+            $active = true;
+        }
+    }
+
     // Individual nav link. Active items get a highlighted background and
     // aria-current="page" so AT announces "current page, <label>".
     $classes = WireKit::resolveClasses('sidebar.item', 'base', implode(' ', [

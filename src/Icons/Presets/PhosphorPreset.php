@@ -49,6 +49,16 @@ final class PhosphorPreset implements IconPreset
             'sort-desc' => 'phosphor-sort-descending',
             'filter' => 'phosphor-funnel',
             'external-link' => 'phosphor-arrow-square-out',
+
+            // common dashboard icons.
+            'home' => 'phosphor-house',
+            'moon' => 'phosphor-moon',
+            'sun' => 'phosphor-sun',
+            'book-open' => 'phosphor-book-open',
+            'sign-out' => 'phosphor-sign-out',
+            'megaphone' => 'phosphor-megaphone',
+            'map' => 'phosphor-map-trifold',
+            'file-text' => 'phosphor-file-text',
         ];
     }
 

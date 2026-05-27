@@ -1081,11 +1081,15 @@ final class ClassInventory
          * `[&_a]:text-foo`, `[&::-webkit-outer-spin-button]:appearance-none`)
          * OR with a single digit IMMEDIATELY followed by a lowercase letter
          * (the `2xl:` breakpoint variant is the canonical case — every
-         * `2xl:grid-cols-N` and `2xl:flex` shape begins with `2`).
+         * `2xl:grid-cols-N` and `2xl:flex` shape begins with `2`)
+         * OR with a leading `-` (Tailwind negative-utility shape — `-top-8`,
+         * `-mt-1`, `-translate-x-1/2`, `-rotate-90`; the negative sign is
+         * a first-class part of the class name and the next char follows
+         * the same shape constraints as a positive-utility start).
          * Body chars are alphanumeric + the structural delimiters Tailwind
          * uses inside arbitrary values + `&` (the v4 nesting marker).
          */
-        if (preg_match('/^(?:[a-z]|\[|\d[a-z])[a-zA-Z0-9:_\-\[\]\(\)\/.,#%*&]+$/', $candidate) !== 1) {
+        if (preg_match('/^-?(?:[a-z]|\[|\d[a-z])[a-zA-Z0-9:_\-\[\]\(\)\/.,#%*&]+$/', $candidate) !== 1) {
             return false;
         }
 

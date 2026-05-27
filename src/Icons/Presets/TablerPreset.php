@@ -47,6 +47,16 @@ final class TablerPreset implements IconPreset
             'sort-desc' => 'tabler-sort-descending',
             'filter' => 'tabler-filter',
             'external-link' => 'tabler-external-link',
+
+            // common dashboard icons.
+            'home' => 'tabler-home',
+            'moon' => 'tabler-moon',
+            'sun' => 'tabler-sun',
+            'book-open' => 'tabler-book',
+            'sign-out' => 'tabler-logout',
+            'megaphone' => 'tabler-megaphone',
+            'map' => 'tabler-map',
+            'file-text' => 'tabler-file-text',
         ];
     }
 

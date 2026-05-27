@@ -265,6 +265,8 @@
     --text-wk-xl: 1.25rem;
     --text-wk-2xl: 1.5rem;
     --text-wk-3xl: 1.875rem;
+    --text-wk-4xl: 2.25rem;
+    --text-wk-5xl: 3rem;
 
     /* ─── Overlay: Backdrop ─── */
     --color-wk-overlay: oklch(0% 0 0 / 0.5);
@@ -423,6 +425,31 @@
 /* Corner piece where horizontal and vertical scrollbars meet */
 .wk-scrollbar::-webkit-scrollbar-corner {
     background: var(--color-wk-scrollbar-track);
+}
+
+/* ─── Prose <pre> scrollbar theming ────────────────────────── */
+/* Markdown-style prose code blocks (`<pre>` children of `.wk-prose`)
+   inherit the themed scrollbar treatment. Without this, the prose
+   component's `[&_pre]:overflow-x-auto` Tailwind utility produces a
+   bare OS-default scrollbar inside long code samples — visibly
+   inconsistent with every other WireKit scrollable surface.        */
+.wk-prose pre {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-wk-scrollbar-thumb) var(--color-wk-scrollbar-track);
+}
+.wk-prose pre::-webkit-scrollbar {
+    width: var(--size-wk-scrollbar);
+    height: var(--size-wk-scrollbar);
+}
+.wk-prose pre::-webkit-scrollbar-track {
+    background: var(--color-wk-scrollbar-track);
+}
+.wk-prose pre::-webkit-scrollbar-thumb {
+    background-color: var(--color-wk-scrollbar-thumb);
+    border-radius: var(--radius-wk-full);
+}
+.wk-prose pre::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-wk-scrollbar-thumb-hover);
 }
 
 /* ─── Alpine x-transition sync ─────────────────────────────── */

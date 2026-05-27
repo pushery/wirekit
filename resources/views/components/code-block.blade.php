@@ -29,7 +29,7 @@
     ]);
 
     $codeClasses = implode(' ', [
-        'block overflow-x-auto',
+        'wk-scrollbar block overflow-x-auto',
         'p-[var(--space-wk-md,1rem)]',
         'bg-transparent border-0 rounded-none',
         'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',

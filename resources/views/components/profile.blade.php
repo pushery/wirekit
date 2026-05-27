@@ -23,6 +23,16 @@
         // canonical button focus state (matches the button component).
         $interactive ? 'cursor-pointer focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[var(--color-wk-ring-offset)] rounded-[var(--radius-wk-sm)]' : '',
     ]), $scope);
+
+    // accept either a string URL
+    // OR an array shape `['src' => ..., 'initials' => ...]` (matching
+    // `message.author` and the avatar-component convention). Pre-fix,
+    // passing an array crashed with `htmlspecialchars(): Argument #1
+    // must be of type string, array given` because the renderer did
+    // `<img src="{{ $avatar }}">` without a normaliser.
+    $avatarSrc = is_array($avatar) ? ($avatar['src'] ?? null) : (is_string($avatar) ? $avatar : null);
+    $avatarInitials = is_array($avatar) ? ($avatar['initials'] ?? null) : null;
+    $avatarAlt = is_array($avatar) ? ($avatar['alt'] ?? '') : '';
 @endphp
 
 <div
@@ -34,8 +44,15 @@
     @endif
     {{ $attributes->class([$classes]) }}
 >
-    @if($avatar)
-        <img src="{{ $avatar }}" alt="" class="h-8 w-8 rounded-full object-cover" />
+    @if($avatarSrc)
+        <img src="{{ $avatarSrc }}" alt="{{ $avatarAlt }}" class="h-8 w-8 rounded-full object-cover" />
+    @elseif($avatarInitials)
+        {{-- Initials fallback — same deterministic-palette shape as the --}}
+        {{-- canonical avatar primitive uses for non-image avatars.       --}}
+        <span
+            aria-label="{{ $name ?? $avatarInitials }}"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)]"
+        >{{ $avatarInitials }}</span>
     @endif
     @if($name)
         <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)]">{{ $name }}</span>

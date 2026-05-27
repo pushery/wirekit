@@ -6,11 +6,20 @@
     'href' => null,
     'disabled' => false,
     'loading' => false,
+    'forceLoading' => false,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    // warn when developers pass an
+    // unknown prop (e.g. `variant="ghost"` when the prop is `surface`).
+    // Dev-only — silent in prod. See WireKit::warnUnknownProps() docs.
+    WireKit::warnUnknownProps('button', $attributes->getAttributes(), [
+        'intent', 'surface', 'size', 'type', 'href', 'disabled',
+        'loading', 'forceLoading', 'scope',
+    ]);
 
     // Base classes: layout, typography, transitions, focus ring, disabled state
     // All values reference design tokens — no hardcoded colors, sizes, or durations
@@ -40,6 +49,12 @@
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:pointer-events-none',
     ]), $scope);
+
+    // accept `outlined` as alias for
+    // the canonical `outline` so developers who copy from card (which
+    // uses `variant="outlined"`) get the same visual on button.
+    $surfaceAliases = ['outlined' => 'outline'];
+    $surface = $surfaceAliases[$surface] ?? $surface;
 
     // Validate intent + surface (debug mode raises on unknown values).
     if (! in_array($intent, \Pushery\WireKit\VariantResolver::INTENTS, true)) {
@@ -119,6 +134,15 @@
         }
     }
     $declarativeLoading = $loading && ! $hasWireAction;
+
+    // `forceLoading=true` renders the
+    // spinner unconditionally — useful for static button demos and for
+    // non-Livewire contexts where the implicit wire:loading gate would
+    // hide the spinner. Bypasses the wire:loading + declarative paths
+    // by promoting the button straight to a hard-disabled spinner state.
+    if ($forceLoading) {
+        $declarativeLoading = true;
+    }
 @endphp
 
 <{{ $tag }}

@@ -28,7 +28,7 @@
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
         'shadow-[var(--shadow-wk-lg)]',
-        'overflow-y-auto',
+        'wk-scrollbar overflow-y-auto',
         'flex flex-col',
     ]), $scope);
 

@@ -14,6 +14,7 @@
     'annotations' => [],
     'inline' => false,
     'replayable' => false,
+    'library' => null,
     'scope' => null,
 ])
 
@@ -89,5 +90,6 @@
         :annotations="$annotations"
         :inline="$inline"
         :replayable="$replayable"
+        :library="$library"
     />
 </div>

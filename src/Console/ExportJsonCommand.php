@@ -63,13 +63,26 @@ class ExportJsonCommand extends Command
                 ? "https://docs.wirekit.app/components/{$name}"
                 : null;
 
-            $components[] = [
+            $tagAlias = ComponentRegistry::tagAlias($name);
+            $entry = [
                 'name' => $name,
                 'tag' => ComponentRegistry::tag($name),
-                'category' => $meta['category'],
-                'description' => $meta['description'],
-                'docs_url' => $docsUrl,
-                'props' => $props,
+            ];
+            // for class-based
+            // components whose canonical tag uses the single-hyphen
+            // form (`<x-wirekit-chart>`), also emit the double-colon
+            // alias (`<x-wirekit::chart>`) so tool integrators that
+            // were grepping against the historical shape still match.
+            // Normal anonymous components have no alias — field
+            // omitted entirely in that case.
+            if ($tagAlias !== null) {
+                $entry['tag_alias'] = $tagAlias;
+            }
+            $entry['category'] = $meta['category'];
+            $entry['description'] = $meta['description'];
+            $entry['docs_url'] = $docsUrl;
+            $entry['props'] = $props;
+            $components[] = $entry + [
                 'slots' => $slots,
                 'sub_components' => $subComponents,
             ];

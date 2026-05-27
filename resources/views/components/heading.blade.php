@@ -24,14 +24,21 @@
         default => 'xl',
     };
 
+    // extend the heading size scale.
+    //   - md accepted as an alias for base (rest of the kit uses md as
+    //     the canonical middle tier — heading was the outlier).
+    //   - 4xl and 5xl added so hero copy can use the standard hero
+    //     scale designers copy from external typography systems.
     $sizeClasses = match ($resolvedSize) {
         'sm' => 'text-[length:var(--text-wk-sm)]',
-        'base' => 'text-[length:var(--text-wk-md)]',
+        'md', 'base' => 'text-[length:var(--text-wk-md)]',
         'lg' => 'text-[length:var(--text-wk-lg)]',
         'xl' => 'text-[length:var(--text-wk-xl,1.25rem)]',
         '2xl' => 'text-[length:var(--text-wk-2xl,1.5rem)]',
         '3xl' => 'text-[length:var(--text-wk-3xl,1.875rem)]',
-        default => WireKit::validateProp('heading', 'size', $resolvedSize, ['sm', 'base', 'lg', 'xl', '2xl', '3xl']),
+        '4xl' => 'text-[length:var(--text-wk-4xl,2.25rem)]',
+        '5xl' => 'text-[length:var(--text-wk-5xl,3rem)]',
+        default => WireKit::validateProp('heading', 'size', $resolvedSize, ['sm', 'md', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl']),
     };
 
     $trackingClasses = match ($tracking) {

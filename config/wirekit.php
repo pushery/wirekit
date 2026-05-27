@@ -113,6 +113,7 @@ return [
         'file-upload' => ['size' => 'md', 'multiple' => false, 'accept' => null],
         'combobox' => ['size' => 'md', 'placeholder' => 'Select...'],
         'slider' => ['size' => 'md', 'min' => 0, 'max' => 100, 'step' => 1],
+        'range-slider' => ['show_values' => true],
         'color-picker' => ['size' => 'md'],
         'number-input' => ['size' => 'md'],
         'password-input' => ['size' => 'md'],

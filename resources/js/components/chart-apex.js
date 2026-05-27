@@ -1,4 +1,4 @@
-import { resolveThemeColors, palette } from '../utils/chart-theme-colors.js';
+import { resolveThemeColors, palette, resolveCssVarsDeep } from '../utils/chart-theme-colors.js';
 
 /**
  * Unified tooltip renderer for every ApexCharts type. Emits ApexCharts'
@@ -407,7 +407,15 @@ window.ApexCharts = ApexCharts;</pre>
                 // guarantees a clean slate so `render()` always plays
                 // the entrance animation.
                 mount.innerHTML = '';
-                this.chart = new ApexCharts(mount, themed);
+                // Resolve every `var(--token)` reference in the config
+                // tree — per-dataset `color`, heatmap colorScale ranges,
+                // annotation fillColor / borderColor, candlestick stroke
+                // colours, timeline fillColor — ApexCharts hands these
+                // straight to SVG `fill="…"`, which does NOT parse CSS
+                // vars. Without this walk, every such reference silently
+                // falls back to ApexCharts' default first-series blue.
+                const resolvedThemed = resolveCssVarsDeep(themed, style);
+                this.chart = new ApexCharts(mount, resolvedThemed);
                 this.chart.render();
 
                 // Radar tooltip — bypass ApexCharts' event system.
@@ -895,7 +903,12 @@ window.ApexCharts = ApexCharts;</pre>
                         dynamicAnimation: { enabled: !reduced, speed: reduced ? 0 : 250 },
                     };
 
-                    this.chart.updateOptions(themed, false, !reduced);
+                    // Re-resolve var() references on the dark-mode swap so
+                    // per-dataset / colorScale / annotation colours pick up
+                    // the new .dark cascade values. Same reasoning as the
+                    // initial-mount resolveCssVarsDeep() above.
+                    const resolvedThemed = resolveCssVarsDeep(themed, style);
+                    this.chart.updateOptions(resolvedThemed, false, !reduced);
                 }, 50);
             });
 

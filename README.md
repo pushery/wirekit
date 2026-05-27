@@ -105,7 +105,7 @@ A wide catalogue of components organised by category. Browse, search, and try ev
 | **Utilities** | fonts, icon, chart, chart-mixed, sparkline, scroll-area, scroll-to-top, structured-data |
 | **Specialized** | resizable, carousel, calendar, tour, qr-code, action-bar, prose, liquid-glass |
 | **Reading** | reading-progress, reading-spine, reading-toc, reading-minimap, reading-bookmark, reading-meta, reading-shell |
-| **Animation** | reveal |
+| **Animation** | reveal, replay-button |
 | **Feedback** | toast |
 
 ## Theming & Customization
@@ -126,7 +126,7 @@ WireKit ships with a **4-level customization system** — from CSS-variable them
 
 - **Fonts** — Curated Google Fonts bundled locally for GDPR compliance. Configure via `config/wirekit.php`.
 - **Icons** — Stackable presets for `heroicons`, `lucide`, `phosphor`, `tabler` plus app/marketing extensions, with semantic aliases for common UI intents.
-- **Charts** — Optional chart system with a Chart.js (MIT) adapter and an ApexCharts adapter. Switch with one line: `'charts' => ['library' => 'apexcharts']` in `config/wirekit.php`. ApexCharts is **non-MIT** (free Community License under $2M USD revenue, Commercial License above) — WireKit ships only the adapter glue. See [Chart docs](https://docs.wirekit.app/components/chart) for the full terms.
+- **Charts** — Optional chart system with a Chart.js (MIT) adapter and an ApexCharts adapter. Switch the app default with one line: `'charts' => ['library' => 'apexcharts']` in `config/wirekit.php`, or override per-instance via `<x-wirekit-chart library="apexcharts" …>` for mixed-library pages. ApexCharts is **non-MIT** (free Community License under $2M USD revenue, Commercial License above) — WireKit ships only the adapter glue. See [Chart docs](https://docs.wirekit.app/components/chart) for the full terms.
 
 → **[Theming Guide](https://docs.wirekit.app/theming)** for fonts and presets · **[Icon docs](https://docs.wirekit.app/components/icon)** · **[Chart docs](https://docs.wirekit.app/components/chart)**
 

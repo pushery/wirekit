@@ -32,7 +32,7 @@ class MakeCommand extends Command
 
     /**
      * Recipe templates ship stubs under src/Console/stubs/recipes/<name>.blade.php
-     * — derived from the corresponding docs/recipes/<name>.md preview blocks.
+     * — derived from the corresponding docs/blueprints/recipes/<name>.md preview blocks.
      * Each scaffold generates a Livewire class + Blade view; the developer
      * adapts the recipe to their data shape.
      *
@@ -180,7 +180,7 @@ class MakeCommand extends Command
     /**
      * Scaffold a Livewire page from a shipped recipe stub.
      *
-     * Each recipe corresponds to a `docs/recipes/<name>.md` page; the
+     * Each recipe corresponds to a `docs/blueprints/recipes/<name>.md` page; the
      * Blade stub under `src/Console/stubs/recipes/<name>.blade.php`
      * captures the recipe's structural skeleton with cross-link to
      * docs.wirekit.app for the full composition.

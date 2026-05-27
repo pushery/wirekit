@@ -94,7 +94,31 @@ final class IconResolver
             }
         }
 
-        // 3. Surface every alias from every active preset for a useful error
+        // 3. fallthrough to the
+        // underlying blade-icons identifier when the alias matches the
+        // ICON name (no prefix) in the active preset family. This
+        // catches the bug class where developers write
+        // `<x-wirekit::icon name="briefcase" />` expecting the
+        // blade-heroicons icon — pre-fix we threw because `briefcase`
+        // wasn't aliased, even though the underlying SVG ships in the
+        // package. We log an INFO line so the dev knows the alias
+        // fell through (and consider promoting it to the preset).
+        $fallthrough = $this->resolveFallthrough($alias, $presets);
+        if ($fallthrough !== null) {
+            // Log at info level only — visible in development logs as
+            // a hint to add the alias to the preset, but invisible
+            // in production noise.
+            if (function_exists('logger')) {
+                logger()->info(
+                    "WireKit: Icon alias '{$alias}' resolved via fallthrough to '{$fallthrough}'. ".
+                    'Consider adding it to your active icon preset.'
+                );
+            }
+
+            return $fallthrough;
+        }
+
+        // 4. Surface every alias from every active preset for a useful error
         $available = [];
         foreach ($presets as $preset) {
             $available = array_merge($available, array_keys($preset->icons()));
@@ -117,6 +141,90 @@ final class IconResolver
         $message .= 'Available aliases: '.implode(', ', $available);
 
         throw new InvalidArgumentException($message);
+    }
+
+    /**
+     * Fallthrough resolution: try `{prefix}-{alias}` and the two
+     * heroicons style variants for the icon name as the developer
+     * typed it. Returns the first match or null if none exists.
+     *
+     * Per-family prefix mapping:
+     *   - heroicons     → `heroicon-m-{alias}`, `heroicon-o-{alias}`, `heroicon-s-{alias}`
+     *   - lucide        → `lucide-{alias}`
+     *   - phosphor      → `phosphor-{alias}`
+     *   - tabler        → `tabler-{alias}`
+     *
+     * @param  list<IconPreset>  $presets
+     */
+    private function resolveFallthrough(string $alias, array $presets): ?string
+    {
+        $svgFactory = function_exists('app') && app()->bound('blade.icons')
+            ? app('blade.icons')
+            : null;
+
+        if ($svgFactory === null) {
+            return null;
+        }
+
+        // Determine which icon family is active by introspecting any
+        // preset's first alias — the prefix is the same for the whole
+        // family.
+        foreach ($presets as $preset) {
+            $icons = $preset->icons();
+            if ($icons === []) {
+                continue;
+            }
+            $firstValue = reset($icons);
+            $prefix = $this->familyPrefix((string) $firstValue);
+
+            if ($prefix === null) {
+                continue;
+            }
+
+            // For heroicons, try mini / outline / solid in that order
+            // (mini is the canonical UI size).
+            $candidates = $prefix === 'heroicon-m'
+                ? ["heroicon-m-{$alias}", "heroicon-o-{$alias}", "heroicon-s-{$alias}"]
+                : ["{$prefix}-{$alias}"];
+
+            foreach ($candidates as $candidate) {
+                try {
+                    if (method_exists($svgFactory, 'svg')) {
+                        // Successful lookup returns an Htmlable; failure throws.
+                        $svgFactory->svg($candidate);
+
+                        return $candidate;
+                    }
+                } catch (\Throwable) {
+                    // Try next candidate.
+                    continue;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Extract the family-prefix (everything up to the LAST `-`) from
+     * a full blade-icon identifier like `heroicon-m-x-mark` →
+     * `heroicon-m`. The blade-icons package uses `{set}-{name}` for
+     * Lucide / Phosphor / Tabler and `{set}-{style}-{name}` for
+     * heroicons (where style is m / o / s).
+     */
+    private function familyPrefix(string $fullIdentifier): ?string
+    {
+        // Heroicons: `heroicon-m-...` / `heroicon-o-...` / `heroicon-s-...`
+        if (preg_match('/^(heroicon-[mos])-/', $fullIdentifier, $m) === 1) {
+            return $m[1];
+        }
+
+        // Other families: `lucide-...` / `phosphor-...` / `tabler-...`
+        if (preg_match('/^([a-z]+)-/', $fullIdentifier, $m) === 1) {
+            return $m[1];
+        }
+
+        return null;
     }
 
     /**
