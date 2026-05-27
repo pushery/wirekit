@@ -7,6 +7,16 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [2.3.1] — 2026-05-27
+
+Patch release.
+
+### Fixed
+
+- **`.cursor/rules/wirekit.mdc` section-heading polish.** Several headings have been simplified to cleaner product copy. Developers running `php artisan wirekit:cursor-rules` after `composer update` pick up the polished rules file.
+
+---
+
 ## [2.3.0] — 2026-05-26
 
 **Minor release.** First-time-integrator audit follow-up. Five surface areas touched: form-input accessibility (`multi-select`, `range-slider`), shared-prop-vocabulary aliases (`feature`, `card`, `button`, `heading`, `reveal`), icon-system completeness (8 new base aliases per preset + bare-name fallthrough resolution), new `main` max-width default + `button` `forceLoading`, two new artisan-command capabilities (`wirekit:show <parent>.<child>`, `wirekit:verify --fix`), plus a new static-analysis a11y linter `wirekit:doctor:a11y`. Documentation site grows the unified `/blueprints/` route with `/blueprints/partials/*` (8 marketing-section building blocks) and `/blueprints/recipes/*` (10 worked-example compositions) under a fresh index page.

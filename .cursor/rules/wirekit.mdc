@@ -28,7 +28,7 @@ with a double colon:
 NEVER use a single colon (`<x-wirekit:button>`) — that syntax does not
 resolve to the package's anonymous-component path.
 
-## Variant system (Plan 28)
+## Variant system
 
 Most interactive components support a unified Intent × Surface variant
 system. Acceptable values:
@@ -72,7 +72,7 @@ Common tokens:
 NEVER use the `dark:` Tailwind prefix on a WireKit component or its
 content — tokens auto-switch via the parent `.dark` class.
 
-## Icon usage (Plan 32 Chunk B2)
+## Icon usage
 
 ```blade
 <x-wirekit::icon name="check" size="sm" />
@@ -91,7 +91,7 @@ marketing-specific aliases. Configure in `config/wirekit.php`:
 'icons' => ['presets' => ['heroicons', 'heroicons-marketing']],
 ```
 
-## Layout primitives (Plan 28)
+## Layout primitives
 
 Reach for these instead of hand-rolled flex/grid:
 
@@ -104,7 +104,7 @@ Reach for these instead of hand-rolled flex/grid:
 - `<x-wirekit::aspect-ratio ratio="16/9">` — locked aspect ratio
 - `<x-wirekit::divider>`, `<x-wirekit::spacer size="md">`
 
-## Typography primitives (Plan 28)
+## Typography primitives
 
 ```blade
 <x-wirekit::heading level="2">Section title</x-wirekit::heading>
