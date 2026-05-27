@@ -13,7 +13,7 @@
     };
 
     $layoutClasses = $orientationValue === 'horizontal'
-        ? 'flex flex-row overflow-x-auto scroll-snap-x-mandatory gap-[var(--space-wk-md,1rem)]'
+        ? 'wk-scrollbar flex flex-row overflow-x-auto scroll-snap-x-mandatory gap-[var(--space-wk-md,1rem)]'
         : 'flex flex-col gap-[var(--space-wk-md,1rem)]';
 
     $baseClasses = WireKit::resolveClasses('kanban', 'base', implode(' ', [

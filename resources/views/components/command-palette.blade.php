@@ -93,7 +93,7 @@
                  close the palette, because the container sits on top of the
                  backdrop and intercepts clicks. --}}
             <div
-                class="fixed inset-0 z-[var(--z-wk-modal)] flex items-start justify-center pt-[var(--wk-command-palette-offset-top,20vh)] px-[var(--padding-wk-x-lg)] overflow-y-auto"
+                class="wk-scrollbar fixed inset-0 z-[var(--z-wk-modal)] flex items-start justify-center pt-[var(--wk-command-palette-offset-top,20vh)] px-[var(--padding-wk-x-lg)] overflow-y-auto"
                 x-on:click="close()"
             >
                 <div
@@ -140,7 +140,7 @@
                         x-ref="list"
                         id="wk-command-list"
                         role="listbox"
-                        class="max-h-72 overflow-y-auto py-[var(--padding-wk-y-xs)]"
+                        class="wk-scrollbar max-h-72 overflow-y-auto py-[var(--padding-wk-y-xs)]"
                     >
                         {{ $slot }}
                     </div>

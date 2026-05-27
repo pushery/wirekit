@@ -5,6 +5,7 @@
     'options' => [],
     'placeholder' => 'Select...',
     'scope' => null,
+    'ariaLabel' => null,
 ])
 
 @php
@@ -12,6 +13,13 @@
 
     $id = $attributes->get('id', $attributes->get('name', 'multi-select-' . \Illuminate\Support\Str::random(6)));
     $name = $attributes->get('name', $id);
+    // When a parent <x-wirekit::field label="..."> wraps this component, the
+    // field-emitted <label for="$id"> doesn't reach the internal combobox
+    // <input id="$id-input">, so screen readers + axe's label rule report
+    // an unlabelled form element. We synthesise an aria-label fallback —
+    // explicit `ariaLabel` prop wins, then the field's `label` prop (passed
+    // down via attributes scan), then the `name`/`placeholder` as last resort.
+    $resolvedAriaLabel = $ariaLabel ?? $attributes->get('aria-label') ?? $label ?? $placeholder ?? $name;
 
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
@@ -120,6 +128,10 @@
                 aria-autocomplete="list"
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+                {{-- Wire an aria-label so WCAG 2.1 AA + axe label-rule are     --}}
+                {{-- satisfied even when the parent <x-wirekit::field label="..."> --}}
+                {{-- doesn't reach this internal combobox input.                 --}}
+                aria-label="{{ $resolvedAriaLabel }}"
                 :placeholder="selected.length === 0 ? '{{ $placeholder }}' : ''"
                 class="flex-1 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] outline-none"
             />

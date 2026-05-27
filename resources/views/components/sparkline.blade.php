@@ -4,6 +4,11 @@
     'inline' => false,
     'height' => null,
     'scope' => null,
+    // Per-instance chart-library override pass-through. See the `library`
+    // prop on src/Components/Chart.php for full semantics. Without explicit
+    // declaration here the prop would NOT reach the inner chart — sparkline
+    // is an anonymous Blade wrapper, so attribute-bag flow is opt-in per prop.
+    'library' => null,
 ])
 
 @php
@@ -170,5 +175,6 @@
         :options="$sparkOptions"
         :height="$resolvedHeight"
         :inline="$inline"
+        :library="$library"
     />
 </{{ $sparklineTag }}>

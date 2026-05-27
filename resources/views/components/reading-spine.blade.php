@@ -77,10 +77,17 @@
     // are tabbable too but Tab-skipping them when the user wants to scroll
     // the container is the canonical pattern). Focus-visible ring uses
     // the standard --ring-wk-* tokens; hidden on mouse-only focus.
+    // `overflow-x-hidden` is explicit (not implied by `overflow-y-auto`):
+    // per CSS spec, setting one axis to `auto` while leaving the other at
+    // `visible` computes BOTH axes to `auto`. Long heading labels with
+    // `white-space: nowrap` on `.wk-reading-spine__label` would then
+    // produce a horizontal scrollbar inside the spine even though the
+    // ellipsis truncation should clip them visually. Pinning x-axis to
+    // hidden + y-axis to auto gives true vertical-only scroll.
     $rootClass = WireKit::resolveClasses('reading-spine', 'base', implode(' ', [
         'wk-reading-spine',
         'fixed top-1/2 -translate-y-1/2 z-[var(--z-wk-sticky)]',
-        'max-h-[calc(100vh-8rem)] overflow-y-auto',
+        'wk-scrollbar max-h-[calc(100vh-8rem)] overflow-x-hidden overflow-y-auto',
         'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         $positionClass,
         $hideBelowClass,

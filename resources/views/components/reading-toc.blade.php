@@ -129,7 +129,7 @@
         layout primitives.
     --}}
     <ol
-        class="wk-reading-toc__list flex flex-row items-center gap-[var(--reading-toc-gap)] py-[var(--reading-toc-padding-y)] px-[var(--reading-toc-padding-x)] overflow-x-auto"
+        class="wk-reading-toc__list wk-scrollbar flex flex-row items-center gap-[var(--reading-toc-gap)] py-[var(--reading-toc-padding-y)] px-[var(--reading-toc-padding-x)] overflow-x-auto"
         style="list-style: none; margin: 0; display: flex; flex-direction: row; align-items: center;"
     >
         <template x-for="item in items" :key="item.id">

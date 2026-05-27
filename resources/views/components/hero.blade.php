@@ -14,7 +14,9 @@
     // `lg` (= `--space-wk-section-lg` at `sm+` viewports). Mobile viewport
     // (< sm breakpoint) automatically drops one tier — `lg` becomes
     // `md` (= 5rem each side) so the bottom-empty-area-with-gradient
-    // class of bug (developer brief 2026-05-19 § B.2) doesn't recur.
+    // class of bug (variant="dark" hero with gradient overlay produces
+    // a visually empty dark band below the content on narrow viewports
+    // when the section padding is too generous) doesn't recur.
     // Pass `size="sm"` for the tightest spacing across every viewport.
     'size' => 'lg',
     'scope' => null,
@@ -153,13 +155,12 @@
     @if($gradient)
         {{-- Gradient overlay is anchored to the outer <section> so it
              fills the section edge-to-edge (visually clean across the
-             side padding as well as the content area). The original
-             B.2-class bug from developer brief 2026-05-19 (empty
-             dark area below content on mobile under variant="dark" +
-             gradient) is now mitigated separately by the responsive
-             py- mapping above — mobile drops one tier so size="lg"
-             gets the section-md padding tier (5rem) instead of lg
-             (7rem), keeping the gradient-extension below content
+             side padding as well as the content area). The
+             empty-dark-area-below-content bug class on mobile under
+             variant="dark" + gradient is mitigated separately by the
+             responsive py- mapping above — mobile drops one tier so
+             size="lg" gets the section-md padding tier (5rem) instead
+             of lg (7rem), keeping the gradient-extension below content
              visually short enough that it reads as depth, not empty
              space. `pointer-events-none` so the overlay never
              intercepts clicks on the action buttons it visually

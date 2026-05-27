@@ -78,7 +78,7 @@
     $listClasses = WireKit::resolveClasses('combobox', 'list', implode(' ', [
         'absolute z-[var(--z-wk-dropdown)] mt-1 w-full',
         'list-none',
-        'max-h-60 overflow-auto',
+        'wk-scrollbar max-h-60 overflow-auto',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',

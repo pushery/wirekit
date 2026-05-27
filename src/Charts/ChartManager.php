@@ -50,14 +50,39 @@ final class ChartManager
             return null;
         }
 
-        // Built-in adapter
-        if (isset(self::ADAPTERS[$library])) {
-            $this->adapter = new (self::ADAPTERS[$library]);
+        $this->adapter = $this->resolve($library);
 
-            return $this->adapter;
+        return $this->adapter;
+    }
+
+    /**
+     * Get the adapter for a SPECIFIC library, bypassing the global
+     * `wirekit.charts.library` config. Used by callers that need to
+     * pin a chart to a specific library regardless of the app's
+     * default (e.g. an ApexCharts demo page in a docs app whose
+     * default is Chart.js). Does not mutate the singleton's cached
+     * `$adapter` — each per-instance lookup is independent so two
+     * charts on the same page can use different libraries without
+     * fighting for the cache slot.
+     *
+     * Throws InvalidArgumentException for unknown library names
+     * (matches the existing adapter() error shape).
+     */
+    public function adapterFor(string $library): ChartAdapter
+    {
+        return $this->resolve($library);
+    }
+
+    /**
+     * Resolve a library name to a fresh adapter instance.
+     * Accepts built-in keys (chartjs / apexcharts) AND custom FQCN.
+     */
+    private function resolve(string $library): ChartAdapter
+    {
+        if (isset(self::ADAPTERS[$library])) {
+            return new (self::ADAPTERS[$library]);
         }
 
-        // Custom adapter (FQCN)
         if (class_exists($library)) {
             $instance = new $library;
 
@@ -68,9 +93,7 @@ final class ChartManager
                 );
             }
 
-            $this->adapter = $instance;
-
-            return $this->adapter;
+            return $instance;
         }
 
         throw new InvalidArgumentException(

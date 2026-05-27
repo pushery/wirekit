@@ -47,6 +47,16 @@ final class LucidePreset implements IconPreset
             'sort-desc' => 'lucide-arrow-down-z-a',
             'filter' => 'lucide-filter',
             'external-link' => 'lucide-external-link',
+
+            // common dashboard icons.
+            'home' => 'lucide-home',
+            'moon' => 'lucide-moon',
+            'sun' => 'lucide-sun',
+            'book-open' => 'lucide-book-open',
+            'sign-out' => 'lucide-log-out',
+            'megaphone' => 'lucide-megaphone',
+            'map' => 'lucide-map',
+            'file-text' => 'lucide-file-text',
         ];
     }
 

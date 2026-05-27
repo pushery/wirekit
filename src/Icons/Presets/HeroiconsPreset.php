@@ -47,6 +47,17 @@ final class HeroiconsPreset implements IconPreset
             'sort-desc' => 'heroicon-m-bars-arrow-down',
             'filter' => 'heroicon-m-funnel',
             'external-link' => 'heroicon-m-arrow-top-right-on-square',
+
+            // common dashboard icons
+            // every new integrator reaches for on first install:
+            'home' => 'heroicon-m-home',
+            'moon' => 'heroicon-m-moon',
+            'sun' => 'heroicon-m-sun',
+            'book-open' => 'heroicon-m-book-open',
+            'sign-out' => 'heroicon-m-arrow-right-on-rectangle',
+            'megaphone' => 'heroicon-m-megaphone',
+            'map' => 'heroicon-m-map',
+            'file-text' => 'heroicon-m-document-text',
         ];
     }
 

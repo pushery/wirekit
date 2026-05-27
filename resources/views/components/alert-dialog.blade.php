@@ -24,7 +24,7 @@
         'z-[var(--z-wk-modal)]',
         'flex items-center justify-center',
         'p-[var(--padding-wk-y-xl)]',
-        'overflow-y-auto',
+        'wk-scrollbar overflow-y-auto',
     ]), $scope);
 
     $panelClasses = WireKit::resolveClasses('alert-dialog', 'panel', implode(' ', [

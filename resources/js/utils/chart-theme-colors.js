@@ -231,3 +231,82 @@ export function withOpacity(color, opacity) {
     }
     return color;
 }
+
+/**
+ * Walk a config object and resolve every `var(--token-name)` string into
+ * its rgb()/rgba() literal — using the same canvas-paint-and-read probe
+ * resolveThemeColors() uses for its outer palette. Returns a new object
+ * tree; the input is not mutated.
+ *
+ * Why this exists: ApexCharts (and Chart.js) consume colour strings via
+ * SVG `fill="…"` attributes / Canvas `fillStyle`. Neither path accepts
+ * `var(--name)` — SVG attribute values aren't parsed for CSS vars, and
+ * Canvas ignores them silently. The adapter resolves the OUTER palette
+ * via `resolveThemeColors()`, but per-dataset / per-range / per-annotation
+ * colours stayed unresolved — `<x-wirekit::sparkline>` passed
+ * `color: 'var(--color-wk-success)'` into a series object, ApexCharts
+ * received the literal string, and the chart fell back to its default
+ * blue first-series colour. Same bug class affected heatmap `colorScale.
+ * ranges[].color`, annotation `fillColor`, candlestick stroke colours,
+ * timeline `fillColor`.
+ *
+ * One adapter-side walk fixes the entire bug class — developers can now
+ * write `'color' => 'var(--color-wk-success)'` in any nested option and
+ * the colour resolves correctly + auto-switches with `.dark` because
+ * `resolveThemeColors()`'s same probe re-runs on every paint cycle.
+ *
+ * @param {*} node — anything; primitives + arrays + objects walk fine.
+ * @param {CSSStyleDeclaration} style — getComputedStyle of an element
+ *   inside the live cascade (typically the chart mount element).
+ * @returns {*} — the input shape with every `var(--…)` substring resolved.
+ */
+export function resolveCssVarsDeep(node, style) {
+    if (typeof node === 'string') {
+        if (!node.includes('var(--')) return node;
+        // Reuse the same canvas + probe trick the outer palette uses so
+        // the resolved value is always a paint-ready rgb()/rgba() string.
+        // Inlined here (rather than exported from resolveThemeColors's
+        // closure) so we can resolve multiple var()s in one string —
+        // e.g. ApexCharts gradient stops carrying two var() colours.
+        return node.replace(/var\((--[a-zA-Z0-9-]+)\)/g, (_match, varName) => {
+            const probe = document.createElement('div');
+            probe.style.display = 'none';
+            document.body.appendChild(probe);
+            probe.style.color = `var(${varName})`;
+            const computed = getComputedStyle(probe).color;
+            probe.remove();
+
+            if (!computed) return _match;
+
+            // Canvas-paint-and-read to force a definitive rgb()/rgba()
+            // value (oklch literals would survive the var() resolution
+            // but break Canvas 2D / older ApexCharts release paths).
+            const canvas = document.createElement('canvas');
+            canvas.width = 1;
+            canvas.height = 1;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            try {
+                ctx.clearRect(0, 0, 1, 1);
+                ctx.fillStyle = computed;
+                ctx.fillRect(0, 0, 1, 1);
+                const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+                return a === 255
+                    ? `rgb(${r}, ${g}, ${b})`
+                    : `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
+            } catch {
+                return computed;
+            }
+        });
+    }
+    if (Array.isArray(node)) {
+        return node.map((item) => resolveCssVarsDeep(item, style));
+    }
+    if (node && typeof node === 'object') {
+        const out = {};
+        for (const key of Object.keys(node)) {
+            out[key] = resolveCssVarsDeep(node[key], style);
+        }
+        return out;
+    }
+    return node;
+}

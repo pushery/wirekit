@@ -24,6 +24,16 @@
         'ease-[var(--transition-wk-easing)]',
     ]), $scope);
 
+    // accept `outline` AND `outlined` for the bordered-only treatment.
+    // Button uses `surface="outline"` (no trailing -d); card
+    // historically used `variant="outlined"` (with trailing -d). Same
+    // visual concept, different vocabulary — the alias here exists for
+    // muscle-memory parity across the two components. The canonical
+    // spelling stays `outlined` for card so existing developer code
+    // keeps working.
+    $variantAliases = ['outline' => 'outlined'];
+    $variant = $variantAliases[$variant] ?? $variant;
+
     // Variant classes: border/shadow combinations for visual weight
     $variantClasses = match ($variant) {
         'outlined' => implode(' ', [

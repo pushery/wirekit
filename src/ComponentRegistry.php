@@ -226,6 +226,24 @@ class ComponentRegistry
     }
 
     /**
+     * expose the deprecated tag-form
+     * alias for class-based components so tool integrators can
+     * verify both the canonical (single-hyphen) shape AND any
+     * historical (double-colon) shape that documentation might have
+     * shipped. Returns NULL for normal anonymous components (their
+     * canonical = their alias).
+     *
+     * Used by ExportJsonCommand to emit a `tag_alias` field next to
+     * `tag` so a downstream tool integrator who hard-coded the
+     * double-colon form during the v2.0 → v2.2 migration window can
+     * still grep against the schema and find the component.
+     */
+    public static function tagAlias(string $name): ?string
+    {
+        return isset(self::TAG_OVERRIDES[$name]) ? "<x-wirekit::{$name}>" : null;
+    }
+
+    /**
      * Get all components in a given category.
      *
      * @return array<string, array{category: string, description: string}>

@@ -36,6 +36,21 @@
         'warning' => 'bg-[color-mix(in_srgb,var(--color-wk-warning)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-warning-text)]',
         'danger' => 'bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-danger-text)]',
     ];
+
+    // the canonical intent vocabulary
+    // (button / badge / progress) uses `primary` and `info` — feature
+    // didn't accept either, so `<x-wirekit::feature tone="primary">`
+    // crashed even though the rest of the kit accepts that spelling.
+    // We alias `primary → accent` (the same colour role) and `info →
+    // soft` (the same tinted-accent treatment) so the canonical
+    // vocabulary works on feature too. See the prop-naming-conventions
+    // docs page for the full vocabulary contract.
+    $toneAliases = [
+        'primary' => 'accent',
+        'info'    => 'soft',
+    ];
+    $tone = $toneAliases[$tone] ?? $tone;
+
     $validTone = isset($toneMap[$tone])
         ? $tone
         : WireKit::validateProp('feature', 'tone', $tone, array_keys($toneMap));

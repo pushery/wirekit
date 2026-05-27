@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
+use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\SuggestSimilar;
 
 class ShowComponentCommand extends Command
@@ -21,6 +22,16 @@ class ShowComponentCommand extends Command
     {
         $name = $this->argument('name');
         $meta = ComponentRegistry::get($name);
+
+        // accept dotted sub-component
+        // names — `wirekit:show card.body` / `wirekit:show timeline.item`.
+        // Pre-fix the dotted form returned "Unknown component" because
+        // ComponentRegistry tracks only top-level components. We now
+        // resolve sub-components by reading the nested Blade file
+        // directly and extracting props from it.
+        if ($meta === null && str_contains($name, '.')) {
+            return $this->handleSubComponent($name);
+        }
 
         if ($meta === null) {
             $this->error("Unknown component: {$name}");
@@ -268,5 +279,113 @@ class ShowComponentCommand extends Command
         }
 
         return $best;
+    }
+
+    /**
+     * handle dotted sub-component
+     * names like `card.body`, `timeline.item`, `alert-dialog.cancel`.
+     *
+     * Resolves the parent component, then reads the nested Blade file
+     * at `resources/views/components/{parent}/{child}.blade.php`.
+     * Extracts props directly via PropsParser (the same source-of-truth
+     * the ComponentRegistry uses for top-level components).
+     *
+     * Honours the --as=json option so AI tooling can introspect
+     * sub-components the same way as top-level components.
+     */
+    private function handleSubComponent(string $name): int
+    {
+        [$parent, $child] = explode('.', $name, 2);
+        $parentMeta = ComponentRegistry::get($parent);
+
+        if ($parentMeta === null) {
+            $this->error("Unknown component: {$parent} (resolving {$name})");
+
+            return self::FAILURE;
+        }
+
+        $packageRoot = dirname(__DIR__, 2);
+        $bladePath = $packageRoot."/resources/views/components/{$parent}/{$child}.blade.php";
+
+        if (! is_file($bladePath)) {
+            $this->error("Unknown sub-component: {$name}");
+            $this->line("  Looked at: resources/views/components/{$parent}/{$child}.blade.php");
+
+            // List sibling sub-components for a Did-you-mean hint.
+            $siblings = $this->siblingSubComponents($parent, $packageRoot);
+            if ($siblings !== []) {
+                $hint = SuggestSimilar::format(
+                    SuggestSimilar::byLevenshtein($child, $siblings)
+                );
+                if ($hint !== null) {
+                    $this->line('  '.$hint);
+                }
+                $this->line('  Available: '.implode(', ', array_map(fn ($s) => "{$parent}.{$s}", $siblings)));
+            }
+
+            return self::FAILURE;
+        }
+
+        // Parse props from the nested Blade file.
+        $props = PropsParser::parseBlade($bladePath);
+
+        if ($this->option('as') === 'json') {
+            $payload = [
+                'name' => $name,
+                'parent' => $parent,
+                'child' => $child,
+                'tag' => "<x-wirekit::{$name}>",
+                'props' => $props,
+                'sub_component' => true,
+            ];
+            $this->line((string) json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+            return self::SUCCESS;
+        }
+
+        $this->info("Sub-component: {$name}");
+        $this->line('');
+        $this->line("  <fg=yellow>Parent:</>      {$parent}");
+        $this->line("  <fg=yellow>Tag:</>         <x-wirekit::{$name}>");
+        $this->line("  <fg=yellow>Blade:</>       resources/views/components/{$parent}/{$child}.blade.php");
+        $this->line('');
+
+        if ($props !== []) {
+            $this->line('  <fg=yellow>Props:</>');
+            foreach ($props as $prop) {
+                $default = $prop['default'] ?? '';
+                $line = "    <fg=green>{$prop['name']}</> = {$default}";
+                if (! empty($prop['comment'])) {
+                    $line .= " — {$prop['comment']}";
+                }
+                $this->line($line);
+            }
+        } else {
+            $this->line('  <fg=yellow>Props:</> (slot-only, no declared @props)');
+        }
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * List the names of sibling sub-component blade files under a
+     * parent's directory. Returns an empty array when the parent has
+     * no sub-component directory.
+     *
+     * @return list<string>
+     */
+    private function siblingSubComponents(string $parent, string $packageRoot): array
+    {
+        $dir = "{$packageRoot}/resources/views/components/{$parent}";
+        if (! is_dir($dir)) {
+            return [];
+        }
+
+        $files = glob("{$dir}/*.blade.php") ?: [];
+
+        return array_values(array_map(
+            fn ($path) => basename($path, '.blade.php'),
+            $files
+        ));
     }
 }

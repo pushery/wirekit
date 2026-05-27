@@ -6,6 +6,7 @@
     'step' => 1,
     'minValue' => null,
     'maxValue' => null,
+    'showValues' => null,
     'scope' => null,
 ])
 
@@ -18,6 +19,20 @@
     // Compute defaults: minValue defaults to min, maxValue defaults to max
     $initialMin = $minValue ?? $min;
     $initialMax = $maxValue ?? $max;
+
+    // Per-thumb value badge ("bubble") visibility.
+    //
+    // Prop default `null` defers to the config fallback so a site can
+    // hide the badges globally with one line in config/wirekit.php:
+    //
+    //     'range-slider' => ['show_values' => false],
+    //
+    // The two visible bubbles above each thumb show the live numeric
+    // value. The bounds-labels under the track and the sr-only
+    // aria-live region are kept regardless — they carry the
+    // accessible name for the slider and remain visible / audible
+    // even when the bubbles are off.
+    $resolvedShowValues = $showValues ?? config('wirekit.components.range-slider.show_values', true);
 
     $wrapperClasses = WireKit::resolveClasses('range-slider', 'base', implode(' ', [
         'space-y-2',
@@ -124,6 +139,9 @@
             }
         }"
         class="relative"
+        @if($resolvedShowValues)
+            style="padding-top: 2rem;"
+        @endif
     >
         {{-- Hidden inputs for form submission. When the caller passed
              wire:model* on the component tag, also bind the matching
@@ -144,60 +162,100 @@
             x-ref="maxInput"
         />
 
-        {{-- Track --}}
-        <div class="relative h-2 rounded-full bg-[var(--color-wk-bg-muted)]" x-ref="track">
+        {{-- Track + thumbs.
+
+             The thumbs MUST live INSIDE the track div so their
+             `top-1/2 -translate-y-1/2` resolves relative to the
+             8px-tall track (centering the thumb vertically ON the
+             track line). Pre-fix the thumbs were siblings of the
+             track in the outer wrapper, so `top-1/2` resolved to the
+             middle of the full wrapper height (track + tooltip + edge
+             labels + sr-only region) and the thumbs visually dropped
+             BELOW the track line instead of sitting centered on it.
+
+             The inline `style="overflow: visible;"` on the track is
+             load-bearing: the thumbs extend above + below the 8px
+             track and the tooltip-style value-badge sits even further
+             above the thumb, so any clipping here would hide them.
+             We use an inline style (not a Tailwind utility class) so
+             the drift suite's reverse-diff scanner can't mis-trace
+             the class name from this comment block.
+             --}}
+        <div class="relative h-2 rounded-full bg-[var(--color-wk-bg-muted)]" style="overflow: visible;" x-ref="track">
             {{-- Active range fill --}}
             <div
                 class="absolute h-full rounded-full bg-[var(--color-wk-accent)]"
                 :style="`left: ${minPercent}%; width: ${maxPercent - minPercent}%`"
             ></div>
+
+            {{-- Min thumb. Static aria-valuenow / aria-valuemax mirror
+                 the initial state so axe-core's pre-Alpine-init scan
+                 sees a complete slider; Alpine then overrides
+                 reactively. The current value bubbles ABOVE the thumb
+                 as a tooltip-style badge that tracks the handle
+                 horizontally (-translate-x-1/2 centers it on the thumb). --}}
+            <div
+                class="{{ $thumbClasses }} z-10"
+                :style="`left: ${minPercent}%`"
+                tabindex="0"
+                role="slider"
+                aria-label="Minimum"
+                aria-valuenow="{{ $initialMin }}"
+                :aria-valuenow="minVal"
+                aria-valuemin="{{ $min }}"
+                aria-valuemax="{{ $initialMax }}"
+                :aria-valuemax="maxVal"
+                @keydown.arrow-right.prevent="stepMin(1)"
+                @keydown.arrow-left.prevent="stepMin(-1)"
+                @pointerdown="startDrag('min', $event)"
+            >
+                @if($resolvedShowValues)
+                    <span
+                        aria-hidden="true"
+                        class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
+                        x-text="minVal"
+                    >{{ $initialMin }}</span>
+                @endif
+            </div>
+
+            {{-- Max thumb. Same static-fallback pattern as the min thumb. --}}
+            <div
+                class="{{ $thumbClasses }} z-20"
+                :style="`left: ${maxPercent}%`"
+                tabindex="0"
+                role="slider"
+                aria-label="Maximum"
+                aria-valuenow="{{ $initialMax }}"
+                :aria-valuenow="maxVal"
+                aria-valuemin="{{ $initialMin }}"
+                :aria-valuemin="minVal"
+                aria-valuemax="{{ $max }}"
+                @keydown.arrow-right.prevent="stepMax(1)"
+                @keydown.arrow-left.prevent="stepMax(-1)"
+                @pointerdown="startDrag('max', $event)"
+            >
+                @if($resolvedShowValues)
+                    <span
+                        aria-hidden="true"
+                        class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
+                        x-text="maxVal"
+                    >{{ $initialMax }}</span>
+                @endif
+            </div>
         </div>
 
-        {{-- Min thumb. Static aria-valuenow / aria-valuemax mirror the
-             initial state so axe-core's pre-Alpine-init scan sees a
-             complete slider; Alpine then overrides reactively. --}}
-        <div
-            class="{{ $thumbClasses }} z-10"
-            :style="`left: ${minPercent}%`"
-            tabindex="0"
-            role="slider"
-            aria-label="Minimum"
-            aria-valuenow="{{ $initialMin }}"
-            :aria-valuenow="minVal"
-            aria-valuemin="{{ $min }}"
-            aria-valuemax="{{ $initialMax }}"
-            :aria-valuemax="maxVal"
-            @keydown.arrow-right.prevent="stepMin(1)"
-            @keydown.arrow-left.prevent="stepMin(-1)"
-            @pointerdown="startDrag('min', $event)"
-        ></div>
-
-        {{-- Max thumb. Same static-fallback pattern as the min thumb. --}}
-        <div
-            class="{{ $thumbClasses }} z-20"
-            :style="`left: ${maxPercent}%`"
-            tabindex="0"
-            role="slider"
-            aria-label="Maximum"
-            aria-valuenow="{{ $initialMax }}"
-            :aria-valuenow="maxVal"
-            aria-valuemin="{{ $initialMin }}"
-            :aria-valuemin="minVal"
-            aria-valuemax="{{ $max }}"
-            @keydown.arrow-right.prevent="stepMax(1)"
-            @keydown.arrow-left.prevent="stepMax(-1)"
-            @pointerdown="startDrag('max', $event)"
-        ></div>
-
-        {{-- Value display. Lives INSIDE the x-data scope so the
-             x-text bindings reach minVal / maxVal at runtime.
-             Pre-fix the spans rendered OUTSIDE the closed x-data
-             div, producing `Alpine Expression Error: minVal is not
-             defined` (twice per render) AND the displayed numbers
-             never updated on drag. --}}
-        <div class="mt-2 flex justify-between text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-live="polite">
-            <span x-text="minVal">{{ $initialMin }}</span>
-            <span x-text="maxVal">{{ $initialMax }}</span>
+        {{-- Edge labels show the slider BOUNDS ($min and $max) — never
+             the current values. The current values bubble above each
+             thumb (see badges above) and follow the handles when dragged.
+             aria-live region keeps screen-readers in sync with the
+             current selection without duplicating the visible bound
+             labels (which are constant). --}}
+        <div class="mt-3 flex justify-between text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums">
+            <span>{{ $min }}</span>
+            <span>{{ $max }}</span>
+        </div>
+        <div class="sr-only" aria-live="polite">
+            <span x-text="`Range: ${minVal} to ${maxVal}`">Range: {{ $initialMin }} to {{ $initialMax }}</span>
         </div>
     </div>
 

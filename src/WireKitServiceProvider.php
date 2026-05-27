@@ -13,6 +13,7 @@ use Pushery\WireKit\Components\Chart;
 use Pushery\WireKit\Console\ClassByAreaCommand;
 use Pushery\WireKit\Console\ComponentMakeCommand;
 use Pushery\WireKit\Console\CursorRulesCommand;
+use Pushery\WireKit\Console\DoctorA11yCommand;
 use Pushery\WireKit\Console\ExportApiMapCommand;
 use Pushery\WireKit\Console\ExportBlocksCommand;
 use Pushery\WireKit\Console\ExportJsonCommand;
@@ -56,6 +57,7 @@ class WireKitServiceProvider extends ServiceProvider
                 ClassByAreaCommand::class,
                 ComponentMakeCommand::class,
                 CursorRulesCommand::class,
+                DoctorA11yCommand::class,
                 ExportApiMapCommand::class,
                 ExportBlocksCommand::class,
                 ExportJsonCommand::class,

@@ -111,11 +111,18 @@ class ExportBlocksCommand extends Command
             if (! $file->isFile() || $file->getExtension() !== 'md') {
                 continue;
             }
-            // Skip indexes + partials (composition fragments, not whole blocks)
+            // Skip indexes + partials + recipes (composition fragments and
+            // worked-example pages — not standalone vertical-blueprint blocks).
+            // Recipes live under docs/blueprints/recipes/ and carry a lighter
+            // frontmatter shape without the responsive / dark_compatible /
+            // category fields.
             if ($file->getBasename() === 'index.md') {
                 continue;
             }
             if (str_contains($file->getPathname(), DIRECTORY_SEPARATOR.'partials'.DIRECTORY_SEPARATOR)) {
+                continue;
+            }
+            if (str_contains($file->getPathname(), DIRECTORY_SEPARATOR.'recipes'.DIRECTORY_SEPARATOR)) {
                 continue;
             }
 

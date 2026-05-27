@@ -39,6 +39,11 @@ export default (options = {}) => ({
     _hovering: false,
     _focused: false,
     _observer: null,
+    // Debounce timer for collapseOnHover — prevents the rapid expand/
+    // collapse flicker when the cursor jitters across the spine's
+    // boundary (sub-pixel mouse movements at the top/left edge fire
+    // alternating mouseenter/mouseleave events).
+    _collapseTimer: null,
     _scrollHandler: null,
     _ticking: false,
     _sectionEventTimer: null,
@@ -282,10 +287,32 @@ export default (options = {}) => ({
             this._onScrollThrottledBound = null;
         }
         if (this._sectionEventTimer) clearTimeout(this._sectionEventTimer);
+        if (this._collapseTimer) clearTimeout(this._collapseTimer);
     },
 
-    expandOnHover() { this._hovering = true; this.expanded = true; },
-    collapseOnHover() { this._hovering = false; this.expanded = this._focused; },
+    expandOnHover() {
+        // Cancel any pending collapse — the cursor re-entered before
+        // the debounce window closed, so the collapse is no longer wanted.
+        if (this._collapseTimer) {
+            clearTimeout(this._collapseTimer);
+            this._collapseTimer = null;
+        }
+        this._hovering = true;
+        this.expanded = true;
+    },
+    collapseOnHover() {
+        // Debounce the collapse to absorb cursor jitter at the spine's
+        // boundary. Without this, a 1-2px mouse movement that
+        // alternately crosses and uncrosses the spine's edge fires
+        // mouseleave/mouseenter every frame, toggling expanded state
+        // continuously — visible to the user as a rapid flicker.
+        if (this._collapseTimer) clearTimeout(this._collapseTimer);
+        this._collapseTimer = setTimeout(() => {
+            this._hovering = false;
+            this.expanded = this._focused;
+            this._collapseTimer = null;
+        }, 120);
+    },
     expandOnFocus() { this._focused = true; this.expanded = true; },
     collapseOnFocus() { this._focused = false; this.expanded = this._hovering; },
 

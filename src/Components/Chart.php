@@ -65,6 +65,20 @@ final class Chart extends Component
      *                            trace / slice-sweep). On a developer app the prop is a no-op unless
      *                            the developer has wired its own replay-button surface; the prop only
      *                            changes the rendered HTML to include the data attribute.
+     * @param  string|null  $library  Per-instance chart-library override. Accepts the same values as
+     *                                `config('wirekit.charts.library')` — the built-in keys `chartjs`
+     *                                / `apexcharts`, OR a fully qualified class name implementing
+     *                                `ChartAdapter`. When `null` (default), the chart uses whatever
+     *                                the global `wirekit.charts.library` config resolves to, matching
+     *                                the pre-v2.3.0 behaviour. When set, this chart instance binds
+     *                                to the named library regardless of the app default — two charts
+     *                                on the same page can use different libraries. Use this when a
+     *                                specific chart type requires a specific library (e.g. `boxplot`
+     *                                / `candlestick` / `heatmap` / `treemap` are ApexCharts-only and
+     *                                throw `TypeNotSupportedException` against the Chart.js adapter)
+     *                                in an app whose default is the OTHER library. Removes the need
+     *                                for path-based library-config switching in renderers (docs
+     *                                sites, sample apps, developer integrations).
      */
     public function __construct(
         public string $type = 'bar',
@@ -84,11 +98,18 @@ final class Chart extends Component
         // legal as inline content.
         public bool $inline = false,
         public bool $replayable = false,
+        public ?string $library = null,
     ) {
         /** @var ChartManager $manager Resolved from the container singleton */
         $manager = app(ChartManager::class);
 
-        $adapter = $manager->adapter();
+        // Per-instance library override wins over the global config. When the
+        // caller passes `library="apexcharts"` (or "chartjs", or a custom
+        // FQCN), the chart binds to that adapter regardless of the app's
+        // default. When omitted, fall through to the configured adapter.
+        $adapter = $library !== null
+            ? $manager->adapterFor($library)
+            : $manager->adapter();
 
         if ($adapter === null) {
             // In production: throw hard. Silent fallback to a blank
