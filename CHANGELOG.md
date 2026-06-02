@@ -9,12 +9,15 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [2.4.0] — Unreleased
 
-**Minor release.** Follow-up pass on the v2.3.1 testsite-audit
-findings — two blocker-tier items from the v2.2.0 report close in
-this release, four new findings from the v2.3.1 audit land, and one
-downstream-website workaround returns as an upstream prop.
-Additive-only: every existing developer's templates render
-identically. No back-compat breaks.
+**Minor release.** New display components (`stage-card`, `activity-row`),
+an `intent` colour axis on `stat` and `progress`, deterministic
+`avatar from-initials`, badge `tooltip` / `leadingIcon` support, a
+`md-compact` size tier on inputs and buttons, and chart tooltip value
+formatting (`valueDecimals` / `valuePrefix` / `valueSuffix`). Plus
+reading-primitive `boundary` scoping, a `hero tightOnMobile` option,
+menubar / navigation-menu dropdown positioning fixes, sortable-table
+fixes, and a round of mobile-layout polish. Additive-only — every
+existing template renders identically. No back-compat breaks.
 
 ### Added
 
@@ -77,7 +80,7 @@ Patch release.
 
 ## [2.3.0] — 2026-05-26
 
-**Minor release.** First-time-integrator audit follow-up. Five surface areas touched: form-input accessibility (`multi-select`, `range-slider`), shared-prop-vocabulary aliases (`feature`, `card`, `button`, `heading`, `reveal`), icon-system completeness (8 new base aliases per preset + bare-name fallthrough resolution), new `main` max-width default + `button` `forceLoading`, two new artisan-command capabilities (`wirekit:show <parent>.<child>`, `wirekit:verify --fix`), plus a new static-analysis a11y linter `wirekit:doctor:a11y`. Documentation site grows the unified `/blueprints/` route with `/blueprints/partials/*` (8 marketing-section building blocks) and `/blueprints/recipes/*` (10 worked-example compositions) under a fresh index page.
+**Minor release.** Five surface areas touched: form-input accessibility (`multi-select`, `range-slider`), shared-prop-vocabulary aliases (`feature`, `card`, `button`, `heading`, `reveal`), icon-system completeness (8 new base aliases per preset + bare-name fallthrough resolution), new `main` max-width default + `button` `forceLoading`, two new artisan-command capabilities (`wirekit:show <parent>.<child>`, `wirekit:verify --fix`), plus a new static-analysis a11y linter `wirekit:doctor:a11y`. Documentation site grows the unified `/blueprints/` route with `/blueprints/partials/*` (8 marketing-section building blocks) and `/blueprints/recipes/*` (10 worked-example compositions) under a fresh index page.
 
 ### Added
 
