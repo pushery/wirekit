@@ -20,7 +20,11 @@
     x-on:click="toggle()"
     x-init="(() => {
         const interactive = $el.querySelector('button, [role=button], a');
-        if (!interactive) return;
+        if (!interactive) {
+            // eslint-disable-next-line no-console
+            console.warn('[wirekit] dropdown.trigger: slot has no focusable element (button/link). Keyboard users cannot open the dropdown. Wrap the trigger content in a <button>.');
+            return;
+        }
         interactive.setAttribute('aria-haspopup', 'menu');
         const panelId = $el.closest('[data-wk-panel-id]')?.dataset.wkPanelId;
         if (panelId) interactive.setAttribute('aria-controls', panelId);

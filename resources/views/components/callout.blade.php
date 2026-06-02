@@ -105,7 +105,10 @@
         @endisset
         <div class="text-[color:var(--color-wk-text-muted)]">{{ $slot }}</div>
         @isset($actions)
-            <div class="mt-3 flex items-center gap-2">{{ $actions }}</div>
+            {{-- flex-wrap so a callout with two buttons (or a long single
+                 button label) wraps to a second row on a phone instead of
+                 overflowing the callout body. --}}
+            <div class="mt-3 flex flex-wrap items-center gap-2">{{ $actions }}</div>
         @endisset
     </div>
 </aside>

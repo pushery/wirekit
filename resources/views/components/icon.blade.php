@@ -74,9 +74,60 @@
 
 {{-- Render the SVG icon via blade-icons, OR a placeholder when blade-icons
      isn't installed yet. The placeholder preserves layout (same h/w as the
-     real icon would have) and stays inert (aria-hidden, no glyph). --}}
+     real icon would have) and stays inert (aria-hidden, no glyph).
+
+     Blade-heroicons' raw SVG source files carry `aria-hidden="true"` baked
+     into the root element — useful as a sensible default for decorative
+     icons, but a screen-reader-skipping a11y bug when the developer marks
+     an icon informative via `aria-label` / `aria-labelledby` / `role="img"`.
+     We post-process the rendered SVG: strip any source-baked aria-hidden,
+     then re-inject our resolved choice (or none, for informative icons).
+     This guarantees the rendered SVG carries AT MOST ONE aria-hidden
+     attribute, matching the developer's declared intent. --}}
 @if (function_exists('svg'))
-    {{ svg($resolved, $mergedAttributes->getAttributes()) }}
+@php
+    // BladeUI\Icons\Svg implements Htmlable, not __toString — use toHtml().
+    $svgHtml = svg($resolved, $mergedAttributes->getAttributes())->toHtml();
+    // Strip EVERY aria-hidden attribute from the OUTER <svg ...> open tag.
+    // The blade-heroicons source bakes `aria-hidden="true"` into the SVG
+    // root; our $mergedAttributes may ALSO have injected one; we leave
+    // neither in place and reapply our resolved choice on the line below.
+    // Operating on the OPENING TAG ONLY (regex anchored at <svg…>) — never
+    // touches nested SVG content (paths, <use>, embedded text labels).
+    $svgHtml = preg_replace_callback(
+        '/<svg\b([^>]*)>/i',
+        function (array $m): string {
+            // Drop every aria-hidden="..." occurrence inside the opening
+            // tag's attribute list (preserving inter-attribute whitespace
+            // collapsed to a single space).
+            $cleaned = preg_replace('/\s*aria-hidden="[^"]*"/i', '', $m[1]);
+            $cleaned = preg_replace('/\s+/', ' ', (string) $cleaned);
+
+            return '<svg'.$cleaned.'>';
+        },
+        $svgHtml,
+        1
+    );
+    // Reapply our resolved aria-hidden — only when:
+    //   - we decided the icon is decorative (shouldSetHidden=true), OR
+    //   - the caller explicitly set aria-hidden (true OR false) — we
+    //     respect their literal value, including aria-hidden="false".
+    $resolvedAriaHidden = null;
+    if ($shouldSetHidden) {
+        $resolvedAriaHidden = 'true';
+    } elseif ($callerAriaHidden !== null) {
+        $resolvedAriaHidden = (string) $callerAriaHidden;
+    }
+    if ($resolvedAriaHidden !== null) {
+        $svgHtml = preg_replace(
+            '/<svg\b/',
+            '<svg aria-hidden="'.htmlspecialchars($resolvedAriaHidden, ENT_QUOTES).'"',
+            $svgHtml,
+            1
+        );
+    }
+@endphp
+{!! $svgHtml !!}
 @else
     <span {{ $mergedAttributes->merge(['aria-hidden' => 'true', 'data-wk-icon-missing' => $name]) }} style="display:inline-block;"></span>
 @endif

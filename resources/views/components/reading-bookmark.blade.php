@@ -5,6 +5,12 @@
     'promptOnReturn' => true,
     'minDwellSeconds' => 30,
     'previewMode' => false,
+    // `boundary` — null (default) = the resume-prompt pill pins to the
+    // viewport via Tailwind `fixed`. `'container'` = scoped to the
+    // nearest positioned ancestor via Tailwind `absolute`. Use
+    // `'container'` when the bookmark surface lives inside a contained
+    // reading frame (preview iframe, sidebar pane, modal body).
+    'boundary' => null,
     'scope' => null,
 ])
 
@@ -37,9 +43,37 @@
         throw new \InvalidArgumentException('<x-wirekit::reading-bookmark> requires a `key` prop (e.g. key="article-{{ $post->slug }}").');
     }
 
+    // Resolve boundary (v2.4.0 Ext 1 extended). null = viewport-pinned;
+    // 'container' = scoped to nearest positioned ancestor; any other
+    // non-empty string is treated as a CSS selector and surfaces the
+    // same scoped (Tailwind `absolute`) shape.
+    if ($boundary === null) {
+        $resolvedBoundary = null;
+        $boundarySelector = null;
+    } elseif ($boundary === 'container') {
+        $resolvedBoundary = 'container';
+        $boundarySelector = null;
+    } elseif (is_string($boundary) && $boundary !== '') {
+        $resolvedBoundary = 'selector';
+        $boundarySelector = $boundary;
+    } else {
+        $resolvedBoundary = WireKit::validateProp(
+            'reading-bookmark',
+            'boundary',
+            (string) $boundary,
+            ['container', '<css-selector-string>']
+        );
+        $boundarySelector = null;
+    }
+
+    $useScoped = $resolvedBoundary === 'container' || $resolvedBoundary === 'selector';
+    $boundaryClass = $useScoped
+        ? 'absolute bottom-[var(--padding-wk-x-lg)] right-[var(--padding-wk-x-lg)]'
+        : 'fixed bottom-[var(--padding-wk-x-lg)] right-[var(--padding-wk-x-lg)]';
+
     $rootClass = WireKit::resolveClasses('reading-bookmark', 'base', implode(' ', [
         'wk-reading-bookmark',
-        'fixed bottom-[var(--padding-wk-x-lg)] right-[var(--padding-wk-x-lg)]',
+        $boundaryClass,
         'z-[var(--z-wk-sticky)]',
         'flex items-center gap-3 px-4 py-3',
         'text-sm text-[color:var(--color-wk-text)]',

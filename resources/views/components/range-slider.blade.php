@@ -75,7 +75,13 @@
     // Thumb classes — shared for both handles
     $thumbClasses = implode(' ', [
         'absolute top-1/2 -translate-y-1/2 -translate-x-1/2',
-        'w-5 h-5',
+        // wk-range-thumb owns the thumb SIZE (20px default, 28px on coarse
+        // pointers) + touch-action:none, shipped in dist/wirekit.css. Sizing
+        // there (not via Tailwind width/height utilities) keeps the
+        // coarse-pointer override deterministic regardless of stylesheet
+        // order, and works in apps whose Tailwind build never compiled the
+        // larger fixed-size utility.
+        'wk-range-thumb',
         'rounded-full',
         'bg-[var(--color-wk-accent)]',
         'border-2 border-[var(--color-wk-bg-elevated)]',
@@ -84,6 +90,20 @@
         'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-shadow duration-[var(--transition-wk-duration)]',
     ]);
+
+    // Snap-to-step tick marks: only for discrete sliders (step > 1) where the
+    // step count is small enough to read (< 20 ticks) — beyond that the ticks
+    // become visual noise. Decorative; positions are step boundaries as
+    // percentages along the track.
+    $tickPercents = [];
+    if ($step > 1 && ($max - $min) > 0) {
+        $segments = ($max - $min) / $step;
+        if ($segments >= 1 && $segments < 20) {
+            for ($i = 0; $i <= $segments; $i++) {
+                $tickPercents[] = round(($i / $segments) * 100, 4);
+            }
+        }
+    }
 @endphp
 
 <div {{ $attributes->class([$wrapperClasses]) }}>
@@ -182,6 +202,12 @@
              the class name from this comment block.
              --}}
         <div class="relative h-2 rounded-full bg-[var(--color-wk-bg-muted)]" style="overflow: visible;" x-ref="track">
+            {{-- Snap-to-step tick marks (decorative) — only for discrete
+                 sliders with a readable number of steps. --}}
+            @foreach($tickPercents as $tickPercent)
+                <span aria-hidden="true" class="absolute top-1/2 -translate-y-1/2 h-2 w-px bg-[var(--color-wk-border)]" style="left: {{ $tickPercent }}%;"></span>
+            @endforeach
+
             {{-- Active range fill --}}
             <div
                 class="absolute h-full rounded-full bg-[var(--color-wk-accent)]"

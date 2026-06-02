@@ -115,6 +115,7 @@ class ComponentRegistry
             // ── Display ──
             'accordion' => ['category' => 'Display', 'description' => 'Collapsible content panels'],
             'action-bar' => ['category' => 'Display', 'description' => 'Floating action bar for bulk operations'],
+            'activity-row' => ['category' => 'Display', 'description' => 'Activity-feed / timeline row with kind-coloured dot, actor, timestamp, and badge slot'],
             'alert' => ['category' => 'Display', 'description' => 'Contextual alert message'],
             'avatar' => ['category' => 'Display', 'description' => 'User avatar with image, initials, or status'],
             'badge' => ['category' => 'Display', 'description' => 'Small status label'],
@@ -143,6 +144,7 @@ class ComponentRegistry
             'chart-mixed' => ['category' => 'Display', 'description' => 'Multi-type / multi-axis chart (per-dataset type field, dual y-axis)'],
             'sparkline' => ['category' => 'Display', 'description' => 'Inline trend sparkline (axis-less line/area chart)'],
             'spine-aware' => ['category' => 'Layout', 'description' => 'Opt-in wrapper that joins the page-edge content spine via WireKit::spinePadding()'],
+            'stage-card' => ['category' => 'Display', 'description' => 'Pipeline / kanban / roadmap stage card with intent left-stripe, count pill, and optional progress'],
             'stat' => ['category' => 'Display', 'description' => 'Single statistic display'],
             'stats' => ['category' => 'Display', 'description' => 'Statistics group container'],
             'table' => ['category' => 'Display', 'description' => 'Data table with sorting and styling options'],
@@ -291,6 +293,18 @@ class ComponentRegistry
         }
 
         return PropsParser::parseBlade(self::bladeFilePath($name));
+    }
+
+    /**
+     * Return the backing class FQCN for class-based components, or null for
+     * anonymous Blade components. Used by the JSON-manifest exporter to
+     * skip false-positive slot detection on class-side public properties.
+     *
+     * @return class-string|null
+     */
+    public static function componentClass(string $name): ?string
+    {
+        return self::CLASS_COMPONENTS[$name] ?? null;
     }
 
     /**

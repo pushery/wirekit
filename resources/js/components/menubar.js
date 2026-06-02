@@ -14,15 +14,38 @@ export default function wirekitMenubar() {
         activeMenu: null,
         _focusIndex: -1,
         _navCleanup: null,
+        _onPointerDown: null,
 
         init() {
             this._navCleanup = () => { this.activeMenu = null; };
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+
+            // Outside-click close. The dropdown panels are teleported to
+            // <body> (to escape transformed ancestors), so they are no longer
+            // DOM descendants of `this.$el` — a Blade `x-on:click.outside` on
+            // the menubar root would treat a click INSIDE an open panel as
+            // "outside" and close the menu before the item's own click handler
+            // ran. This document-level handler instead closes only when the
+            // pointer lands outside BOTH the menubar bar AND the active
+            // teleported panel (looked up via the teleport-safe $refs).
+            this._onPointerDown = (event) => {
+                if (!this.activeMenu) return;
+                const target = event.target;
+                if (!(target instanceof Node)) return;
+                if (this.$root.contains(target)) return;
+                const panel = this.$refs[`panel-${this.activeMenu}`];
+                if (panel && panel.contains(target)) return;
+                this.closeAll();
+            };
+            document.addEventListener('pointerdown', this._onPointerDown, { capture: true });
         },
 
         destroy() {
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
+            }
+            if (this._onPointerDown) {
+                document.removeEventListener('pointerdown', this._onPointerDown, { capture: true });
             }
         },
 
@@ -65,8 +88,14 @@ export default function wirekitMenubar() {
         async _positionActiveMenu(name) {
             await this.$nextTick();
 
-            const trigger = this.$el.querySelector(`[data-wk-menubar-trigger="${name}"]`);
-            const panel = this.$el.querySelector(`[data-wk-menubar-panel="${name}"]`);
+            // Trigger stays in the bar (not teleported). Query from $root (the
+            // menubar element), NOT $el — when this runs off a trigger's
+            // x-on:click, Alpine binds $el to the clicked menuitem button
+            // (no trigger descendants), so $el.querySelector would miss and
+            // positioning would silently never run. Panel is teleported to
+            // <body> → resolve via the teleport-safe ref.
+            const trigger = this.$root.querySelector(`[data-wk-menubar-trigger="${name}"]`);
+            const panel = this.$refs[`panel-${name}`];
 
             if (trigger && panel) {
                 await position(trigger, panel, {
@@ -80,7 +109,9 @@ export default function wirekitMenubar() {
          * Get menu trigger buttons.
          */
         _getTriggers() {
-            return [...this.$el.querySelectorAll('[data-wk-menubar-trigger]')];
+            // $root, not $el — see _positionActiveMenu for why ($el can be a
+            // clicked menuitem button rather than the menubar root).
+            return [...this.$root.querySelectorAll('[data-wk-menubar-trigger]')];
         },
 
         /**
@@ -88,7 +119,8 @@ export default function wirekitMenubar() {
          */
         _getActiveItems() {
             if (!this.activeMenu) return [];
-            const panel = this.$el.querySelector(`[data-wk-menubar-panel="${this.activeMenu}"]`);
+            // Panel is teleported to <body>; resolve via the teleport-safe ref.
+            const panel = this.$refs[`panel-${this.activeMenu}`];
             if (!panel) return [];
             return [...panel.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')];
         },

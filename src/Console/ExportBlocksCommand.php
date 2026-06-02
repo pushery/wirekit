@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Pushery\WireKit\Support\VersionResolver;
+use Pushery\WireKit\WireKit;
 
 /**
  * emit a `/blocks.json` machine-readable manifest of every
@@ -149,7 +150,7 @@ class ExportBlocksCommand extends Command
                 // session tier (guest sessions never see admin-only blocks).
                 'visibility' => $frontmatter['visibility'] ?? 'guest',
                 'draft' => $frontmatter['draft'] ?? false,
-                'preview_url' => 'https://docs.wirekit.app/'.$slug,
+                'preview_url' => WireKit::DOCS_URL.'/'.$slug,
                 'source_url' => 'https://github.com/pushery/wirekit/blob/develop/docs/'.$slug.'.md',
             ];
         }

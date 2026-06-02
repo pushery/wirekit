@@ -26,6 +26,21 @@
         default => 'top-0 right-0 items-end',
     };
 
+    // Edge offset — keeps the toast stack clear of a fixed app header / nav
+    // (or a bottom bar) AND of the device safe-area (notch / home indicator).
+    // The region is pinned flush to its edge (top-0 / bottom-0); we add the
+    // offset as padding on the ACTIVE edge so the toasts sit inside it without
+    // disturbing the other three sides' base `p-4`. Developers set the nav
+    // height once via `--space-wk-toast-offset` (default 0px) on their app
+    // shell / :root; `env(safe-area-inset-*)` is folded in automatically so a
+    // top toast clears the notch and a bottom toast clears the home indicator.
+    // Inline style (not a Tailwind arbitrary class) to avoid escaping the
+    // nested calc()/env() expression.
+    $isTopEdge = str_starts_with($position, 'top');
+    $offsetStyle = $isTopEdge
+        ? 'padding-top: calc(1rem + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-top, 0px));'
+        : 'padding-bottom: calc(1rem + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-bottom, 0px));';
+
     // Container: fixed portal, stacks toasts vertically with gap
     $containerClasses = WireKit::resolveClasses('toast-region', 'base', implode(' ', [
         'fixed z-[9999]',
@@ -130,6 +145,7 @@
 <div
     x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: @js($name), scope: @js($eventScope) })"
     {{ $attributes->class([$containerClasses, $positionClasses]) }}
+    style="{{ $offsetStyle }}"
     role="region"
     aria-label="Notifications"
 >

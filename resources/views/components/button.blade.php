@@ -80,6 +80,12 @@
             'text-[length:var(--text-wk-sm)]',
             'rounded-[var(--radius-wk-sm)]',
         ]),
+        'md-compact' => implode(' ', [
+            'h-[var(--size-wk-md-compact)]',
+            'px-[var(--padding-wk-x-md)]',
+            'text-[length:var(--text-wk-sm)]',
+            'rounded-[var(--radius-wk-md)]',
+        ]),
         'md' => implode(' ', [
             'h-[var(--size-wk-md)]',
             'px-[var(--padding-wk-x-md)]',
@@ -98,7 +104,7 @@
             'text-[length:var(--text-wk-lg)]',
             'rounded-[var(--radius-wk-lg)]',
         ]),
-        default => WireKit::validateProp('button', 'size', $size, ['xs', 'sm', 'md', 'lg', 'xl']),
+        default => WireKit::validateProp('button', 'size', $size, ['xs', 'sm', 'md-compact', 'md', 'lg', 'xl']),
     };
 
     // Render as <a> when href is provided, otherwise <button>

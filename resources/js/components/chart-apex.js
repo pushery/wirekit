@@ -29,6 +29,33 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
     }[c]));
 
+    // Numeric value formatting — driven by the wk* keys the PHP adapter
+    // threads onto `tooltip` when the developer sets valueDecimals /
+    // valuePrefix / valueSuffix on <x-wirekit-chart>. Only genuine finite
+    // numbers are formatted: decimals via toFixed(N), then prefix + suffix.
+    // Composite values (range "a – b", OHLC tuples already joined to strings)
+    // and non-numeric labels pass through untouched. When all three are unset
+    // this returns the value verbatim, preserving pre-feature output.
+    const tcfg = cfg.tooltip || {};
+    // Clamp to toFixed()'s legal 0–100 range defensively. The PHP adapter
+    // already clamps, but Number.prototype.toFixed() throws a RangeError for
+    // any out-of-range argument, so guarding here too means no caller can ever
+    // crash the tooltip render with a stray decimals value.
+    const wkDecimals = (typeof tcfg.wkValueDecimals === 'number' && Number.isFinite(tcfg.wkValueDecimals))
+        ? Math.min(100, Math.max(0, Math.trunc(tcfg.wkValueDecimals)))
+        : null;
+    const wkPrefix = tcfg.wkValuePrefix || '';
+    const wkSuffix = tcfg.wkValueSuffix || '';
+    const fmtValue = (v) => {
+        if (typeof v === 'number' && Number.isFinite(v)) {
+            const n = (wkDecimals !== null)
+                ? v.toFixed(wkDecimals)
+                : String(v);
+            return `${wkPrefix}${n}${wkSuffix}`;
+        }
+        return v;
+    };
+
     // Resolve x-label (header). Priority: hovered series' data-point `x`
     // (scatter / bubble / range-bar object form) → globals.labels (bar /
     // line / area / heatmap) → globals.categoryLabels → seriesX (numeric).
@@ -144,7 +171,7 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
             <span class="apexcharts-tooltip-marker" style="background: ${color};"></span>
             <div class="apexcharts-tooltip-text" style="font-family: inherit; font-size: 12px;">
                 <div class="apexcharts-tooltip-y-group">
-                    ${labelHtml}<span class="apexcharts-tooltip-text-y-value">${esc(value)}</span>
+                    ${labelHtml}<span class="apexcharts-tooltip-text-y-value">${esc(fmtValue(value))}</span>
                 </div>
             </div>
         </div>`;
@@ -185,6 +212,9 @@ export default function wirekitApexChart(config) {
         _darkModeObserver: null,
         _darkModeDebounce: null,
         _manualColorIndices: new Set(),
+        // Focus-guard for the aria-hidden mount (see _setupFocusGuard).
+        _focusGuardMount: null,
+        _focusBlurHandler: null,
 
         init() {
             // ApexCharts peer-dependency guard. WireKit ships only the
@@ -200,15 +230,22 @@ export default function wirekitApexChart(config) {
             // license reminder, and a link to apexcharts.com/license so
             // the developer can act without opening DevTools first.
             if (typeof ApexCharts === 'undefined') {
-                console.error(
-                    'WireKit: ApexCharts is not loaded. Install it via npm:\n' +
-                    '  npm install apexcharts\n' +
-                    'And import it in your app.js:\n' +
-                    '  import ApexCharts from "apexcharts";\n' +
-                    '  window.ApexCharts = ApexCharts;\n' +
-                    '\nLicense reminder: ApexCharts is non-MIT.\n' +
-                    'See https://apexcharts.com/license/ for terms.'
-                );
+                // Deduplicate the console.error so N apex charts on the same
+                // page emit ONE warning instead of N. The in-DOM fallback
+                // panel still renders per-chart (each chart needs its own
+                // visible advisory). (v2.4.0 R5 polish.)
+                if (typeof window !== 'undefined' && !window.__wirekit_apexcharts_missing_warned__) {
+                    window.__wirekit_apexcharts_missing_warned__ = true;
+                    console.error(
+                        'WireKit: ApexCharts is not loaded. Install it via npm:\n' +
+                        '  npm install apexcharts\n' +
+                        'And import it in your app.js:\n' +
+                        '  import ApexCharts from "apexcharts";\n' +
+                        '  window.ApexCharts = ApexCharts;\n' +
+                        '\nLicense reminder: ApexCharts is non-MIT.\n' +
+                        'See https://apexcharts.com/license/ for terms.'
+                    );
+                }
 
                 this.$nextTick(() => {
                     const mount = this.$refs.mount;
@@ -659,12 +696,14 @@ window.ApexCharts = ApexCharts;</pre>
 
                         const handlePointerLeave = () => stopPin();
 
-                        baseEl.addEventListener('pointermove', onActivity);
-                        baseEl.addEventListener('mousemove', onActivity);
-                        baseEl.addEventListener('pointerenter', onActivity);
-                        baseEl.addEventListener('mouseover', onActivity);
-                        baseEl.addEventListener('pointerleave', handlePointerLeave);
-                        baseEl.addEventListener('mouseleave', handlePointerLeave);
+                        // Passive — these only schedule a rAF pin loop, never
+                        // call preventDefault, so they must not block scroll.
+                        baseEl.addEventListener('pointermove', onActivity, { passive: true });
+                        baseEl.addEventListener('mousemove', onActivity, { passive: true });
+                        baseEl.addEventListener('pointerenter', onActivity, { passive: true });
+                        baseEl.addEventListener('mouseover', onActivity, { passive: true });
+                        baseEl.addEventListener('pointerleave', handlePointerLeave, { passive: true });
+                        baseEl.addEventListener('mouseleave', handlePointerLeave, { passive: true });
 
                         this._cellShapeTooltipCleanup = () => {
                             stopPin();
@@ -740,6 +779,30 @@ window.ApexCharts = ApexCharts;</pre>
                 // tear down on first detached frame so the orphaned chart
                 // can't cascade-crash a follow-up preview re-render.
                 this._setupDetachGuard(mount);
+
+                // A11y + visual fix (all ApexCharts types). The parent wrapper
+                // carries `role="img"` + aria-label (the accessible
+                // representation); THIS mount is `aria-hidden="true"` to hide
+                // ApexCharts' verbose SVG DOM from assistive tech. But the
+                // ApexCharts <svg> takes focus on click/tap, which both (a)
+                // trips Chrome's "Blocked aria-hidden because a descendant
+                // retained focus" console warning and (b) paints a stray focus
+                // ring on the chart's FIRST element (looks like the wrong bar
+                // is highlighted when you click another). Since the whole mount
+                // is decorative by design, nothing inside it should hold focus
+                // — immediately blur anything that gains it. Capture-phase so
+                // it fires before focus settles; pointer-driven tooltips are
+                // unaffected (blur does not cancel mouse/touch events, and
+                // ApexCharts' own dataPointSelection styling is pointer-based,
+                // not focus-based).
+                this._focusGuardMount = mount;
+                this._focusBlurHandler = (event) => {
+                    const target = event.target;
+                    if (target && typeof target.blur === 'function') {
+                        target.blur();
+                    }
+                };
+                mount.addEventListener('focusin', this._focusBlurHandler, { capture: true });
 
                 this._setupDarkModeObserver(rawConfig);
             });
@@ -950,6 +1013,11 @@ window.ApexCharts = ApexCharts;</pre>
                 this._hoverEnterHandler = null;
                 this._hoverLeaveHandler = null;
                 this._mount = null;
+            }
+            if (this._focusGuardMount && this._focusBlurHandler) {
+                this._focusGuardMount.removeEventListener('focusin', this._focusBlurHandler, { capture: true });
+                this._focusBlurHandler = null;
+                this._focusGuardMount = null;
             }
             if (this._cellShapeTooltipCleanup) {
                 this._cellShapeTooltipCleanup();

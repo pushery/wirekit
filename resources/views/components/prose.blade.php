@@ -62,6 +62,20 @@
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
         'leading-[var(--leading-wk-relaxed)]',
+        // Long-token overflow guard. `overflow-wrap` is an INHERITED property,
+        // so setting it on the prose root cascades to every descendant
+        // (headings, paragraphs, inline code, list items, table cells) —
+        // letting an unbreakable run like a heading containing
+        // `ComponentRegistry::category(string $category)` wrap mid-token
+        // instead of running off the right edge on a narrow viewport. It only
+        // breaks when a word would OTHERWISE overflow, so normal prose is
+        // unaffected, and `<pre>` (white-space: pre + its own overflow-x-auto)
+        // is unaffected too. Ugly mid-token wrapping beats off-screen overflow.
+        // Written as an arbitrary-value class (NOT the bare-word utility form)
+        // so the drift inventory traces it like every other arbitrary class
+        // here — AND so Tailwind's content scanner doesn't pick the bare-word
+        // token out of this very comment and emit an untraceable utility.
+        '[overflow-wrap:break-word]',
         // Shared heading typography (font-weight + line-height), density
         // controls size + margin.
         '[&_h1]:font-[number:var(--font-wk-heading-weight)] [&_h1]:leading-[var(--leading-wk-tight)]',
@@ -78,7 +92,11 @@
         // Blockquote
         '[&_blockquote]:border-l-4 [&_blockquote]:border-[var(--color-wk-border)] [&_blockquote]:pl-[var(--padding-wk-x-md)] [&_blockquote]:italic [&_blockquote]:text-[color:var(--color-wk-text-muted)] [&_blockquote]:mb-[var(--padding-wk-y-md)]',
         // Code
-        '[&_code]:font-[family-name:var(--font-wk-mono)] [&_code]:text-[length:var(--text-wk-sm)] [&_code]:bg-[var(--color-wk-bg-muted)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-[var(--radius-wk-sm)]',
+        // Inline code is the prime offender — tokens like `Foo::bar(string $x)`
+        // have long no-space runs, so it gets the stronger `anywhere` (which
+        // also lets the code element's min-content shrink, so it can't force
+        // its parent wider than the viewport).
+        '[&_code]:font-[family-name:var(--font-wk-mono)] [&_code]:text-[length:var(--text-wk-sm)] [&_code]:bg-[var(--color-wk-bg-muted)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-[var(--radius-wk-sm)] [&_code]:[overflow-wrap:anywhere]',
         '[&_pre]:bg-[var(--color-wk-bg-muted)] [&_pre]:rounded-[var(--radius-wk-md)] [&_pre]:p-[var(--padding-wk-x-md)] [&_pre]:mb-[var(--padding-wk-y-md)] [&_pre]:overflow-x-auto',
         '[&_pre_code]:bg-transparent [&_pre_code]:p-0',
         // Table

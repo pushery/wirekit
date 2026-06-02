@@ -2,6 +2,12 @@
     'src' => null,
     'alt' => null,
     'initials' => null,
+    // When true (with `initials` set and no `src`), derive a deterministic
+    // background colour from the initials hash so the same person always
+    // gets the same colour — replaces per-app crc32-palette helpers. The
+    // palette pairs an AA-contrast background with white text and is
+    // theme-independent. See Pushery\WireKit\Support\AvatarPalette.
+    'fromInitials' => false,
     'size' => config('wirekit.components.avatar.size', 'md'),
     'shape' => config('wirekit.components.avatar.shape', 'circle'),
     'status' => null,
@@ -17,7 +23,18 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\AvatarPalette;
     use Pushery\WireKit\WireKit;
+
+    // from-initials: deterministic background derived from the initials hash.
+    // Only applies to the initials-fallback path (no image). The inline style
+    // overrides the muted base bg + default text colour with the AA-contrast
+    // palette pair so the same key always renders the same colour.
+    $fromInitialsStyle = '';
+    if ($fromInitials && $initials && ! $src) {
+        $palette = AvatarPalette::for((string) $initials);
+        $fromInitialsStyle = "background-color: {$palette['bg']}; color: {$palette['fg']};";
+    }
 
     // Base classes: inline-flex for initials centering, muted fallback bg
     $baseClasses = WireKit::resolveClasses('avatar', 'base', implode(' ', [
@@ -101,8 +118,13 @@
     };
 @endphp
 
+@php
+    // Combine the optional ring box-shadow with the optional from-initials
+    // colour pair into one style attribute.
+    $avatarStyle = trim(implode(' ', array_filter([$fromInitialsStyle, $statusRingStyle ? $statusRingStyle.';' : ''])));
+@endphp
 <span {{ $attributes->class([$baseClasses, $sizeClasses, $shapeClasses]) }}
-    @if($statusRingStyle) style="{{ $statusRingStyle }}" @endif
+    @if($avatarStyle) style="{{ $avatarStyle }}" @endif
 >
     @if($src)
         <img src="{{ $src }}" alt="{{ $alt ?? '' }}" class="w-full h-full object-cover" />

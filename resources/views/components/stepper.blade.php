@@ -29,7 +29,13 @@
     // Each step wrapper.
     $itemClasses = WireKit::resolveClasses('stepper', 'item', implode(' ', [
         'flex',
-        $isVertical ? 'flex-row items-start gap-[var(--padding-wk-x-sm)]' : 'flex-col items-center flex-1',
+        // Horizontal: `flex-1 min-w-0` so each step takes an equal share AND
+        // can shrink below its label's intrinsic width. Without `min-w-0` the
+        // default `min-width: auto` pins each item to its longest-word width,
+        // so a multi-word step label ("Supporting documents") pushed the item
+        // past its share and overflowed the row on a phone. With min-w-0 the
+        // centered label wraps within its column instead of overflowing.
+        $isVertical ? 'flex-row items-start gap-[var(--padding-wk-x-sm)]' : 'flex-col items-center flex-1 min-w-0',
         'relative',
     ]), $scope);
 
@@ -56,6 +62,10 @@
     // Label classes.
     $labelClasses = WireKit::resolveClasses('stepper', 'label', implode(' ', [
         $isVertical ? '' : 'mt-[var(--padding-wk-y-xs)] text-center',
+        // Long step labels must wrap (and break a too-long single token)
+        // within their min-w-0 column on a phone instead of overflowing the
+        // horizontal row.
+        $isVertical ? '' : 'max-w-full [overflow-wrap:anywhere]',
         'text-[length:var(--text-wk-sm)]',
         'text-[color:var(--color-wk-text)]',
     ]), $scope);

@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Support\SuggestSimilar;
+use Pushery\WireKit\WireKit;
 
 /**
  * Scaffold a custom component derived from a WireKit base.
@@ -97,7 +98,7 @@ class ComponentMakeCommand extends Command
         $this->line('    <x-custom::'.$name.' ... />');
         $this->line('');
         $this->line('  To register a personalization scope instead of copying the file,');
-        $this->line('  see https://docs.wirekit.app/customization');
+        $this->line('  see '.WireKit::DOCS_URL.'/customization');
 
         return self::SUCCESS;
     }

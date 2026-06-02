@@ -37,17 +37,38 @@
 
     // Tablist container — horizontal row of tab buttons. Variant controls bottom
     // border (underline), background pill track (pills), or bordered segments.
+    //
+    // `max-w-full overflow-x-auto overflow-y-hidden` makes the tab bar
+    // horizontally scrollable when the labels exceed the available width (the
+    // canonical mobile tab-bar pattern — Material / iOS both scroll). The
+    // explicit `overflow-y-hidden` is REQUIRED: a bare `overflow-x-auto`
+    // computes `overflow-y` to `auto` per CSS spec (a non-visible value on one
+    // axis forces the other off `visible`), so the moment the horizontal
+    // scrollbar consumes vertical space a phantom VERTICAL scrollbar appeared
+    // over the tablist on mobile. Matches the canonical horizontal scroll-area
+    // shape (`scroll-area` 'horizontal' variant). The `bordered` variant
+    // already had effective `overflow-y:hidden` via its `overflow-hidden`.
+    // Desktop is unchanged: `inline-flex`
+    // still sizes to content when it fits; the cap + scroll only engage on
+    // narrow viewports. WCAG 2.1.1 is satisfied because the container carries
+    // role="tablist" with arrow-key navigation (a composite widget owning its
+    // own keyboard model — scroll-region rule shape #1). Each tab also
+    // carries a no-shrink + no-wrap rule (see $tabBase below) so the
+    // rounded track doesn't squish its children below their label width.
     $tablistBase = match ($variant) {
-        'pills' => 'inline-flex items-center gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)]',
-        'bordered' => 'inline-flex items-center border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden',
-        default => 'inline-flex items-center gap-2 border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
+        'pills' => 'inline-flex items-center gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)] max-w-full overflow-x-auto overflow-y-hidden',
+        'bordered' => 'inline-flex items-center border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden max-w-full overflow-x-auto',
+        default => 'inline-flex items-center gap-2 border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] max-w-full overflow-x-auto overflow-y-hidden',
     };
 
     $tablistClasses = WireKit::resolveClasses('tabs', 'tablist', $tablistBase, $scope);
 
     // Per-tab button classes. active/inactive state toggled via :class="..."
     // Bound to Alpine's `active === key` expression in the loop below.
-    $tabBase = 'inline-flex items-center gap-2 font-[number:var(--font-wk-body-weight)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed cursor-pointer';
+    // `shrink-0 whitespace-nowrap` keep each tab at its natural label width
+    // inside the scrollable tablist — without them, a narrow viewport would
+    // squish tabs and wrap/clip labels instead of letting the bar scroll.
+    $tabBase = 'inline-flex items-center gap-2 shrink-0 whitespace-nowrap font-[number:var(--font-wk-body-weight)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed cursor-pointer';
 
     $tabVariantClasses = match ($variant) {
         'pills' => 'p-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-md)]',

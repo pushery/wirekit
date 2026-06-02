@@ -154,7 +154,18 @@
     // that branch is intentional. Same reasoning as the chart-wrapper width
     // fix in commit 669d978: utility classes for decoration, inline style for
     // load-bearing layout primitives.
-    $displayStyle = $inline ? 'display: inline-block; vertical-align: middle; ' : '';
+    // Block-mode wrapper carries `min-width: 0; overflow: hidden` so the
+    // sparkline never imposes the ApexCharts canvas's fixed intrinsic width
+    // (~300px) as the min-content floor of a surrounding CSS-grid track. Without
+    // it, a `repeat(2, 1fr)` KPI grid floors each column at the chart's 300px
+    // intrinsic width and clips the right-hand cells off-screen on narrow
+    // viewports (the inner <x-wirekit-chart> wrapper already does this, but the
+    // sparkline's own outer wrapper sat between the grid track and that
+    // protection and re-leaked the intrinsic width). Inline mode keeps its fixed
+    // 4rem width — it lives in running prose, never in a grid track.
+    $displayStyle = $inline
+        ? 'display: inline-block; vertical-align: middle; '
+        : 'min-width: 0; overflow: hidden; ';
 @endphp
 
 {{--

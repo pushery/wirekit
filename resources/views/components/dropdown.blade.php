@@ -28,7 +28,15 @@
      on the non-focusable panel `<div>` moves focus to `document.body` in some
      headless environments, so the keydown never bubbles up to a wrapper-level
      listener. Attaching to `window` avoids the race entirely and also gives
-     users the conventional "ESC closes menu from anywhere" UX. --}}
+     users the conventional "ESC closes menu from anywhere" UX.
+
+     Two composition forms supported (use ONE, not both):
+       1. Named-slot quick form — provide <x-slot:trigger>...</x-slot:trigger>
+          and the default slot becomes the panel content. The parent
+          auto-wraps trigger + panel sub-components with their ARIA wiring.
+       2. Explicit form — nest <x-wirekit::dropdown.trigger> +
+          <x-wirekit::dropdown.panel> children directly. Full control over
+          sub-component props (width, scope, etc.). --}}
 <div
     x-data="wirekitDropdown({ placement: '{{ $placement }}', offset: {{ (int) $offset }} })"
     x-on:keydown="handleKeydown"
@@ -38,5 +46,17 @@
     data-wk-panel-id="{{ $panelId }}"
     {{ $attributes->class([$classes]) }}
 >
-    {{ $slot }}
+    @isset($trigger)
+        {{-- Quick form: <x-slot:trigger> provided. Auto-wrap trigger +
+             default slot in the canonical sub-component shells so the
+             developer doesn't repeat the trigger/panel composition. --}}
+        <x-wirekit::dropdown.trigger>{{ $trigger }}</x-wirekit::dropdown.trigger>
+        <x-wirekit::dropdown.panel>{{ $slot }}</x-wirekit::dropdown.panel>
+    @else
+        {{-- Explicit form: developer nests <x-wirekit::dropdown.trigger>
+             and <x-wirekit::dropdown.panel> children directly. The default
+             slot passes through unchanged — the explicit sub-components
+             carry their own ARIA wiring. --}}
+        {{ $slot }}
+    @endisset
 </div>

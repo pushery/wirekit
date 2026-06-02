@@ -99,6 +99,18 @@ final class Chart extends Component
         public bool $inline = false,
         public bool $replayable = false,
         public ?string $library = null,
+        // Tooltip numeric formatting (ApexCharts only — see the sentinel-keyed
+        // injection below). `valueDecimals` rounds raw float y-values in the
+        // custom tooltip to N decimal places; `valuePrefix` / `valueSuffix`
+        // wrap each formatted number (e.g. "€", " ms", "%"). All three are
+        // null by default → today's behaviour (raw value, no affix) preserved
+        // byte-for-byte. `valueDecimals` is typed `int|string|null` so both
+        // `valueDecimals="2"` (plain attribute) and `:valueDecimals="2"`
+        // (bound int) work — strict_types would reject a string on a bare
+        // `?int` param.
+        public int|string|null $valueDecimals = null,
+        public ?string $valuePrefix = null,
+        public ?string $valueSuffix = null,
     ) {
         /** @var ChartManager $manager Resolved from the container singleton */
         $manager = app(ChartManager::class);
@@ -160,6 +172,34 @@ final class Chart extends Component
                 $mergedOptions['plugins'] ?? [],
                 ['annotation' => ['annotations' => $annotations]],
             );
+        }
+
+        // Tooltip numeric formatting — thread valueDecimals / valuePrefix /
+        // valueSuffix into the tooltip config, but ONLY when the merged options
+        // still carry the ApexCharts `WIREKIT_DEFAULT_TOOLTIP` sentinel. That
+        // sentinel is emitted exclusively by ApexChartsAdapter::defaultOptions(),
+        // so keying off it scopes the feature to the apex adapter automatically
+        // (Chart.js never emits it) without an instanceof check or an interface
+        // change. A developer who overrides `tooltip.custom` with their own JS
+        // formatter opts out — their override wins via array_replace_recursive,
+        // the sentinel is gone, and we skip the injection.
+        if (($mergedOptions['tooltip']['custom'] ?? null) === 'WIREKIT_DEFAULT_TOOLTIP') {
+            // Normalize valueDecimals to an int in [0, 100] or null. is_numeric
+            // accepts "2" / 2 / "0"; anything else (null, "", "x") → null = unset.
+            // The 0–100 clamp is mandatory: the JS side feeds this to
+            // Number.prototype.toFixed(), which throws a RangeError for any
+            // argument outside 0–100 — an unclamped `valueDecimals="200"` would
+            // crash the tooltip renderer at hover time.
+            $decimals = is_numeric($valueDecimals) ? min(100, max(0, (int) $valueDecimals)) : null;
+
+            // Only attach the wk* keys when at least one is meaningful — keeps
+            // the emitted config byte-for-byte identical to pre-feature output
+            // when the developer passes none of the three props.
+            if ($decimals !== null || $valuePrefix !== null || $valueSuffix !== null) {
+                $mergedOptions['tooltip']['wkValueDecimals'] = $decimals;
+                $mergedOptions['tooltip']['wkValuePrefix'] = $valuePrefix;
+                $mergedOptions['tooltip']['wkValueSuffix'] = $valueSuffix;
+            }
         }
 
         $this->chartConfig = array_merge($normalized, ['options' => $mergedOptions]);

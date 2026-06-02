@@ -2,6 +2,14 @@
     'intent' => config('wirekit.components.badge.intent', 'neutral'),
     'size' => config('wirekit.components.badge.size', 'md'),
     'dot' => false,
+    // Discoverable tooltip — sets a native title="" on the badge. Previously
+    // callers passed title="" via the attribute bag; the prop makes the
+    // status-explanation affordance first-class.
+    'tooltip' => null,
+    // Optional leading status glyph (icon alias, e.g. 'check' / 'clock' /
+    // 'x-circle' / 'shield-check'). Rendered decoratively before the label —
+    // the text is the accessible name, so the icon is aria-hidden.
+    'leadingIcon' => null,
     'scope' => null,
 ])
 
@@ -99,11 +107,24 @@
         'neutral' => 'bg-[var(--color-wk-text-muted)]',
         default => 'bg-[var(--color-wk-text-muted)]',
     };
+
+    // Depth: a subtle inset currentColor ring (adapts per intent) + a faint
+    // 1px drop shadow lift the badge off the surface — previously it read
+    // flat. currentColor resolves to the intent's text/fg colour, so the
+    // ring tints itself; the drop shadow uses the text token at 4%.
+    $depthStyle = 'box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent), 0 1px 1px color-mix(in srgb, var(--color-wk-text) 4%, transparent);';
 @endphp
 
-<span {{ $attributes->class([$baseClasses, $intentClasses, $sizeClasses]) }}>
+<span
+    {{ $attributes->class([$baseClasses, $intentClasses, $sizeClasses]) }}
+    style="{{ $depthStyle }}"
+    @if($tooltip) title="{{ $tooltip }}" @endif
+>
     @if($dot)
         <span aria-hidden="true" class="inline-block h-1.5 w-1.5 rounded-full {{ $dotColorClass }}"></span>
+    @endif
+    @if($leadingIcon)
+        <x-wirekit::icon :name="$leadingIcon" size="xs" aria-hidden="true" class="shrink-0" />
     @endif
     {{ $slot }}
 </span>

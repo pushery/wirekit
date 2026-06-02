@@ -7,6 +7,15 @@
     'indicator' => 'bar',
     'segments' => null,
     'milestones' => false,
+    // `boundary` — when null (default), the progress indicator pins to
+    // the viewport via `position: fixed`. Set to `"container"` to swap to
+    // `position: sticky` so the bar/dot stays inside the nearest
+    // positioned ancestor (a modal body, a sidebar pane, an article
+    // preview surface). Sticky requires a scrolling parent with a
+    // defined height; in a non-scrolling parent the indicator falls back
+    // to static positioning and disappears — verify your wrapper has
+    // `overflow: auto` (or scroll) plus an explicit height.
+    'boundary' => null,
     'scope' => null,
 ])
 
@@ -67,14 +76,54 @@
     // 3px tall — but defensive against overlap with a sticky nav).
     $positionClass = $position === 'bottom' ? 'bottom-0' : 'top-0';
 
+    // Resolve boundary. Three shapes supported (v2.4.0 Ext 1):
+    //   null         → viewport-fixed (default — every existing developer
+    //                   sees zero change).
+    //   'container'  → position: sticky in the nearest positioned ancestor.
+    //   '<selector>' → position: sticky + Alpine init() asserts an ancestor
+    //                   matching the CSS selector exists; warns + falls back
+    //                   to viewport-fixed otherwise. Developer is responsible
+    //                   for setting position: relative + overflow on the
+    //                   targeted ancestor (same pre-requisite as 'container').
+    // The selector form must look like a CSS selector — letters / digits /
+    // common punctuation; we accept any non-empty string here and defer
+    // actual matching to the runtime JS (which fails gracefully).
+    if ($boundary === null) {
+        $resolvedBoundary = null;
+        $boundarySelector = null;
+    } elseif ($boundary === 'container') {
+        $resolvedBoundary = 'container';
+        $boundarySelector = null;
+    } elseif (is_string($boundary) && $boundary !== '') {
+        $resolvedBoundary = 'selector';
+        $boundarySelector = $boundary;
+    } else {
+        $resolvedBoundary = WireKit::validateProp(
+            'reading-progress',
+            'boundary',
+            (string) $boundary,
+            ['container', '<css-selector-string>']
+        );
+        $boundarySelector = null;
+    }
+
+    $useSticky = $resolvedBoundary === 'container' || $resolvedBoundary === 'selector';
+    $positionMode = $useSticky ? 'sticky' : 'fixed';
+
     // Marker class — used by reduced-motion gating in dist/wirekit.css, and by
     // print-stylesheet rules. Doubled-class specificity (`.wk-reading-progress.wk-reading-progress`)
     // wins over developer typography wrappers without using `!important`.
+    // Class strings stay STATIC across the sticky/fixed branch so Tailwind v4's
+    // content scanner picks both variants up cleanly.
     $rootClass = WireKit::resolveClasses('reading-progress', 'base', implode(' ', [
         'wk-reading-progress',
         $indicator === 'dot'
-            ? 'fixed z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[var(--padding-wk-x-lg)]'
-            : 'fixed left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$positionClass,
+            ? ($useSticky
+                ? 'sticky z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[var(--padding-wk-x-lg)]'
+                : 'fixed z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[var(--padding-wk-x-lg)]')
+            : ($useSticky
+                ? 'sticky left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$positionClass
+                : 'fixed left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$positionClass),
     ]), $scope);
 
     // Segments prop — a numeric array of fractional positions (0..1) where chapter
@@ -120,7 +169,20 @@
             _milestonesEnabled: {{ $milestonesEnabled ? 'true' : 'false' }},
             init() {
                 const target = '{{ $target }}' || null;
+                const boundarySelector = '{{ $boundarySelector }}' || null;
                 const showAfter = {{ (int) $showAfter }};
+                // v2.4.0 Ext 1 — warn when boundary='<css-selector>' does
+                // NOT resolve to any ancestor of this element. The bar's
+                // visual positioning is `position: sticky` regardless, but
+                // sticky only anchors correctly when the developer's
+                // selector targets a positioned + scrolling ancestor.
+                if (boundarySelector && !this.$el.closest(boundarySelector)) {
+                    console.warn(
+                        `[wirekit] reading-progress: boundary selector '${boundarySelector}' did not match any ancestor of this element. ` +
+                        `position: sticky will anchor to the nearest positioned ancestor instead. ` +
+                        `Pass boundary='container' for the no-selector form, or verify the selector matches an ancestor (e.g. add id/class to a wrapper).`
+                    );
+                }
                 // Warn-once when a developer-supplied target selector doesn't
                 // resolve. Without this signal the progress bar silently
                 // tracks viewport scroll instead of the scoped element,
@@ -269,7 +331,7 @@
              contexts, lands in document flow, and changes the body
              height calculation (which can also break scroll detection
              on iframe-srcdoc previews). Tokens stay theme-aware. --}}
-        style="position: fixed; right: var(--padding-wk-x-lg); bottom: var(--padding-wk-x-lg); z-index: var(--z-wk-sticky); pointer-events: none; width: var(--reading-progress-dot-size); height: var(--reading-progress-dot-size);"
+        style="position: {{ $positionMode }}; right: var(--padding-wk-x-lg); bottom: var(--padding-wk-x-lg); z-index: var(--z-wk-sticky); pointer-events: none; width: var(--reading-progress-dot-size); height: var(--reading-progress-dot-size);"
     >
         <svg viewBox="0 0 36 36" class="block h-full w-full -rotate-90" aria-hidden="true">
             {{-- background ring --}}
@@ -301,7 +363,20 @@
             _milestonesEnabled: {{ $milestonesEnabled ? 'true' : 'false' }},
             init() {
                 const target = '{{ $target }}' || null;
+                const boundarySelector = '{{ $boundarySelector }}' || null;
                 const showAfter = {{ (int) $showAfter }};
+                // v2.4.0 Ext 1 — warn when boundary='<css-selector>' does
+                // NOT resolve to any ancestor of this element. The bar's
+                // visual positioning is `position: sticky` regardless, but
+                // sticky only anchors correctly when the developer's
+                // selector targets a positioned + scrolling ancestor.
+                if (boundarySelector && !this.$el.closest(boundarySelector)) {
+                    console.warn(
+                        `[wirekit] reading-progress: boundary selector '${boundarySelector}' did not match any ancestor of this element. ` +
+                        `position: sticky will anchor to the nearest positioned ancestor instead. ` +
+                        `Pass boundary='container' for the no-selector form, or verify the selector matches an ancestor (e.g. add id/class to a wrapper).`
+                    );
+                }
                 // Warn-once when a developer-supplied target selector doesn't
                 // resolve. Without this signal the progress bar silently
                 // tracks viewport scroll instead of the scoped element,
@@ -451,7 +526,7 @@
              of the right edge. Inline `!important` is not needed
              because inline style already beats class-level rules
              on specificity. --}}
-        style="position: fixed; {{ $position === 'bottom' ? 'bottom: 0' : 'top: 0' }}; left: 0; right: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: {{ $heightToken }};{{ $segmentsStyle ? ' '.$segmentsStyle : '' }}"
+        style="position: {{ $positionMode }}; {{ $position === 'bottom' ? 'bottom: 0' : 'top: 0' }}; left: 0; right: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: {{ $heightToken }};{{ $segmentsStyle ? ' '.$segmentsStyle : '' }}"
     >
         {{-- x-bind:style uses the OBJECT form, not a string template.
              Alpine's `bind:style` with a string template REPLACES the

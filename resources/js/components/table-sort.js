@@ -15,9 +15,10 @@ export default function wirekitTableSort(config = {}) {
         _originalOrder: [],
 
         init() {
-            // Snapshot original row order so we can restore it when sort is cleared
+            // Snapshot original row order so we can restore it when sort is cleared.
+            // Use $root (the x-data <table>), NOT $el — see _reorderRows for why.
             this.$nextTick(() => {
-                const tbody = this.$el.querySelector('tbody');
+                const tbody = this.$root.querySelector('tbody');
                 if (tbody) {
                     this._originalOrder = [...tbody.querySelectorAll('tr')];
                 }
@@ -60,7 +61,13 @@ export default function wirekitTableSort(config = {}) {
          * Reads cell values from data-wk-sort-value attribute or textContent.
          */
         _reorderRows() {
-            const tbody = this.$el.querySelector('tbody');
+            // $root, NOT $el. sortBy() is reached via @click ON the <th>, so at
+            // call time Alpine binds $el to the clicked <th> — which has no
+            // <tbody> (and no <thead th> descendants), so $el.querySelector
+            // would return null and this method would early-return: the
+            // aria-sort indicator (a reactive binding) flipped but the rows
+            // never moved. $root is the x-data <table>, which owns both.
+            const tbody = this.$root.querySelector('tbody');
             if (!tbody) return;
 
             // No active sort — restore original DOM order
@@ -70,7 +77,8 @@ export default function wirekitTableSort(config = {}) {
             }
 
             // Find column index by matching data-wk-sort-column on th elements
-            const ths = this.$el.querySelectorAll('thead th');
+            // ($root, not $el — see the tbody lookup above).
+            const ths = this.$root.querySelectorAll('thead th');
             let colIndex = -1;
             ths.forEach((th, i) => {
                 if (th.dataset.wkSortColumn === this.sortColumn) {
@@ -90,9 +98,17 @@ export default function wirekitTableSort(config = {}) {
                 const valA = cellA?.dataset.wkSortValue ?? cellA?.textContent?.trim() ?? '';
                 const valB = cellB?.dataset.wkSortValue ?? cellB?.textContent?.trim() ?? '';
 
-                // Try numeric comparison when both values parse as numbers
-                const numA = parseFloat(valA);
-                const numB = parseFloat(valB);
+                // Numeric comparison ONLY when each value is FULLY numeric.
+                // parseFloat() reads a leading number out of a non-numeric
+                // string — "2025-01-15" → 2025 — which collapsed every ISO date
+                // in a column to its year, so they compared equal and the
+                // column never sorted. Number() returns NaN unless the whole
+                // string parses, so dates / "12px" / "$5" / "3 items" correctly
+                // fall through to the locale comparison below (which orders ISO
+                // dates chronologically via numeric:true). The `=== ''` guard
+                // stops Number('') === 0 from treating empty cells as numeric.
+                const numA = valA === '' ? NaN : Number(valA);
+                const numB = valB === '' ? NaN : Number(valB);
                 if (!isNaN(numA) && !isNaN(numB)) {
                     return this.sortDirection === 'asc' ? numA - numB : numB - numA;
                 }

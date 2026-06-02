@@ -6,10 +6,23 @@ namespace Pushery\WireKit;
 
 use Closure;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\AvatarPalette;
 use Pushery\WireKit\Support\StrictnessGate;
 
 class WireKit
 {
+    /**
+     * Canonical base URL for the public documentation site.
+     *
+     * Single source of truth for the `https://docs.wirekit.app` literal that
+     * the CLI surfaces (wirekit:show / :export-json / :export-api-map /
+     * :make / :install / :doctor) emit when pointing developers at a docs
+     * page. A future domain change becomes a one-line edit here rather than a
+     * scatter-replace across src/Console. No trailing slash — callers append
+     * `'/components/'.$name` etc.
+     */
+    public const DOCS_URL = 'https://docs.wirekit.app';
+
     /** @var array<string, array<string, mixed>> */
     protected static array $defaults = [];
 
@@ -185,6 +198,21 @@ class WireKit
     public static function prefix(): string
     {
         return config('wirekit.prefix', 'wirekit');
+    }
+
+    /**
+     * Deterministic avatar colour pair for a key (initials / name).
+     *
+     * Exposes {@see AvatarPalette::for()} so a
+     * developer can colour a custom inline avatar/chip with the SAME palette
+     * `<x-wirekit::avatar from-initials>` uses, without rendering the
+     * component. Returns `['bg' => 'oklch(...)', 'fg' => '#fff']`.
+     *
+     * @return array{bg: string, fg: string}
+     */
+    public static function avatarPaletteFor(string $key): array
+    {
+        return AvatarPalette::for($key);
     }
 
     /**

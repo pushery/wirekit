@@ -17,6 +17,7 @@
 
     // Base table classes — full width, collapse borders, use design tokens for typography
     $classes = WireKit::resolveClasses('table', 'base', implode(' ', [
+        'wk-table',
         'w-full',
         'border-collapse',
         'text-left',
@@ -91,15 +92,22 @@
     }
 @endphp
 
-{{-- Wrap in responsive container for horizontal scroll on narrow screens --}}
+{{-- Wrap in responsive container for horizontal scroll on narrow screens.
+     WCAG 2.1.1 (Keyboard): an `overflow-x-auto` region that actually scrolls
+     MUST be keyboard-reachable, otherwise a keyboard / switch user cannot pan
+     to the off-screen columns (the "you can't even reach the content on the
+     right" report). The focusable region + accessible name therefore apply to
+     EVERY responsive wrapper, not only the sticky-header variant — a wide data
+     table with no focusable cells was exactly the unreachable case. `min-w-0`
+     lets the wrapper shrink below the table's intrinsic width inside a flex
+     parent so the scroll engages instead of the table forcing document
+     overflow. --}}
 @if($responsive)
 <div
-    class="w-full overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'max-h-96 overflow-y-auto' : '' }}"
-    @if($stickyHeader)
-        tabindex="0"
-        role="region"
-        aria-label="{{ $tableLabel ?? 'Scrollable table' }}"
-    @endif
+    class="w-full min-w-0 overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'max-h-96 overflow-y-auto' : '' }}"
+    tabindex="0"
+    role="region"
+    aria-label="{{ $tableLabel ?? 'Scrollable table' }}"
 >
 @endif
     <table

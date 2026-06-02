@@ -158,9 +158,26 @@ final class IconResolver
      */
     private function resolveFallthrough(string $alias, array $presets): ?string
     {
-        $svgFactory = function_exists('app') && app()->bound('blade.icons')
-            ? app('blade.icons')
-            : null;
+        // blade-ui-kit/blade-icons binds its Factory under the FQCN
+        // `BladeUI\Icons\Factory::class` — NOT the dotted `'blade.icons'`
+        // string the earlier shape of this method probed. The dotted
+        // form has never been a registered alias in blade-icons; this
+        // method silently returned null on every call until a developer
+        // ran into a missing-alias and the throw branch fired.
+        //
+        // We probe the FQCN first (the real binding), and fall back to
+        // the legacy dotted name for forward-compat if blade-icons ever
+        // ships an alias by that name.
+        $factoryClass = 'BladeUI\\Icons\\Factory';
+        $svgFactory = null;
+        if (function_exists('app')) {
+            $container = app();
+            if ($container->bound($factoryClass)) {
+                $svgFactory = $container->make($factoryClass);
+            } elseif ($container->bound('blade.icons')) {
+                $svgFactory = $container->make('blade.icons');
+            }
+        }
 
         if ($svgFactory === null) {
             return null;

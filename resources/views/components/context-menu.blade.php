@@ -43,8 +43,18 @@
     x-on:keydown="handleKeydown"
     {{ $attributes->class([$wrapperClasses]) }}
 >
-    {{-- Trigger — the area that responds to right-click --}}
-    <div x-on:contextmenu="openAt($event)" x-ref="trigger">
+    {{-- Trigger — the area that responds to right-click (desktop) and to a
+         touch long-press / hold (touch devices, which have no right-click).
+         The touch listeners are passive: they never block scrolling — a
+         scroll/drag cancels the pending long-press instead. --}}
+    <div
+        x-on:contextmenu="openAt($event)"
+        x-on:touchstart.passive="onTouchStart($event)"
+        x-on:touchmove.passive="onTouchMove($event)"
+        x-on:touchend.passive="onTouchEnd()"
+        x-on:touchcancel.passive="onTouchEnd()"
+        x-ref="trigger"
+    >
         {{ $trigger }}
     </div>
 

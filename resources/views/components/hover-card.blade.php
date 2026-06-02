@@ -34,15 +34,28 @@
     x-data="wirekitHoverCard({ placement: '{{ $placement }}', offset: {{ $offset }}, delayShow: {{ $delayShow }}, delayHide: {{ $delayHide }} })"
     {{ $attributes->class([$wrapperClasses]) }}
 >
-    {{-- Trigger element --}}
+    {{-- Trigger element.
+
+         ARIA attributes (aria-haspopup, aria-expanded) are delegated to the
+         INNER interactive element (button/link) via x-init when one exists,
+         NOT placed on this wrapper <span> — a generic <span> rejects them
+         under axe-core's aria-allowed-attr rule. Unlike popover, a hover-card
+         trigger is LEGITIMATELY non-interactive (an avatar or @username that
+         reveals a card on hover/focus), so the no-descendant case is silent —
+         it is not a developer error. --}}
     <span
         x-ref="trigger"
         @mouseenter="mouseenter()"
         @mouseleave="mouseleave()"
         @focusin="focusin()"
         @focusout="focusout()"
-        aria-haspopup="dialog"
-        :aria-expanded="open ? 'true' : 'false'"
+        x-init="(() => {
+            const interactive = $el.querySelector('button, [role=button], a');
+            if (!interactive) return;
+            interactive.setAttribute('aria-haspopup', 'dialog');
+            interactive.setAttribute('aria-expanded', 'false');
+            $watch('open', value => interactive.setAttribute('aria-expanded', value ? 'true' : 'false'));
+        })()"
     >
         {{ $trigger }}
     </span>

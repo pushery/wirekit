@@ -104,15 +104,23 @@ export default function wirekitChartJs(config) {
         _manualColorIndices: new Set(),
 
         init() {
-            // Intentional console.error — DX hint when Chart.js peer dependency is missing
+            // Intentional console.error — DX hint when Chart.js peer dependency is missing.
+            // Deduplicated via module-scoped flag so a page with N charts emits
+            // the warning ONCE rather than N times. (v2.4.0 R5 polish.)
             if (typeof Chart === 'undefined') {
-                console.error(
-                    'WireKit: Chart.js is not loaded. Install it via npm:\n' +
-                    '  npm install chart.js\n' +
-                    'And import it in your app.js:\n' +
-                    '  import { Chart, registerables } from "chart.js";\n' +
-                    '  Chart.register(...registerables);'
-                );
+                if (typeof window !== 'undefined') {
+                    window.__wirekit_chartjs_missing_warned__ ??= false;
+                    if (!window.__wirekit_chartjs_missing_warned__) {
+                        window.__wirekit_chartjs_missing_warned__ = true;
+                        console.error(
+                            'WireKit: Chart.js is not loaded. Install it via npm:\n' +
+                            '  npm install chart.js\n' +
+                            'And import it in your app.js:\n' +
+                            '  import { Chart, registerables } from "chart.js";\n' +
+                            '  Chart.register(...registerables);'
+                        );
+                    }
+                }
                 return;
             }
 

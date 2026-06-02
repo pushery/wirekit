@@ -15,7 +15,11 @@
 
 <nav
     x-data="wirekitNavigationMenu()"
-    x-on:click.outside="closeAll()"
+    {{-- Outside-click close is handled in wirekitNavigationMenu()'s
+         document-level pointerdown listener, not here: the flyout panels
+         teleport to <body>, so a Blade x-on:click.outside on this root would
+         fire when clicking inside an open panel (no longer a DOM descendant)
+         and close it before an in-panel click registered. --}}
     aria-label="Main navigation"
     {{ $attributes->class([$classes]) }}
 >

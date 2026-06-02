@@ -120,6 +120,14 @@
                 id="{{ $id }}-input"
                 x-ref="input"
                 placeholder="{{ $placeholder }}"
+                {{-- When no visible <label> is rendered (no `label` prop), the
+                     type-a-tag input would have no accessible name — a
+                     placeholder is not a name (WCAG 2.1 AA / axe `label`).
+                     Fall back to the placeholder as the aria-label so the
+                     control is always named; when a label IS present the
+                     <label for> above owns the name and we must NOT override
+                     it with aria-label. --}}
+                @unless($label) aria-label="{{ $placeholder }}" @endunless
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @keydown.enter.prevent="addTag()"
