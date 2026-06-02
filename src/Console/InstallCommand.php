@@ -10,10 +10,12 @@ use InvalidArgumentException;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Support\BladeParser;
+use Pushery\WireKit\Support\ClassPropsExtractor;
 use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\Support\VersionResolver;
 use Pushery\WireKit\Theming\ThemePresetRegistry;
+use Pushery\WireKit\WireKit;
 
 class InstallCommand extends Command
 {
@@ -1247,10 +1249,15 @@ CSS;
                 // (PropsParser) and class-based (ClassPropsExtractor)
                 // components uniformly.
                 $props = ComponentRegistry::extractProps($name);
+                $componentClass = ComponentRegistry::componentClass($name);
+                $classPublicProps = $componentClass !== null
+                    ? ClassPropsExtractor::publicPropertyNames($componentClass)
+                    : [];
                 $slots = $bladePath !== null
                     ? BladeParser::extractSlotsWithMetadataFromSource(
                         (string) file_get_contents($bladePath),
-                        $bladePath
+                        $bladePath,
+                        $classPublicProps
                     )
                     : [];
                 $subComponents = $this->discoverSubComponentsForSchema($name);
@@ -1259,7 +1266,7 @@ CSS;
                     'tag' => ComponentRegistry::tag($name),
                     'category' => $meta['category'],
                     'description' => $meta['description'],
-                    'docs_url' => "https://docs.wirekit.app/components/{$name}",
+                    'docs_url' => WireKit::DOCS_URL."/components/{$name}",
                     'props' => $props,
                     'slots' => $slots,
                     'sub_components' => $subComponents,

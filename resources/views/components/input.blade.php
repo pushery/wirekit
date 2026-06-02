@@ -78,6 +78,12 @@
             'text-[length:var(--text-wk-sm)]',
             'rounded-[var(--radius-wk-sm)]',
         ]),
+        'md-compact' => implode(' ', [
+            'h-[var(--size-wk-md-compact)]',
+            'px-[var(--padding-wk-x-md)]',
+            'text-[length:var(--text-wk-sm)]',
+            'rounded-[var(--radius-wk-md)]',
+        ]),
         'md' => implode(' ', [
             'h-[var(--size-wk-md)]',
             'px-[var(--padding-wk-x-md)]',
@@ -90,7 +96,24 @@
             'text-[length:var(--text-wk-lg)]',
             'rounded-[var(--radius-wk-md)]',
         ]),
-        default => WireKit::validateProp('input', 'size', $size, ['sm', 'md', 'lg']),
+        default => WireKit::validateProp('input', 'size', $size, ['sm', 'md-compact', 'md', 'lg']),
+    };
+
+    // Prefix/suffix-wrapper sizing — computed here in the @php block (not
+    // inline in the wrapper's @class directive) so the hyphenated size key
+    // 'md-compact' stays in the context where the drift class-detector's
+    // shape-marker pass correctly treats it as a dispatch key, not a class.
+    $prefixWrapperSizeClass = match ($size) {
+        'sm' => 'rounded-[var(--radius-wk-sm)] h-[var(--size-wk-sm)]',
+        'md-compact' => 'rounded-[var(--radius-wk-md)] h-[var(--size-wk-md-compact)]',
+        'lg' => 'rounded-[var(--radius-wk-md)] h-[var(--size-wk-lg)]',
+        default => 'rounded-[var(--radius-wk-md)] h-[var(--size-wk-md)]',
+    };
+    $prefixInputPadClass = match ($size) {
+        'sm' => 'px-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)]',
+        'md-compact' => 'px-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)]',
+        'lg' => 'px-[var(--padding-wk-x-lg)] text-[length:var(--text-wk-lg)]',
+        default => 'px-[var(--padding-wk-x-md)] text-[length:var(--text-wk-md)]',
     };
 @endphp
 
@@ -122,11 +145,7 @@
             'has-[:user-invalid:focus-visible]:ring-[var(--color-wk-danger)]',
             'hover:border-[var(--color-wk-border-hover)]',
             $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]',
-            match ($size) {
-                'sm' => 'rounded-[var(--radius-wk-sm)] h-[var(--size-wk-sm)]',
-                'lg' => 'rounded-[var(--radius-wk-md)] h-[var(--size-wk-lg)]',
-                default => 'rounded-[var(--radius-wk-md)] h-[var(--size-wk-md)]',
-            },
+            $prefixWrapperSizeClass,
         ])>
             @if($prefix)
                 <span class="shrink-0 select-none pl-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $prefix }}</span>
@@ -150,11 +169,7 @@
                     'placeholder:text-[color:var(--color-wk-text-placeholder)]',
                     'focus:outline-none focus:ring-0',
                     'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed',
-                    match ($size) {
-                        'sm' => 'px-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)]',
-                        'lg' => 'px-[var(--padding-wk-x-lg)] text-[length:var(--text-wk-lg)]',
-                        default => 'px-[var(--padding-wk-x-md)] text-[length:var(--text-wk-md)]',
-                    },
+                    $prefixInputPadClass,
                     'pl-1' => (bool) $prefix,
                     'pr-1' => (bool) $suffix,
                 ]) }}

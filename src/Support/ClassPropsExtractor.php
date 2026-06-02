@@ -41,6 +41,31 @@ use ReflectionUnionType;
 final class ClassPropsExtractor
 {
     /**
+     * Return every public property name (including constructor-promoted ones)
+     * of the class. Used by the JSON-manifest exporter to extend BladeParser's
+     * slot-detection exclude set so class-side variables like
+     * `$alpineComponent` / `$chartConfig` on Chart.php don't false-positive
+     * as required `<x-slot:...>` references in the emitted manifest.
+     *
+     * @param  class-string  $className
+     * @return list<string>
+     */
+    public static function publicPropertyNames(string $className): array
+    {
+        if (! class_exists($className)) {
+            return [];
+        }
+
+        $reflection = new ReflectionClass($className);
+        $names = [];
+        foreach ($reflection->getProperties(\ReflectionProperty::IS_PUBLIC) as $property) {
+            $names[] = $property->getName();
+        }
+
+        return array_values(array_unique($names));
+    }
+
+    /**
      * Extract every constructor parameter from a class as a prop entry.
      *
      * Returns an empty array when the class doesn't exist OR has no

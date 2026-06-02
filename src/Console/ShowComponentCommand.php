@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\SuggestSimilar;
+use Pushery\WireKit\WireKit;
 
 class ShowComponentCommand extends Command
 {
@@ -116,7 +117,7 @@ class ShowComponentCommand extends Command
             }
         }
 
-        $this->line("  <fg=yellow>Docs:</> https://docs.wirekit.app/components/{$name}");
+        $this->line('  <fg=yellow>Docs:</> '.WireKit::DOCS_URL."/components/{$name}");
 
         return self::SUCCESS;
     }
@@ -153,7 +154,7 @@ class ShowComponentCommand extends Command
             'tag' => ComponentRegistry::tag($name),
             'category' => $meta['category'],
             'description' => $meta['description'],
-            'docs_url' => "https://docs.wirekit.app/components/{$name}",
+            'docs_url' => WireKit::DOCS_URL."/components/{$name}",
             'props' => $props,
             'sub_components' => $subComponents,
         ];

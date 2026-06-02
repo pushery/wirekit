@@ -63,9 +63,17 @@
     @if($ariaLabel) aria-label="{{ $ariaLabel }}" @endif
     {{ $attributes->class([$baseClasses]) }}
 >
-    {{-- Leading slot (search, primary controls) --}}
+    {{-- Leading slot (search, primary controls).
+         `flex-1 basis-0 min-w-[min(100%,14rem)]` is the responsive contract:
+         the search cluster grows to fill spare space but NEVER shrinks below
+         14rem (or the full container width on a phone narrower than that).
+         The old `min-w-0` let it collapse to zero — on a narrow viewport the
+         search field vanished instead of forcing the toolbar to wrap to a
+         second row. With a real min-width, flex-wrap pushes the filters /
+         actions to the next line once they no longer fit beside a usable
+         search field. --}}
     @if(isset($leading))
-        <div class="flex items-center gap-[var(--space-wk-sm,0.5rem)] min-w-0">
+        <div class="flex items-center gap-[var(--space-wk-sm,0.5rem)] flex-1 basis-0 min-w-[min(100%,14rem)]">
             {{ $leading }}
         </div>
     @endif
@@ -83,7 +91,16 @@
             {{ $trailing }}
         </div>
     @elseif(!$slot->isEmpty())
-        <div class="flex items-center gap-[var(--space-wk-sm,0.5rem)]">
+        {{-- Default-slot path: content passed WITHOUT the named leading/
+             filters/trailing slots. This wrapper must mirror the toolbar's
+             own responsive flex behaviour (`flex-wrap justify-between
+             w-full`) so default-slot content still wraps to a second row on
+             a narrow viewport instead of cramming on one line — the
+             named-slot path already wraps via the root. Without `flex-wrap`
+             here, a search field + filter selects + an action button dumped
+             into the default slot were squeezed onto one line and the
+             leading field collapsed to nothing on mobile. --}}
+        <div class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm,0.5rem)] w-full">
             {{ $slot }}
         </div>
     @endif

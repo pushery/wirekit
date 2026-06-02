@@ -213,6 +213,11 @@
     /* ─── Component Heights ─── */
     --size-wk-xs: 1.5rem;
     --size-wk-sm: 2rem;
+    /* md-compact: the dense-toolbar middle tier between sm (2rem) and md
+       (2.5rem). Real-world list/filter toolbars (Linear, Stripe, Shopify)
+       land here — sm reads cramped, md reads slightly too tall in a dense
+       row. */
+    --size-wk-md-compact: 2.25rem;
     --size-wk-md: 2.5rem;
     --size-wk-lg: 3rem;
     --size-wk-xl: 6rem;
@@ -249,6 +254,14 @@
     --space-wk-section-sm: 3rem;
     --space-wk-section-md: 5rem;
     --space-wk-section-lg: 7rem;
+
+    /* Toast-region edge offset — distance the toast stack keeps from its
+       pinned viewport edge (top or bottom). Default 0px; set it to your fixed
+       app header / nav height (or bottom-bar height) so toasts never render
+       underneath it. `<x-wirekit::toast-region>` folds `env(safe-area-inset-*)`
+       in on top automatically, so the notch / home indicator are always
+       cleared regardless of this value. */
+    --space-wk-toast-offset: 0px;
 
     /* ─── Container Max Widths ─── */
     --size-wk-container-sm: 40rem;
@@ -425,6 +438,81 @@
 /* Corner piece where horizontal and vertical scrollbars meet */
 .wk-scrollbar::-webkit-scrollbar-corner {
     background: var(--color-wk-scrollbar-track);
+}
+
+/* ─── Hero / CTA muted-text-on-dark contrast fix ───────────── */
+/* When a hero or cta runs variant="dark" / "accent", its background is
+   near-black (bg-inverse / accent), but a nested <x-wirekit::text
+   variant="muted"> reads the LIGHT-theme --color-wk-text-muted (a dark
+   gray) — invisible at ~1.5:1 on the dark surface.
+   Scope --color-wk-text-muted to a translucent mix of the variant's OWN
+   foreground so it auto-adapts to any theme AND to either variant:
+   dark → text-inverse, accent → accent-fg. :where() keeps specificity 0
+   so a developer's explicit override still wins. */
+:where(.wk-hero, .wk-cta)[data-variant="dark"] {
+    --color-wk-text-muted: color-mix(in oklab, var(--color-wk-text-inverse) 72%, transparent);
+}
+
+:where(.wk-hero, .wk-cta)[data-variant="accent"] {
+    --color-wk-text-muted: color-mix(in oklab, var(--color-wk-accent-fg) 72%, transparent);
+}
+
+/* ─── Range-slider thumb sizing + touch handling ───────────── */
+/* The thumb is sized here (not via w-5/h-5 utilities) so the coarse-pointer
+   bump is deterministic regardless of stylesheet order. touch-action:none
+   stops a horizontal thumb drag from scrolling the page on touch devices —
+   the modern idiom for the iOS drag-vs-scroll conflict, no manual
+   touchstart/touchmove listeners needed (pointer events already drive the
+   drag). 28px on coarse pointers clears the ~44px touch-target guidance once
+   the surrounding hit-slop is included. */
+.wk-range-thumb {
+    width: 1.25rem;
+    height: 1.25rem;
+    touch-action: none;
+}
+
+@media (pointer: coarse) {
+    .wk-range-thumb {
+        width: 1.75rem;
+        height: 1.75rem;
+    }
+}
+
+/* ─── Table-aware cell padding for raw <td>/<th> ───────────── */
+/* <x-wirekit::table> only styles the outer <table>; padding lives on the
+   table.td / table.th sub-components. A developer who drops a raw
+   <td>/<th> in (no sub-component) otherwise gets a cramped zero-padding
+   cell. Auto-apply the same metrics table.td uses so a raw table renders
+   correctly — complementing the app.debug console.warn the component
+   already emits. Cells that DO carry the data-wk-table-* marker are
+   excluded (their sub-component owns the padding). */
+.wk-table td:not([data-wk-table-td]),
+.wk-table th:not([data-wk-table-th]) {
+    padding: var(--padding-wk-y-md) var(--padding-wk-x-md);
+}
+
+.wk-table[data-wk-compact] td:not([data-wk-table-td]),
+.wk-table[data-wk-compact] th:not([data-wk-table-th]) {
+    padding-block: var(--padding-wk-y-sm);
+}
+
+/* An edge-to-edge card body (padded=false) drops its own padding, so a raw
+   table flush to the card edge needs its cells padded to stay readable. */
+.wk-card-body[data-wk-padded="false"] > table td:not([data-wk-table-td]),
+.wk-card-body[data-wk-padded="false"] > table th:not([data-wk-table-th]) {
+    padding: var(--padding-wk-y-sm) var(--padding-wk-x-md);
+}
+
+/* ─── Data-list row separators ─────────────────────────────── */
+/* Horizontal data-list items carry a 1px bottom rule between rows.
+   The separator lives here (not as an inline style on the item) so the
+   LAST item omits it via :not(:last-child) — an inline border-bottom
+   can't express that and produced a doubled 2px seam where the list's
+   final row met its container's own bottom border.
+   Loaded via @wirekitStyles, so it resolves in the same preview-iframe /
+   SSR-without-Tailwind contexts the item's inline layout styles target. */
+.wk-data-list-item:not(:last-child) {
+    border-bottom: 1px solid var(--color-wk-border-subtle);
 }
 
 /* ─── Prose <pre> scrollbar theming ────────────────────────── */
@@ -1203,6 +1291,65 @@
     --reading-toc-padding-x: 1rem;
     --reading-toc-gap: 1rem;
     --reading-toc-link-max-width: 24ch;
+    /* Horizontal gutter the article reserves on its inline-end edge so the
+       fixed-position reading-spine never overlaps body text. Applied ONLY
+       at md+ (see .wk-reading-content below) because the spine itself is
+       hidden below md (reading-spine default hideBelow="md"). */
+    --reading-content-spine-gutter: 12rem;
+}
+
+/* reading-content — responsive article wrapper for spine compositions.   */
+/* THE mobile-safe replacement for the hand-rolled, NON-responsive inline  */
+/* `max-width: calc(100% - 12rem)` / `padding-right: 12rem` reserve that    */
+/* used to collapse the article to one character per line on phones: the    */
+/* inline reserve stayed applied even though the spine is hidden below md,   */
+/* leaving a dead 12rem gutter on a ~300px screen. This class reserves the   */
+/* spine gutter ONLY at md+ (lockstep with reading-spine hideBelow="md"); on */
+/* mobile the article uses the FULL width. overflow-wrap guards long tokens. */
+.wk-reading-content {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+@media (min-width: 48rem) {
+    .wk-reading-content {
+        /* 48rem === Tailwind `md` === reading-spine default hideBelow.
+           max-width (not padding) so the reserve never fights an inline
+           `padding:` shorthand on the article (specificity 1000 would beat
+           a class-level padding rule). The narrowed, left-aligned content
+           leaves the inline-end gutter for the fixed spine. */
+        max-width: calc(100% - var(--reading-content-spine-gutter, 12rem));
+    }
+}
+
+/* Generic responsive utilities for app-shell sidebars and secondary      */
+/* panes inside documentation preview blocks. Inline-style mockups can't   */
+/* express `@media`, so blueprint previews resort to fixed `width: 18rem;  */
+/* flex-shrink: 0` aside elements that crush the main content on a phone.  */
+/* These classes give those mockups a tiny responsive vocabulary:          */
+/*                                                                        */
+/*   .wk-hide-below-md         — display:none below md (sidebars that     */
+/*                                are pure nav/filter — calendar sources, */
+/*                                mail folder rails, kanban swim picker)  */
+/*   .wk-stack-below-md        — flex-direction:column + items:stretch    */
+/*                                below md (2-pane master/detail where    */
+/*                                the sidebar holds useful meta)          */
+/*                                                                        */
+/* Both align with the reading-spine `hideBelow="md"` (48rem) breakpoint  */
+/* so the whole app-shell vocabulary stays in lockstep.                   */
+@media (max-width: 47.999rem) {
+    .wk-hide-below-md {
+        display: none !important;
+    }
+    .wk-stack-below-md {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .wk-stack-below-md > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex-basis: auto !important;
+    }
 }
 
 /* reading-spine base — collapsed by default, expands on hover/focus.  */

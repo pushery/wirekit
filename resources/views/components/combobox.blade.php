@@ -103,6 +103,16 @@
         selected: @js($value),
         highlight: 0,
         allOptions: @js($normalized),
+        // Cross-instance coordination — when ANY combobox on the page opens it
+        // broadcasts a `wirekit:combobox-open` event carrying a stable Symbol;
+        // every OTHER instance closes itself on receipt. Without this, two
+        // open comboboxes can visually overlap (a long option list spills into
+        // the next combobox's territory on a docs page). Matches the
+        // context-menu cross-close pattern. The Symbol is created in init()
+        // so each instance gets its own unforgeable identity that survives
+        // Alpine's Proxy wrap-and-unwrap.
+        _uid: null,
+        _otherOpenCleanup: null,
         get filtered() {
             if (this.query === '') return this.allOptions;
             const q = this.query.toLowerCase();
@@ -112,6 +122,27 @@
             // Seed the query with the label of the initial value, if any.
             const match = this.allOptions.find(o => o.value === this.selected);
             if (match) this.query = match.label;
+
+            this._uid = Symbol('wirekitCombobox');
+            this._otherOpenCleanup = (event) => {
+                if (event.detail?.source !== this._uid && this.open) {
+                    this.open = false;
+                }
+            };
+            window.addEventListener('wirekit:combobox-open', this._otherOpenCleanup);
+            // Broadcast on every transition into the open state so siblings can close.
+            this.$watch('open', (val) => {
+                if (val) {
+                    window.dispatchEvent(new CustomEvent('wirekit:combobox-open', {
+                        detail: { source: this._uid },
+                    }));
+                }
+            });
+        },
+        destroy() {
+            if (this._otherOpenCleanup) {
+                window.removeEventListener('wirekit:combobox-open', this._otherOpenCleanup);
+            }
         },
         selectOption(opt) {
             if (opt.disabled) return;

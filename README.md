@@ -69,7 +69,7 @@ Add WireKit's Blade source path to your `resources/css/app.css`:
 @source '../../vendor/pushery/wirekit/resources/views/**/*.blade.php';
 ```
 
-Full setup walkthrough: **[Getting Started](https://docs.wirekit.app/getting-started)** · **[Integration Guide](https://docs.wirekit.app/integration)**
+Full setup walkthrough: **[Getting Started](https://docs.wirekit.app/getting-started)** · **[Integration Guide](https://docs.wirekit.app/getting-started/integration)**
 
 ## Quick Start
 
@@ -95,7 +95,7 @@ A wide catalogue of components organised by category. Browse, search, and try ev
 | Category | Examples |
 |----------|----------|
 | **Forms** | button, input, select, textarea, combobox, multi-select, date-picker, slider, color-picker, otp-input, … |
-| **Display** | badge, card, avatar, alert, callout, image-compare, kanban, reveal, … |
+| **Display** | badge, card, avatar, alert, callout, image-compare, kanban, stage-card, activity-row, reveal, … |
 | **Data Display** | table, pagination, stat, stats, progress, skeleton, timeline, tree-view, ticker, price, … |
 | **Overlays** | dropdown, tooltip, modal, drawer, popover, hover-card, command-palette, alert-dialog, … |
 | **Navigation** | tabs, breadcrumb, accordion, sidebar, navbar, brand-bar, menubar, navigation-menu, stepper, … |

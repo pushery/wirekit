@@ -1,13 +1,20 @@
 /**
  * WireKit Context Menu Alpine Component.
  *
- * Right-click (contextmenu) triggered floating menu.
- * Uses Floating UI for positioning at cursor coordinates.
+ * Right-click (contextmenu) triggered floating menu, with touch parity via
+ * long-press (touch-and-hold) on devices that have no right-click.
+ * Uses Floating UI for positioning at cursor / touch-point coordinates.
  * Follows WAI-ARIA menu pattern with arrow key navigation.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menu/
  */
 import { position } from '../utils/floating.js';
+
+// Long-press tuning. 500ms is the platform-conventional touch-hold threshold
+// (matches iOS/Android long-press); a 10px movement budget distinguishes a
+// deliberate hold from the start of a scroll/drag gesture.
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_MOVE_TOLERANCE_PX = 10;
 
 /**
  * @param {Object} config - Context menu configuration from Blade
@@ -27,6 +34,10 @@ export default function wirekitContextMenu(config = {}) {
         // — it's a primitive value, never proxied, and `===` comparison is
         // identity-based, so each instance gets its own unforgeable token.
         _uid: null,
+        // Long-press (touch) state.
+        _pressTimer: null,
+        _pressStartX: 0,
+        _pressStartY: 0,
 
         init() {
             this._uid = Symbol('wirekitContextMenu');
@@ -54,16 +65,26 @@ export default function wirekitContextMenu(config = {}) {
             if (this._otherOpenCleanup) {
                 window.removeEventListener('wirekit:context-menu-open', this._otherOpenCleanup);
             }
+            this._clearPressTimer();
             this._forceClose();
         },
 
         /**
-         * Open context menu at cursor position.
+         * Open context menu at cursor position (right-click).
          * @param {MouseEvent} event - The contextmenu event
          */
         async openAt(event) {
             event.preventDefault();
+            await this._openAtCoords(event.clientX, event.clientY);
+        },
 
+        /**
+         * Shared open routine — positions the panel at viewport coordinates.
+         * Used by both the right-click (openAt) and touch long-press paths.
+         * @param {number} clientX
+         * @param {number} clientY
+         */
+        async _openAtCoords(clientX, clientY) {
             // Broadcast BEFORE flipping `open` so other instances close first.
             // The `source: this._uid` payload (a stable Symbol per instance)
             // lets sibling instances skip self-closing without relying on
@@ -80,18 +101,18 @@ export default function wirekitContextMenu(config = {}) {
             const panel = this.$refs.panel;
             if (!panel) return;
 
-            // Position panel at cursor coordinates using a virtual reference element
+            // Position panel at the cursor / touch point using a virtual reference.
             const virtualRef = {
                 getBoundingClientRect() {
                     return {
                         width: 0,
                         height: 0,
-                        x: event.clientX,
-                        y: event.clientY,
-                        top: event.clientY,
-                        left: event.clientX,
-                        right: event.clientX,
-                        bottom: event.clientY,
+                        x: clientX,
+                        y: clientY,
+                        top: clientY,
+                        left: clientX,
+                        right: clientX,
+                        bottom: clientY,
                     };
                 },
             };
@@ -100,6 +121,67 @@ export default function wirekitContextMenu(config = {}) {
                 placement: 'bottom-start',
                 offset: 2,
             });
+        },
+
+        /**
+         * Touch long-press — opens the menu after a hold, giving touch devices
+         * (which have no right-click) parity with the contextmenu trigger. A
+         * scroll/drag gesture (movement beyond the tolerance) cancels the press.
+         * @param {TouchEvent} event
+         */
+        onTouchStart(event) {
+            // Only a single-finger press is a long-press candidate; multi-touch
+            // (pinch/zoom) is never a context-menu intent.
+            if (event.touches.length !== 1) {
+                this._clearPressTimer();
+                return;
+            }
+
+            const touch = event.touches[0];
+            this._pressStartX = touch.clientX;
+            this._pressStartY = touch.clientY;
+
+            this._clearPressTimer();
+            this._pressTimer = setTimeout(() => {
+                this._pressTimer = null;
+                this._openAtCoords(this._pressStartX, this._pressStartY);
+            }, LONG_PRESS_MS);
+        },
+
+        /**
+         * Cancel the pending long-press if the finger moves far enough to be a
+         * scroll/drag rather than a hold.
+         * @param {TouchEvent} event
+         */
+        onTouchMove(event) {
+            if (!this._pressTimer) return;
+
+            const touch = event.touches[0];
+            if (!touch) return;
+
+            const dx = Math.abs(touch.clientX - this._pressStartX);
+            const dy = Math.abs(touch.clientY - this._pressStartY);
+            if (dx > LONG_PRESS_MOVE_TOLERANCE_PX || dy > LONG_PRESS_MOVE_TOLERANCE_PX) {
+                this._clearPressTimer();
+            }
+        },
+
+        /**
+         * Finger lifted / gesture cancelled before the threshold — abort the
+         * pending long-press.
+         */
+        onTouchEnd() {
+            this._clearPressTimer();
+        },
+
+        /**
+         * Clear the pending long-press timer (idempotent).
+         */
+        _clearPressTimer() {
+            if (this._pressTimer) {
+                clearTimeout(this._pressTimer);
+                this._pressTimer = null;
+            }
         },
 
         /**

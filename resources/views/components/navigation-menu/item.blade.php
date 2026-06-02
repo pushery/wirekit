@@ -30,6 +30,11 @@
     // element receives hover, causing the panel to close prematurely.
     $panelClasses = WireKit::resolveClasses('navigation-menu.item', 'panel', implode(' ', [
         'fixed z-[var(--z-wk-dropdown)]',
+        // Never exceed the viewport on narrow screens — a wide mega-menu
+        // (multi-column grid in the slot) otherwise bled off the right edge
+        // on mobile. Pairs with the JS `crossAxisShift` that pulls the panel
+        // back from the edge; the clamp forces it to wrap instead of overflow.
+        'max-w-[calc(100vw-1rem)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-lg)]',
@@ -94,23 +99,40 @@
             </svg>
         </button>
 
-        {{-- Flyout panel --}}
-        <div
-            x-show="activeItem === '{{ $name }}'"
-            x-on:mouseenter="cancelClose()"
-            x-on:mouseleave="scheduleClose()"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 translate-y-1"
-            x-transition:enter-end="opacity-100 translate-y-0"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100 translate-y-0"
-            x-transition:leave-end="opacity-0 translate-y-1"
-            @keydown.escape.prevent="closeAll()"
-            data-wk-nav-panel="{{ $name }}"
-            class="{{ $panelClasses }}"
-            x-cloak
-        >
-            {{ $slot }}
-        </div>
+        {{-- Flyout panel. Wrapped in `<template x-teleport="body">` so the
+             `position: fixed` mega-menu escapes every ancestor `transform` /
+             `contain` / `overflow: hidden` container and anchors against the
+             true viewport — same pattern as Context-Menu, Modal, and Tooltip.
+             Without it, a navigation-menu rendered inside a transformed
+             ancestor (which establishes a containing block for fixed
+             descendants) opened its flyout relative to that ancestor instead
+             of the viewport. Alpine's x-teleport preserves `x-ref` + `x-data`
+             scope across the move, so the hover handlers and
+             `this.$refs['panel-<name>']` (used by the JS to position the
+             panel and for the outside-tap / scroll-close guards) keep working,
+             and the per-instance ref namespace avoids cross-menu collisions.
+             The `before:` hover-bridge is positioned relative to the panel, so
+             it still covers the trigger→panel offset gap at the panel's fixed
+             location. --}}
+        <template x-teleport="body">
+            <div
+                x-ref="panel-{{ $name }}"
+                x-show="activeItem === '{{ $name }}'"
+                x-on:mouseenter="cancelClose()"
+                x-on:mouseleave="scheduleClose()"
+                x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 translate-y-1"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-150"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 translate-y-1"
+                @keydown.escape.prevent="closeAll()"
+                data-wk-nav-panel="{{ $name }}"
+                class="{{ $panelClasses }}"
+                x-cloak
+            >
+                {{ $slot }}
+            </div>
+        </template>
     </div>
 @endif

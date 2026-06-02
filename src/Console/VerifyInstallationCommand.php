@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Console;
 use BaconQrCode\Renderer\ImageRenderer;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Pushery\WireKit\WireKit;
 
 /**
  * Verifies that WireKit is correctly integrated into the host application.
@@ -102,6 +103,7 @@ class VerifyInstallationCommand extends Command
         // get only these without the package-tier noise.
         if ($tier === null || $tier === 'environment') {
             $this->checkCompiledViewsFreshness();
+            $this->checkSilentValidationTypos();
         }
 
         // ── Summary ──
@@ -813,7 +815,7 @@ class VerifyInstallationCommand extends Command
         $this->line('    Chart.register(...registerables);');
         $this->line('');
         $this->line('  Without this, every <x-wirekit-chart> renders but draws nothing — chart.js logs a friendly');
-        $this->line('  console.error at runtime and gives up. See https://docs.wirekit.app/integration#optional-dependencies');
+        $this->line('  console.error at runtime and gives up. See '.WireKit::DOCS_URL.'/integration#optional-dependencies');
         $this->line('  for the full setup walkthrough.');
     }
 
@@ -1261,61 +1263,89 @@ class VerifyInstallationCommand extends Command
     {
         $developerJsDir = resource_path('js');
         if (! is_dir($developerJsDir)) {
-            // Developers without custom Alpine plugins skip this check.
+            // Developers without a `resources/js/` tree have nothing for
+            // this check to walk — but the doctor's contract is "every
+            // check emits at least one observable line", so emit an INFO
+            // here instead of returning silently. Tests asserting the
+            // check ran (e.g. DoctorAliasTest "still runs and produces
+            // structurally identical output") then see the marker
+            // regardless of worker-sandbox state.
+            $this->reportInfo('Alpine plugin cleanup hygiene: skipped — no resources/js/ directory (no developer-side Alpine plugins to scan)');
+
             return;
         }
 
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($developerJsDir, \RecursiveDirectoryIterator::SKIP_DOTS)
-        );
+        // Defensive iterator wrapping — if the directory exists but the
+        // recursive walk throws (race-deleted sub-tree, permission flip
+        // during parallel test runs, exotic filesystem error), surface
+        // the issue as an INFO and degrade. Without this, an unhandled
+        // throw aborts the whole doctor handle() pipeline mid-flight.
+        try {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($developerJsDir, \RecursiveDirectoryIterator::SKIP_DOTS)
+            );
+        } catch (\Throwable $e) {
+            $this->reportInfo('Alpine plugin cleanup hygiene: scan skipped — '.$e::class.': '.mb_substr($e->getMessage(), 0, 100));
+
+            return;
+        }
 
         $issues = [];
 
-        foreach ($iterator as $file) {
-            if (! $file->isFile() || $file->getExtension() !== 'js') {
-                continue;
+        // Defensive iteration — wrap the foreach so a mid-walk throw
+        // (filesystem race, vanished sub-directory) degrades to an INFO
+        // emission instead of aborting the doctor's check pipeline.
+        try {
+            foreach ($iterator as $file) {
+                if (! $file->isFile() || $file->getExtension() !== 'js') {
+                    continue;
+                }
+                $path = $file->getPathname();
+                $source = @file_get_contents($path);
+                if ($source === false || $source === '') {
+                    continue;
+                }
+
+                // Opt-out comment lets developers acknowledge intentional patterns.
+                if (str_contains($source, '// wirekit-doctor: cleanup-ok')) {
+                    continue;
+                }
+
+                $relativePath = str_replace($developerJsDir.'/', '', $path);
+
+                // Anti-pattern 1: observer instantiation without destroy()
+                $hasObserver = preg_match(
+                    '/new\s+(?:IntersectionObserver|MutationObserver|ResizeObserver)\s*\(/',
+                    $source
+                ) === 1;
+                $hasDestroy = (
+                    preg_match('/\bdestroy\s*\(\s*\)\s*\{/', $source) === 1
+                    || preg_match('/\bdestroy\s*:\s*(?:function\s*)?\(/', $source) === 1
+                );
+
+                if ($hasObserver && ! $hasDestroy) {
+                    $issues[$relativePath][] = 'observer-without-destroy';
+                }
+
+                // Anti-pattern 2: disconnect() inside an observer callback
+                // without a preceding null-guard. We detect any
+                // `.disconnect()` call AND the absence of either:
+                //   - `if (! this._<obs>) return;` somewhere in the same file
+                //   - `this._<obs>?.disconnect()` optional-chaining form
+                $hasDisconnect = preg_match('/\.disconnect\s*\(\s*\)/', $source) === 1;
+                $hasGuard = (
+                    preg_match('/if\s*\(\s*!\s*this\._\w*[Oo]bserver\s*\)/', $source) === 1
+                    || preg_match('/this\._\w*[Oo]bserver\?\.disconnect\s*\(/', $source) === 1
+                );
+
+                if ($hasDisconnect && $hasObserver && ! $hasGuard) {
+                    $issues[$relativePath][] = 'disconnect-without-null-guard';
+                }
             }
-            $path = $file->getPathname();
-            $source = (string) file_get_contents($path);
-            if ($source === '') {
-                continue;
-            }
+        } catch (\Throwable $e) {
+            $this->reportInfo('Alpine plugin cleanup hygiene: scan partial — '.$e::class.': '.mb_substr($e->getMessage(), 0, 100));
 
-            // Opt-out comment lets developers acknowledge intentional patterns.
-            if (str_contains($source, '// wirekit-doctor: cleanup-ok')) {
-                continue;
-            }
-
-            $relativePath = str_replace($developerJsDir.'/', '', $path);
-
-            // Anti-pattern 1: observer instantiation without destroy()
-            $hasObserver = preg_match(
-                '/new\s+(?:IntersectionObserver|MutationObserver|ResizeObserver)\s*\(/',
-                $source
-            ) === 1;
-            $hasDestroy = (
-                preg_match('/\bdestroy\s*\(\s*\)\s*\{/', $source) === 1
-                || preg_match('/\bdestroy\s*:\s*(?:function\s*)?\(/', $source) === 1
-            );
-
-            if ($hasObserver && ! $hasDestroy) {
-                $issues[$relativePath][] = 'observer-without-destroy';
-            }
-
-            // Anti-pattern 2: disconnect() inside an observer callback
-            // without a preceding null-guard. We detect any
-            // `.disconnect()` call AND the absence of either:
-            //   - `if (! this._<obs>) return;` somewhere in the same file
-            //   - `this._<obs>?.disconnect()` optional-chaining form
-            $hasDisconnect = preg_match('/\.disconnect\s*\(\s*\)/', $source) === 1;
-            $hasGuard = (
-                preg_match('/if\s*\(\s*!\s*this\._\w*[Oo]bserver\s*\)/', $source) === 1
-                || preg_match('/this\._\w*[Oo]bserver\?\.disconnect\s*\(/', $source) === 1
-            );
-
-            if ($hasDisconnect && $hasObserver && ! $hasGuard) {
-                $issues[$relativePath][] = 'disconnect-without-null-guard';
-            }
+            return;
         }
 
         if ($issues === []) {
@@ -1498,5 +1528,181 @@ class VerifyInstallationCommand extends Command
         $minutes = (int) floor(($seconds % 3600) / 60);
 
         return $minutes > 0 ? "{$hours}h {$minutes}m" : "{$hours}h";
+    }
+
+    /**
+     * v2.4.0 Extension 3 — surface silent prop typos detected in the
+     * Laravel log. The StrictnessGate emits `local.ERROR: WireKit [...]`
+     * lines in HTTP dev mode when a developer passes an invalid prop
+     * value (the gate logs + renders the fallback instead of throwing).
+     * Without this scan a typo can sit in production code for weeks —
+     * the page renders with the fallback and the developer never sees
+     * the log.
+     *
+     * SAFE-DEGRADE contract — this check is an OPTIONAL helper, never
+     * required, never blocks. Every branch handles its failure mode
+     * gracefully:
+     *   - Log file missing → INFO ("scan skipped — log not at default path")
+     *   - Log file unreadable → INFO ("scan skipped — permission denied")
+     *   - Log level filters below WARNING → INFO ("scan saw nothing —
+     *     LOG_LEVEL may filter strict-validation writes")
+     *   - Custom log channel (Slack, daily, stack-with-others) → INFO
+     *     ("scan skipped — single-file scan can't see custom channels")
+     *   - Found WireKit lines → WARN with example count + first 3 lines
+     *   - Found none → PASS
+     * The check NEVER returns FAIL — the doctor's overall exit code is
+     * unaffected.
+     *
+     * Opt-out: set `wirekit.doctor.scan_logs` to `false` in config OR
+     * pass `--no-scan-logs` flag on the command (registered separately).
+     */
+    private function checkSilentValidationTypos(): void
+    {
+        // SAFE-DEGRADE outer guard — wrap the entire method body in a
+        // try/catch so ANY unexpected error (filesystem race during
+        // parallel test runs, transient permission issue, glob() / fopen()
+        // edge case) silently degrades to an INFO line instead of aborting
+        // the rest of the doctor's check pipeline. The doctor's contract
+        // (see method docblock) is that this check NEVER blocks; we extend
+        // the contract here to "NEVER aborts subsequent checks either".
+        // Without this guard, a transient PHP warning escalated to
+        // exception under Pest's strict error handling would abort
+        // `handle()` mid-pipeline and leak as a flaky test ("Alpine plugin
+        // cleanup hygiene" missing because the check never ran).
+        try {
+            $this->checkSilentValidationTyposBody();
+        } catch (\Throwable $e) {
+            $this->reportInfo(
+                'silent-typo log scan skipped — transient I/O error during scan ('.
+                $e::class.': '.mb_substr($e->getMessage(), 0, 100).'). '.
+                'The scan is an optional helper; subsequent doctor checks are unaffected.'
+            );
+        }
+    }
+
+    private function checkSilentValidationTyposBody(): void
+    {
+        // Honour opt-out config — defaults to true (helper IS on by default
+        // in dev environments; production developers may disable explicitly).
+        $enabled = (bool) config('wirekit.doctor.scan_logs', true);
+        if (! $enabled) {
+            return;
+        }
+
+        // Custom log channels — when the developer routes logs anywhere
+        // OTHER than the default single-file channel ('single' or 'daily'),
+        // scanning a static file path would miss the writes entirely. Bail
+        // out with an INFO instead of falsely reporting "no typos".
+        $defaultChannel = (string) config('logging.default', 'stack');
+        $stackChannels = (array) config('logging.channels.stack.channels', ['single']);
+        $scannableChannels = ['single', 'daily', 'stack'];
+        if (! in_array($defaultChannel, $scannableChannels, true)) {
+            $this->reportInfo(sprintf(
+                'silent-typo log scan skipped — LOG_CHANNEL=%s routes elsewhere (Slack / Papertrail / Sentry / custom). '.
+                'Inspect that destination for `WireKit [...]` ERROR/WARNING lines manually.',
+                $defaultChannel
+            ));
+
+            return;
+        }
+        if ($defaultChannel === 'stack') {
+            $usableInStack = array_intersect($stackChannels, ['single', 'daily']);
+            if ($usableInStack === []) {
+                $this->reportInfo(
+                    'silent-typo log scan skipped — LOG_STACK contains only non-file channels. '.
+                    'Inspect the configured destinations for `WireKit [...]` ERROR/WARNING lines manually.'
+                );
+
+                return;
+            }
+        }
+
+        // Resolve the log file path — Laravel's default 'single' channel
+        // writes to storage/logs/laravel.log. The 'daily' channel rotates
+        // per day (laravel-YYYY-MM-DD.log); scan today's file.
+        $logDir = storage_path('logs');
+        if (! is_dir($logDir)) {
+            $this->reportInfo(
+                'silent-typo log scan skipped — storage/logs directory missing (fresh install? skipped log writes?).'
+            );
+
+            return;
+        }
+
+        $logFiles = [];
+        $singlePath = $logDir.'/laravel.log';
+        if (is_file($singlePath) && is_readable($singlePath)) {
+            $logFiles[] = $singlePath;
+        }
+        $dailyPattern = $logDir.'/laravel-*.log';
+        $dailyFiles = glob($dailyPattern) ?: [];
+        // Sort by mtime — race-safe via @suppression so a sibling worker
+        // deleting a daily-rotated log between glob() and filemtime()
+        // doesn't escalate a warning to a fatal under Pest's strict
+        // error handling. Missing mtime sorts to 0 (treated as oldest).
+        usort($dailyFiles, fn ($a, $b) => ((int) @filemtime($a)) <=> ((int) @filemtime($b)));
+        foreach (array_slice($dailyFiles, -3) as $daily) {
+            // Re-verify readability AT read-time (the file may have
+            // vanished between glob() and now under parallel test runs).
+            if (is_file($daily) && is_readable($daily)) {
+                $logFiles[] = $daily;
+            }
+        }
+
+        if ($logFiles === []) {
+            $this->reportInfo(
+                'silent-typo log scan skipped — no readable log files found at storage/logs/laravel*.log. '.
+                'If your app writes logs elsewhere, this check is a no-op (expected behaviour).'
+            );
+
+            return;
+        }
+
+        // Scan each log file for `local.ERROR: WireKit [...]` or
+        // `local.WARNING: WireKit [...]` lines. We use a streaming
+        // scanner — read line-by-line — so a huge log file doesn't
+        // exhaust memory.
+        $matches = [];
+        $matchCount = 0;
+        $matchPattern = '/^\[[^\]]+\] [a-z]+\.(ERROR|WARNING): WireKit \[/i';
+
+        foreach ($logFiles as $path) {
+            $fh = @fopen($path, 'r');
+            if ($fh === false) {
+                continue;
+            }
+            while (($line = fgets($fh)) !== false) {
+                if (preg_match($matchPattern, $line)) {
+                    $matchCount++;
+                    if (count($matches) < 3) {
+                        $matches[] = trim($line);
+                    }
+                }
+            }
+            fclose($fh);
+        }
+
+        if ($matchCount === 0) {
+            $this->reportPass(sprintf(
+                'silent-typo log scan clean — no `WireKit [...]` ERROR/WARNING lines in %d log file(s). '.
+                '(If your env logs at level=critical/emergency only, fallback warnings get filtered out — that is expected.)',
+                count($logFiles)
+            ));
+
+            return;
+        }
+
+        // Found something — surface as WARN, NEVER as FAIL. The doctor
+        // shouldn't refuse to exit zero just because the developer left
+        // a typo in a button. Show count + first 3 example lines.
+        $exampleLines = implode("\n      ", array_map(
+            fn ($l) => mb_substr($l, 0, 180).(mb_strlen($l) > 180 ? '…' : ''),
+            $matches
+        ));
+        $this->reportWarn(sprintf(
+            "silent prop-typo signals found in storage/logs: %d `WireKit [...]` ERROR/WARNING line(s). Examples:\n      %s\n      Fix each component prop value to match its allowed enum. See docs/strict-validation.md.",
+            $matchCount,
+            $exampleLines
+        ));
     }
 }

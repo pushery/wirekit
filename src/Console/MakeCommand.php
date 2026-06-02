@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Pushery\WireKit\Support\SuggestSimilar;
+use Pushery\WireKit\WireKit;
 
 class MakeCommand extends Command
 {
@@ -236,7 +237,7 @@ class MakeCommand extends Command
 
         $this->info("Created: {$livewireClassPath}");
         $this->info("Created: {$viewPath}");
-        $this->line("  Recipe reference: https://docs.wirekit.app/recipes/{$recipe}");
+        $this->line('  Recipe reference: '.WireKit::DOCS_URL."/recipes/{$recipe}");
 
         return self::SUCCESS;
     }

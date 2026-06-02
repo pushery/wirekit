@@ -98,7 +98,17 @@ final class BladeParser
      *
      * @return list<array{name: string, required: bool}>
      */
-    public static function extractSlotsWithMetadataFromSource(string $contents, ?string $bladePathForPropExclusion = null): array
+    /**
+     * @param  list<string>  $additionalExcludes  Extra names to drop from the
+     *                                            detected slot set. Used by the
+     *                                            JSON-manifest exporter to pass
+     *                                            a class-based component's
+     *                                            public-property names, which
+     *                                            appear as bare `{{ $name }}`
+     *                                            references in the template
+     *                                            but are NOT real slots.
+     */
+    public static function extractSlotsWithMetadataFromSource(string $contents, ?string $bladePathForPropExclusion = null, array $additionalExcludes = []): array
     {
         // Strip Blade `{{-- … --}}` comments BEFORE scanning so phantom
         // slot signals inside documentation comments don't leak into
@@ -145,7 +155,7 @@ final class BladeParser
         $reserved = ['loop', 'attributes', 'errors', 'this', 'errors', 'message'];
         $phpLocals = self::extractPhpLocalsFromSource($contents);
 
-        $exclude = array_unique(array_merge($propNames, $reserved, $phpLocals));
+        $exclude = array_unique(array_merge($propNames, $reserved, $phpLocals, $additionalExcludes));
 
         // Build the merged slot set:
         //   - Every isset-checked name → OPTIONAL.

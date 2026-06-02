@@ -7,8 +7,10 @@ namespace Pushery\WireKit\Console;
 use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Support\BladeParser;
+use Pushery\WireKit\Support\ClassPropsExtractor;
 use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\VersionResolver;
+use Pushery\WireKit\WireKit;
 
 /**
  * components.json export.
@@ -50,7 +52,18 @@ class ExportJsonCommand extends Command
             // on the constructor signature). Both paths return the same
             // shape so this caller doesn't branch.
             $props = ComponentRegistry::extractProps($name);
-            $slots = $bladePath !== null ? $this->extractSlots($bladePath) : [];
+            // Class-based components (chart) expose public properties (e.g.
+            // `$alpineComponent`, `$chartConfig`, `$mountElement`) that the
+            // Blade template references as `{{ $name }}` — without filtering
+            // these out, BladeParser surfaces them as required `<x-slot:...>`
+            // entries in the manifest. Pass the class's public-property names
+            // as additional excludes so the emitted slots array reflects only
+            // genuine template slots.
+            $componentClass = ComponentRegistry::componentClass($name);
+            $classPublicProps = $componentClass !== null
+                ? ClassPropsExtractor::publicPropertyNames($componentClass)
+                : [];
+            $slots = $bladePath !== null ? $this->extractSlots($bladePath, $classPublicProps) : [];
             $subComponents = $this->discoverSubComponents($name);
 
             // docs_url resolves to a publicly visitable page on
@@ -60,7 +73,7 @@ class ExportJsonCommand extends Command
             // useful. The component itself remains in the manifest (it's
             // still a callable Blade tag); only the docs URL drops.
             $docsUrl = $this->hasPublicDocsPage($name)
-                ? "https://docs.wirekit.app/components/{$name}"
+                ? WireKit::DOCS_URL."/components/{$name}"
                 : null;
 
             $tagAlias = ComponentRegistry::tagAlias($name);
@@ -82,6 +95,18 @@ class ExportJsonCommand extends Command
             $entry['description'] = $meta['description'];
             $entry['docs_url'] = $docsUrl;
             $entry['props'] = $props;
+            // v2.4.0 Extension 4 — slot kind disambiguation. Downstream
+            // LLM / IDE-extension tooling needs to know how a component
+            // exposes its API: anonymous Blade components carry props
+            // via @props([...]) blocks AND can accept named template
+            // slots; class-based components carry props via constructor
+            // signature reflection AND typically have NO developer-
+            // facing template slots (their composition surface is
+            // chart-class internals, not <x-slot:...> nesting).
+            // The `component_kind` field on every manifest entry surfaces
+            // this so a developer agent can generate the right wrapping
+            // shape without re-deriving from prop names.
+            $entry['component_kind'] = $componentClass !== null ? 'class' : 'anonymous';
             $components[] = $entry + [
                 'slots' => $slots,
                 'sub_components' => $subComponents,
@@ -198,11 +223,17 @@ class ExportJsonCommand extends Command
      *
      * @return list<array{name: string, required: bool}>
      */
-    private function extractSlots(string $bladePath): array
+    /**
+     * @param  list<string>  $additionalExcludes  Class-side public-property
+     *                                            names for class-based
+     *                                            components. Empty for
+     *                                            anonymous Blade components.
+     */
+    private function extractSlots(string $bladePath, array $additionalExcludes = []): array
     {
         $contents = (string) file_get_contents($bladePath);
 
-        return BladeParser::extractSlotsWithMetadataFromSource($contents, $bladePath);
+        return BladeParser::extractSlotsWithMetadataFromSource($contents, $bladePath, $additionalExcludes);
     }
 
     /**

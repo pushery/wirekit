@@ -10,6 +10,7 @@ use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\VersionResolver;
 use Pushery\WireKit\Theming\ThemePresetRegistry;
+use Pushery\WireKit\WireKit;
 
 /**
  * emit a hierarchical AI-friendly site sitemap covering
@@ -58,7 +59,7 @@ class ExportApiMapCommand extends Command
         $payload = [
             'version' => $this->detectVersion($packageRoot),
             'generated_at' => date('c'),
-            'docs_base' => 'https://docs.wirekit.app',
+            'docs_base' => WireKit::DOCS_URL,
             'groups' => [
                 $this->componentsGroup(),
                 $this->themesGroup(),
@@ -122,7 +123,7 @@ class ExportApiMapCommand extends Command
                 // (it's still a callable tag) but won't fetch a URL that
                 // resolves to no useful content.
                 'docs_url' => $this->hasPublicComponentDocs($name)
-                    ? 'https://docs.wirekit.app/components/'.$name
+                    ? WireKit::DOCS_URL.'/components/'.$name
                     : null,
             ];
         }
@@ -167,7 +168,7 @@ class ExportApiMapCommand extends Command
         $items = array_map(fn (string $p): array => [
             'id' => $p,
             'install' => 'php artisan wirekit:theme '.$p,
-            'docs_url' => 'https://docs.wirekit.app/theming#'.$p,
+            'docs_url' => WireKit::DOCS_URL.'/theming#'.$p,
         ], $presets);
 
         return ['id' => 'themes', 'count' => count($items), 'items' => $items];
@@ -184,7 +185,7 @@ class ExportApiMapCommand extends Command
                 'id' => $key,
                 'category' => $preset->category,
                 'family' => $preset->family,
-                'docs_url' => 'https://docs.wirekit.app/fonts',
+                'docs_url' => WireKit::DOCS_URL.'/fonts',
             ];
         }
 
@@ -200,7 +201,7 @@ class ExportApiMapCommand extends Command
         $items = array_map(fn (string $p): array => [
             'id' => $p,
             'install' => 'php artisan wirekit:publish-icons '.$p,
-            'docs_url' => 'https://docs.wirekit.app/icons#'.$p,
+            'docs_url' => WireKit::DOCS_URL.'/icons#'.$p,
         ], $presets);
 
         return ['id' => 'icons', 'count' => count($items), 'items' => $items];
@@ -265,7 +266,7 @@ class ExportApiMapCommand extends Command
             $items[] = [
                 'id' => $slug,
                 'title' => $title,
-                'docs_url' => 'https://docs.wirekit.app/'.$subdir.'/'.$slug,
+                'docs_url' => WireKit::DOCS_URL.'/'.$subdir.'/'.$slug,
             ];
         }
 
@@ -328,7 +329,7 @@ class ExportApiMapCommand extends Command
 
             return [
                 'id' => $c,
-                'docs_url' => 'https://docs.wirekit.app/cli#'.str_replace(':', '', $canonical),
+                'docs_url' => WireKit::DOCS_URL.'/cli#'.str_replace(':', '', $canonical),
             ];
         }, $commands);
 
@@ -374,7 +375,7 @@ class ExportApiMapCommand extends Command
                 'trigger_enum' => ['viewport', 'click', 'manual'],
                 'duration_enum' => ['fast', 'normal', 'slow'],
                 'respects_reduced_motion' => true,
-                'docs_url' => 'https://docs.wirekit.app/animations#wirekit-animate',
+                'docs_url' => WireKit::DOCS_URL.'/animations#wirekit-animate',
                 'blade_wrapper' => '<x-wirekit::reveal preset="…">',
             ],
             [
@@ -389,7 +390,7 @@ class ExportApiMapCommand extends Command
                     ['name' => 'progress', 'type' => 'float', 'description' => '0..1 eased progress'],
                 ],
                 'respects_reduced_motion' => true,
-                'docs_url' => 'https://docs.wirekit.app/components/stat#counter-animation',
+                'docs_url' => WireKit::DOCS_URL.'/components/stat#counter-animation',
                 'blade_wrapper' => '<x-wirekit::stat animate>',
             ],
         ];
@@ -464,7 +465,7 @@ class ExportApiMapCommand extends Command
             return [
                 'id' => $class,
                 'tier' => $isAnimation ? 'Internal-with-exception' : 'Stable',
-                'docs_url' => 'https://docs.wirekit.app/extending/public-css-api#'.$this->cssClassSection($class),
+                'docs_url' => WireKit::DOCS_URL.'/extending/public-css-api#'.$this->cssClassSection($class),
             ];
         }, $list);
 

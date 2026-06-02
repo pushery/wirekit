@@ -45,13 +45,28 @@
              srMessage is the SR-only announcement; copied drives the icon swap.
              Symmetric success/failure announcements: success path sets both; error path sets only srMessage. --}}
         <div
-            class="flex items-center justify-between border-b border-[var(--color-wk-border)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-xs,0.25rem)]"
+            class="flex items-center justify-between gap-2 border-b border-[var(--color-wk-border)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-xs,0.25rem)]"
             @if($copy) x-data="{ copied: false, srMessage: '' }" @endif
         >
             @if($filename)
-                <span class="text-[length:var(--text-wk-xs,0.75rem)] text-[color:var(--color-wk-text-muted)] font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]">{{ $filename }}</span>
+                {{-- Filename header truncates from the START (leading ellipsis) on narrow
+                     viewports so the actual file NAME stays visible while the parent path
+                     collapses — `app/Providers/AppServiceProvider.php` becomes
+                     `…rs/AppServiceProvider.php` instead of `app/Providers/Ap…`. The CSS
+                     trick is `direction: rtl` on the outer span (clips at the left) with
+                     `unicode-bidi: plaintext` on the inner span so the path itself still
+                     renders LTR. `min-w-0` is the standard flex-overflow unlock so the
+                     span actually shrinks instead of pushing the copy button off-screen.
+                     `title` surfaces the full path on hover (desktop) and on long-press
+                     (iOS Safari); the unclipped text remains in the DOM so screen readers
+                     always announce the full name. --}}
+                <span
+                    class="min-w-0 flex-1 overflow-hidden whitespace-nowrap text-[length:var(--text-wk-xs,0.75rem)] text-[color:var(--color-wk-text-muted)] font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]"
+                    style="direction: rtl; text-align: left; text-overflow: ellipsis;"
+                    title="{{ $filename }}"
+                ><span style="unicode-bidi: plaintext;">{{ $filename }}</span></span>
             @else
-                <span></span>
+                <span class="flex-1"></span>
             @endif
 
             @if($copy)
@@ -69,7 +84,7 @@
                                 setTimeout(() => { srMessage = ''; }, 2000);
                             });
                     "
-                    class="cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors p-1"
+                    class="shrink-0 cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors p-1"
                     aria-label="Copy to clipboard"
                     :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
                 >

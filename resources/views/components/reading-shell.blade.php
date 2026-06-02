@@ -12,6 +12,13 @@
     'meta' => null,
     'density' => 'comfortable',
     'previewMode' => false,
+    // `boundary` — pass-through to the composed primitives (reading-progress,
+    // reading-spine, reading-bookmark). Default `null` keeps the viewport-
+    // pinned behaviour. Set to `'container'` to scope every composed
+    // primitive to the shell's nearest positioned ancestor — required when
+    // embedding the entire reading surface inside a modal body, sidebar
+    // pane, preview iframe, or Livewire panel.
+    'boundary' => null,
     'scope' => null,
 ])
 
@@ -88,6 +95,7 @@
     @if ($renderProgress)
         <x-wirekit::reading-progress
             :height="$densityDefaults['progressHeight']"
+            :boundary="$boundary"
             :scope="$scope"
         />
     @endif
@@ -95,6 +103,7 @@
     @if ($renderSpine)
         <x-wirekit::reading-spine
             :expand="$densityDefaults['spineExpand']"
+            :boundary="$boundary"
             :scope="$scope"
         />
     @endif
@@ -111,6 +120,7 @@
         <x-wirekit::reading-bookmark
             :key="$bookmarkKey"
             :previewMode="$previewMode"
+            :boundary="$boundary"
             :scope="$scope"
         />
     @endif

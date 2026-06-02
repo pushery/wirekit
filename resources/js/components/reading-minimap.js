@@ -847,8 +847,10 @@ export default (options = {}) => ({
         this._hoverPreviewEscapeHandler = (event) => {
             if (event.key === 'Escape') this._hoverPreviewLeaveHandler();
         };
-        this.$el.addEventListener('pointermove', this._hoverPreviewHandler);
-        this.$el.addEventListener('pointerleave', this._hoverPreviewLeaveHandler);
+        // Passive — the handler is rAF-throttled and only reads cursor
+        // coords; it never calls preventDefault, so it must not block scroll.
+        this.$el.addEventListener('pointermove', this._hoverPreviewHandler, { passive: true });
+        this.$el.addEventListener('pointerleave', this._hoverPreviewLeaveHandler, { passive: true });
         window.addEventListener('keydown', this._hoverPreviewEscapeHandler);
     },
 

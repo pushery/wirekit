@@ -87,13 +87,17 @@
             <template x-for="(week, weekIdx) in Array.from({ length: Math.ceil(days.length / 7) }, (_, i) => days.slice(i * 7, i * 7 + 7))" :key="weekIdx">
                 <tr role="row">
                     <template x-for="day in week" :key="day.date">
-                        <td role="gridcell" class="p-0.5 text-center">
+                        {{-- aria-selected lives on the gridcell, NOT the button.
+                             Per the WAI-ARIA grid pattern, `aria-selected` is
+                             only allowed on gridcell/option/row/rowheader/tab/
+                             treeitem roles — placing it on a <button> fails
+                             axe-core's aria-allowed-attr (critical). --}}
+                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="day.isSelected ? 'true' : 'false'">
                             <button
                                 type="button"
                                 x-on:click="day.isCurrentMonth && selectDate(day.date)"
                                 :data-wk-day="day.isCurrentMonth ? day.dayOfMonth : null"
                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay ? '0' : '-1'"
-                                :aria-selected="day.isSelected ? 'true' : 'false'"
                                 :disabled="!day.isCurrentMonth"
                                 class="{{ $dayBtnClasses }}"
                                 :class="{

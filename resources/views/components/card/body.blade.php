@@ -1,20 +1,29 @@
 @props([
+    // Comfortable padding by default. Set padded=false for edge-to-edge
+    // content (a flush hero image, a full-bleed table). When false, the body
+    // also tags itself so a raw <table> dropped inside still gets readable
+    // cell padding (see the .wk-card-body[data-wk-padded="false"] rule in
+    // dist/wirekit.css).
+    'padded' => true,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
 
-    // Body section — main content area with comfortable padding
-    $classes = WireKit::resolveClasses('card.body', 'base', implode(' ', [
-        'px-[var(--padding-wk-x-lg)]',
-        'py-[var(--padding-wk-y-lg)]',
+    // Body section — main content area. `wk-card-body` is the marker the
+    // table-aware padding rule keys off; the padding utilities drop out when
+    // padded=false.
+    $classes = WireKit::resolveClasses('card.body', 'base', implode(' ', array_filter([
+        'wk-card-body',
+        $padded ? 'px-[var(--padding-wk-x-lg)]' : null,
+        $padded ? 'py-[var(--padding-wk-y-lg)]' : null,
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
-    ]), $scope);
+    ])), $scope);
 @endphp
 
-<div {{ $attributes->class([$classes]) }}>
+<div {{ $attributes->class([$classes]) }} data-wk-padded="{{ $padded ? 'true' : 'false' }}">
     {{ $slot }}
 </div>

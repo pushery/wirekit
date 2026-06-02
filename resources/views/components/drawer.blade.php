@@ -53,6 +53,17 @@
         default => $isHorizontal ? 'w-[var(--size-wk-drawer-md)]' : 'h-[var(--size-wk-drawer-md)]',
     };
 
+    // Clamp to the viewport so the panel never exceeds the screen on small
+    // devices. The drawer size tokens (sm 20rem / md 28rem / lg 40rem) are
+    // wider than a 390px phone, so a `right`/`left` drawer at md or lg bled
+    // past the screen edge on mobile (content clipped, no backdrop strip).
+    // `max-w`/`max-h` keep the slide-in transition intact (translate-*-full
+    // is relative to the element's own, now-clamped, size) while leaving a
+    // 3rem backdrop strip so the overlay still reads as a sheet.
+    $sizeClass .= $isHorizontal
+        ? ' max-w-[calc(100vw-3rem)]'
+        : ' max-h-[calc(100vh-3rem)]';
+
     // Slide transition classes — direction depends on position
     $enterStart = match ($position) {
         'left' => '-translate-x-full',

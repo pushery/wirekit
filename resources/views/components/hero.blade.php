@@ -19,6 +19,15 @@
     // when the section padding is too generous) doesn't recur.
     // Pass `size="sm"` for the tightest spacing across every viewport.
     'size' => 'lg',
+    // `tightOnMobile` — when true, drop an ADDITIONAL tier on mobile
+    // viewports for `size="lg"` heroes. Useful for dark-variant heroes
+    // with gradient overlays where even 5 rem of mobile bottom padding
+    // reads as a visible dead-zone below the content on 390 px-wide
+    // viewports (iPhone 12-class). Opt-in (default `false`) — does NOT
+    // change the rendering of any existing hero. For `size="sm"` and
+    // `size="md"`, the prop is a no-op (mobile already runs at the
+    // tightest tier).
+    'tightOnMobile' => false,
     'scope' => null,
 ])
 
@@ -49,10 +58,20 @@
     // an example, even in a comment — Tailwind's source scanner reads
     // raw .blade.php files and would emit invalid CSS for any
     // bracket-wrapped value containing a PHP-style variable token.
-    $heroVerticalPadding = match ($validSize) {
-        'sm' => 'py-[var(--space-wk-section-sm)] sm:py-[var(--space-wk-section-sm)]',
-        'md' => 'py-[var(--space-wk-section-sm)] sm:py-[var(--space-wk-section-md)]',
-        'lg' => 'py-[var(--space-wk-section-md)] sm:py-[var(--space-wk-section-lg)]',
+    // Class strings stay STATIC (no string interpolation) so Tailwind v4's
+    // source-detection picks them up. The 6-way match exhausts every
+    // (size × tightOnMobile) combination — emitting the literal strings
+    // here is the only shape that keeps every variant visible to the
+    // content scanner. tightOnMobile is a no-op for `sm` / `md` because
+    // those sizes already run at the tightest mobile tier; the boolean
+    // only shrinks the `lg` mobile axis from section-md (5 rem) to
+    // section-sm (3 rem).
+    $tightMobile = (bool) $tightOnMobile;
+    $heroVerticalPadding = match (true) {
+        $validSize === 'sm' => 'py-[var(--space-wk-section-sm)] sm:py-[var(--space-wk-section-sm)]',
+        $validSize === 'md' => 'py-[var(--space-wk-section-sm)] sm:py-[var(--space-wk-section-md)]',
+        $validSize === 'lg' && $tightMobile => 'py-[var(--space-wk-section-sm)] sm:py-[var(--space-wk-section-lg)]',
+        $validSize === 'lg' => 'py-[var(--space-wk-section-md)] sm:py-[var(--space-wk-section-lg)]',
     };
 
     // Hero — landing page hero section with title, lede, actions, and optional aside.
@@ -151,7 +170,7 @@
     $gradientClasses = $gradient ? $gradientOverlayClass : '';
 @endphp
 
-<section {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
+<section data-variant="{{ $variant }}" {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     @if($gradient)
         {{-- Gradient overlay is anchored to the outer <section> so it
              fills the section edge-to-edge (visually clean across the

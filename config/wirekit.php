@@ -47,6 +47,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Doctor
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for the `wirekit:doctor` command. The doctor is a read-only
+    | diagnostic that surfaces install / asset / env issues. Toggles below let
+    | developers disable individual opt-in helpers in environments where they
+    | don't apply (e.g. apps with custom log channels).
+    |
+    | scan_logs: when true (default), the doctor scans storage/logs/laravel*.log
+    | for `WireKit [...]` ERROR / WARNING lines emitted by StrictnessGate's
+    | HTTP-dev fallback path. The scan SAFE-DEGRADES at every failure mode
+    | (missing log file, non-file log channel, unreadable file) — set to false
+    | only when you want to suppress the helper entirely.
+    |
+    */
+
+    'doctor' => [
+        'scan_logs' => env('WIREKIT_DOCTOR_SCAN_LOGS', true),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Component Defaults
     |--------------------------------------------------------------------------
     |
@@ -129,6 +151,12 @@ return [
         'scroll-to-top' => ['size' => 'md'],
         'alert-dialog' => ['dismissible' => false],
         'toast-region' => ['position' => 'top-right', 'duration' => 5000, 'max' => 5],
+
+        // Activity-row kind → dot-colour token map. Merged over the
+        // component's built-in defaults (commit / merge / deploy / comment /
+        // system / user); add your own kinds here, e.g.
+        // 'release' => 'var(--color-wk-warning)'.
+        'activity-row' => ['kinds' => []],
         'price' => ['size' => 'md'],
         'ticker' => ['size' => 'md'],
 

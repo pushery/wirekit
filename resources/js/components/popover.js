@@ -59,6 +59,11 @@ export default function wirekitPopover(config = {}) {
                 await position(trigger, panel, {
                     placement: this._placement,
                     offset: this._offset,
+                    // Keep the panel inside the viewport on narrow screens for
+                    // left/right placements — Floating UI's default main-axis
+                    // shift can't pull a right-placed panel back from the right
+                    // edge (main axis is vertical for left/right placements).
+                    crossAxisShift: true,
                 });
 
                 // Activate focus trap — ESC deactivates and closes

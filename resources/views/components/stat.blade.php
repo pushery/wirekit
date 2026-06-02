@@ -22,6 +22,11 @@
     // Optional reveal animation when stat scrolls into view (separate from
     // the value count-up `animate` prop). Null = no reveal (default).
     'animateIn' => null,
+    // KPI-tile chrome: when set, the stat gains an intent-coloured left
+    // stripe + a faint intent-tinted body — the pattern dashboard blueprints
+    // hand-rolled per tile. null = the existing plain card surface, unchanged.
+    // primary | success | warning | danger | info | neutral.
+    'intent' => null,
     'scope' => null,
 ])
 
@@ -57,6 +62,29 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
+    // KPI-tile chrome. When `intent` is set, resolve its colour token and
+    // paint a 3px left stripe + an 8%-tint body via inline style (so it
+    // overrides the base border-left + bg-elevated without a per-intent
+    // class explosion). Mirrors badge's intent palette: info/primary share
+    // accent; neutral uses the muted text token.
+    $intentTileStyle = '';
+    if ($intent !== null) {
+        // Validate first (throws in debug / falls back to first-allowed in
+        // prod), then map the canonical value to its colour token.
+        $validIntent = match ($intent) {
+            'primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral' => $intent,
+            default => WireKit::validateProp('stat', 'intent', $intent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']),
+        };
+        $intentToken = match ($validIntent) {
+            'success' => 'var(--color-wk-success)',
+            'warning' => 'var(--color-wk-warning)',
+            'danger' => 'var(--color-wk-danger)',
+            'neutral' => 'var(--color-wk-text-muted)',
+            default => 'var(--color-wk-accent)', // primary + accent + info
+        };
+        $intentTileStyle = "border-left-width: 3px; border-left-color: {$intentToken}; background-color: color-mix(in srgb, {$intentToken} 8%, var(--color-wk-bg-elevated));";
+    }
+
     // Trend color + arrow glyph — mapped to semantic tokens
     [$trendColor, $trendIcon, $trendLabel] = match ($trend) {
         'up' => ['text-[color:var(--color-wk-success-text)]', '▲', 'increased'],
@@ -78,6 +106,8 @@
 
 <div
     {{ $attributes->class([$classes]) }}
+    @if($intentTileStyle) style="{{ $intentTileStyle }}" @endif
+    @if($intent !== null && $label) role="group" aria-label="{{ $label }}" @endif
     @if($animate)
         {{-- Counter scope on root. Description spans inside read $root.animating
              / $root.progress. When $needsEntranceWrapper is also true, the

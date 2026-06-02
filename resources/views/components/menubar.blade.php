@@ -22,7 +22,11 @@
 <div
     x-data="wirekitMenubar()"
     x-on:keydown="handleKeydown"
-    x-on:click.outside="closeAll()"
+    {{-- Outside-click close is handled in wirekitMenubar()'s document-level
+         pointerdown listener, not here: the dropdown panels teleport to
+         <body>, so a Blade x-on:click.outside on this root would fire when
+         clicking inside an open panel (it's no longer a DOM descendant) and
+         close the menu before the item's click registered. --}}
     role="menubar"
     {{ $attributes->class([$classes]) }}
 >

@@ -38,12 +38,29 @@
     x-on:click.outside="close()"
     {{ $attributes->class([$wrapperClasses]) }}
 >
-    {{-- Trigger — clicking toggles the popover --}}
+    {{-- Trigger — clicking toggles the popover.
+
+         ARIA attributes (aria-haspopup, aria-expanded) are applied to the
+         INNER interactive element (button/link) via x-init, NOT to this
+         wrapper div. The ARIA spec requires these attributes to live on an
+         element with an interactive role; placing them on a generic <div>
+         fails axe-core's aria-allowed-attr rule. A popover is a click-to-open
+         control, so a missing focusable descendant is a developer error
+         (keyboard users can't open it) — surface it with a console.warn. --}}
     <div
         x-ref="trigger"
         x-on:click="toggle()"
-        aria-haspopup="dialog"
-        :aria-expanded="open ? 'true' : 'false'"
+        x-init="(() => {
+            const interactive = $el.querySelector('button, [role=button], a');
+            if (!interactive) {
+                // eslint-disable-next-line no-console
+                console.warn('[wirekit] popover: trigger slot has no focusable element (button/link). Keyboard users cannot open the popover. Wrap the trigger content in a <button>.');
+                return;
+            }
+            interactive.setAttribute('aria-haspopup', 'dialog');
+            interactive.setAttribute('aria-expanded', 'false');
+            $watch('open', value => interactive.setAttribute('aria-expanded', value ? 'true' : 'false'));
+        })()"
     >
         {{ $trigger }}
     </div>

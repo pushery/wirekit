@@ -62,7 +62,9 @@ export default function wirekitRangeSlider(config = {}) {
                 document.removeEventListener('pointercancel', onUp);
             };
 
-            document.addEventListener('pointermove', onMove);
+            // Passive — onDrag only computes the value from pointer position;
+            // it never calls preventDefault, so it must not block scroll.
+            document.addEventListener('pointermove', onMove, { passive: true });
             document.addEventListener('pointerup', onUp);
             document.addEventListener('pointercancel', onUp);
         },

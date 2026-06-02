@@ -3,7 +3,8 @@
     'max' => 100,                // max value the bar represents
     'label' => null,             // visible label rendered above the bar
     'showValue' => false,        // show "42 / 100" next to label
-    'variant' => config('wirekit.components.progress.variant', 'primary'), // primary | accent (alias of primary) | success | warning | danger
+    'variant' => config('wirekit.components.progress.variant', 'primary'), // back-compat alias of `intent`
+    'intent' => null,            // canonical colour axis: primary | success | warning | danger | info | neutral (+ accent alias). null → falls back to `variant`
     'size' => config('wirekit.components.progress.size', 'md'),           // sm | md | lg
     'scope' => null,
 ])
@@ -11,11 +12,15 @@
 @php
     use Pushery\WireKit\WireKit;
 
-    // Validate variant against the canonical intent set + the legacy 'accent'
-    // synonym (kept working so existing developer code doesn't break).
-    $variantValue = match ($variant) {
-        'primary', 'accent', 'success', 'warning', 'danger' => $variant,
-        default => WireKit::validateProp('progress', 'variant', $variant, ['primary', 'accent', 'success', 'warning', 'danger']),
+    // `intent` is the canonical colour-axis name (matches the house vocabulary
+    // used by badge / button / alert). `variant` is kept as a back-compat
+    // alias so pre-2.4 callers render identically — when `intent` is null the
+    // effective colour falls back to `variant`. Validate the resolved value
+    // against the canonical intent set + the legacy 'accent' synonym.
+    $effectiveIntent = $intent ?? $variant;
+    $variantValue = match ($effectiveIntent) {
+        'primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral' => $effectiveIntent,
+        default => WireKit::validateProp('progress', 'intent', $effectiveIntent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']),
     };
 
     // Clamp the value to [0, max] and compute percentage for fill width
@@ -37,13 +42,16 @@
         default => 'h-2',
     };
 
-    // Fill color changes with semantic variant — always via design tokens.
-    // 'primary' is the canonical name; 'accent' kept as alias for back-compat.
+    // Fill color changes with semantic intent — always via design tokens.
+    // Mapping mirrors badge's intent palette: info shares the accent fill (no
+    // distinct --color-wk-info base token exists), neutral uses the muted text
+    // token for a low-emphasis grey bar.
     $fillColor = match ($variantValue) {
         'success' => 'bg-[var(--color-wk-success)]',
         'warning' => 'bg-[var(--color-wk-warning)]',
         'danger' => 'bg-[var(--color-wk-danger)]',
-        default => 'bg-[var(--color-wk-accent)]', // primary + accent
+        'neutral' => 'bg-[var(--color-wk-text-muted)]',
+        default => 'bg-[var(--color-wk-accent)]', // primary + accent + info
     };
 
     // Determinate: animate width transitions for smooth updates.

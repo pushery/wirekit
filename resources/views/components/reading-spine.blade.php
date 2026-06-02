@@ -9,6 +9,12 @@
     'fillSections' => false,
     'sectionEvents' => true,
     'backToTop' => false,
+    // `boundary` — null (default) = viewport-pinned via Tailwind `fixed`.
+    // `'container'` = scoped to the nearest positioned ancestor via
+    // Tailwind `absolute`. Use `'container'` when embedding the spine
+    // inside a contained reading surface (a modal body, a sidebar pane,
+    // a docs preview frame) so it doesn't escape to the outer viewport.
+    'boundary' => null,
     'scope' => null,
 ])
 
@@ -68,6 +74,35 @@
         $offsetPx = (int) round($unit === 'px' ? $val : $val * 16);
     }
 
+    // Resolve boundary (v2.4.0 Ext 1 extended). null = viewport-pinned
+    // via Tailwind `fixed`. 'container' = scoped via Tailwind `absolute`
+    // to the nearest positioned ancestor. Any other non-empty string is
+    // treated as a CSS selector — the spine renders Tailwind `absolute`
+    // and the JS layer (where applicable) can verify the selector matches.
+    if ($boundary === null) {
+        $resolvedBoundary = null;
+        $boundarySelector = null;
+    } elseif ($boundary === 'container') {
+        $resolvedBoundary = 'container';
+        $boundarySelector = null;
+    } elseif (is_string($boundary) && $boundary !== '') {
+        $resolvedBoundary = 'selector';
+        $boundarySelector = $boundary;
+    } else {
+        $resolvedBoundary = WireKit::validateProp(
+            'reading-spine',
+            'boundary',
+            (string) $boundary,
+            ['container', '<css-selector-string>']
+        );
+        $boundarySelector = null;
+    }
+
+    $useScoped = $resolvedBoundary === 'container' || $resolvedBoundary === 'selector';
+    $boundaryClass = $useScoped
+        ? 'absolute top-1/2 -translate-y-1/2 z-[var(--z-wk-sticky)]'
+        : 'fixed top-1/2 -translate-y-1/2 z-[var(--z-wk-sticky)]';
+
     // Marker class drives the print-stylesheet hide rule + reduced-motion
     // gating + doubled-class specificity for any developer overrides.
     // `tabindex="0"` + `focus-visible:` ring on the scroll-overflow
@@ -86,7 +121,7 @@
     // hidden + y-axis to auto gives true vertical-only scroll.
     $rootClass = WireKit::resolveClasses('reading-spine', 'base', implode(' ', [
         'wk-reading-spine',
-        'fixed top-1/2 -translate-y-1/2 z-[var(--z-wk-sticky)]',
+        $boundaryClass,
         'wk-scrollbar max-h-[calc(100vh-8rem)] overflow-x-hidden overflow-y-auto',
         'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         $positionClass,

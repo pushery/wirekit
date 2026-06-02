@@ -83,7 +83,10 @@ export default function wirekitImageCompare(config = {}) {
                 document.removeEventListener('pointercancel', onUp);
             };
 
-            document.addEventListener('pointermove', onMove);
+            // Passive — onMove only reads pointer coords + sets the divider
+            // position; it never calls preventDefault (the pointerdown does,
+            // to suppress native drag), so it must not block scroll.
+            document.addEventListener('pointermove', onMove, { passive: true });
             document.addEventListener('pointerup', onUp);
             document.addEventListener('pointercancel', onUp);
         },
