@@ -2,9 +2,11 @@
     'intent' => config('wirekit.components.badge.intent', 'neutral'),
     'size' => config('wirekit.components.badge.size', 'md'),
     'dot' => false,
-    // Discoverable tooltip — sets a native title="" on the badge. Previously
-    // callers passed title="" via the attribute bag; the prop makes the
-    // status-explanation affordance first-class.
+    // Discoverable tooltip — surfaces the status explanation through
+    // WireKit's own tooltip component (hover / focus / touch / keyboard,
+    // aria-describedby) instead of the browser's native title attribute.
+    // The text is the badge label; the tooltip is the supplementary
+    // explanation (e.g. "Build failed" on a "Failed" badge).
     'tooltip' => null,
     // Optional leading status glyph (icon alias, e.g. 'check' / 'clock' /
     // 'x-circle' / 'shield-check'). Rendered decoratively before the label —
@@ -115,16 +117,37 @@
     $depthStyle = 'box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent), 0 1px 1px color-mix(in srgb, var(--color-wk-text) 4%, transparent);';
 @endphp
 
-<span
-    {{ $attributes->class([$baseClasses, $intentClasses, $sizeClasses]) }}
-    style="{{ $depthStyle }}"
-    @if($tooltip) title="{{ $tooltip }}" @endif
->
-    @if($dot)
-        <span aria-hidden="true" class="inline-block h-1.5 w-1.5 rounded-full {{ $dotColorClass }}"></span>
-    @endif
-    @if($leadingIcon)
-        <x-wirekit::icon :name="$leadingIcon" size="xs" aria-hidden="true" class="shrink-0" />
-    @endif
-    {{ $slot }}
-</span>
+{{-- The badge body. When a tooltip is requested it is wrapped in the
+     WireKit tooltip component so the explanation surfaces through WireKit's
+     own accessible tooltip (hover / focus / touch / keyboard,
+     aria-describedby) rather than the browser's native title attribute. The
+     wrap is conditional so a badge WITHOUT a tooltip stays a bare span with
+     zero Alpine overhead. The if/else duplicates the span deliberately —
+     Blade pairs anonymous component tags at compile time, so the wrapper
+     cannot be split across a runtime conditional. (Note: literal component
+     tag syntax is kept out of this comment on purpose — Blade's component
+     compiler scans comments too and an unbalanced tag here would break the
+     pairing.) --}}
+@if($tooltip)
+    <x-wirekit::tooltip :text="$tooltip" :scope="$scope">
+        <span {{ $attributes->class([$baseClasses, $intentClasses, $sizeClasses]) }} style="{{ $depthStyle }}">
+            @if($dot)
+                <span aria-hidden="true" class="inline-block h-1.5 w-1.5 rounded-full {{ $dotColorClass }}"></span>
+            @endif
+            @if($leadingIcon)
+                <x-wirekit::icon :name="$leadingIcon" size="xs" aria-hidden="true" class="shrink-0" />
+            @endif
+            {{ $slot }}
+        </span>
+    </x-wirekit::tooltip>
+@else
+    <span {{ $attributes->class([$baseClasses, $intentClasses, $sizeClasses]) }} style="{{ $depthStyle }}">
+        @if($dot)
+            <span aria-hidden="true" class="inline-block h-1.5 w-1.5 rounded-full {{ $dotColorClass }}"></span>
+        @endif
+        @if($leadingIcon)
+            <x-wirekit::icon :name="$leadingIcon" size="xs" aria-hidden="true" class="shrink-0" />
+        @endif
+        {{ $slot }}
+    </span>
+@endif
