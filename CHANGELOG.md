@@ -7,7 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [2.4.0] — Unreleased
+## [2.4.1] — 2026-06-03
+
+**Patch release.** Bug-fix and polish window on top of the v2.4.0 baseline.
+
+### Fixed
+
+- **Streamlined the copy-paste code in component-docs previews.** The Show-Code panels on `/components/sparkline`, `/components/charts-apex/sparklines`, `/components/accordion`, `/components/breadcrumb`, `/components/button`, `/components/hover-card`, `/components/icon`, `/components/input`, `/components/popover`, `/components/qr-code`, `/components/scroll-to-top`, `/components/spine-aware`, `/components/toast`, and `/components/tooltip` now compose WireKit primitives — `<x-wirekit::stats>` + `<x-wirekit::stat>` (with the `sparkline` slot), `<x-wirekit::card>` + `<x-wirekit::card.body>`, `<x-wirekit::grid>`, `<x-wirekit::row>`, `<x-wirekit::stack>`, `<x-wirekit::prose>`, `<x-wirekit::text>`, and `<x-wirekit::heading>` — instead of hand-rolled `<div>` layout scaffolding. The rendered previews are unchanged; the code you copy is cleaner, shorter, and consistent with how the library is meant to be composed.
+- **Accessible names on read-only example inputs in the docs.** Several read-only example inputs — the popover share-link / share-URL fields plus a couple of search / filter fields elsewhere in the docs — now carry an `aria-label`, so screen readers announce them instead of an unnamed text field (WCAG 4.1.2).
+
+---
+
+## [2.4.0] — 2026-06-02
 
 **Minor release.** New display components (`stage-card`, `activity-row`),
 an `intent` colour axis on `stat` and `progress`, deterministic
