@@ -11,10 +11,10 @@
     'forceMobile' => false,
     // `container` — when true, wraps the inner flex-row in a max-width
     // container so the navbar's CHROME (background, border, sticky
-    // behaviour) stays edge-to-edge while the CONTENT (brand, nav items,
+    // behavior) stays edge-to-edge while the CONTENT (brand, nav items,
     // actions) aligns with the body's container-wrapped column. Mirrors
     // the brand-bar `container` prop. Default false preserves the prior
-    // edge-to-edge content behaviour.
+    // edge-to-edge content behavior.
     'container' => false,
     // `max` — container max-width tier when `container=true`. One of
     // `sm/md/lg/xl/2xl/full`. Defaults to `xl` (the most common

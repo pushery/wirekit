@@ -1,5 +1,5 @@
 {{-- Recipe: Documentation Reader — long-form article + reading-spine + reading-progress.
-     Full reference: https://docs.wirekit.app/recipes/documentation-reader
+     Full reference: https://docs.wirekit.app/blueprints/recipes/documentation-reader
      Drop your prose into <main>; the reading widgets auto-detect headings. --}}
 <div>
     <x-wirekit::reading-progress />
@@ -21,7 +21,7 @@
                 <h2>Usage</h2>
                 <p>Drop the reading-spine into your sidebar; it will populate from <code>h1</code> / <code>h2</code> elements inside <code>main</code> automatically.</p>
 
-                <h2>Customisation</h2>
+                <h2>Customization</h2>
                 <p>Override the target selector via <code>target="#article-body"</code> to scope the spine to a specific region.</p>
             </article>
         </main>

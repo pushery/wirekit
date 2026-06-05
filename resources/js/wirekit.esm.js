@@ -33,6 +33,11 @@ import wirekitTableSort from './components/table-sort.js';
 import wirekitTour from './components/tour.js';
 import wirekitResizableHandle from './components/resizable.js';
 import wirekitImageCompare from './components/image-compare.js';
+import wirekitStatAnimate from './components/stat-animate.js';
+import wirekitAnimate from './components/animate.js';
+import wirekitReadingSpine from './components/reading-spine.js';
+import wirekitReadingMinimap from './components/reading-minimap.js';
+import wirekitReadingToc from './components/reading-toc.js';
 
 export default function (Alpine) {
     Alpine.data('wirekitChartJs', wirekitChartJs);
@@ -59,4 +64,9 @@ export default function (Alpine) {
     Alpine.data('wirekitTour', wirekitTour);
     Alpine.data('wirekitResizableHandle', wirekitResizableHandle);
     Alpine.data('wirekitImageCompare', wirekitImageCompare);
+    Alpine.data('wirekitStatAnimate', wirekitStatAnimate);
+    Alpine.data('wirekitAnimate', wirekitAnimate);
+    Alpine.data('wirekitReadingSpine', wirekitReadingSpine);
+    Alpine.data('wirekitReadingMinimap', wirekitReadingMinimap);
+    Alpine.data('wirekitReadingToc', wirekitReadingToc);
 }

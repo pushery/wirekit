@@ -10,7 +10,7 @@ use Pushery\WireKit\Contracts\ChartAdapter;
  * ApexCharts adapter — normalizes WireKit data into the ApexCharts options shape.
  *
  * License notice — ApexCharts is NOT MIT-licensed. The free Community License
- * covers personal use, non-profits, education, and organisations under
+ * covers personal use, non-profits, education, and organizations under
  * $2M USD annual revenue. Above that threshold a Commercial License must be
  * purchased directly from ApexCharts. WireKit ships only this adapter glue
  * (MIT); the JS library is the developer's responsibility to install + license.
@@ -124,8 +124,8 @@ final class ApexChartsAdapter implements ChartAdapter
                 'position' => 'top',
             ],
             // Tooltip — uniform BEHAVIOR + STYLING across every apex demo,
-            // modelled on the /components/charts-apex/scatter-bubble Basic
-            // Example which the user signalled as canonical.
+            // modeled on the /components/charts-apex/scatter-bubble Basic
+            // Example which the user signaled as canonical.
             //
             // `shared: false` + `intersect: true`: tooltip fires when the
             // cursor is ON a data element (bar / bubble / line point / pie
@@ -135,12 +135,12 @@ final class ApexChartsAdapter implements ChartAdapter
             // `shared: false, intersect: true`) which produced visibly
             // different tooltip placement between, say, /charts-apex/bar
             // (panel anchored at the column edge) and /charts-apex/scatter-
-            // bubble (panel anchored at the bubble centre). Forcing the
+            // bubble (panel anchored at the bubble center). Forcing the
             // scatter-style defaults across all types gives every demo
             // the same hover affordance.
             //
-            // `fillSeriesColor: false` + `marker.show: true` standardise
-            // the colour-swatch as an unfilled circle. `style.fontSize:
+            // `fillSeriesColor: false` + `marker.show: true` standardize
+            // the color-swatch as an unfilled circle. `style.fontSize:
             // '12px'` pins the tooltip typography so the panel reads
             // identically regardless of chart type.
             'tooltip' => $this->defaultTooltip($type) + ['custom' => 'WIREKIT_DEFAULT_TOOLTIP'],
@@ -226,9 +226,9 @@ final class ApexChartsAdapter implements ChartAdapter
      */
     /**
      * Type-aware tooltip defaults. Uniform STYLING (marker shape, font, etc.)
-     * across every chart type — `shared` / `intersect` BEHAVIOUR is per-type.
+     * across every chart type — `shared` / `intersect` BEHAVIOR is per-type.
      *
-     * Cursor-following behaviour (`shared: true, intersect: false` — tooltip
+     * Cursor-following behavior (`shared: true, intersect: false` — tooltip
      * tracks the cursor's x-position, shows the closest data point's value)
      * is the right UX for charts with a continuous x-axis: line / area /
      * bar / column / candlestick / boxplot / mixed / annotated. Users
@@ -292,13 +292,13 @@ final class ApexChartsAdapter implements ChartAdapter
 
         // Heatmap + treemap are intentionally NOT in either branch above.
         // ApexCharts doesn't expose a "anchor tooltip at hovered cell
-        // centre" API — `intersect: true, followCursor: false` makes the
+        // center" API — `intersect: true, followCursor: false` makes the
         // tooltip render in a chart-corner fallback far from the hovered
         // cell; `followCursor: true` (the native default) keeps the
         // tooltip near the cursor but with visible jitter as the mouse
         // moves within the cell. The cursor-follow native default is
         // the lesser evil — the tooltip stays USEFUL (near where the
-        // user is looking) at the cost of some jitter. A proper centre-
+        // user is looking) at the cost of some jitter. A proper center-
         // of-cell anchor would need a custom positioning layer outside
         // the ApexCharts tooltip API (post-hover DOM measurement +
         // direct style.left/top mutation).

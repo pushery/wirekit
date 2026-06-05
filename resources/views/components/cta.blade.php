@@ -45,9 +45,17 @@
         'text-center',
     ]), $scope);
 
+    // `dark` establishes a real dark TOKEN CONTEXT (the bare `dark` class), not
+    // just a dark band — every --color-wk-* token resolves to its `.dark` value
+    // for the subtree, so token-surfaced children (code-block, card, input)
+    // render dark surfaces instead of light (white-on-white bug class). Regular
+    // --color-wk-bg / --color-wk-text are dark / light under `.dark`, so the band
+    // is identical in light mode and stays genuinely dark in dark mode (the old
+    // `bg-inverse` flipped it to near-white in dark mode). See hero.blade.php for
+    // the full rationale; kept in lock-step.
     $variantClasses = match ($variant) {
         'default' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
-        'dark' => 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]',
+        'dark' => 'dark bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
         'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
         default => WireKit::validateProp('cta', 'variant', $variant, ['default', 'dark', 'accent']),
     };

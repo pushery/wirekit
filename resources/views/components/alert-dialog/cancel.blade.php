@@ -12,7 +12,7 @@
 
      Defaults: renders a neutral filled button reading "Cancel". Pass
      a default slot to override the button label, OR pass any inner
-     <x-wirekit::button> to customise variant / size / icon.
+     <x-wirekit::button> to customize variant / size / icon.
 
      Example:
        <x-wirekit::alert-dialog.cancel />

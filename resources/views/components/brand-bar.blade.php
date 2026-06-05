@@ -19,9 +19,9 @@
     'sticky' => false,
     // `container` — when true, wraps the inner flex-row in a max-width
     // container so the brand-bar's CHROME (background, border, sticky
-    // behaviour) stays edge-to-edge while the CONTENT (brand, tagline,
+    // behavior) stays edge-to-edge while the CONTENT (brand, tagline,
     // actions) aligns with the body's container-wrapped column. Default
-    // false preserves the v2.0.0 edge-to-edge content behaviour.
+    // false preserves the v2.0.0 edge-to-edge content behavior.
     'container' => false,
     // `max` — container max-width tier when `container=true`. One of
     // `sm/md/lg/xl/2xl/full`. Defaults to `xl` (the most common
@@ -74,7 +74,7 @@
     };
 
     // When container-wrapped, the OUTER element keeps the chrome
-    // (background, border, sticky behaviour, padding) but loses the
+    // (background, border, sticky behavior, padding) but loses the
     // flex-row layout — the INNER container takes the layout and the
     // max-width. When edge-to-edge (default), the OUTER element is
     // the flex parent directly.

@@ -58,6 +58,7 @@ class ComponentRegistry
             'section' => ['category' => 'Layout', 'description' => 'Full-width page section with background and padding'],
             'spacer' => ['category' => 'Layout', 'description' => 'Flexible space filler in flex layouts'],
             'stack' => ['category' => 'Layout', 'description' => 'Vertical flex container'],
+            'skip-link' => ['category' => 'Layout', 'description' => 'WCAG 2.4.1 skip-link to main landmark (keyboard bypass)'],
             'visually-hidden' => ['category' => 'Layout', 'description' => 'Screen-reader-only content wrapper'],
 
             // ── Typography ──
@@ -115,7 +116,7 @@ class ComponentRegistry
             // ── Display ──
             'accordion' => ['category' => 'Display', 'description' => 'Collapsible content panels'],
             'action-bar' => ['category' => 'Display', 'description' => 'Floating action bar for bulk operations'],
-            'activity-row' => ['category' => 'Display', 'description' => 'Activity-feed / timeline row with kind-coloured dot, actor, timestamp, and badge slot'],
+            'activity-row' => ['category' => 'Display', 'description' => 'Activity-feed / timeline row with kind-colored dot, actor, timestamp, and badge slot'],
             'alert' => ['category' => 'Display', 'description' => 'Contextual alert message'],
             'avatar' => ['category' => 'Display', 'description' => 'User avatar with image, initials, or status'],
             'badge' => ['category' => 'Display', 'description' => 'Small status label'],
@@ -141,6 +142,7 @@ class ComponentRegistry
             'scroll-area' => ['category' => 'Display', 'description' => 'Scrollable content area with styled scrollbar'],
             'segmented-control' => ['category' => 'Display', 'description' => 'Segmented toggle control'],
             'skeleton' => ['category' => 'Display', 'description' => 'Loading placeholder skeleton'],
+            'spinner' => ['category' => 'Display', 'description' => 'Accessible loading spinner (size + semantic intent, role=status)'],
             'chart-mixed' => ['category' => 'Display', 'description' => 'Multi-type / multi-axis chart (per-dataset type field, dual y-axis)'],
             'sparkline' => ['category' => 'Display', 'description' => 'Inline trend sparkline (axis-less line/area chart)'],
             'spine-aware' => ['category' => 'Layout', 'description' => 'Opt-in wrapper that joins the page-edge content spine via WireKit::spinePadding()'],
@@ -266,7 +268,7 @@ class ComponentRegistry
     }
 
     /**
-     * Extract props from a component. Two flavours coexist:
+     * Extract props from a component. Two flavors coexist:
      *
      * 1. **Anonymous Blade component** (the 99% case): parse the
      *    `@props([...])` directive from the Blade file via PropsParser.

@@ -11,11 +11,11 @@ namespace Pushery\WireKit\Sandbox;
  * Rules enforced:
  *   1. Only props in the schema's `allowed` list pass through.
  *   2. Each prop value's type matches the schema's declared type.
- *   3. String values cap at 10KB (denial-of-service defence).
+ *   3. String values cap at 10KB (denial-of-service defense).
  *   4. Nested arrays cap at depth 5 (prevent recursion bombs).
  *   5. String values stripped of `<script>` / closing `</script>`
  *      sequences via `htmlspecialchars()` — Blade's `{{ }}` will
- *      double-escape downstream, but defence-in-depth here closes
+ *      double-escape downstream, but defense-in-depth here closes
  *      the gap if a slot ever receives raw output by mistake.
  *
  * Returns a `ValidationResult` carrying either the sanitized payload
@@ -162,7 +162,7 @@ final class PropsValidator
                 return null;
             }
 
-            // Defence-in-depth: HTML-escape every string. The renderer's
+            // Defense-in-depth: HTML-escape every string. The renderer's
             // Blade interpolation does this too, but a slot that mistakenly
             // uses `{!! !!}` would let raw values through. Escape here so
             // the worst case is double-escaped output, not XSS.

@@ -11,7 +11,7 @@ use Pushery\WireKit\WireKit;
 
 class MakeCommand extends Command
 {
-    protected $signature = 'wirekit:make {template : Template to scaffold — page:dashboard|page:settings|page:login OR recipe:<name> (see `wirekit:list --category=Marketing` or docs.wirekit.app/recipes for the catalogue)}';
+    protected $signature = 'wirekit:make {template : Template to scaffold — page:dashboard|page:settings|page:login OR recipe:<name> (see `wirekit:list --category=Marketing` or docs.wirekit.app/recipes for the catalog)}';
 
     protected $description = 'Scaffold a page or recipe using WireKit components';
 

@@ -1,6 +1,6 @@
 @props([
-    // Activity kind — drives the leading dot colour. The built-in set is
-    // commit / merge / deploy / comment / system / user; extend or recolour
+    // Activity kind — drives the leading dot color. The built-in set is
+    // commit / merge / deploy / comment / system / user; extend or recolor
     // via `config('wirekit.components.activity-row.kinds')`. Unknown kinds
     // fall back to the muted dot (no error — the map is intentionally open).
     'kind' => 'system',
@@ -14,7 +14,7 @@
 @php
     use Pushery\WireKit\WireKit;
 
-    // kind → dot-colour token. Developer config is merged over the defaults,
+    // kind → dot-color token. Developer config is merged over the defaults,
     // so an app can add `release => var(--color-wk-warning)` etc. without a
     // component override.
     $kinds = array_merge([
@@ -38,7 +38,7 @@
 <div {{ $attributes->class([$classes]) }}>
     {{-- Leading kind dot. Decorative (aria-hidden) — the kind is conveyed
          textually by the sr-only span below, so the activity is
-         distinguishable without colour perception (WCAG 1.4.1). --}}
+         distinguishable without color perception (WCAG 1.4.1). --}}
     <span
         aria-hidden="true"
         class="mt-1.5 inline-block h-2 w-2 shrink-0 rounded-full"
@@ -63,7 +63,7 @@
             </div>
         @endisset
 
-        {{-- Accessible kind label — the textual equivalent of the dot colour. --}}
+        {{-- Accessible kind label — the textual equivalent of the dot color. --}}
         <span class="sr-only">{{ $kind }}</span>
     </div>
 </div>

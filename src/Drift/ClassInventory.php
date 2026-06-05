@@ -562,7 +562,7 @@ final class ClassInventory
      * Without this scan Tailwind v4's raw-text source scan still reads
      * the @php-block content and generates rules — but the audit's
      * reverse-diff would flag them as "compiled classes without
-     * source" because the static analyser couldn't reach them. This
+     * source" because the static analyzer couldn't reach them. This
      * focused scan closes that gap for the most common shape (match
      * arms) without re-introducing the false-positive flood that a
      * blanket "scan every quoted string" produced.
@@ -800,7 +800,7 @@ final class ClassInventory
                          * the same class virtually always appears in a
                          * `class="…"` attribute elsewhere in the same
                          * Blade template and is caught by
-                         * `harvestAttributeClasses`. The trade-off favours
+                         * `harvestAttributeClasses`. The trade-off favors
                          * zero false positives in @php-block context.
                          */
                         $hasShapeMarker = preg_match('/\d|\[|:/', $candidate) === 1;
@@ -888,7 +888,7 @@ final class ClassInventory
                     continue;
                 }
 
-                // Walk to the closing quote, honouring backslash escapes
+                // Walk to the closing quote, honoring backslash escapes
                 $valueStart = $j + 1;
                 $k = $valueStart;
                 while ($k < $len) {

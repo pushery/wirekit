@@ -8,14 +8,14 @@ namespace Pushery\WireKit\Support;
  * Deterministic avatar background palette.
  *
  * Maps an arbitrary key (typically a person's initials or name) to a stable
- * background + foreground colour pair, so the same person always renders the
- * same avatar colour across page loads and across a list. Replaces the
+ * background + foreground color pair, so the same person always renders the
+ * same avatar color across page loads and across a list. Replaces the
  * per-app `$avatarBg = fn ($initials) => …` crc32-palette helpers that every
  * dashboard blueprint previously hand-rolled.
  *
  * Theme-independence: each palette entry is a self-contained background +
  * white foreground pair chosen for WCAG-AA contrast (≥ 4.5:1) regardless of
- * the active WireKit theme — the avatar paints its own colour, it does not
+ * the active WireKit theme — the avatar paints its own color, it does not
  * read a theme token, so it reads identically in light and dark. The
  * lightness (~47%) keeps white text above the AA threshold on every hue.
  */
@@ -43,7 +43,7 @@ final class AvatarPalette
     private const FOREGROUND = '#fff';
 
     /**
-     * Resolve the deterministic colour pair for a key.
+     * Resolve the deterministic color pair for a key.
      *
      * @return array{bg: string, fg: string}
      */

@@ -30,7 +30,7 @@ export default () => ({
     // to hide/show the description span via x-show).
     animating: false,
     // progress: 0 (start) → 1 (settled), eased. Used by descriptionAnimate Option C
-    // to interpolate the description text colour synchronously with the count-up.
+    // to interpolate the description text color synchronously with the count-up.
     progress: 1,
 
     init() {
@@ -65,6 +65,15 @@ export default () => ({
         // Encapsulated run-the-counter helper so both the entrance-wrapper path
         // and the standalone IntersectionObserver path can call it.
         const runCounter = () => {
+            // Idempotent: a real trigger (animationend / IO) and the safety-net
+            // fallback timer below both call this; whichever fires first wins,
+            // the others are no-ops.
+            if (this._started) return;
+            this._started = true;
+            if (this._fallbackTimer) {
+                clearTimeout(this._fallbackTimer);
+                this._fallbackTimer = null;
+            }
             this.animating = true;
             const start = performance.now();
             const duration = 1200;
@@ -85,6 +94,19 @@ export default () => ({
 
             requestAnimationFrame(tick);
         };
+
+        // Safety net (website finding F2). Both start-triggers below can MISS:
+        // the entrance path waits for an `animationend` that may never fire (a
+        // coalesced / skipped keyframe, or a browser that doesn't emit it), and
+        // the standalone IntersectionObserver can fail to report `isIntersecting`
+        // on some touch browsers (iOS Safari edge cases). Either miss would leave
+        // the count-up stuck at "0" painted over the correct SSR value. After a
+        // generous window, start it anyway so `animate` is never visibly stuck.
+        // Cleared the instant a real trigger fires (runCounter) or on teardown.
+        this._fallbackTimer = setTimeout(() => {
+            this._fallbackTimer = null;
+            runCounter();
+        }, 1800);
 
         // Entrance-wrapper detection. The Blade template wraps the counter root
         // in an outer <div x-data="wirekitAnimate('…')"> when BOTH animate and
@@ -162,6 +184,10 @@ export default () => ({
             const outer = this.$root.parentElement;
             outer?.removeEventListener('animationend', this._entranceListener);
             this._entranceListener = null;
+        }
+        if (this._fallbackTimer) {
+            clearTimeout(this._fallbackTimer);
+            this._fallbackTimer = null;
         }
     },
 });

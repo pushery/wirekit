@@ -8,8 +8,8 @@
     $classes = WireKit::resolveClasses('code', 'base', implode(' ', [
         'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',
         'text-[length:0.875em]',
-        'bg-[var(--color-wk-bg-muted)]',
-        'text-[color:var(--color-wk-text)]',
+        'bg-[var(--color-wk-code-bg)]',
+        'text-[color:var(--color-wk-code)]',
         'rounded-[var(--radius-wk-sm)]',
         'px-1.5 py-0.5',
         'border-[length:var(--border-wk-width)]',

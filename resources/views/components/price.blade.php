@@ -102,7 +102,7 @@
     {{-- Strike-through compare-at price (UVP / RRP / MSRP).
          Uses inline `text-decoration` to bypass Tailwind v4 class-ordering
          where `no-underline` could shadow `line-through` on the same element,
-         and to pin the decoration colour to text-muted (border-token is too
+         and to pin the decoration color to text-muted (border-token is too
          faint at 91% lightness to read as a strike). --}}
     @if($formattedBase !== null)
         <del

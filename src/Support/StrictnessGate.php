@@ -11,7 +11,7 @@ use InvalidArgumentException;
  *
  * Used by WireKit::validateProp() (component-level prop validation) and
  * IconResolver (icon-alias / preset lookups) to decide between two
- * behaviours when an invalid value is supplied:
+ * behaviors when an invalid value is supplied:
  *
  *   - STRICT  → throw InvalidArgumentException with a Did-you-mean hint.
  *   - LENIENT → log a warning (with fallback annotation) and return the
@@ -28,7 +28,7 @@ use InvalidArgumentException;
  * HTTP dev requests (strict + browser), the gate logs at ERROR level
  * and renders the fallback so a single prop typo doesn't 500 the whole
  * blade view. the old
- * always-throw-in-debug behaviour took down the entire page on a typo
+ * always-throw-in-debug behavior took down the entire page on a typo
  * that was purely cosmetic.
  */
 final class StrictnessGate

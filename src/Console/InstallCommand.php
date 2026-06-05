@@ -20,14 +20,14 @@ use Pushery\WireKit\WireKit;
 class InstallCommand extends Command
 {
     protected $signature = 'wirekit:install
-        {--preset=default : Theme preset — see ThemePresetRegistry::keys() for the canonical list (default, minimal, soft, material, brutalist, retro-terminal, cupertino at v2.1.0; downstream packages may register additional presets via ThemePresetRegistry::register()).}
+        {--preset=default : Theme preset — see ThemePresetRegistry::keys() for the canonical list (default, minimal, soft, material, brutalist, retro-terminal, cupertino, aurora at v2.5.0; downstream packages may register additional presets via ThemePresetRegistry::register()).}
         {--font= : Inject sans font-family override (must be a sans-category key from FontRegistry)}
         {--font-serif= : Inject serif font-family override (must be a serif-category key from FontRegistry)}
         {--font-mono= : Inject mono font-family override (must be a mono-category key from FontRegistry)}
         {--apex-license= : Set ApexCharts license tier when opting into the apexcharts adapter — accepts community, commercial, or oem. Sets charts.library => apexcharts AND charts.apex_license => <tier> in config/wirekit.php. ApexCharts is non-MIT; see https://apexcharts.com/license/ for terms.}
         {--interactive : Force interactive prompts even when TTY detection misfires (Herd / Docker / WSL setups)}
         {--no-gitignore : Skip auto-adding /public/vendor/wirekit to .gitignore (commit published assets to repo for environments without vendor:publish in deploy)}
-        {--no-strict : Opt out of strict-by-default mode — pre-flight warnings print but do not abort. Use only for legacy CI scripts that depend on the v2.0.0 "warnings as success" behaviour.}
+        {--no-strict : Opt out of strict-by-default mode — pre-flight warnings print but do not abort. Use only for legacy CI scripts that depend on the v2.0.0 "warnings as success" behavior.}
         {--force : Bypass pre-flight warnings (token clobber, hand-edited marker blocks). Errors still abort. Mutually exclusive with --no-strict.}
         {--ignore-failed-flags : Per-flag failures report but do NOT abort. Other flags still apply. Exit code = count of failed flags. Mutually exclusive with default-strict mode (use --no-strict to combine).}
         {--diff : Dry-run mode — report what WOULD change in app.css / tailwind.config.js / layout / config without writing any files. Exit code reflects the would-be-state; nothing on disk is touched.}
@@ -41,7 +41,7 @@ class InstallCommand extends Command
         // it reverses recorded prior installs. Combining --rollback with any
         // install-side flag is incoherent (rollback bypasses every other code
         // path), so we reject the combination at boot instead of silently
-        // honouring --rollback and ignoring the rest.
+        // honoring --rollback and ignoring the rest.
         if ($this->option('rollback')) {
             // Boolean flags — only flagged if explicitly enabled.
             // `--no-interaction` is the documented exception (Symfony
@@ -76,7 +76,7 @@ class InstallCommand extends Command
         }
 
         // Mutually-exclusive flag validation — flag combinations that don't
-        // semantically compose are rejected at boot, NOT silently honoured.
+        // semantically compose are rejected at boot, NOT silently honored.
         if ($this->option('force') && $this->option('no-strict')) {
             $this->error('--force and --no-strict are mutually exclusive. Pick one — see `wirekit:install --help`.');
 
@@ -451,7 +451,7 @@ class InstallCommand extends Command
     }
 
     /**
-     * Finalise the install log. Successful installs flush the pending
+     * Finalize the install log. Successful installs flush the pending
      * entries to base_path('.wirekit-install.log') as a JSON-Lines file
      * (one entry per line, append-only). Failed installs discard the
      * pending entries — they reflect partial state that rollback
@@ -653,7 +653,7 @@ class InstallCommand extends Command
             // see no prompts and assume "interactive mode is broken". The flag
             // is the documented escape hatch for exactly this case. Suppress
             // the hint when --no-interaction was passed explicitly (the user
-            // signalled they want a quiet scripted run).
+            // signaled they want a quiet scripted run).
             if (! $this->option('no-interaction')) {
                 $this->line('  <fg=blue>i</> Interactive prompts skipped (no TTY detected). Re-run with <fg=cyan>--interactive</> to force the guided setup, or pass flags directly (e.g. <fg=cyan>--preset=cupertino</>).');
             }
@@ -715,7 +715,7 @@ class InstallCommand extends Command
     /**
      * Routes each `--font*` flag through the font-override injector.
      *
-     * Centralised here so future multi-font flags (`--font-serif`,
+     * Centralized here so future multi-font flags (`--font-serif`,
      * `--font-mono`) can be added by extending the categories array.
      */
     private function processApexLicenseFlag(): int
@@ -744,8 +744,8 @@ class InstallCommand extends Command
         $this->warn('ApexCharts License Notice');
         $this->line('  ApexCharts is not MIT-licensed.');
         $this->line('  - Community License (free): personal use, non-profits, education,');
-        $this->line('    AND organisations under $2 million USD annual revenue.');
-        $this->line('  - Commercial License (paid): organisations at or above the threshold.');
+        $this->line('    AND organizations under $2 million USD annual revenue.');
+        $this->line('  - Commercial License (paid): organizations at or above the threshold.');
         $this->line('  - OEM/Redistribution License (paid, separate): when embedding into a');
         $this->line('    redistributed product. NOT applicable to a normal WireKit developer install.');
         $this->line('');
@@ -1024,8 +1024,8 @@ class InstallCommand extends Command
      *   --font-wk-{category}  → drives WireKit chrome
      *
      * Setting both ensures Tailwind utilities and WireKit components stay
-     * visually aligned. Closes the brief's "WireKit chrome was Inter while
-     * copy was Instrument Sans" footgun.
+     * visually aligned, preventing the footgun where WireKit chrome renders
+     * in a different font than the body copy.
      */
     private function buildFontOverrideBlock(string $category, string $fontFamily): string
     {
@@ -1049,7 +1049,7 @@ CSS;
      * resolved preset's local CSS file lands in `public/vendor/wirekit/fonts/`.
      *
      * Non-overwriting (`--force=false`) — re-running won't clobber developer
-     * customisations. Idempotent: silently skips already-published files.
+     * customizations. Idempotent: silently skips already-published files.
      */
     private function publishFontAssets(): void
     {

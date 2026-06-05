@@ -25,7 +25,7 @@
     // Reading-toc — horizontal sticky-strip TOC variant of the reading family.
     // Same data source as reading-spine (auto-built from page headings); different
     // rendered shape (flat horizontal nav across the top/bottom of the viewport)
-    // and different responsive behaviour (mobile-hidden by default since narrow
+    // and different responsive behavior (mobile-hidden by default since narrow
     // viewports cannot host a 3-4-link horizontal strip without overflow).
     //
     // Use case: marketing landing pages with 3-4 anchored sections (Hero,
@@ -97,7 +97,7 @@
     // docs/components/reading.md.
     $resolvedTarget = $target ?? 'main, article';
 
-    // Plugin options as JSON for the x-data initialiser.
+    // Plugin options as JSON for the x-data initializer.
     $alpineOptions = json_encode([
         'target' => $resolvedTarget,
         'levels' => $levelsArray,

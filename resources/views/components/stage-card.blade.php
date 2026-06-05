@@ -1,7 +1,7 @@
 @props([
     // Visible stage title (e.g. "In progress", "Q3 2026", "Backlog").
     'label' => null,
-    // Semantic colour for the left stripe + tinted body.
+    // Semantic color for the left stripe + tinted body.
     // primary | success | warning | danger | info | neutral.
     'intent' => 'neutral',
     // Optional item count rendered as a pill in the header.
@@ -15,7 +15,7 @@
     use Pushery\WireKit\WireKit;
 
     // Validate the intent first (throws in debug / falls back in prod), then
-    // map to its colour token. Mirrors stat / badge: info+primary share
+    // map to its color token. Mirrors stat / badge: info+primary share
     // accent, neutral uses the muted text token.
     $validIntent = match ($intent) {
         'primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral' => $intent,
@@ -40,7 +40,7 @@
 
     // 3px intent stripe + 6%-tinted body via inline style (overrides the base
     // border-left + bg without a per-intent class explosion). color-mix and
-    // the colour tokens are in the Tailwind baseline.
+    // the color tokens are in the Tailwind baseline.
     $stripeStyle = "border-left-width: 3px; border-left-color: {$intentToken}; background-color: color-mix(in srgb, {$intentToken} 6%, var(--color-wk-bg-elevated));";
 
     // Clamp the optional progress to [0, 100].

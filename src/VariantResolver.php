@@ -97,7 +97,7 @@ class VariantResolver
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             // 'info' is a visual synonym of 'primary' — both tint with the
-            // accent colour. The tokens --color-wk-info / --color-wk-info-fg /
+            // accent color. The tokens --color-wk-info / --color-wk-info-fg /
             // --color-wk-info-hover do NOT exist in dist/wirekit.css; only
             // --color-wk-info-text exists (aliases accent-content). Reuse
             // the accent token chain so the button is theme-aware and the
@@ -146,7 +146,7 @@ class VariantResolver
 
     private static function soft(string $intent): string
     {
-        // Soft = tinted background, intent-coloured text, no border. The
+        // Soft = tinted background, intent-colored text, no border. The
         // *-bg tokens (--color-wk-accent-bg / --color-wk-success-bg / etc.)
         // do NOT exist in dist/wirekit.css — only --color-wk-warning-bg
         // exists. Use color-mix(in_srgb, var(--color-wk-X) 12%, var(--color-wk-bg))

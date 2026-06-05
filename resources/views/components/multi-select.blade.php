@@ -16,7 +16,7 @@
     // When a parent <x-wirekit::field label="..."> wraps this component, the
     // field-emitted <label for="$id"> doesn't reach the internal combobox
     // <input id="$id-input">, so screen readers + axe's label rule report
-    // an unlabelled form element. We synthesise an aria-label fallback —
+    // an unlabelled form element. We synthesize an aria-label fallback —
     // explicit `ariaLabel` prop wins, then the field's `label` prop (passed
     // down via attributes scan), then the `name`/`placeholder` as last resort.
     $resolvedAriaLabel = $ariaLabel ?? $attributes->get('aria-label') ?? $label ?? $placeholder ?? $name;

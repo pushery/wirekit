@@ -5,13 +5,13 @@ import { resolveThemeColors, palette, resolveCssVarsDeep } from '../utils/chart-
  * NATIVE CSS classes (`.apexcharts-tooltip-title`,
  * `.apexcharts-tooltip-series-group`, `.apexcharts-tooltip-marker`,
  * `.apexcharts-tooltip-text-y-label/value`) — ApexCharts' own stylesheet
- * then renders the grey header + white body + circle marker layout
+ * then renders the gray header + white body + circle marker layout
  * automatically. We only control the SHAPE of the data: header always
  * = x-axis category / x-value, body always = one row per stat (marker
  * + label + value). Per-chart-type renderers ship with inconsistent
  * roles (range-bar puts series-name as header; scatter puts x-value
  * as header; pie has no header). The unified renderer locks the
- * scatter-bubble layout — which the user signalled as canonical —
+ * scatter-bubble layout — which the user signaled as canonical —
  * onto every apex demo without touching ApexCharts' visual styling.
  *
  * The PHP adapter ships a `WIREKIT_DEFAULT_TOOLTIP` sentinel under
@@ -151,8 +151,8 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
         : [seriesIndex];
 
     // Accumulate rows from every contributing series. Each row carries its
-    // own series colour so multi-series tooltips render the correct marker
-    // colour per row.
+    // own series color so multi-series tooltips render the correct marker
+    // color per row.
     const bodyRows = [];
     seriesIndices.forEach((sIdx) => {
         const color = (g.colors && g.colors[sIdx]) || '#888';
@@ -320,9 +320,9 @@ window.ApexCharts = ApexCharts;</pre>
                 const fontFamily = style.getPropertyValue('--font-wk-sans').trim()
                     || 'ui-sans-serif, system-ui, sans-serif';
 
-                // Track datasets that carry user-supplied colours BEFORE we apply
+                // Track datasets that carry user-supplied colors BEFORE we apply
                 // theme defaults — those are excluded from dark-mode re-theming
-                // so the developer's explicit colour choices stay frozen across
+                // so the developer's explicit color choices stay frozen across
                 // the toggle.
                 (rawConfig.series || []).forEach((series, i) => {
                     if (series && series.color) this._manualColorIndices.add(i);
@@ -352,9 +352,9 @@ window.ApexCharts = ApexCharts;</pre>
                 // every other ApexCharts type) are now subsumed by the
                 // unified `renderUnifiedTooltip` swap above — single
                 // tooltip layout across every demo, matched to the
-                // scatter-bubble canonical look the user signalled.
+                // scatter-bubble canonical look the user signaled.
 
-                // Honour reduced-motion at chart-construction time: disable
+                // Honor reduced-motion at chart-construction time: disable
                 // animations entirely when the OS preference is set, so the
                 // first paint is instant.
                 if (this._reducedMotion()) {
@@ -406,10 +406,10 @@ window.ApexCharts = ApexCharts;</pre>
                     if (themed.markers.hover.sizeOffset === undefined) themed.markers.hover.sizeOffset = 0;
                 }
 
-                // Hover state for cells with colour-scale shading (heatmap +
+                // Hover state for cells with color-scale shading (heatmap +
                 // treemap). ApexCharts defaults `states.hover.filter.type =
                 // 'lighten'` with a strong value, which drives already-pale
-                // colour-scaled cells (low-value heatmap cells, small treemap
+                // color-scaled cells (low-value heatmap cells, small treemap
                 // cells) toward near-white on hover, making the hovered cell
                 // effectively invisible. Force a subtle `darken` instead so
                 // light cells get a touch darker (visible affordance) and
@@ -447,7 +447,7 @@ window.ApexCharts = ApexCharts;</pre>
                 // Resolve every `var(--token)` reference in the config
                 // tree — per-dataset `color`, heatmap colorScale ranges,
                 // annotation fillColor / borderColor, candlestick stroke
-                // colours, timeline fillColor — ApexCharts hands these
+                // colors, timeline fillColor — ApexCharts hands these
                 // straight to SVG `fill="…"`, which does NOT parse CSS
                 // vars. Without this walk, every such reference silently
                 // falls back to ApexCharts' default first-series blue.
@@ -470,7 +470,7 @@ window.ApexCharts = ApexCharts;</pre>
                 //      position. A reentry guard prevents infinite loops.
                 //   3. Use the marker `<path>`'s getBoundingClientRect() —
                 //      the browser composes all parent SVG transforms
-                //      (`translate(2, 30)` + `translate(centreX, centreY)` +
+                //      (`translate(2, 30)` + `translate(centerX, centerY)` +
                 //      `cx/cy` offsets) automatically.
                 // Native-DOM tooltip anchor for cell-shape charts.
                 //
@@ -602,22 +602,22 @@ window.ApexCharts = ApexCharts;</pre>
                                         let left;
                                         let top;
                                         if (apexType === 'radar') {
-                                            // Bottom-left anchor at marker centre —
+                                            // Bottom-left anchor at marker center —
                                             // panel extends up-and-right of the vertex
                                             // so the marker stays visible.
                                             left = cellCentreX - baseRect.left;
                                             top = cellCentreY - baseRect.top - tipRect.height;
                                         } else if (apexType === 'rangeBar' || apexType === 'rangeArea') {
                                             // Half-overlap anchor — tooltip's BOTTOM
-                                            // edge sits at the bar's CENTRE Y, so the
+                                            // edge sits at the bar's CENTER Y, so the
                                             // top half of the bar gets covered and
                                             // the bottom half stays visible (the user
                                             // can still see where the cursor is).
-                                            // Horizontal centre-on-bar with edge-clamp.
+                                            // Horizontal center-on-bar with edge-clamp.
                                             //
                                             // If the tooltip would clip the chart top
                                             // (bar near the top edge), flip to BELOW:
-                                            // tooltip's TOP edge at the bar's centre Y.
+                                            // tooltip's TOP edge at the bar's center Y.
                                             // The bar's bottom half gets covered; top
                                             // half stays visible.
                                             left = cellCentreX - tipRect.width / 2 - baseRect.left;
@@ -628,7 +628,7 @@ window.ApexCharts = ApexCharts;</pre>
                                                 top = cellCentreY - baseRect.top;
                                             }
                                         } else {
-                                            // Centre anchor on cell centre —
+                                            // Center anchor on cell center —
                                             // cells are large enough that the panel
                                             // doesn't hide the data.
                                             left = cellCentreX - tipRect.width / 2 - baseRect.left;
@@ -736,15 +736,15 @@ window.ApexCharts = ApexCharts;</pre>
                 // and theme arrays were all overwritten with internal
                 // state, so the second mount rendered against corrupted
                 // numbers (visible as: bars shrunk to half-height,
-                // legend colours scrambled, axis labels wrong). The
+                // legend colors scrambled, axis labels wrong). The
                 // docs.wirekit.app replay button already reloads the preview
                 // iframe — same effect as a fresh page-load, identical
-                // behaviour to every other replayable component — so
+                // behavior to every other replayable component — so
                 // the right fix is to NOT intercept the event here and
                 // let the iframe reload take over. `<x-wirekit-chart
                 // data-replayable="true">` continues to opt INTO the
                 // docs.wirekit.app's button surface; we just don't fight the
-                // standard reload behaviour with broken in-place logic.
+                // standard reload behavior with broken in-place logic.
 
                 this._hoverPaused = false;
                 if (this._wireStreamHandler) {
@@ -851,7 +851,7 @@ window.ApexCharts = ApexCharts;</pre>
             // ApexCharts then ran 3 partial-overlap animations in rapid
             // succession, which made the LAST series visually appear to
             // "rebuild from scratch" each tick (the 3rd updateSeries
-            // cancelled the in-progress animation from the 2nd, re-
+            // canceled the in-progress animation from the 2nd, re-
             // interpolating the same path the 2nd had just animated to).
             // Symptom on /components/charts-apex/streaming's Multi-series
             // preview: blue + red streamed smoothly, green rebuilt on
@@ -885,7 +885,7 @@ window.ApexCharts = ApexCharts;</pre>
                 // ApexCharts interprets as "interpolate every existing
                 // position's Y-value to the NEW series' Y-value at that
                 // position". Each X-position then morphs into the value
-                // shifted from its right neighbour — visually the entire
+                // shifted from its right neighbor — visually the entire
                 // chart "wobbles upside-down" on every tick (reported as
                 // "all three lines reverse direction on every data tick").
                 // `appendData` doesn't have this property: existing
@@ -936,7 +936,7 @@ window.ApexCharts = ApexCharts;</pre>
          * (e.g. system-preference changes that fire multiple mutations).
          *
          * Dark-mode preset transitions: the update uses dynamicAnimation so
-         * colour interpolation runs over ~250 ms instead of snapping. Collapsed
+         * color interpolation runs over ~250 ms instead of snapping. Collapsed
          * to instant when prefers-reduced-motion is set.
          */
         _setupDarkModeObserver(rawConfig) {
@@ -967,7 +967,7 @@ window.ApexCharts = ApexCharts;</pre>
                     };
 
                     // Re-resolve var() references on the dark-mode swap so
-                    // per-dataset / colorScale / annotation colours pick up
+                    // per-dataset / colorScale / annotation colors pick up
                     // the new .dark cascade values. Same reasoning as the
                     // initial-mount resolveCssVarsDeep() above.
                     const resolvedThemed = resolveCssVarsDeep(themed, style);
@@ -1030,10 +1030,10 @@ window.ApexCharts = ApexCharts;</pre>
         },
 
         /**
-         * Theme-colour readers — thin wrappers around the shared util in
+         * Theme-color readers — thin wrappers around the shared util in
          * resources/js/utils/chart-theme-colors.js. Identical helpers used
          * by wirekitChartJs so dataset palettes, fallbacks, and probe
-         * behaviour stay in lockstep across both adapters.
+         * behavior stay in lockstep across both adapters.
          */
         _resolveThemeColors(style) { return resolveThemeColors(style); },
         _palette(colors)           { return palette(colors); },
@@ -1100,7 +1100,7 @@ window.ApexCharts = ApexCharts;</pre>
 
         /**
          * Build a fully-themed ApexCharts options object from the developer's
-         * raw config + the resolved theme colours. Preserves developer-supplied
+         * raw config + the resolved theme colors. Preserves developer-supplied
          * fields (color, type, plotOptions, etc.) — the merge prefers caller
          * values where present.
          */
@@ -1116,7 +1116,7 @@ window.ApexCharts = ApexCharts;</pre>
             // number with Object.assign({}, 10, { color }) returns `{color: …}`
             // — an object with no `data` property — and ApexCharts throws
             // `Unsupported series format for pie/donut/radialBar. Expected
-            // series objects with data property.` Per-slice colours for these
+            // series objects with data property.` Per-slice colors for these
             // chart types live in the top-level `colors` array (set further
             // down), not on the series entries themselves; skip the wrapping.
             const palette = this._palette(colors);
@@ -1132,16 +1132,16 @@ window.ApexCharts = ApexCharts;</pre>
 
             // Treemap (and heatmap) use ApexCharts' built-in `colorScale`
             // to vary cell shade by VALUE — small cells get a light tint,
-            // large cells get the full accent. Forcing a single-colour
+            // large cells get the full accent. Forcing a single-color
             // `colors: [accent]` collapses every cell to the same blue,
-            // breaking the "I can read magnitude from colour" affordance
-            // that's the whole point of a treemap. Skip the colours
+            // breaking the "I can read magnitude from color" affordance
+            // that's the whole point of a treemap. Skip the colors
             // override for these types so ApexCharts' native shading
             // kicks in. Developer-supplied `colors` still wins.
             const apexChartType = rawConfig?.chart?.type;
-            const colourScaleTypes = ['treemap', 'heatmap'];
+            const colorScaleTypes = ['treemap', 'heatmap'];
             const resolvedColors = rawConfig.colors
-                || (colourScaleTypes.includes(apexChartType)
+                || (colorScaleTypes.includes(apexChartType)
                     ? undefined
                     : palette.slice(0, Math.max(themedSeries.length, 1)));
 

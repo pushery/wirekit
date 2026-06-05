@@ -41,7 +41,7 @@
     // (button / badge / progress) uses `primary` and `info` — feature
     // didn't accept either, so `<x-wirekit::feature tone="primary">`
     // crashed even though the rest of the kit accepts that spelling.
-    // We alias `primary → accent` (the same colour role) and `info →
+    // We alias `primary → accent` (the same color role) and `info →
     // soft` (the same tinted-accent treatment) so the canonical
     // vocabulary works on feature too. See the prop-naming-conventions
     // docs page for the full vocabulary contract.

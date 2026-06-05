@@ -70,7 +70,7 @@
     @if($logo instanceof \Illuminate\View\ComponentSlot)
         {{-- A NAMED slot `<x-slot:logo>...</x-slot:logo>` was passed
              instead of the URL prop — render its raw markup so callers
-             can drop in a custom SVG / coloured div / icon without
+             can drop in a custom SVG / colored div / icon without
              being forced into the URL-string contract. Blueprint authors
              routinely reach for this shape. Pre-fix this code path
              crashed the <a>'s HTML because the @elseif below stringified

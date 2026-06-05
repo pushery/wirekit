@@ -9,7 +9,7 @@ use Pushery\WireKit\Drift\ClassInventory;
 use Pushery\WireKit\Drift\CompiledCssParser;
 
 /**
- * Class-by-area inventory + diff analyser.
+ * Class-by-area inventory + diff analyzer.
  *
  * Lists every class across the five layers WireKit's component output
  * is built from (Blade / PHP / JS / Tailwind-compiled / WireKit-CSS-
@@ -125,7 +125,7 @@ class ClassByAreaCommand extends Command
     private function locateCompiledCss(string $projectRoot): ?string
     {
         // Prefer the sample app's build output — that's the canonical
-        // post-Tailwind artefact this repo's audit references.
+        // post-Tailwind artifact this repo's audit references.
         $matches = glob($projectRoot.'/sample/public/build/assets/app-*.css');
         if ($matches !== false && count($matches) > 0) {
             return $matches[0];

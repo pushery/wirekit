@@ -3,6 +3,9 @@
     'id' => null,
     'label' => null,
     'value' => null,
+    // false (default) renders one native date input. true renders a linked
+    // start + end pair (two native inputs) — see the range parsing below.
+    'range' => false,
     'min' => null,
     'max' => null,
     'size' => config('wirekit.components.date-picker.size', 'md'),
@@ -22,6 +25,21 @@
     // and zero-dependency operation. The browser provides its own calendar
     // popup + keyboard navigation (arrow keys, PageUp/PageDown for months,
     // etc.), and ships localized to the user's OS locale automatically.
+    $isRange = filter_var($range, FILTER_VALIDATE_BOOLEAN);
+
+    // Range value can be an array ['start' => .., 'end' => ..] or a slash string
+    // "Y-m-d/Y-m-d" (e.g. "2025-01-20/2025-02-09"). Single mode keeps `value`.
+    $startValue = null;
+    $endValue = null;
+    if ($isRange) {
+        if (is_array($value)) {
+            $startValue = $value['start'] ?? ($value[0] ?? null);
+            $endValue = $value['end'] ?? ($value[1] ?? null);
+        } elseif (is_string($value) && str_contains($value, '/')) {
+            [$startValue, $endValue] = array_pad(explode('/', $value, 2), 2, null);
+        }
+    }
+
     $dateId = $id ?? ($name ? 'wk-date-' . $name : 'wk-date-' . Str::random(6));
     $errorId = $dateId . '-error';
     $hintId = $dateId . '-hint';
@@ -83,20 +101,64 @@
         <label for="{{ $dateId }}" class="sr-only">{{ $fallbackLabel }}</label>
     @endif
 
-    <input
-        type="date"
-        @if($name) name="{{ $name }}" @endif
-        id="{{ $dateId }}"
-        @if($value) value="{{ $value }}" @endif
-        @if($min) min="{{ $min }}" @endif
-        @if($max) max="{{ $max }}" @endif
-        @if($placeholder) placeholder="{{ $placeholder }}" @endif
-        @if($disabled) disabled @endif
-        @if($required) required aria-required="true" @endif
-        @if($hasError) aria-invalid="true" @endif
-        @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-        {{ $attributes->class([$inputClasses]) }}
-    />
+    @if($isRange)
+        {{-- Range = two native date inputs. A tiny Alpine scope holds the current
+             start (s) + end (e) so each input can constrain the other reactively:
+             the end can't precede the start, the start can't follow the end. This
+             is additive — it doesn't touch the values, so wire:model / native form
+             submission of the {name}[start] / {name}[end] fields still works. --}}
+        <div
+            x-data="{ s: @js($startValue), e: @js($endValue) }"
+            class="flex items-center gap-[var(--padding-wk-x-sm)]"
+        >
+            <input
+                type="date"
+                @if($name) name="{{ $name }}[start]" @endif
+                id="{{ $dateId }}"
+                value="{{ $startValue }}"
+                x-on:change="s = $event.target.value"
+                :min="@js($min)"
+                :max="e || @js($max)"
+                @if($disabled) disabled @endif
+                @if($required) required aria-required="true" @endif
+                @if($hasError) aria-invalid="true" @endif
+                @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+                @unless($label) aria-label="{{ $fallbackLabel }} start" @endunless
+                class="{{ $inputClasses }}"
+            />
+            <span aria-hidden="true" class="shrink-0 text-[color:var(--color-wk-text-muted)]">&ndash;</span>
+            <input
+                type="date"
+                @if($name) name="{{ $name }}[end]" @endif
+                id="{{ $dateId }}-end"
+                value="{{ $endValue }}"
+                x-on:change="e = $event.target.value"
+                :min="s || @js($min)"
+                :max="@js($max)"
+                @if($disabled) disabled @endif
+                @if($required) required aria-required="true" @endif
+                @if($hasError) aria-invalid="true" @endif
+                @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+                aria-label="{{ $label ?: $fallbackLabel }} end"
+                class="{{ $inputClasses }}"
+            />
+        </div>
+    @else
+        <input
+            type="date"
+            @if($name) name="{{ $name }}" @endif
+            id="{{ $dateId }}"
+            @if($value) value="{{ $value }}" @endif
+            @if($min) min="{{ $min }}" @endif
+            @if($max) max="{{ $max }}" @endif
+            @if($placeholder) placeholder="{{ $placeholder }}" @endif
+            @if($disabled) disabled @endif
+            @if($required) required aria-required="true" @endif
+            @if($hasError) aria-invalid="true" @endif
+            @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+            {{ $attributes->class([$inputClasses]) }}
+        />
+    @endif
 
     @if($hint && !$hasError)
         <p id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>

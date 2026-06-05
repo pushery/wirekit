@@ -76,7 +76,7 @@
     // Replay-button contract — docs sites surface a `↻ Replay` button on
     // previews whose root carries `data-replayable="true"`. Auto-opt-in
     // when wireStream is bound (every streaming chart is replay-worthy:
-    // clicking replay resets the live ticker), otherwise honour the
+    // clicking replay resets the live ticker), otherwise honor the
     // explicit `replayable` prop. Caller-supplied `data-replayable`
     // attributes on `<x-wirekit-chart>` still pass through via the
     // attribute bag (we don't strip the key), and the first-class
@@ -96,7 +96,7 @@
          path does `target.innerHTML = ''; target.innerHTML = saved;
          Alpine.initTree(target)` — if `target` is the same element that
          carries `x-data`, the wrapper itself persists with its already-
-         initialised Alpine scope, only its children get re-injected,
+         initialized Alpine scope, only its children get re-injected,
          and the chart's `init()` (which creates the ApexCharts instance
          and fires the entrance animation) never re-runs. Wrapping the
          chart in a non-Alpine, non-wire:ignore div makes the ENTIRE
@@ -117,7 +117,7 @@
     @endif
     {{-- Tailwind utilities still applied as a courtesy for developers
          whose CSS bundle DOES load `relative` / `w-full` (the inline
-         style above is the source of truth for either class's behaviour;
+         style above is the source of truth for either class's behavior;
          these merely keep the rendered class= tidy for any styling that
          developers might want to override on top). --}}
     {{ $chartAttributes->class(['relative w-full']) }}

@@ -15,14 +15,14 @@
     // the description span is hidden via x-show while the counter runs (~1.2s)
     // and fades in once the animation settles. Mutually exclusive with descriptionAnimate.
     'descriptionDeferred' => false,
-    // Description animation Option C — synchronous colour count-up. When true AND animate=true,
-    // the description text colour interpolates from --color-wk-text-muted → --color-wk-text
+    // Description animation Option C — synchronous color count-up. When true AND animate=true,
+    // the description text color interpolates from --color-wk-text-muted → --color-wk-text
     // on the same 1.2s timeline as the value. Mutually exclusive with descriptionDeferred.
     'descriptionAnimate' => false,
     // Optional reveal animation when stat scrolls into view (separate from
     // the value count-up `animate` prop). Null = no reveal (default).
     'animateIn' => null,
-    // KPI-tile chrome: when set, the stat gains an intent-coloured left
+    // KPI-tile chrome: when set, the stat gains an intent-colored left
     // stripe + a faint intent-tinted body — the pattern dashboard blueprints
     // hand-rolled per tile. null = the existing plain card surface, unchanged.
     // primary | success | warning | danger | info | neutral.
@@ -62,7 +62,7 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // KPI-tile chrome. When `intent` is set, resolve its colour token and
+    // KPI-tile chrome. When `intent` is set, resolve its color token and
     // paint a 3px left stripe + an 8%-tint body via inline style (so it
     // overrides the base border-left + bg-elevated without a per-intent
     // class explosion). Mirrors badge's intent palette: info/primary share
@@ -70,7 +70,7 @@
     $intentTileStyle = '';
     if ($intent !== null) {
         // Validate first (throws in debug / falls back to first-allowed in
-        // prod), then map the canonical value to its colour token.
+        // prod), then map the canonical value to its color token.
         $validIntent = match ($intent) {
             'primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral' => $intent,
             default => WireKit::validateProp('stat', 'intent', $intent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']),
@@ -199,7 +199,7 @@
                         class="text-[color:var(--color-wk-text-muted)]"
                     >{{ $description }}</span>
                 @elseif($descriptionAnimate && $animate)
-                    {{-- Option C — synchronous colour count-up. Text colour interpolates
+                    {{-- Option C — synchronous color count-up. Text color interpolates
                          from muted → text on the same 1.2s timeline as the value via
                          the `progress` reactive (0 = start, 1 = settled). --}}
                     <span

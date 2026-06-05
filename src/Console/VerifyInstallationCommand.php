@@ -20,7 +20,7 @@ use Pushery\WireKit\WireKit;
  *   php artisan wirekit:verify
  *
  * Returns exit code 1 on failure — can be used in CI or as a Claude Code hook.
- * Reference: docs/integration.md
+ * Reference: https://docs.wirekit.app/getting-started/integration
  */
 class VerifyInstallationCommand extends Command
 {
@@ -41,7 +41,7 @@ class VerifyInstallationCommand extends Command
      *
      * Existing CI scripts and docs that reference `wirekit:doctor`
      * continue to work — Symfony Console routes alias invocations to
-     * the canonical command without behaviour change.
+     * the canonical command without behavior change.
      */
     protected function configure(): void
     {
@@ -118,7 +118,7 @@ class VerifyInstallationCommand extends Command
         if ($this->failed > 0) {
             $this->line('');
             $this->error('Integration incomplete — see failures above.');
-            $this->line('  Reference: vendor/pushery/wirekit/docs/integration.md');
+            $this->line('  Reference: https://docs.wirekit.app/getting-started/integration');
 
             return self::FAILURE;
         }
@@ -193,7 +193,7 @@ class VerifyInstallationCommand extends Command
                 $this->line('  Hint: public/vendor/wirekit/ exists but is empty.');
                 $this->line('        Wire `vendor:publish --tag=wirekit-assets --force` into your post-deploy hook.');
                 $this->line('        Default `wirekit:install` adds the dir to .gitignore, so deploys strip it.');
-                $this->line('        See docs/integration.md "Deploy Checklist" for Forge / Envoyer / GitHub Actions snippets.');
+                $this->line('        See https://docs.wirekit.app/getting-started/integration "Deploy Checklist" for Forge / Envoyer / GitHub Actions snippets.');
             }
         }
     }
@@ -561,7 +561,7 @@ class VerifyInstallationCommand extends Command
      * (`views/components/layout.blade.php`) OR any `.blade.php` file lives
      * inside one of the conventional layout DIRECTORIES (Laravel 12's
      * `views/components/layouts/` or the legacy `views/layouts/`).
-     * The directory-scan flavour matches real-world projects that ship
+     * The directory-scan flavor matches real-world projects that ship
      * multiple sibling layouts (`app.blade.php`, `guest.blade.php`, etc.).
      */
     private function hasAnyLayoutFile(): bool
@@ -684,7 +684,7 @@ class VerifyInstallationCommand extends Command
             $this->reportPass(sprintf('ApexCharts license tier declared: %s', $tier));
         } else {
             $this->reportWarn(
-                'ApexCharts is non-MIT. Confirm your organisation is below the '
+                'ApexCharts is non-MIT. Confirm your organization is below the '
                 .'$2M USD revenue threshold for the Community License, or purchase a '
                 .'Commercial License at https://apexcharts.com/license/. '
                 .'Record your tier via `charts.apex_license` in config/wirekit.php '
@@ -815,7 +815,7 @@ class VerifyInstallationCommand extends Command
         $this->line('    Chart.register(...registerables);');
         $this->line('');
         $this->line('  Without this, every <x-wirekit-chart> renders but draws nothing — chart.js logs a friendly');
-        $this->line('  console.error at runtime and gives up. See '.WireKit::DOCS_URL.'/integration#optional-dependencies');
+        $this->line('  console.error at runtime and gives up. See '.WireKit::DOCS_URL.'/getting-started/integration#optional-dependencies');
         $this->line('  for the full setup walkthrough.');
     }
 
@@ -1054,9 +1054,9 @@ class VerifyInstallationCommand extends Command
 
     /**
      * Token-alignment diagnostic — compares Tailwind tokens against WireKit
-     * tokens in `resources/css/app.css`. Closes the brief's "WireKit chrome
-     * was Inter while copy was Instrument Sans" footgun by surfacing the
-     * mismatch at install-time rather than letting it ship to production.
+     * tokens in `resources/css/app.css`. Surfaces the footgun where WireKit
+     * chrome renders in a different font than the body copy at install-time,
+     * rather than letting the mismatch ship to production.
      *
      * Checks:
      *   --font-sans   ↔ --font-wk-sans
@@ -1090,7 +1090,7 @@ class VerifyInstallationCommand extends Command
             ['Sans font', '--font-sans', '--font-wk-sans', 'php artisan wirekit:install --font=<key>'],
             ['Serif font', '--font-serif', '--font-wk-serif', 'php artisan wirekit:install --font-serif=<key>'],
             ['Mono font', '--font-mono', '--font-wk-mono', 'php artisan wirekit:install --font-mono=<key>'],
-            ['Accent colour', '--color-accent', '--color-wk-accent', 'set --color-accent in @theme to match WireKit accent'],
+            ['Accent color', '--color-accent', '--color-wk-accent', 'set --color-accent in @theme to match WireKit accent'],
             ['Accent foreground', '--color-accent-foreground', '--color-wk-accent-fg', 'set --color-accent-foreground in @theme'],
             ['Border radius', '--radius', '--radius-wk', 'set --radius in @theme to match --radius-wk'],
             ['Shadow', '--shadow', '--shadow-wk', 'set --shadow in @theme to match --shadow-wk'],
@@ -1123,8 +1123,8 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
-        $twNormalised = $this->normaliseTokenValue($twValue);
-        $wkNormalised = $this->normaliseTokenValue($wkValue);
+        $twNormalised = $this->normalizeTokenValue($twValue);
+        $wkNormalised = $this->normalizeTokenValue($wkValue);
 
         if ($twNormalised === $wkNormalised) {
             $this->line("    <fg=green>✓</> {$label}: aligned ({$twNormalised})");
@@ -1151,15 +1151,15 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Normalises a token value for cross-comparison.
+     * Normalizes a token value for cross-comparison.
      *
      * For font families: extracts the first comma-separated token, lowercases,
      * trims quotes. So `'Inter', ui-sans-serif` and `"Inter", ui-sans` both
-     * normalise to `inter`.
+     * normalize to `inter`.
      *
      * For other values: lowercases + trims whitespace.
      */
-    private function normaliseTokenValue(string $value): string
+    private function normalizeTokenValue(string $value): string
     {
         $first = trim(explode(',', $value)[0]);
         $first = trim($first, "'\"");
@@ -1219,7 +1219,7 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
-        $this->reportWarn('Token symmetry: '.count($asymmetric).' colour token(s) overridden in `:root` but not in `.dark`');
+        $this->reportWarn('Token symmetry: '.count($asymmetric).' color token(s) overridden in `:root` but not in `.dark`');
         foreach (array_keys($asymmetric) as $token) {
             $this->line("    <fg=gray>•</> {$token}");
         }
@@ -1358,7 +1358,7 @@ class VerifyInstallationCommand extends Command
         foreach ($issues as $relativePath => $detected) {
             $this->line("    <fg=gray>•</> {$relativePath}: ".implode(', ', $detected));
         }
-        $this->line('    <fg=gray>See: vendor/pushery/wirekit/docs/extending/authoring-custom-alpine-plugins.md</>');
+        $this->line('    <fg=gray>See: https://docs.wirekit.app/extending/authoring-custom-alpine-plugins</>');
         $this->line('    <fg=gray>Opt out per-file with a `// wirekit-doctor: cleanup-ok` comment if intentional.</>');
     }
 
@@ -1582,7 +1582,7 @@ class VerifyInstallationCommand extends Command
 
     private function checkSilentValidationTyposBody(): void
     {
-        // Honour opt-out config — defaults to true (helper IS on by default
+        // Honor opt-out config — defaults to true (helper IS on by default
         // in dev environments; production developers may disable explicitly).
         $enabled = (bool) config('wirekit.doctor.scan_logs', true);
         if (! $enabled) {
@@ -1652,7 +1652,7 @@ class VerifyInstallationCommand extends Command
         if ($logFiles === []) {
             $this->reportInfo(
                 'silent-typo log scan skipped — no readable log files found at storage/logs/laravel*.log. '.
-                'If your app writes logs elsewhere, this check is a no-op (expected behaviour).'
+                'If your app writes logs elsewhere, this check is a no-op (expected behavior).'
             );
 
             return;
@@ -1700,7 +1700,7 @@ class VerifyInstallationCommand extends Command
             $matches
         ));
         $this->reportWarn(sprintf(
-            "silent prop-typo signals found in storage/logs: %d `WireKit [...]` ERROR/WARNING line(s). Examples:\n      %s\n      Fix each component prop value to match its allowed enum. See docs/strict-validation.md.",
+            "silent prop-typo signals found in storage/logs: %d `WireKit [...]` ERROR/WARNING line(s). Examples:\n      %s\n      Fix each component prop value to match its allowed enum. See https://docs.wirekit.app/strict-validation.",
             $matchCount,
             $exampleLines
         ));

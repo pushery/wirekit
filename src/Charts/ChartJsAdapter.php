@@ -126,7 +126,7 @@ final class ChartJsAdapter implements ChartAdapter
                 // `position: 'nearest'` anchors the tooltip at the data
                 // element nearest the cursor, with the default 2 px
                 // `caretPadding` between cursor and panel — matches the
-                // ApexCharts adapter's `followCursor: true` behaviour
+                // ApexCharts adapter's `followCursor: true` behavior
                 // so tooltips read uniformly across chart libraries.
                 'tooltip' => [
                     'enabled' => true,

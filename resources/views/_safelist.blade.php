@@ -6,7 +6,7 @@
     `Pushery\WireKit\VariantResolver::resolve($intent, $surface)` returns
     Tailwind class strings at PHP runtime — text/bg/border arbitrary classes
     pointing at WireKit's design tokens. Examples include the danger-fg text
-    colour, the success-hover background, the accent fill, and the soft tint
+    color, the success-hover background, the accent fill, and the soft tint
     color-mix expressions.
     Tailwind v4 only scans the file paths the developer declares via `@source`;
     the canonical integration declares `@source 'vendor/pushery/wirekit/resources/views/**/*.blade.php'`,
@@ -128,7 +128,7 @@
       bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
       bg-[var(--color-wk-bg-muted)]
 
-    (text colour classes shared with outline() above)
+    (text color classes shared with outline() above)
 
     ────────────────────────────────────────────────────────────────────────
     ghost() — six intents (transparent background)
@@ -139,7 +139,7 @@
       hover:bg-[var(--color-wk-bg-subtle)]
       shadow-[var(--shadow-wk-none)]
 
-    (text colour classes shared with outline() above)
+    (text color classes shared with outline() above)
 
     ────────────────────────────────────────────────────────────────────────
     link() — accent + danger only

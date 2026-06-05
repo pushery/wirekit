@@ -7,10 +7,15 @@
     // container component's '2xl' tier — most full-page layouts
     // already wrap the slot in a container with that cap, so adopting
     // the same default here unifies the two surfaces. Opt out with
-    // max="none" to preserve the pre-2.3.0 unbounded behaviour.
+    // max="none" to preserve the pre-2.3.0 unbounded behavior.
     // Reads from config to allow per-app overrides.
     'max' => null,
     'scope' => null,
+    // First-class id prop — pairs with the wirekit::skip-link helper.
+    // When set, the main element also becomes programmatically focusable
+    // (tabindex="-1") so the skip-link's fragment navigation moves
+    // keyboard focus INTO the landmark (browser default would only scroll).
+    'id' => null,
 ])
 
 @php
@@ -18,7 +23,7 @@
 
     // warn on unknown prop keys in dev.
     WireKit::warnUnknownProps('main', $attributes->getAttributes(), [
-        'container', 'padding', 'max', 'scope',
+        'container', 'padding', 'max', 'scope', 'id',
     ]);
 
     // Main — primary content area in app-shell layouts.
@@ -61,7 +66,10 @@
     };
 @endphp
 
-<main {{ $attributes->class([$classes, $paddingClasses]) }}>
+<main
+    @if($id !== null) id="{{ $id }}" tabindex="-1" @endif
+    {{ $attributes->class([$classes, $paddingClasses]) }}
+>
     @if($container || $maxClass !== null)
         <div class="{{ $maxClass ?? 'max-w-[var(--size-wk-container-2xl,96rem)]' }} mx-auto w-full">
             {{ $slot }}

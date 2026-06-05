@@ -18,7 +18,7 @@ use ReflectionUnionType;
  * walks that signature via Reflection and produces the same shape as
  * `PropsParser` returns for anonymous components, so downstream
  * callers (ExportJsonCommand, InstallCommand schema writer,
- * ShowComponentCommand) can route both flavours through a single code
+ * ShowComponentCommand) can route both flavors through a single code
  * path.
  *
  * Return shape per entry — mirrors `PropsParser::parseBlade()`:
@@ -193,7 +193,7 @@ final class ClassPropsExtractor
             // PHP's reflection emits `?T` only when the parameter was
             // declared with the leading-`?` shorthand; `T|null` reads
             // back as a union. Both shapes are semantically identical;
-            // we normalise to the `?T` form for prefix-nullable types.
+            // we normalize to the `?T` form for prefix-nullable types.
             return ($type->allowsNull() && $name !== 'null' && $name !== 'mixed')
                 ? '?'.$name
                 : $name;

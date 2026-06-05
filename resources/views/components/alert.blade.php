@@ -96,10 +96,14 @@
     @if($dismissible)
         {{-- No x-cloak: starts visible (shown: true), only hides on user dismiss.
              animateIn is silently skipped on dismissible alerts to avoid
-             double-x-data conflicts; wrap in <x-wirekit::reveal> instead. --}}
+             double-x-data conflicts; wrap in <x-wirekit::reveal> instead.
+             data-replayable opts the dismissed-then-empty preview into the docs
+             site's replay affordance so a reader can restore the alert without a
+             full page reload (inert in a developer app — no replay-button there). --}}
         x-data="{ shown: true }"
         x-show="shown"
         x-transition.opacity
+        data-replayable="true"
     @elseif($animateAttr)
         {!! $animateAttr !!}
     @endif

@@ -256,7 +256,7 @@ export default function wirekitResizableHandle() {
          *    between `panel` and `nextPanel` only; every other panel in
          *    the wrapper (including the flex:1 last panel) is left
          *    untouched. This matches every industry-standard splitter
-         *    UI (VSCode, split.js, react-resizable-panels, Figma).
+         *    UI.
          *
          *    Bounds:
          *        upper = min(panel.maxSize, pairSum − nextPanel.minSize)

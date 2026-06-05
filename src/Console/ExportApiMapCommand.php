@@ -380,7 +380,7 @@ class ExportApiMapCommand extends Command
             ],
             [
                 'id' => 'wirekitStatAnimate',
-                'description' => 'Counter-animation Alpine helper for `<x-wirekit::stat animate>`. Animates the bound `value` from 0 to a `data-target` over 1.2s ease-out cubic. Exposes `animating` + `progress` reactive state for description-fade-in / description-colour-count-up opt-ins.',
+                'description' => 'Counter-animation Alpine helper for `<x-wirekit::stat animate>`. Animates the bound `value` from 0 to a `data-target` over 1.2s ease-out cubic. Exposes `animating` + `progress` reactive state for description-fade-in / description-color-count-up opt-ins.',
                 'parameters' => [
                     ['name' => 'data-target', 'type' => 'string (numeric or numeric+suffix)', 'required' => true],
                 ],

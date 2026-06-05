@@ -1,6 +1,6 @@
 # WireKit `dist/` bundles
 
-WireKit ships five compiled artefacts. Pick the one that matches your
+WireKit ships five compiled artifacts. Pick the one that matches your
 runtime / loader story.
 
 | File | Format | Contents | Size (gzip ≈) | When to load |
@@ -31,7 +31,7 @@ where the developer doesn't control the Alpine pipeline. Typical use
 cases: preview iframes, embedded demo pages, third-party widgets, and
 any context where you need every WireKit Alpine-driven primitive
 (reading-progress, stat-animate, reveal, modal, drawer, ...) to
-initialise without the developer first bootstrapping Alpine themselves.
+initialize without the developer first bootstrapping Alpine themselves.
 
 ## Loading via `@wirekitScripts` Blade directive
 

@@ -1,33 +1,44 @@
 /*!
- * WireKit CSS — MIT License
+ * WireKit CSS v2.5.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
  * Design Tokens for WireKit UI Components.
  * Self-contained: no third-party CSS dependencies bundled, every token
- * lives inside a standard `:root {}` (light) and `.dark {}` (dark) block
- * so the file works as plain CSS in EVERY consumption path:
+ * lives inside a `:where(:root) {}` (light) and `:where(.dark) {}` (dark)
+ * block so the file works as plain CSS in EVERY consumption path:
  *
  *   1. `<link rel="stylesheet">` via the `@wirekitStyles` Blade directive
  *      (the documented "fastest path" — works because every token is
- *      inside `:root`, no Tailwind compiler needed).
+ *      inside `:where(:root)`, no Tailwind compiler needed).
  *
  *   2. `@import` from your `resources/css/app.css` (Tailwind v4 picks up
- *      the `:root` variables automatically; you also get the
- *      `@custom-variant dark` directive so `.dark:` Tailwind variants
- *      work alongside WireKit's `.dark` selector). Either path resolves.
+ *      the variables automatically; you also get the `@custom-variant
+ *      dark` directive so `.dark:` Tailwind variants work alongside
+ *      WireKit's `.dark` selector). Either path resolves.
  *
- * To customize tokens, override CSS variables in your app.css:
+ * To customize tokens, override CSS variables in your app.css with a
+ * plain `:root` (specificity 0,1,0) — no extra tricks needed:
  *
- *     @layer base {
- *         :root { --color-wk-accent: oklch(54.6% 0.245 262.881); }
- *     }
+ *     :root { --color-wk-accent: oklch(54.6% 0.245 262.881); }
+ *     .dark { --color-wk-accent: oklch(70%   0.20  262.881); }
+ *
+ * Why `:where(:root)` / `:where(.dark)` instead of bare `:root` / `.dark`:
+ * the `:where()` pseudo-class zeroes the specificity of its argument
+ * (0,0,0). Any developer-side `:root {}` override (specificity 0,1,0)
+ * therefore wins regardless of source order — including the very common
+ * `@wirekitStyles` setup where this stylesheet is injected via a
+ * separate `<link>` tag AFTER the developer's compiled `app.css`. Without
+ * the `:where()` wrap, equal-specificity (0,1,0) would let our later-loaded
+ * defaults silently overwrite the developer's overrides.
  *
  * History: prior versions used Tailwind v4's `@theme {}` compiler
  * directive, which browsers correctly skip as an unknown at-rule when
  * the file is loaded via `<link>`. That broke the `@wirekitStyles`
  * documented setup path — fixed in v1.3.0 by emitting `:root {}` /
- * `.dark {}` directly.
+ * `.dark {}` directly. The `:where()` wrap landed later to fix a
+ * second cascade-order bug where developer `:root` overrides loaded
+ * earlier than wirekit.css were silently defeated by our defaults.
  */
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -35,8 +46,12 @@
 /* ─── Light mode tokens ────────────────────────────────────── */
 /* Self-contained OKLCH values — no Tailwind var() dependencies.*/
 /* Verified against Tailwind CSS v4 source. WCAG ratios intact. */
+/* `:where(:root)` wraps the selector to specificity 0 so any   */
+/* developer-side `:root {}` override (specificity 0,1,0) wins  */
+/* regardless of source order. See top-of-file comment for the  */
+/* full cascade rationale.                                      */
 
-:root {
+:where(:root) {
     /* ─── Accent Colors ─── */
     --color-wk-accent: oklch(20.5% 0 0);
     --color-wk-accent-hover: oklch(26.9% 0 0);
@@ -113,6 +128,11 @@
        text-subtle/text-placeholder appear on white only and stay at neutral-500
        for visual hierarchy (4.74:1 on white passes AA). */
     --color-wk-text: oklch(14.5% 0 0); /* ~19:1 on white */
+    /* Inline <code> styling — themeable. Defaults to body text on the muted
+       surface so non-Aurora themes are unchanged. A preset can override these
+       to give inline code a distinct color (e.g. Aurora's brand magenta). */
+    --color-wk-code: var(--color-wk-text);
+    --color-wk-code-bg: var(--color-wk-bg-muted);
     --color-wk-text-muted: oklch(47% 0 0);
     --color-wk-text-subtle: oklch(55.6% 0 0);
     --color-wk-text-placeholder: oklch(55.6% 0 0);
@@ -122,9 +142,9 @@
     /* Calibrated against the soft-tinted variant backgrounds (12% color-mix
        of accent / success / warning / danger): a heavier neutral border
        reads as the dominant tone next to those tints and makes the default
-       theme feel grayer than its colourful tokens. Sitting at ~91-92%
+       theme feel grayer than its colorful tokens. Sitting at ~91-92%
        lightness keeps the line visible without competing with the variant
-       palette — matches the band shadcn / Linear / Vercel etc. occupy. */
+       palette — matches the band subtle decorative borders typically occupy. */
     --color-wk-border: oklch(91.4% 0 0);
     --color-wk-border-hover: oklch(80% 0 0);
     --color-wk-border-subtle: oklch(94% 0 0);
@@ -151,6 +171,10 @@
     --shadow-wk-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
     --shadow-wk-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.10), 0 4px 10px -2px rgba(0, 0, 0, 0.06);
     --shadow-wk-none: 0 0 0 0 transparent;
+    /* Badge depth — the inset currentColor ring + faint drop that lifts a badge
+       off the surface. A theme can flatten the badge to a borderless tinted
+       chip by setting this to `none` (paired with --border-wk-badge-width: 0). */
+    --shadow-wk-badge: 0 1px 1px color-mix(in srgb, var(--color-wk-text) 4%, transparent), inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
 
     /* ─── Typography ─── */
     --font-wk-sans: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
@@ -200,6 +224,10 @@
 
     /* ─── Border Width ─── */
     --border-wk-width: 1px;
+    /* Badge border width — its own token so a theme can drop the badge outline
+       (0) without affecting any other bordered surface. Defaults to the global
+       border width. */
+    --border-wk-badge-width: var(--border-wk-width);
 
     /* ─── State Opacity ─── */
     --opacity-wk-hover: 0.8;
@@ -316,8 +344,9 @@
 }
 
 /* ─── Dark mode overrides ──────────────────────────────────── */
+/* `:where(.dark)` — specificity 0; see top-of-file rationale.  */
 
-.dark {
+:where(.dark) {
     /* Accent — inverted */
     --color-wk-accent: oklch(98.5% 0 0);
     --color-wk-accent-hover: oklch(92.2% 0 0);
@@ -366,6 +395,8 @@
     /* Neutral Text — subtle/placeholder use neutral-400 on neutral-950 for ~7.82:1.
        neutral-500 only reaches 4.18:1 on neutral-950 — below AA. */
     --color-wk-text: oklch(98.5% 0 0);  /* ~18.4:1 on neutral-950 */
+    --color-wk-code: var(--color-wk-text);
+    --color-wk-code-bg: var(--color-wk-bg-muted);
     --color-wk-text-muted: oklch(70.8% 0 0); /* ~7.82:1 */
     --color-wk-text-subtle: oklch(70.8% 0 0);
     --color-wk-text-placeholder: oklch(70.8% 0 0);
@@ -441,20 +472,31 @@
 }
 
 /* ─── Hero / CTA muted-text-on-dark contrast fix ───────────── */
-/* When a hero or cta runs variant="dark" / "accent", its background is
-   near-black (bg-inverse / accent), but a nested <x-wirekit::text
-   variant="muted"> reads the LIGHT-theme --color-wk-text-muted (a dark
-   gray) — invisible at ~1.5:1 on the dark surface.
-   Scope --color-wk-text-muted to a translucent mix of the variant's OWN
-   foreground so it auto-adapts to any theme AND to either variant:
-   dark → text-inverse, accent → accent-fg. :where() keeps specificity 0
-   so a developer's explicit override still wins. */
+/* When a hero or cta runs variant="dark" / "accent", a nested
+   <x-wirekit::text variant="muted"> would otherwise read a --color-wk-text-muted
+   that's wrong for the variant's surface. Scope it to a translucent mix of the
+   variant's OWN foreground so it stays legible on any theme.
+   NOTE: variant="dark" now also carries the bare `dark` class (a full dark token
+   context — see hero/cta blade), so its foreground is --color-wk-text (light
+   under `.dark`), NOT --color-wk-text-inverse (which flips to near-black under
+   `.dark` and would make muted text invisible). accent has no `.dark`, so it
+   mixes accent-fg. :where() keeps specificity 0 so a developer override wins. */
 :where(.wk-hero, .wk-cta)[data-variant="dark"] {
-    --color-wk-text-muted: color-mix(in oklab, var(--color-wk-text-inverse) 72%, transparent);
+    --color-wk-text-muted: color-mix(in oklab, var(--color-wk-text) 72%, transparent);
 }
 
 :where(.wk-hero, .wk-cta)[data-variant="accent"] {
-    --color-wk-text-muted: color-mix(in oklab, var(--color-wk-accent-fg) 72%, transparent);
+    /* Muted text on a colored accent surface == the full accent-fg. On a
+       medium-lightness accent (Aurora L=0.55, plus Soft / Material / Cupertino)
+       the accent-fg <-> accent contrast headroom is only ~4.8-5.3:1, so ANY
+       transparency mix drops muted text below the 4.5:1 WCAG AA floor — the
+       previous 72% mix landed Aurora/Cupertino at ~3.5:1. Colored surfaces
+       don't have AA-safe muting room, so muted == foreground here (guaranteed
+       AA: identical to the accent-fg-on-accent pair ThemePresetContrastTest
+       already verifies). The variant="dark" rule above still mutes for real —
+       its --color-wk-text base has the contrast headroom that a colored
+       accent lacks. */
+    --color-wk-text-muted: var(--color-wk-accent-fg);
 }
 
 /* ─── Range-slider thumb sizing + touch handling ───────────── */
@@ -552,7 +594,7 @@
 /* Animated placeholder for content that is being loaded.       */
 /* Respects prefers-reduced-motion (falls back to solid color). */
 /*                                                              */
-/* PERF optimisations:                                          */
+/* PERF optimizations:                                          */
 /*   - `will-change: transform` on the ::after hints the        */
 /*     compositor to promote the layer eagerly with optimal     */
 /*     paint path                                                */
@@ -606,6 +648,79 @@
 @keyframes wk-skeleton-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: var(--reading-skeleton-pulse-opacity, 0.5); }
+}
+
+/* ─── Avatar group (stacked / overlapping) ─────────────────── */
+/* Applied by <x-wirekit::avatar.group>. Overlaps its children  */
+/* with a logical negative margin (RTL-safe) and rings each one */
+/* in the surface bg so the stack reads as distinct discs.      */
+/* Later children stack above earlier ones. The ring uses       */
+/* --color-wk-bg, which already adapts to light / dark.         */
+.wk-avatar-group {
+    display: inline-flex;
+    align-items: center;
+}
+
+.wk-avatar-group > * {
+    box-shadow: 0 0 0 2px var(--color-wk-bg);
+    position: relative;
+}
+
+.wk-avatar-group > * + * {
+    margin-inline-start: -0.6rem;
+}
+
+/* ─── Button group (joined / attached) ─────────────────────── */
+/* Applied by <x-wirekit::button.group>. Joins its children into a */
+/* single segmented control: inner corner radii are squared off,   */
+/* the shared border seam is collapsed to a single line via a -1px  */
+/* logical margin (RTL-safe), and the hovered / focused child rises */
+/* above the seam so its full ring is visible. Works for buttons    */
+/* AND an input + button mix (it targets direct children).          */
+.wk-button-group {
+    display: inline-flex;
+}
+
+.wk-button-group[data-orientation="vertical"] {
+    flex-direction: column;
+}
+
+.wk-button-group > *:hover,
+.wk-button-group > *:focus-visible,
+.wk-button-group > *:focus-within {
+    z-index: 1;
+}
+
+/* Horizontal (default): collapse the inline seam + square inner edges. */
+.wk-button-group:not([data-orientation="vertical"]) > :not(:first-child) {
+    margin-inline-start: -1px;
+}
+.wk-button-group:not([data-orientation="vertical"]) > :first-child:not(:last-child) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+}
+.wk-button-group:not([data-orientation="vertical"]) > :last-child:not(:first-child) {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+}
+.wk-button-group:not([data-orientation="vertical"]) > :not(:first-child):not(:last-child) {
+    border-radius: 0;
+}
+
+/* Vertical: collapse the block seam + square inner edges. */
+.wk-button-group[data-orientation="vertical"] > :not(:first-child) {
+    margin-block-start: -1px;
+}
+.wk-button-group[data-orientation="vertical"] > :first-child:not(:last-child) {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+}
+.wk-button-group[data-orientation="vertical"] > :last-child:not(:first-child) {
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+}
+.wk-button-group[data-orientation="vertical"] > :not(:first-child):not(:last-child) {
+    border-radius: 0;
 }
 
 /* ─── Progress bar indeterminate ───────────────────────────── */
@@ -814,7 +929,7 @@
     /* of 16rem keeps unstyled vertical wrappers rendering visibly.    */
     /* Developers needing a different baseline override via inline       */
     /* style="min-height: …" or a parent container query (CSS specificity */
-    /* favours the inline style + the developer's own selector).        */
+    /* favors the inline style + the developer's own selector).        */
     min-height: 16rem;
 }
 
@@ -861,7 +976,7 @@
 }
 
 /* Last panel always absorbs whatever space the others leave —   */
-/* but it still honours its declared min-size so content cannot  */
+/* but it still honors its declared min-size so content cannot  */
 /* be squeezed into a column narrower than `minSize%` of the     */
 /* wrapper. Without this floor a sibling panel could grow until  */
 /* the last panel collapsed to its content's intrinsic minimum,  */
@@ -1096,7 +1211,7 @@
     top: -9999px;
 }
 
-/* Alpine.js x-cloak — hide elements until Alpine initialises and removes  */
+/* Alpine.js x-cloak — hide elements until Alpine initializes and removes  */
 /* the attribute. Required for components using x-cloak (tour steps, etc.) */
 /* to prevent a visible flash of unstyled content before hydration.        */
 [x-cloak] {
@@ -1106,7 +1221,8 @@
 /* Image Compare component tokens. Both are optional overrides — the Blade */
 /* template uses var(..., <fallback>) so the component keeps working even  */
 /* when a developer ships an older CSS file than the current template.      */
-:root {
+/* `:where(:root)` — specificity 0; see top-of-file cascade rationale.      */
+:where(:root) {
     /* Width (horizontal) or height (vertical) of the reveal divider line. */
     --wk-image-compare-divider-size: 2px;
     /* Handle diameter — overridable for smaller/larger thumb targets.     */
@@ -1147,7 +1263,8 @@
 /* component-base rule (e.g. `.wk-reading-spine.wk-reading-spine`) so  */
 /* developer typography wrappers (.prose / .docs-prose) never beat us   */
 /* without using !important. Same pattern as wk-list.                  */
-:root {
+/* `:where(:root)` — specificity 0; see top-of-file cascade rationale. */
+:where(:root) {
     /* reading-progress (bar) */
     --reading-progress-height-sm: 2px;
     --reading-progress-height-md: 3px;
@@ -1222,7 +1339,7 @@
     --reading-minimap-stripe-gap: 1px;
     --reading-minimap-color-idle: var(--reading-spine-color-idle);
     --reading-minimap-color-active: var(--reading-spine-color-active);
-    /* Rendered-mode (PhpStorm-style canvas) per-element-type colours. Each
+    /* Rendered-mode (code-editor-style canvas) per-element-type colors. Each
        category is alpha-modulated so the canvas reads as a translucent
        texture; override these tokens at :root to retheme the minimap
        without touching JS. */
@@ -1250,9 +1367,9 @@
     --reading-minimap-block-radius: 2px;
     --reading-minimap-block-gap: 2px;
 
-    /* reading-minimap rendered-mode — PhpStorm-style canvas minimap.
+    /* reading-minimap rendered-mode — code-editor-style canvas minimap.
        Opt-in via `mode="rendered"`. Default mode is `stripes` so
-       existing developers see zero behavioural drift. */
+       existing developers see zero behavioral drift. */
     --reading-minimap-rendered-placeholder-bg: var(--color-wk-bg-elevated);
     --reading-minimap-rendered-radius: var(--radius-wk-sm);
 
@@ -1283,7 +1400,7 @@
        backdrop-filter is unsupported or attenuated). Developers wanting
        the frosted look can override this token to a translucent value;
        the `backdrop-filter: blur(6px)` rule on .wk-reading-toc stays as
-       defence-in-depth for that case. */
+       defense-in-depth for that case. */
     --reading-toc-bg: var(--color-wk-bg-elevated);
     --reading-toc-color-idle: var(--reading-spine-color-idle);
     --reading-toc-color-active: var(--reading-spine-color-active);
@@ -1454,7 +1571,7 @@
 .wk-reading-spine .wk-reading-spine__link[aria-current="location"] .wk-reading-spine__tick {
     background-color: var(--reading-spine-color-active);
     /* Active tick gets a 1.5x scale-x so the change reads at a glance.
-       Combined with the colour shift + bold label below, the active row
+       Combined with the color shift + bold label below, the active row
        is unmistakeable against the dim idle stack. */
     transform: scaleX(1.5);
     transform-origin: left center;
@@ -1542,7 +1659,7 @@
    item's natural height (Blade emits `height: <heightFraction*100>%`
    inline). Adds a softer rounded-corner + subtle inset so the
    rectangles read as content placeholders rather than hard rules.
-   Active state stays the same colour token but with extra contrast
+   Active state stays the same color token but with extra contrast
    so it still pops against the surrounding muted blocks. */
 .wk-reading-minimap[data-item-style="block"] .wk-reading-minimap__stripe {
     background: var(--reading-minimap-block-bg, color-mix(in srgb, var(--reading-minimap-color-idle) 25%, transparent));
@@ -1632,11 +1749,11 @@
     z-index: 0;
 }
 .wk-reading-minimap__rendered-canvas {
-    /* PhpStorm / VS Code-style minimap canvas. The Alpine controller
+    /* code-editor-style minimap canvas. The Alpine controller
        paints abstract content-texture rectangles onto this canvas at
        DPR-aware resolution, one per rendered text line. Element types
        (heading / prose / code / default) get distinct alpha-modulated
-       colours so structural anchors pop against prose density. No
+       colors so structural anchors pop against prose density. No
        transform-scale needed — the canvas already draws at minimap
        coordinates. */
     position: absolute;
@@ -1740,7 +1857,7 @@
 
 /* reading-toc — horizontal sticky-strip TOC for marketing landing pages. */
 /* Sibling to reading-spine but flat: a row of <a> links across the top   */
-/* (or bottom) of the article container. Sticky positioning honours the   */
+/* (or bottom) of the article container. Sticky positioning honors the   */
 /* --reading-toc-offset inline style set by Blade so developers can clear  */
 /* their own fixed nav above the strip.                                   */
 .wk-reading-toc {
@@ -1788,10 +1905,10 @@
        inspecting the strip. We now keep the numbers symmetric and rely
        on the link's own `line-height: 1` (set in `.wk-reading-toc__item
        > a.wk-reading-toc__link`) to give the visible cap-height-to-
-       descender column a clean optical centre inside the padding box.
+       descender column a clean optical center inside the padding box.
 
        Inline padding 0.25 rem on each side gives the strip a hairline
-       of "list-edge" indent. An earlier defence-in-depth `!important`
+       of "list-edge" indent. An earlier defense-in-depth `!important`
        on these two declarations was removed in v2.0.0; developers
        running a typography prose-wrapper (e.g. `body.{prose-class}`)
        should carve out `[class*="wk-"]` from their `ol/ul/li` rules so
@@ -1863,7 +1980,7 @@
        `!important` is necessary here: developer prose rules can win on
        specificity (e.g. `.prose a` is more specific than
        `.wk-reading-toc__link` and reaches inside our component's class
-       boundary). The active state below relies on font-weight + colour
+       boundary). The active state below relies on font-weight + color
        only — never on underline — so dropping underlines globally on
        this surface preserves the active-vs-idle contrast cleanly. */
     text-decoration: none !important;
@@ -1877,9 +1994,9 @@
 .wk-reading-toc__link[data-active="true"],
 .wk-reading-toc__link[aria-current="location"] {
     color: var(--reading-toc-color-active);
-    /* Active state = bold weight + accent colour only. The idle state
+    /* Active state = bold weight + accent color only. The idle state
        ships with `text-decoration: none !important` above, so the active
-       state can rely on font-weight + colour alone for differentiation
+       state can rely on font-weight + color alone for differentiation
        against the rest of the row — no underline shift, which would
        cause a sub-pixel reflow as the reader scrolls between sections. */
     font-weight: 700;
@@ -1907,7 +2024,7 @@
    utility on the brand's class list loses on specificity to
    `.{prose-class} a` (specificity (0,1,0) vs (0,1,1)). The
    doubled-class `.wk-brand.wk-brand` selector wins on specificity
-   (0,2,0) without resorting to `!important`. Same defence
+   (0,2,0) without resorting to `!important`. Same defense
    strategy as `.wk-reading-toc__link[text-decoration: none !important]`
    above — but with the more elegant doubled-class shape that
    doesn't escalate the cascade to !important. */
@@ -1979,7 +2096,7 @@
         animation-delay: 0ms !important;
     }
     /* Reading-* family: every transition (bar fill scaleX, dot stroke-     */
-    /* dashoffset, spine width / label opacity / tick colour-fade,         */
+    /* dashoffset, spine width / label opacity / tick color-fade,         */
     /* bookmark pill fade-in) collapses to 0.01ms so users with             */
     /* prefers-reduced-motion see an instant state change, no motion.      */
     /* Bar progress and dot stroke still UPDATE on scroll — only the inter-*/

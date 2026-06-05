@@ -37,7 +37,7 @@
     //
     // Delegates to <x-wirekit-chart type="mixed"> which both adapters'
     // supportedTypes() include. Per-dataset type fields pass through the
-    // normalizer untouched (existing array_diff_key passthrough behaviour
+    // normalizer untouched (existing array_diff_key passthrough behavior
     // in both ChartJsAdapter::normalizeData and ApexChartsAdapter::normalizeData).
 
     // Validate every dataset has a sensible type entry — empty type falls

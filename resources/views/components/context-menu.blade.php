@@ -24,7 +24,7 @@
     // min-w-48: 12rem floor so single-icon items still feel like a menu, not a tooltip.
     // max-w-[calc(100vw-1rem)] + w-max: panel grows to fit longest item (combined with
     // whitespace-nowrap on items) but never overflows the viewport. Without w-max the
-    // shrink-to-fit behaviour of fixed elements would cap at the longest unbreakable
+    // shrink-to-fit behavior of fixed elements would cap at the longest unbreakable
     // run rather than the longest line.
     $panelClasses = WireKit::resolveClasses('context-menu', 'panel', implode(' ', [
         'fixed z-[var(--z-wk-dropdown)]',
@@ -68,7 +68,7 @@
          working transparently. `click.outside` lives on the panel (not the
          wrapper) so it fires correctly in both teleport modes — clicking
          anywhere that isn't the panel (including the trigger) closes the
-         menu, which is the standard menu behaviour. --}}
+         menu, which is the standard menu behavior. --}}
     @if($teleport)
     <template x-teleport="body">
     @endif

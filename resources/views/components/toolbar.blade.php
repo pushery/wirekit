@@ -93,7 +93,7 @@
     @elseif(!$slot->isEmpty())
         {{-- Default-slot path: content passed WITHOUT the named leading/
              filters/trailing slots. This wrapper must mirror the toolbar's
-             own responsive flex behaviour (`flex-wrap justify-between
+             own responsive flex behavior (`flex-wrap justify-between
              w-full`) so default-slot content still wraps to a second row on
              a narrow viewport instead of cramming on one line — the
              named-slot path already wraps via the root. Without `flex-wrap`

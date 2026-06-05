@@ -19,7 +19,7 @@ use Pushery\WireKit\WireKit;
  * vendor:publish --tag=wirekit-views (which would copy ~109 files).
  *
  * `--base` defaults:
- *   1. Explicit --base= wins (today's behaviour).
+ *   1. Explicit --base= wins (today's behavior).
  *   2. Self-derivation: if `name` IS itself a valid component (e.g.
  *      `wirekit:component button`), use it. Most common case.
  *   3. Right-segment derivation: `my-button` → `button`,
@@ -43,7 +43,7 @@ class ComponentMakeCommand extends Command
         {name : Component slug for the new file (kebab-case)}
         {--base= : Source component to copy from. Defaults to the rightmost dash-segment of {name} (e.g. "my-button" → "button"). Falls back to a Levenshtein suggestion when no real component matches.}
         {--force : Overwrite an existing custom component}
-        {--interactive : Prompt for --base from the component catalogue when derivation has no clear match (defaults to on in a TTY).}';
+        {--interactive : Prompt for --base from the component catalog when derivation has no clear match (defaults to on in a TTY).}';
 
     protected $description = 'Scaffold a custom Blade component derived from a WireKit base';
 
@@ -183,7 +183,7 @@ class ComponentMakeCommand extends Command
 
     /**
      * Component names suitable for `--base` derivation: ComponentRegistry's
-     * top-level catalogue. Sub-components like `card.header` are reachable
+     * top-level catalog. Sub-components like `card.header` are reachable
      * via dotted names but are not common base templates.
      *
      * @return list<string>

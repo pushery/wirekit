@@ -17,7 +17,7 @@
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
 
-    // Normalise the initial value into an array of strings. Accepts a real
+    // Normalize the initial value into an array of strings. Accepts a real
     // array (e.g. `:value="['Laravel', 'Livewire']"`) or a comma-separated
     // string (e.g. `value="Laravel,Livewire"`); both shapes appear in
     // existing developer codebases.

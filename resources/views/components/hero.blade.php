@@ -88,9 +88,20 @@
         'px-[var(--padding-wk-x-lg)]',
     ]), $scope);
 
+    // `dark` establishes a real dark TOKEN CONTEXT (the bare `dark` class), not
+    // just a dark band: every --color-wk-* token resolves to its `.dark` value
+    // for the whole subtree, so a token-surfaced child (<x-wirekit::code-block>,
+    // card, input, table) renders a DARK surface instead of a light one — fixing
+    // the white-on-white bug class (a code-block in a dark hero). Painting from
+    // the regular --color-wk-bg / --color-wk-text (which are dark / light under
+    // `.dark`) keeps the band identical in light mode AND keeps the hero
+    // genuinely dark in dark mode — the old `bg-inverse` flipped the band to
+    // near-white in dark mode. `accent` stays a colored surface (no `.dark`,
+    // it isn't dark); its token-surfaced children read the page mode, which is
+    // fine because the accent surface is colored, not near-white.
     $variantClasses = match ($variant) {
         'default' => 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
-        'dark' => 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]',
+        'dark' => 'dark bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
         'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
         'muted' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
         default => WireKit::validateProp('hero', 'variant', $variant, ['default', 'dark', 'accent', 'muted']),

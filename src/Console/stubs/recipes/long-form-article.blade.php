@@ -1,5 +1,5 @@
 {{-- Recipe: Long-Form Article — readable column with metadata header + prose body.
-     Full reference: https://docs.wirekit.app/recipes/long-form-article --}}
+     Full reference: https://docs.wirekit.app/blueprints/recipes/long-form-article --}}
 <div>
     <x-wirekit::container max="md">
         <x-wirekit::reading-meta
@@ -16,7 +16,7 @@
             <p>Consider a card with a header, body, and footer. The declarative shape uses three composable sub-components; the imperative shape requires you to know which class names to attach to which DOM elements.</p>
 
             <h2>The tradeoff</h2>
-            <p>Declarative components are more verbose at the call site, but they're also more legible to readers and easier to refactor. Most teams find the tradeoff favours legibility once a codebase grows past a few thousand lines.</p>
+            <p>Declarative components are more verbose at the call site, but they're also more legible to readers and easier to refactor. Most teams find the tradeoff favors legibility once a codebase grows past a few thousand lines.</p>
         </article>
     </x-wirekit::container>
 </div>

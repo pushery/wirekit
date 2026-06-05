@@ -209,6 +209,16 @@ export default function wirekitChartJs(config) {
                     },
                 }]);
 
+                // Honor prefers-reduced-motion: switch Chart.js entrance +
+                // update animations off entirely when the OS preference is set,
+                // so bars/lines don't grow/sweep for motion-sensitive users.
+                // Mirrors the chart-apex adapter's reduced-motion handling.
+                if (this._reducedMotion()) {
+                    rawConfig.options = rawConfig.options || {};
+                    rawConfig.options.animation = false;
+                    rawConfig.options.animations = false;
+                }
+
                 this.chart = new Chart(ctx, rawConfig);
                 getRegistry().add(this.chart);
 
@@ -385,14 +395,23 @@ export default function wirekitChartJs(config) {
         },
 
         /**
-         * Theme-colour readers — thin wrappers around the shared util in
+         * Theme-color readers — thin wrappers around the shared util in
          * resources/js/utils/chart-theme-colors.js — single source of truth.
          * Both wirekitChartJs and wirekitApexChart consume the same helpers
-         * so dataset palettes, fallbacks, and probe behaviour stay in lockstep.
+         * so dataset palettes, fallbacks, and probe behavior stay in lockstep.
          */
         _resolveThemeColors(style) { return resolveThemeColors(style); },
         _palette(colors)           { return palette(colors); },
         _withOpacity(color, op)    { return withOpacity(color, op); },
+
+        // Read the OS-level prefers-reduced-motion preference. Mirrors the
+        // chart-apex adapter; consulted once at new Chart() time to switch
+        // Chart.js animations off for motion-sensitive users.
+        _reducedMotion() {
+            return typeof window !== 'undefined'
+                && window.matchMedia
+                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        },
 
         /**
          * Apply theme colors to datasets that don't have manual colors set.
@@ -409,7 +428,7 @@ export default function wirekitChartJs(config) {
 
                 if (!dataset.backgroundColor) {
                     if (['pie', 'doughnut'].includes(config.type)) {
-                        // Pie / doughnut: each slice is a flat colour wedge.
+                        // Pie / doughnut: each slice is a flat color wedge.
                         // Solid (no opacity) keeps adjacent wedges crisply
                         // distinguishable; pie charts have no gridlines for
                         // transparency to reveal.
@@ -522,7 +541,7 @@ export default function wirekitChartJs(config) {
             // (separate from `scale.grid` which is the inner tick lines). If
             // we only update grid.color the axis line stays stuck on whatever
             // was resolved at construction time — this is one of the "still
-            // looks stale after dark-mode toggle" artefacts.
+            // looks stale after dark-mode toggle" artifacts.
             Object.keys(chart.scales || {}).forEach((scaleId) => {
                 if (!options.scales) options.scales = {};
                 if (!options.scales[scaleId]) options.scales[scaleId] = {};

@@ -1,11 +1,11 @@
 /**
- * sanitise-minimap-html — strip dangerous HTML before injecting cloned
+ * sanitize-minimap-html — strip dangerous HTML before injecting cloned
  * content into the reading-minimap's rendered-mode iframe.
  *
  * Threat model:
  *
  *  The cloned source HTML may contain user-generated content the
- *  developer hasn't sanitised (CMS posts, comment threads, markdown-
+ *  developer hasn't sanitized (CMS posts, comment threads, markdown-
  *  rendered articles). Cloning into a srcdoc iframe carries that HTML
  *  into the iframe context — and `srcdoc` iframes inherit the parent's
  *  same-origin context, so any script that runs inside has full DOM
@@ -38,18 +38,18 @@
  *  via explicit <link rel="stylesheet"> injection of the parent's
  *  same-origin stylesheets (see reading-minimap.js _buildIframe()).
  *
- *  Why this is NOT a general-purpose sanitiser:
+ *  Why this is NOT a general-purpose sanitizer:
  *  It's tuned for the specific use case of "scaled-down decorative
  *  page-preview". The resulting HTML is rendered inside an iframe with
  *  `aria-hidden="true"` + `tabindex="-1"` + `pointer-events: none` on
  *  the iframe body — interaction lives in the wrapping minimap
  *  element, not in the iframe content. This means we can be MORE
- *  aggressive than a general sanitiser would be (e.g. we strip ALL
+ *  aggressive than a general sanitizer would be (e.g. we strip ALL
  *  form-related elements because the minimap never accepts input).
  *
- *  For general-purpose HTML sanitisation in WireKit, use the developer
- *  Laravel app's server-side sanitisation (e.g. `Str::stripTags`,
- *  `HTMLPurifier`). This module is a defence-in-depth for the
+ *  For general-purpose HTML sanitization in WireKit, use the developer
+ *  Laravel app's server-side sanitization (e.g. `Str::stripTags`,
+ *  `HTMLPurifier`). This module is a defense-in-depth for the
  *  minimap-rendered render path specifically.
  */
 
@@ -83,10 +83,10 @@ const STYLE_TAG_RE = /<style[\s\S]*?<\/style>/gi;
 
 // `style="…"` inline attributes ARE preserved — they carry layout that the
 // minimap needs to visually represent the source (CSS variable references,
-// inline colour overrides, position cues). The risk of CSS @import inside an
+// inline color overrides, position cues). The risk of CSS @import inside an
 // inline `style` attribute is zero (the syntax doesn't apply).
 
-// srcdoc on nested iframes — defence in depth (the NESTED_EMBED_RE above
+// srcdoc on nested iframes — defense in depth (the NESTED_EMBED_RE above
 // already strips the whole iframe, but if a future change preserves them
 // for some niche use case, this catches the srcdoc payload separately).
 const NESTED_SRCDOC_RE = /\s+srcdoc\s*=\s*(?:"[^"]*"|'[^']*')/gi;
@@ -101,7 +101,7 @@ const FORMACTION_RE = /\s+formaction\s*=\s*(?:"[^"]*"|'[^']*')/gi;
  * Returns a new string; never mutates the input. Idempotent — calling
  * twice on the same input produces the same output.
  */
-export function sanitiseMinimapHtml(html) {
+export function sanitizeMinimapHtml(html) {
     if (typeof html !== 'string' || html.length === 0) return '';
 
     let out = html;
@@ -124,9 +124,9 @@ export function sanitiseMinimapHtml(html) {
     // around `on*=…` doesn't false-positive inside a `href="javascript:…"`
     // value that's about to be stripped).
     out = out.replace(ON_HANDLER_RE, '');
-    // srcdoc on any tag (defence-in-depth).
+    // srcdoc on any tag (defense-in-depth).
     out = out.replace(NESTED_SRCDOC_RE, '');
-    // formaction attributes (credential-pivot defence).
+    // formaction attributes (credential-pivot defense).
     out = out.replace(FORMACTION_RE, '');
 
     return out;
