@@ -34,12 +34,12 @@
     $allowedBases = ['fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right',
                      'scale', 'zoom', 'flip', 'rotate', 'bounce', 'spring'];
 
-    // accept the Tailwind UI naming
-    // convention `fade-up` / `fade-down` / `fade-left` / `fade-right`
-    // as aliases for the equivalent `slide-*-in` (which combines fade
-    // + slide motion). Same visual, different vocabulary — designers
-    // copying from Tailwind UI / Framer Motion / Headless UI patterns
-    // get the same animation without having to learn our suffix scheme.
+    // accept the `fade-up` / `fade-down` / `fade-left` / `fade-right`
+    // shorthand naming convention as aliases for the equivalent
+    // `slide-*-in` (which combines fade + slide motion). Same visual,
+    // different vocabulary — designers who reach for the `fade-*`
+    // shorthand get the same animation without having to learn our
+    // suffix scheme.
     $presetAliases = [
         'fade-up'    => 'slide-up-in',
         'fade-down'  => 'slide-down-in',
@@ -48,7 +48,7 @@
     ];
     $preset = $presetAliases[$preset] ?? $preset;
 
-    // Normalise: 'fade' → 'fade-in' (default direction)
+    // Normalize: 'fade' → 'fade-in' (default direction)
     if (in_array($preset, $allowedBases, true)) {
         $preset = $preset.'-in';
     }

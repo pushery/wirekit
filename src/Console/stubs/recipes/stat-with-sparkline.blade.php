@@ -1,5 +1,5 @@
-{{-- Recipe: Stat with Sparkline — KPI tile with inline trend visualisation.
-     Full reference: https://docs.wirekit.app/recipes/stat-with-sparkline --}}
+{{-- Recipe: Stat with Sparkline — KPI tile with inline trend visualization.
+     Full reference: https://docs.wirekit.app/blueprints/recipes/stat-with-sparkline --}}
 <div>
     <x-wirekit::row>
         <x-wirekit::stat

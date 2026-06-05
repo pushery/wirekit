@@ -46,7 +46,7 @@
     // 'primary' and 'info' both tint with --color-wk-accent — they are visual
     // synonyms here, distinguished only by the prop value the developer passed.
     // Non-neutral intents tint BOTH the background AND the border (mirrors the
-    // callout palette) so a system message reads as a coloured callout rather
+    // callout palette) so a system message reads as a colored callout rather
     // than a tinted bubble inside a generic gray frame.
     $bubbleClasses = match (true) {
         $intentValue !== 'neutral' => match ($intentValue) {
@@ -107,7 +107,7 @@
             @endif
         </span>
 
-        {{-- Body bubble — border colour comes from $bubbleClasses (intent-tinted for
+        {{-- Body bubble — border color comes from $bubbleClasses (intent-tinted for
              non-neutral, neutral border for plain chat bubbles). --}}
         <div class="{{ $bubbleClasses }} rounded-[var(--radius-wk-lg)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)]">
             {{ $slot }}

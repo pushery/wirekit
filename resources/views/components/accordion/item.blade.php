@@ -4,6 +4,17 @@
     'scope' => null,
 ])
 
+{{-- Read the parent accordion's `variant` + `size` so item-level chrome (the
+     `separated` card outline) and density (`lg` padding) follow the container's
+     choice. @aware is Laravel's canonical parent→child prop bridge; the defaults
+     mirror the same config keys the parent reads, so a global config override of
+     the accordion variant/size stays consistent between container and items
+     even when the developer doesn't pass the prop on the tag. --}}
+@aware([
+    'variant' => config('wirekit.components.accordion.variant', 'bordered'),
+    'size' => config('wirekit.components.accordion.size', 'md'),
+])
+
 @php
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
@@ -14,13 +25,37 @@
     $buttonId = $itemId . '-button';
     $panelId = $itemId . '-panel';
 
+    // Density. 'lg' bumps trigger/panel padding one step and the trigger text
+    // size; 'md' is the original padding (back-compat). NOTE: full literal class
+    // strings (not interpolated) so Tailwind's text scanner compiles them — a
+    // built class like "px-[var(--padding-wk-x-lg)]" must appear verbatim in the
+    // file (the dynamic-class-composition pitfall from the drift-audit system).
+    $itemSize = $size === 'lg' ? 'lg' : 'md';
+    $buttonPad = $itemSize === 'lg'
+        ? 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-lg)] text-[length:var(--text-wk-lg)]'
+        : 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)]';
+    $panelPad = $itemSize === 'lg'
+        ? 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-lg)]'
+        : 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]';
+
+    // In `separated` mode each item is its own card (the container draws no
+    // border/bg), so the item carries the chrome. bordered/flush leave this
+    // empty — the container's border + row dividers handle separation.
+    $itemVariant = in_array($variant, ['bordered', 'flush', 'separated'], true) ? $variant : 'bordered';
+    $wrapperClasses = $itemVariant === 'separated' ? implode(' ', [
+        'border-[length:var(--border-wk-width)]',
+        'border-[var(--color-wk-border)]',
+        'rounded-[var(--radius-wk-lg)]',
+        'overflow-hidden',
+        'bg-[var(--color-wk-bg-elevated)]',
+    ]) : '';
+
     // Trigger button — full-width, left-aligned, clickable row that toggles
     // the item and swaps the chevron direction based on open state.
     $buttonClasses = WireKit::resolveClasses('accordion.item', 'button', implode(' ', [
         'flex items-center justify-between w-full gap-[var(--padding-wk-x-md)]',
-        'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
+        $buttonPad,
         'text-left',
-        'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'hover:bg-[var(--color-wk-bg-muted)]',
@@ -36,7 +71,7 @@
     // Panel — revealed content region. Uses aria role="region" + aria-labelledby
     // so AT announces it as a titled region when user arrows into it.
     $panelClasses = WireKit::resolveClasses('accordion.item', 'panel', implode(' ', [
-        'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
+        $panelPad,
         'text-[length:var(--text-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
         'border-t-[length:var(--border-wk-width)]',
@@ -51,7 +86,7 @@
     $chevronClasses = 'shrink-0 w-4 h-4 text-[color:var(--color-wk-text-subtle)] transition-transform duration-[var(--transition-wk-duration)]';
 @endphp
 
-<div {{ $attributes }}>
+<div {{ $attributes->class([$wrapperClasses]) }}>
     {{-- Header button: delegates to toggle() defined on the parent accordion's x-data scope.
          Alpine resolves methods via scope chain — no $root prefix needed. --}}
     <h3>

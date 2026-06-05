@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Blade;
  *
  * The renderer NEVER receives raw user input directly — every value
  * funnels through the validator. The validator HTML-escapes every
- * string defence-in-depth, so even a slot using `{!! !!}` cannot
+ * string defense-in-depth, so even a slot using `{!! !!}` cannot
  * surface raw payload content.
  *
  * Returned `RenderResult` carries either `html` (success) or

@@ -67,7 +67,7 @@ final class BladeParser
 
     /**
      * Extract named slots with per-slot metadata (currently just
-     * `required: bool`). The metadata flavour catches a bug class the
+     * `required: bool`). The metadata flavor catches a bug class the
      * plain extraction misses: components that reference a named slot
      * directly via `{{ $name }}` WITHOUT an `@isset($name)` guard
      * render `Undefined variable $name` when the developer omits the
@@ -87,7 +87,7 @@ final class BladeParser
      *
      * Heuristic limitations: the scanner is line-aware, not
      * AST-aware — a `{{ $trigger }}` reference inside an `@isset($trigger)`
-     * branch IS scanned as bare. For the current component catalogue
+     * branch IS scanned as bare. For the current component catalog
      * this is correct because `@isset` blocks DON'T re-interpolate
      * the slot inside themselves (they conditionally include OTHER
      * markup based on slot presence). If a component starts doing
@@ -191,7 +191,7 @@ final class BladeParser
      *
      * Heuristic only — captures the simple assignment shape; a
      * destructuring assignment (`[$a, $b] = ...`) wouldn't be picked
-     * up. For the current component catalogue this covers every case.
+     * up. For the current component catalog this covers every case.
      *
      * @return list<string>
      */

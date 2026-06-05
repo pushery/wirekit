@@ -16,10 +16,13 @@
     Alpine.initTree() to re-bind the Alpine x-data scopes.
 
     Pairs with the `data-replayable="true"` contract emitted by every
-    animation-capable WireKit component (reveal, stat[animate],
-    stat[animateIn]). The docs site's preview wrapper sets
-    data-replay-target on the iframe / preview root and uses this
-    button to give developers a "↻" affordance to re-run the demo.
+    WireKit component whose preview can be re-run or reset: animation-
+    capable components (reveal, stat[animate], card/hero/cta/feature/
+    footer[animateIn], chart) AND state-mutating components whose demo is
+    "used up" by interaction (badge[dismissible], alert[dismissible]).
+    The docs site's preview wrapper sets data-replay-target on the iframe
+    / preview root and uses this button to give developers a "↻" affordance
+    to re-run or reset the demo.
 
     Style hooks via `wk-replay-button` BEM root — matches the existing
     `wk-*` namespace convention used by reading-progress, scrollbar etc.

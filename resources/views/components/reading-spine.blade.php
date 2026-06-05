@@ -27,7 +27,7 @@
     // components/reading-spine.js — bundled into dist/wirekit.js).
     //
     // The component opt-in story is the standard WireKit composition pattern:
-    // place the Blade tag where you want a spine, the plugin only initialises
+    // place the Blade tag where you want a spine, the plugin only initializes
     // there. No global side effects, no auto-injection.
 
     // levels: comma-separated string -> int[] for the plugin
@@ -133,7 +133,7 @@
     // "Family contracts → target prop convention" in docs/components/reading.md.
     $resolvedTarget = $target ?? 'main, article';
 
-    // Plugin options as JSON for the x-data initialiser. Keep keys terse.
+    // Plugin options as JSON for the x-data initializer. Keep keys terse.
     $alpineOptions = json_encode([
         'target' => $resolvedTarget,
         'levels' => $levelsArray,
@@ -252,7 +252,7 @@
 
                         {{-- Expanded label — fades in when expanded=true via
                              CSS in dist/wirekit.css. text-current inherits
-                             the colour state from the link's data-active. --}}
+                             the color state from the link's data-active. --}}
                         <span
                             class="wk-reading-spine__label text-[var(--reading-spine-color-idle)]"
                             x-text="item.text"

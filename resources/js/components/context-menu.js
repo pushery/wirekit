@@ -167,7 +167,7 @@ export default function wirekitContextMenu(config = {}) {
         },
 
         /**
-         * Finger lifted / gesture cancelled before the threshold — abort the
+         * Finger lifted / gesture canceled before the threshold — abort the
          * pending long-press.
          */
         onTouchEnd() {

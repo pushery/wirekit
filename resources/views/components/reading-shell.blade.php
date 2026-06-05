@@ -14,7 +14,7 @@
     'previewMode' => false,
     // `boundary` — pass-through to the composed primitives (reading-progress,
     // reading-spine, reading-bookmark). Default `null` keeps the viewport-
-    // pinned behaviour. Set to `'container'` to scope every composed
+    // pinned behavior. Set to `'container'` to scope every composed
     // primitive to the shell's nearest positioned ancestor — required when
     // embedding the entire reading surface inside a modal body, sidebar
     // pane, preview iframe, or Livewire panel.
@@ -56,7 +56,7 @@
     // Density preset → per-primitive defaults. Each preset's `defaults` tuple
     // controls which primitives render by DEFAULT — explicit toggles
     // override (handled below). The `progressHeight` + `spineExpand` keys
-    // configure the rendered primitives' behaviour.
+    // configure the rendered primitives' behavior.
     // toc defaults to false in every density — reading-toc is a marketing-
     // landing affordance, not a default for blog posts. Marketing pages
     // explicitly opt in via :toc="true" :spine="false".

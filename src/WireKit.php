@@ -142,7 +142,7 @@ class WireKit
      * decision is identical across every WireKit validation site
      * (component props here, icon resolution in `IconResolver`).
      *
-     * Default behaviour (no `wirekit.validation.strict` config):
+     * Default behavior (no `wirekit.validation.strict` config):
      *   - APP_DEBUG=true  → throws InvalidArgumentException with Did-you-mean.
      *   - APP_DEBUG=false → logs warning + returns first allowed value.
      *
@@ -201,10 +201,10 @@ class WireKit
     }
 
     /**
-     * Deterministic avatar colour pair for a key (initials / name).
+     * Deterministic avatar color pair for a key (initials / name).
      *
      * Exposes {@see AvatarPalette::for()} so a
-     * developer can colour a custom inline avatar/chip with the SAME palette
+     * developer can color a custom inline avatar/chip with the SAME palette
      * `<x-wirekit::avatar from-initials>` uses, without rendering the
      * component. Returns `['bg' => 'oklch(...)', 'fg' => '#fff']`.
      *
@@ -230,9 +230,9 @@ class WireKit
      * Tiers map 1:1 to the `--padding-wk-x-{tier}` token family. The
      * `lg` tier (default) is the canonical page-edge spine; other
      * tiers (sm / md / xl) are documented in
-     * [Theming → Design Token Reference](docs/theming.md).
+     * [Theming → Design Token Reference](https://docs.wirekit.app/theming).
      *
-     * See [Content-Edge Spine](docs/extending/spine-contract.md) for the
+     * See [Content-Edge Spine](https://docs.wirekit.app/extending/spine-contract) for the
      * full participation contract.
      */
     public static function spinePadding(string $tier = 'lg'): string
@@ -268,9 +268,9 @@ class WireKit
      * the prop is unset (default — no animation, byte-identical to v1.5.0).
      *
      * Accepts both base names (`fade` → `fade-in`) and full preset names
-     * (`fade-in`, `slide-up-in`, etc). Also accepts the Tailwind-UI naming
-     * convention `fade-up` / `fade-down` / `fade-left` / `fade-right` as
-     * aliases for the corresponding `slide-*-in` presets — the same map
+     * (`fade-in`, `slide-up-in`, etc). Also accepts the `fade-up` /
+     * `fade-down` / `fade-left` / `fade-right` shorthand naming convention
+     * as aliases for the corresponding `slide-*-in` presets — the same map
      * `<x-wirekit::reveal>` accepts, kept in lockstep by
      * `FadePresetAliasConsistencyTest`. Unknown values throw via
      * validateProp in debug mode, fall back to the first allowed in
@@ -285,7 +285,7 @@ class WireKit
         $bases = ['fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right',
             'scale', 'zoom', 'flip', 'rotate', 'bounce', 'spring'];
 
-        // Tailwind-UI naming-convention aliases. Resolved BEFORE auto-suffix
+        // `fade-*` shorthand naming-convention aliases. Resolved BEFORE auto-suffix
         // so `fade-up` resolves to `slide-up-in`, not the non-existent
         // `fade-up-in`. Same map as resources/views/components/reveal.blade.php
         // — divergence is blocked by FadePresetAliasConsistencyTest.

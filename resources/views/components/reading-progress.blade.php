@@ -42,7 +42,7 @@
     // Variant validation — gates against the canonical 6-set + the auto value.
     // 'accent' (legacy) and 'inverse' (legacy) explicitly throw — both were
     // dropped during the family's first public release, no alias preserved.
-    // Developers wanting the old 'inverse' behaviour set
+    // Developers wanting the old 'inverse' behavior set
     // `--reading-progress-fill: var(--color-wk-text)` in their :root {} block.
     $variantValue = match ($variant) {
         'primary', 'neutral', 'success', 'warning', 'danger', 'info', 'auto' => $variant,
@@ -134,7 +134,7 @@
     $segmentsStyle = '';
     if ($segmentsArray && count($segmentsArray) > 0) {
         // Build a linear-gradient with 1px wide stops at each fractional position,
-        // overlaid on top of the base fill colour. Each segment marker is 1px wide
+        // overlaid on top of the base fill color. Each segment marker is 1px wide
         // at the boundary; the rest of the strip transitions via the scaled fill.
         $stops = [];
         foreach ($segmentsArray as $pos) {

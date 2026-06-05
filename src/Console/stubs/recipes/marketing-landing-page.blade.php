@@ -1,5 +1,5 @@
 {{-- Recipe: Marketing Landing Page — composes brand-bar + hero + feature-grid + cta + footer.
-     Full reference: https://docs.wirekit.app/recipes/marketing-landing-page
+     Full reference: https://docs.wirekit.app/blueprints/recipes/marketing-landing-page
      This scaffold ships the skeleton; expand each section with your copy + assets. --}}
 <div>
     <x-wirekit::brand-bar :container="true">

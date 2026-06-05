@@ -7,7 +7,7 @@
     'alpineSort' => false, // enable client-side Alpine sorting (no Livewire needed)
     // WCAG 2.1.1 (Keyboard) — when stickyHeader makes the table body
     // scroll-confined, the wrapper becomes a focusable scrollable region
-    // and gets a name so screen-reader users can recognise it.
+    // and gets a name so screen-reader users can recognize it.
     'tableLabel' => null,
     'scope' => null,
 ])

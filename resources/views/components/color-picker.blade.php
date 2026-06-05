@@ -88,7 +88,7 @@
         @if(trim((string) $slot) !== '')
             <span class="sr-only">{{ $slot }}</span>
         @else
-            <span class="sr-only">{{ $name ? Str::headline((string) $name) . ' colour' : 'Colour picker' }}</span>
+            <span class="sr-only">{{ $name ? Str::headline((string) $name) . ' color' : 'Color picker' }}</span>
         @endif
     </label>
     @if($showValue)

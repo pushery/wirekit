@@ -11,7 +11,7 @@ use Pushery\WireKit\Theming\ThemePresetRegistry;
 
 class ThemeCommand extends Command
 {
-    protected $signature = 'wirekit:theme {preset : Theme preset name — see ThemePresetRegistry::keys() for the canonical list (default, minimal, soft, material, brutalist, retro-terminal, cupertino at v2.1.0; downstream packages may register additional presets via ThemePresetRegistry::register()).}';
+    protected $signature = 'wirekit:theme {preset : Theme preset name — see ThemePresetRegistry::keys() for the canonical list (default, minimal, soft, material, brutalist, retro-terminal, cupertino, aurora at v2.5.0; downstream packages may register additional presets via ThemePresetRegistry::register()).}';
 
     protected $description = 'Apply a WireKit theme preset to your app.css';
 

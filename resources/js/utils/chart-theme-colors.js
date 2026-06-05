@@ -1,5 +1,5 @@
 /**
- * Shared theme-colour helpers for chart adapters.
+ * Shared theme-color helpers for chart adapters.
  *
  * Both wirekitChartJs and wirekitApexChart need to read the same WireKit
  * `--color-wk-*` CSS variables and resolve them to a paint-friendly format
@@ -15,7 +15,7 @@
  *
  * - `palette(colors)` — 8-slot dataset palette (accent, danger, success,
  *   warning, info, plus three fixed fallbacks). Identical across adapters
- *   so dataset 0 paints the same visual colour whether Chart.js or
+ *   so dataset 0 paints the same visual color whether Chart.js or
  *   ApexCharts is active.
  *
  * - `withOpacity(color, opacity)` — produce an rgba() variant from hex,
@@ -26,7 +26,7 @@
  */
 
 /**
- * Resolve WireKit theme colours from the current CSS-variable cascade.
+ * Resolve WireKit theme colors from the current CSS-variable cascade.
  *
  * Implementation note — OKLCH probe trick: setting a CSS variable as
  * `color: var(--name)` on a hidden DOM element forces the browser to
@@ -61,10 +61,10 @@ export function resolveThemeColors(style) {
     probe.style.display = 'none';
     document.body.appendChild(probe);
 
-    // Canvas 2D parser + paint-and-read pixel trick — forces every colour
+    // Canvas 2D parser + paint-and-read pixel trick — forces every color
     // input into a definitive `rgb()` / `rgba()` representation regardless
     // of the source format (`oklch()`, `color(srgb ...)`, `hsl()`, `#rrggbb`,
-    // bare colour names, etc.). Just setting `ctx.fillStyle = colorStr` and
+    // bare color names, etc.). Just setting `ctx.fillStyle = colorStr` and
     // reading it back is NOT enough on Chrome 111+ baselines: when the input
     // is `oklch(...)`, the browser preserves the OKLCH literal in fillStyle,
     // and downstream code (isGrayscale, withOpacity, ApexCharts series.color)
@@ -73,7 +73,7 @@ export function resolveThemeColors(style) {
     //
     // Painting a 1×1 pixel and reading the ImageData back gives us the
     // browser's actual sRGB-rendered pixel value, which is always rgb()/
-    // rgba() regardless of source colour space.
+    // rgba() regardless of source color space.
     const probeCanvas = document.createElement('canvas');
     probeCanvas.width = 1;
     probeCanvas.height = 1;
@@ -81,7 +81,7 @@ export function resolveThemeColors(style) {
     const normalizeToRgb = (colorStr) => {
         try {
             // Clear to fully transparent (so reading alpha is meaningful when
-            // the source colour itself carries an alpha channel).
+            // the source color itself carries an alpha channel).
             canvasCtx.clearRect(0, 0, 1, 1);
             canvasCtx.fillStyle = colorStr;
             canvasCtx.fillRect(0, 0, 1, 1);
@@ -92,7 +92,7 @@ export function resolveThemeColors(style) {
                 ? `rgb(${r}, ${g}, ${b})`
                 : `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
         } catch {
-            // Invalid colour → preserve original so the rest of the pipeline
+            // Invalid color → preserve original so the rest of the pipeline
             // still has something to work with.
             return colorStr;
         }
@@ -109,7 +109,7 @@ export function resolveThemeColors(style) {
         return normalizeToRgb(rgb);
     };
 
-    // Test whether a resolved colour string is effectively grayscale —
+    // Test whether a resolved color string is effectively grayscale —
     // R, G, B channels within an 8-unit window of each other (0..255 scale).
     // Reads from the Canvas-normalized output so we only have to handle
     // rgb()/rgba()/#rrggbb — not oklch()/color()/etc.
@@ -132,7 +132,7 @@ export function resolveThemeColors(style) {
         return false;
     };
 
-    // Chart-DATA colours (fills, strokes, dataset colours). These must be
+    // Chart-DATA colors (fills, strokes, dataset colors). These must be
     // visible against the chart background. The WireKit Default theme uses
     // a neutral palette (--color-wk-accent: oklch(20.5% 0 0) — near-black
     // for UI chrome) which would render a chart polygon as a black blob
@@ -162,7 +162,7 @@ export function resolveThemeColors(style) {
         // Sky-blue replaces flat blue for a friendlier accent default;
         // rose replaces red for a less-alarming negative signal that still
         // reads as semantic. The light/dark pair is deliberate — a chart
-        // toggling between modes MUST visibly recolour to signal the theme
+        // toggling between modes MUST visibly recolor to signal the theme
         // change, otherwise dark-mode regression tests fail and developers
         // perceive the chart as not theme-aware.
         accent:      resolveChartColor('--color-wk-accent', '#7dd3fc', '#bae6fd'),
@@ -184,7 +184,7 @@ export function resolveThemeColors(style) {
 
 /**
  * 8-slot dataset palette. Identical across Chart.js + ApexCharts adapters
- * so a chart's dataset[0] paints in the same brand colour regardless of
+ * so a chart's dataset[0] paints in the same brand color regardless of
  * which library renders it.
  *
  * @param {ReturnType<resolveThemeColors>} colors
@@ -201,7 +201,7 @@ export function palette(colors) {
         // saturation band used in the resolveChartColor fallbacks above.
         // These three are non-semantic accents (no "this means good/bad"
         // meaning): violet, pink, orange. Together with the five semantic
-        // slots they cover up to 8 series without repeating colours.
+        // slots they cover up to 8 series without repeating colors.
         '#c4b5fd', // violet-300
         '#f9a8d4', // pink-300
         '#fdba74', // orange-300
@@ -238,21 +238,21 @@ export function withOpacity(color, opacity) {
  * resolveThemeColors() uses for its outer palette. Returns a new object
  * tree; the input is not mutated.
  *
- * Why this exists: ApexCharts (and Chart.js) consume colour strings via
+ * Why this exists: ApexCharts (and Chart.js) consume color strings via
  * SVG `fill="…"` attributes / Canvas `fillStyle`. Neither path accepts
  * `var(--name)` — SVG attribute values aren't parsed for CSS vars, and
  * Canvas ignores them silently. The adapter resolves the OUTER palette
  * via `resolveThemeColors()`, but per-dataset / per-range / per-annotation
- * colours stayed unresolved — `<x-wirekit::sparkline>` passed
+ * colors stayed unresolved — `<x-wirekit::sparkline>` passed
  * `color: 'var(--color-wk-success)'` into a series object, ApexCharts
  * received the literal string, and the chart fell back to its default
- * blue first-series colour. Same bug class affected heatmap `colorScale.
- * ranges[].color`, annotation `fillColor`, candlestick stroke colours,
+ * blue first-series color. Same bug class affected heatmap `colorScale.
+ * ranges[].color`, annotation `fillColor`, candlestick stroke colors,
  * timeline `fillColor`.
  *
  * One adapter-side walk fixes the entire bug class — developers can now
  * write `'color' => 'var(--color-wk-success)'` in any nested option and
- * the colour resolves correctly + auto-switches with `.dark` because
+ * the color resolves correctly + auto-switches with `.dark` because
  * `resolveThemeColors()`'s same probe re-runs on every paint cycle.
  *
  * @param {*} node — anything; primitives + arrays + objects walk fine.
@@ -267,7 +267,7 @@ export function resolveCssVarsDeep(node, style) {
         // the resolved value is always a paint-ready rgb()/rgba() string.
         // Inlined here (rather than exported from resolveThemeColors's
         // closure) so we can resolve multiple var()s in one string —
-        // e.g. ApexCharts gradient stops carrying two var() colours.
+        // e.g. ApexCharts gradient stops carrying two var() colors.
         return node.replace(/var\((--[a-zA-Z0-9-]+)\)/g, (_match, varName) => {
             const probe = document.createElement('div');
             probe.style.display = 'none';

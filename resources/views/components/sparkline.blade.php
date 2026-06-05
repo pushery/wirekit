@@ -50,9 +50,9 @@
 
     $resolvedTrend = $resolveTrend($trend, $data);
 
-    // Trend-aware colour token. WireKit theming consumes these via the
+    // Trend-aware color token. WireKit theming consumes these via the
     // chart adapter's normal palette; we pre-resolve at the Blade level so
-    // both Chart.js and ApexCharts get a consistent series colour.
+    // both Chart.js and ApexCharts get a consistent series color.
     $trendColor = match ($resolvedTrend) {
         'up' => 'var(--color-wk-success)',
         'down' => 'var(--color-wk-danger)',

@@ -1,4 +1,4 @@
-import { sanitiseMinimapHtml } from '../utils/sanitise-minimap-html.js';
+import { sanitizeMinimapHtml } from '../utils/sanitize-minimap-html.js';
 
 /**
  * Reading-minimap — every-item density overview + literal page-preview
@@ -8,10 +8,10 @@ import { sanitiseMinimapHtml } from '../utils/sanitise-minimap-html.js';
  * rendering modes:
  *
  *   stripes  (default) — every item matched by `itemSelector` renders
- *     as a coloured stripe in a fixed-width column. Lightweight, no
+ *     as a colored stripe in a fixed-width column. Lightweight, no
  *     iframe.
  *
- *   rendered — abstract content-texture canvas (PhpStorm / VS Code-style
+ *   rendered — abstract content-texture canvas (code-editor-style
  *     minimap). Walks the source DOM via TreeWalker, draws per-line
  *     rectangles on a DPR-aware canvas at minimap scale. Lazy-init via
  *     IntersectionObserver so the canvas isn't constructed until the
@@ -41,7 +41,7 @@ import { sanitiseMinimapHtml } from '../utils/sanitise-minimap-html.js';
  *
  * Interaction model:
  *   - Click stripe / anchor → smooth-scroll target so the item is
- *     centered. Honours prefers-reduced-motion (instant).
+ *     centered. Honors prefers-reduced-motion (instant).
  *   - Drag overlay → pan target's scroll position proportionally.
  *   - Hover stripe (non-touch) → tooltip with item title.
  *   - In rendered mode, click anywhere on the canvas → scroll to the
@@ -301,11 +301,11 @@ export default (options = {}) => ({
         this.tooltipText = item.label;
         // Position the tooltip next to the cursor's actual Y, then keep
         // it tracking via trackTooltip() on mousemove. Cursor-Y is the
-        // most intuitive behaviour — the tooltip appears next to whatever
+        // most intuitive behavior — the tooltip appears next to whatever
         // the user is pointing at, not at some computed mid-point of a
         // stripe that could be many pixels away (especially in block-mode
         // where each stripe's height tracks its source paragraph and can
-        // span 80–150 px, putting the geometric centre far from the
+        // span 80–150 px, putting the geometric center far from the
         // pointer). mousemove tracking also obsoletes the old "stuck at
         // top" failure mode where mouseenter fired with the cursor at
         // the stripe's top edge — the first mousemove corrects it.
@@ -359,7 +359,7 @@ export default (options = {}) => ({
         // viewport — top:1rem; bottom:1rem subtracts 32 px, plus any
         // developer-side padding/border). Matching the scrollbar's
         // translation gives consistent muscle memory across both
-        // surfaces. Trade-off: the overlay's centre lags the finger
+        // surfaces. Trade-off: the overlay's center lags the finger
         // slightly during drag (by 1 - minimapHeight/clientHeight) —
         // same as the browser scrollbar's own thumb-vs-finger lag, and
         // the scroll handler re-anchors the overlay to its proportional
@@ -401,7 +401,7 @@ export default (options = {}) => ({
      */
     _initRenderedMode() {
         // If IntersectionObserver isn't available (impossible per our
-        // Tailwind v4 baseline, but defence-in-depth), build immediately.
+        // Tailwind v4 baseline, but defense-in-depth), build immediately.
         if (typeof IntersectionObserver === 'undefined') {
             this._buildCanvas();
             return;
@@ -423,10 +423,10 @@ export default (options = {}) => ({
     },
 
     /**
-     * Build the PhpStorm / VS Code style minimap canvas. Walks every
+     * Build the code-editor-style minimap canvas. Walks every
      * text-bearing node in the source, gets per-rendered-line bounding
      * rects via Range.getClientRects(), and draws each rect onto a
-     * scaled-down canvas. Element type → colour family (heading /
+     * scaled-down canvas. Element type → color family (heading /
      * prose / code / default). The result is an abstract content-
      * texture map, not a literal scaled clone — the editor-minimap
      * convention readers know from IDEs.
@@ -437,7 +437,7 @@ export default (options = {}) => ({
      * (minimap convention is abstract blocks, not readable text),
      * and the iframe added ~100 ms of cold-start cost on long
      * articles. Canvas is a single rAF-fast pass, no iframe, no
-     * sanitiser, no cross-origin stylesheet plumbing.
+     * sanitizer, no cross-origin stylesheet plumbing.
      */
     _buildCanvas() {
         if (!this._renderHost) return;
@@ -451,7 +451,7 @@ export default (options = {}) => ({
         if (sourceWidth <= 0 || sourceHeight <= 0) return;
 
         // Tag-count density check — above the threshold we fall back to
-        // stripe mode silently (memory + perf budget). The PhpStorm-style
+        // stripe mode silently (memory + perf budget). The code-editor-style
         // canvas walks every text node + builds a Range per node, so the
         // cost is O(textNodes) rather than O(htmlSize). 5000-tag threshold
         // ports from the iframe-clone path; comparable enough.
@@ -493,7 +493,7 @@ export default (options = {}) => ({
         const ctx = canvas.getContext('2d');
         ctx.scale(dpr, dpr);
 
-        // Element-type → colour palette. Each category is overridable
+        // Element-type → color palette. Each category is overridable
         // via a CSS custom property on the minimap root, so developers
         // can re-theme without touching JS. Defaults are alpha-modulated
         // so the canvas reads as a translucent texture over whatever
@@ -502,7 +502,7 @@ export default (options = {}) => ({
         // Walk-priority (first match wins, walking UP from each text
         // node toward the source root):
         //   1. code        (<pre>, <code>, <kbd>, <samp>)
-        //   2. heading     (h1..h6 — each gets its own colour)
+        //   2. heading     (h1..h6 — each gets its own color)
         //   3. table       (<table>, <td>, <th>, <caption>)
         //   4. blockquote
         //   5. prose       (<p>, <li>, <dd>, <dt>, <figcaption>)
@@ -622,7 +622,7 @@ export default (options = {}) => ({
         // Second pass: visual-empty elements (images, figures, SVGs,
         // videos, canvases). These carry no walkable text, so the text-
         // node walker above misses them. Draw each as a single rect
-        // with the image colour so the minimap reflects content that
+        // with the image color so the minimap reflects content that
         // is visually significant even when it has no characters.
         const visualSelector = IMAGE_TAGS.join(',');
         const visualElements = source.querySelectorAll(visualSelector);
@@ -820,7 +820,7 @@ export default (options = {}) => ({
      * minimap, position the popover near the cursor (flipped to stay
      * inside the viewport) and clone the surrounding source content
      * into it. Re-uses the iframe-clone technique at a higher scale
-     * (25% vs. 10%) — same sanitisation pipeline.
+     * (25% vs. 10%) — same sanitization pipeline.
      *
      * Throttled via rAF — pointermove can fire 60+ times/sec on a fast
      * mouse, and DOM cloning is expensive. The preview only re-renders
@@ -859,7 +859,7 @@ export default (options = {}) => ({
         if (!preview) return;
         // Build the popover's iframe contents on demand — first hover only.
         if (!preview.dataset.built && this._renderHost) {
-            const sanitised = sanitiseMinimapHtml(this._renderHost.outerHTML);
+            const sanitized = sanitizeMinimapHtml(this._renderHost.outerHTML);
             const styleLinks = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
                 .filter((l) => {
                     try { return new URL(l.href, location.href).origin === location.origin; }
@@ -878,7 +878,7 @@ export default (options = {}) => ({
             const rawScale = getComputedStyle(this.$el).getPropertyValue('--reading-minimap-preview-scale').trim();
             const parsedScale = Number.parseFloat(rawScale);
             const previewScale = (Number.isFinite(parsedScale) && parsedScale > 0 && parsedScale <= 1) ? parsedScale : 0.25;
-            const srcdoc = `<!doctype html><html><head><meta charset="utf-8">${styleLinks}<style>html,body{margin:0;padding:0;background:var(--color-wk-bg-elevated,#fff)}body{pointer-events:none;transform:scale(${previewScale});transform-origin:0 0;width:calc(100% / ${previewScale});height:calc(100% / ${previewScale})}</style></head><body data-wk-rendered-minimap="true">${sanitised}</body></html>`;
+            const srcdoc = `<!doctype html><html><head><meta charset="utf-8">${styleLinks}<style>html,body{margin:0;padding:0;background:var(--color-wk-bg-elevated,#fff)}body{pointer-events:none;transform:scale(${previewScale});transform-origin:0 0;width:calc(100% / ${previewScale});height:calc(100% / ${previewScale})}</style></head><body data-wk-rendered-minimap="true">${sanitized}</body></html>`;
             preview.innerHTML = '';
             const frame = document.createElement('iframe');
             frame.setAttribute('aria-hidden', 'true');

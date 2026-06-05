@@ -1,12 +1,12 @@
 {{-- Recipe: Marketing Landing Page with TOC — reading-toc auto-builds a sticky sidebar from h2 sections.
-     Full reference: https://docs.wirekit.app/recipes/marketing-landing-toc --}}
+     Full reference: https://docs.wirekit.app/blueprints/recipes/marketing-landing-toc --}}
 <div>
     <x-wirekit::reading-toc hide-below="lg" />
 
     <main>
         <article class="prose">
             <h1>Pricing</h1>
-            <p>Choose the plan that fits your team. All plans include the full component catalogue.</p>
+            <p>Choose the plan that fits your team. All plans include the full component catalog.</p>
 
             <h2>Free</h2>
             <p>Forever free for personal projects and OSS.</p>

@@ -34,7 +34,7 @@
         // flex-row preview wrapper (see footer.blade.php for full rationale).
         'w-full',
         // `flex-wrap` mirrors $headerStyle's inline rule so Tailwind-aware
-        // contexts pick up the same behaviour as the sandbox-inline one.
+        // contexts pick up the same behavior as the sandbox-inline one.
         // h-16 becomes a MIN-height once wrap engages (`min-h-16`) so a
         // wrapped second row doesn't squeeze its children's line-height.
         'flex flex-wrap items-center',
@@ -49,7 +49,7 @@
     $stickyClasses = $sticky ? 'sticky top-0 z-[var(--z-wk-sticky)]' : '';
 
     // When `:container="true"`, the inner wrapper takes 100% of the header
-    // content area up to the 2xl container limit and centres itself with
+    // content area up to the 2xl container limit and centers itself with
     // auto margins. The flex + width / max-width / margin properties are
     // inlined for the same reason as the outer header.
     $innerStyle = 'display: flex; flex-wrap: wrap; align-items: center; width: 100%; max-width: var(--size-wk-container-2xl, 96rem); margin-left: auto; margin-right: auto; gap: var(--gap-wk-md);';

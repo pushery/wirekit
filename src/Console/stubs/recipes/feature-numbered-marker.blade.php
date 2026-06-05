@@ -1,5 +1,5 @@
 {{-- Recipe: Feature with Numbered Marker — incremental-counter affordance on a feature card.
-     Full reference: https://docs.wirekit.app/recipes/feature-numbered-marker --}}
+     Full reference: https://docs.wirekit.app/blueprints/recipes/feature-numbered-marker --}}
 <div>
     <x-wirekit::feature-grid cols="3">
         @foreach([

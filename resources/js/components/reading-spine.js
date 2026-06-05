@@ -20,7 +20,7 @@
  *   sectionEvents — debounced section-changed events (default true)
  *
  * Honors `prefers-reduced-motion: reduce` — the CSS layer collapses every
- * width / opacity / colour transition on this component to 0.01ms via the
+ * width / opacity / color transition on this component to 0.01ms via the
  * global @media block. The plugin itself never animates anything in JS.
  */
 export default (options = {}) => ({
@@ -342,7 +342,7 @@ export default (options = {}) => ({
         // ping-ponging through intermediate headings. 600 ms covers the
         // typical smooth-scroll settle time; `prefers-reduced-motion: reduce`
         // collapses scroll to `auto` (instant), the next frame's gate check
-        // fails and recomputeActive resumes normal behaviour.
+        // fails and recomputeActive resumes normal behavior.
         this._programmaticScrollUntil = Date.now() + 600;
         try {
             history.replaceState(null, '', `#${id}`);

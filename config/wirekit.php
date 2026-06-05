@@ -80,18 +80,20 @@ return [
     'components' => [
         // Form components
         'button' => ['intent' => 'primary', 'surface' => 'filled', 'size' => 'md'],
+        'button.group' => [],
         'input' => ['size' => 'md'],
         'label' => [],
         'select' => ['size' => 'md'],
         'textarea' => ['size' => 'md', 'rows' => 3],
 
         // Display components
-        'badge' => ['intent' => 'neutral', 'size' => 'md'],
+        'badge' => ['intent' => 'neutral', 'size' => 'md', 'surface' => 'soft'],
         'card' => ['variant' => 'outlined'],
         'card.header' => [],
         'card.body' => [],
         'card.footer' => [],
         'avatar' => ['size' => 'md', 'shape' => 'circle'],
+        'avatar.group' => [],
         'alert' => ['variant' => 'info'],
         'toggle' => ['size' => 'md'],
         'checkbox' => [],
@@ -111,6 +113,7 @@ return [
         'progress' => ['variant' => 'accent', 'size' => 'md'],
         'stat' => ['animate' => false],
         'skeleton' => [],
+        'spinner' => ['size' => 'md', 'intent' => null],
 
         // Overlay components
         'dropdown' => ['placement' => 'bottom-start', 'offset' => 8],
@@ -123,7 +126,7 @@ return [
         // Navigation components
         'tabs' => ['variant' => 'underline'],
         'breadcrumb' => ['separator' => 'chevron'],
-        'accordion' => ['mode' => 'single'],
+        'accordion' => ['mode' => 'single', 'variant' => 'bordered', 'size' => 'md'],
         'accordion.item' => [],
         'sidebar' => [],
         'sidebar.group' => [],
@@ -152,7 +155,7 @@ return [
         'alert-dialog' => ['dismissible' => false],
         'toast-region' => ['position' => 'top-right', 'duration' => 5000, 'max' => 5],
 
-        // Activity-row kind → dot-colour token map. Merged over the
+        // Activity-row kind → dot-color token map. Merged over the
         // component's built-in defaults (commit / merge / deploy / comment /
         // system / user); add your own kinds here, e.g.
         // 'release' => 'var(--color-wk-warning)'.

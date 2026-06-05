@@ -4,7 +4,7 @@
     'scope' => null,
     // Interactive mode: when true, the profile becomes a focusable
     // button-like element with role="button" + tabindex="0" plus
-    // Enter / Space keyboard handlers that synthesise a click event.
+    // Enter / Space keyboard handlers that synthesize a click event.
     // Used when a profile sits inside a dropdown trigger (or any other
     // parent that listens for click + needs a focusable child for
     // keyboard-reachability). Default false preserves the pre-existing
@@ -29,7 +29,7 @@
     // `message.author` and the avatar-component convention). Pre-fix,
     // passing an array crashed with `htmlspecialchars(): Argument #1
     // must be of type string, array given` because the renderer did
-    // `<img src="{{ $avatar }}">` without a normaliser.
+    // `<img src="{{ $avatar }}">` without a normalizer.
     $avatarSrc = is_array($avatar) ? ($avatar['src'] ?? null) : (is_string($avatar) ? $avatar : null);
     $avatarInitials = is_array($avatar) ? ($avatar['initials'] ?? null) : null;
     $avatarAlt = is_array($avatar) ? ($avatar['alt'] ?? '') : '';

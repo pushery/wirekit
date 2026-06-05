@@ -1,5 +1,5 @@
 {{-- Recipe: Hero with Code Aside — copy on the left, code block on the right (balanced layout).
-     Full reference: https://docs.wirekit.app/recipes/hero-with-code-aside --}}
+     Full reference: https://docs.wirekit.app/blueprints/recipes/hero-with-code-aside --}}
 <div>
     <x-wirekit::hero layout="balanced" variant="default">
         <x-slot:title>Ship your dashboard in minutes</x-slot:title>

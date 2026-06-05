@@ -291,7 +291,7 @@ class ShowComponentCommand extends Command
      * Extracts props directly via PropsParser (the same source-of-truth
      * the ComponentRegistry uses for top-level components).
      *
-     * Honours the --as=json option so AI tooling can introspect
+     * Honors the --as=json option so AI tooling can introspect
      * sub-components the same way as top-level components.
      */
     private function handleSubComponent(string $name): int

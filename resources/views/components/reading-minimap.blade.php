@@ -9,7 +9,7 @@
     // rendered-mode — rendered mode (literal scaled-down page preview)
     'mode' => 'stripes',         // 'stripes' (default, back-compat) | 'rendered'
     'renderTarget' => null,      // CSS selector for the source to clone (defaults to `target`)
-    // stripe-mode visual: 'line' (default, thin 2px stripes per item) | 'block' (taller skeleton-style grey rectangles whose height tracks each source item's natural height — gives the minimap a content-texture instead of a sparse list of lines)
+    // stripe-mode visual: 'line' (default, thin 2px stripes per item) | 'block' (taller skeleton-style gray rectangles whose height tracks each source item's natural height — gives the minimap a content-texture instead of a sparse list of lines)
     'itemStyle' => 'line',
     // rendered-mode Extensions
     'hoverPreview' => false,     // E1 — magnified popover near cursor
@@ -27,11 +27,11 @@
     //
     // Two rendering modes:
     //
-    //   mode="stripes" (default) — one coloured stripe per matched item.
+    //   mode="stripes" (default) — one colored stripe per matched item.
     //     Lightweight, no iframe, suitable for any developer.
     //
-    //   mode="rendered" — abstract content-texture canvas (PhpStorm /
-    //     VS Code-style minimap). Walks the source DOM via TreeWalker,
+    //   mode="rendered" — abstract content-texture canvas (code-editor-style
+    //     minimap). Walks the source DOM via TreeWalker,
     //     draws per-line rectangles on a DPR-aware canvas at minimap
     //     scale. Visually mirrors the source page's content rhythm so
     //     developers read "where am I in THIS specific layout" rather
@@ -239,7 +239,7 @@
     @endif
 
     {{-- Tooltip — shows hovered item's label in stripe mode. Hidden on touch.
-         `transform: translateY(-50%)` vertically centres the tooltip on the
+         `transform: translateY(-50%)` vertically centers the tooltip on the
          `top` coordinate (= cursor's Y inside the wrapper). Without it,
          `top: Npx` would place the tooltip's TOP EDGE at the cursor and
          the text would visually sit ~half-tooltip-height BELOW the cursor.

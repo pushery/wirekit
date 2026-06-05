@@ -124,7 +124,7 @@
     // When `loading=true` is set without ANY `wire:*` action attribute
     // (wire:click / wire:submit / wire:click.prevent / wire:keydown / etc.),
     // the developer wants the DECLARATIVE loading state — the button stays
-    // in its loading look until they manually flip it. The pre-fix behaviour
+    // in its loading look until they manually flip it. The pre-fix behavior
     // attached `wire:loading` to the spinner and `wire:loading.attr` to the
     // button, both of which are no-ops outside a Livewire request — so the
     // spinner never showed AND the button never disabled. We now distinguish:

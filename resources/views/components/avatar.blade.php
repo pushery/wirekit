@@ -3,8 +3,8 @@
     'alt' => null,
     'initials' => null,
     // When true (with `initials` set and no `src`), derive a deterministic
-    // background colour from the initials hash so the same person always
-    // gets the same colour — replaces per-app crc32-palette helpers. The
+    // background color from the initials hash so the same person always
+    // gets the same color — replaces per-app crc32-palette helpers. The
     // palette pairs an AA-contrast background with white text and is
     // theme-independent. See Pushery\WireKit\Support\AvatarPalette.
     'fromInitials' => false,
@@ -28,8 +28,8 @@
 
     // from-initials: deterministic background derived from the initials hash.
     // Only applies to the initials-fallback path (no image). The inline style
-    // overrides the muted base bg + default text colour with the AA-contrast
-    // palette pair so the same key always renders the same colour.
+    // overrides the muted base bg + default text color with the AA-contrast
+    // palette pair so the same key always renders the same color.
     $fromInitialsStyle = '';
     if ($fromInitials && $initials && ! $src) {
         $palette = AvatarPalette::for((string) $initials);
@@ -120,7 +120,7 @@
 
 @php
     // Combine the optional ring box-shadow with the optional from-initials
-    // colour pair into one style attribute.
+    // color pair into one style attribute.
     $avatarStyle = trim(implode(' ', array_filter([$fromInitialsStyle, $statusRingStyle ? $statusRingStyle.';' : ''])));
 @endphp
 <span {{ $attributes->class([$baseClasses, $sizeClasses, $shapeClasses]) }}

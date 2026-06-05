@@ -48,7 +48,7 @@ final class Chart extends Component
      *                                   event and pipes incoming `point` payloads into the chart
      *                                   via the library's imperative API (Chart.js: data.datasets[i].data.push;
      *                                   ApexCharts: chart.appendSeries / chart.appendData). When null
-     *                                   (default), the chart renders normally with no streaming behaviour.
+     *                                   (default), the chart renders normally with no streaming behavior.
      * @param  string  $wireStreamMode  'strict' (default — caps the dataset at wireStreamCap points
      *                                  FIFO) or 'stream' (unbounded growth — developer responsibility).
      * @param  int  $wireStreamCap  Max data-point count per dataset under 'strict' mode. Default 100.
@@ -70,7 +70,7 @@ final class Chart extends Component
      *                                / `apexcharts`, OR a fully qualified class name implementing
      *                                `ChartAdapter`. When `null` (default), the chart uses whatever
      *                                the global `wirekit.charts.library` config resolves to, matching
-     *                                the pre-v2.3.0 behaviour. When set, this chart instance binds
+     *                                the pre-v2.3.0 behavior. When set, this chart instance binds
      *                                to the named library regardless of the app default — two charts
      *                                on the same page can use different libraries. Use this when a
      *                                specific chart type requires a specific library (e.g. `boxplot`
@@ -103,7 +103,7 @@ final class Chart extends Component
         // injection below). `valueDecimals` rounds raw float y-values in the
         // custom tooltip to N decimal places; `valuePrefix` / `valueSuffix`
         // wrap each formatted number (e.g. "€", " ms", "%"). All three are
-        // null by default → today's behaviour (raw value, no affix) preserved
+        // null by default → today's behavior (raw value, no affix) preserved
         // byte-for-byte. `valueDecimals` is typed `int|string|null` so both
         // `valueDecimals="2"` (plain attribute) and `:valueDecimals="2"`
         // (bound int) work — strict_types would reject a string on a bare

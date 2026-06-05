@@ -35,7 +35,7 @@ export default function wirekitToast(config = {}) {
             // pattern, or a real app with per-card local toast queues).
             //
             // Falsy / missing → no containment filter, every dispatched
-            // event is handled (current behaviour, fully back-compat).
+            // event is handled (current behavior, fully back-compat).
             this._scope = typeof config.scope === 'string' && config.scope !== ''
                 ? config.scope
                 : null;

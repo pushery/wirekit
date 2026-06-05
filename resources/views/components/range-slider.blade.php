@@ -37,6 +37,13 @@
     $wrapperClasses = WireKit::resolveClasses('range-slider', 'base', implode(' ', [
         'space-y-2',
         'font-[family-name:var(--font-wk-sans)]',
+        // Usability floor. The track is a full-width block with NO intrinsic
+        // width of its own, so in any shrink-to-fit context — a flex/grid auto
+        // item, a table cell, or a `width: fit-content` wrapper — the slider
+        // collapses to the width of its widest text row (the two bound labels,
+        // e.g. "0 … 10"), i.e. ~60px: far too narrow to drag. A min-width keeps
+        // it operable everywhere while still expanding to 100% in normal flow.
+        'min-w-[16rem]',
     ]), $scope);
 
     // wire:model integration (Strategy B — split-min/split-max):

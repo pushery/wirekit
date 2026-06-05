@@ -53,17 +53,29 @@
     <ol class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($items as $i => $item)
             @php
-                // Normalize item: accept ['label' => .., 'href' => ..] or just a string label.
+                // Normalize item: accept ['label' => .., 'href' => .., 'icon' => ..] or just a string label.
                 $label = is_array($item) ? ($item['label'] ?? '') : (string) $item;
                 $href = is_array($item) ? ($item['href'] ?? null) : null;
+                // Optional decorative icon alias (e.g. 'home') rendered before the
+                // label. The label stays the accessible text, so the icon is
+                // aria-hidden. When present, the crumb element becomes an
+                // inline-flex row so the glyph + label align.
+                $icon = is_array($item) ? ($item['icon'] ?? null) : null;
+                $iconWrap = $icon ? 'inline-flex items-center gap-[var(--padding-wk-x-xs)]' : '';
                 $isLast = $i === array_key_last($items);
             @endphp
             <li class="flex items-center gap-[var(--padding-wk-x-xs)]">
                 @if($isLast || !$href)
                     {{-- Current page: no link, aria-current tells AT "this is where you are" --}}
-                    <span class="{{ $currentClasses }}" aria-current="page">{{ $label }}</span>
+                    <span class="{{ $currentClasses }} {{ $iconWrap }}" aria-current="page">
+                        @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />@endif
+                        {{ $label }}
+                    </span>
                 @else
-                    <a href="{{ $href }}" class="{{ $linkClasses }}">{{ $label }}</a>
+                    <a href="{{ $href }}" class="{{ $linkClasses }} {{ $iconWrap }}">
+                        @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />@endif
+                        {{ $label }}
+                    </a>
                 @endif
 
                 @unless($isLast)

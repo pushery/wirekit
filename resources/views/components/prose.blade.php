@@ -5,7 +5,7 @@
     //   `comfortable` (default) — long-form-article rhythm: generous
     //       `--padding-wk-y-xl` (2.5 rem) top-margin on h2 headings,
     //       `--padding-wk-y-md` (0.75 rem) bottom-margin on paragraphs.
-    //       Optimised for blog posts, docs, news articles where
+    //       Optimized for blog posts, docs, news articles where
     //       section breaks should breathe.
     //   `compact` — marketing/landing-page rhythm: tighter
     //       `--padding-wk-y-md` (0.75 rem) top-margin on h2, smaller

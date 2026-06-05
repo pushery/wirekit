@@ -1,5 +1,5 @@
 {{-- Recipe: Toolbar Filter Bar — search input + select filters + reset button above a data table.
-     Full reference: https://docs.wirekit.app/recipes/toolbar-filter-bar --}}
+     Full reference: https://docs.wirekit.app/blueprints/recipes/toolbar-filter-bar --}}
 <div>
     <x-wirekit::toolbar>
         <x-wirekit::input
