@@ -22,6 +22,13 @@ use Illuminate\Support\Facades\Blade;
  * string defense-in-depth, so even a slot using `{!! !!}` cannot
  * surface raw payload content.
  *
+ * SSTI defense: developer values are bound as runtime DATA and referenced
+ * from the assembled template through Blade expressions — they are NEVER
+ * concatenated into the template source `Blade::render()` compiles. HTML
+ * escaping alone does not neutralize Blade's compile tokens (`{{ }}`, `@…`),
+ * so concatenating a value into the source would let `{{ 7*7 }}` execute.
+ * See `doRender()` for the binding mechanism.
+ *
  * Returned `RenderResult` carries either `html` (success) or
  * `violations` (validation failure). Never throws — the caller
  * decides between 200 and 422.
@@ -90,10 +97,25 @@ final class SandboxRenderer
      */
     private static function doRender(string $component, array $props): string
     {
-        // Build the Blade source: <x-wirekit::{component} :prop1="..." :prop2="...">{$body}</x-wirekit::{component}>
+        // Build: <x-wirekit::{component} :prop="$__wk_pN" …>{!! $__wk_body !!}</…>
+        //
+        // SECURITY (SSTI/RCE): every developer-controlled value is bound as
+        // runtime DATA (the `$data` map below) and referenced from the template
+        // through a Blade expression — NEVER concatenated into the template
+        // source. This is the load-bearing defense: `PropsValidator::sanitize`
+        // HTML-escapes `<>&"'` but does NOT neutralize Blade's own compile
+        // tokens (`{{ … }}`, `{!! … !!}`, `@directive`). Previously the values
+        // were string-concatenated straight into the Blade source, so a prop
+        // value of `{{ 7*7 }}` (or `{{ system(chr(105).chr(100)) }}` for a
+        // no-quote RCE) reached the Blade compiler intact and executed. Binding
+        // the values as data instead means their content is echoed literally at
+        // render time and never re-parsed as Blade — there is no token blacklist
+        // to bypass.
         $tag = 'x-wirekit::'.$component;
         $body = '';
         $attrs = '';
+        $data = [];
+        $i = 0;
 
         foreach ($props as $key => $value) {
             if ($key === 'body') {
@@ -103,20 +125,23 @@ final class SandboxRenderer
                 continue;
             }
             if (is_bool($value)) {
+                // Boolean attribute: bare name (no value) when true. `$key` is a
+                // schema-defined prop name — PropsValidator rejects any key not
+                // in the schema — so it is always a safe identifier, never
+                // developer free-text.
                 if ($value) {
                     $attrs .= ' '.$key;
                 }
 
                 continue;
             }
-            if (is_int($value) || is_float($value)) {
-                $attrs .= ' '.$key.'="'.htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8').'"';
-
-                continue;
-            }
-            if (is_string($value)) {
-                // Validator already HTML-escaped; pass through into the attribute
-                $attrs .= ' '.$key.'="'.$value.'"';
+            if (is_int($value) || is_float($value) || is_string($value)) {
+                // Bind the value to a generated variable and reference it as a
+                // bound attribute. The value travels as data, so its content is
+                // never compiled as template source.
+                $var = '__wk_p'.$i++;
+                $data[$var] = $value;
+                $attrs .= ' :'.$key.'="$'.$var.'"';
 
                 continue;
             }
@@ -124,16 +149,24 @@ final class SandboxRenderer
             // anything else is intentionally dropped).
         }
 
+        // Body slot: a RAW echo of the body data variable. Its content is
+        // already HTML-escaped by the validator (so it can only emit inert
+        // entities, never live markup), and a raw echo of a DATA variable is
+        // never re-parsed as Blade — so a `{{ … }}` / `@…` in the body stays
+        // literal. This reproduces the previous single-escaped slot-text output.
+        $data['__wk_body'] = $body;
+        $bodyExpr = $body === '' ? '' : '{!! $__wk_body !!}';
+
         // Apply per-component body-slot wrap if registered.
         // See BODY_WRAPPERS docblock for rationale.
-        if ($body !== '' && isset(self::BODY_WRAPPERS[$component])) {
+        if ($bodyExpr !== '' && isset(self::BODY_WRAPPERS[$component])) {
             $wrapTag = 'x-wirekit::'.self::BODY_WRAPPERS[$component];
-            $body = '<'.$wrapTag.'>'.$body.'</'.$wrapTag.'>';
+            $bodyExpr = '<'.$wrapTag.'>'.$bodyExpr.'</'.$wrapTag.'>';
         }
 
-        $blade = $body === ''
+        $blade = $bodyExpr === ''
             ? '<'.$tag.$attrs.' />'
-            : '<'.$tag.$attrs.'>'.$body.'</'.$tag.'>';
+            : '<'.$tag.$attrs.'>'.$bodyExpr.'</'.$tag.'>';
 
         if (! function_exists('app') || ! app()->bound('view')) {
             // Test environment without a Laravel container — return the raw Blade
@@ -142,6 +175,6 @@ final class SandboxRenderer
             return $blade;
         }
 
-        return (string) Blade::render($blade);
+        return (string) Blade::render($blade, $data);
     }
 }

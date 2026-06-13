@@ -3,6 +3,7 @@
     'danger' => false,
     'disabled' => false,
     'icon' => null,
+    'shortcut' => null, // keyboard-shortcut hint shown at the inline-end (e.g. "⌘K")
     'scope' => null,
 ])
 
@@ -70,6 +71,11 @@
     @endif
 
     {{ $slot }}
+
+    {{-- Keyboard-shortcut hint, pushed to the inline-end. Decorative. --}}
+    @if($shortcut)
+        <span class="ms-auto ps-[var(--padding-wk-x-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] tabular-nums" aria-hidden="true">{{ $shortcut }}</span>
+    @endif
 
     @if($opensNewTab)
         <span class="sr-only">(opens in new tab)</span>

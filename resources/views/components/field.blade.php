@@ -5,11 +5,18 @@
     'error' => null,
     'required' => false,
     'for' => null,
+    'orientation' => 'vertical', // vertical (label above) | horizontal (label beside)
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    $orientationValue = match ($orientation) {
+        'vertical', 'horizontal' => $orientation,
+        default => WireKit::validateProp('field', 'orientation', $orientation, ['vertical', 'horizontal']),
+    };
+    $isHorizontal = $orientationValue === 'horizontal';
 
     // The `for` attribute links the label to its input. If not explicitly given,
     // we fall back to `name` so the wrapped input's auto-generated id (= name) matches.
@@ -23,31 +30,51 @@
     $hintId = $targetId ? "{$targetId}-hint" : null;
     $errorId = $targetId ? "{$targetId}-error" : null;
 
-    // Wrapper spacing token — uses same spacing as inputs for visual consistency
-    $wrapperClasses = WireKit::resolveClasses('field', 'base', 'space-y-1.5', $scope);
+    // Wrapper spacing — vertical stacks (space-y); horizontal lets the inner flex row drive layout.
+    $wrapperClasses = WireKit::resolveClasses('field', 'base', $isHorizontal ? '' : 'space-y-1.5', $scope);
 @endphp
 
 <div {{ $attributes->class([$wrapperClasses]) }}>
-    {{-- Label with optional required indicator (red asterisk) --}}
-    @if($label)
-        <x-wirekit::label :for="$targetId" :required="$required" :scope="$scope">
-            {{ $label }}
-        </x-wirekit::label>
-    @endif
+    @if($isHorizontal)
+        {{-- Horizontal: label in a left column beside the control; control + messages
+             take the remaining inline space. --}}
+        <div class="flex items-start gap-[var(--padding-wk-x-lg)]">
+            @if($label)
+                <x-wirekit::label :for="$targetId" :required="$required" :scope="$scope" class="w-1/3 shrink-0 pt-[var(--padding-wk-y-sm)]">
+                    {{ $label }}
+                </x-wirekit::label>
+            @endif
+            <div class="flex-1 min-w-0 space-y-1.5">
+                {{ $slot }}
+                @if($hasError && $errorMessage)
+                    <p @if($errorId) id="{{ $errorId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+                @elseif($hint)
+                    <p @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+                @endif
+            </div>
+        </div>
+    @else
+        {{-- Vertical (default): label above the control. --}}
+        @if($label)
+            <x-wirekit::label :for="$targetId" :required="$required" :scope="$scope">
+                {{ $label }}
+            </x-wirekit::label>
+        @endif
 
-    {{-- The actual input/select/textarea/checkbox — passed in as default slot.
-         The child component is expected to read its own $errors bag and set aria-* itself,
-         but the wrapper still renders its own error/hint messages with stable IDs. --}}
-    {{ $slot }}
+        {{-- The actual input/select/textarea/checkbox — passed in as default slot.
+             The child component is expected to read its own $errors bag and set aria-* itself,
+             but the wrapper still renders its own error/hint messages with stable IDs. --}}
+        {{ $slot }}
 
-    {{-- Error takes precedence over hint — show one, not both --}}
-    @if($hasError && $errorMessage)
-        <p @if($errorId) id="{{ $errorId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
-            {{ $errorMessage }}
-        </p>
-    @elseif($hint)
-        <p @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
-            {{ $hint }}
-        </p>
+        {{-- Error takes precedence over hint — show one, not both --}}
+        @if($hasError && $errorMessage)
+            <p @if($errorId) id="{{ $errorId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
+                {{ $errorMessage }}
+            </p>
+        @elseif($hint)
+            <p @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+                {{ $hint }}
+            </p>
+        @endif
     @endif
 </div>

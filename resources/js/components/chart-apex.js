@@ -168,7 +168,7 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
     const bodyHtml = bodyRows.map(({ label, value, color }) => {
         const labelHtml = label ? `<span class="apexcharts-tooltip-text-y-label">${esc(label)}: </span>` : '';
         return `<div class="apexcharts-tooltip-series-group apexcharts-active" style="order: 1; display: flex;">
-            <span class="apexcharts-tooltip-marker" style="background: ${color};"></span>
+            <span class="apexcharts-tooltip-marker" style="background: ${esc(color)};"></span>
             <div class="apexcharts-tooltip-text" style="font-family: inherit; font-size: 12px;">
                 <div class="apexcharts-tooltip-y-group">
                     ${labelHtml}<span class="apexcharts-tooltip-text-y-value">${esc(fmtValue(value))}</span>
@@ -179,6 +179,13 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
 
     return `${headerHtml}${bodyHtml}`;
 }
+
+// Named export of the otherwise-internal tooltip renderer, so its escaping
+// contract — every dataset- and palette-derived value is HTML-escaped before it
+// reaches innerHTML — can be asserted in isolation. The Alpine factory below is
+// the public default export; esbuild tree-shakes this unused named export out of
+// the browser bundles, so it adds no shipped weight.
+export { renderUnifiedTooltip };
 
 /**
  * WireKit ApexCharts Alpine Component.
@@ -1093,6 +1100,16 @@ window.ApexCharts = ApexCharts;</pre>
             if (!isPlainObject(target) || !isPlainObject(source)) return source;
             const out = Object.assign({}, target);
             for (const key of Object.keys(source)) {
+                // Prototype-pollution guard (defense-in-depth): never merge a key
+                // that can re-parent an object or reach a shared prototype. The
+                // chart config is assembled from JSON that may be influenced by
+                // app data, so a `__proto__` / `constructor` / `prototype` key
+                // must not flow through the merge. (This merge already writes only
+                // to fresh objects, so global pollution wasn't reachable — but
+                // skipping the keys also keeps the result's prototype intact.)
+                if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+                    continue;
+                }
                 out[key] = this._deepMerge(target[key], source[key]);
             }
             return out;

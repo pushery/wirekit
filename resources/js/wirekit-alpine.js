@@ -57,6 +57,15 @@ import wirekitAnimate from './components/animate.js';
 import wirekitReadingSpine from './components/reading-spine.js';
 import wirekitReadingMinimap from './components/reading-minimap.js';
 import wirekitReadingToc from './components/reading-toc.js';
+import wirekitEditor from './components/editor.js';
+import wirekitColorPicker from './components/color-picker.js';
+import wirekitFilterBuilder from './components/filter-builder.js';
+import wirekitStatusMatrix from './components/status-matrix.js';
+import wirekitNotificationCenter from './components/notification-center.js';
+import wirekitDataTable from './components/data-table.js';
+import wirekitEventCalendar from './components/event-calendar.js';
+import wirekitMap from './components/map.js';
+import wirekitStickyPanelShadows from './components/sticky-panel.js';
 
 /**
  * Detect a pre-existing Alpine instance. Loading wirekit-alpine.js when
@@ -106,6 +115,15 @@ if (alreadyHasAlpine()) {
     Alpine.data('wirekitReadingSpine', wirekitReadingSpine);
     Alpine.data('wirekitReadingMinimap', wirekitReadingMinimap);
     Alpine.data('wirekitReadingToc', wirekitReadingToc);
+    Alpine.data('wirekitEditor', wirekitEditor);
+    Alpine.data('wirekitColorPicker', wirekitColorPicker);
+    Alpine.data('wirekitFilterBuilder', wirekitFilterBuilder);
+    Alpine.data('wirekitStatusMatrix', wirekitStatusMatrix);
+    Alpine.data('wirekitNotificationCenter', wirekitNotificationCenter);
+    Alpine.data('wirekitDataTable', wirekitDataTable);
+    Alpine.data('wirekitEventCalendar', wirekitEventCalendar);
+    Alpine.data('wirekitMap', wirekitMap);
+    Alpine.data('wirekitStickyPanelShadows', wirekitStickyPanelShadows);
 
     // Expose Alpine on window so developers (and the docs site's replay
     // button) can call Alpine.initTree(element) for re-mounting.

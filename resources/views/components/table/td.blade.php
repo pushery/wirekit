@@ -21,6 +21,13 @@
         $alignClass,
         // Compact variant: reduce vertical padding to match th
         '[table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)]',
+        // Sticky first column: freeze the leading body cell. Solid background so
+        // scrolling cells don't show through (the frozen column reads as solid even
+        // on striped tables — the standard frozen-column convention).
+        '[table[data-wk-sticky-column]_&:first-child]:sticky',
+        '[table[data-wk-sticky-column]_&:first-child]:left-0',
+        '[table[data-wk-sticky-column]_&:first-child]:z-[1]',
+        '[table[data-wk-sticky-column]_&:first-child]:bg-[var(--color-wk-bg)]',
     ]), $scope);
 @endphp
 

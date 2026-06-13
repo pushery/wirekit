@@ -29,15 +29,45 @@ final class SandboxAuditLog
         }
 
         $file = $logDir.'/'.date('Y-m-d').'.log';
+        // Log-injection (CWE-117) defense: the log is tab-delimited, line-based,
+        // and `$component` arrives UNSANITIZED on the `rejected:component` path
+        // (it is logged BEFORE the allowlist regex validates it — see
+        // SandboxRenderer::render). A `$component` carrying a tab or newline
+        // could otherwise forge a fake log record. Collapse every control
+        // character (tabs, CR, LF, and the rest of the C0/C1 range) to a single
+        // U+FFFD and cap the length so a hostile field cannot break the record
+        // shape. `$outcome` is always an internal literal but is sanitized too
+        // for defense in depth.
         $line = implode("\t", [
             date('c'),
-            $outcome,
-            $component,
+            self::sanitizeField($outcome),
+            self::sanitizeField($component),
             substr(hash('sha256', $ipAddress), 0, 16),
             (string) $violationsCount,
         ]).PHP_EOL;
 
         @file_put_contents($file, $line, FILE_APPEND | LOCK_EX);
+    }
+
+    /**
+     * Neutralize a value for inclusion in a tab-delimited, line-based log
+     * record: replace every control character (C0 + DEL + C1, which includes
+     * tab / CR / LF — the field and record separators) with U+FFFD, and cap
+     * the length. Prevents a hostile field from forging extra columns or rows.
+     */
+    private static function sanitizeField(string $value): string
+    {
+        // `\pC` = any Unicode "Other" (control/format/surrogate/unassigned).
+        // The `/u` flag is required so the regex walks UTF-8 codepoints, not
+        // bytes (matches the project's multi-byte-safe regex rule).
+        $clean = preg_replace('/\pC/u', "\u{FFFD}", $value);
+        // preg_replace returns null on a malformed-UTF-8 subject; fall back to
+        // a byte-level control-char strip so a bad input still can't inject.
+        if ($clean === null) {
+            $clean = preg_replace('/[\x00-\x1F\x7F]/', "\u{FFFD}", $value) ?? '';
+        }
+
+        return mb_substr($clean, 0, 200);
     }
 
     private static function resolveLogDir(): ?string

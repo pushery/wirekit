@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.5.0 — MIT License
+ * WireKit CSS v2.6.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -152,6 +152,10 @@
        error-message text read as a coherent visual pair. Dark theme has the
        same alignment (both at oklch(70.4% 0.191 22.216)). */
     --color-wk-border-error: oklch(50.5% 0.213 27.518);
+    /* border-success mirrors --color-wk-success-text (same alignment rule as
+       border-error) so a success-state input border and its confirmation text
+       read as one coherent pair. */
+    --color-wk-border-success: oklch(45.6% 0.17 149.7);
     --color-wk-border-strong: oklch(70.8% 0 0);
 
     /* ─── Focus Ring ─── */
@@ -242,9 +246,8 @@
     --size-wk-xs: 1.5rem;
     --size-wk-sm: 2rem;
     /* md-compact: the dense-toolbar middle tier between sm (2rem) and md
-       (2.5rem). Real-world list/filter toolbars (Linear, Stripe, Shopify)
-       land here — sm reads cramped, md reads slightly too tall in a dense
-       row. */
+       (2.5rem). Real-world list/filter toolbars land here — sm reads
+       cramped, md reads slightly too tall in a dense row. */
     --size-wk-md-compact: 2.25rem;
     --size-wk-md: 2.5rem;
     --size-wk-lg: 3rem;
@@ -299,6 +302,7 @@
     --size-wk-container-2xl: 96rem;
 
     /* ─── Font Sizes per Size ─── */
+    --text-wk-2xs: 0.6875rem;
     --text-wk-xs: 0.75rem;
     --text-wk-sm: 0.8125rem;
     --text-wk-md: 0.875rem;
@@ -410,6 +414,7 @@
     --color-wk-border-hover: oklch(43.9% 0 0);
     --color-wk-border-subtle: oklch(26.9% 0 0);
     --color-wk-border-error: oklch(70.4% 0.191 22.216);
+    --color-wk-border-success: oklch(79.2% 0.209 151.711);
     --color-wk-border-strong: oklch(55.6% 0 0);
 
     /* Focus Ring */
@@ -471,6 +476,66 @@
     background: var(--color-wk-scrollbar-track);
 }
 
+/* ─── Scroll-shadow utility ───────────────────────────────── */
+/* Apply .wk-scroll-shadow to a scrollable container for top/bottom
+   shadows that appear ONLY when content is hidden in that direction — a
+   pure-CSS overflow affordance (no JS, no scroll listener). The two
+   "cover" gradients (background-attachment: local) ride with the scrolled
+   content and mask the shadows at the very start / end; the two "shadow"
+   gradients (background-attachment: scroll) stay pinned to the scroll
+   viewport, so a shadow shows exactly when there is more to scroll toward.
+   Baseline-safe: background-attachment + color-mix are both in the
+   Tailwind v4 floor. The shadow is a static depth cue (no animation), so
+   no prefers-reduced-motion handling is required.
+
+   Customize via:
+     --wk-scroll-shadow-bg     (cover color — MUST match the container bg)
+     --wk-scroll-shadow-color  (the shadow tint)
+     --wk-scroll-shadow-size   (shadow height) */
+.wk-scroll-shadow {
+    --wk-scroll-shadow-bg: var(--color-wk-bg-elevated);
+    --wk-scroll-shadow-color: color-mix(in oklab, var(--color-wk-text) 12%, transparent);
+    --wk-scroll-shadow-size: 0.875rem;
+    background:
+        linear-gradient(var(--wk-scroll-shadow-bg) 30%, transparent) center top / 100% 2.25rem,
+        linear-gradient(transparent, var(--wk-scroll-shadow-bg) 70%) center bottom / 100% 2.25rem,
+        radial-gradient(farthest-side at 50% 0, var(--wk-scroll-shadow-color), transparent) center top / 100% var(--wk-scroll-shadow-size),
+        radial-gradient(farthest-side at 50% 100%, var(--wk-scroll-shadow-color), transparent) center bottom / 100% var(--wk-scroll-shadow-size);
+    background-repeat: no-repeat;
+    background-attachment: local, local, scroll, scroll;
+}
+
+/* Overlay-variant scroll shadows — painted ABOVE the scrolled content.
+   The background-based .wk-scroll-shadow above sits UNDER children, so a
+   hovered row/button at a scroll edge covers it; these overlays (used by
+   <x-wirekit::sticky-panel>, toggled by an IntersectionObserver over two
+   edge sentinels) always stay visible on top. Place them as siblings AFTER
+   the scroll container inside a `position: relative` wrapper, and drive
+   their opacity from the sentinel state. They share the utility's
+   customization variables (color + size); no cover gradient is needed —
+   visibility itself is the auto-hide. pointer-events: none keeps clicks
+   flowing to the content beneath. */
+.wk-scroll-shadow-top,
+.wk-scroll-shadow-bottom {
+    --wk-scroll-shadow-color: color-mix(in oklab, var(--color-wk-text) 12%, transparent);
+    --wk-scroll-shadow-size: 0.875rem;
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: var(--wk-scroll-shadow-size);
+    pointer-events: none;
+}
+
+.wk-scroll-shadow-top {
+    top: 0;
+    background: radial-gradient(farthest-side at 50% 0, var(--wk-scroll-shadow-color), transparent);
+}
+
+.wk-scroll-shadow-bottom {
+    bottom: 0;
+    background: radial-gradient(farthest-side at 50% 100%, var(--wk-scroll-shadow-color), transparent);
+}
+
 /* ─── Hero / CTA muted-text-on-dark contrast fix ───────────── */
 /* When a hero or cta runs variant="dark" / "accent", a nested
    <x-wirekit::text variant="muted"> would otherwise read a --color-wk-text-muted
@@ -518,6 +583,38 @@
         width: 1.75rem;
         height: 1.75rem;
     }
+}
+
+/* ─── Blocked-day diagonal hatch (event-calendar day markers) ── */
+/* A day marked `blocked` (unavailable) gets a subtle diagonal hatch on top of
+   its muted surface so the unavailable state is conveyed texturally, not by
+   color alone. The "unavailable" state is ALSO written into the day's
+   accessible name in the Blade (an sr-only suffix) — the hatch is a redundant
+   visual cue, never the sole carrier of meaning (WCAG 1.4.1). The stripe color
+   is a low-opacity mix of the subtle-text token so it reads on any theme.
+   background-image composes over the element's background-color (the muted
+   tint set by a utility class), so both apply together. */
+.wk-day-blocked {
+    background-image: repeating-linear-gradient(
+        -45deg,
+        color-mix(in oklab, var(--color-wk-text-subtle) 40%, transparent) 0,
+        color-mix(in oklab, var(--color-wk-text-subtle) 40%, transparent) 2px,
+        transparent 2px,
+        transparent 8px
+    );
+}
+
+/* ─── Leaflet intent-colored marker pin ─────────────────────── */
+/* <x-wirekit::map> with the Leaflet provider renders each marker as an
+   inline-SVG divIcon (map.js _leafletIcon) so the pin can be filled with the
+   marker's intent token — Leaflet's default marker is a fixed PNG that can't
+   be themed. Leaflet's divIcon `className` option REPLACES the default
+   `leaflet-div-icon` class (white box + gray border), but we reset here too so
+   the bare SVG shows on any Leaflet version. No effect for MapLibre, which
+   colors its own SVG marker via `new Marker({ color })`. */
+.wk-map-pin {
+    background: transparent;
+    border: 0;
 }
 
 /* ─── Table-aware cell padding for raw <td>/<th> ───────────── */
@@ -635,10 +732,10 @@
     100% { transform: translateX(100%); }
 }
 
-/* Pulse mode — opt-in via `:shimmer="false"` on the Blade component.
-   Hides the gradient ::after layer entirely + pulses the base element
-   opacity. Halves GPU layer count per skeleton; matches the GitHub /
-   Linear loading aesthetic. */
+/* Pulse mode — opt-in via `:shimmer="false"` or `animation="pulse"` on the
+   Blade component. Hides the gradient ::after layer entirely + pulses the
+   base element opacity. Halves GPU layer count per skeleton; the calm
+   opacity-pulse loading aesthetic. */
 .wk-skeleton[data-pulse="true"]::after {
     display: none;
 }
@@ -648,6 +745,16 @@
 @keyframes wk-skeleton-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: var(--reading-skeleton-pulse-opacity, 0.5); }
+}
+
+/* Static mode — opt-in via `animation="none"`. No shimmer sweep, no pulse:
+   a flat placeholder block. For low-power / reduced-data contexts and for
+   developers who prefer a calm, motion-free skeleton. */
+.wk-skeleton[data-animation="none"]::after {
+    display: none;
+}
+.wk-skeleton[data-animation="none"] {
+    animation: none;
 }
 
 /* ─── Avatar group (stacked / overlapping) ─────────────────── */
@@ -1195,6 +1302,88 @@
 [data-wk-timeline] > li:last-child > [data-wk-timeline-item-content],
 [data-wk-timeline] > li:has(+ li[aria-hidden="true"]) > [data-wk-timeline-item-content] {
     padding-bottom: 0;
+}
+
+/* Vertical carousel — each slide must fill the fixed-height viewport so the     */
+/* translateY(-N*100%) step scrolls exactly one slide at a time. The slide       */
+/* sub-component is w-full shrink-0 (works for both axes); the height is added    */
+/* only when its carousel ancestor is vertical, leaving horizontal unchanged.    */
+[data-wk-carousel-orientation="vertical"] [data-wk-carousel-slide] {
+    height: 100%;
+}
+
+/* Rich-text editor content typography. Tiptap renders into a `.wk-editor-content` */
+/* element (set via editorProps); these token-driven rules give the document a     */
+/* sensible default look (the developer can override via their own stylesheet).    */
+/* The layout rules are REAL CSS on purpose: Tailwind never scans the JS config    */
+/* strings that emit this class, so utility classes there would silently not       */
+/* exist in a developer's build.                                                   */
+.wk-editor-content {
+    /* The editor body host is a flex column — fill it so the WHOLE box is the
+       clickable work area, not just the typed lines. */
+    flex: 1 1 auto;
+    /* The wrapper's focus-within ring frames the field; without this the
+       browser's default contenteditable outline draws a second ring INSIDE. */
+    outline: none;
+    /* Long unwrappable content (a heading turned H1) must wrap inside the
+       editor, never widen it. Pairs with [contain:inline-size] on the host. */
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: break-word;
+}
+.wk-editor-content > * + * {
+    margin-top: 0.75em;
+}
+.wk-editor-content h1 { font-size: var(--text-wk-2xl); font-weight: var(--font-wk-heading-weight); line-height: 1.2; }
+.wk-editor-content h2 { font-size: var(--text-wk-xl); font-weight: var(--font-wk-heading-weight); line-height: 1.25; }
+.wk-editor-content h3 { font-size: var(--text-wk-lg); font-weight: var(--font-wk-heading-weight); line-height: 1.3; }
+/* Inline marks MUST be styled explicitly. Tiptap's Bold renders <strong> and
+   Italic renders <em>, but the bold/italic browser defaults get flattened in the
+   editor surface (Tailwind Preflight / the host's reset cascade) — so the mark
+   APPLIED but the text did not look bold/italic, while Underline (<u>) and Strike
+   (<s>) kept their text-decoration defaults and DID show (QA). Restore them
+   explicitly, using the house emphasis weight for bold. */
+.wk-editor-content strong, .wk-editor-content b { font-weight: var(--font-wk-heading-weight); }
+.wk-editor-content em, .wk-editor-content i { font-style: italic; }
+.wk-editor-content a { color: var(--color-wk-accent); text-decoration: underline; }
+.wk-editor-content ul { list-style: disc; padding-inline-start: 1.5em; }
+.wk-editor-content ol { list-style: decimal; padding-inline-start: 1.5em; }
+.wk-editor-content blockquote {
+    border-inline-start: 3px solid var(--color-wk-border);
+    padding-inline-start: 1em;
+    color: var(--color-wk-text-muted);
+}
+/* Horizontal rule (the toolbar "Divider" command runs setHorizontalRule(),    */
+/* which inserts a bare <hr>). Its 1px default border is flattened by the host  */
+/* reset cascade — exactly like the bold/em marks above — so the line rendered  */
+/* INVISIBLE. Paint it explicitly as a themed full-width divider (matches the   */
+/* <x-wirekit::divider> border treatment).                                      */
+.wk-editor-content hr {
+    border: 0;
+    border-top: var(--border-wk-width) solid var(--color-wk-border);
+    margin-block: 1.25em;
+}
+.wk-editor-content code {
+    font-family: var(--font-wk-mono, ui-monospace, monospace);
+    font-size: 0.9em;
+    background: var(--color-wk-bg-muted);
+    border-radius: var(--radius-wk-sm);
+    padding: 0.1em 0.3em;
+}
+.wk-editor-content pre {
+    background: var(--color-wk-bg-muted);
+    border-radius: var(--radius-wk-md);
+    padding: var(--padding-wk-y-md) var(--padding-wk-x-md);
+    overflow-x: auto;
+}
+.wk-editor-content pre code { background: transparent; padding: 0; }
+/* Placeholder (requires @tiptap/extension-placeholder; renders on the empty doc). */
+.wk-editor-content p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--color-wk-text-placeholder);
+    float: inline-start;
+    height: 0;
+    pointer-events: none;
 }
 
 /* Tour step initial position — park every tour step off-screen before    */

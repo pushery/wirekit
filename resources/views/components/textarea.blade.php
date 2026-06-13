@@ -2,7 +2,12 @@
     'label' => null,
     'hint' => null,
     'error' => null,
+    // Success / valid state — string shows a green confirmation below, `true`
+    // shows just the green border. `error` always wins when both are set.
+    'success' => null,
     'size' => config('wirekit.components.textarea.size', 'md'),
+    // Number of rows, OR 'auto' to grow with content (CSS field-sizing: content,
+    // baseline-safe). In auto mode `rows` acts as the minimum height.
     'rows' => config('wirekit.components.textarea.rows', 3),
     'resize' => true,
     'scope' => null,
@@ -18,6 +23,17 @@
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
+
+    // Success / valid state — only when there is no error (error wins).
+    $hasSuccess = ! $hasError && $success !== null && $success !== false;
+    $successMessage = is_string($success) ? $success : null;
+
+    // Auto-size: `rows="auto"` grows the textarea with its content via CSS
+    // `field-sizing: content` (in the WireKit browser baseline). The numeric
+    // `rows` still serves as the minimum height; we never emit `rows="auto"`
+    // (invalid HTML) — auto falls back to a 2-row minimum.
+    $autosize = $rows === 'auto' || $rows === true;
+    $minRows = $autosize ? 2 : (int) $rows;
 
     // Base classes: all values reference design tokens — no hardcoded colors or sizes
     //
@@ -48,10 +64,12 @@
         'disabled:cursor-not-allowed',
     ]), $scope);
 
-    // Border color switches between normal and error state — both via tokens
-    $stateClasses = $hasError
-        ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]'
-        : 'border-[var(--color-wk-border)]';
+    // Border color switches between error, success, and normal state — all via tokens
+    $stateClasses = match (true) {
+        (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]',
+        $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success)]',
+        default => 'border-[var(--color-wk-border)]',
+    };
 
     // Size classes: padding (horizontal + vertical), font size, radius — all from sizing tokens
     // Textarea uses padding-y instead of fixed height (unlike input/select)
@@ -86,15 +104,18 @@
     <textarea
         id="{{ $id }}"
         name="{{ $name }}"
-        rows="{{ $rows }}"
+        rows="{{ $minRows }}"
         @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
-        @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
-        {{ $attributes->class([$textareaClasses, $stateClasses, $sizeClasses, $resize ? 'resize-y' : 'resize-none']) }}
+        @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
+        @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
+        {{ $attributes->class([$textareaClasses, $stateClasses, $sizeClasses, $resize ? 'resize-y' : 'resize-none', '[field-sizing:content]' => $autosize]) }}
     >{{ $slot }}</textarea>
 
-    {{-- Error message and hint text use design tokens for automatic dark mode --}}
+    {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}
     @if($hasError && $errorMessage)
         <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    @elseif($hasSuccess && $successMessage)
+        <p id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
     @elseif($hint)
         <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif

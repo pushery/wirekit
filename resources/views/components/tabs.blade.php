@@ -2,6 +2,7 @@
     'items' => [],
     'default' => null,
     'variant' => config('wirekit.components.tabs.variant', 'underline'),
+    'orientation' => 'horizontal', // horizontal (default) | vertical
     'label' => 'Tabs',
     'scope' => null,
 ])
@@ -9,27 +10,41 @@
 @php
     use Pushery\WireKit\WireKit;
 
-    // Normalize $items at the template edge: accept BOTH historical shapes:
-    //   - Keyed-assoc (legacy):    ['profile' => 'Profile', 'billing' => 'Billing']
-    //   - Array-of-objects:        [['key' => 'profile', 'label' => 'Profile'], ...]
-    // After this block, $items is always the keyed-assoc form so the
-    // existing render loops + Alpine bindings stay byte-stable.
+    $orientationValue = match ($orientation) {
+        'horizontal', 'vertical' => $orientation,
+        default => WireKit::validateProp('tabs', 'orientation', $orientation, ['horizontal', 'vertical']),
+    };
+    $isVertical = $orientationValue === 'vertical';
+
+    // Normalize $items at the template edge to a keyed map of per-tab metadata:
+    //   $tabs[key] = ['label' => string, 'icon' => ?string, 'badge' => ?scalar]
+    // Accepts BOTH historical input shapes:
+    //   - Keyed-assoc (legacy):  ['profile' => 'Profile', 'billing' => 'Billing']
+    //   - Array-of-objects:      [['key' => 'profile', 'label' => 'Profile',
+    //                              'icon' => 'user', 'badge' => 3], ...]
+    // Only the array-of-objects shape can carry per-tab `icon` / `badge`.
     //
     // Detection: PHP 8.1+ array_is_list() returns true for a zero-indexed
-    // sequential array (the shape of array-of-objects). Keyed-assoc
-    // returns false. Empty array stays empty.
+    // sequential array (the shape of array-of-objects). Keyed-assoc returns false.
+    $tabs = [];
     if (is_array($items) && array_is_list($items)) {
-        $normalized = [];
         foreach ($items as $item) {
             if (is_array($item) && isset($item['key'])) {
-                $normalized[$item['key']] = $item['label'] ?? $item['key'];
+                $tabs[$item['key']] = [
+                    'label' => $item['label'] ?? $item['key'],
+                    'icon' => $item['icon'] ?? null,
+                    'badge' => $item['badge'] ?? null,
+                ];
             }
         }
-        $items = $normalized;
+    } else {
+        foreach ($items as $key => $val) {
+            $tabs[$key] = ['label' => $val, 'icon' => null, 'badge' => null];
+        }
     }
 
     // Resolve the initial active tab: explicit default, otherwise first key
-    $activeTab = $default ?? (array_key_first($items) ?? '');
+    $activeTab = $default ?? (array_key_first($tabs) ?? '');
 
     // Unique instance id — needed so multiple Tabs components on the same page
     // don't clash on `aria-controls`/`id` attributes when mounted together.
@@ -55,9 +70,15 @@
     // own keyboard model — scroll-region rule shape #1). Each tab also
     // carries a no-shrink + no-wrap rule (see $tabBase below) so the
     // rounded track doesn't squish its children below their label width.
-    $tablistBase = match ($variant) {
-        'pills' => 'inline-flex items-center gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)] max-w-full overflow-x-auto overflow-y-hidden',
-        'bordered' => 'inline-flex items-center border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden max-w-full overflow-x-auto',
+    $tablistBase = match (true) {
+        // Vertical orientation — stack the tabs; the active indicator becomes the
+        // inline-end (right) border for underline, full-width pill/segment otherwise.
+        $isVertical && $variant === 'pills' => 'flex flex-col gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)]',
+        $isVertical && $variant === 'bordered' => 'flex flex-col border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden',
+        $isVertical => 'flex flex-col items-stretch border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
+        // Horizontal orientation (default) — unchanged.
+        $variant === 'pills' => 'inline-flex items-center gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)] max-w-full overflow-x-auto overflow-y-hidden',
+        $variant === 'bordered' => 'inline-flex items-center border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden max-w-full overflow-x-auto',
         default => 'inline-flex items-center gap-2 border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] max-w-full overflow-x-auto overflow-y-hidden',
     };
 
@@ -70,9 +91,14 @@
     // squish tabs and wrap/clip labels instead of letting the bar scroll.
     $tabBase = 'inline-flex items-center gap-2 shrink-0 whitespace-nowrap font-[number:var(--font-wk-body-weight)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed cursor-pointer';
 
-    $tabVariantClasses = match ($variant) {
-        'pills' => 'p-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-md)]',
-        'bordered' => 'p-[var(--padding-wk-x-sm)] border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)] last:border-r-0',
+    $tabVariantClasses = match (true) {
+        // Vertical — left-align content; the underline indicator moves to the right edge.
+        $isVertical && $variant === 'pills' => 'justify-start p-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-md)]',
+        $isVertical && $variant === 'bordered' => 'justify-start p-[var(--padding-wk-x-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] last:border-b-0',
+        $isVertical => 'justify-start p-[var(--padding-wk-x-sm)] -mr-[length:var(--border-wk-width)] border-r-[3px] border-transparent',
+        // Horizontal (default) — unchanged.
+        $variant === 'pills' => 'p-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-md)]',
+        $variant === 'bordered' => 'p-[var(--padding-wk-x-sm)] border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)] last:border-r-0',
         default => 'p-[var(--padding-wk-x-sm)] -mb-[length:var(--border-wk-width)] border-b-[3px] border-transparent',
     };
 
@@ -87,8 +113,14 @@
 
     $tabInactiveClasses = 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]';
 
-    // Panel container — the area below the tablist that shows the active panel.
-    $panelClasses = WireKit::resolveClasses('tabs', 'panel', 'pt-[var(--padding-wk-y-md)]', $scope);
+    // Root layout — vertical places the tablist beside the panels (flex row);
+    // horizontal stacks them (the panel sits below the tablist).
+    $rootClasses = $isVertical ? 'flex gap-[var(--padding-wk-x-lg)] items-start' : '';
+
+    // Panel container — vertical takes the remaining inline space; horizontal pads the top.
+    $panelClasses = WireKit::resolveClasses('tabs', 'panel',
+        $isVertical ? 'flex-1 min-w-0' : 'pt-[var(--padding-wk-y-md)]',
+        $scope);
 
     // Dev-mode warning: tabs are client-only Alpine state — wire:model
     // passed on the component tag is silently dropped into the outer
@@ -128,12 +160,12 @@
     @if($warnWireModelInDebug)
         x-init="console.warn('[wirekit] tabs: wire:model dropped — tabs are client-only Alpine state, not a Livewire input. Use named slots for content (<x-slot:keyname>...</x-slot:keyname>) per items[key]. See https://docs.wirekit.app/components/tabs for the contract.')"
     @endif
-    {{ $attributes }}
+    {{ $attributes->class([$rootClasses]) }}
 >
-    {{-- Tablist — horizontal list of tab buttons.
+    {{-- Tablist — the row (or column, when vertical) of tab buttons.
          role="tablist" groups the tab buttons as a single keyboard navigation unit. --}}
-    <div role="tablist" aria-label="{{ $label }}" class="{{ $tablistClasses }}">
-        @foreach($items as $key => $label)
+    <div role="tablist" aria-label="{{ $label }}" aria-orientation="{{ $orientationValue }}" class="{{ $tablistClasses }}">
+        @foreach($tabs as $key => $tab)
             <button
                 type="button"
                 role="tab"
@@ -142,14 +174,25 @@
                 :aria-selected="active === @js($key) ? 'true' : 'false'"
                 :tabindex="active === @js($key) ? '0' : '-1'"
                 @click="active = @js($key)"
-                @keydown.arrow-right.prevent="focusTab('next')"
-                @keydown.arrow-left.prevent="focusTab('prev')"
+                @if($isVertical)
+                    @keydown.arrow-down.prevent="focusTab('next')"
+                    @keydown.arrow-up.prevent="focusTab('prev')"
+                @else
+                    @keydown.arrow-right.prevent="focusTab('next')"
+                    @keydown.arrow-left.prevent="focusTab('prev')"
+                @endif
                 @keydown.home.prevent="focusTab('first')"
                 @keydown.end.prevent="focusTab('last')"
                 :class="active === @js($key) ? '{{ $tabActiveClasses }}' : '{{ $tabInactiveClasses }}'"
                 class="{{ $tabClasses }}"
             >
-                {{ $label }}
+                @if($tab['icon'])
+                    <x-wirekit::icon :name="$tab['icon']" class="h-4 w-4 shrink-0" />
+                @endif
+                <span>{{ $tab['label'] }}</span>
+                @if($tab['badge'] !== null && $tab['badge'] !== '')
+                    <x-wirekit::badge size="sm">{{ $tab['badge'] }}</x-wirekit::badge>
+                @endif
             </button>
         @endforeach
     </div>
@@ -158,7 +201,7 @@
          matching the item key (`<x-slot:{key}>...</x-slot:{key}>`). Only the
          active panel is visible; others stay in the DOM but are hidden via x-show. --}}
     <div class="{{ $panelClasses }}">
-        @foreach($items as $key => $label)
+        @foreach($tabs as $key => $tab)
             <div
                 role="tabpanel"
                 id="{{ $uid }}-panel-{{ $key }}"

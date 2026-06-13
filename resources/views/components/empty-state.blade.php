@@ -2,6 +2,9 @@
     'icon' => null,
     'title' => null,
     'description' => null,
+    // Container chrome: default (no border/bg — v1.5.0-identical) · outline (dashed
+    // border, reads as a placeholder drop-zone) · muted (filled muted surface).
+    'variant' => config('wirekit.components.empty-state.variant', 'default'),
     // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
     'animateIn' => null,
     'scope' => null,
@@ -10,11 +13,29 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // outline ↔ outlined spelling-pair alias (house rule — EnumValueAliasConsistencyTest).
+    $variantAliases = ['outlined' => 'outline'];
+    $variant = $variantAliases[$variant] ?? $variant;
+
+    $variantValue = match ($variant) {
+        'default', 'outline', 'muted' => $variant,
+        default => WireKit::validateProp('empty-state', 'variant', $variant, ['default', 'outline', 'muted']),
+    };
+
+    // Container chrome per variant. `default` adds nothing (back-compat); the others
+    // wrap the centered content in a rounded surface for use as a standalone card.
+    $variantClasses = match ($variantValue) {
+        'outline' => 'rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-dashed border-[var(--color-wk-border)]',
+        'muted' => 'rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)]',
+        default => '',
+    };
+
     // Centered container with muted colors and generous vertical padding
     $classes = WireKit::resolveClasses('empty-state', 'base', implode(' ', [
         'flex flex-col items-center justify-center text-center',
         'px-[var(--padding-wk-x-xl)] py-[var(--padding-wk-y-xl)]',
         'font-[family-name:var(--font-wk-sans)]',
+        $variantClasses,
     ]), $scope);
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'empty-state');

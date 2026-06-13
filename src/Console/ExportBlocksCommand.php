@@ -34,14 +34,15 @@ use Pushery\WireKit\WireKit;
 class ExportBlocksCommand extends Command
 {
     protected $signature = 'wirekit:export-blocks
-        {--pretty : Pretty-print (multi-line) output}';
+        {--pretty : Pretty-print (multi-line) output}
+        {--public : Emit the blocks docs.wirekit.app serves at its /blocks.json endpoint (the default emits all blocks).}';
 
     protected $description = 'Emit a machine-readable JSON manifest of every layout + blueprint';
 
     /**
      * Hidden from `php artisan list` and from the public CLI reference doc
      * — the command itself works fine but its companion docs catalog is
-     * still in pre-release staging. Once the catalog is published, flip
+     * not part of the public CLI reference yet. Once it is, flip
      * to `protected $hidden = false;` and add a `## wirekit:export-blocks`
      * section to `docs/cli-reference.md`.
      */
@@ -60,6 +61,22 @@ class ExportBlocksCommand extends Command
             $this->scanDirectory($packageRoot, 'layouts'),
             $this->scanDirectory($packageRoot, 'blueprints'),
         );
+
+        // --public: hard-filter to the public blocks at the SOURCE. A
+        // public machine-readable manifest (served at /blocks.json) must NEVER
+        // list a block that isn't public — non-public blocks and drafts are
+        // dropped HERE so the guarantee can't depend on a downstream serve
+        // remembering to filter (an absolute project rule: a public artifact
+        // never carries non-public content). Without the flag the full
+        // manifest (every block + its visibility field) stays available for
+        // the docs site's authenticated full-catalog gallery.
+        if ($this->option('public')) {
+            $blocks = array_values(array_filter(
+                $blocks,
+                fn (array $b): bool => ($b['visibility'] ?? 'guest') === 'guest'
+                    && ($b['draft'] ?? false) !== true,
+            ));
+        }
 
         usort($blocks, fn (array $a, array $b): int => strcmp($a['slug'], $b['slug']));
 

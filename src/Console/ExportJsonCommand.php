@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\ClassPropsExtractor;
+use Pushery\WireKit\Support\DocsVisibility;
 use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\VersionResolver;
 use Pushery\WireKit\WireKit;
@@ -27,15 +28,25 @@ use Pushery\WireKit\WireKit;
  * minified JSON. Either way: stdout-only, exit 0 on success, JSON
  * decodable.
  *
+ * --public restricts the manifest to components whose dedicated docs
+ * page is publicly rendered — the variant docs.wirekit.app serves at
+ * /components.json. A component whose page is not publicly rendered is
+ * omitted entirely. Components with NO dedicated page (the sub-component
+ * pattern, documented on a parent page) always stay. The flagless full
+ * manifest is the build input for docs.wirekit.app and internal tooling.
+ *
  * Usage:
  *   php artisan wirekit:export-json --pretty
+ *   php artisan wirekit:export-json --public
  *   php artisan wirekit:export-json
  *
  * Output: full JSON document on stdout. Exit code 0 = success.
  */
 class ExportJsonCommand extends Command
 {
-    protected $signature = 'wirekit:export-json {--pretty : Pretty-print the JSON output}';
+    protected $signature = 'wirekit:export-json
+        {--pretty : Pretty-print the JSON output}
+        {--public : Emit the manifest docs.wirekit.app serves at its /components.json endpoint (the default emits the full inventory).}';
 
     protected $description = 'Emit machine-readable JSON manifest of every WireKit component (props + slots + category)';
 
@@ -44,6 +55,17 @@ class ExportJsonCommand extends Command
         $components = [];
 
         foreach (ComponentRegistry::all() as $name => $meta) {
+            $pageStatus = DocsVisibility::componentPageStatus($name);
+
+            // --public: a component whose page exists but is not
+            // publicly rendered is omitted ENTIRELY — never merely
+            // docs_url=null. MISSING is deliberately kept: a page-less
+            // sub-component (toast-region, glass, reading-*) is
+            // documented on a parent page.
+            if ($this->option('public') && $pageStatus === DocsVisibility::STATUS_STAGED) {
+                continue;
+            }
+
             $bladePath = $this->resolveBladePath($name);
             // ComponentRegistry::extractProps() is THE single source of
             // truth for prop extraction. It routes anonymous components
@@ -70,9 +92,10 @@ class ExportJsonCommand extends Command
             // docs.wirekit.app. When the component's dedicated docs page
             // has no publicly-rendered surface, the field is null so AI
             // tooling clients don't fetch a URL that returns nothing
-            // useful. The component itself remains in the manifest (it's
-            // still a callable Blade tag); only the docs URL drops.
-            $docsUrl = $this->hasPublicDocsPage($name)
+            // useful. In the FULL manifest the component entry remains
+            // (it's still a callable Blade tag) with the URL nulled;
+            // under --public a non-public entry was already dropped above.
+            $docsUrl = $pageStatus === DocsVisibility::STATUS_PUBLIC
                 ? WireKit::DOCS_URL."/components/{$name}"
                 : null;
 
@@ -143,49 +166,6 @@ class ExportJsonCommand extends Command
         $this->output->writeln('');
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Whether the component has a publicly-rendered docs page. Reads
-     * `docs/components/{name}.md`'s YAML frontmatter; only `visibility:
-     * guest` (or no `visibility:` field at all — defaults to guest) counts
-     * as public. Missing docs file → false. Used to gate `docs_url`
-     * emission so the manifest doesn't advertise URLs that resolve to
-     * pages developers can't actually visit.
-     */
-    private function hasPublicDocsPage(string $name): bool
-    {
-        $path = dirname(__DIR__, 2)."/docs/components/{$name}.md";
-        if (! file_exists($path)) {
-            return false;
-        }
-
-        $content = (string) file_get_contents($path);
-
-        // Frontmatter must be at the very top, between two `---` lines.
-        if (! str_starts_with($content, '---')) {
-            // No frontmatter → assume public (consistent with the
-            // downstream Markdown parser, which treats missing
-            // visibility: as guest by default).
-            return true;
-        }
-
-        $closing = strpos($content, "\n---", 3);
-        if ($closing === false) {
-            return true;
-        }
-
-        $frontmatter = substr($content, 3, $closing - 3);
-
-        // Match `visibility:` value on its own line. Strict shape avoids
-        // false-positives on prose mentions of the literal field name
-        // — but we already strip body content above so this is belt-and-
-        // braces.
-        if (preg_match('/^\s*visibility\s*:\s*([a-z]+)\s*$/mi', $frontmatter, $m)) {
-            return strtolower($m[1]) === 'guest';
-        }
-
-        return true;
     }
 
     /**

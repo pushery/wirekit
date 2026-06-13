@@ -13,6 +13,7 @@ use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\ClassPropsExtractor;
 use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\SuggestSimilar;
+use Pushery\WireKit\Support\TailwindVersion;
 use Pushery\WireKit\Support\VersionResolver;
 use Pushery\WireKit\Theming\ThemePresetRegistry;
 use Pushery\WireKit\WireKit;
@@ -231,6 +232,27 @@ class InstallCommand extends Command
     {
         $errors = [];
         $warnings = [];
+
+        // 0) Tailwind CSS v4+ is a HARD requirement — WireKit's CSS uses the v4
+        //    engine (@theme, @source, color-mix(), @property) and cannot run on
+        //    v3. Composer can't gate it (Tailwind is an npm dependency, and
+        //    WireKit is not an npm package) and `wirekit:doctor` runs only
+        //    post-install, so this pre-flight ERROR is the earliest checkpoint —
+        //    it hard-aborts before any files are written. Conservative:
+        //    TailwindVersion::isPreV4() trips only on positive pre-v4 evidence,
+        //    so a valid v4 install is never blocked.
+        if (TailwindVersion::isPreV4(base_path())) {
+            $detected = TailwindVersion::detectMajor(base_path());
+            $errors[] = sprintf(
+                "Tailwind CSS v4+ is required — detected %s. WireKit's CSS is built on the Tailwind v4 ".
+                "engine (@theme, @source, color-mix(), @property) and cannot run on Tailwind v3.\n".
+                "Upgrade first:\n".
+                "  npm install tailwindcss@latest @tailwindcss/vite@latest\n".
+                'then migrate your CSS to the v4 syntax (https://tailwindcss.com/docs/upgrade-guide) '.
+                'and re-run `php artisan wirekit:install`.',
+                $detected !== null ? "Tailwind v{$detected}" : 'a pre-v4 Tailwind'
+            );
+        }
 
         // 1) Font-key validation (errors). Each --font* must resolve to a
         //    real preset in the correct category.

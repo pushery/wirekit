@@ -43,6 +43,10 @@
         // collapses to the width of its widest text row (the two bound labels,
         // e.g. "0 … 10"), i.e. ~60px: far too narrow to drag. A min-width keeps
         // it operable everywhere while still expanding to 100% in normal flow.
+        // 20rem (not the single slider's 16rem): a DUAL-thumb track needs room
+        // for two handles plus their value bubbles without the bubbles colliding
+        // on contact — the wider floor keeps the demo and tight-column real
+        // usages comfortable. Still shrinks to 100% of a narrower parent.
         'min-w-[16rem]',
     ]), $scope);
 
@@ -128,6 +132,7 @@
             _max: {{ $max }},
             _step: {{ $step }},
             _dragging: null,
+            _merged: false,
             get minPercent() { return ((this.minVal - this._min) / (this._max - this._min)) * 100; },
             get maxPercent() { return ((this.maxVal - this._min) / (this._max - this._min)) * 100; },
             stepMin(dir) {
@@ -163,8 +168,17 @@
             _dispatch() {
                 this.$refs.minInput?.dispatchEvent(new Event('input', { bubbles: true }));
                 this.$refs.maxInput?.dispatchEvent(new Event('input', { bubbles: true }));
+            },
+            _measureBubbles() {
+                const track = this.$refs.track, lo = this.$refs.minBubble, hi = this.$refs.maxBubble;
+                if (!track || !lo || !hi) return;
+                const tw = track.getBoundingClientRect().width;
+                if (!tw) return;
+                const need = (lo.offsetWidth + hi.offsetWidth) / 2 + 6;
+                this._merged = ((this.maxPercent - this.minPercent) / 100 * tw) < need;
             }
         }"
+        x-effect="minVal; maxVal; $nextTick(() => _measureBubbles())"
         class="relative"
         @if($resolvedShowValues)
             style="padding-top: 2rem;"
@@ -243,9 +257,24 @@
                 @pointerdown="startDrag('min', $event)"
             >
                 @if($resolvedShowValues)
+                    {{-- Edge-flush clamp. The bubble's containing block is the
+                         thumb wrapper (a thumb-sized box centered on the
+                         handle), so `left: ${minPercent}%` slides the bubble's
+                         anchor across the THUMB's own width — 0% → the thumb's
+                         outer-left edge, 100% → its outer-right edge, 50% → center
+                         — and `translateX(-${minPercent}%)` aligns the bubble's own
+                         box the same way. Net: at the far-left the bubble closes
+                         flush with the circle's outer edge (not the track line a
+                         half-thumb further in), at the far-right flush on the right,
+                         centered in the middle. Anchoring on the thumb box auto-
+                         scales with the coarse-pointer thumb size. The transform
+                         carries no transition (only opacity does), so it snaps. --}}
                     <span
                         aria-hidden="true"
-                        class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
+                        x-ref="minBubble"
+                        :class="_merged ? 'opacity-0' : 'opacity-100'"
+                        :style="`left: ${minPercent}%; transform: translateX(-${minPercent}%)`"
+                        class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none transition-opacity duration-[var(--transition-wk-duration)]"
                         x-text="minVal"
                     >{{ $initialMin }}</span>
                 @endif
@@ -268,13 +297,66 @@
                 @pointerdown="startDrag('max', $event)"
             >
                 @if($resolvedShowValues)
+                    {{-- Edge-flush clamp — mirror of the min bubble, keyed to
+                         maxPercent so the max thumb's bubble closes flush with the
+                         circle's outer-right edge at 100% (and outer-left at 0%). --}}
                     <span
                         aria-hidden="true"
-                        class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
+                        x-ref="maxBubble"
+                        :class="_merged ? 'opacity-0' : 'opacity-100'"
+                        :style="`left: ${maxPercent}%; transform: translateX(-${maxPercent}%)`"
+                        class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none transition-opacity duration-[var(--transition-wk-duration)]"
                         x-text="maxVal"
                     >{{ $initialMax }}</span>
                 @endif
             </div>
+
+            @if($resolvedShowValues)
+                {{-- Merged badge: when the thumbs sit close enough that the two
+                     individual badges would overlap (_measureBubbles), show ONE
+                     "min – max" badge centered between them instead.
+
+                     Structure MIRRORS a thumb + its badge: an outer wrapper at
+                     `top-1/2 -translate-y-1/2` (vertically centered on the track,
+                     exactly like a thumb div) carries the horizontal `:style`
+                     left, and the inner badge sits at `-top-8 left-1/2
+                     -translate-x-1/2` (exactly like the per-thumb badges). Sharing
+                     the identical positioning recipe guarantees the merged badge
+                     sits at the SAME height as the individual badges — a bare
+                     `-top-8` off the TRACK sat ~4px lower, because the track top is
+                     above the thumb-centered origin the individual badges use.
+
+                     Visibility is an OPACITY toggle on the SAME `_merged` flag the
+                     individual badges read (they use `!_merged`) — NEVER `x-show`.
+                     `x-show` writes `display:none` into the `style` attribute, but
+                     this element also needs a `:style` left binding, and Alpine
+                     re-renders `:style` on every thumb move — clobbering x-show's
+                     `display:none` and making the merged badge reappear, so BOTH
+                     badge sets showed at once whenever a thumb moved. Keeping
+                     opacity in `class` (via `:class`) leaves `:style` free for
+                     `left`, so the two bindings never fight and the individual vs
+                     merged badges stay strictly mutually exclusive. --}}
+                {{-- "Phantom thumb": same positioning + size recipe as a real
+                     thumb (top-1/2 -translate-y-1/2 -translate-x-1/2 wk-range-thumb)
+                     but invisible and non-interactive. It carries the SAME
+                     `border-2` as a real thumb (transparent here) so its
+                     border-box height is pixel-identical: -translate-y-1/2 then
+                     shifts this wrapper by the EXACT same amount as a real thumb,
+                     landing the inner badge at the same Y as the per-thumb badges.
+                     Without the matching border the real thumb's 2px border
+                     nudged its badge ~2px off the merged badge's row. --}}
+                <div
+                    class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 wk-range-thumb border-2 border-transparent pointer-events-none"
+                    :style="`left: ${(minPercent + maxPercent) / 2}%`"
+                >
+                    <span
+                        aria-hidden="true"
+                        :class="_merged ? 'opacity-100' : 'opacity-0'"
+                        class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] z-30 transition-opacity duration-[var(--transition-wk-duration)]"
+                        x-text="`${minVal} – ${maxVal}`"
+                    ></span>
+                </div>
+            @endif
         </div>
 
         {{-- Edge labels show the slider BOUNDS ($min and $max) — never

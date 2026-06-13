@@ -184,9 +184,8 @@ final class BladeParser
 
     /**
      * Best-effort extraction of `$name = ...` assignments inside
-     * `@php` blocks AND `@php(...)` inline directives. Used to filter
-     *
-     * @php-declared locals out of the slot-detection set so they don't
+     * `@php` blocks AND `@php(...)` inline directives. Used to filter the
+     * `@php`-declared locals out of the slot-detection set so they don't
      * false-positive as required slots.
      *
      * Heuristic only — captures the simple assignment shape; a
@@ -240,9 +239,8 @@ final class BladeParser
     }
 
     /**
-     * Extract every Blade directive used in a file (e.g. @if, @foreach,
-     *
-     * @wirekitStyles).
+     * Extract every Blade directive used in a file (e.g. `@if`, `@foreach`,
+     * `@wirekitStyles`).
      *
      * Useful for drift audits ("does this file use a directive that
      * isn't registered?") and CLI inspection.

@@ -94,16 +94,16 @@ A wide catalog of components organized by category. Browse, search, and try ever
 
 | Category | Examples |
 |----------|----------|
-| **Forms** | button, input, select, textarea, combobox, multi-select, date-picker, slider, color-picker, otp-input, … |
+| **Forms** | button, input, select, textarea, editor, combobox, multi-select, date-picker, slider, color-picker, otp-input, filter-builder, … |
 | **Display** | badge, card, avatar, alert, callout, image-compare, kanban, stage-card, activity-row, reveal, … |
-| **Data Display** | table, pagination, stat, stats, progress, skeleton, spinner, timeline, tree-view, ticker, price, … |
+| **Data Display** | table, data-table, status-matrix, notification-center, pagination, stat, stats, progress, usage-meter, skeleton, spinner, timeline, tree-view, ticker, price, … |
 | **Overlays** | dropdown, tooltip, modal, drawer, popover, hover-card, command-palette, alert-dialog, … |
-| **Navigation** | tabs, breadcrumb, accordion, sidebar, navbar, brand-bar, menubar, navigation-menu, stepper, … |
-| **Layout** | app-shell, header, main, footer, container, stack, grid, section, divider, skip-link, spine-aware, … |
+| **Navigation** | tabs, breadcrumb, accordion, collapsible, sidebar, navbar, brand-bar, menubar, navigation-menu, stepper, … |
+| **Layout** | app-shell, header, main, footer, container, stack, grid, section, divider, sticky-panel, skip-link, spine-aware, … |
 | **Typography** | heading, text, link, code, code-block, kbd, list, blockquote, mark, … |
 | **Marketing** | hero, feature-grid, feature, cta |
-| **Utilities** | fonts, icon, chart, chart-mixed, sparkline, scroll-area, scroll-to-top, structured-data |
-| **Specialized** | resizable, carousel, calendar, tour, qr-code, action-bar, prose, liquid-glass |
+| **Utilities** | fonts, icon, chart, chart-mixed, map, sparkline, scroll-area, scroll-to-top, structured-data |
+| **Specialized** | resizable, carousel, calendar, event-calendar, tour, qr-code, action-bar, prose, liquid-glass |
 | **Reading** | reading-progress, reading-spine, reading-toc, reading-minimap, reading-bookmark, reading-meta, reading-shell |
 | **Animation** | reveal, replay-button |
 | **Feedback** | toast |

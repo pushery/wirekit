@@ -27,6 +27,13 @@
         $alignClass,
         // Compact variant: reduce vertical padding
         '[table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)]',
+        // Sticky first column: freeze the leading header cell. It needs its own
+        // background (it would otherwise show scrolling body cells through it) and
+        // a z-index ABOVE the sticky header (z-10) so the top-left corner stays on top.
+        '[table[data-wk-sticky-column]_&:first-child]:sticky',
+        '[table[data-wk-sticky-column]_&:first-child]:left-0',
+        '[table[data-wk-sticky-column]_&:first-child]:z-20',
+        '[table[data-wk-sticky-column]_&:first-child]:bg-[var(--color-wk-bg-subtle)]',
         // Sortable headers get pointer cursor + hover color
         $sortable ? 'cursor-pointer select-none hover:text-[color:var(--color-wk-text)]' : '',
     ]), $scope);

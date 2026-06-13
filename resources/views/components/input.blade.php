@@ -2,6 +2,10 @@
     'label' => null,
     'hint' => null,
     'error' => null,
+    // Success / valid state. Pass a string to show a green confirmation message
+    // below the field (e.g. "Username available"), or `true` for just the green
+    // border with no message. `error` always wins when both are set.
+    'success' => null,
     'size' => config('wirekit.components.input.size', 'md'),
     'type' => 'text',
     'prefix' => null,
@@ -28,6 +32,12 @@
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
+
+    // Success / valid state — only when there is NO error (error wins). A string
+    // value renders a green confirmation message below the field; `true` shows the
+    // green border alone. Not an `aria-invalid` state (the field is valid).
+    $hasSuccess = ! $hasError && $success !== null && $success !== false;
+    $successMessage = is_string($success) ? $success : null;
 
     // Base classes: all values reference design tokens — no hardcoded colors or sizes
     //
@@ -65,10 +75,12 @@
         'disabled:cursor-not-allowed',
     ]), $scope);
 
-    // Border color switches between normal and error state — both via tokens
-    $stateClasses = $hasError
-        ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]'
-        : 'border-[var(--color-wk-border)]';
+    // Border color switches between error, success, and normal state — all via tokens
+    $stateClasses = match (true) {
+        (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]',
+        $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success)]',
+        default => 'border-[var(--color-wk-border)]',
+    };
 
     // Size classes: height, padding, font size, radius — all from sizing tokens
     $sizeClasses = match ($size) {
@@ -144,7 +156,9 @@
             'has-[:user-invalid]:border-[var(--color-wk-border-error)]',
             'has-[:user-invalid:focus-visible]:ring-[var(--color-wk-danger)]',
             'hover:border-[var(--color-wk-border-hover)]',
-            $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]',
+            $hasError
+                ? 'border-[var(--color-wk-border-error)]'
+                : ($hasSuccess ? 'border-[var(--color-wk-border-success)]' : 'border-[var(--color-wk-border)]'),
             $prefixWrapperSizeClass,
         ])>
             @if($prefix)
@@ -161,7 +175,8 @@
                 @if($autocomplete !== null) autocomplete="{{ $autocomplete }}" @endif
                 @if($placeholder !== null) placeholder="{{ $placeholder }}" @endif
                 @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
-                @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
+                @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
+                @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
                 {{ $attributes->class([
                     'block w-full h-full bg-transparent border-none shadow-none',
                     'font-[family-name:var(--font-wk-sans)]',
@@ -191,14 +206,17 @@
             @if($autocomplete !== null) autocomplete="{{ $autocomplete }}" @endif
             @if($placeholder !== null) placeholder="{{ $placeholder }}" @endif
             @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
-            @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
+            @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
+            @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
             {{ $attributes->class([$inputClasses, $stateClasses, $sizeClasses]) }}
         />
     @endif
 
-    {{-- Error message and hint text use design tokens for automatic dark mode --}}
+    {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}
     @if($hasError && $errorMessage)
         <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    @elseif($hasSuccess && $successMessage)
+        <p id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
     @elseif($hint)
         <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif

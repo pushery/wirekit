@@ -4,6 +4,12 @@
     'beforeAlt' => '',
     'afterAlt' => '',
     'orientation' => 'horizontal',
+    // Optional intrinsic aspect-ratio (e.g. "16/9", "4/3", "1/1"). The component
+    // has absolutely-positioned images, so it needs a sized box. Set `ratio` and
+    // the figure sizes ITSELF (height derived from width) — no hand-rolled
+    // `<div style="aspect-ratio: …">` wrapper needed. Leave it null to fill the
+    // height of whatever box the developer provides (the original contract).
+    'ratio' => null,
     'value' => 50,
     'beforeLabel' => 'Before',
     'afterLabel' => 'After',
@@ -52,8 +58,16 @@
     }
 
     // Class blocks — all themable via WireKit::personalize() + scope.
+    // `h-full` (fill the developer-provided box) applies ONLY when no ratio is
+    // given; with a ratio, the aspect-ratio style on the figure drives the height
+    // from the width and h-full would fight it. Kept as a plain implode array (no
+    // array_filter) so the drift scanner can statically extract every literal
+    // class; the empty string for the ratio case collapses to a harmless space.
+    $heightClass = $ratio ? '' : 'h-full';
+
     $wrapperClasses = WireKit::resolveClasses('image-compare', 'base', implode(' ', [
-        'relative block w-full h-full overflow-hidden select-none isolate',
+        'relative block w-full overflow-hidden select-none isolate',
+        $heightClass,
         'rounded-[var(--radius-wk-lg)]',
         'bg-[var(--color-wk-bg-muted)]',
         'border border-[var(--color-wk-border)]',
@@ -106,7 +120,7 @@
         @endif
     })"
     x-on:slide="$dispatch('wirekit:image-compare-slide', $event.detail)"
-    style="touch-action: none;"
+    style="touch-action: none;@if($ratio) aspect-ratio: {{ $ratio }};@endif"
 >
     {{-- Hidden input so plain-HTML form submission works without Livewire.
          The Alpine factory dispatches `input` events on this element so

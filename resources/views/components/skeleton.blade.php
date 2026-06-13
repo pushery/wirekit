@@ -1,7 +1,10 @@
 @props([
     'type' => 'text',     // text | avatar | card | custom
     'lines' => 3,         // for type=text
-    'shimmer' => true,    // false → pulse mode (opacity fade, no gradient layer)
+    // Animation mode: shimmer (gradient sweep, default) · pulse (opacity fade,
+    // lighter on the GPU) · none (static placeholder, no animation).
+    'animation' => config('wirekit.components.skeleton.animation', 'shimmer'),
+    'shimmer' => true,    // legacy bool — false → pulse (kept for back-compat)
     'scope' => null,
 ])
 
@@ -12,12 +15,26 @@
     // role="status" + aria-label announce loading state to screen readers.
     $baseShimmer = 'wk-skeleton bg-[var(--color-wk-bg-skeleton)] rounded-[var(--radius-wk-md)]';
 
-    // Pulse-mode flag becomes a `data-pulse="true"` attribute on each
-    // .wk-skeleton element below. The CSS rule
-    // `.wk-skeleton[data-pulse="true"]` hides the gradient ::after
-    // layer and switches to a single opacity-pulse animation on the
-    // base element — halves GPU layer count per skeleton.
-    $pulseAttr = filter_var($shimmer, FILTER_VALIDATE_BOOL) ? '' : 'data-pulse="true"';
+    $animationValue = match ($animation) {
+        'shimmer', 'pulse', 'none' => $animation,
+        default => WireKit::validateProp('skeleton', 'animation', $animation, ['shimmer', 'pulse', 'none']),
+    };
+    // Legacy `:shimmer="false"` maps to pulse, but only when the caller did NOT
+    // explicitly pick an animation (animation still at its 'shimmer' default) —
+    // the new `animation` prop always wins when set.
+    if ($animationValue === 'shimmer' && ! filter_var($shimmer, FILTER_VALIDATE_BOOL)) {
+        $animationValue = 'pulse';
+    }
+
+    // Each .wk-skeleton element below carries this attribute. The CSS rules
+    // `.wk-skeleton[data-pulse="true"]` (opacity pulse) and
+    // `.wk-skeleton[data-animation="none"]` (static) switch off the gradient
+    // ::after layer; shimmer (default) needs no attribute.
+    $animAttr = match ($animationValue) {
+        'pulse' => 'data-pulse="true"',
+        'none' => 'data-animation="none"',
+        default => '',
+    };
 
     // content-visibility: auto + contain-intrinsic-size give the
     // browser permission to SKIP rendering work for off-screen
@@ -54,28 +71,28 @@
         <div style="display: flex; flex-direction: column; gap: 0.5rem;">
             @for($i = 0; $i < $lines; $i++)
                 {{-- Vary widths so the stack doesn't look perfectly aligned --}}
-                <div class="{{ $baseShimmer }}" {!! $pulseAttr !!} style="height: 0.75rem; width: {{ $i === $lines - 1 ? '66%' : '100%' }}; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+                <div class="{{ $baseShimmer }}" {!! $animAttr !!} style="height: 0.75rem; width: {{ $i === $lines - 1 ? '66%' : '100%' }}; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
             @endfor
         </div>
 
     @elseif($type === 'avatar')
         {{-- Avatar: circular placeholder + two short text lines (name + subtitle) --}}
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <div class="{{ $baseShimmer }}" {!! $pulseAttr !!} style="height: 2.5rem; width: 2.5rem; flex-shrink: 0; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-full);"></div>
+            <div class="{{ $baseShimmer }}" {!! $animAttr !!} style="height: 2.5rem; width: 2.5rem; flex-shrink: 0; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-full);"></div>
             <div style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1;">
-                <div class="{{ $baseShimmer }}" {!! $pulseAttr !!} style="height: 0.75rem; width: 33%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
-                <div class="{{ $baseShimmer }}" {!! $pulseAttr !!} style="height: 0.5rem; width: 25%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+                <div class="{{ $baseShimmer }}" {!! $animAttr !!} style="height: 0.75rem; width: 33%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+                <div class="{{ $baseShimmer }}" {!! $animAttr !!} style="height: 0.5rem; width: 25%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
             </div>
         </div>
 
     @elseif($type === 'card')
         {{-- Card: image area + title + body text mimicking a content card --}}
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            <div class="{{ $baseShimmer }}" {!! $pulseAttr !!} style="height: 8rem; width: 100%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
-            <div class="{{ $baseShimmer }}" {!! $pulseAttr !!} style="height: 1rem; width: 75%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+            <div class="{{ $baseShimmer }}" {!! $animAttr !!} style="height: 8rem; width: 100%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+            <div class="{{ $baseShimmer }}" {!! $animAttr !!} style="height: 1rem; width: 75%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                <div class="{{ $baseShimmer }}" {!! $pulseAttr !!} style="height: 0.75rem; width: 100%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
-                <div class="{{ $baseShimmer }}" {!! $pulseAttr !!} style="height: 0.75rem; width: 83%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+                <div class="{{ $baseShimmer }}" {!! $animAttr !!} style="height: 0.75rem; width: 100%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+                <div class="{{ $baseShimmer }}" {!! $animAttr !!} style="height: 0.75rem; width: 83%; background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
             </div>
         </div>
 

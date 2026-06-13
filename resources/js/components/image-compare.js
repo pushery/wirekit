@@ -70,7 +70,12 @@ export default function wirekitImageCompare(config = {}) {
             event.preventDefault();
             this._dragging = true;
 
-            const onMove = (e) => this._setFromPointer(e);
+            // Cache the track's rect ONCE per drag — it's stationary while dragging,
+            // so re-reading getBoundingClientRect on every pointermove (a hot path)
+            // would force a needless layout read per frame. The click path keeps
+            // reading fresh (the track may have shifted since the last drag).
+            const dragRect = this.$refs.track ? this.$refs.track.getBoundingClientRect() : null;
+            const onMove = (e) => this._setFromPointer(e, dragRect);
             const onUp = () => {
                 // Defer clearing the drag flag by a microtask so the trailing
                 // click event (from the same pointer sequence) still sees
@@ -91,11 +96,13 @@ export default function wirekitImageCompare(config = {}) {
             document.addEventListener('pointercancel', onUp);
         },
 
-        _setFromPointer(event) {
+        _setFromPointer(event, cachedRect = null) {
             const track = this.$refs.track;
             if (!track) return;
 
-            const rect = track.getBoundingClientRect();
+            // Use the per-drag cached rect when dragging; the click path passes
+            // none and reads fresh.
+            const rect = cachedRect || track.getBoundingClientRect();
             const pct = this.orientation === 'vertical'
                 ? ((event.clientY - rect.top) / rect.height) * 100
                 : ((event.clientX - rect.left) / rect.width) * 100;

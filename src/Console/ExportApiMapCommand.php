@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\DocsVisibility;
 use Pushery\WireKit\Support\VersionResolver;
 use Pushery\WireKit\Theming\ThemePresetRegistry;
 use Pushery\WireKit\WireKit;
@@ -39,11 +40,27 @@ use Pushery\WireKit\WireKit;
  * Output is XSS-safe: `JSON_HEX_TAG` is set so user-controlled string
  * values containing `</script>` cannot break out of a consuming
  * `<script type="application/ld+json">` block.
+ *
+ * --public restricts every documentation-backed group to entries whose
+ * docs page is publicly rendered — the variant docs.wirekit.app serves
+ * at /api-map.json:
+ *
+ *   - components: a component whose dedicated docs page is not publicly
+ *     rendered is omitted (page-less sub-components documented on a
+ *     parent page stay — a missing page is not the same as a non-public
+ *     one).
+ *   - the page groups: keep only pages that are publicly rendered.
+ *   - css-classes: omit a marker class whose component's docs page is
+ *     not publicly rendered.
+ *
+ * Code-only groups (themes, fonts, icons, commands, helpers) describe
+ * shipped public API and are never filtered.
  */
 class ExportApiMapCommand extends Command
 {
     protected $signature = 'wirekit:export-api-map
-        {--pretty : Pretty-print (multi-line) output}';
+        {--pretty : Pretty-print (multi-line) output}
+        {--public : Emit the sitemap docs.wirekit.app serves at its /api-map.json endpoint (the default emits the full sitemap).}';
 
     protected $description = 'Emit a machine-readable AI-friendly sitemap of every WireKit surface';
 
@@ -104,6 +121,15 @@ class ExportApiMapCommand extends Command
     {
         $items = [];
         foreach (ComponentRegistry::all() as $name => $meta) {
+            $pageStatus = DocsVisibility::componentPageStatus($name);
+
+            // --public: a component whose page is not publicly rendered
+            // is omitted ENTIRELY — same contract as ExportJsonCommand.
+            // MISSING is kept (page-less sub-component on a parent page).
+            if ($this->option('public') && $pageStatus === DocsVisibility::STATUS_STAGED) {
+                continue;
+            }
+
             // Transform the canonical open-tag form (`<x-wirekit::name>`
             // OR class-based override `<x-wirekit-chart>`) into the
             // self-closing form expected by AI / IDE tooling
@@ -122,41 +148,13 @@ class ExportApiMapCommand extends Command
                 // consuming the api-map then knows the component exists
                 // (it's still a callable tag) but won't fetch a URL that
                 // resolves to no useful content.
-                'docs_url' => $this->hasPublicComponentDocs($name)
+                'docs_url' => $pageStatus === DocsVisibility::STATUS_PUBLIC
                     ? WireKit::DOCS_URL.'/components/'.$name
                     : null,
             ];
         }
 
         return ['id' => 'components', 'count' => count($items), 'items' => $items];
-    }
-
-    /**
-     * Whether docs/components/{name}.md is publicly visitable. Reads YAML
-     * frontmatter for the `visibility:` field; only `guest` (or missing
-     * frontmatter / missing field, both defaulting to guest) counts as
-     * public. Mirrors ExportJsonCommand::hasPublicDocsPage().
-     */
-    private function hasPublicComponentDocs(string $name): bool
-    {
-        $path = dirname(__DIR__, 2)."/docs/components/{$name}.md";
-        if (! file_exists($path)) {
-            return false;
-        }
-        $content = (string) file_get_contents($path);
-        if (! str_starts_with($content, '---')) {
-            return true;
-        }
-        $closing = strpos($content, "\n---", 3);
-        if ($closing === false) {
-            return true;
-        }
-        $frontmatter = substr($content, 3, $closing - 3);
-        if (preg_match('/^\s*visibility\s*:\s*([a-z]+)\s*$/mi', $frontmatter, $m)) {
-            return strtolower($m[1]) === 'guest';
-        }
-
-        return true;
     }
 
     /**
@@ -254,6 +252,15 @@ class ExportApiMapCommand extends Command
 
             // Skip group-index pages (usually `index.md` or empty stubs)
             if ($file->getBasename() === 'index.md') {
+                continue;
+            }
+
+            // --public: these groups ARE pages — a page that is not
+            // publicly rendered (or a draft) is omitted, mirroring the
+            // blocks export's public filter. This keeps non-public pages
+            // out of the publicly-served /api-map.json.
+            if ($this->option('public')
+                && DocsVisibility::pageStatus($file->getPathname()) !== DocsVisibility::STATUS_PUBLIC) {
                 continue;
             }
 
@@ -447,6 +454,26 @@ class ExportApiMapCommand extends Command
 
         $list = array_keys($classes);
         sort($list);
+
+        // --public: drop the marker class of a component whose docs
+        // page is not publicly rendered — a class whose wk-stripped name
+        // IS a registry component with a non-public docs page names that
+        // component to AI tooling enumerating the list. The public-CSS-API
+        // catalog PAGE row is a separate, deliberate surface (kept since
+        // v2.2.0, lockstep-guarded) and is NOT affected by this filter.
+        // Non-component class names (wk-glass-refract, wk-stagger, …)
+        // never match a registry key and always stay.
+        if ($this->option('public')) {
+            $registry = ComponentRegistry::all();
+            $list = array_values(array_filter($list, function (string $class) use ($registry): bool {
+                $owner = substr($class, 3); // strip the wk- prefix
+                if (! array_key_exists($owner, $registry)) {
+                    return true;
+                }
+
+                return DocsVisibility::componentPageStatus($owner) !== DocsVisibility::STATUS_STAGED;
+            }));
+        }
 
         // Per-class metadata. Tier reflects the catalog in
         // docs/extending/public-css-api.md — wk-animate-* state classes

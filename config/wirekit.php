@@ -85,6 +85,11 @@ return [
         'label' => [],
         'select' => ['size' => 'md'],
         'textarea' => ['size' => 'md', 'rows' => 3],
+        // Tiptap is a peer dependency (install @tiptap/core + @tiptap/starter-kit and
+        // expose window.tiptapEditor). `extensions` is the default name list passed
+        // through to your factory. See docs/components/editor.md.
+        'editor' => ['extensions' => ['StarterKit'], 'format' => 'html', 'toolbar' => 'basic', 'size' => 'md'],
+        'editor.toolbar' => [],
 
         // Display components
         'badge' => ['intent' => 'neutral', 'size' => 'md', 'surface' => 'soft'],
@@ -96,9 +101,11 @@ return [
         'avatar.group' => [],
         'alert' => ['variant' => 'info'],
         'toggle' => ['size' => 'md'],
-        'checkbox' => [],
-        'radio' => [],
+        'checkbox' => ['size' => 'md', 'variant' => 'default'],
+        'radio' => ['size' => 'md', 'variant' => 'default'],
         'field' => [],
+        'field.set' => [],
+        'field.legend' => [],
 
         // Data display components
         'table' => ['striped' => false, 'hoverable' => false, 'compact' => false, 'responsive' => true],
@@ -109,16 +116,25 @@ return [
         'table.th' => [],
         'table.td' => [],
         'pagination' => ['variant' => 'full'],
-        'empty-state' => [],
+        'empty-state' => ['variant' => 'default'],
         'progress' => ['variant' => 'accent', 'size' => 'md'],
+        'usage-meter' => ['warn' => 0.8, 'danger' => 1.0],
+        'filter-builder' => ['searchable' => false, 'search-placeholder' => 'Search…', 'add-label' => 'Add filter'],
+        'status-matrix' => ['cell-type' => 'status', 'legend' => true],
+        'notification-center' => ['group-by' => 'none', 'filters' => false],
+        'data-table' => ['density' => 'comfortable', 'selectable' => false, 'searchable' => false],
+        'event-calendar' => ['view' => 'month', 'week-starts-on' => 1],
+        'map' => ['provider' => 'maplibre', 'zoom' => 2, 'highlight' => 'ring', 'highlight-color' => 'accent'],
         'stat' => ['animate' => false],
-        'skeleton' => [],
+        'skeleton' => ['animation' => 'shimmer'],
         'spinner' => ['size' => 'md', 'intent' => null],
 
         // Overlay components
         'dropdown' => ['placement' => 'bottom-start', 'offset' => 8],
         'dropdown.panel' => ['width' => 'auto'],
         'dropdown.item' => [],
+        'dropdown.checkbox-item' => [],
+        'dropdown.radio-item' => [],
         'tooltip' => ['placement' => 'top', 'offset' => 6, 'delay-show' => 300, 'delay-hide' => 100],
         'modal' => ['size' => 'md', 'dismissible' => true],
         'drawer' => ['position' => 'right', 'size' => 'md', 'dismissible' => true],
@@ -128,6 +144,7 @@ return [
         'breadcrumb' => ['separator' => 'chevron'],
         'accordion' => ['mode' => 'single', 'variant' => 'bordered', 'size' => 'md'],
         'accordion.item' => [],
+        'collapsible' => [],
         'sidebar' => [],
         'sidebar.group' => [],
         'sidebar.item' => [],
@@ -139,7 +156,7 @@ return [
         'combobox' => ['size' => 'md', 'placeholder' => 'Select...'],
         'slider' => ['size' => 'md', 'min' => 0, 'max' => 100, 'step' => 1],
         'range-slider' => ['show_values' => true],
-        'color-picker' => ['size' => 'md'],
+        'color-picker' => ['size' => 'md', 'format' => 'hex', 'native-on-mobile' => false],
         'number-input' => ['size' => 'md'],
         'password-input' => ['size' => 'md'],
         'time-picker' => ['size' => 'md'],
