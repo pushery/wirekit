@@ -4,6 +4,7 @@
     'compact' => config('wirekit.components.table.compact', false),
     'responsive' => config('wirekit.components.table.responsive', true),
     'stickyHeader' => false,
+    'stickyColumn' => false, // freeze the FIRST column while the rest scroll horizontally
     'alpineSort' => false, // enable client-side Alpine sorting (no Livewire needed)
     // WCAG 2.1.1 (Keyboard) — when stickyHeader makes the table body
     // scroll-confined, the wrapper becomes a focusable scrollable region
@@ -18,7 +19,11 @@
     // Base table classes — full width, collapse borders, use design tokens for typography
     $classes = WireKit::resolveClasses('table', 'base', implode(' ', [
         'wk-table',
-        'w-full',
+        // A sticky-column table MUST be able to exceed its scroll container so the
+        // frozen column has something to scroll past — `w-full` caps it at 100% and
+        // the columns just compress (no horizontal scroll, sticky-column inert). Use
+        // the natural content width (min 100%) so a wide table overflows + scrolls.
+        $stickyColumn ? 'min-w-full w-max' : 'w-full',
         'border-collapse',
         'text-left',
         'font-[family-name:var(--font-wk-sans)]',
@@ -41,6 +46,14 @@
     }
     if ($stickyHeader) {
         $tableAttrs[] = 'data-wk-sticky-header';
+    }
+    if ($stickyColumn) {
+        // NOTE: this marker is a cross-surface CONTRACT, not just internal CSS
+        // plumbing — docs.wirekit.app keys a preview-frame width rule (pin the
+        // preview to the content column so the wide table scrolls instead of
+        // growing the frame) and a scroll-demo regression check off
+        // [data-wk-sticky-column]. Renaming or dropping it breaks those silently.
+        $tableAttrs[] = 'data-wk-sticky-column';
     }
 
     // Dev-mode warn for plain-HTML descendants. <x-wirekit::table> only

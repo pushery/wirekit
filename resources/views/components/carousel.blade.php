@@ -2,37 +2,63 @@
     'autoplay' => false,
     'interval' => 5000,
     'loop' => true,
+    'orientation' => 'horizontal', // horizontal (default) | vertical
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
 
+    $orientationValue = match ($orientation) {
+        'horizontal', 'vertical' => $orientation,
+        default => WireKit::validateProp('carousel', 'orientation', $orientation, ['horizontal', 'vertical']),
+    };
+    $isVertical = $orientationValue === 'vertical';
+
     // Carousel — slide-based content rotation with autoplay, navigation, and indicators.
     // Uses aria-roledescription="carousel" and live region for slide announcements.
+    // Vertical needs a fixed viewport height so overflow-hidden clips to one slide;
+    // ship a sensible default the developer can override via class / style.
     $classes = WireKit::resolveClasses('carousel', 'base', implode(' ', [
         'relative overflow-hidden',
         'rounded-[var(--radius-wk-lg)]',
         'font-[family-name:var(--font-wk-sans)]',
+        $isVertical ? 'h-[20rem]' : '',
     ]), $scope);
 
+    // Slide track: flex axis + translate axis follow the orientation. h-full lets the
+    // vertical track fill the fixed-height viewport so each slide is one viewport tall.
+    $trackClasses = $isVertical
+        ? 'flex flex-col h-full transition-transform duration-500 ease-in-out'
+        : 'flex transition-transform duration-500 ease-in-out';
+    $translateAxis = $isVertical ? 'translateY' : 'translateX';
+
+    // Nav buttons — centered on the cross axis; prev/next sit at the two ends of the main axis.
     $buttonClasses = implode(' ', [
-        'absolute top-1/2 -translate-y-1/2',
-        'z-10',
+        'absolute z-10',
         'flex items-center justify-center',
-        'w-10 h-10',
-        'cursor-pointer',
-        'rounded-full',
+        'w-10 h-10 cursor-pointer rounded-full',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'shadow-[var(--shadow-wk-md)]',
         'text-[color:var(--color-wk-text)]',
-        'transition-opacity',
-        'duration-[var(--transition-wk-duration)]',
+        'transition-opacity duration-[var(--transition-wk-duration)]',
         'hover:bg-[var(--color-wk-bg-subtle)]',
         'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-default',
+        $isVertical ? 'left-1/2 -translate-x-1/2' : 'top-1/2 -translate-y-1/2',
     ]);
+    $prevPosClass = $isVertical ? 'top-[var(--padding-wk-y-sm)]' : 'left-[var(--padding-wk-x-sm)]';
+    $nextPosClass = $isVertical ? 'bottom-[var(--padding-wk-y-sm)]' : 'right-[var(--padding-wk-x-sm)]';
+
+    // Chevron paths: prev = up/left, next = down/right (heroicons mini chevrons).
+    $prevPath = $isVertical ? 'm4.5 15.75 7.5-7.5 7.5 7.5' : 'M15.75 19.5 8.25 12l7.5-7.5';
+    $nextPath = $isVertical ? 'm19.5 8.25-7.5 7.5-7.5-7.5' : 'm8.25 4.5 7.5 7.5-7.5 7.5';
+
+    // Indicators: a row along the bottom (horizontal) or a column on the inline-end (vertical).
+    $indicatorClasses = $isVertical
+        ? 'absolute right-[var(--padding-wk-x-sm)] top-1/2 -translate-y-1/2 flex flex-col gap-1.5'
+        : 'absolute bottom-[var(--padding-wk-y-sm)] left-1/2 -translate-x-1/2 flex gap-1.5';
 @endphp
 
 <div
@@ -44,10 +70,11 @@
     role="region"
     aria-roledescription="carousel"
     aria-label="Image carousel"
+    data-wk-carousel-orientation="{{ $orientationValue }}"
     {{ $attributes->class([$classes]) }}
 >
-    {{-- Slide container — horizontal scroll via translate --}}
-    <div class="flex transition-transform duration-500 ease-in-out" :style="`transform: translateX(-${current * 100}%)`">
+    {{-- Slide container — scrolled via translate on the orientation's main axis. --}}
+    <div class="{{ $trackClasses }}" :style="`transform: {{ $translateAxis }}(-${current * 100}%)`">
         {{ $slot }}
     </div>
 
@@ -56,11 +83,11 @@
         type="button"
         x-on:click="prev()"
         :disabled="!loop && current === 0"
-        class="{{ $buttonClasses }} left-[var(--padding-wk-x-sm)]"
+        class="{{ $buttonClasses }} {{ $prevPosClass }}"
         aria-label="Previous slide"
     >
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $prevPath }}" />
         </svg>
     </button>
 
@@ -69,16 +96,16 @@
         type="button"
         x-on:click="next()"
         :disabled="!loop && current === total - 1"
-        class="{{ $buttonClasses }} right-[var(--padding-wk-x-sm)]"
+        class="{{ $buttonClasses }} {{ $nextPosClass }}"
         aria-label="Next slide"
     >
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="{{ $nextPath }}" />
         </svg>
     </button>
 
     {{-- Indicators --}}
-    <div class="absolute bottom-[var(--padding-wk-y-sm)] left-1/2 -translate-x-1/2 flex gap-1.5" role="tablist" aria-label="Slides">
+    <div class="{{ $indicatorClasses }}" role="tablist" aria-label="Slides">
         <template x-for="(_, i) in total" :key="i">
             <button
                 type="button"

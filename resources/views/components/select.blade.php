@@ -2,6 +2,9 @@
     'label' => null,
     'hint' => null,
     'error' => null,
+    // Success / valid state — string shows a green confirmation below, `true`
+    // shows just the green border. `error` always wins when both are set.
+    'success' => null,
     'size' => config('wirekit.components.select.size', 'md'),
     'placeholder' => null,
     'options' => [],
@@ -18,6 +21,10 @@
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
+
+    // Success / valid state — only when there is no error (error wins).
+    $hasSuccess = ! $hasError && $success !== null && $success !== false;
+    $successMessage = is_string($success) ? $success : null;
 
     // Base classes: all values reference design tokens — no hardcoded colors or sizes
     $selectClasses = WireKit::resolveClasses('select', 'base', implode(' ', [
@@ -42,10 +49,12 @@
         'cursor-pointer',
     ]), $scope);
 
-    // Border color switches between normal and error state — both via tokens
-    $stateClasses = $hasError
-        ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]'
-        : 'border-[var(--color-wk-border)]';
+    // Border color switches between error, success, and normal state — all via tokens
+    $stateClasses = match (true) {
+        (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]',
+        $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success)]',
+        default => 'border-[var(--color-wk-border)]',
+    };
 
     // Size classes: height, padding, font size, radius — all from sizing tokens
     // pr-8 kept for dropdown arrow space
@@ -92,14 +101,40 @@
             id="{{ $id }}"
             name="{{ $name }}"
             @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
-            @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
+            @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
+            @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
             {{ $attributes->class([$selectClasses, $stateClasses, $sizeClasses]) }}
         >
             @if($placeholder)
                 <option value="" disabled selected>{{ $placeholder }}</option>
             @endif
+            {{--
+                Options accept three shapes (mix freely):
+                  - Flat:            ['de' => 'Germany']                       → <option>
+                  - Per-option attrs:['de' => ['label' => 'Germany',
+                                               'disabled' => true]]            → disabled <option>
+                  - Grouped:         ['Europe' => ['de' => 'Germany', ...]]    → <optgroup>
+                A group is an array value WITHOUT a 'label' key; a single option
+                with attributes is an array value WITH a 'label' key.
+            --}}
             @foreach($options as $value => $optionLabel)
-                <option value="{{ $value }}">{{ $optionLabel }}</option>
+                @if(is_array($optionLabel) && ! array_key_exists('label', $optionLabel))
+                    <optgroup label="{{ $value }}">
+                        @foreach($optionLabel as $subValue => $subLabel)
+                            @php
+                                $sLabel = is_array($subLabel) ? ($subLabel['label'] ?? $subValue) : $subLabel;
+                                $sDisabled = is_array($subLabel) && ! empty($subLabel['disabled']);
+                            @endphp
+                            <option value="{{ $subValue }}"{{ $sDisabled ? ' disabled' : '' }}>{{ $sLabel }}</option>
+                        @endforeach
+                    </optgroup>
+                @else
+                    @php
+                        $oLabel = is_array($optionLabel) ? ($optionLabel['label'] ?? $value) : $optionLabel;
+                        $oDisabled = is_array($optionLabel) && ! empty($optionLabel['disabled']);
+                    @endphp
+                    <option value="{{ $value }}"{{ $oDisabled ? ' disabled' : '' }}>{{ $oLabel }}</option>
+                @endif
             @endforeach
             {{ $slot }}
         </select>
@@ -112,9 +147,11 @@
         </div>
     </div>
 
-    {{-- Error message and hint text use design tokens for automatic dark mode --}}
+    {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}
     @if($hasError && $errorMessage)
         <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    @elseif($hasSuccess && $successMessage)
+        <p id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
     @elseif($hint)
         <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif

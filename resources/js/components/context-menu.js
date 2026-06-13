@@ -56,6 +56,19 @@ export default function wirekitContextMenu(config = {}) {
                 }
             };
             window.addEventListener('wirekit:context-menu-open', this._otherOpenCleanup);
+
+            // Close on page scroll — the panel is fixed at the pointer position, so
+            // a scroll strands it detached from the row it belongs to (same class
+            // as the notification-center flyout; also the OS-native context-menu
+            // convention). In-panel scrolls (a long menu) keep working. Capture
+            // catches every scroller; passive per perf-hygiene.
+            this._onScroll = (e) => {
+                if (!this.open) return;
+                const panel = this.$refs.panel;
+                if (panel && e.target instanceof Node && panel.contains(e.target)) return;
+                this._forceClose();
+            };
+            window.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
         },
 
         destroy() {
@@ -64,6 +77,10 @@ export default function wirekitContextMenu(config = {}) {
             }
             if (this._otherOpenCleanup) {
                 window.removeEventListener('wirekit:context-menu-open', this._otherOpenCleanup);
+            }
+            if (this._onScroll) {
+                window.removeEventListener('scroll', this._onScroll, { capture: true });
+                this._onScroll = null;
             }
             this._clearPressTimer();
             this._forceClose();

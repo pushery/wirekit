@@ -1,5 +1,6 @@
 @props([
-    'shimmer' => true, // false → pulse mode (see skeleton.blade.php)
+    'animation' => config('wirekit.components.skeleton.animation', 'shimmer'), // shimmer | pulse | none
+    'shimmer' => true, // legacy bool — false → pulse (see skeleton.blade.php)
     'scope' => null,
 ])
 
@@ -7,7 +8,10 @@
     use Pushery\WireKit\WireKit;
 
     $baseShimmer = 'wk-skeleton bg-[var(--color-wk-bg-skeleton)] rounded-[var(--radius-wk-md)]';
-    $pulseAttr = filter_var($shimmer, FILTER_VALIDATE_BOOL) ? '' : 'data-pulse="true"';
+    // Animation: shimmer (default) | pulse | none. Legacy `shimmer=false` → pulse.
+    $wkAnim = in_array($animation, ['pulse', 'none'], true) ? $animation
+        : (filter_var($shimmer, FILTER_VALIDATE_BOOL) ? 'shimmer' : 'pulse');
+    $animAttr = $wkAnim === 'pulse' ? 'data-pulse="true"' : ($wkAnim === 'none' ? 'data-animation="none"' : '');
 
     $wrapperClasses = WireKit::resolveClasses('skeleton', 'card', implode(' ', [
         'block',
@@ -26,11 +30,11 @@
     {{ $attributes->class([$wrapperClasses]) }}
 >
     <div class="space-y-3">
-        <div class="{{ $baseShimmer }} h-32 w-full" {!! $pulseAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
-        <div class="{{ $baseShimmer }} h-4 w-3/4" {!! $pulseAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+        <div class="{{ $baseShimmer }} h-32 w-full" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+        <div class="{{ $baseShimmer }} h-4 w-3/4" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
         <div class="space-y-2">
-            <div class="{{ $baseShimmer }} h-3 w-full" {!! $pulseAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
-            <div class="{{ $baseShimmer }} h-3 w-5/6" {!! $pulseAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+            <div class="{{ $baseShimmer }} h-3 w-full" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
+            <div class="{{ $baseShimmer }} h-3 w-5/6" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
         </div>
     </div>
     <span class="sr-only">Loading content</span>

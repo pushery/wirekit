@@ -20,6 +20,10 @@ export default function wirekitRangeSlider(config = {}) {
         _max: config.max ?? 100,
         _step: config.step ?? 1,
         _dragging: null,
+        // True when the two thumbs are close enough that their individual value
+        // badges would overlap — the blade then shows ONE merged "min – max"
+        // badge instead. Set by _measureBubbles() (measured, not a guessed %).
+        _merged: false,
 
         get minPercent() {
             return ((this.minVal - this._min) / (this._max - this._min)) * 100;
@@ -54,9 +58,16 @@ export default function wirekitRangeSlider(config = {}) {
             event.preventDefault();
             this._dragging = handle;
 
+            // Cache the track's rect ONCE per drag — the track is stationary while
+            // dragging, so re-reading getBoundingClientRect on every pointermove (a
+            // hot path) would force a needless layout read per frame. Mirrors the
+            // color-picker drag optimization.
+            this._dragRect = this.$refs.track ? this.$refs.track.getBoundingClientRect() : null;
+
             const onMove = (e) => this._onDrag(e);
             const onUp = () => {
                 this._dragging = null;
+                this._dragRect = null;
                 document.removeEventListener('pointermove', onMove);
                 document.removeEventListener('pointerup', onUp);
                 document.removeEventListener('pointercancel', onUp);
@@ -78,7 +89,9 @@ export default function wirekitRangeSlider(config = {}) {
             const track = this.$refs.track;
             if (!track) return;
 
-            const rect = track.getBoundingClientRect();
+            // Use the per-drag cached rect (set in startDrag); fall back to a
+            // fresh read only if it's somehow absent.
+            const rect = this._dragRect || track.getBoundingClientRect();
             const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
             const rawValue = this._min + percent * (this._max - this._min);
 
@@ -92,6 +105,31 @@ export default function wirekitRangeSlider(config = {}) {
             }
 
             this._dispatchInputEvent();
+        },
+
+        /**
+         * Merge the two value badges into one "min – max" badge when the thumbs
+         * sit close enough that the individual badges would overlap (the issue a
+         * docs blueprint used to work around by printing the value in a separate
+         * row). Measures the rendered badge widths against the gap between the
+         * thumb centers — robust to track width and digit count, unlike a guessed
+         * % threshold. Driven by an x-effect on minVal/maxVal, so it tracks live
+         * during a drag, plus first paint. The individual badges stay in layout
+         * (toggled via opacity, not display) so they remain measurable.
+         */
+        _measureBubbles() {
+            const track = this.$refs.track;
+            const lo = this.$refs.minBubble;
+            const hi = this.$refs.maxBubble;
+            if (!track || !lo || !hi) return;
+            const tw = track.getBoundingClientRect().width;
+            if (!tw) return;
+            const minCenter = (this.minPercent / 100) * tw;
+            const maxCenter = (this.maxPercent / 100) * tw;
+            // Overlap when the gap between the two badge centers is less than
+            // their combined half-widths plus a small breathing gap (6px).
+            const need = (lo.offsetWidth + hi.offsetWidth) / 2 + 6;
+            this._merged = (maxCenter - minCenter) < need;
         },
 
         /**

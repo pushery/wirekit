@@ -3,11 +3,44 @@
     'hint' => null,
     'error' => null,
     'value' => null,
+    'size' => config('wirekit.components.radio.size', 'md'),
+    // 'default' (inline control + label) or 'card' (the whole bordered card is the
+    // clickable target and highlights when selected — the pricing-tier pattern).
+    'variant' => config('wirekit.components.radio.variant', 'default'),
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    // Size scale (aligned with toggle/checkbox): the circle + its inner accent dot
+    // scale together. The dot lives INSIDE the circle and is flex-centered by the
+    // circle (items-center/justify-center), so it only needs a size — no left/top
+    // offsets. (Absolute offsets relative to the label mis-centered the dot in the
+    // `card` variant, whose label padding insets the circle.)
+    $sizing = match ($size) {
+        'sm' => ['box' => 'w-4 h-4', 'dot' => 'w-1.5 h-1.5'],
+        'lg' => ['box' => 'w-6 h-6', 'dot' => 'w-2.5 h-2.5'],
+        default => ['box' => 'w-5 h-5', 'dot' => 'w-2 h-2'],
+    };
+
+    $variantValue = match ($variant) {
+        'default', 'card' => $variant,
+        default => WireKit::validateProp('radio', 'variant', $variant, ['default', 'card']),
+    };
+    // Card variant: the <label> becomes a bordered card reacting to its inner input
+    // via :has() — accent border + tinted surface when selected, focus ring on focus.
+    // `group` so the inner dot can toggle via group-has-[:checked] (it's nested in
+    // the circle, not a sibling of .peer, so peer-checked can't reach it).
+    //
+    // align-top on the default (inline-flex) label kills a sub-pixel layout shift on
+    // toggle — see the matching note in checkbox.blade.php. The inline-flex label is
+    // placed by its baseline; the dot flipping display none↔block re-rounds that
+    // baseline on a 2× display and nudges the next row. align-top pins the label by
+    // its top edge instead. The card variant is block-level `flex` and is unaffected.
+    $labelClasses = $variantValue === 'card'
+        ? 'group flex items-start gap-3 cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-subtle)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
+        : 'group inline-flex items-start gap-2 cursor-pointer relative align-top';
 
     // Auto-generate ID: when multiple radios share a name, we suffix by value to stay unique
     $nameAttr = $attributes->get('name');
@@ -23,7 +56,7 @@
     // Visual circle — sibling of the peer input, reacts via peer-checked/focus/disabled
     $boxClasses = WireKit::resolveClasses('radio', 'base', implode(' ', [
         'relative inline-flex items-center justify-center shrink-0',
-        'w-5 h-5',
+        $sizing['box'],
         'rounded-full',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
@@ -47,7 +80,7 @@
 @endphp
 
 <div class="space-y-1.5">
-    <label for="{{ $id }}" class="inline-flex items-start gap-2 cursor-pointer relative">
+    <label for="{{ $id }}" class="{{ $labelClasses }}">
         {{-- Native radio input — visually hidden but accessible + Livewire wire:model compatible --}}
         <input
             type="radio"
@@ -59,14 +92,15 @@
             {{ $attributes->except(['id']) }}
         />
 
-        {{-- Visual circle — sibling of .peer, consumes peer-checked border --}}
-        <span class="{{ $boxClasses }}" aria-hidden="true"></span>
-
-        {{-- Inner accent dot overlay — must be a sibling of .peer (not nested) for peer-checked to work --}}
-        <span
-            class="hidden peer-checked:block pointer-events-none absolute left-1.5 top-1.5 w-2 h-2 rounded-full bg-[var(--color-wk-accent)]"
-            aria-hidden="true"
-        ></span>
+        {{-- Visual circle — sibling of .peer, consumes peer-checked border. The
+             inner accent dot is nested HERE and flex-centered by the circle's
+             items-center/justify-center, so it stays centered in both the default
+             and card variants. It toggles via the label's group-has-[:checked]
+             (a nested element isn't a sibling of .peer, so peer-checked can't
+             reach it; the circle border still uses peer-checked, unchanged). --}}
+        <span class="{{ $boxClasses }}" aria-hidden="true">
+            <span class="hidden group-has-[:checked]:block pointer-events-none {{ $sizing['dot'] }} rounded-full bg-[var(--color-wk-accent)]"></span>
+        </span>
 
         @if($label)
             <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $label }}</span>

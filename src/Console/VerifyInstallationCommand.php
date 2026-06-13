@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Console;
 use BaconQrCode\Renderer\ImageRenderer;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Pushery\WireKit\Support\TailwindVersion;
 use Pushery\WireKit\WireKit;
 
 /**
@@ -77,6 +78,7 @@ class VerifyInstallationCommand extends Command
         // (assets, config, directives, optional deps). These bite when
         // the package's own install / upgrade misfires.
         if ($tier === null || $tier === 'package') {
+            $this->checkTailwindVersion();
             $this->checkPublishedAssets();
             $this->checkAssetFreshness();
             $this->checkTailwindSource();
@@ -229,6 +231,38 @@ class VerifyInstallationCommand extends Command
         } else {
             $this->reportPass("{$name} is up to date");
         }
+    }
+
+    /**
+     * Tailwind CSS v4+ is a hard requirement — WireKit's CSS uses the v4 engine
+     * (the `@theme` / `@source` at-rules, `color-mix()`, `@property`). This
+     * backstops the wirekit:install pre-flight gate — a v3 project that somehow
+     * reached the doctor gets the SAME clear "upgrade to v4" message here,
+     * instead of the misleading "Missing @source" the source-directive check
+     * would emit (v3 has no `@source` concept). Detection is conservative
+     * (positive evidence only).
+     */
+    private function checkTailwindVersion(): void
+    {
+        $basePath = base_path();
+
+        if (TailwindVersion::isPreV4($basePath)) {
+            $detected = TailwindVersion::detectMajor($basePath);
+            $this->reportFail('Tailwind CSS v4+ required — detected '.($detected !== null ? "v{$detected}" : 'a pre-v4 release'));
+            $this->line('  WireKit cannot run on Tailwind v3 — it uses the v4 engine (@theme, @source, color-mix(), @property).');
+            $this->line('  Fix: npm install tailwindcss@latest @tailwindcss/vite@latest');
+            $this->line('       then migrate your CSS to v4 (https://tailwindcss.com/docs/upgrade-guide) and rebuild.');
+
+            return;
+        }
+
+        $major = TailwindVersion::detectMajor($basePath);
+        if ($major !== null) {
+            $this->reportPass("Tailwind CSS v{$major} (v4+ required)");
+        }
+        // Undetermined (no package.json tailwindcss entry, no v3 directives):
+        // stay silent rather than add a noisy line — the assets/@source checks
+        // still cover the practical setup.
     }
 
     /**
@@ -513,10 +547,23 @@ class VerifyInstallationCommand extends Command
         $fontDir = public_path('vendor/wirekit/fonts');
 
         if (is_dir($fontDir)) {
-            $cssFiles = glob("{$fontDir}/*.css") ?: [];
+            // Font CSS publishes into nested category/name subdirs
+            // (fonts/<category>/<name>/<name>.css — vendor:publish copies
+            // resources/fonts/ verbatim), so scan RECURSIVELY. A top-level
+            // glob("{$fontDir}/*.css") finds nothing even when fonts ARE
+            // correctly published, producing a false "no CSS files found" warning.
+            $cssFiles = $this->findFontCssFiles($fontDir);
             if ($cssFiles !== []) {
                 $this->reportPass('Font assets published ('.count($cssFiles).' font CSS files)');
+            } elseif ($this->isPackageDefaultFontConfig($fontConfig)) {
+                // Empty dir + the package default ('inter'): the system-ui
+                // fallback works out of the box, so this is an INFO — the same
+                // treatment as the dir-missing branch below, not a false WARN.
+                $this->reportInfo("Default 'inter' sans font configured (system-ui fallback works out of the box)");
+                $this->line('  To self-host: php artisan vendor:publish --tag=wirekit-fonts');
             } else {
+                // A non-default font was requested but no CSS is present — it
+                // genuinely won't render until published. Real warning.
                 $this->reportWarn('Font directory exists but no CSS files found');
                 $this->line('  Fix: php artisan vendor:publish --tag=wirekit-fonts --force');
             }
@@ -536,6 +583,30 @@ class VerifyInstallationCommand extends Command
                 $this->line('  Fix: php artisan vendor:publish --tag=wirekit-fonts');
             }
         }
+    }
+
+    /**
+     * Recursively collect every `.css` file under the published fonts dir.
+     * Font CSS lands at fonts/<category>/<name>/<name>.css, so a shallow
+     * glob("{$fontDir}/*.css") misses it — this iterator finds it at any depth.
+     *
+     * @return list<string>
+     */
+    private function findFontCssFiles(string $fontDir): array
+    {
+        $found = [];
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($fontDir, \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $file) {
+            if ($file->isFile() && strtolower($file->getExtension()) === 'css') {
+                $found[] = $file->getPathname();
+            }
+        }
+
+        return $found;
     }
 
     /**
