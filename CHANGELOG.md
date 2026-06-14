@@ -7,7 +7,18 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
-## [2.6.1] — Unreleased
+## [2.6.2] — 2026-06-14
+
+**Patch release.** A diagnostic-tool fix and release-notes accuracy, fully backward-compatible — no changes to components or styles.
+
+### Fixed
+
+- **`php artisan wirekit:doctor:a11y --theme-contrast` no longer skips a token whose value falls back to a color function.** A token written as `var(--your-token, oklch(…))` — a `var()` with a parenthesized fallback such as `oklch(…)`, `rgb(…)`, or `hsl(…)` — was reported as "unsupported color format" and skipped instead of being contrast-checked. The audit now resolves those fallbacks, so the pairing is evaluated like any other.
+- **The changelog now shows a release date for every published version.** A tagged release could previously ship with its section for that version still labeled "Unreleased", so the version you installed and the notes you read could disagree. Every published version now records its release date.
+
+---
+
+## [2.6.1] — 2026-06-14
 
 **Patch release.** Bug fixes across the schema-export tooling, the editor, the diagnostic commands (`doctor` / `doctor:a11y`), and the theme-preset system, all backward-compatible.
 
