@@ -307,10 +307,10 @@ return [
     |
     | Choose which JavaScript bundle @wirekitScripts loads.
     |
-    | 'full' — All Alpine components including overlays (~14 KB gzip)
+    | 'full' — All Alpine components including overlays (~43 KB gzip)
     |          Includes Floating UI + focus-trap, bundled.
     |
-    | 'core' — Only chart Alpine component (~3 KB gzip)
+    | 'core' — Only chart Alpine component (~4 KB gzip)
     |          For projects that only use form components + charts.
     |
     */

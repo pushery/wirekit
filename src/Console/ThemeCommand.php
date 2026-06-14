@@ -81,7 +81,16 @@ class ThemeCommand extends Command
         // through a strict CSS linter don't see an empty selector.
         $vars = $themeMeta['vars'];
         $darkVars = $themeMeta['dark_vars'];
-        $themeBlock = "\n/* wirekit:theme start */\n@theme {\n{$vars}\n}\n";
+        // Emit the LIGHT palette as a plain unlayered `:root {}` block — NOT a
+        // Tailwind `@theme {}` block. `@theme` compiles into the `theme` cascade
+        // LAYER, and unlayered CSS always beats layered CSS, so dist/wirekit.css's
+        // own unlayered `:where(:root)` defaults would override a layered preset
+        // and the light palette would silently no-op on the `@wirekitStyles`
+        // <link> path. A plain `:root {}` (specificity 0,1,0, unlayered) wins over
+        // those defaults and mirrors the `.dark {}` block emitted just below.
+        // (WireKit tokens are consumed via `var(--color-wk-*)`, not as generated
+        // `bg-wk-*` utilities, so dropping `@theme` loses no utilities.)
+        $themeBlock = "\n/* wirekit:theme start */\n:root {\n{$vars}\n}\n";
         if ($darkVars !== null && $darkVars !== '') {
             $themeBlock .= "\n.dark {\n{$darkVars}\n}\n";
         }

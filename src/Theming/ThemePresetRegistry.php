@@ -159,7 +159,7 @@ CSS,
        (306 by default). Override --theme-hue in your own :root block AFTER
        applying this preset to retint the entire palette in ONE LINE:
 
-           :root { --theme-hue: 264; }   /* indigo Aurora */
+           :root { --theme-hue: 264; }   (indigo Aurora)
 
        Scope: re-tones the brand / accent surface only. Semantic intents
        (success / warning / danger / info) intentionally inherit the WireKit

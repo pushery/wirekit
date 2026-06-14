@@ -26,6 +26,50 @@ namespace Pushery\WireKit\Theming;
 final class WcagContrast
 {
     /**
+     * Substitute CSS custom-property `var()` references embedded anywhere in a
+     * value string with their declared values, so a color such as
+     * `oklch(0.55 0.22 var(--theme-hue))` becomes parseable. Per the CSS spec,
+     * `var()` is substituted BEFORE a value is parsed, so a static contrast
+     * auditor must do the same — otherwise the raw `var(--theme-hue)` token is
+     * an unparseable hue and the whole hue-driven (single-source-hue) palette
+     * reports "unsupported color format".
+     *
+     * Resolves recursively (a substituted value may itself contain a `var()`)
+     * and is CYCLE-GUARDED by a depth cap plus a no-progress break, so a
+     * malformed `--a: var(--b); --b: var(--a)` table terminates (the value is
+     * simply left with an unresolved `var()`, which the caller then treats as
+     * unsupported) instead of looping forever. A `var(--x, fallback)` whose
+     * custom property is absent resolves to its fallback.
+     *
+     * @param  array<string, string>  $vars  custom-property name => declared value
+     */
+    public static function resolveCssVars(string $value, array $vars, int $maxDepth = 8): string
+    {
+        for ($depth = 0; $depth < $maxDepth && str_contains($value, 'var('); $depth++) {
+            $next = preg_replace_callback(
+                '/var\(\s*(--[\w-]+)\s*(?:,\s*([^()]*))?\)/',
+                static function (array $m) use ($vars): string {
+                    if (array_key_exists($m[1], $vars)) {
+                        return $vars[$m[1]];
+                    }
+
+                    // No declared value: fall back to the var()'s own fallback
+                    // arg if present, else leave the token untouched (the caller
+                    // will treat the still-unresolved color as unsupported).
+                    return isset($m[2]) ? trim($m[2]) : $m[0];
+                },
+                $value
+            );
+            if ($next === null || $next === $value) {
+                break; // unresolvable or no progress — stop (cycle-safe)
+            }
+            $value = $next;
+        }
+
+        return $value;
+    }
+
+    /**
      * Parse a CSS color string into linear sRGB [r, g, b] in 0..1.
      * Returns null when the format is unsupported.
      *

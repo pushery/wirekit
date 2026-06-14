@@ -691,7 +691,8 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Check optional dependencies: Chart.js adapter and QR Code package.
+     * Check optional dependencies: Chart.js adapter, QR Code package, and the
+     * editor / map front-end peer dependencies (Tiptap, MapLibre GL / Leaflet).
      * These are INFO-level only — not required for core functionality.
      */
     private function checkOptionalDependencies(): void
@@ -711,6 +712,15 @@ class VerifyInstallationCommand extends Command
         } else {
             $this->line('  <fg=cyan>i</> bacon/bacon-qr-code not installed (optional — only needed for <x-wirekit::qr-code>)');
         }
+
+        // Front-end peer dependencies for <x-wirekit::editor> and <x-wirekit::map>.
+        // These are browser globals (window.tiptapEditor / window.maplibregl /
+        // window.L), so a PHP command can't probe whether they're loaded — they
+        // surface as a contextual INFO reminder, not a pass/fail check. Listed
+        // here so the onboarding doctor mentions them, not just the component
+        // pages. Each component degrades gracefully if its dependency is absent.
+        $this->line('  <fg=cyan>i</> <x-wirekit::editor> needs Tiptap (optional — npm install @tiptap/core @tiptap/starter-kit and expose window.tiptapEditor; only if you use the editor)');
+        $this->line('  <fg=cyan>i</> <x-wirekit::map> needs a map engine (optional — npm install maplibre-gl or leaflet and load it before WireKit; only if you use the map)');
     }
 
     /**
