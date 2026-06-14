@@ -336,12 +336,25 @@ export default function wirekitEditor(config = {}) {
         // ── Tiptap-absent fallback ───────────────────────────────────
 
         _activateFallback() {
-            // eslint-disable-next-line no-console
-            console.error(
-                '[wirekit] editor: window.tiptapEditor is not defined — falling back to a plain '
-                + 'textarea. Install @tiptap/core + @tiptap/starter-kit and expose '
-                + 'window.tiptapEditor(config) (see https://docs.wirekit.app/components/editor).'
-            );
+            // One-time DX hint — gate ONLY the console.error behind a module-scoped
+            // flag so a page with N Tiptap-less editors logs ONCE, not N times.
+            // Mirrors the missing-peer-dependency hint in chart.js / chart-apex.js /
+            // map.js (all gate on window.__wirekit_<lib>_missing_warned__). The
+            // textarea-fallback DOM work below still runs for EVERY editor — each
+            // instance needs its own field un-hidden — so the dedup wraps the log
+            // only, never the fallback itself.
+            if (typeof window !== 'undefined') {
+                window.__wirekit_tiptap_missing_warned__ ??= false;
+                if (!window.__wirekit_tiptap_missing_warned__) {
+                    window.__wirekit_tiptap_missing_warned__ = true;
+                    // eslint-disable-next-line no-console
+                    console.error(
+                        '[wirekit] editor: window.tiptapEditor is not defined — falling back to a plain '
+                        + 'textarea. Install @tiptap/core + @tiptap/starter-kit and expose '
+                        + 'window.tiptapEditor(config) (see https://docs.wirekit.app/components/editor).'
+                    );
+                }
+            }
             // The hidden form-field textarea ($refs.input) doubles as the fallback:
             // un-hide it so the user can still edit + submit, and hide the (now dead)
             // Tiptap mount point + toolbar.

@@ -141,6 +141,44 @@ final class PropsParser
 
                 continue;
             }
+
+            // Comment-aware (only when NOT inside a string): a quote or bracket
+            // inside a comment is NOT code. We skip the whole comment span so
+            // its characters never toggle string state or bracket depth. Before
+            // this, an ODD quote char inside a comment — e.g. the apostrophe in
+            // `// Blade's compiler` or a trailing `// each item's group` — flipped
+            // quote-parity for the real prop code below, swallowing the closing
+            // `]` inside a phantom string. The walker then ran off the end and
+            // returned null → parseSource returned [] → the component's props
+            // were reported as (none) and its prop variables leaked into the
+            // slot list downstream (the export-json props→slots misfire). The
+            // skipped text still lands in the returned substring, where
+            // token_get_all() tokenizes comments correctly.
+            $next = $source[$i + 1] ?? '';
+            if ($ch === '/' && $next === '/') {
+                // `//` line comment → skip to the end of the line (or EOF).
+                $nl = strpos($source, "\n", $i + 2);
+                $i = $nl === false ? $len : $nl + 1;
+
+                continue;
+            }
+            if ($ch === '#' && $next !== '[') {
+                // `#` line comment. `#[` would begin a PHP attribute, which
+                // cannot appear inside a @props array literal — excluded anyway
+                // to stay faithful to PHP's lexer.
+                $nl = strpos($source, "\n", $i + 1);
+                $i = $nl === false ? $len : $nl + 1;
+
+                continue;
+            }
+            if ($ch === '/' && $next === '*') {
+                // `/* … */` block comment → skip to the closing `*/` (or EOF).
+                $close = strpos($source, '*/', $i + 2);
+                $i = $close === false ? $len : $close + 2;
+
+                continue;
+            }
+
             if ($ch === "'" || $ch === '"') {
                 $inString = $ch;
                 $i++;

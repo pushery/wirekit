@@ -95,7 +95,7 @@ export default () => ({
             requestAnimationFrame(tick);
         };
 
-        // Safety net (website finding F2). Both start-triggers below can MISS:
+        // Safety net. Both start-triggers below can MISS:
         // the entrance path waits for an `animationend` that may never fire (a
         // coalesced / skipped keyframe, or a browser that doesn't emit it), and
         // the standalone IntersectionObserver can fail to report `isIntersecting`

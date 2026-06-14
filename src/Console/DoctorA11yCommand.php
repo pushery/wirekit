@@ -205,6 +205,13 @@ class DoctorA11yCommand extends Command
                     continue;
                 }
 
+                // Substitute any embedded custom-property var() (e.g.
+                // `oklch(L C var(--theme-hue))` on a single-source-hue preset)
+                // from the same token table before parsing — otherwise the hue
+                // channel is an unparseable token and the pairing SKIPs.
+                $fg = WcagContrast::resolveCssVars($fg, $tokens);
+                $bg = WcagContrast::resolveCssVars($bg, $tokens);
+
                 $ratio = WcagContrast::ratio($fg, $bg);
                 if ($ratio === null) {
                     $totals['skip']++;
@@ -268,7 +275,12 @@ class DoctorA11yCommand extends Command
             preg_match_all($pattern, $css, $matches);
             $tokens = [];
             foreach ($matches[1] ?? [] as $body) {
-                if (preg_match_all('/(--color-wk-[\w-]+)\s*:\s*([^;]+);/', $body, $declMatches, PREG_SET_ORDER)) {
+                // Capture EVERY custom property (not just --color-wk-*) so that
+                // a hue-driven token like `oklch(L C var(--theme-hue))` can have
+                // its `--theme-hue` reference substituted before parsing.
+                // The pairings still only evaluate --color-wk-* pairs; the extra
+                // entries are var()-resolution sources.
+                if (preg_match_all('/(--[\w-]+)\s*:\s*([^;]+);/', $body, $declMatches, PREG_SET_ORDER)) {
                     foreach ($declMatches as $entry) {
                         $tokens[$entry[1]] = trim($entry[2]);
                     }
