@@ -179,6 +179,29 @@ final class PropsParser
                 continue;
             }
 
+            // Heredoc / nowdoc: the body is OPAQUE — `/*`, `//`, `#`, quotes, and
+            // brackets inside it are literal text, not code. The walker is
+            // otherwise only string-aware (it toggles on '/"), so a `<<<LABEL`
+            // body could leak state: a `/*` would chase a phantom `*/` past the
+            // array's `]`, a stray `]` would mis-count depth, an odd quote would
+            // flip parity. Recognize the opener, capture the label, and skip the
+            // whole body to its closing-label line — mirroring how token_get_all()
+            // treats a heredoc as ONE opaque token. (The skipped text still lands
+            // in the returned substring, where token_get_all() re-parses it.)
+            if ($ch === '<' && substr($source, $i, 3) === '<<<'
+                && preg_match('/<<<[ \t]*([\'"]?)([A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*)\1\r?\n/A', $source, $hm, 0, $i)) {
+                $label = $hm[2];
+                // PHP 7.3+ allows the closing label to be indented; it sits at a
+                // line start and is followed by a non-identifier boundary.
+                if (preg_match('/^[ \t]*'.preg_quote($label, '/').'(?![A-Za-z0-9_\x80-\xff])/m', $source, $cm, PREG_OFFSET_CAPTURE, $i + strlen($hm[0]))) {
+                    $i = $cm[0][1] + strlen($cm[0][0]);
+                } else {
+                    $i = $len; // malformed (no closing label) — skip to EOF
+                }
+
+                continue;
+            }
+
             if ($ch === "'" || $ch === '"') {
                 $inString = $ch;
                 $i++;

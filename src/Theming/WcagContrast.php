@@ -47,7 +47,14 @@ final class WcagContrast
     {
         for ($depth = 0; $depth < $maxDepth && str_contains($value, 'var('); $depth++) {
             $next = preg_replace_callback(
-                '/var\(\s*(--[\w-]+)\s*(?:,\s*([^()]*))?\)/',
+                // The fallback capture allows ONE level of balanced parens so a
+                // function fallback — `var(--x, oklch(…))` / `rgb(…)` / `calc(…)`,
+                // a common token shape — is matched (a bare `[^()]*` stops at the
+                // inner `(`, leaves the whole var() unmatched, and the caller then
+                // SKIPs the token as unsupported). A fallback nesting TWO+ paren
+                // levels (e.g. `color-mix(in srgb, oklch(…), …)`) still falls
+                // through unresolved → SKIP — the safe pre-existing degrade, not a crash.
+                '/var\(\s*(--[\w-]+)\s*(?:,\s*((?:[^()]|\([^()]*\))*))?\)/',
                 static function (array $m) use ($vars): string {
                     if (array_key_exists($m[1], $vars)) {
                         return $vars[$m[1]];
