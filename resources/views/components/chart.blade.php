@@ -5,6 +5,21 @@
      wire:ignore prevents Livewire's DOM morphing from destroying the chart state.
      role="img" marks the chart as a graphical element for screen readers. --}}
 @php
+    // The chart is a CLASS-based component (<x-wirekit-chart>, single hyphen) — the
+    // Component class supplies the chart data and $height. Rendered anonymously as
+    // <x-wirekit::chart> (double colon) there is no class, so fail with a clear,
+    // actionable message instead of the cryptic "Undefined variable $height" the
+    // view would otherwise throw further down. The class — and the direct
+    // Blade-string render tests — always supply $height, so this guard only trips
+    // the unsupported anonymous tag.
+    if (! isset($height)) {
+        throw new \RuntimeException(
+            'WireKit: the chart is a class-based component — use <x-wirekit-chart …> '
+            .'(single hyphen), not the anonymous <x-wirekit::chart …>. '
+            .'See https://docs.wirekit.app/components/chart'
+        );
+    }
+
     // Extract caller's aria-label (if any) and render it explicitly so we can
     // supply a fallback; drop it from the bag to avoid emitting a duplicate
     // attribute when the bag is echoed below.

@@ -7,6 +7,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [2.6.3] — 2026-06-15
+
+**Patch release.** CLI and component-usage fixes, fully backward-compatible.
+
+### Changed
+
+- **Invalid input now exits with code `1` consistently across every `php artisan wirekit:*` command.** A few commands (`wirekit:install`, `wirekit:verify` / `wirekit:doctor`) previously exited `2` on a bad flag value or an invalid invocation, while the rest exited `1`. They now all exit `1` — the Laravel/Artisan failure convention. Both are non-zero, so `if ! command` checks are unaffected; only a script branching on the specific code `2` needs to switch to `1`. The `wirekit:install --ignore-failed-flags` help text — which wrongly implied the exit code equaled the number of failed flags — now correctly states it is `1`.
+
+### Fixed
+
+- **[`<x-wirekit::chart>`](https://docs.wirekit.app/components/chart) now fails with a clear, actionable message instead of a cryptic "Undefined variable" error.** The chart is a class-based component: written as the anonymous `<x-wirekit::chart>` (double colon) instead of `<x-wirekit-chart>` (single hyphen) it has no class to supply its data and previously threw `Undefined variable $height`. It now explains which tag to use and links to the docs.
+- **`php artisan wirekit:class-by-area` now rejects an unknown `--format` instead of silently falling back to the summary.** A typo'd `--format=jsom` previously rendered the summary and exited `0`; it now exits non-zero with an `Available: summary, full, json` list, matching `--area` and every other command's option validation.
+- **`php artisan wirekit:install --diff` now reports the actual layout file it would edit.** The dry-run hard-coded a single layout path; it now resolves and names the same candidate the real install would touch — including the `resources/views/layouts/app.blade.php` convention — or lists every candidate it probes when none exist yet.
+
+### Documentation
+
+- **The [prop-naming conventions guide](https://docs.wirekit.app/extending/prop-naming-conventions) now documents back-compat prop aliases.** It clarifies that [`<x-wirekit::progress>`](https://docs.wirekit.app/components/progress)'s `variant` prop is a deprecated alias of `intent` (both set the bar color), not the surface-treatment `variant` that `alert` / `card` use.
+
+---
+
 ## [2.6.2] — 2026-06-14
 
 **Patch release.** A diagnostic-tool fix and release-notes accuracy, fully backward-compatible — no changes to components or styles.

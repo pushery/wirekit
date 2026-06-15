@@ -36,6 +36,22 @@ class ClassByAreaCommand extends Command
 
     public function handle(): int
     {
+        $format = (string) $this->option('format');
+        $filter = (array) $this->option('area');
+
+        // Validate --format BEFORE the expensive inventory scan — collectAreas()
+        // instantiates ClassInventory and parses every Blade/PHP/JS file plus the
+        // compiled CSS, so a typo'd value should fail fast, not after that cost.
+        // The same way --area errors below and every other command validates
+        // --as/--format. Without this the `match` default arm silently swallowed
+        // an unknown value as `summary` (exit 0) — a typo'd --format=jsom in CI
+        // would yield summary text instead of the JSON asked for.
+        if (! in_array($format, ['summary', 'full', 'json'], true)) {
+            $this->error("Unknown --format value: {$format}. Available: summary, full, json");
+
+            return self::FAILURE;
+        }
+
         $projectRoot = base_path('vendor/pushery/wirekit');
         if (! is_dir($projectRoot)) {
             // Running from inside the package itself
@@ -43,9 +59,6 @@ class ClassByAreaCommand extends Command
         }
 
         $areas = $this->collectAreas($projectRoot);
-
-        $format = (string) $this->option('format');
-        $filter = (array) $this->option('area');
 
         if ($filter !== []) {
             $areas = array_intersect_key($areas, array_flip($filter));
