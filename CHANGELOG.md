@@ -7,6 +7,21 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [2.6.4] — 2026-06-15
+
+**Patch release.** CLI introspection + editor-default fixes, fully backward-compatible.
+
+### Changed
+
+- **The [`<x-wirekit::editor>`](https://docs.wirekit.app/components/editor) `extensions` config now defaults to an empty array** (was `['StarterKit']`). Your `window.tiptapEditor` factory owns the real Tiptap extension set; the `extensions` value is only an optional list of name hints for a factory that reads them. The old non-empty string default was a foot-gun — a factory that spread it straight into Tiptap's `extensions` would throw (strings aren't Extension objects). The documented factory ignores the hints and is unaffected; set your own hints only if your factory consumes them.
+
+### Fixed
+
+- **`php artisan wirekit:show <component>` now lists the component's slots** (both the human output and `--as=json`), matching `wirekit:export-json` and the `.wirekit-schema.json` manifest. Previously `show` printed props and sub-components but omitted slots entirely, so introspecting a component (e.g. `wirekit:show dropdown`) never surfaced its named-slot quick-form contract such as [`<x-wirekit::dropdown>`](https://docs.wirekit.app/components/dropdown)'s `<x-slot:trigger>`.
+- **Four common [`<x-wirekit::icon>`](https://docs.wirekit.app/components/icon) aliases — `copy`, `globe`, `book`, `lightbulb` — now resolve on every base icon preset** (heroicons, lucide, phosphor, tabler) instead of throwing. Previously they lived only in the optional heroicons-app / marketing preset layers, so a base-only setup raised an exception unless those presets were stacked. They're now part of the shared base alias set, with each library's correct icon (e.g. tabler's `world` / `bulb`).
+
+---
+
 ## [2.6.3] — 2026-06-15
 
 **Patch release.** CLI and component-usage fixes, fully backward-compatible.

@@ -57,6 +57,14 @@ final class TablerPreset implements IconPreset
             'megaphone' => 'tabler-megaphone',
             'map' => 'tabler-map',
             'file-text' => 'tabler-file-text',
+
+            // Common semantic aliases (v2.6.4) — shared keyset with every base
+            // preset so they resolve without stacking; `live` stays marketing.
+            // Tabler names: world (globe) + bulb (lightbulb).
+            'copy' => 'tabler-copy',
+            'globe' => 'tabler-world',
+            'book' => 'tabler-book',
+            'lightbulb' => 'tabler-bulb',
         ];
     }
 

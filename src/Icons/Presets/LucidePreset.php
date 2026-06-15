@@ -57,6 +57,13 @@ final class LucidePreset implements IconPreset
             'megaphone' => 'lucide-megaphone',
             'map' => 'lucide-map',
             'file-text' => 'lucide-file-text',
+
+            // Common semantic aliases (v2.6.4) — shared keyset with every base
+            // preset so they resolve without stacking; `live` stays marketing.
+            'copy' => 'lucide-copy',
+            'globe' => 'lucide-globe',
+            'book' => 'lucide-book-open',
+            'lightbulb' => 'lucide-lightbulb',
         ];
     }
 

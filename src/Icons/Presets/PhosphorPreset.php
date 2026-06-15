@@ -59,6 +59,13 @@ final class PhosphorPreset implements IconPreset
             'megaphone' => 'phosphor-megaphone',
             'map' => 'phosphor-map-trifold',
             'file-text' => 'phosphor-file-text',
+
+            // Common semantic aliases (v2.6.4) — shared keyset with every base
+            // preset so they resolve without stacking; `live` stays marketing.
+            'copy' => 'phosphor-copy',
+            'globe' => 'phosphor-globe',
+            'book' => 'phosphor-book-open',
+            'lightbulb' => 'phosphor-lightbulb',
         ];
     }
 

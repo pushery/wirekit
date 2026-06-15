@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
+use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\WireKit;
@@ -100,6 +101,20 @@ class ShowComponentCommand extends Command
 
         $this->line('');
 
+        // Slots — named-slot quick forms (e.g. dropdown's <x-slot:trigger>) plus
+        // the default slot. Uses the SAME source-of-truth extractor as
+        // wirekit:export-json + the .wirekit-schema.json writer, so `show` no
+        // longer omits the slot contract a developer needs to discover (D1).
+        $slots = $this->extractSlots($name);
+        if ($slots !== []) {
+            $this->line('  <fg=yellow>Slots:</>');
+            foreach ($slots as $slot) {
+                $req = $slot['required'] ? '<fg=red>(required)</>' : '<fg=gray>(optional)</>';
+                $this->line("    <fg=green>{$slot['name']}</> {$req}");
+            }
+            $this->line('');
+        }
+
         // Check for sub-components
         $subDir = __DIR__.'/../../resources/views/components/'.$name;
         if (is_dir($subDir)) {
@@ -156,6 +171,7 @@ class ShowComponentCommand extends Command
             'description' => $meta['description'],
             'docs_url' => WireKit::DOCS_URL."/components/{$name}",
             'props' => $props,
+            'slots' => $this->extractSlots($name),
             'sub_components' => $subComponents,
         ];
 
@@ -164,6 +180,33 @@ class ShowComponentCommand extends Command
         );
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Extract the slot schema for a top-level component, reusing the SAME
+     * BladeParser source-of-truth as wirekit:export-json + the
+     * .wirekit-schema.json writer (so `show` can never drift from them).
+     * Resolves both the flat `{name}.blade.php` and the
+     * `{name}/index.blade.php` anonymous-component layouts.
+     *
+     * @return list<array{name: string, required: bool}>
+     */
+    private function extractSlots(string $name): array
+    {
+        $base = __DIR__.'/../../resources/views/components';
+        $bladePath = "{$base}/{$name}.blade.php";
+        if (! is_file($bladePath)) {
+            $index = "{$base}/{$name}/index.blade.php";
+            if (! is_file($index)) {
+                return [];
+            }
+            $bladePath = $index;
+        }
+
+        return BladeParser::extractSlotsWithMetadataFromSource(
+            (string) file_get_contents($bladePath),
+            $bladePath,
+        );
     }
 
     /**
