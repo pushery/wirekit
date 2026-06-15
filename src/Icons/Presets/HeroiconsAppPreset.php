@@ -34,13 +34,10 @@ final class HeroiconsAppPreset implements IconPreset
             // Close-with-emphasis (vs. plain `close` from base preset)
             'x-circle' => 'heroicon-m-x-circle',
 
-            // Educational / informational surfaces
-            'book' => 'heroicon-m-book-open',
-            'lightbulb' => 'heroicon-m-light-bulb',
-
             // Sharing / clipboard
+            // (`book` / `lightbulb` / `copy` moved to the base preset in v2.6.4 —
+            // they resolve on every base preset now, no stacking required.)
             'link' => 'heroicon-m-link',
-            'copy' => 'heroicon-m-clipboard-document',
 
             // Security states
             'lock' => 'heroicon-m-lock-closed',

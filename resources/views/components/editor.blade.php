@@ -70,7 +70,7 @@
         'value' => $value !== null && ! is_string($value) ? json_encode($value) : $value,
         'format' => $formatValue,
         'editable' => (bool) $editable,
-        'extensions' => $extensions ?? config('wirekit.components.editor.extensions', ['StarterKit']),
+        'extensions' => $extensions ?? config('wirekit.components.editor.extensions', []),
         'placeholder' => $placeholder,
         'maxLength' => $maxLength,
         'ariaLabel' => $label ? null : ($name ? Str::headline((string) $name) : 'Rich text editor'),

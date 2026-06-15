@@ -58,6 +58,16 @@ final class HeroiconsPreset implements IconPreset
             'megaphone' => 'heroicon-m-megaphone',
             'map' => 'heroicon-m-map',
             'file-text' => 'heroicon-m-document-text',
+
+            // Common semantic aliases (v2.6.4) — promoted from the heroicons-app/
+            // marketing extension presets so they resolve on EVERY base preset
+            // without stacking. Every base preset (heroicons/lucide/phosphor/
+            // tabler) shares this identical keyset; `live` stays marketing-specific
+            // (no clean universal-core equivalent across libraries).
+            'copy' => 'heroicon-m-clipboard-document',
+            'globe' => 'heroicon-m-globe-alt',
+            'book' => 'heroicon-m-book-open',
+            'lightbulb' => 'heroicon-m-light-bulb',
         ];
     }
 

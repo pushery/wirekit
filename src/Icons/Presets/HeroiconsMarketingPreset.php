@@ -57,9 +57,10 @@ final class HeroiconsMarketingPreset implements IconPreset
             'finger-print' => 'heroicon-m-finger-print',
 
             // Audience
+            // (`globe` moved to the base preset in v2.6.4; `live` stays here —
+            // no clean universal-core equivalent across icon libraries.)
             'users' => 'heroicon-m-users',
             'user-group' => 'heroicon-m-user-group',
-            'globe' => 'heroicon-m-globe-alt',
 
             // Developer / product
             'code-bracket' => 'heroicon-m-code-bracket',

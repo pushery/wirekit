@@ -86,9 +86,12 @@ return [
         'select' => ['size' => 'md'],
         'textarea' => ['size' => 'md', 'rows' => 3],
         // Tiptap is a peer dependency (install @tiptap/core + @tiptap/starter-kit and
-        // expose window.tiptapEditor). `extensions` is the default name list passed
-        // through to your factory. See docs/components/editor.md.
-        'editor' => ['extensions' => ['StarterKit'], 'format' => 'html', 'toolbar' => 'basic', 'size' => 'md'],
+        // expose window.tiptapEditor). `extensions` is an OPTIONAL list of name
+        // hints forwarded to YOUR factory; the factory owns the real Tiptap
+        // extension set (see docs/components/editor.md). It defaults to an empty
+        // array so a factory that naively spreads it into Tiptap can't throw on a
+        // bare string — set your own hints here only if your factory reads them.
+        'editor' => ['extensions' => [], 'format' => 'html', 'toolbar' => 'basic', 'size' => 'md'],
         'editor.toolbar' => [],
 
         // Display components
