@@ -5,9 +5,7 @@
 # WireKit
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/pushery/wirekit.svg)](https://packagist.org/packages/pushery/wirekit)
-[![Total Downloads](https://img.shields.io/packagist/dt/pushery/wirekit.svg)](https://packagist.org/packages/pushery/wirekit)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![GitHub Stars](https://img.shields.io/github/stars/pushery/wirekit?style=flat&logo=github)](https://github.com/pushery/wirekit/stargazers)
 [![Components](https://img.shields.io/badge/components-browse-5046e5)](https://docs.wirekit.app)
 
 [![PHP ≥ 8.4](https://img.shields.io/packagist/dependency-v/pushery/wirekit/php?logo=php&logoColor=white&color=777BB4&label=PHP)](https://www.php.net)

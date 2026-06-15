@@ -30,7 +30,7 @@ class InstallCommand extends Command
         {--no-gitignore : Skip auto-adding /public/vendor/wirekit to .gitignore (commit published assets to repo for environments without vendor:publish in deploy)}
         {--no-strict : Opt out of strict-by-default mode — pre-flight warnings print but do not abort. Use only for legacy CI scripts that depend on the v2.0.0 "warnings as success" behavior.}
         {--force : Bypass pre-flight warnings (token clobber, hand-edited marker blocks). Errors still abort. Mutually exclusive with --no-strict.}
-        {--ignore-failed-flags : Per-flag failures report but do NOT abort. Other flags still apply. Exit code = count of failed flags. Mutually exclusive with default-strict mode (use --no-strict to combine).}
+        {--ignore-failed-flags : Per-flag failures report but do NOT abort. Other flags still apply. Exit code is 1 if any flag failed (Laravel FAILURE), never the raw count. Mutually exclusive with default-strict mode (use --no-strict to combine).}
         {--diff : Dry-run mode — report what WOULD change in app.css / tailwind.config.js / layout / config without writing any files. Exit code reflects the would-be-state; nothing on disk is touched.}
         {--rollback : Reverse the most-recent install actions recorded in .wirekit-install.log. Restores file contents to their pre-install state for every tracked entry. Mutually exclusive with every other flag except --no-interaction.}';
 
@@ -70,7 +70,7 @@ class InstallCommand extends Command
                 $this->error('--rollback is mutually exclusive with every other install flag. Got: --'.implode(', --', $conflicting));
                 $this->line('  Run --rollback by itself to reverse the most recent install session.');
 
-                return self::INVALID;
+                return self::FAILURE;
             }
 
             return $this->handleRollback();
@@ -81,12 +81,12 @@ class InstallCommand extends Command
         if ($this->option('force') && $this->option('no-strict')) {
             $this->error('--force and --no-strict are mutually exclusive. Pick one — see `wirekit:install --help`.');
 
-            return self::INVALID;
+            return self::FAILURE;
         }
         if ($this->option('ignore-failed-flags') && ! $this->option('no-strict')) {
             $this->error('--ignore-failed-flags requires --no-strict (default strict mode aborts on the first failed flag). Combine with `--no-strict --ignore-failed-flags`.');
 
-            return self::INVALID;
+            return self::FAILURE;
         }
 
         $isDryRun = (bool) $this->option('diff');
@@ -112,7 +112,7 @@ class InstallCommand extends Command
             $this->line('');
             $this->error('Install aborted — pre-flight validation found '.count($errors).' error(s).');
 
-            return self::INVALID;
+            return self::FAILURE;
         }
 
         if ($warnings !== []) {
@@ -126,7 +126,7 @@ class InstallCommand extends Command
                 $this->error('Install aborted — pre-flight warnings under default-strict mode.');
                 $this->line('  Re-run with <fg=cyan>--force</> to bypass, or <fg=cyan>--no-strict</> to treat warnings as advisory.');
 
-                return self::INVALID;
+                return self::FAILURE;
             }
             if ($force) {
                 $this->line('  <fg=yellow>i</> --force set — proceeding despite warnings.');
@@ -615,8 +615,21 @@ class InstallCommand extends Command
             $this->line('    <fg=cyan>~</> resources/css/app.css (would inject theme preset '.$preset.')');
         }
 
-        // Layout file — Blade directives.
-        $this->line('    <fg=cyan>~</> resources/views/components/layouts/app.blade.php (would inject @wirekitStyles + @wirekitScripts if missing)');
+        // Layout file — Blade directives. Report the path the REAL install would
+        // resolve (the first existing candidate), or, if none exist yet, the full
+        // candidate list it probes — so the dry-run never names a narrower path
+        // than the actual install touches.
+        $layout = $this->resolveLayoutFile();
+        if ($layout !== null) {
+            $rel = str_replace(base_path().DIRECTORY_SEPARATOR, '', $layout);
+            $this->line("    <fg=cyan>~</> {$rel} (would inject @wirekitStyles + @wirekitScripts if missing)");
+        } else {
+            $candidates = implode(', ', array_map(
+                fn (string $p): string => str_replace(base_path().DIRECTORY_SEPARATOR, '', $p),
+                $this->layoutCandidates()
+            ));
+            $this->line("    <fg=cyan>~</> layout: none of the probed candidates exist yet ({$candidates}) — add @wirekitStyles/@wirekitScripts manually");
+        }
 
         // public/vendor/wirekit/ — assets.
         $this->line('    <fg=cyan>~</> public/vendor/wirekit/* (would publish CSS + JS bundles)');
@@ -755,7 +768,7 @@ class InstallCommand extends Command
                 implode(', ', $allowedTiers),
             ));
 
-            return self::INVALID;
+            return self::FAILURE;
         }
 
         // Echo the License Notice once before mutating config/wirekit.php so
@@ -1159,22 +1172,41 @@ CSS;
         $this->line('  <fg=green>✓</> Added @source for WireKit to app.css');
     }
 
-    private function addBladeDirectives(): void
+    /**
+     * The layout files the install probes, in priority order. Single source of
+     * truth shared by the real install (addBladeDirectives) and the --diff
+     * dry-run, so the dry-run can never name a different path than the install
+     * actually resolves.
+     *
+     * @return list<string>
+     */
+    private function layoutCandidates(): array
     {
-        $layoutPaths = [
+        return [
             resource_path('views/components/layouts/app.blade.php'),
             resource_path('views/layouts/app.blade.php'),
             resource_path('views/components/layout.blade.php'),
         ];
+    }
 
-        $layoutFile = null;
-        foreach ($layoutPaths as $path) {
+    /**
+     * The first existing layout candidate (the one the install would edit), or
+     * null when none exist yet.
+     */
+    private function resolveLayoutFile(): ?string
+    {
+        foreach ($this->layoutCandidates() as $path) {
             if (file_exists($path)) {
-                $layoutFile = $path;
-
-                break;
+                return $path;
             }
         }
+
+        return null;
+    }
+
+    private function addBladeDirectives(): void
+    {
+        $layoutFile = $this->resolveLayoutFile();
 
         if (! $layoutFile) {
             $this->line('  <fg=yellow>!</> No layout file found — add @wirekitStyles/@wirekitScripts manually');

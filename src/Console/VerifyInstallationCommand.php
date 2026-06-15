@@ -68,7 +68,7 @@ class VerifyInstallationCommand extends Command
         if ($tier !== null && ! in_array($tier, ['package', 'environment'], true)) {
             $this->error("Unknown tier '{$tier}'. Available: package, environment.");
 
-            return self::INVALID;
+            return self::FAILURE;
         }
 
         $this->info('WireKit Integration Check');
