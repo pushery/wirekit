@@ -46,6 +46,10 @@
     // Resolve the initial active tab: explicit default, otherwise first key
     $activeTab = $default ?? (array_key_first($tabs) ?? '');
 
+    // Key→label map exposed to Alpine so the `wirekit:tab-changed` event payload
+    // can carry the human label alongside the key (detail = { tab, label }).
+    $tabLabels = array_map(fn ($t) => $t['label'], $tabs);
+
     // Unique instance id — needed so multiple Tabs components on the same page
     // don't clash on `aria-controls`/`id` attributes when mounted together.
     $uid = 'wk-tabs-' . \Illuminate\Support\Str::random(6);
@@ -144,6 +148,19 @@
 <div
     x-data="{
         active: @js($activeTab),
+        labels: @js($tabLabels),
+        init() {
+            // Emit a namespaced, bubbling browser event on every tab change so a
+            // Livewire (or any) listener can OBSERVE the switch server-side without
+            // rebuilding the tablist by hand. $watch fires on CHANGE only (not the
+            // initial value), and an unobserved CustomEvent is a no-op — so this is
+            // zero-config and backward-compatible for every existing usage. Listen
+            // with @wirekit:tab-changed (the event bubbles to any ancestor / window).
+            this.$watch('active', (value) => this.$dispatch('wirekit:tab-changed', {
+                tab: value,
+                label: this.labels?.[value] ?? value,
+            }));
+        },
         focusTab(direction) {
             const buttons = $el.querySelectorAll('[role=tab]:not([disabled])');
             const current = document.activeElement;

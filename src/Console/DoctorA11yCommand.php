@@ -31,6 +31,15 @@ use Pushery\WireKit\Theming\WcagContrast;
  *      class where a developer customizes `--color-wk-accent` without
  *      verifying the new value still clears 4.5:1 against
  *      `--color-wk-accent-fg`.
+ *
+ *      Border handling follows WCAG 1.4.11. The COMMUNICATING borders
+ *      (focus ring, stateful error / success borders) are hard-checked
+ *      at 3:1, while the RESTING DECORATIVE borders (`border`,
+ *      `border-strong` on `bg`) are exempt — printed as advisory INFO
+ *      with their ratio but never counted toward the verdict or exit
+ *      code. This matches docs/theming.md "Intentional trade-offs" and
+ *      keeps WireKit's own default palette (intentionally ~1.3-2.5:1
+ *      decorative borders) auditing clean.
  */
 class DoctorA11yCommand extends Command
 {
@@ -186,11 +195,27 @@ class DoctorA11yCommand extends Command
             ['name' => 'accent-fg on accent-hover', 'fg' => '--color-wk-accent-fg', 'bg' => '--color-wk-accent-hover', 'threshold' => 'text'],
             ['name' => 'danger-fg on danger', 'fg' => '--color-wk-danger-fg', 'bg' => '--color-wk-danger', 'threshold' => 'text'],
             ['name' => 'success-fg on success', 'fg' => '--color-wk-success-fg', 'bg' => '--color-wk-success', 'threshold' => 'text'],
-            ['name' => 'border on bg (UI)', 'fg' => '--color-wk-border', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
-            ['name' => 'border-strong on bg (UI)', 'fg' => '--color-wk-border-strong', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
+
+            // Communicating borders — WCAG 1.4.11 DOES require >= 3:1 for these:
+            // a focus ring and the stateful (error / success) borders convey
+            // state or mark an active boundary, so they are hard-checked.
+            ['name' => 'focus ring on ring-offset', 'fg' => '--color-wk-ring', 'bg' => '--color-wk-ring-offset', 'threshold' => 'ui'],
+            ['name' => 'border-error on bg', 'fg' => '--color-wk-border-error', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
+            ['name' => 'border-success on bg', 'fg' => '--color-wk-border-success', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
+
+            // Decorative resting borders — WCAG 1.4.11 EXEMPTS pure dividers that
+            // neither convey state nor identify an active boundary. WireKit ships
+            // these intentionally low-contrast (~1.3-2.5:1), matching every major
+            // design system; see docs/theming.md "Intentional trade-offs". They are
+            // audited for INFORMATION ONLY ('advisory'): the ratio is printed, but
+            // the result never counts toward PASS/WARN/FAIL totals and never affects
+            // the exit code. Hard-FAILing them contradicted both the docs AND
+            // WireKit's own default palette (which sits squarely in the exempt band).
+            ['name' => 'border on bg', 'fg' => '--color-wk-border', 'bg' => '--color-wk-bg', 'threshold' => 'ui', 'advisory' => true],
+            ['name' => 'border-strong on bg', 'fg' => '--color-wk-border-strong', 'bg' => '--color-wk-bg', 'threshold' => 'ui', 'advisory' => true],
         ];
 
-        $totals = ['pass' => 0, 'warn' => 0, 'fail' => 0, 'skip' => 0];
+        $totals = ['pass' => 0, 'warn' => 0, 'fail' => 0, 'skip' => 0, 'exempt' => 0];
 
         foreach (['light' => $light, 'dark' => $dark] as $mode => $tokens) {
             $this->line(sprintf('  <fg=cyan>%s mode</>', ucfirst($mode)));
@@ -220,6 +245,20 @@ class DoctorA11yCommand extends Command
                     continue;
                 }
 
+                // Decorative resting borders are WCAG 1.4.11 exempt — print the
+                // ratio for visibility but never let it drive the verdict or the
+                // exit code (the exit logic below reads fail/warn totals only).
+                if ($pair['advisory'] ?? false) {
+                    $totals['exempt']++;
+                    $this->line(sprintf(
+                        '    <fg=blue>INFO</> %-44s   %.2f:1  (decorative, WCAG 1.4.11 exempt)',
+                        $pair['name'],
+                        $ratio,
+                    ));
+
+                    continue;
+                }
+
                 $klass = WcagContrast::classify($ratio, $pair['threshold']);
                 $totals[$klass]++;
                 $label = match ($klass) {
@@ -240,11 +279,12 @@ class DoctorA11yCommand extends Command
         }
 
         $this->line(sprintf(
-            'Theme contrast totals: %d PASS / %d WARN / %d FAIL / %d SKIP.',
+            'Theme contrast totals: %d PASS / %d WARN / %d FAIL / %d SKIP / %d EXEMPT (decorative).',
             $totals['pass'],
             $totals['warn'],
             $totals['fail'],
             $totals['skip'],
+            $totals['exempt'],
         ));
 
         return match ($failOn) {
