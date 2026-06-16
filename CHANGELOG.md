@@ -7,6 +7,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [2.6.5] — 2026-06-16
+
+**Patch release.** Adds one opt-in, fully backward-compatible event to Tabs so a server can observe tab switches; no breaking changes.
+
+### Added
+
+- **[`<x-wirekit::tabs>`](https://docs.wirekit.app/components/tabs) now dispatches a `wirekit:tab-changed` browser event on every tab switch**, so a Livewire component can react to a change without rebuilding the tablist by hand. The event bubbles to `window`, and its `detail` carries `{ tab, label }` (the activated item's key and its label). It fires on change only — not on the initial render, and not when the already-active tab is re-clicked. Listen for it on a wrapper and forward it into your component, e.g. `<div x-on:wirekit:tab-changed="$wire.onTabChanged($event.detail.tab)">`. Rendering stays client-side and existing tabs are unaffected (an unobserved event is a no-op). See [Observing tab changes server-side](https://docs.wirekit.app/components/tabs).
+
+### Fixed
+
+- **`php artisan wirekit:doctor:a11y --theme-contrast` no longer fails on resting decorative borders.** Per WCAG 1.4.11 (non-text contrast applies only to UI elements that convey state or identify a boundary), the audit now treats the resting decorative borders (`border`, `border-strong`) as advisory — printed as `INFO (decorative, WCAG 1.4.11 exempt)` — and hard-checks only the borders that communicate at 3:1 (the focus ring, `border-error`, `border-success`). Previously it failed the decorative border/background pairing against a flat 3:1 bar, so even a stock install reported a failure on its own intentionally low-contrast dividers. See the [theming guide](https://docs.wirekit.app/theming) for the exact exempt token pairings.
+
+### Documentation
+
+- **[`<x-wirekit::tabs>`](https://docs.wirekit.app/components/tabs)** — the page now leads with a live example, and a new "Observing tab changes server-side" section documents the `wirekit:tab-changed` event end-to-end.
+- **[`<x-wirekit::editor>`](https://docs.wirekit.app/components/editor)** — added a "Factory `config` contract" table listing every key WireKit passes to your `window.tiptapEditor(config)` factory, so you can write the factory from the reference instead of reading the source.
+- **[`<x-wirekit::icon>`](https://docs.wirekit.app/components/icon)** — documented the single-alias override (map one alias directly instead of stacking a whole extension preset) and why `live` stays a marketing alias.
+- **[`<x-wirekit::slider>`](https://docs.wirekit.app/components/slider)** — added a pitfall: a dragged slider bound with `wire:model.live` sends a Livewire round-trip per step; use `.debounce` / `.lazy` instead.
+- **[Authoring custom components](https://docs.wirekit.app/extending/authoring-custom-components)** — added a recipe for asserting WireKit's debug-mode "unknown prop" warning in a test.
+
+---
+
 ## [2.6.4] — 2026-06-15
 
 **Patch release.** CLI introspection + editor-default fixes, fully backward-compatible.

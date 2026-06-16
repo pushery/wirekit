@@ -1,4 +1,4 @@
-/*! WireKit Alpine Bundle v2.6.4 | MIT License | https://wirekit.app
+/*! WireKit Alpine Bundle v2.6.5 | MIT License | https://wirekit.app
  * Bundles Alpine.js (MIT, https://alpinejs.dev/license),
  *         @floating-ui/dom ^1.7.0 (MIT), @floating-ui/core ^1.7.0 (MIT),
  *         focus-trap ^8.0.0 (MIT), tabbable ^6.0.0 (MIT). */
