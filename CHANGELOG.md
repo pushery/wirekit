@@ -7,6 +7,28 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ---
 
+## [2.6.6] — 2026-06-16
+
+**Patch release.** Implements the documented `value` pre-selection prop on multi-select, fixes icon-name rendering on the sidebar components and the replay button's default icon, registers the `list` component in the machine-readable manifests, and documents the Livewire binding contract on the stateful form controls.
+
+### Added
+
+- **[`<x-wirekit::multi-select>`](https://docs.wirekit.app/components/multi-select) now implements the `value` prop for pre-selecting options on load.** Pass an array of option keys (`:value="['php', 'js']"`) or a comma-separated string and the matching pills render immediately. The prop was already documented but not previously implemented, so the pre-selection example rendered empty.
+
+### Fixed
+
+- **[`<x-wirekit::list>`](https://docs.wirekit.app/components/list) now appears in `wirekit:list`, `wirekit:export-json`, and the generated `.wirekit-schema.json` manifest.** The component shipped and was fully documented, but was absent from the internal component registry that drives those manifests — so AI tooling and IDE extensions reading the catalog never saw it. The component itself always rendered correctly; only the machine-readable manifest omitted it.
+
+- **[`<x-wirekit::sidebar.item>`](https://docs.wirekit.app/components/sidebar) and [`<x-wirekit::sidebar.collapsible>`](https://docs.wirekit.app/components/sidebar) now resolve a string `icon` name to an SVG.** Passing `icon="cube"` previously rendered the literal text "cube" instead of the icon; it now resolves through the icon system, consistent with the other components that accept an icon name. A custom `<x-slot:icon>` still works as before.
+
+- **[`<x-wirekit::replay-button>`](https://docs.wirekit.app/components/replay-button) renders its default circular-arrow icon when no custom content is given.** The default icon was previously suppressed, leaving an empty button.
+
+### Documentation
+
+- **Every stateful form control now documents the Livewire binding pattern.** [`number-input`](https://docs.wirekit.app/components/number-input), [`slider`](https://docs.wirekit.app/components/slider), [`combobox`](https://docs.wirekit.app/components/combobox), [`color-picker`](https://docs.wirekit.app/components/color-picker), [`rating`](https://docs.wirekit.app/components/rating), and [`filter-builder`](https://docs.wirekit.app/components/filter-builder) gained a "Livewire Integration" section explaining how to seed the initial display with `:value` alongside `wire:model`.
+
+---
+
 ## [2.6.5] — 2026-06-16
 
 **Patch release.** Adds one opt-in, fully backward-compatible event to Tabs so a server can observe tab switches; no breaking changes.

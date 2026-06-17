@@ -3,6 +3,7 @@
     'hint' => null,
     'error' => null,
     'options' => [],
+    'value' => [],          // option keys to pre-select on load (array or comma-separated string)
     'placeholder' => 'Select...',
     'scope' => null,
     'ariaLabel' => null,
@@ -69,10 +70,22 @@
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
 
     // Encode options for Alpine — convert to array of {value, label} objects
-    $encodedOptions = collect($options)->map(fn ($label, $value) => [
-        'value' => (string) $value,
+    $encodedOptions = collect($options)->map(fn ($label, $optionValue) => [
+        'value' => (string) $optionValue,
         'label' => (string) $label,
     ])->values()->all();
+
+    // Normalize the `value` prop to an array of string option keys for
+    // pre-selection. Accepts an array (['php', 'js']) or a comma-separated
+    // string ('php,js') — mirrors the seeding contract of tags-input. The
+    // resulting keys seed the Alpine `selected` array so the matching pills
+    // render on load. (Framework-agnostic: works in plain Blade forms and as
+    // the initial display alongside a two-way binding.)
+    $selectedValues = is_array($value)
+        ? array_values(array_map(fn ($v) => (string) $v, $value))
+        : (is_string($value) && $value !== ''
+            ? array_values(array_filter(array_map('trim', explode(',', $value)), fn ($v) => $v !== ''))
+            : []);
 @endphp
 
 <div class="space-y-1.5">
@@ -81,7 +94,7 @@
     @endif
 
     <div
-        x-data="wirekitMultiSelect({ options: {{ json_encode($encodedOptions) }}, name: '{{ $name }}' })"
+        x-data="wirekitMultiSelect({ options: {{ json_encode($encodedOptions) }}, name: '{{ $name }}', value: {{ json_encode($selectedValues) }} })"
         class="relative"
         @click.away="dropdownOpen = false"
         @keydown.escape="dropdownOpen = false"

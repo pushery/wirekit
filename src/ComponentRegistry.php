@@ -72,6 +72,7 @@ class ComponentRegistry
             'highlight' => ['category' => 'Typography', 'description' => 'Text with highlighted query matches'],
             'kbd' => ['category' => 'Typography', 'description' => 'Keyboard key indicator'],
             'link' => ['category' => 'Typography', 'description' => 'Styled anchor with external link support'],
+            'list' => ['category' => 'Typography', 'description' => 'Ordered or unordered list with type (disc / decimal / roman / alpha / none) and spacing variants'],
             'mark' => ['category' => 'Typography', 'description' => 'Highlighted text mark'],
             'prose' => ['category' => 'Typography', 'description' => 'Typography wrapper for raw HTML content'],
             'text' => ['category' => 'Typography', 'description' => 'Body text with size, variant, and weight'],

@@ -46,8 +46,17 @@
         class="{{ $triggerClasses }}"
     >
         @if($icon)
-            {{-- Icon slot — decorative, hidden from AT. --}}
-            <span class="shrink-0" aria-hidden="true">{{ $icon }}</span>
+            {{-- Icon — decorative, hidden from AT. A bare name string resolves
+                 via the WireKit icon system (consistent with sidebar.item /
+                 dropdown.item); a <x-slot:icon> or inline markup (non-string
+                 ComponentSlot, Htmlable) renders verbatim. --}}
+            <span class="shrink-0" aria-hidden="true">
+                @if(is_string($icon) && ! str_contains($icon, '<') && function_exists('svg'))
+                    {{ svg(\Pushery\WireKit\WireKit::icon($icon), ['class' => 'w-5 h-5']) }}
+                @else
+                    {{ $icon }}
+                @endif
+            </span>
         @endif
         <span class="flex-1 truncate text-left">{{ $label }}</span>
         {{-- Chevron indicator — rotates when open. --}}

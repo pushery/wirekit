@@ -20,7 +20,7 @@ use Pushery\WireKit\WireKit;
  * Usage:
  *   php artisan wirekit:verify
  *
- * Returns exit code 1 on failure — can be used in CI or as a Claude Code hook.
+ * Returns exit code 1 on failure — can be wired into CI or a pre-commit hook.
  * Reference: https://docs.wirekit.app/getting-started/integration
  */
 class VerifyInstallationCommand extends Command
