@@ -71,8 +71,19 @@
     {{ $attributes->except('rel')->class([$classes, $activeClasses => $active]) }}
 >
     @if($icon)
-        {{-- Icon slot — decorative; the label is the accessible name. --}}
-        <span class="shrink-0" aria-hidden="true">{{ $icon }}</span>
+        {{-- Icon — decorative; the label is the accessible name. A bare name
+             string ("cube") resolves via the WireKit icon system, consistent
+             with dropdown.item / context-menu.item / command-palette.item. A
+             <x-slot:icon> or inline markup (a non-string ComponentSlot, which
+             is Htmlable) renders verbatim, preserving the documented slot
+             contract — so both `icon="cube"` and `<x-slot:icon>` now work. --}}
+        <span class="shrink-0" aria-hidden="true">
+            @if(is_string($icon) && ! str_contains($icon, '<') && function_exists('svg'))
+                {{ svg(WireKit::icon($icon), ['class' => 'w-5 h-5']) }}
+            @else
+                {{ $icon }}
+            @endif
+        </span>
     @endif
     <span class="flex-1 truncate">{{ $slot }}</span>
     @if($opensNewTab)

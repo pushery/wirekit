@@ -53,9 +53,11 @@
         }
     "
 >
-    @isset($slot)
-        {{ $slot }}
-    @else
+    {{-- Default circular-arrow icon when no slot content is given. `@isset($slot)`
+         is always true (an empty slot is still a ComponentSlot), so the default
+         must be gated on the slot being EMPTY, not unset — otherwise the icon
+         never renders for `<x-wirekit::replay-button />`. --}}
+    @if($slot->isEmpty())
         <svg
             aria-hidden="true"
             viewBox="0 0 24 24"
@@ -65,5 +67,7 @@
         >
             <path d="M12 5V2L8 6l4 4V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7Z"/>
         </svg>
-    @endisset
+    @else
+        {{ $slot }}
+    @endif
 </button>
