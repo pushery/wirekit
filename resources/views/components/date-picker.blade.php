@@ -124,7 +124,7 @@
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @unless($label) aria-label="{{ $fallbackLabel }} start" @endunless
-                class="{{ $inputClasses }}"
+                class="wk-field {{ $inputClasses }}"
             />
             <span aria-hidden="true" class="shrink-0 text-[color:var(--color-wk-text-muted)]">&ndash;</span>
             <input
@@ -140,7 +140,7 @@
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 aria-label="{{ $label ?: $fallbackLabel }} end"
-                class="{{ $inputClasses }}"
+                class="wk-field {{ $inputClasses }}"
             />
         </div>
     @else
@@ -156,7 +156,8 @@
             @if($required) required aria-required="true" @endif
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-            {{ $attributes->class([$inputClasses]) }}
+            {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
+            {{ $attributes->class(['wk-field', $inputClasses]) }}
         />
     @endif
 

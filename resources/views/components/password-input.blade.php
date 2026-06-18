@@ -108,7 +108,8 @@
             @if($strengthMeter) x-model="password" @endif
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-            {{ $attributes->class([$inputClasses, $stateClasses, $sizeClasses]) }}
+            {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
+            {{ $attributes->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
         />
 
         {{-- Toggle visibility button --}}

@@ -139,8 +139,8 @@ export default function wirekitMap(config = {}) {
             this._map = map;
             // Zoom controls. Leaflet's L.map() ships a zoom control by default, but
             // MapLibre ships NO UI — add the standard NavigationControl (zoom in/out
-            // + compass) so both engines have on-canvas zoom buttons (QA: "keine
-            // zoom-funktionen mit buttons bei maplibre"). Guarded for a stubbed/older
+            // + compass) so both engines have on-canvas zoom buttons (MapLibre
+            // otherwise has no zoom buttons). Guarded for a stubbed/older
             // build without NavigationControl.
             if (which === 'maplibre' && this._map && typeof this._map.addControl === 'function'
                 && typeof window.maplibregl.NavigationControl === 'function') {
@@ -245,7 +245,7 @@ export default function wirekitMap(config = {}) {
             // Photo-ONLY bubbles need a DEFINITE width: Leaflet's tooltip (and
             // MapLibre's popup) shrink-wrap their content, so a bare `width:100%`
             // image has no width to resolve against and collapses to a sliver
-            // (QA: "photo only funktioniert bei leaflet nicht"). When there's text
+            // (a photo-only bubble collapses to a sliver on Leaflet). When there's text
             // alongside (text-with-photo), the text gives the bubble its width, so
             // `width:100%` is correct there. 12rem ≈ the 320×180 source at a
             // readable size; max-width keeps it inside a small viewport.
@@ -312,8 +312,8 @@ export default function wirekitMap(config = {}) {
                     // CLICK, but our click is reserved for selectMarker (pan + emit) —
                     // and the docs promise "hovering (or tapping) a pin opens a
                     // bubble", which is how Leaflet's bindTooltip already behaves. So
-                    // wire mouseenter/leave to togglePopup for parity (QA: "keiner der
-                    // tooltips funktioniert bei maplibre" — they were click-only).
+                    // wire mouseenter/leave to togglePopup for parity (MapLibre popups
+                    // were otherwise click-only, unlike Leaflet's hover tooltips).
                     // isOpen() guards keep enter/leave idempotent.
                     if (node) {
                         node.addEventListener('mouseenter', () => {

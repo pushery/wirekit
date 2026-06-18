@@ -25,7 +25,7 @@
     @if($label)
         {{-- Visible label; also the accessible name via aria-label above.
              We render it visually because sighted users benefit from the grouping too. --}}
-        <div class="{{ $labelClasses }}">{{ $label }}</div>
+        <div class="{{ $labelClasses }} group-data-[collapsed]/wk-sidebar:sr-only">{{ $label }}</div>
     @endif
     {{ $slot }}
 </div>

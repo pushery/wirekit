@@ -11,6 +11,7 @@
  */
 import wirekitChartJs from './components/chart.js';
 import wirekitDropdown from './components/dropdown.js';
+import wirekitSubmenu from './components/submenu.js';
 import wirekitTooltip from './components/tooltip.js';
 import wirekitModal from './components/modal.js';
 import wirekitDrawer from './components/drawer.js';
@@ -51,6 +52,7 @@ import wirekitStickyPanelShadows from './components/sticky-panel.js';
 export default function (Alpine) {
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitDropdown', wirekitDropdown);
+    Alpine.data('wirekitSubmenu', wirekitSubmenu);
     Alpine.data('wirekitTooltip', wirekitTooltip);
     Alpine.data('wirekitModal', wirekitModal);
     Alpine.data('wirekitDrawer', wirekitDrawer);

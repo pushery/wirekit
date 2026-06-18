@@ -101,10 +101,10 @@ A wide catalog of components organized by category. Browse, search, and try ever
 | **Typography** | heading, text, link, code, code-block, kbd, list, blockquote, mark, … |
 | **Marketing** | hero, feature-grid, feature, cta |
 | **Utilities** | fonts, icon, chart, chart-mixed, map, sparkline, scroll-area, scroll-to-top, structured-data |
-| **Specialized** | resizable, carousel, calendar, event-calendar, tour, qr-code, action-bar, prose, liquid-glass |
+| **Specialized** | resizable, carousel, calendar, event-calendar, tour, qr-code, action-bar, prose, glass |
 | **Reading** | reading-progress, reading-spine, reading-toc, reading-minimap, reading-bookmark, reading-meta, reading-shell |
 | **Animation** | reveal, replay-button |
-| **Feedback** | toast |
+| **Feedback** | toast-region |
 
 ## Theming & Customization
 

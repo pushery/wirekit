@@ -13,6 +13,7 @@
     // Uses aria-expanded for AT, and indents child content by one level.
     $triggerClasses = WireKit::resolveClasses('sidebar.collapsible', 'trigger', implode(' ', [
         'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
+        'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'rounded-[var(--radius-wk-md)]',
         'text-[color:var(--color-wk-text-muted)]',
@@ -58,10 +59,10 @@
                 @endif
             </span>
         @endif
-        <span class="flex-1 truncate text-left">{{ $label }}</span>
-        {{-- Chevron indicator — rotates when open. --}}
+        <span class="flex-1 truncate text-left group-data-[collapsed]/wk-sidebar:sr-only">{{ $label }}</span>
+        {{-- Chevron indicator — rotates when open; hidden in the collapsed rail. --}}
         <svg
-            class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)]"
+            class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden"
             :class="open ? 'rotate-90' : ''"
             fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
         >
@@ -69,8 +70,9 @@
         </svg>
     </button>
 
-    {{-- Collapsible children — shown/hidden with Alpine. --}}
-    <div x-show="open" x-collapse x-cloak class="{{ $childClasses }}">
+    {{-- Collapsible children — shown/hidden with Alpine; always hidden in the
+         collapsed rail (there is no room to show indented children at 3.5rem). --}}
+    <div x-show="open" x-collapse x-cloak class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:hidden">
         {{ $slot }}
     </div>
 </div>

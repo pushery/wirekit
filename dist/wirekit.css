@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.6.6 — MIT License
+ * WireKit CSS v2.7.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -583,6 +583,38 @@
         width: 1.75rem;
         height: 1.75rem;
     }
+
+    /* iOS Safari zooms (and shifts) the viewport the moment a TEXT-ENTRY form
+       control with a computed font-size below 16px receives focus — the field
+       reads as "too small and displaced". WireKit's --text-wk-md (14px) and
+       --text-wk-sm (13px) sit below that floor, so every select / input /
+       textarea must be lifted to the 16px threshold on touch devices. Desktop
+       (pointer: fine) keeps the smaller design-token size, so this is a pure
+       touch-only adjustment with no effect on the desktop render. The element-
+       qualified `.wk-field` selectors carry specificity (0,1,1) so they win
+       over the Tailwind `text-[length:var(--text-wk-*)]` utility (0,1,0)
+       regardless of stylesheet load order. The marker class is applied in
+       select / input / textarea Blade. */
+    select.wk-field,
+    input.wk-field,
+    textarea.wk-field {
+        font-size: 16px;
+    }
+}
+
+/* <x-wirekit::calendar> renders at a fixed ~312px content width (inline-block)
+   so the day grid stays compact on desktop. On phone-width viewports that reads
+   as "too narrow", and in a padding-squeezed container the trailing weekday
+   column can clip. Below the sm breakpoint (640px) flip the calendar to a
+   full-width block so the grid fills the available width and never clips; the
+   table is already w-full, so the day cells expand to fit. Desktop is untouched.
+   `div.wk-calendar` (0,1,1) out-specifies the Tailwind `.inline-block` utility
+   (0,1,0) regardless of stylesheet load order. */
+@media (max-width: 639.98px) {
+    div.wk-calendar {
+        display: block;
+        width: 100%;
+    }
 }
 
 /* ─── Blocked-day diagonal hatch (event-calendar day markers) ── */
@@ -1023,8 +1055,8 @@
 /* `contain: block-size` value (Chrome 121 / Firefox 135 / Safari */
 /* 18) which would not kick in on older browsers and left the    */
 /* vertical wrapper able to grow past its 18rem cap on any       */
-/* browser older than a few months — the exact scrollbar bug the */
-/* user reported.                                                  */
+/* browser older than a few months — the exact scrollbar bug     */
+/* this rule prevents.                                           */
 [data-wk-resizable][data-wk-direction="horizontal"] {
     contain: inline-size;
 }
@@ -1294,8 +1326,8 @@
 /* This replaces the former inline `style="padding-bottom:..."` */
 /* + `[li:last-child_&]:pb-0` combo in the Blade template. The    */
 /* inline style beat the class (no `!important`), so the pb-0    */
-/* never actually applied — the bug the user reported when the   */
-/* last-before-continuation item still showed trailing padding.  */
+/* never actually applied, so the last-before-continuation       */
+/* item still showed trailing padding.                           */
 [data-wk-timeline] [data-wk-timeline-item-content] {
     padding-bottom: 1.5rem;
 }
@@ -1341,7 +1373,7 @@
    Italic renders <em>, but the bold/italic browser defaults get flattened in the
    editor surface (Tailwind Preflight / the host's reset cascade) — so the mark
    APPLIED but the text did not look bold/italic, while Underline (<u>) and Strike
-   (<s>) kept their text-decoration defaults and DID show (QA). Restore them
+   (<s>) kept their text-decoration defaults and DID show. Restore them
    explicitly, using the house emphasis weight for bold. */
 .wk-editor-content strong, .wk-editor-content b { font-weight: var(--font-wk-heading-weight); }
 .wk-editor-content em, .wk-editor-content i { font-style: italic; }
@@ -1490,6 +1522,9 @@
        grow the items' typographic height. */
     --reading-spine-padding-x: 0.5rem;
     --reading-spine-padding-y: 0.875rem;
+    /* Sticky offset from the top of the scroll container when boundary="container"
+       (the spine pins here instead of scrolling away with the article). */
+    --reading-spine-offset-top: 1rem;
     --reading-spine-tick-height: 2px;
     --reading-spine-color-idle: var(--color-wk-text-subtle);
     --reading-spine-color-active: var(--color-wk-text);

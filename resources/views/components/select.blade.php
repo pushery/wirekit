@@ -103,7 +103,8 @@
             @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
             @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
             @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
-            {{ $attributes->class([$selectClasses, $stateClasses, $sizeClasses]) }}
+            {{-- wk-field: lifts font-size to the 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
+            {{ $attributes->class(['wk-field', $selectClasses, $stateClasses, $sizeClasses]) }}
         >
             @if($placeholder)
                 <option value="" disabled selected>{{ $placeholder }}</option>

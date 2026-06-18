@@ -25,10 +25,15 @@ export default function wirekitColorPicker(config = {}) {
         a: 1,
         format: ['hex', 'rgb', 'hsl', 'oklch'].includes(config.format) ? config.format : 'hex',
         withAlpha: config.withAlpha !== false,
+        // Opt-in "no color" affordance (popover mode only). `cleared` true means
+        // the bound form value is empty; applying any color flips it back to
+        // false via _sync(). Inert when withClear is false (button not rendered).
+        withClear: config.withClear === true,
+        cleared: false,
         // Opt-in escape hatch: on touch-primary devices, swap the popover
         // trigger for the platform's native color sheet (the non-popover
         // variant gets that for free via <input type="color">; the popover
-        // variant otherwise ALWAYS opens the custom panel — QA mobile).
+        // variant otherwise ALWAYS opens the custom panel, even on mobile).
         nativeOnMobile: config.nativeOnMobile === true,
         useNative: false,
         invalidInput: false,
@@ -49,6 +54,9 @@ export default function wirekitColorPicker(config = {}) {
                 this.v = hsv.v;
                 this.a = parsed.a ?? 1;
             }
+            // withClear + an empty initial value starts in the cleared ("no
+            // color") state instead of defaulting the HSV plane to red.
+            this.cleared = this.withClear && !config.value;
             this._loadRecents();
             // Decide native-vs-popover ONCE at mount. `(pointer: coarse)` is the
             // touch-primary discriminator (true on phones/tablets, false on
@@ -116,6 +124,20 @@ export default function wirekitColorPicker(config = {}) {
 
         get formattedValue() {
             return formatColor({ ...this.rgb, a: this.a }, this.format, this.withAlpha);
+        },
+
+        // Readout text. The cleared ("no color") state overrides the formatted
+        // value; withClear off keeps cleared false, so this always returns the
+        // formatted value (byte-identical to before withClear existed).
+        get displayValue() {
+            return this.cleared ? 'No color' : this.formattedValue;
+        },
+
+        // Popover value-field text. Like displayValue but BLANK (not "No color")
+        // while cleared, so the editable field shows its placeholder rather than a
+        // stale color. withClear off keeps cleared false → always formattedValue.
+        get popoverValue() {
+            return this.cleared ? '' : this.formattedValue;
         },
 
         // Marker positions as percentages for inline style binding.
@@ -241,9 +263,30 @@ export default function wirekitColorPicker(config = {}) {
             this._commitRecent();
         },
 
+        // Clear to "no color": empty the bound form value + dispatch input/change
+        // so wire:model picks up the empty string, AND reset the picker apparatus
+        // to its neutral default so the popover stops displaying the just-cleared
+        // color — the plane marker, hue, and value field all reset (matching a
+        // fresh empty `withClear` picker). The next applied color un-clears via
+        // _sync(). Popover mode only — see the Blade @props note.
+        clear() {
+            this.cleared = true;
+            this.h = 0;
+            this.s = 0;
+            this.v = 0;
+            this.a = 1;
+            if (this.$refs.input) {
+                this.$refs.input.value = '';
+                this.$refs.input.dispatchEvent(new Event('input', { bubbles: true }));
+                this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        },
+
         // ── Sync + recents ────────────────────────────────────────────
 
         _sync(commitRecent = true) {
+            // Applying any color leaves the cleared ("no color") state.
+            this.cleared = false;
             if (this.$refs.input) {
                 this.$refs.input.value = this.formattedValue;
                 this.$refs.input.dispatchEvent(new Event('input', { bubbles: true }));

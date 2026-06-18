@@ -325,7 +325,7 @@ class VerifyInstallationCommand extends Command
         // files found" WARN because the empty-views-dir case is a
         // strict subset of "no canonical layout".
         if (! $this->hasAnyLayoutFile() && ! $this->hasWirekitCssImportInAppCss()) {
-            $this->reportInfo('Layout file not yet created — `wirekit:install` injects @wirekitStyles + @wirekitScripts on a re-run once you add `resources/views/components/layouts/app.blade.php` (or `resources/views/layouts/app.blade.php`)');
+            $this->reportInfo('No app layout yet — run `php artisan wirekit:install`: it creates `resources/views/components/layouts/app.blade.php` via Livewire\'s `livewire:layout` and injects @wirekitStyles + @wirekitScripts (before @livewireScripts). Or create it yourself with `php artisan livewire:layout`, then re-run install.');
 
             return;
         }

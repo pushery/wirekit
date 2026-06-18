@@ -14,6 +14,7 @@ use Pushery\WireKit\Console\ClassByAreaCommand;
 use Pushery\WireKit\Console\ComponentMakeCommand;
 use Pushery\WireKit\Console\CursorRulesCommand;
 use Pushery\WireKit\Console\DoctorA11yCommand;
+use Pushery\WireKit\Console\EditorPresetCommand;
 use Pushery\WireKit\Console\ExportApiMapCommand;
 use Pushery\WireKit\Console\ExportBlocksCommand;
 use Pushery\WireKit\Console\ExportJsonCommand;
@@ -58,6 +59,7 @@ class WireKitServiceProvider extends ServiceProvider
                 ComponentMakeCommand::class,
                 CursorRulesCommand::class,
                 DoctorA11yCommand::class,
+                EditorPresetCommand::class,
                 ExportApiMapCommand::class,
                 ExportBlocksCommand::class,
                 ExportJsonCommand::class,
@@ -93,6 +95,7 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../dist/wirekit.core.js' => public_path('vendor/wirekit/wirekit.core.js'),
                 __DIR__.'/../dist/wirekit.esm.js' => public_path('vendor/wirekit/wirekit.esm.js'),
                 __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
+                __DIR__.'/../dist/wirekit-tiptap.js' => public_path('vendor/wirekit/wirekit-tiptap.js'),
                 __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
             ], 'wirekit-scripts');
 
@@ -103,6 +106,7 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../dist/wirekit.core.js' => public_path('vendor/wirekit/wirekit.core.js'),
                 __DIR__.'/../dist/wirekit.esm.js' => public_path('vendor/wirekit/wirekit.esm.js'),
                 __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
+                __DIR__.'/../dist/wirekit-tiptap.js' => public_path('vendor/wirekit/wirekit-tiptap.js'),
                 __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
             ], 'wirekit-assets');
         }
@@ -295,6 +299,7 @@ class WireKitServiceProvider extends ServiceProvider
             'wirekit/wirekit.core.js' => ['file' => 'wirekit.core.js', 'type' => 'application/javascript'],
             'wirekit/wirekit.esm.js' => ['file' => 'wirekit.esm.js', 'type' => 'application/javascript'],
             'wirekit/wirekit-apex.js' => ['file' => 'wirekit-apex.js', 'type' => 'application/javascript'],
+            'wirekit/wirekit-tiptap.js' => ['file' => 'wirekit-tiptap.js', 'type' => 'application/javascript'],
             'wirekit/wirekit-alpine.js' => ['file' => 'wirekit-alpine.js', 'type' => 'application/javascript'],
         ];
 

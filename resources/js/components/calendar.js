@@ -16,17 +16,59 @@ export default function wirekitCalendar(config = {}) {
         selected: config.value || null,
         focusedDay: initial?.getDate() || today.getDate(),
         _name: config.name || 'date',
+        // Multi-month display: render N consecutive months side by side (1 = the
+        // classic single grid). Clamped 1..4. focusOffset tracks which displayed
+        // month currently holds keyboard focus (always 0 for single-month).
+        months: Math.min(4, Math.max(1, parseInt(config.months, 10) || 1)),
+        focusOffset: 0,
+
+        // First day of the week: 0 (Sun) .. 1 (Mon, default) — matches the house
+        // convention + <x-wirekit::event-calendar>.
+        weekStartsOn: Number.isInteger(config.weekStartsOn) ? config.weekStartsOn : 1,
 
         /**
          * Get days array for current view month.
          * Returns objects: { date, dayOfMonth, isCurrentMonth, isToday, isSelected }
          */
         get days() {
-            const year = this.viewYear;
-            const month = this.viewMonth;
+            return this._daysFor(this.viewYear, this.viewMonth);
+        },
+
+        // N consecutive months from the base view, for the multi-month layout.
+        get monthsView() {
+            const out = [];
+            for (let i = 0; i < this.months; i++) {
+                const base = new Date(this.viewYear, this.viewMonth + i, 1);
+                out.push({
+                    offset: i,
+                    year: base.getFullYear(),
+                    month: base.getMonth(),
+                    label: base.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+                    days: this._daysFor(base.getFullYear(), base.getMonth()),
+                });
+            }
+
+            return out;
+        },
+
+        // Year options (±10 around the view year) for the selectable header.
+        get yearRange() {
+            const years = [];
+            for (let y = this.viewYear - 10; y <= this.viewYear + 10; y++) {
+                years.push(y);
+            }
+
+            return years;
+        },
+
+        // Day matrix for a given month (offset-independent), extracted so the
+        // multi-month view can build each grid from one routine.
+        _daysFor(year, month) {
             const firstDay = new Date(year, month, 1);
             const lastDay = new Date(year, month + 1, 0);
-            const startPad = firstDay.getDay(); // 0=Sun
+            // Leading pad offset by weekStartsOn so the grid begins on the configured
+        // first weekday (Mon by default). Mirrors <x-wirekit::event-calendar>.
+        const startPad = (firstDay.getDay() - this.weekStartsOn + 7) % 7;
             const daysInMonth = lastDay.getDate();
 
             const todayStr = this._formatDate(today);
@@ -121,13 +163,24 @@ export default function wirekitCalendar(config = {}) {
          * Handle keyboard navigation within the calendar grid.
          */
         handleKeydown(event) {
-            const daysInMonth = new Date(this.viewYear, this.viewMonth + 1, 0).getDate();
+            // The focused grid = base view shifted by focusOffset. For a single
+            // month focusOffset is always 0, so fYear/fMonth === view*, lastOffset
+            // is 0, and every cross-grid branch below is skipped — byte-identical
+            // to the classic single-month behavior.
+            const fBase = new Date(this.viewYear, this.viewMonth + this.focusOffset, 1);
+            const fYear = fBase.getFullYear();
+            const fMonth = fBase.getMonth();
+            const daysInMonth = new Date(fYear, fMonth + 1, 0).getDate();
+            const lastOffset = this.months - 1;
 
             switch (event.key) {
                 case 'ArrowRight':
                     event.preventDefault();
                     if (this.focusedDay < daysInMonth) {
                         this.focusedDay++;
+                    } else if (this.focusOffset < lastOffset) {
+                        this.focusOffset++;
+                        this.focusedDay = 1;
                     } else {
                         this.nextMonth();
                     }
@@ -138,6 +191,9 @@ export default function wirekitCalendar(config = {}) {
                     event.preventDefault();
                     if (this.focusedDay > 1) {
                         this.focusedDay--;
+                    } else if (this.focusOffset > 0) {
+                        this.focusOffset--;
+                        this.focusedDay = new Date(this.viewYear, this.viewMonth + this.focusOffset + 1, 0).getDate();
                     } else {
                         this.prevMonth();
                         this.focusedDay = new Date(this.viewYear, this.viewMonth + 1, 0).getDate();
@@ -149,6 +205,11 @@ export default function wirekitCalendar(config = {}) {
                     event.preventDefault();
                     if (this.focusedDay + 7 <= daysInMonth) {
                         this.focusedDay += 7;
+                    } else if (this.focusOffset < lastOffset) {
+                        // Same weekday, one week down — Date normalization rolls the
+                        // overflow into the next displayed month exactly.
+                        this.focusedDay = new Date(fYear, fMonth, this.focusedDay + 7).getDate();
+                        this.focusOffset++;
                     } else {
                         this.nextMonth();
                     }
@@ -159,6 +220,9 @@ export default function wirekitCalendar(config = {}) {
                     event.preventDefault();
                     if (this.focusedDay - 7 >= 1) {
                         this.focusedDay -= 7;
+                    } else if (this.focusOffset > 0) {
+                        this.focusedDay = new Date(fYear, fMonth, this.focusedDay - 7).getDate();
+                        this.focusOffset--;
                     } else {
                         this.prevMonth();
                     }
@@ -168,7 +232,7 @@ export default function wirekitCalendar(config = {}) {
                 case 'Enter':
                 case ' ':
                     event.preventDefault();
-                    this.selectDate(this._formatDate(new Date(this.viewYear, this.viewMonth, this.focusedDay)));
+                    this.selectDate(this._formatDate(new Date(fYear, fMonth, this.focusedDay)));
                     break;
 
                 case 'PageDown':
@@ -199,8 +263,12 @@ export default function wirekitCalendar(config = {}) {
 
         _focusDay() {
             this.$nextTick(() => {
-                const btn = this.$el.querySelector(`[data-wk-day="${this.focusedDay}"]`);
-                btn?.focus();
+                // Scope to the focused grid in multi-month mode (day numbers repeat
+                // across grids); the single-month selector is unchanged.
+                const sel = this.months > 1
+                    ? `[data-wk-month="${this.focusOffset}"] [data-wk-day="${this.focusedDay}"]`
+                    : `[data-wk-day="${this.focusedDay}"]`;
+                this.$el.querySelector(sel)?.focus();
             });
         },
 

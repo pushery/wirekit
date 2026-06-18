@@ -26,18 +26,49 @@
     // ['value' => .., 'label' => .., 'disabled' => bool] or plain strings.
     // The `disabled` flag (default false) renders the option visually
     // dimmed + not-allowed cursor and prevents click + keyboard activation.
-    $normalized = [];
-    foreach ($options as $key => $opt) {
+    // A GROUP is an array value with neither a 'label' nor a 'value' key — i.e.
+    // a nested map of sub-options (mirrors <x-wirekit::select>: `['Europe' =>
+    // ['de' => 'Germany', ...]]`). The extra `value`-key guard keeps the legacy
+    // single-option shape `['value' => 'x']` (no label) working as an option.
+    // Grouped options carry a `group` key; ungrouped options omit it, so a
+    // group-free combobox normalizes byte-identically to before.
+    $normalizeOption = function ($key, $opt) {
         if (is_array($opt)) {
-            $normalized[] = [
+            return [
                 'value' => (string) ($opt['value'] ?? $key),
                 'label' => (string) ($opt['label'] ?? $opt['value'] ?? $key),
                 'disabled' => (bool) ($opt['disabled'] ?? false),
             ];
-        } elseif (is_int($key)) {
-            $normalized[] = ['value' => (string) $opt, 'label' => (string) $opt, 'disabled' => false];
+        }
+
+        return is_int($key)
+            ? ['value' => (string) $opt, 'label' => (string) $opt, 'disabled' => false]
+            : ['value' => (string) $key, 'label' => (string) $opt, 'disabled' => false];
+    };
+
+    $normalized = [];
+    foreach ($options as $key => $opt) {
+        $isGroup = is_array($opt) && ! array_key_exists('label', $opt) && ! array_key_exists('value', $opt);
+        if ($isGroup) {
+            foreach ($opt as $subKey => $subOpt) {
+                $entry = $normalizeOption($subKey, $subOpt);
+                $entry['group'] = (string) $key;
+                $normalized[] = $entry;
+            }
         } else {
-            $normalized[] = ['value' => (string) $key, 'label' => (string) $opt, 'disabled' => false];
+            $entry = $normalizeOption($key, $opt);
+            if (is_array($opt) && ! empty($opt['group'])) {
+                $entry['group'] = (string) $opt['group'];
+            }
+            $normalized[] = $entry;
+        }
+    }
+
+    $hasGroups = false;
+    foreach ($normalized as $o) {
+        if (! empty($o['group'])) {
+            $hasGroups = true;
+            break;
         }
     }
 
@@ -117,6 +148,27 @@
             if (this.query === '') return this.allOptions;
             const q = this.query.toLowerCase();
             return this.allOptions.filter(o => o.label.toLowerCase().includes(q));
+        },
+        // Groups the FILTERED options by their `group` label, preserving
+        // first-seen group order and each option's index into `filtered` (as
+        // `_idx`) so highlight + aria-activedescendant keep using the flat
+        // keyboard model unchanged. Empty groups never appear (built from
+        // `filtered`, so a group whose options all filtered out is absent).
+        get filteredGroups() {
+            const groups = [];
+            const byLabel = new Map();
+            this.filtered.forEach((opt, idx) => {
+                const label = opt.group || null;
+                let bucket = byLabel.get(label);
+                if (! bucket) {
+                    bucket = { label, options: [] };
+                    byLabel.set(label, bucket);
+                    groups.push(bucket);
+                }
+                bucket.options.push({ ...opt, _idx: idx });
+            });
+
+            return groups;
         },
         init() {
             // Seed the query with the label of the initial value, if any.
@@ -214,7 +266,7 @@
         @keydown.escape="open = false"
         @if($disabled) disabled @endif
         @if($hasError) aria-invalid="true" aria-describedby="{{ $errorId }}" @endif
-        class="{{ $inputClasses }}"
+        class="wk-field {{ $inputClasses }}"
     />
 
     {{-- Clear button — visible only when a value is selected. Positioned left of the chevron. --}}
@@ -263,6 +315,40 @@
         x-show="open && filtered.length > 0"
         x-cloak
     >
+        @if($hasGroups)
+        {{-- Grouped options: each group is role="group" with an aria-label; the
+             visible heading is decorative (aria-hidden) since the group's
+             aria-label supplies its name. The inner list is role="none" so the
+             options remain effective children of the group in the a11y tree.
+             The flat keyboard model is untouched — selection + highlight key off
+             opt._idx (each option's index into the flat `filtered` list). --}}
+        <template x-for="grp in filteredGroups" :key="grp.label ?? '__wk_ungrouped'">
+            <li role="group" :aria-label="grp.label || 'Options'" style="list-style: none;">
+                <template x-if="grp.label">
+                    <div aria-hidden="true" class="px-[var(--padding-wk-x-md)] pt-[var(--padding-wk-y-sm)] pb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] uppercase tracking-wider text-[color:var(--color-wk-text-muted)]" x-text="grp.label"></div>
+                </template>
+                <ul role="none" style="list-style: none; margin: 0; padding: 0;">
+                    <template x-for="opt in grp.options" :key="opt.value">
+                        <li
+                            role="option"
+                            :id="'{{ $listId }}-opt-' + opt._idx"
+                            :aria-selected="selected === opt.value"
+                            :aria-disabled="opt.disabled ? 'true' : null"
+                            :class="opt.disabled
+                                ? 'text-[color:var(--color-wk-text-muted)] opacity-[var(--opacity-wk-disabled)] cursor-not-allowed'
+                                : (opt._idx === highlight
+                                    ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] cursor-pointer'
+                                    : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
+                            class="p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)]"
+                            @click="selectOption(opt)"
+                            @mouseenter="if (! opt.disabled) highlight = opt._idx"
+                            x-text="opt.label"
+                        ></li>
+                    </template>
+                </ul>
+            </li>
+        </template>
+        @else
         <template x-for="(opt, idx) in filtered" :key="opt.value">
             <li
                 role="option"
@@ -280,6 +366,7 @@
                 x-text="opt.label"
             ></li>
         </template>
+        @endif
     </ul>
 
     {{-- Empty state when filter produces no matches. --}}

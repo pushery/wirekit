@@ -69,7 +69,7 @@ export function resolveThemeColors(style) {
     // is `oklch(...)`, the browser preserves the OKLCH literal in fillStyle,
     // and downstream code (isGrayscale, withOpacity, ApexCharts series.color)
     // either fails to parse it (silent black fallback) or paints it directly
-    // — producing the chart-bars-render-pure-black bug the user reported.
+    // — producing a chart-bars-render-pure-black bug.
     //
     // Painting a 1×1 pixel and reading the ImageData back gives us the
     // browser's actual sRGB-rendered pixel value, which is always rgb()/

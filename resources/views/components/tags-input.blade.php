@@ -133,7 +133,7 @@
                 @keydown.enter.prevent="addTag()"
                 @keydown.comma.prevent="addTag()"
                 @keydown.backspace="onBackspace($event)"
-                class="flex-1 min-w-[80px] px-2 bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] outline-none"
+                class="wk-field flex-1 min-w-[80px] px-2 bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] outline-none"
             />
         </div>
     </div>

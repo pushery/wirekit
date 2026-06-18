@@ -40,8 +40,8 @@ export default function wirekitNotificationCenter(config = {}) {
             }
             // Close on page scroll / viewport resize. The teleported panel is
             // position:fixed, anchored ONCE on open — when the page scrolls under
-            // it, the panel strands visually detached from the bell (QA mobile:
-            // "wegscrollen und es bleibt einfach stehen"). Scrolling INSIDE the
+            // it, the panel strands visually detached from the bell (it stays in
+            // place when the page scrolls away under it). Scrolling INSIDE the
             // panel (a long notification list) must keep working — only scrolls
             // originating outside the panel dismiss it. Capture catches every
             // scroller (document + nested containers); passive per perf-hygiene.

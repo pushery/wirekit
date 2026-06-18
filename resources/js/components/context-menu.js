@@ -218,12 +218,18 @@ export default function wirekitContextMenu(config = {}) {
         },
 
         /**
-         * Get all menuitem elements in the panel.
+         * Get all menuitem elements at THIS level of the panel.
+         *
+         * Items nested inside a submenu's child panel (`[data-wk-submenu-panel]`)
+         * are excluded so top-level roving focus stays flat — the submenu owns
+         * its own level via wirekitSubmenu. The submenu PARENT item is itself a
+         * `[role="menuitem"]` NOT inside a submenu panel, so it stays included.
          */
         _getItems() {
             const panel = this.$refs.panel;
             if (!panel) return [];
-            return [...panel.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')];
+            return [...panel.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')]
+                .filter((el) => !el.closest('[data-wk-submenu-panel]'));
         },
 
         /**

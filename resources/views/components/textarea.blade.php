@@ -108,7 +108,8 @@
         @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
         @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
         @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
-        {{ $attributes->class([$textareaClasses, $stateClasses, $sizeClasses, $resize ? 'resize-y' : 'resize-none', '[field-sizing:content]' => $autosize]) }}
+        {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
+        {{ $attributes->class(['wk-field', $textareaClasses, $stateClasses, $sizeClasses, $resize ? 'resize-y' : 'resize-none', '[field-sizing:content]' => $autosize]) }}
     >{{ $slot }}</textarea>
 
     {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}

@@ -96,7 +96,7 @@
     // corner two equal-specificity z classes, so on mobile the data headers
     // (painted later in the DOM) scrolled OVER the sticky corner — the
     // first-column header "Cohort" vanished while the body first column
-    // stayed (QA: "das label der ersten spalte scrollt weg"). Spelled WITHOUT
+    // stayed (the first-column label scrolled away on mobile). Spelled WITHOUT
     // the bracket shorthand: Tailwind's scanner reads comments, and the
     // class-shaped shorthand minted a phantom utility in the sample build
     // (caught by the drift reverse-diff).

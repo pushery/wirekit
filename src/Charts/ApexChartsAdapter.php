@@ -244,7 +244,7 @@ final class ApexChartsAdapter implements ChartAdapter
      * The earlier global `shared: false, intersect: true` override broke
      * line/area hover (tooltip stuck on first point, didn't follow cursor).
      * The earlier no-override path left radar / treemap / heatmap with
-     * cursor-following defaults that the user reported as "ruckelnd".
+     * cursor-following defaults that produced visible tooltip jitter.
      * Branch by canonical ApexCharts type so each chart family gets the
      * shape its users expect.
      */
