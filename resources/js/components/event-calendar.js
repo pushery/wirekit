@@ -132,7 +132,7 @@ export default function wirekitEventCalendar(config = {}) {
         // a large gap before short locale times ("9:00") and would clip long ones
         // ("12:30 PM"); the timeline spine and every row consume the same var, so
         // the vertical line stays straight AND hugs the actual content width
-        // (QA-reported). Only measures while the agenda view is visible — hidden
+        // Only measures while the agenda view is visible — hidden
         // elements measure 0 and would collapse the column.
         _measureAgendaTime() {
             if (this.view !== 'agenda' || !this.$root || typeof this.$root.querySelectorAll !== 'function') {

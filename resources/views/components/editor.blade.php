@@ -148,7 +148,7 @@
                 {{-- Mirror the maxHeight cap on the fallback textarea so the absent-Tiptap
                      path scrolls at the same ceiling (a textarea scrolls natively). --}}
                 @if($maxHeight) style="max-height: {{ $maxHeight }}; overflow-y: auto;" @endif
-                class="block w-full bg-transparent px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] focus:outline-none {{ $minHeight }}"
+                class="wk-field block w-full bg-transparent px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] focus:outline-none {{ $minHeight }}"
             >{{ is_string($value) ? $value : ($value !== null ? json_encode($value) : '') }}</textarea>
         @endif
 

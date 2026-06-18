@@ -24,7 +24,7 @@
     // is no --color-wk-info base token, so info maps onto accent.
     // Stripe color = the intent's *-text token, NOT the base color: a base-color
     // stripe sits on a 16% tint of the SAME hue, so its edge nearly vanishes
-    // (QA: "Release 2.6 mal ohne Rand") — while accent's near-black stripe popped.
+    // (its edge reads as borderless) — while accent's near-black stripe popped.
     // The *-text tokens are the AA-on-tint pairings, so the stripe separates on
     // every intent equally, in both themes.
     $eventClasses = [
@@ -64,7 +64,7 @@
     // state is ALSO surfaced in the accessible name (sr-only) — never hatch-only.
     $markerBlocked = 'wk-day-blocked bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text-muted)]';
     // Blocked markers paint the diagonal hatch ACROSS the band — readable stripes,
-    // unreadable text on top of them (QA: "den Text kann man kaum lesen"). The
+    // unreadable text on top of them (the label is hard to read over the hatch). The
     // label (and the agenda type-suffix) therefore sits on a small solid chip that
     // hugs the TEXT, so the hatch stays visible around it as the affordance.
     $markerChip = 'rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-xs)]';
@@ -197,8 +197,8 @@
              container padding) the strip is tinted muted AND carries the per-column
              border-l, so the vertical column lines run CONTINUOUSLY from the sticky
              header into the hour grid — container padding has no children, so the
-             lines visibly broke there (QA: "die vertikalen Linien…", "der Abstand…
-             in einem hellen Grau"). Its border-b draws the 00:00 gridline the
+             lines visibly broke there (the vertical column lines were
+             discontinuous in light gray). Its border-b draws the 00:00 gridline the
              "12 AM" label sits on, matching every other hour label. --}}
         <div class="grid grid-cols-[3rem_repeat(7,minmax(0,1fr))]">
             <div class="h-2 bg-[var(--color-wk-bg-muted)]" aria-hidden="true"></div>
@@ -234,17 +234,17 @@
                              tall); 2.25rem (row − 4px gutter) fixed most of it but left the
                              1-hour block 1px too tall at the bottom — the `% height` calc
                              rounds UP ~1px at this scale and the 2.25rem floor (== the 1-hour
-                             calc) pinned it there (QA: "noch einen pixel zu hoch"). So the
+                             calc) pinned it there (the block was 1px too tall). So the
                              vertical gutter is now 5px on height with the floor lowered to
                              2.1875rem (35px): a 1-hour block lands 1px shorter and the bottom
                              inset matches the +2px top. Horizontal gutter stays 2px/-4px
-                             (left/right "passt"). The clipped line is the time (no
+                             (left/right fit). The clipped line is the time (no
                              descenders), so overflow-hidden costs nothing visible. No
                              vertical gutter at all made back-to-back events touch
-                             edge-to-edge (QA: "hängen absolut aufeinander"). NOTE the event
+                             edge-to-edge (back-to-back events visually merged). NOTE the event
                              background ($eventClasses) is now an OPAQUE color-mix over
                              var(--color-wk-bg), not transparent, so the hour gridlines no
-                             longer show THROUGH the block (QA: "termine über den linien"). --}}
+                             longer show THROUGH the block (events no longer bleed over the gridlines). --}}
                         <button type="button" @click="selectEvent(b.event)" :aria-label="eventLabel(b.event)" :data-wk-tip="b.event.title" :class="@js($eventClasses)[b.event.intent || 'accent']" :style="'top:calc('+b.top+'% + 2px); height:calc('+b.height+'% - 5px); left:calc('+b.left+'% + 2px); width:calc('+b.width+'% - 4px)'" class="absolute overflow-hidden min-h-[2.1875rem] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-left text-[length:var(--text-wk-xs)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
                             <span class="block font-[number:var(--font-wk-heading-weight)] leading-[var(--leading-wk-tight)] truncate" x-text="b.event.title"></span>
                             {{-- Secondary line: a smaller (2xs) tight time so the title

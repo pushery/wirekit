@@ -127,6 +127,7 @@ return [
         'notification-center' => ['group-by' => 'none', 'filters' => false],
         'data-table' => ['density' => 'comfortable', 'selectable' => false, 'searchable' => false],
         'event-calendar' => ['view' => 'month', 'week-starts-on' => 1],
+        'calendar' => ['week-starts-on' => 1],
         'map' => ['provider' => 'maplibre', 'zoom' => 2, 'highlight' => 'ring', 'highlight-color' => 'accent'],
         'stat' => ['animate' => false],
         'skeleton' => ['animation' => 'shimmer'],

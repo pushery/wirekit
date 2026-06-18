@@ -5,7 +5,7 @@
  * scrolled content (`.wk-scroll-shadow-top/-bottom` in dist/wirekit.css), so a
  * hovered row or button near an edge can never cover the affordance. The
  * earlier approach drew the shadows in the scroll container's `background`,
- * which children paint over (QA: a ghost button's hover surface swallowed the
+ * which children paint over (a ghost button's hover surface swallowed the
  * shadow at both edges).
  *
  * Auto-hide at the scroll extremes is driven by an IntersectionObserver over

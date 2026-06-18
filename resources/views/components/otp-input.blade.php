@@ -118,7 +118,7 @@
                 aria-label="Digit {{ $i + 1 }} of {{ $length }}"
                 @if($hasError) aria-invalid="true" @endif
                 @if($i === 0 && $describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-                class="{{ $digitClasses }} {{ $stateClasses }}"
+                class="wk-field {{ $digitClasses }} {{ $stateClasses }}"
                 x-ref="digit{{ $i }}"
                 @input="onInput($event, {{ $i }})"
                 @keydown="onKeydown($event, {{ $i }})"

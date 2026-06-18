@@ -1,6 +1,6 @@
 # WireKit `dist/` bundles
 
-WireKit ships five compiled artifacts. Pick the one that matches your
+WireKit ships six compiled artifacts. Pick the one that matches your
 runtime / loader story.
 
 | File | Format | Contents | Size (gzip ≈) | When to load |
@@ -9,6 +9,7 @@ runtime / loader story.
 | `wirekit.js` | IIFE | Every WireKit Alpine component (chart, dropdown, tooltip, modal, drawer, toast, …) registered as plugins. **Does NOT bundle Alpine itself.** | 17 KB | When your app already runs Alpine and you register WireKit plugins yourself (Laravel-Livewire setups, sample-app) |
 | `wirekit.core.js` | IIFE | Chart component only — no overlay deps, no Floating-UI / focus-trap | ~6 KB | When you only need `<x-wirekit::chart>` and want the smallest possible bundle |
 | `wirekit-apex.js` | IIFE | ApexCharts adapter glue — does **NOT** contain ApexCharts itself (developer's separate npm install) | ~2 KB | When using `<x-wirekit::chart>` with `'charts.library' => 'apexcharts'` config |
+| `wirekit-tiptap.js` | IIFE | Tiptap editor adapter glue (`wirekitEditor` factory) — does **NOT** contain Tiptap itself (developer's separate npm install) | ~2 KB | When using `<x-wirekit::editor>` alongside `wirekit.core.js` (the full bundle already includes the editor) |
 | `wirekit-alpine.js` | IIFE | Alpine.js core + every WireKit Alpine plugin + auto-`Alpine.start()`. **Self-contained drop-in.** | ~30 KB | When you want one bundle that gives you Alpine + every WireKit primitive in a single tag (docs site iframe srcdoc, isolated preview surfaces, sample landing pages) |
 
 ## Pick exactly one of `wirekit.js` OR `wirekit-alpine.js`
@@ -75,3 +76,8 @@ The bundles are IIFEs with no module-loader requirement.
   License above). Adapter does NOT contain ApexCharts code; developer
   installs it separately. See `docs/components/chart.md` for the full
   license terms.
+- `wirekit-tiptap.js` — MIT adapter glue only. Tiptap's core
+  (`@tiptap/core`, `@tiptap/starter-kit`) is **MIT**; the optional
+  Pro extensions (`@tiptap-pro/*`) are commercial. Adapter does NOT
+  contain Tiptap code; developer installs it separately. See
+  `docs/components/editor.md` for the setup walk-through.

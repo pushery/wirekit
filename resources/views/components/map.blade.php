@@ -84,7 +84,7 @@
     {{-- NO flex gap between canvas and list: the list's own divider border (a top
          border when stacked, a left border when side by side) IS the separator. A
          flex gap here adds a dead strip of page background between the map and the
-         list on BOTH engines (QA: "auf einmal eine gap") — the two panes must sit
+         list on BOTH engines (a visible gap appears) — the two panes must sit
          flush inside the rounded, clipped card, split only by that border. (Plain
          prose, no bare utility tokens: Tailwind scans Blade comments too, so a
          literal class name here would emit a dead selector and trip the drift audit.) --}}

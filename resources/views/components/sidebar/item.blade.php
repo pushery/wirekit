@@ -29,6 +29,8 @@
     // aria-current="page" so AT announces "current page, <label>".
     $classes = WireKit::resolveClasses('sidebar.item', 'base', implode(' ', [
         'flex items-center gap-[var(--padding-wk-x-sm)]',
+        // Collapse-to-icon rail: center the lone icon when the sidebar collapses.
+        'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'rounded-[var(--radius-wk-md)]',
         'text-[color:var(--color-wk-text-muted)]',
@@ -85,14 +87,16 @@
             @endif
         </span>
     @endif
-    <span class="flex-1 truncate">{{ $slot }}</span>
+    {{-- In a collapsed rail the label becomes sr-only — visually hidden but
+         still the link's accessible name (the icon is decorative). --}}
+    <span class="flex-1 truncate group-data-[collapsed]/wk-sidebar:sr-only">{{ $slot }}</span>
     @if($opensNewTab)
         <span class="sr-only">(opens in new tab)</span>
     @endif
     @if($submenu)
         {{-- Submenu indicator — signals a flyout or sub-navigation exists.
              Purely visual hint; only shown when the developer opts in via :submenu="true". --}}
-        <svg class="w-3.5 h-3.5 shrink-0 text-[color:var(--color-wk-text-subtle)] wk-submenu-indicator" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+        <svg class="w-3.5 h-3.5 shrink-0 text-[color:var(--color-wk-text-subtle)] wk-submenu-indicator group-data-[collapsed]/wk-sidebar:hidden" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
         </svg>
     @endif

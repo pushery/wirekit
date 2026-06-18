@@ -106,7 +106,7 @@ export default function wirekitFilterBuilder(config = {}) {
             // Close on page scroll / viewport resize. The popover is teleported +
             // position:fixed, anchored ONCE on open — a page scroll under it
             // strands the panel visually detached from the trigger (same class as
-            // the notification-center flyout; QA mobile). Scrolling INSIDE the
+            // the notification-center flyout). Scrolling INSIDE the
             // panel keeps working — only outside scrolls dismiss. Capture catches
             // every scroller; passive per perf-hygiene.
             if (typeof window !== 'undefined') {

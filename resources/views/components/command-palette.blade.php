@@ -130,7 +130,7 @@
                             :aria-activedescendant="activeDescendant"
                             aria-autocomplete="list"
                             placeholder="{{ $placeholder }}"
-                            class="{{ $inputClasses }}"
+                            class="wk-field {{ $inputClasses }}"
                             autocomplete="off"
                         />
                     </div>

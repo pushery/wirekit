@@ -624,11 +624,14 @@ class InstallCommand extends Command
             $rel = str_replace(base_path().DIRECTORY_SEPARATOR, '', $layout);
             $this->line("    <fg=cyan>~</> {$rel} (would inject @wirekitStyles + @wirekitScripts if missing)");
         } else {
+            // Name every candidate the real install probes (never a narrower path
+            // than addBladeDirectives() would touch), and describe the new
+            // create-when-missing behavior.
             $candidates = implode(', ', array_map(
                 fn (string $p): string => str_replace(base_path().DIRECTORY_SEPARATOR, '', $p),
                 $this->layoutCandidates()
             ));
-            $this->line("    <fg=cyan>~</> layout: none of the probed candidates exist yet ({$candidates}) — add @wirekitStyles/@wirekitScripts manually");
+            $this->line("    <fg=cyan>~</> layout: none of the probed candidates exist yet ({$candidates}) — would create one via Livewire (livewire:layout) and inject @wirekitStyles + @wirekitScripts (before @livewireScripts)");
         }
 
         // public/vendor/wirekit/ — assets.
@@ -1208,8 +1211,25 @@ CSS;
     {
         $layoutFile = $this->resolveLayoutFile();
 
+        // Fresh Laravel + Livewire 4 projects (no starter kit) ship NO app layout
+        // at any canonical path, so Livewire page components fail at runtime with
+        // "Livewire page component layout view not found: [components.layouts.app]".
+        // Livewire OWNS layout creation via its own `livewire:layout` command (it
+        // writes the layout at the config('livewire.component_layout') convention —
+        // by default resources/views/components/layouts/app.blade.php). Delegate to
+        // it (fix at the source — don't hand-roll a layout template that could drift
+        // from Livewire's own convention), then wire our directives into the result.
+        // This closes the chicken-and-egg the flow used to leave: the doctor said
+        // "add the layout, then re-run install", but install never created one.
         if (! $layoutFile) {
-            $this->line('  <fg=yellow>!</> No layout file found — add @wirekitStyles/@wirekitScripts manually');
+            $layoutFile = $this->createLayoutViaLivewire();
+        }
+
+        if (! $layoutFile) {
+            // Livewire's command is unavailable (e.g. a non-Livewire host) — give an
+            // actionable instruction instead of the old "add manually" dead-end.
+            $this->line('  <fg=yellow>!</> No layout file found, and Livewire\'s <fg=cyan>livewire:layout</> command is unavailable.');
+            $this->line('    Create <fg=cyan>resources/views/components/layouts/app.blade.php</>, add <fg=cyan>@wirekitStyles</> in <head> and <fg=cyan>@wirekitScripts</> just before @livewireScripts, then re-run <fg=cyan>wirekit:install</>.');
 
             return;
         }
@@ -1219,7 +1239,7 @@ CSS;
         $modified = false;
 
         if (! str_contains($content, '@wirekitStyles')) {
-            // Add before </head> or @vite
+            // Add before </head>.
             if (str_contains($content, '</head>')) {
                 $content = str_replace('</head>', "    @wirekitStyles\n</head>", $content);
                 $modified = true;
@@ -1227,8 +1247,15 @@ CSS;
         }
 
         if (! str_contains($content, '@wirekitScripts')) {
-            // Add before </body>
-            if (str_contains($content, '</body>')) {
+            // Critical order: @wirekitScripts registers WireKit's Alpine plugins on
+            // the alpine:init event, which MUST run before @livewireScripts boots
+            // Alpine. The Livewire layout stub always emits @livewireScripts, so when
+            // it's present insert @wirekitScripts immediately BEFORE it; otherwise
+            // fall back to just before </body>.
+            if (str_contains($content, '@livewireScripts')) {
+                $content = str_replace('@livewireScripts', "@wirekitScripts\n        @livewireScripts", $content);
+                $modified = true;
+            } elseif (str_contains($content, '</body>')) {
                 $content = str_replace('</body>', "    @wirekitScripts\n</body>", $content);
                 $modified = true;
             }
@@ -1241,6 +1268,29 @@ CSS;
         } else {
             $this->line('  <fg=yellow>!</> Blade directives already present in layout');
         }
+    }
+
+    /**
+     * Create an app layout when none exists yet, by delegating to Livewire's own
+     * `livewire:layout` command — the source-correct creator. It writes the layout
+     * at the `config('livewire.component_layout')` convention (default
+     * `resources/views/components/layouts/app.blade.php`), so the file lands at one
+     * of the paths {@see resolveLayoutFile()} probes. Returns the resolved layout
+     * path, or null when the Livewire command is unavailable (so the caller can fall
+     * back to an actionable manual instruction).
+     */
+    private function createLayoutViaLivewire(): ?string
+    {
+        $application = $this->getApplication();
+
+        if ($application === null || ! $application->has('livewire:layout')) {
+            return null;
+        }
+
+        $this->line('  <fg=blue>i</> No app layout found — creating one via Livewire (<fg=cyan>php artisan livewire:layout</>)…');
+        $this->call('livewire:layout');
+
+        return $this->resolveLayoutFile();
     }
 
     private function addGitignoreEntry(): void

@@ -10,6 +10,14 @@
     'type' => 'text',
     'prefix' => null,
     'suffix' => null,
+    // Optional trailing affordances (opt-in; default off for byte-identical
+    // back-compat). `clearable` shows an X button that empties the field,
+    // refocuses it, and dispatches input/change so wire:model / x-model sync.
+    // `copyable` shows a copy-to-clipboard button with a brief "Copied" state.
+    // Both route the field through the flex wrapper and add a tiny inline Alpine
+    // island; when neither is set the input renders exactly as before.
+    'clearable' => false,
+    'copyable' => false,
     'scope' => null,
     // HTML5 form-state props — surface in the schema so AI / IDE tools
     // know about them, while preserving the pre-existing attribute-bag
@@ -127,6 +135,12 @@
         'lg' => 'px-[var(--padding-wk-x-lg)] text-[length:var(--text-wk-lg)]',
         default => 'px-[var(--padding-wk-x-md)] text-[length:var(--text-wk-md)]',
     };
+
+    // Trailing affordances (clearable / copyable) route the field through the
+    // flex wrapper so the buttons sit as inline siblings; when set, the wrapper
+    // also carries the tiny Alpine island that drives clear() / copy().
+    $hasAffordances = $clearable || $copyable;
+    $useWrapper = $prefix || $suffix || $hasAffordances;
 @endphp
 
 <div class="space-y-1.5">
@@ -134,10 +148,24 @@
         <x-wirekit::label :for="$id" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
-    @if($prefix || $suffix)
-        {{-- Wrapper: flex row places prefix/suffix as inline siblings so the input
-             padding adjusts to the actual text width instead of a hardcoded value. --}}
-        <div @class([
+    @if($useWrapper)
+        {{-- Wrapper: flex row places prefix/suffix (and the clearable/copyable
+             affordance buttons) as inline siblings so the input padding adjusts
+             to the actual content width instead of a hardcoded value. --}}
+        <div
+            @if($hasAffordances)
+                {{-- Tiny inline Alpine island. clear() empties + refocuses the
+                     field and dispatches input/change so wire:model / x-model
+                     pick up the cleared value; copy() writes the live value to
+                     the clipboard with a brief "Copied" state. hasValue gates the
+                     clear button so the X only shows when the field has content
+                     (kept in sync via the bubbled input event from the field).
+                     execCommand is the fallback for non-secure (http) contexts
+                     where navigator.clipboard is unavailable. --}}
+                x-data="{ copied: false, hasValue: false, _t: null, init() { this.hasValue = (this.$refs.wkField?.value.length ?? 0) > 0; }, clear() { const f = this.$refs.wkField; if (! f) return; f.value = ''; f.dispatchEvent(new Event('input', { bubbles: true })); f.dispatchEvent(new Event('change', { bubbles: true })); this.hasValue = false; f.focus(); }, copy() { const f = this.$refs.wkField; if (! f) return; const done = () => { this.copied = true; clearTimeout(this._t); this._t = setTimeout(() => { this.copied = false; }, 2000); }; if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(f.value).then(done).catch(() => {}); } else { try { f.select(); document.execCommand('copy'); done(); } catch (e) {} } } }"
+                @input="hasValue = ($refs.wkField?.value.length ?? 0) > 0"
+            @endif
+            @class([
             'flex items-center',
             'bg-[var(--color-wk-bg-input)]',
             'border-[length:var(--border-wk-width)]',
@@ -177,7 +205,9 @@
                 @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
                 @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
                 @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
+                @if($hasAffordances) x-ref="wkField" @endif
                 {{ $attributes->class([
+                    'wk-field', // 16px iOS-zoom floor on phones (dist/wirekit.css)
                     'block w-full h-full bg-transparent border-none shadow-none',
                     'font-[family-name:var(--font-wk-sans)]',
                     'text-[color:var(--color-wk-text)]',
@@ -186,12 +216,59 @@
                     'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed',
                     $prefixInputPadClass,
                     'pl-1' => (bool) $prefix,
-                    'pr-1' => (bool) $suffix,
+                    'pr-1' => (bool) $suffix || $hasAffordances,
                 ]) }}
             />
 
             @if($suffix)
                 <span class="shrink-0 select-none pr-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $suffix }}</span>
+            @endif
+
+            @if($copyable)
+                {{-- Copy-to-clipboard button. Swaps to a check icon and announces
+                     "Copied" via the polite live region below for ~2s. Static
+                     aria-label is the no-JS fallback; Alpine :aria-label swaps it
+                     to reflect the copied state. ring-inset so the focus ring is
+                     never clipped by the wrapper's overflow-hidden. --}}
+                <button
+                    type="button"
+                    @click="copy()"
+                    @if($disabled) disabled @endif
+                    aria-label="Copy to clipboard"
+                    :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
+                    class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                >
+                    <svg x-show="! copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V12.5a1.5 1.5 0 01-1.5 1.5h-1v-3.379a3 3 0 00-.879-2.121L10.5 5.379A3 3 0 008.379 4.5H7v-1z"/>
+                        <path d="M4.5 6A1.5 1.5 0 003 7.5v9A1.5 1.5 0 004.5 18h7a1.5 1.5 0 001.5-1.5v-5.879a1.5 1.5 0 00-.44-1.06L9.44 6.439A1.5 1.5 0 008.378 6H4.5z"/>
+                    </svg>
+                    <svg x-show="copied" x-cloak class="w-4 h-4 text-[color:var(--color-wk-success-text)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd"/>
+                    </svg>
+                </button>
+            @endif
+
+            @if($clearable)
+                {{-- Clear button. Only visible when the field has content
+                     (hasValue); empties + refocuses the field. --}}
+                <button
+                    type="button"
+                    x-show="hasValue"
+                    x-cloak
+                    @click="clear()"
+                    @if($disabled) disabled @endif
+                    aria-label="Clear input"
+                    class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                >
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
+                    </svg>
+                </button>
+            @endif
+
+            @if($hasAffordances)
+                {{-- Polite live region announces the copy success to screen readers. --}}
+                <span aria-live="polite" aria-atomic="true" class="sr-only" x-text="copied ? 'Copied to clipboard' : ''"></span>
             @endif
         </div>
     @else
@@ -208,7 +285,8 @@
             @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
             @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
             @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
-            {{ $attributes->class([$inputClasses, $stateClasses, $sizeClasses]) }}
+            {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
+            {{ $attributes->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
         />
     @endif
 

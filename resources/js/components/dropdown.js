@@ -163,7 +163,13 @@ export default function wirekitDropdown(config = {}) {
         },
 
         /**
-         * Get all focusable menu items (not disabled).
+         * Get all focusable menu items (not disabled) at THIS level.
+         *
+         * Items nested inside a submenu's child panel (`[data-wk-submenu-panel]`)
+         * are excluded so parent-level roving focus (ArrowUp/Down/Home/End) stays
+         * flat — the submenu owns its own level via wirekitSubmenu. The submenu
+         * PARENT item is itself a `[role="menuitem"]` that is NOT inside a submenu
+         * panel, so it is correctly included at this level.
          *
          * @returns {HTMLElement[]}
          */
@@ -173,7 +179,7 @@ export default function wirekitDropdown(config = {}) {
 
             return Array.from(
                 panel.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')
-            );
+            ).filter((el) => !el.closest('[data-wk-submenu-panel]'));
         },
     };
 }

@@ -18,6 +18,11 @@
     'nativeOnMobile' => config('wirekit.components.color-picker.native-on-mobile', false),
     'withAlpha' => true,
     'withEyedropper' => true,
+    // Popover mode only: render a "clear" (no color) button that empties the
+    // bound form value. The native <input type="color"> cannot represent an
+    // empty value (HTML coerces it to #000000), so this is popover-only. Off by
+    // default — "no color" is rarely a valid state on a color control.
+    'withClear' => false,
     'withRecents' => true,
     'presets' => [],
     'recentsKey' => null,
@@ -61,8 +66,8 @@
     // The input extends 8px BELOW the visible swatch (height = label + 4px top
     // overhang + 12px bottom): the browser anchors its native color panel to the
     // INPUT's element box, so the extra (overflow-clipped, invisible) zone pushes
-    // the panel the same 8px off the swatch as the house popover offset (QA: the
-    // native panel sat flush on the circle). The label's overflow-hidden keeps
+    // the panel the same 8px off the swatch as the house popover offset (without
+    // it the native panel sat flush on the circle). The label's overflow-hidden keeps
     // the visual swatch byte-identical; the hit area grows 8px downward.
     $inputClasses = WireKit::resolveClasses('color-picker', 'input', implode(' ', [
         // Replaced elements don't stretch between insets — height must be
@@ -116,9 +121,14 @@
             'value' => $value,
             'format' => $formatValue,
             'withAlpha' => (bool) $withAlpha,
+            'withClear' => (bool) $withClear,
             'recentsKey' => $recentsKey,
             'nativeOnMobile' => (bool) $nativeOnMobile,
         ];
+        // With withClear on, the readout binds the displayValue getter (which
+        // shows "No color" while cleared); otherwise the plain formattedValue,
+        // byte-identical to before withClear existed.
+        $readoutExpr = $withClear ? 'displayValue' : 'formattedValue';
         // Checkerboard backdrop so alpha is legible — a structural transparency
         // grid (like the SV-plane white/black axes, it is NOT themeable).
         $checker = 'background-image: linear-gradient(45deg, var(--color-wk-border) 25%, transparent 25%), linear-gradient(-45deg, var(--color-wk-border) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--color-wk-border) 75%), linear-gradient(-45deg, transparent 75%, var(--color-wk-border) 75%); background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0;';
@@ -158,26 +168,46 @@
             </template>
         @endif
 
-        {{-- Trigger swatch showing the live color over a transparency checker. --}}
+        {{-- Trigger. A custom `trigger` slot (popover mode) replaces the default
+             swatch — WireKit still wires the open toggle, the x-ref Floating-UI
+             anchor, and the aria-haspopup/aria-expanded dialog semantics; the
+             slot supplies the visible content (its text / icon is the accessible
+             name, like any icon-button). Without the slot, the default swatch
+             shows the live color over a transparency checker. --}}
         @if($nativeOnMobile)<template x-if="!useNative">@endif
-        <button
-            type="button"
-            id="{{ $pickerId }}"
-            x-ref="trigger"
-            @click="open = ! open"
-            :aria-expanded="open ? 'true' : 'false'"
-            aria-haspopup="dialog"
-            aria-label="{{ $name ? Str::headline((string) $name) . ' color' : 'Color picker' }}"
-            @if($disabled) disabled @endif
-            class="{{ $swatchClasses }} disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
-            style="{{ $checker }}"
-        >
-            <span class="absolute inset-0" :style="`background-color: ${cssColor}`"></span>
-        </button>
+        @isset($trigger)
+            <button
+                type="button"
+                id="{{ $pickerId }}"
+                x-ref="trigger"
+                @click="open = ! open"
+                :aria-expanded="open ? 'true' : 'false'"
+                aria-haspopup="dialog"
+                @if($disabled) disabled @endif
+                class="inline-flex items-center cursor-pointer rounded-[var(--radius-wk-sm)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
+            >
+                {{ $trigger }}
+            </button>
+        @else
+            <button
+                type="button"
+                id="{{ $pickerId }}"
+                x-ref="trigger"
+                @click="open = ! open"
+                :aria-expanded="open ? 'true' : 'false'"
+                aria-haspopup="dialog"
+                aria-label="{{ $name ? Str::headline((string) $name) . ' color' : 'Color picker' }}"
+                @if($disabled) disabled @endif
+                class="{{ $swatchClasses }} disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
+                style="{{ $checker }}"
+            >
+                <span class="absolute inset-0" :style="`background-color: ${cssColor}`"@if($withClear) x-show="!cleared"@endif></span>
+            </button>
+        @endisset
         @if($nativeOnMobile)</template>@endif
 
         @if($showValue)
-            <span class="{{ $valueClasses }}" x-text="formattedValue" aria-live="polite"></span>
+            <span class="{{ $valueClasses }}" x-text="{{ $readoutExpr }}" aria-live="polite"></span>
         @endif
 
         {{-- Hidden form field — mirrors the picked value in the active format. --}}
@@ -274,12 +304,12 @@
                 ></button>
                 <input
                     type="text"
-                    :value="formattedValue"
+                    :value="{{ $withClear ? 'popoverValue' : 'formattedValue' }}"
                     @change="onInput($event.target.value)"
                     aria-label="Color value"
                     :aria-invalid="invalidInput ? 'true' : 'false'"
                     spellcheck="false"
-                    class="w-full rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] bg-[var(--color-wk-bg-input)] px-[var(--padding-wk-x-sm)] py-1 font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="wk-field w-full rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] bg-[var(--color-wk-bg-input)] px-[var(--padding-wk-x-sm)] py-1 font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     :class="invalidInput ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]'"
                 />
                 @if($withEyedropper)
@@ -292,7 +322,7 @@
                     >
                         {{-- A recognizable PIPETTE silhouette (angled dropper barrel + tip).
                              The previous glyph was a pencil path — read as "edit", never as
-                             "pick a color from the screen" (QA). --}}
+                             "pick a color from the screen". --}}
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m2 22 1-1h3l9-9"/><path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-3l9-9"/><path stroke-linecap="round" stroke-linejoin="round" d="m15 6 3.4-3.4a2.1 2.1 0 1 1 3 3L18 9l.4.4a2.1 2.1 0 1 1-3 3l-3.8-3.8a2.1 2.1 0 1 1 3-3l.4.4Z"/></svg>
                     </button>
                 @endif
@@ -304,12 +334,25 @@
                 >
                     {{-- Canonical clipboard glyph (matches <x-wirekit::clipboard-button>);
                          stroke-width 2 on a clean single shape renders crisp at 16px —
-                         the old two-rect "duplicate" glyph at 1.8 read as blurry (QA). --}}
+                         the old two-rect "duplicate" glyph at 1.8 read as blurry. --}}
                     <svg x-show="!copied" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
                     {{-- Copied confirmation — a success-colored checkmark (CP-2). --}}
                     <svg x-show="copied" x-cloak class="h-4 w-4 text-[color:var(--color-wk-success)]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                     <span class="sr-only" aria-live="polite" x-text="copied ? 'Copied to clipboard' : ''"></span>
                 </button>
+                @if($withClear)
+                    {{-- Clear to "no color": empties the bound form value (popover
+                         mode only — the native input cannot be empty). --}}
+                    <button
+                        type="button"
+                        @click="clear()"
+                        class="shrink-0 rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        aria-label="Clear color"
+                    >
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                        <span class="sr-only" aria-live="polite" x-text="cleared ? 'Color cleared' : ''"></span>
+                    </button>
+                @endif
             </div>
 
             @if(! empty($presets))

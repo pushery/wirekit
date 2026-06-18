@@ -146,7 +146,7 @@
                 {{-- doesn't reach this internal combobox input.                 --}}
                 aria-label="{{ $resolvedAriaLabel }}"
                 :placeholder="selected.length === 0 ? '{{ $placeholder }}' : ''"
-                class="flex-1 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] outline-none"
+                class="wk-field flex-1 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] outline-none"
             />
         </div>
 

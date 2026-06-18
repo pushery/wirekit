@@ -99,8 +99,14 @@
     }
 
     $useScoped = $resolvedBoundary === 'container' || $resolvedBoundary === 'selector';
+    // Viewport mode: `fixed` + vertically centered. Scoped/container mode: the
+    // aside is `absolute` at the top of a zero-height STICKY wrapper (rendered
+    // below) so it PINS to the scroll container's viewport (offset by
+    // --reading-spine-offset-top) instead of scrolling away with the content —
+    // an `absolute` element alone is anchored to the scrolling box and scrolls
+    // out of view with the article.
     $boundaryClass = $useScoped
-        ? 'absolute top-1/2 -translate-y-1/2 z-[var(--z-wk-sticky)]'
+        ? 'absolute top-0 z-[var(--z-wk-sticky)]'
         : 'fixed top-1/2 -translate-y-1/2 z-[var(--z-wk-sticky)]';
 
     // Marker class drives the print-stylesheet hide rule + reduced-motion
@@ -144,6 +150,16 @@
     ], JSON_THROW_ON_ERROR);
 @endphp
 
+@if ($useScoped)
+{{-- Sticky pin wrapper (scoped/container mode only): a zero-height sticky
+     positioning context. It sticks to the scroll container's viewport at
+     --reading-spine-offset-top from the top, and the absolute spine inside it
+     rides along — so the spine stays pinned instead of scrolling with content.
+     height:0 keeps it out of the article's flow (no pushed-down content); the
+     spine's hover-expand still overlays. Viewport mode skips this (the aside is
+     `fixed`). Inline-styled so it works in the docs sandbox without Tailwind. --}}
+<div style="position: sticky; top: var(--reading-spine-offset-top, 1rem); height: 0; z-index: var(--z-wk-sticky);">
+@endif
 <aside
     x-data="wirekitReadingSpine({{ $alpineOptions }})"
     x-init="
@@ -280,3 +296,6 @@
         @endif
     </nav>
 </aside>
+@if ($useScoped)
+</div>
+@endif

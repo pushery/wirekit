@@ -95,7 +95,7 @@
                 placeholder="{{ $searchPlaceholder }}"
                 aria-label="{{ $searchPlaceholder }}"
                 @input="$dispatch('search-change', { value: $event.target.value })"
-                class="{{ $control }} max-w-[16rem]"
+                class="wk-field {{ $control }} max-w-[16rem]"
             />
         @endif
 
@@ -159,7 +159,7 @@
                 <label class="block">
                     <span class="{{ $controlLabel }}">Field</span>
                     <div class="relative">
-                        <select x-ref="fieldSelect" x-model="draft.field" @change="onFieldChange()" class="{{ $selectControl }}">
+                        <select x-ref="fieldSelect" x-model="draft.field" @change="onFieldChange()" class="wk-field {{ $selectControl }}">
                             <template x-for="f in fields" :key="f.key">
                                 <option :value="f.key" x-text="f.label"></option>
                             </template>
@@ -174,7 +174,7 @@
                 <label class="block">
                     <span class="{{ $controlLabel }}">Condition</span>
                     <div class="relative">
-                        <select x-model="draft.op" class="{{ $selectControl }}">
+                        <select x-model="draft.op" class="wk-field {{ $selectControl }}">
                             <template x-for="o in operatorsFor(draft.field)" :key="o.op">
                                 <option :value="o.op" x-text="o.label"></option>
                             </template>
@@ -190,7 +190,7 @@
                     <span class="{{ $controlLabel }}">Value</span>
                     <template x-if="draftValueType() === 'select'">
                         <div class="relative">
-                            <select x-model="draft.value" class="{{ $selectControl }}">
+                            <select x-model="draft.value" class="wk-field {{ $selectControl }}">
                                 <option value="" disabled>Choose…</option>
                                 <template x-for="opt in draftOptions()" :key="opt.value">
                                     <option :value="opt.value" x-text="opt.label"></option>
@@ -208,7 +208,7 @@
                                  Without it the model holds the truthy string "false" → the
                                  chip shows "Yes" and the emitted JSON carries a string, not a
                                  boolean. apply() also coerces as a defensive net. --}}
-                            <select x-model.boolean="draft.value" class="{{ $selectControl }}">
+                            <select x-model.boolean="draft.value" class="wk-field {{ $selectControl }}">
                                 <option :value="true">Yes</option>
                                 <option :value="false">No</option>
                             </select>
@@ -218,13 +218,13 @@
                         </div>
                     </template>
                     <template x-if="draftValueType() === 'number'">
-                        <input type="number" x-model.number="draft.value" class="{{ $control }}" />
+                        <input type="number" x-model.number="draft.value" class="wk-field {{ $control }}" />
                     </template>
                     <template x-if="draftValueType() === 'date'">
-                        <input type="date" x-model="draft.value" class="{{ $control }}" />
+                        <input type="date" x-model="draft.value" class="wk-field {{ $control }}" />
                     </template>
                     <template x-if="draftValueType() === 'text'">
-                        <input type="text" x-model="draft.value" @keydown.enter.prevent="apply()" class="{{ $control }}" />
+                        <input type="text" x-model="draft.value" @keydown.enter.prevent="apply()" class="wk-field {{ $control }}" />
                     </template>
                 </label>
 
