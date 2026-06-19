@@ -10,6 +10,16 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.7.2] — 2026-06-19
+
+**Patch release.** A documentation addition, fully backward-compatible.
+
+### Documentation
+
+- **WireKit's release history is now browsable online at [docs.wirekit.app/changelog](https://docs.wirekit.app/changelog), with a dedicated page per version.** The README "Documentation" table and this file's header now link it, so you can read the release notes as navigable per-version pages instead of scrolling one long file. The page list stays in step with each published release.
+
+---
+
 ## [2.7.1] — 2026-06-18
 
 **Patch release.** A single layout fix, fully backward-compatible.
