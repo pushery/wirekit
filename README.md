@@ -137,7 +137,7 @@ WireKit ships with a **4-level customization system** — from CSS-variable them
 | Theming | [docs.wirekit.app/theming](https://docs.wirekit.app/theming) |
 | CLI reference | [docs.wirekit.app/cli](https://docs.wirekit.app/cli) |
 | Contribution guide | [CONTRIBUTING.md](CONTRIBUTING.md) |
-| Release history | [CHANGELOG.md](CHANGELOG.md) |
+| Changelog | [docs.wirekit.app/changelog](https://docs.wirekit.app/changelog) · [CHANGELOG.md](CHANGELOG.md) |
 
 ## License
 

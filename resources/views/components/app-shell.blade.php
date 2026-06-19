@@ -56,7 +56,14 @@
                  position at lg+. --}}
             <aside
                 x-bind:class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-                class="fixed inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-64 transform transition-transform duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:mt-[var(--space-wk-md,1rem)] lg:ml-[var(--padding-wk-x-lg)]"
+                {{-- wk-app-shell-aside: on lg the dist/wirekit.css rule sizes this column
+                     to the inner sidebar's width (var(--wk-sidebar-w,16rem)), and shrinks it
+                     to the 3.5rem icon rail when the sidebar is data-collapsed, so the main
+                     content reflows instead of leaving a gap. w-64 stays the mobile overlay width.
+                     lg:transition-[width] animates the column in sync with the sidebar's own
+                     transition-[width] (compositor cost is a one-shot deliberate toggle, mirroring
+                     the sidebar — kept out of dist so the shipped-CSS web-vitals guard stays clean). --}}
+                class="wk-app-shell-aside fixed inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-64 transform transition-transform duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] lg:mt-[var(--space-wk-md,1rem)] lg:ml-[var(--padding-wk-x-lg)]"
                 x-cloak
                 class:lg="!x-cloak"
             >
