@@ -5,6 +5,19 @@ All notable changes to WireKit are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Browse it online — one page per version — at
+[docs.wirekit.app/changelog](https://docs.wirekit.app/changelog).
+
+---
+
+## [2.7.1] — 2026-06-18
+
+**Patch release.** A single layout fix, fully backward-compatible.
+
+### Fixed
+
+- **[`<x-wirekit::app-shell>`](https://docs.wirekit.app/components/app-shell) now reflows its main content when a [`collapsible`](https://docs.wirekit.app/components/sidebar) sidebar collapses to its icon rail.** The shell's sidebar column was a fixed 16rem, so when the nested `<x-wirekit::sidebar collapsible>` shrank to its 3.5rem rail the main content kept its left offset and a ~12.5rem gap appeared. On desktop the column now tracks the sidebar's width — following the `--wk-sidebar-w` variable when expanded and shrinking to the rail width when the sidebar is collapsed — so the content reclaims the freed space. Mobile (the off-canvas overlay) is unchanged.
+
 ---
 
 ## [2.7.0] — 2026-06-18

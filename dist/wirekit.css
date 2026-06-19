@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.7.0 — MIT License
+ * WireKit CSS v2.7.1 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -614,6 +614,25 @@
     div.wk-calendar {
         display: block;
         width: 100%;
+    }
+}
+
+/* The app-shell's in-flow sidebar column (lg) must track the collapsible
+   sidebar's width so the main content reflows when the rail collapses — the
+   column otherwise stayed at a fixed w-64 (16rem) while the inner
+   <x-wirekit::sidebar collapsible> shrank to its 3.5rem icon rail, leaving a
+   ~12.5rem gap. Expanded width follows --wk-sidebar-w (the sidebar's own var,
+   16rem default); collapsed width matches the rail. lg only — on a phone the
+   aside is a fixed w-64 overlay. `aside.wk-app-shell-aside` (0,1,1) and the
+   `:has(...[data-collapsed])` form out-specify the Tailwind `.w-64` utility
+   (0,1,0) regardless of stylesheet load order. */
+@media (min-width: 1024px) {
+    aside.wk-app-shell-aside {
+        width: var(--wk-sidebar-w, 16rem);
+    }
+
+    aside.wk-app-shell-aside:has(.group\/wk-sidebar[data-collapsed]) {
+        width: 3.5rem;
     }
 }
 
