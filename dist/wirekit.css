@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.7.2 — MIT License
+ * WireKit CSS v2.8.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -2273,6 +2273,25 @@
    doesn't escalate the cascade to !important. */
 .wk-brand.wk-brand {
     text-decoration: none;
+}
+
+/* Mode-aware asset visibility — `<x-wirekit::brand :dark-logo>` and any future
+   component that swaps a raster/SVG asset by color mode. WireKit components
+   never use the Tailwind `dark:` variant (color tokens auto-switch via the
+   `.dark` class, so `dark:` is banned), but an IMAGE-SRC swap has no token
+   mechanism — so the light/dark visibility toggle lives here, scoped to the
+   `.dark` class exactly like every other WireKit dark rule. `wk-light-only`
+   shows in light mode and hides under `.dark`; `wk-dark-only` is the mirror.
+   `display: revert` restores each element's natural display (e.g. an <img>'s
+   `inline`) instead of forcing a specific box type. */
+.wk-dark-only {
+    display: none;
+}
+.dark .wk-light-only {
+    display: none;
+}
+.dark .wk-dark-only {
+    display: revert;
 }
 
 /* Stagger — cascade entrance animations across direct children of a       */
