@@ -10,6 +10,28 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.8.0] — 2026-06-22
+
+**Minor release.** One additive component prop plus accessibility, tooling, and documentation fixes — all backward-compatible.
+
+### Added
+
+- **[`<x-wirekit::brand>`](https://docs.wirekit.app/components/brand) gains a `darkLogo` prop for a mode-aware logo swap.** Set `darkLogo` alongside `logo` and the component renders a light/dark `<img>` pair that swaps automatically under the `.dark` class — no more rendering two `<x-wirekit::brand>` elements toggled by hand. It composes with `mobileLogo` (the compact mobile mark stays mode-neutral below the breakpoint; the light/dark swap applies to the desktop logo above it). Omitting `darkLogo` keeps the previous single-logo behavior byte-for-byte.
+
+### Fixed
+
+- **[`<x-wirekit::range-slider>`](https://docs.wirekit.app/components/range-slider) now forwards a caller `aria-label` / `aria-describedby` to the sliders instead of a non-focusable wrapper.** The dual-thumb slider spread its attribute bag onto the outer `<div>`, so a caller-supplied accessible name never reached the two `role="slider"` thumbs (WCAG 4.1.2 / 1.3.1). The wrapper is now a labeled `role="group"`: the visible `label` names the group, each thumb's name embeds that context ("…minimum" / "…maximum"), and the `hint` plus any caller `aria-describedby` are announced on the focusable thumbs.
+- **`wirekit:verify` (alias `wirekit:doctor`) no longer mis-reads CSS comments in your `app.css`.** A comment that merely mentioned an `@import` of `wirekit.css` could trip a false "imported" pass, and a `--font-wk-*` example pasted in a comment above the real declaration could mask the token-alignment check. The command now strips CSS comments before scanning, so only live CSS is read.
+- **[`<x-wirekit::reaction>`](https://docs.wirekit.app/components/reaction) and [`<x-wirekit::scroll-to-top>`](https://docs.wirekit.app/components/scroll-to-top) now let a caller's `aria-label` override the component's default.** Both hardcoded their default `aria-label` *before* spreading the attribute bag, so a developer-supplied `aria-label` rendered as a duplicate the browser ignores (first wins). They now merge the default into the bag, so your `aria-label` takes precedence — and the sensible default still applies when you pass none.
+
+### Documentation
+
+- **New guidance for dark-mode `dark:` utilities in your own markup** on the [integration page](https://docs.wirekit.app/getting-started/integration): if you write Tailwind `dark:` utilities yourself while loading WireKit via the `@wirekitStyles` `<link>`, add `@custom-variant dark (&:where(.dark, .dark *))` to your `app.css` so they follow the `.dark` class rather than the OS `prefers-color-scheme`.
+- **[`wirekit:doctor:a11y`](https://docs.wirekit.app/cli-reference) now documents its scope** — the contrast audit covers your Blade usage and `--color-wk-*` token overrides, not colors inside your own CSS custom classes.
+- **The [theming guide](https://docs.wirekit.app/theming) now warns that token overrides wrapped in `@layer` silently lose** to WireKit's unlayered defaults — keep `--color-wk-*` overrides in a plain `:root {}` block.
+
+---
+
 ## [2.7.2] — 2026-06-19
 
 **Patch release.** A documentation addition, fully backward-compatible.

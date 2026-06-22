@@ -91,8 +91,10 @@
     x-transition:leave-end="opacity-0 translate-y-2"
     @click="scrollToTop()"
     type="button"
-    aria-label="Scroll to top"
-    {{ $attributes->class([$buttonClasses, $sizeClasses, $positionClasses]) }}
+    {{-- aria-label via merge so a caller can override the default — a
+         hardcoded attribute plus a separate $attributes bag renders a
+         duplicate aria-label that the browser ignores (first wins). --}}
+    {{ $attributes->merge(['aria-label' => 'Scroll to top'])->class([$buttonClasses, $sizeClasses, $positionClasses]) }}
 >
     {{-- Chevron up icon — decorative, label is on the button --}}
     <svg aria-hidden="true" class="{{ $iconSize }}" viewBox="0 0 20 20" fill="currentColor">

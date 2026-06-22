@@ -422,7 +422,9 @@ class VerifyInstallationCommand extends Command
         if (! file_exists($appCss)) {
             return false;
         }
-        $content = file_get_contents($appCss);
+        // Strip CSS comments first (see stripCssComments) so a commented
+        // reference to an @import of wirekit.css isn't read as a real one.
+        $content = $this->stripCssComments((string) file_get_contents($appCss));
 
         return (bool) preg_match('/@import\b[^;]*wirekit\.css/', $content);
     }
@@ -683,7 +685,9 @@ class VerifyInstallationCommand extends Command
             return; // No app.css — nothing to check
         }
 
-        $content = file_get_contents($appCss);
+        // Strip CSS comments first — a commented "(not an @import of
+        // wirekit.css)" note must not trip a false @import PASS.
+        $content = $this->stripCssComments((string) file_get_contents($appCss));
 
         if (preg_match('/@import\b.*wirekit\.css/', $content)) {
             $this->reportPass('wirekit.css is @import-ed in app.css (valid setup path)');
@@ -1165,7 +1169,10 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
-        $content = (string) file_get_contents($appCss);
+        // Strip CSS comments first — the per-pair scanner greps the FIRST
+        // `--token: value` it finds, so an example pasted in a comment
+        // above the real declaration would otherwise mask it.
+        $content = $this->stripCssComments((string) file_get_contents($appCss));
 
         $checks = [
             ['Sans font', '--font-sans', '--font-wk-sans', 'php artisan wirekit:install --font=<key>'],
@@ -1213,6 +1220,29 @@ class VerifyInstallationCommand extends Command
         } else {
             $this->reportWarn("  {$label}: mismatch — Tailwind `{$twValue}` vs WireKit `{$wkValue}`. Fix: {$hint}");
         }
+    }
+
+    /**
+     * Strip CSS block comments before any raw-text scan of app.css.
+     *
+     * Several checks grep app.css as plain text (the @import-path
+     * detection, the token-alignment scanner, the :root/.dark block
+     * extractor). A CSS comment that happens to contain the scanned phrase
+     * — e.g. a commented "not an @import of wirekit.css" note, or an
+     * example "--font-wk-sans: …" pasted above the real declaration —
+     * would otherwise be read as if it were live CSS, producing a false
+     * PASS or masking the real value. This mirrors the Blade-comment strip
+     * in checkBladeDirectives() and the JS comment strip in
+     * checkChartJsRegistration(): sanitize once, scan the live CSS only.
+     * (parseColorTokens() already strips its block the same way; this
+     * centralizes the pattern for every app.css reader.)
+     */
+    private function stripCssComments(string $css): string
+    {
+        // Non-greedy across newlines (/s) so each comment span is removed
+        // individually; a CSS value never contains a comment delimiter, so
+        // this can't corrupt a real declaration.
+        return preg_replace('~/\*.*?\*/~s', '', $css) ?? $css;
     }
 
     /**
@@ -1274,6 +1304,9 @@ class VerifyInstallationCommand extends Command
         if ($content === false) {
             return;
         }
+        // Strip CSS comments first so a `:root {` / `.dark {` written
+        // inside a comment can't mis-anchor extractCssBlock().
+        $content = $this->stripCssComments($content);
 
         $rootBlock = $this->extractCssBlock($content, ':root');
         $darkBlock = $this->extractCssBlock($content, '.dark');

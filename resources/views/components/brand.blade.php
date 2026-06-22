@@ -1,6 +1,15 @@
 @props([
     'logo' => null,
     'mobileLogo' => null,
+    // Dark-mode logo. When set, the desktop logo swaps light↔dark by the
+    // `.dark` class via the `wk-light-only` / `wk-dark-only` visibility pair
+    // in dist/wirekit.css — components never use the Tailwind `dark:` variant
+    // (an image-src swap has no design-token mechanism, so the toggle lives in
+    // CSS like every other `.dark`-scoped WireKit rule). Composes with
+    // `$mobileLogo`: the mobile mark stays mode-neutral below the breakpoint;
+    // the light/dark swap applies to the desktop logo at + breakpoint. Null →
+    // single-logo behavior (byte-identical back-compat).
+    'darkLogo' => null,
     // Tailwind breakpoint at which the responsive-logo swap flips back to
     // the full `$logo`. Values: 'sm' / 'md' / 'lg' / 'xl'. Default 'sm'
     // (640px) — wide wordmark logos in a brand-bar typically clear sm+
@@ -80,6 +89,20 @@
              below; the URL branches' `truthy-string` test no longer
              matches a ComponentSlot when this @if eats it. --}}
         {{ $logo }}
+    @elseif($logo && $mobileLogo && $darkLogo)
+        {{-- Responsive + mode-aware. Mode-neutral mobile mark below the
+             breakpoint; at + breakpoint the desktop wordmark swaps light↔dark
+             by the `.dark` class. The breakpoint lives on the wrapper <span>
+             and the mode swap on the inner <img>s (via wk-light-only /
+             wk-dark-only) so the two axes never combine on ONE element — a
+             single element carrying both `{bp}:block` and `wk-dark-only` is a
+             0,1,0 specificity tie decided by stylesheet load order (fragile).
+             Splitting them onto the span vs the imgs keeps it deterministic. --}}
+        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $resolvedBreakpoint }}:hidden" aria-hidden="true" />
+        <span class="hidden {{ $resolvedBreakpoint }}:inline-flex items-center">
+            <img src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" aria-hidden="true" />
+            <img src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" aria-hidden="true" />
+        </span>
     @elseif($logo && $mobileLogo)
         {{-- Responsive logo swap: mobile-first wordmark below the breakpoint,
              full-width wordmark at + breakpoint. Both images carry the same
@@ -87,6 +110,14 @@
              aria-label handles the accessible name. --}}
         <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $resolvedBreakpoint }}:hidden" aria-hidden="true" />
         <img src="{{ $logo }}" alt="" class="hidden h-8 w-auto {{ $resolvedBreakpoint }}:block" aria-hidden="true" />
+    @elseif($logo && $darkLogo)
+        {{-- Mode-aware logo swap: light wordmark in light mode, dark wordmark
+             under the `.dark` class (via the wk-light-only / wk-dark-only
+             visibility pair in dist/wirekit.css). Both images carry the same
+             accessibility shape (alt="" + aria-hidden="true") — the <a>'s
+             aria-label / visible name handles the accessible name. --}}
+        <img src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" aria-hidden="true" />
+        <img src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" aria-hidden="true" />
     @elseif($logo)
         <img src="{{ $logo }}" alt="" class="h-8 w-auto" aria-hidden="true" />
     @endif

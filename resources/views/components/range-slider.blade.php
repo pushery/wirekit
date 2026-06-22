@@ -115,11 +115,40 @@
             }
         }
     }
+
+    // Accessibility — a caller's aria-* must reach the focusable sliders /
+    // the group, NOT the role-less outer wrapper. A dual-thumb slider is a
+    // group of two `role="slider"` thumbs (WAI-ARIA range pattern): the
+    // wrapper carries `role="group"` + an accessible name, and each thumb's
+    // name embeds that context ("<label> minimum" / "<label> maximum").
+    //
+    // The group name comes from the visible $label (wired via
+    // aria-labelledby) or, failing that, a caller-supplied aria-label.
+    $callerAriaLabel = $attributes->get('aria-label');
+    $groupLabel = $label ?? $callerAriaLabel;
+    $minThumbLabel = $groupLabel !== null ? trim((string) $groupLabel).' minimum' : 'Minimum';
+    $maxThumbLabel = $groupLabel !== null ? trim((string) $groupLabel).' maximum' : 'Maximum';
+
+    // Description targets the focusable thumbs (announced on focus): the
+    // visible $hint plus any caller-supplied aria-describedby. Routing it to
+    // the thumbs (and off the wrapper) lands it on the element the user
+    // actually focuses.
+    $callerDescribedBy = $attributes->get('aria-describedby');
+    $thumbDescribedBy = trim(($hint !== null ? $id.'-hint' : '').' '.((string) ($callerDescribedBy ?? '')));
+    $thumbDescribedBy = $thumbDescribedBy !== '' ? $thumbDescribedBy : null;
+
+    // aria-describedby has been routed to the thumbs — drop it from the
+    // wrapper bag so it doesn't also render on the (now group) wrapper.
+    $attributes = $attributes->except('aria-describedby');
 @endphp
 
-<div {{ $attributes->class([$wrapperClasses]) }}>
+<div
+    role="group"
+    @if($label) aria-labelledby="{{ $id }}-label" @endif
+    {{ $attributes->class([$wrapperClasses]) }}
+>
     @if($label)
-        <x-wirekit::label>{{ $label }}</x-wirekit::label>
+        <x-wirekit::label id="{{ $id }}-label">{{ $label }}</x-wirekit::label>
     @endif
 
     {{-- Alpine logic inlined (no wirekit.js dependency needed).
@@ -246,7 +275,8 @@
                 :style="`left: ${minPercent}%`"
                 tabindex="0"
                 role="slider"
-                aria-label="Minimum"
+                aria-label="{{ $minThumbLabel }}"
+                @if($thumbDescribedBy) aria-describedby="{{ $thumbDescribedBy }}" @endif
                 aria-valuenow="{{ $initialMin }}"
                 :aria-valuenow="minVal"
                 aria-valuemin="{{ $min }}"
@@ -286,7 +316,8 @@
                 :style="`left: ${maxPercent}%`"
                 tabindex="0"
                 role="slider"
-                aria-label="Maximum"
+                aria-label="{{ $maxThumbLabel }}"
+                @if($thumbDescribedBy) aria-describedby="{{ $thumbDescribedBy }}" @endif
                 aria-valuenow="{{ $initialMax }}"
                 :aria-valuenow="maxVal"
                 aria-valuemin="{{ $initialMin }}"
@@ -375,6 +406,6 @@
     </div>
 
     @if($hint)
-        <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>
