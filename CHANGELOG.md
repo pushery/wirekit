@@ -10,6 +10,20 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.8.1] — 2026-06-25
+
+**Patch release.** A Livewire 4 layout-setup documentation correction plus a matching installer-hint fix — fully backward-compatible.
+
+### Fixed
+
+- **`wirekit:install` now names the correct layout path in its no-layout hint.** When no app layout exists and Livewire's `livewire:layout` command is unavailable, the installer's fallback instruction pointed at `resources/views/components/layouts/app.blade.php`. On a fresh Livewire 4 app the layout actually belongs at `resources/views/layouts/app.blade.php` (Livewire 4's default `layouts::app` namespace), so the hint now names that path.
+
+### Documentation
+
+- **The [Getting Started](https://docs.wirekit.app/getting-started) layout walkthrough now matches what the installer actually creates.** It recommended `resources/views/components/layouts/app.blade.php` and pinned the example page-component to `#[Layout('components.layouts.app')]` — but on a fresh Livewire 4 app (no Starter Kit), `wirekit:install`, via Livewire's own `livewire:layout`, creates `resources/views/layouts/app.blade.php` (Livewire 4's default `layouts::app`). Following the old steps left `#[Layout]` pointing at a file that was never created. The page now frames the two real cases (fresh app vs. Starter Kit), drops the `#[Layout]` attribute from the example (Livewire's default already wraps the component in the created layout), and clarifies that `make:livewire` scaffolds empty stubs you fill in and that the route is yours to add.
+
+---
+
 ## [2.8.0] — 2026-06-22
 
 **Minor release.** One additive component prop plus accessibility, tooling, and documentation fixes — all backward-compatible.
