@@ -1216,9 +1216,9 @@ CSS;
         // "Livewire page component layout view not found: [components.layouts.app]".
         // Livewire OWNS layout creation via its own `livewire:layout` command (it
         // writes the layout at the config('livewire.component_layout') convention —
-        // by default resources/views/components/layouts/app.blade.php). Delegate to
-        // it (fix at the source — don't hand-roll a layout template that could drift
-        // from Livewire's own convention), then wire our directives into the result.
+        // by default resources/views/layouts/app.blade.php, Livewire 4's 'layouts::app').
+        // Delegate to it (fix at the source — don't hand-roll a layout template that
+        // could drift from Livewire's own convention), then wire our directives in.
         // This closes the chicken-and-egg the flow used to leave: the doctor said
         // "add the layout, then re-run install", but install never created one.
         if (! $layoutFile) {
@@ -1229,7 +1229,7 @@ CSS;
             // Livewire's command is unavailable (e.g. a non-Livewire host) — give an
             // actionable instruction instead of the old "add manually" dead-end.
             $this->line('  <fg=yellow>!</> No layout file found, and Livewire\'s <fg=cyan>livewire:layout</> command is unavailable.');
-            $this->line('    Create <fg=cyan>resources/views/components/layouts/app.blade.php</>, add <fg=cyan>@wirekitStyles</> in <head> and <fg=cyan>@wirekitScripts</> just before @livewireScripts, then re-run <fg=cyan>wirekit:install</>.');
+            $this->line('    Create <fg=cyan>resources/views/layouts/app.blade.php</>, add <fg=cyan>@wirekitStyles</> in <head> and <fg=cyan>@wirekitScripts</> just before @livewireScripts, then re-run <fg=cyan>wirekit:install</>.');
 
             return;
         }
@@ -1274,8 +1274,8 @@ CSS;
      * Create an app layout when none exists yet, by delegating to Livewire's own
      * `livewire:layout` command — the source-correct creator. It writes the layout
      * at the `config('livewire.component_layout')` convention (default
-     * `resources/views/components/layouts/app.blade.php`), so the file lands at one
-     * of the paths {@see resolveLayoutFile()} probes. Returns the resolved layout
+     * `resources/views/layouts/app.blade.php`, Livewire 4's `layouts::app`), so the
+     * file lands at one of the paths {@see resolveLayoutFile()} probes. Returns the resolved layout
      * path, or null when the Livewire command is unavailable (so the caller can fall
      * back to an actionable manual instruction).
      */
