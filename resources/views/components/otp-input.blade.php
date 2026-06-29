@@ -10,6 +10,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('otp-input', $attributes->getAttributes());
+
     $id = $attributes->get('id', $attributes->get('name', 'otp-' . \Illuminate\Support\Str::random(6)));
     $name = $attributes->get('name', $id);
 
@@ -105,7 +109,7 @@
         }"
         class="flex gap-2"
         role="group"
-        aria-label="{{ $label ?? 'One-time code' }}"
+        aria-label="{{ $label ?? $attributes->get('aria-label') ?? 'One-time code' }}"
     >
         @for($i = 0; $i < $length; $i++)
             <input

@@ -1,5 +1,6 @@
 @props([
     'label' => null,
+    'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
     'hint' => null,
     'error' => null,
     // Success / valid state. Pass a string to show a green confirmation message
@@ -32,6 +33,10 @@
 
 @php
     use Pushery\WireKit\WireKit;
+
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('input', $attributes->getAttributes());
 
     // Auto-generate ID from name attribute, or generate random if neither provided
     $id = $attributes->get('id', $attributes->get('name', 'input-' . \Illuminate\Support\Str::random(6)));
@@ -145,7 +150,7 @@
 
 <div class="space-y-1.5">
     @if($label)
-        <x-wirekit::label :for="$id" :required="$required">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 
     @if($useWrapper)

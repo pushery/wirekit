@@ -65,6 +65,9 @@ final class ClassInventory
      *     here in the same commit and add a regression test.
      *
      *   resources/views/_safelist.blade.php → Tailwind safelist payload
+     *   src/Boost/                          → Boost skill-manifest builder
+     *                                         (JSON keys + prompt prose, no
+     *                                         class strings)
      *   src/Charts/                         → chart-kind labels + adapter glue
      *   src/Components/                     → class-component glue (no class strings)
      *   src/ComponentRegistry.php           → component-slug constants
@@ -73,6 +76,9 @@ final class ClassInventory
      *   src/Drift/                          → audit-tooling itself
      *   src/Fonts/                          → font preset / registry
      *   src/Icons/                          → icon resolver + heroicon / lucide presets
+     *   src/Mcp/                            → MCP catalog + JSON-RPC server
+     *                                         (tool names + descriptions, no
+     *                                         class strings)
      *   src/Sandbox/                        → preview-renderer wiring
      *   src/Support/                        → version metadata + utilities
      *   src/WireKit.php                     → animation / icon registrations
@@ -93,6 +99,7 @@ final class ClassInventory
     public const DEFAULT_SKIP_PATH_PREFIXES_FOR_CLASS_EXTRACTION = [
         'resources/views/_safelist.blade.php',
         'resources/js/',
+        'src/Boost/',
         'src/Charts/',
         'src/Components/',
         'src/ComponentRegistry.php',
@@ -101,6 +108,7 @@ final class ClassInventory
         'src/Drift/',
         'src/Fonts/',
         'src/Icons/',
+        'src/Mcp/',
         'src/Sandbox/',
         'src/Support/',
         'src/Theming/',

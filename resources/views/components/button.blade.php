@@ -16,10 +16,7 @@
     // warn when developers pass an
     // unknown prop (e.g. `variant="ghost"` when the prop is `surface`).
     // Dev-only — silent in prod. See WireKit::warnUnknownProps() docs.
-    WireKit::warnUnknownProps('button', $attributes->getAttributes(), [
-        'intent', 'surface', 'size', 'type', 'href', 'disabled',
-        'loading', 'forceLoading', 'scope',
-    ]);
+    WireKit::warnUnknownProps('button', $attributes->getAttributes());
 
     // Base classes: layout, typography, transitions, focus ring, disabled state
     // All values reference design tokens — no hardcoded colors, sizes, or durations

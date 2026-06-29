@@ -177,9 +177,9 @@ class WireKit
      *     ]);
      *
      * @param  array<string, mixed>  $actual  The attribute bag (`$attributes->getAttributes()`).
-     * @param  list<string>  $declared  The list of declared `@props` keys.
+     * @param  list<string>|null  $declared  The declared `@props` keys; when null, derived from the component's own @props.
      */
-    public static function warnUnknownProps(string $component, array $actual, array $declared): void
+    public static function warnUnknownProps(string $component, array $actual, ?array $declared = null): void
     {
         StrictnessGate::warnUnknownProps($component, $actual, $declared);
     }

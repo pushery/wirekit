@@ -13,6 +13,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('radio', $attributes->getAttributes());
+
     // Size scale (aligned with toggle/checkbox): the circle + its inner accent dot
     // scale together. The dot lives INSIDE the circle and is flex-centered by the
     // circle (items-center/justify-center), so it only needs a size — no left/top

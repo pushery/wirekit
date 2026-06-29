@@ -33,6 +33,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('stat', $attributes->getAttributes());
+
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'stat');
 
     // Mutual exclusion check — Option A and Option C cannot combine.

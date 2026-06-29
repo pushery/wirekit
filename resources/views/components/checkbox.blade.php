@@ -13,6 +13,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('checkbox', $attributes->getAttributes());
+
     // Size scale (aligned with toggle/radio): sets the box w/h. The check +
     // indeterminate overlays are nested inside the box and fill it (w-full h-full),
     // so they need no size of their own and stay centered in every variant.

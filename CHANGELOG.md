@@ -10,6 +10,32 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.9.0] — 2026-06-28
+
+**Minor release.** A local MCP server, discoverable AI tooling, new SaaS icon aliases, a dropdown form-submit affordance, dev-mode composition + prop warnings, and documentation — all backward-compatible.
+
+### Added
+
+- **A local MCP server — `php artisan wirekit:mcp-serve`.** AI coding assistants spawn it over stdio and query the component catalog live while authoring, so the editor reads real prop signatures and design tokens instead of guessing them. It is local and read-only — no port, no daemon, no network, always version-matched to your installed WireKit. See the [AI-tooling guide](https://docs.wirekit.app/ai-tooling) for copy-paste editor config and the [CLI reference](https://docs.wirekit.app/cli-reference).
+- **A tool-neutral `AGENTS.md` at the package root.** It points AI coding assistants at the `wirekit:list` / `wirekit:show` / `wirekit:icons` discovery commands, so assistants that do not read the Cursor rules still find the tooling. The README gains a matching "Using WireKit with AI assistants" section.
+- **A Laravel Boost skill manifest — `php artisan wirekit:boost-skills`.** Publishes `.boost/wirekit.json` — every component with its real props + defaults, the theme presets, the customization decision tree, and the CLI — so a Laravel-Boost-aware editor autocompletes WireKit. Auto-generated from the installed package, so it cannot drift from your version; re-run to refresh after an upgrade. See the [CLI reference](https://docs.wirekit.app/cli-reference).
+- **Five high-frequency icon aliases now resolve out of the box on every base preset** — `settings`, `gear`, `dashboard`, `billing`, and `credit-card`. Previously `settings` / `gear` / `dashboard` / `billing` had no glyph on a base-only setup. See [`<x-wirekit::icon>`](https://docs.wirekit.app/components/icon).
+- **[`<x-wirekit::dropdown.item>`](https://docs.wirekit.app/components/dropdown) now honors a caller `type`.** A no-href item still defaults to `type="button"`, but `type="submit"` lets it drive a wrapping `<form>` — the canonical CSRF logout for non-Livewire apps. A "Sign out & form actions" recipe documents both the Livewire and the form-submit paths.
+- **A `hideLabel` prop on [`<x-wirekit::input>`](https://docs.wirekit.app/components/input), `<x-wirekit::select>`, and `<x-wirekit::textarea>`.** It keeps the real `<label>` (so the control keeps its accessible name) but renders it visually hidden — for a compact field in a toolbar or header, where the default stacked label reads wrong.
+- **Dev-mode warnings for two silent mistakes (debug only, silent in production).** [`<x-wirekit::card>`](https://docs.wirekit.app/components/card) warns when content is placed directly in it with no `card.body` (it would otherwise render flush against the border), and a misspelled prop on a prop-rich component — the form controls plus button, badge, alert, stat, callout, progress, and tooltip — now logs a "did you mean" hint instead of silently doing nothing.
+
+### Changed
+
+- **The shipped `.cursor/rules/wirekit.mdc` AI-authoring rules were corrected to match the shipped API.** Several prop names (the layout primitives take `gap`, not `space`; the button takes `intent`), token names, and a composition example had drifted from the components they describe. The file now matches the real surface and gains the `card.body` and app-shell composition patterns, with a guard that keeps it from drifting again.
+
+### Fixed
+
+- **A caller `aria-label` now reaches the actual control on more form components.** On [`<x-wirekit::otp-input>`](https://docs.wirekit.app/components/otp-input), [`<x-wirekit::rating>`](https://docs.wirekit.app/components/rating), [`<x-wirekit::tags-input>`](https://docs.wirekit.app/components/tags-input), and [`<x-wirekit::file-upload>`](https://docs.wirekit.app/components/file-upload), a caller `aria-label` previously landed on the outer wrapper, where assistive technology ignored it. It now names the role-bearing element — the `role="group"` / `role="radiogroup"`, or the text / file `<input>` — so screen readers announce it. A class-level guard now locks this across every single-interactive-element component.
+
+### Documentation
+
+- **Setup and reference guidance for the most common first-build mistakes.** A consolidated "Styles not applying?" troubleshooting checklist and a "using WireKit tokens in your own Tailwind classes" note on the [integration](https://docs.wirekit.app/getting-started/integration) and [customization](https://docs.wirekit.app/customization) pages; a Spacing-and-Layout token section on the [Design Tokens](https://docs.wirekit.app/theming/design-tokens) page; a typography signpost steering body copy to `<x-wirekit::text>`; a note that `navbar` and the app-shell are alternative layout shells; and corrected prop / token references across several component pages. The [AI-tooling guide](https://docs.wirekit.app/ai-tooling) now features the local MCP server with copy-paste editor config, and component reference pages lead with their live examples — usage notes and prop conventions moved below.
+
 ## [2.8.1] — 2026-06-25
 
 **Patch release.** A Livewire 4 layout-setup documentation correction plus a matching installer-hint fix — fully backward-compatible.

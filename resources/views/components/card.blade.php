@@ -68,10 +68,36 @@
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr . ' noopener noreferrer')
         : $relAttr;
+
+    // Dev-only composition warning. The card root is a FRAME with no
+    // padding — real content belongs in card.body / card.header / card.footer
+    // (each emits the shared `px-[var(--padding-wk-x-lg)]` padding). If the slot
+    // carries visible text but none of those padded sub-components, the content
+    // renders flush against the border — the #1 silent card bug the downstream
+    // DX reports hit. Mirrors the table.blade.php raw-descendant warn pattern.
+    //
+    // False-positive guard: `strip_tags()` leaving non-empty text means there is
+    // real copy in the slot, which EXCLUDES the legitimate edge-to-edge media
+    // pattern (a bare <img>/<picture>/<video>/<svg> flush in the card has no
+    // card.body by design — strip_tags() leaves nothing, so no warn). Errs toward
+    // under-warning, never crying wolf.
+    $warnNoBody = false;
+    if (config('app.debug')) {
+        $rawSlot = (string) $slot;
+        if (trim(strip_tags($rawSlot)) !== '') {
+            $composed = str_contains($rawSlot, 'wk-card-body')
+                || str_contains($rawSlot, 'px-[var(--padding-wk-x-lg)]');
+            $warnNoBody = ! $composed;
+        }
+    }
 @endphp
 
 <{{ $tag }}
     data-wk-card
+    @if($warnNoBody)
+        x-data
+        x-init="console.warn('[wirekit] card: content sits directly in the card with no card.body — the card root is a padding-free frame, so this content renders flush against the border. Wrap it in card.body (or card.header / card.footer). See https://docs.wirekit.app/components/card.')"
+    @endif
     @if($href) href="{{ $href }}" @endif
     @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif
     {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$baseClasses, $variantClasses, $interactiveClasses]) }}

@@ -66,6 +66,14 @@ final class PhosphorPreset implements IconPreset
             'globe' => 'phosphor-globe',
             'book' => 'phosphor-book-open',
             'lightbulb' => 'phosphor-lightbulb',
+
+            // SaaS app aliases (v2.9.0) — shared keyset with every base preset.
+            // Phosphor names: gear (settings) + squares-four (dashboard).
+            'settings' => 'phosphor-gear',
+            'gear' => 'phosphor-gear',
+            'dashboard' => 'phosphor-squares-four',
+            'billing' => 'phosphor-credit-card',
+            'credit-card' => 'phosphor-credit-card',
         ];
     }
 

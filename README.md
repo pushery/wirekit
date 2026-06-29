@@ -128,6 +128,24 @@ WireKit ships with a **4-level customization system** — from CSS-variable them
 
 → **[Theming Guide](https://docs.wirekit.app/theming)** for fonts and presets · **[Icon docs](https://docs.wirekit.app/components/icon)** · **[Chart docs](https://docs.wirekit.app/components/chart)**
 
+## Using WireKit with AI assistants
+
+WireKit ships first-class context for AI coding assistants so they author correct
+markup instead of guessing at props. From your project root:
+
+- `php artisan wirekit:list` — every component, grouped by category
+- `php artisan wirekit:show <component>` — props, slots, sub-components, docs URL
+- `php artisan wirekit:icons` — every icon alias, grouped by preset
+- `php artisan wirekit:export-json --pretty` — the full machine-readable manifest
+
+`wirekit:install` also writes a `.wirekit-schema.json` to your project root for
+zero-configuration autocomplete. A tool-neutral [`AGENTS.md`](AGENTS.md) and a
+`.cursor/rules/wirekit.mdc` rule file (publish with `php artisan wirekit:cursor-rules`)
+ship with the package, and an MCP server exposes the same catalog as live editor
+tools.
+
+→ **[AI tooling guide](https://docs.wirekit.app/ai-tooling)**
+
 ## Documentation
 
 | Resource | Where |

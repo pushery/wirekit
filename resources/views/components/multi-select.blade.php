@@ -12,6 +12,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('multi-select', $attributes->getAttributes());
+
     $id = $attributes->get('id', $attributes->get('name', 'multi-select-' . \Illuminate\Support\Str::random(6)));
     $name = $attributes->get('name', $id);
     // When a parent <x-wirekit::field label="..."> wraps this component, the

@@ -10,6 +10,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('tooltip', $attributes->getAttributes());
+
     // Generate unique ID for ARIA association between trigger and tooltip
     $tooltipId = 'wk-tooltip-' . uniqid();
 
