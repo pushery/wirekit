@@ -98,7 +98,7 @@
             this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
         }
     }"
-    {{ $attributes->class(['w-full']) }}
+    {{ $attributes->except('aria-label')->class(['w-full']) }}
 >
     <label
         for="{{ $uploadId }}"
@@ -135,6 +135,7 @@
             @if($accept) accept="{{ $accept }}" @endif
             @if($disabled) disabled @endif
             @if($hasError) aria-invalid="true" @endif
+            @if($attributes->get('aria-label')) aria-label="{{ $attributes->get('aria-label') }}" @endif
             aria-describedby="{{ trim(($hint ? $hintId : '') . ' ' . ($hasError ? $errorId : '')) }}"
             @change="handleFiles($event.target.files)"
             class="sr-only"

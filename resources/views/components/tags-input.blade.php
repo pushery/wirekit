@@ -127,7 +127,7 @@
                      control is always named; when a label IS present the
                      <label for> above owns the name and we must NOT override
                      it with aria-label. --}}
-                @unless($label) aria-label="{{ $placeholder }}" @endunless
+                @if($attributes->get('aria-label')) aria-label="{{ $attributes->get('aria-label') }}" @elseif(! $label) aria-label="{{ $placeholder }}" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @keydown.enter.prevent="addTag()"

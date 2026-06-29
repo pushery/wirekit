@@ -67,7 +67,7 @@
 @endphp
 
 <div
-    {{ $attributes->class([$wrapperClasses]) }}
+    {{ $attributes->except('aria-label')->class([$wrapperClasses]) }}
     x-data="{ rating: {{ $clamped }}, hovered: 0 }"
 >
     @if($label)
@@ -79,7 +79,7 @@
 
     <div
         role="radiogroup"
-        aria-label="{{ $label ?? 'Rating' }}"
+        aria-label="{{ $label ?? $attributes->get('aria-label') ?? 'Rating' }}"
         class="inline-flex gap-0.5"
     >
         @for($i = 1; $i <= $max; $i++)

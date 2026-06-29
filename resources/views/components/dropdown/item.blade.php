@@ -54,12 +54,16 @@
 
 <{{ $tag }}
     @if($href) href="{{ $href }}" @endif
-    @if($tag === 'button') type="button" @endif
+    {{-- Honor a caller-provided type so a no-href item can drive a form
+         (e.g. type="submit" for a CSRF logout inside a wrapping <form>);
+         defaults to "button". The bag's `type` is stripped below so it
+         renders exactly once. --}}
+    @if($tag === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
     role="menuitem"
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes, $colorClasses, $disabledClasses]) }}
+    {{ $attributes->except(['rel', 'type'])->class([$classes, $colorClasses, $disabledClasses]) }}
 >
     {{-- Optional icon (resolved via WireKit icon system) --}}
     @if($icon)

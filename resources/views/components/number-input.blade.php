@@ -14,6 +14,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('number-input', $attributes->getAttributes());
+
     // Auto-generate ID from name attribute
     $id = $attributes->get('id', $attributes->get('name', 'number-input-' . \Illuminate\Support\Str::random(6)));
     $name = $attributes->get('name', $id);

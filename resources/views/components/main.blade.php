@@ -22,9 +22,7 @@
     use Pushery\WireKit\WireKit;
 
     // warn on unknown prop keys in dev.
-    WireKit::warnUnknownProps('main', $attributes->getAttributes(), [
-        'container', 'padding', 'max', 'scope', 'id',
-    ]);
+    WireKit::warnUnknownProps('main', $attributes->getAttributes());
 
     // Main — primary content area in app-shell layouts.
     // `wk-main` marker — load-bearing against developer prose

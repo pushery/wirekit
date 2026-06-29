@@ -12,6 +12,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('progress', $attributes->getAttributes());
+
     // `intent` is the canonical color-axis name (matches the house vocabulary
     // used by badge / button / alert). `variant` is kept as a back-compat
     // alias so pre-2.4 callers render identically — when `intent` is null the

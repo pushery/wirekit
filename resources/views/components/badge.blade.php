@@ -35,6 +35,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('badge', $attributes->getAttributes());
+
     // Accept the British spelling as a runtime alias (house enum-alias contract:
     // any component exposing `outline` must also accept `outlined`).
     $surfaceAliases = ['outlined' => 'outline'];

@@ -17,11 +17,14 @@ WireKit components use Laravel's anonymous-component namespace syntax
 with a double colon:
 
 ```blade
-<x-wirekit::button variant="primary">Save</x-wirekit::button>
+<x-wirekit::button intent="primary">Save</x-wirekit::button>
 <x-wirekit::input name="email" wire:model="email" />
 <x-wirekit::card>
-    <x-wirekit::heading>Title</x-wirekit::heading>
-    <x-wirekit::text>Body copy</x-wirekit::text>
+    {{-- Card is a FRAME (radius/border/bg, NO padding). Content goes in card.body. --}}
+    <x-wirekit::card.body>
+        <x-wirekit::heading>Title</x-wirekit::heading>
+        <x-wirekit::text>Body copy</x-wirekit::text>
+    </x-wirekit::card.body>
 </x-wirekit::card>
 ```
 
@@ -37,7 +40,8 @@ system. Acceptable values:
   `info`, `neutral`, `accent`
 - **Surface:** `solid` (default), `soft`, `outline`, `ghost`, `link`
 
-When in doubt, prefer `variant="primary"` over hand-coding colors.
+The color-role prop is `intent` (button / badge / progress); `surface` selects the
+visual treatment. When in doubt, prefer `intent="primary"` over hand-coding colors.
 
 NEVER apply Tailwind color utilities to recolor a component:
 
@@ -46,12 +50,12 @@ NEVER apply Tailwind color utilities to recolor a component:
 <x-wirekit::button class="bg-blue-500 text-white">…</x-wirekit::button>
 
 {{-- ✅ RIGHT --}}
-<x-wirekit::button variant="primary">…</x-wirekit::button>
+<x-wirekit::button intent="primary">…</x-wirekit::button>
 ```
 
 ## Design tokens
 
-WireKit ships ~70 CSS variables under the `--*-wk-*` namespace. They
+WireKit ships its design tokens under the `--*-wk-*` namespace. They
 auto-switch in dark mode via the `.dark` class. NEVER hand-write color
 values; reach for the token. NEVER use Tailwind palette classes
 (`zinc-*`, `gray-*`, `slate-*`) inside WireKit components or their
@@ -63,10 +67,12 @@ Common tokens:
 - `--color-wk-text`, `--color-wk-text-muted`, `--color-wk-text-subtle`
 - `--color-wk-border`, `--color-wk-border-subtle`
 - `--color-wk-accent`, `--color-wk-accent-fg`
-- `--space-wk-xs|sm|md|lg|xl|2xl|3xl`
-- `--radius-wk-sm|md|lg|xl`
-- `--shadow-wk-sm|md|lg|xl`
-- `--text-wk-xs|sm|base|lg|xl|2xl|3xl|4xl`
+- `--space-wk-xs|sm|md|lg|xl|2xl` (+ `--space-wk-section-sm|md|lg`)
+- `--gap-wk-sm|md` (the `stack`/`row`/`grid` gap scale — only `sm` and `md` exist)
+- `--padding-wk-x-xs|sm|md|lg|xl` and `--padding-wk-y-xs|sm|md|lg|xl` (axis-split — no axis-less shorthand)
+- `--radius-wk-sm|md|lg|xl|full`
+- `--shadow-wk-sm|md|lg`
+- `--text-wk-2xs|xs|sm|md|lg|xl|2xl|3xl|4xl|5xl`
 - `--transition-wk-duration`, `--transition-wk-easing`
 
 NEVER use the `dark:` Tailwind prefix on a WireKit component or its
@@ -96,22 +102,63 @@ marketing-specific aliases. Configure in `config/wirekit.php`:
 Reach for these instead of hand-rolled flex/grid:
 
 - `<x-wirekit::container>` — max-width wrapper with responsive padding
-- `<x-wirekit::stack space="md">` — vertical flex column
-- `<x-wirekit::row space="sm">` — horizontal flex row
-- `<x-wirekit::grid cols="3">` — responsive CSS grid
+- `<x-wirekit::stack gap="md">` — vertical flex column (the prop is `gap`, NOT `space`)
+- `<x-wirekit::row gap="sm">` — horizontal flex row (the prop is `gap`, NOT `space`)
+- `<x-wirekit::grid cols="3" gap="md">` — responsive CSS grid
 - `<x-wirekit::section>` — semantic page section with vertical padding
 - `<x-wirekit::center>` — centers a single child both axes
 - `<x-wirekit::aspect-ratio ratio="16/9">` — locked aspect ratio
-- `<x-wirekit::divider>`, `<x-wirekit::spacer size="md">`
+- `<x-wirekit::divider>`, `<x-wirekit::spacer>` (the spacer is a flex-grow gap — it has no `size` prop)
+
+Components carry NO outer margins — compose rhythm with `stack`/`row`/`grid`/
+`section` + their `gap` prop. Do NOT hand-roll `space-y-*` / `mb-*` utilities.
+
+## Application shell (signed-in app layout)
+
+For a full dashboard chrome (sidebar + header + content) compose the **app-shell**
+system — NOT a hand-rolled top bar. `app-shell` owns the mobile sidebar state; the
+`header` and `sidebar` go in its named slots, the page content is the default slot
+(wrap it in `main`, which already centers + width-caps via `max="2xl"` — don't add
+another container). `navbar` is a SEPARATE, ALTERNATIVE top-nav shell with its OWN
+mobile hamburger — never nest `navbar` inside the app-shell header (you get two
+hamburgers).
+
+```blade
+<x-wirekit::app-shell>
+    <x-slot:sidebar>
+        <x-wirekit::sidebar>
+            <x-wirekit::sidebar.item href="/dashboard" icon="home">Dashboard</x-wirekit::sidebar.item>
+        </x-wirekit::sidebar>
+    </x-slot:sidebar>
+    <x-slot:header>
+        <x-wirekit::header>
+            <x-wirekit::sidebar.toggle class="lg:hidden" />
+            <x-wirekit::brand name="App" />
+            <x-wirekit::spacer />
+            <x-wirekit::dropdown>
+                <x-slot:trigger>
+                    <x-wirekit::profile name="User" interactive />
+                </x-slot:trigger>
+                <x-wirekit::dropdown.item href="/settings">Settings</x-wirekit::dropdown.item>
+            </x-wirekit::dropdown>
+        </x-wirekit::header>
+    </x-slot:header>
+
+    <x-wirekit::main>
+        {{-- main already centers + width-caps — pass page content directly --}}
+        Page content
+    </x-wirekit::main>
+</x-wirekit::app-shell>
+```
 
 ## Typography primitives
 
 ```blade
 <x-wirekit::heading level="2">Section title</x-wirekit::heading>
-<x-wirekit::text size="sm" muted>Help copy</x-wirekit::text>
+<x-wirekit::text size="sm" variant="muted">Help copy</x-wirekit::text>
 <x-wirekit::link href="/docs">Read docs</x-wirekit::link>
 <x-wirekit::code>$variable</x-wirekit::code>
-<x-wirekit::code-block lang="php">{{ $snippet }}</x-wirekit::code-block>
+<x-wirekit::code-block language="php">{{ $snippet }}</x-wirekit::code-block>
 <x-wirekit::kbd>Cmd</x-wirekit::kbd> + <x-wirekit::kbd>K</x-wirekit::kbd>
 ```
 
@@ -181,7 +228,6 @@ php artisan wirekit:export-json          # machine-readable component manifest
 php artisan wirekit:export-api-map       # AI-friendly hierarchical sitemap
 php artisan wirekit:export-blocks        # layout + blueprint manifest
 php artisan wirekit:cursor-rules         # publish this file
-php artisan wirekit:generate-changelogs  # per-component changelogs
 ```
 
 ## Reference

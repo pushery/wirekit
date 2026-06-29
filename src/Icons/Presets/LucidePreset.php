@@ -64,6 +64,13 @@ final class LucidePreset implements IconPreset
             'globe' => 'lucide-globe',
             'book' => 'lucide-book-open',
             'lightbulb' => 'lucide-lightbulb',
+
+            // SaaS app aliases (v2.9.0) — shared keyset with every base preset.
+            'settings' => 'lucide-settings',
+            'gear' => 'lucide-settings',
+            'dashboard' => 'lucide-layout-dashboard',
+            'billing' => 'lucide-credit-card',
+            'credit-card' => 'lucide-credit-card',
         ];
     }
 

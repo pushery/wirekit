@@ -68,6 +68,15 @@ final class HeroiconsPreset implements IconPreset
             'globe' => 'heroicon-m-globe-alt',
             'book' => 'heroicon-m-book-open',
             'lightbulb' => 'heroicon-m-light-bulb',
+
+            // SaaS app aliases (v2.9.0) — high-frequency dashboard / settings /
+            // billing icons every signed-in app reaches for. Shared keyset across
+            // every base preset; identifiers follow each upstream library.
+            'settings' => 'heroicon-m-cog-6-tooth',
+            'gear' => 'heroicon-m-cog-6-tooth',
+            'dashboard' => 'heroicon-m-squares-2x2',
+            'billing' => 'heroicon-m-credit-card',
+            'credit-card' => 'heroicon-m-credit-card',
         ];
     }
 

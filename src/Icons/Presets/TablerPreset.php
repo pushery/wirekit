@@ -65,6 +65,13 @@ final class TablerPreset implements IconPreset
             'globe' => 'tabler-world',
             'book' => 'tabler-book',
             'lightbulb' => 'tabler-bulb',
+
+            // SaaS app aliases (v2.9.0) — shared keyset with every base preset.
+            'settings' => 'tabler-settings',
+            'gear' => 'tabler-settings',
+            'dashboard' => 'tabler-layout-dashboard',
+            'billing' => 'tabler-credit-card',
+            'credit-card' => 'tabler-credit-card',
         ];
     }
 

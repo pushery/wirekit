@@ -10,6 +10,10 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props.
+    WireKit::warnUnknownProps('callout', $attributes->getAttributes());
+
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'callout');
 
     // Validate variant against the canonical intent set. 'primary' and 'info'

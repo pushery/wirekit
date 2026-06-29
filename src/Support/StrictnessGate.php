@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Support;
 
 use InvalidArgumentException;
+use Pushery\WireKit\ComponentRegistry;
 
 /**
  * Strictness gate for runtime prop / value validation.
@@ -115,14 +116,41 @@ final class StrictnessGate
      *
      * @param  string  $context  Component name (e.g. `button`, `alert`).
      * @param  array<string, mixed>  $actual  The attribute bag (`$attributes->getAttributes()`).
-     * @param  list<string>  $declared  The list of declared `@props` keys.
+     * @param  list<string>|null  $declared  The declared `@props` keys; when null, derived from the component's @props.
      */
-    public static function warnUnknownProps(string $context, array $actual, array $declared): void
+    public static function warnUnknownProps(string $context, array $actual, ?array $declared = null): void
     {
         // Skip the check outside dev — no value in noisy prod logs over
         // attribute passthroughs the framework supports by design.
         if (! (bool) config('app.debug') && ! app()->runningInConsole()) {
             return;
+        }
+
+        // When the declared-prop list isn't passed explicitly, derive it from
+        // the component's own @props via the canonical PropsParser-backed
+        // registry. A generated list can't drift from the component the way a
+        // hand-transcribed one can. Cached per component per request; an
+        // unresolvable component (no registry entry / blade file) skips
+        // silently rather than throwing.
+        if ($declared === null) {
+            static $declaredCache = [];
+            if (! array_key_exists($context, $declaredCache)) {
+                try {
+                    $declaredCache[$context] = array_map(
+                        static fn (array $p): string => $p['name'],
+                        ComponentRegistry::extractProps($context),
+                    );
+                } catch (\Throwable) {
+                    $declaredCache[$context] = null;
+                }
+            }
+            $declared = $declaredCache[$context];
+            // An unresolvable component (cached null) OR one with no declared
+            // @props (cached []) has nothing to validate against — skip rather
+            // than flag every attribute as unknown.
+            if (empty($declared)) {
+                return;
+            }
         }
 
         // Allowed passthrough prefixes: Blade-framework reserved, ARIA,

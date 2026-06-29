@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Compilers\BladeCompiler;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
+use Pushery\WireKit\Console\BoostSkillsCommand;
 use Pushery\WireKit\Console\ClassByAreaCommand;
 use Pushery\WireKit\Console\ComponentMakeCommand;
 use Pushery\WireKit\Console\CursorRulesCommand;
@@ -24,6 +25,7 @@ use Pushery\WireKit\Console\ListComponentsCommand;
 use Pushery\WireKit\Console\ListFontsCommand;
 use Pushery\WireKit\Console\ListIconsCommand;
 use Pushery\WireKit\Console\MakeCommand;
+use Pushery\WireKit\Console\McpServeCommand;
 use Pushery\WireKit\Console\PublishIconsCommand;
 use Pushery\WireKit\Console\ShowComponentCommand;
 use Pushery\WireKit\Console\ThemeCommand;
@@ -55,6 +57,7 @@ class WireKitServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             // Register artisan commands
             $this->commands([
+                BoostSkillsCommand::class,
                 ClassByAreaCommand::class,
                 ComponentMakeCommand::class,
                 CursorRulesCommand::class,
@@ -69,6 +72,7 @@ class WireKitServiceProvider extends ServiceProvider
                 ListFontsCommand::class,
                 ListIconsCommand::class,
                 MakeCommand::class,
+                McpServeCommand::class,
                 PublishIconsCommand::class,
                 ShowComponentCommand::class,
                 ThemeCommand::class,
@@ -202,10 +206,12 @@ class WireKitServiceProvider extends ServiceProvider
                 //
                 // Livewire only auto-injects when at least one Livewire
                 // component renders (per SupportAutoInjectedAssets::shouldInjectLivewireAssets).
-                // Calling forceAssetInjection() flips that flag so the
-                // developer no longer needs @livewireScripts in the layout —
-                // @wirekitStyles + @wirekitScripts is enough, and Alpine
-                // arrives automatically via Livewire bundle.
+                // Calling forceAssetInjection() flips that flag so a pure-Blade
+                // page (no Livewire component) still ships Alpine + the WireKit
+                // plugins. The documented setup still emits BOTH @wirekitScripts
+                // AND @livewireScripts in the canonical order; Livewire dedupes
+                // its own assets, so this force-injection is a safety net for
+                // Alpine-only pages, not a replacement for the layout directives.
                 //
                 // Guarded by class_exists() + method_exists() so installs
                 // without Livewire OR with older Livewire versions silently

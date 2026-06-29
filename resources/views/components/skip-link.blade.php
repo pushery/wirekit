@@ -14,9 +14,7 @@
 @php
     use Pushery\WireKit\WireKit;
 
-    WireKit::warnUnknownProps('skip-link', $attributes->getAttributes(), [
-        'target', 'label', 'scope',
-    ]);
+    WireKit::warnUnknownProps('skip-link', $attributes->getAttributes());
 
     // Visually-hidden by default; on `:focus-visible` the anchor pops out
     // as a high-contrast accent pill in the top-left of the viewport.
