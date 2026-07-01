@@ -14,6 +14,13 @@
     //       page wants without forcing the developer to write
     //       `.ml h2 { margin: ... }` overrides.
     'density' => 'comfortable',
+    // `measure` — readable line-length clamp (max-width). Long-form prose reads
+    // best at ~65 characters per line; without a cap it runs the full container
+    // width, which hurts readability on wide screens.
+    //   `default` (default) — ~65ch via --measure-wk.
+    //   `wide` — ~78ch via --measure-wk-wide.
+    //   `none` — no clamp (full container width; the pre-v2.10.0 behavior).
+    'measure' => 'default',
     'scope' => null,
 ])
 
@@ -121,8 +128,19 @@
         'muted' => 'text-[color:var(--color-wk-text-muted)]',
         default => WireKit::validateProp('prose', 'variant', $variant, ['default', 'muted']),
     };
+
+    // Readable line-length clamp. The max-width lives in dist/wirekit.css on
+    // `.wk-prose` (default ~65ch) + `.wk-prose[data-measure]`, so it stays
+    // themeable via --measure-wk; here we only validate + expose the override as
+    // a data attribute. `default` needs no attribute (the base `.wk-prose` rule).
+    $measureAttr = match ($measure) {
+        'default' => null,
+        'wide' => 'wide',
+        'none' => 'none',
+        default => WireKit::validateProp('prose', 'measure', $measure, ['default', 'wide', 'none']),
+    };
 @endphp
 
-<div {{ $attributes->class([$classes, $sizeClasses, $variantClasses]) }}>
+<div @if($measureAttr) data-measure="{{ $measureAttr }}" @endif {{ $attributes->class([$classes, $sizeClasses, $variantClasses]) }}>
     {{ $slot }}
 </div>

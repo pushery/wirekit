@@ -10,6 +10,25 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.10.0] — 2026-07-01
+
+**Minor release.** An opt-in accent stripe for callouts, a readable line-length measure for prose, a refined intent treatment on KPI tiles and stage cards, and refreshed marketing-blueprint copy — all backward-compatible.
+
+### Added
+
+- **[`<x-wirekit::callout>`](https://docs.wirekit.app/components/callout) gains an opt-in `stripe` prop.** It adds a one-sided accent bar and is off by default (the plain callout is the alert-style tinted border). Pass `stripe` to bring the bar back.
+- **[`<x-wirekit::prose>`](https://docs.wirekit.app/components/prose) gains a `measure` prop — a readable line-length clamp.** Long-form text caps at a comfortable ~65 characters per line by default; use `measure="wide"` (~78ch) for a roomier column or `measure="none"` for the full container width. Themeable via the new `--measure-wk` token.
+
+### Changed
+
+- **[`<x-wirekit::callout>`](https://docs.wirekit.app/components/callout) no longer shows the accent stripe by default.** The plain callout is now the balanced tinted border; add the new `stripe` prop to restore the one-sided bar.
+- **[`<x-wirekit::stat>`](https://docs.wirekit.app/components/stat) and [`<x-wirekit::stage-card>`](https://docs.wirekit.app/components/stage-card) intent treatment is now a balanced 4-sided tinted border** (previously a one-sided left bar). The intent color cue is unchanged — only the shape is refined.
+- **[`<x-wirekit::prose>`](https://docs.wirekit.app/components/prose) now clamps long-form text to a readable measure by default.** Existing prose wraps at ~65ch; set `measure="none"` to restore the previous full-container-width behavior.
+
+### Documentation
+
+- Refreshed the marketing-blueprint demo copy (hero, testimonials, feature, and landing previews) with neutral, concrete placeholder content.
+
 ## [2.9.0] — 2026-06-28
 
 **Minor release.** A local MCP server, discoverable AI tooling, new SaaS icon aliases, a dropdown form-submit affordance, dev-mode composition + prop warnings, and documentation — all backward-compatible.

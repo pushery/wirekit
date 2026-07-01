@@ -2,6 +2,11 @@
     'variant' => config('wirekit.components.callout.variant', 'info'),
     'icon' => true,
     'bordered' => true,
+    // Opt-in one-sided accent stripe (default OFF). The plain callout is the
+    // alert-style 4-sided tinted border; a one-sided colored stripe reads as
+    // generic dashboard chrome, so it is no longer the default. Pass `stripe`
+    // to restore the accent bar deliberately.
+    'stripe' => false,
     // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
     'animateIn' => null,
     'scope' => null,
@@ -24,9 +29,10 @@
         default => WireKit::validateProp('callout', 'variant', $variant, ['primary', 'neutral', 'info', 'success', 'warning', 'danger']),
     };
 
-    // Callout is visually denser than Alert, designed for inline documentation
-    // notices. It is persistent (no dismiss), supports title+body+action slots.
-    // When bordered=false, only the left accent stripe is shown (no all-around border).
+    // Callout is visually denser than Alert (15% vs 10% background tint), designed
+    // for inline documentation notices. It is persistent (no dismiss), supports
+    // title+body+action slots. With bordered=false the tinted background carries the
+    // surface; pass `stripe` to add an opt-in one-sided accent bar.
     $baseClasses = WireKit::resolveClasses('callout', 'base', implode(' ', [
         'relative flex items-start gap-3',
         'px-[var(--padding-wk-x-lg)]',
@@ -85,10 +91,14 @@
 
 {{-- Callout: persistent inline notice for documentation-style content.
      Uses <aside> for semantic landmark (complementary content).
-     Visually denser than Alert with left accent stripe. --}}
+     Visually denser than Alert; opt-in one-sided accent stripe via `stripe`. --}}
 <aside {{ $attributes->class([$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden']) }} @if($animateAttr) {!! $animateAttr !!} @endif>
-    {{-- Left accent stripe — 3px colored bar for visual prominence --}}
-    <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-[var(--radius-wk-lg)] {{ $variantColors['stripe'] }}" aria-hidden="true"></div>
+    @if($stripe)
+        {{-- Opt-in accent stripe: a one-sided colored bar, OFF by default. The
+             plain callout is the alert-style 4-sided tinted border; the bar is
+             added only when `stripe` is set deliberately. --}}
+        <div class="absolute left-0 top-0 bottom-0 w-1 rounded-l-[var(--radius-wk-lg)] {{ $variantColors['stripe'] }}" aria-hidden="true"></div>
+    @endif
 
     {{-- Variant icon —: iconSlot named slot wins over the
          variant-derived auto icon. The bool $icon prop continues to toggle

@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.9.0 — MIT License
+ * WireKit CSS v2.10.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -312,6 +312,11 @@
     --text-wk-3xl: 1.875rem;
     --text-wk-4xl: 2.25rem;
     --text-wk-5xl: 3rem;
+
+    /* Readable line-length measure for long-form prose (<x-wirekit::prose>).
+       ~65ch is the established comfortable reading width; `wide` relaxes it. */
+    --measure-wk: 65ch;
+    --measure-wk-wide: 78ch;
 
     /* ─── Overlay: Backdrop ─── */
     --color-wk-overlay: oklch(0% 0 0 / 0.5);
@@ -703,6 +708,23 @@
    SSR-without-Tailwind contexts the item's inline layout styles target. */
 .wk-data-list-item:not(:last-child) {
     border-bottom: 1px solid var(--color-wk-border-subtle);
+}
+
+/* ─── Prose readable measure ───────────────────────────────── */
+/* <x-wirekit::prose> clamps long-form text to a comfortable ~65ch line
+   length by default (the `--measure-wk` token). `measure="wide"` relaxes it;
+   `measure="none"` opts out to the full container width. Lives here (component
+   CSS) rather than as a Tailwind utility so it stays themeable via the token. */
+.wk-prose {
+    max-width: var(--measure-wk);
+}
+
+.wk-prose[data-measure='wide'] {
+    max-width: var(--measure-wk-wide);
+}
+
+.wk-prose[data-measure='none'] {
+    max-width: none;
 }
 
 /* ─── Prose <pre> scrollbar theming ────────────────────────── */
