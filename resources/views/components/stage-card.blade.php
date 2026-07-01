@@ -1,7 +1,7 @@
 @props([
     // Visible stage title (e.g. "In progress", "Q3 2026", "Backlog").
     'label' => null,
-    // Semantic color for the left stripe + tinted body.
+    // Semantic color for the intent-tinted border + body.
     // primary | success | warning | danger | info | neutral.
     'intent' => 'neutral',
     // Optional item count rendered as a pill in the header.
@@ -38,10 +38,12 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // 3px intent stripe + 6%-tinted body via inline style (overrides the base
-    // border-left + bg without a per-intent class explosion). color-mix and
-    // the color tokens are in the Tailwind baseline.
-    $stripeStyle = "border-left-width: 3px; border-left-color: {$intentToken}; background-color: color-mix(in srgb, {$intentToken} 6%, var(--color-wk-bg-elevated));";
+    // 4-sided intent-tinted border + 6%-tinted body via inline style (overrides
+    // the base neutral border + bg without a per-intent class explosion). A
+    // one-sided accent stripe reads as generic dashboard chrome, so the stage cue
+    // uses the balanced 4-sided tinted border. color-mix + the color tokens are
+    // in the Tailwind baseline.
+    $intentBorderStyle = "border-color: color-mix(in srgb, {$intentToken} 40%, var(--color-wk-border)); background-color: color-mix(in srgb, {$intentToken} 6%, var(--color-wk-bg-elevated));";
 
     // Clamp the optional progress to [0, 100].
     $progressValue = $progress === null ? null : max(0, min(100, (int) $progress));
@@ -52,7 +54,7 @@
      stage / roadmap quarter). --}}
 <div
     {{ $attributes->class([$classes]) }}
-    style="{{ $stripeStyle }}"
+    style="{{ $intentBorderStyle }}"
     @if($label) role="group" aria-label="{{ $label }}" @endif
 >
     @if($label || $count !== null)

@@ -22,8 +22,8 @@
     // Optional reveal animation when stat scrolls into view (separate from
     // the value count-up `animate` prop). Null = no reveal (default).
     'animateIn' => null,
-    // KPI-tile chrome: when set, the stat gains an intent-colored left
-    // stripe + a faint intent-tinted body — the pattern dashboard blueprints
+    // KPI-tile chrome: when set, the stat gains an intent-colored 4-sided
+    // border + a faint intent-tinted body — the pattern dashboard blueprints
     // hand-rolled per tile. null = the existing plain card surface, unchanged.
     // primary | success | warning | danger | info | neutral.
     'intent' => null,
@@ -66,11 +66,12 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // KPI-tile chrome. When `intent` is set, resolve its color token and
-    // paint a 3px left stripe + an 8%-tint body via inline style (so it
-    // overrides the base border-left + bg-elevated without a per-intent
-    // class explosion). Mirrors badge's intent palette: info/primary share
-    // accent; neutral uses the muted text token.
+    // KPI-tile chrome. When `intent` is set, resolve its color token and paint a
+    // 4-sided tinted border + an 8%-tint body via inline style (so it overrides
+    // the base neutral border + bg-elevated without a per-intent class explosion).
+    // A one-sided accent stripe reads as generic dashboard chrome, so the intent
+    // cue uses the balanced 4-sided tinted border instead. Mirrors badge's intent
+    // palette: info/primary share accent; neutral uses the muted text token.
     $intentTileStyle = '';
     if ($intent !== null) {
         // Validate first (throws in debug / falls back to first-allowed in
@@ -86,7 +87,7 @@
             'neutral' => 'var(--color-wk-text-muted)',
             default => 'var(--color-wk-accent)', // primary + accent + info
         };
-        $intentTileStyle = "border-left-width: 3px; border-left-color: {$intentToken}; background-color: color-mix(in srgb, {$intentToken} 8%, var(--color-wk-bg-elevated));";
+        $intentTileStyle = "border-color: color-mix(in srgb, {$intentToken} 40%, var(--color-wk-border)); background-color: color-mix(in srgb, {$intentToken} 8%, var(--color-wk-bg-elevated));";
     }
 
     // Trend color + arrow glyph — mapped to semantic tokens
