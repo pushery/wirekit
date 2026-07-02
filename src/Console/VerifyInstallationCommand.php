@@ -718,12 +718,12 @@ class VerifyInstallationCommand extends Command
         }
 
         // Front-end peer dependencies for <x-wirekit::editor> and <x-wirekit::map>.
-        // These are browser globals (window.tiptapEditor / window.maplibregl /
+        // These are browser globals (window.wirekitEditor / window.maplibregl /
         // window.L), so a PHP command can't probe whether they're loaded — they
         // surface as a contextual INFO reminder, not a pass/fail check. Listed
         // here so the onboarding doctor mentions them, not just the component
         // pages. Each component degrades gracefully if its dependency is absent.
-        $this->line('  <fg=cyan>i</> <x-wirekit::editor> needs Tiptap (optional — npm install @tiptap/core @tiptap/starter-kit and expose window.tiptapEditor; only if you use the editor)');
+        $this->line('  <fg=cyan>i</> <x-wirekit::editor> needs a ProseMirror editor (optional — Tiptap recommended: npm install @tiptap/core @tiptap/starter-kit and expose window.wirekitEditor; only if you use the editor)');
         $this->line('  <fg=cyan>i</> <x-wirekit::map> needs a map engine (optional — npm install maplibre-gl or leaflet and load it before WireKit; only if you use the map)');
     }
 

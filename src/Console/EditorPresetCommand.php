@@ -8,9 +8,10 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 /**
- * Scaffold the `window.tiptapEditor(config)` factory snippet that
+ * Scaffold the `window.wirekitEditor(config)` factory snippet that
  * `<x-wirekit::editor>` calls at Alpine init, pre-wired for a chosen
- * toolbar preset.
+ * toolbar preset. (The legacy `window.tiptapEditor` name still works as a
+ * deprecated alias — the emitted snippet uses the canonical name.)
  *
  * The editor ships ZERO Tiptap code — Tiptap is the developer's peer
  * dependency, exposed through this factory. Writing the factory by hand is
@@ -37,7 +38,7 @@ class EditorPresetCommand extends Command
         {--write= : Write the snippet to this file instead of printing it to stdout}
         {--force : Overwrite the --write target if it already exists}';
 
-    protected $description = 'Scaffold the window.tiptapEditor() factory snippet for the editor component';
+    protected $description = 'Scaffold the window.wirekitEditor() factory snippet for the editor component';
 
     /**
      * The presets this command can scaffold. Mirrors the toolbar presets that
@@ -128,7 +129,8 @@ class EditorPresetCommand extends Command
         // 2. Expose the factory WireKit calls at Alpine init(). It receives
         //    element / content / editable / editorProps / lifecycle callbacks
         //    and MUST forward editorProps verbatim (carries role + styling).
-        window.tiptapEditor = (config) => new Editor({
+        //    (The legacy name window.tiptapEditor still works as a deprecated alias.)
+        window.wirekitEditor = (config) => new Editor({
             element: config.element,
             content: config.content,
             editable: config.editable,

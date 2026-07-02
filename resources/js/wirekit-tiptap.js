@@ -7,13 +7,14 @@
  * focus-trap). Registers a single Alpine factory under `wirekitEditor` — the
  * name the `<x-wirekit::editor>` Blade template wires into x-data.
  *
- * This bundle ships ZERO Tiptap code (same shape as the ApexCharts adapter).
- * Tiptap is the developer's peer dependency, exposed as a
- * `window.tiptapEditor(config)` factory before this script loads:
+ * This bundle ships ZERO editor-engine code (same shape as the ApexCharts
+ * adapter). The engine is the developer's peer dependency (Tiptap recommended),
+ * exposed as a `window.wirekitEditor(config)` factory before this script loads
+ * (the legacy `window.tiptapEditor` name still works as a deprecated alias):
  *
  *   import { Editor } from '@tiptap/core';
  *   import StarterKit from '@tiptap/starter-kit';
- *   window.tiptapEditor = (config) => new Editor({ ...config, extensions: [StarterKit] });
+ *   window.wirekitEditor = (config) => new Editor({ ...config, extensions: [StarterKit] });
  *
  * The editor is ALSO registered in the full `wirekit.js` bundle — this split
  * is purely additive for the core-bundle-plus-editor case.

@@ -1,16 +1,23 @@
 /**
- * WireKit Editor — thin Alpine glue around Tiptap (a PEER DEPENDENCY).
+ * WireKit Editor — thin Alpine glue around a ProseMirror-based rich-text editor
+ * (a PEER DEPENDENCY; Tiptap is the recommended engine).
  *
- * Tiptap itself is NOT bundled (same shape as the Chart.js / ApexCharts
- * adapters). The developer installs `@tiptap/core` + `@tiptap/starter-kit`
- * and exposes a `window.tiptapEditor(config)` factory that returns a Tiptap
- * `Editor` instance (see the docs page). When that factory is missing we
- * gracefully fall back to a plain <textarea> + a console error, so a form is
- * never silently broken.
+ * The editor engine is NOT bundled (same shape as the Chart.js / ApexCharts
+ * adapters). The developer installs their editor (e.g. `@tiptap/core` +
+ * `@tiptap/starter-kit`) and exposes a `window.wirekitEditor(config)` factory
+ * that returns an `Editor` instance (see the docs page). The legacy factory name
+ * `window.tiptapEditor` is still accepted as a deprecated alias — the resolution
+ * order lives in `_resolveFactory()`. When no factory is present we gracefully
+ * fall back to a plain <textarea> + a console error, so a form is never silently
+ * broken.
  *
- * Responsibilities: mount Tiptap on the content element, mirror the document
+ * Responsibilities: mount the engine on the content element, mirror the document
  * into a hidden <input> (debounced) so `wire:model` + native form submit keep
  * working, wire the toolbar commands, and tear the instance down on destroy.
+ *
+ * The factory name is engine-neutral by design: the glue treats the returned
+ * Editor as opaque and only calls the shared ProseMirror-editor interface, so it
+ * never hard-couples to one vendor.
  */
 export default function wirekitEditor(config = {}) {
     return {
@@ -34,13 +41,16 @@ export default function wirekitEditor(config = {}) {
 
         init() {
             // Idempotency guard: Livewire DOM morphing can re-run Alpine's init() on an
-            // already-mounted editor. Without this, a second window.tiptapEditor() mounts a
+            // already-mounted editor. Without this, a second factory call mounts a
             // duplicate ProseMirror view on the same node — the content renders twice and
             // every toolbar command throws "Applying a mismatched transaction". Bail if a
             // live editor already exists (destroy() nulls it, so a real remount still works).
             if (this.editor) { return; }
 
-            if (typeof window.tiptapEditor !== 'function') {
+            // Resolve the engine factory: canonical window.wirekitEditor first, then the
+            // deprecated window.tiptapEditor alias (with a one-time hint). Null → fallback.
+            const factory = this._resolveFactory();
+            if (!factory) {
                 this._activateFallback();
 
                 return;
@@ -67,7 +77,7 @@ export default function wirekitEditor(config = {}) {
                 host.querySelectorAll('[data-wk-editor-seed], .ProseMirror').forEach((n) => n.remove());
             }
 
-            const created = window.tiptapEditor({
+            const created = factory({
                 element: host,
                 content: this._initialContent(),
                 editable: this._editable,
@@ -103,7 +113,7 @@ export default function wirekitEditor(config = {}) {
             // (proven: proxied selectAll() throws, Alpine.raw(editor) works).
             // `__v_skip` is the flag Vue's markRaw() sets and reactive() honors;
             // setting it here protects every integrator no matter what their
-            // window.tiptapEditor factory returns. The toolbar's reactivity never
+            // editor factory returns. The toolbar's reactivity never
             // depended on the editor being reactive — it's driven by the _version
             // counter (see the on* hooks above). try/catch: a frozen/sealed factory
             // return can't take the flag — fall through rather than break mount.
@@ -120,7 +130,7 @@ export default function wirekitEditor(config = {}) {
             // previously reached ONLY the textarea fallback). Done AFTER the assignment
             // — not in onCreate, which can fire mid-construction while this.editor is
             // still undefined (the same reason _writeOut guards on it) — and
-            // factory-independent: it doesn't rely on the window.tiptapEditor factory
+            // factory-independent: it doesn't rely on the editor factory
             // forwarding a Tiptap `autofocus` option. Guarded for factories that return
             // a minimal stub without the command API.
             if (config.autofocus && this.editor && this.editor.commands && typeof this.editor.commands.focus === 'function') {
@@ -252,8 +262,8 @@ export default function wirekitEditor(config = {}) {
                     // the missing-factory fallback above).
                     // eslint-disable-next-line no-console
                     console.error(
-                        `[wirekit] editor: command "${name}" failed — is its Tiptap `
-                        + 'extension installed and registered in window.tiptapEditor? '
+                        `[wirekit] editor: command "${name}" failed — is its editor `
+                        + 'extension installed and registered in window.wirekitEditor? '
                         + 'See https://docs.wirekit.app/components/editor#toolbar-presets',
                         e
                     );
@@ -333,25 +343,60 @@ export default function wirekitEditor(config = {}) {
             }
         },
 
-        // ── Tiptap-absent fallback ───────────────────────────────────
+        // ── Engine factory resolution ────────────────────────────────
+
+        // Resolve the developer-supplied editor factory. The contract name is
+        // engine-neutral: `window.wirekitEditor` is canonical; `window.tiptapEditor`
+        // is a deprecated alias kept working through the whole v2.x line (removed in
+        // v3.0.0). A one-time console.info nudges old-name integrators to rename,
+        // gated on a window flag so a page with N editors hints ONCE, not N times.
+        // (No collision with the `wirekitEditor` Alpine.data component: that lives in
+        // Alpine's registry, not on window — our IIFE bundles set no window globals.)
+        // Returns the factory function, or null when neither global is callable.
+        _resolveFactory() {
+            if (typeof window === 'undefined') {
+                return null;
+            }
+            if (typeof window.wirekitEditor === 'function') {
+                return window.wirekitEditor;
+            }
+            if (typeof window.tiptapEditor === 'function') {
+                window.__wirekit_editor_alias_warned__ ??= false;
+                if (!window.__wirekit_editor_alias_warned__) {
+                    window.__wirekit_editor_alias_warned__ = true;
+                    // eslint-disable-next-line no-console
+                    console.info(
+                        '[wirekit] editor: window.tiptapEditor is a deprecated alias — rename your '
+                        + 'factory to window.wirekitEditor. The old name keeps working through the '
+                        + 'v2.x line and is removed in v3.0.0.'
+                    );
+                }
+
+                return window.tiptapEditor;
+            }
+
+            return null;
+        },
+
+        // ── Engine-absent fallback ───────────────────────────────────
 
         _activateFallback() {
             // One-time DX hint — gate ONLY the console.error behind a module-scoped
-            // flag so a page with N Tiptap-less editors logs ONCE, not N times.
+            // flag so a page with N engine-less editors logs ONCE, not N times.
             // Mirrors the missing-peer-dependency hint in chart.js / chart-apex.js /
             // map.js (all gate on window.__wirekit_<lib>_missing_warned__). The
             // textarea-fallback DOM work below still runs for EVERY editor — each
             // instance needs its own field un-hidden — so the dedup wraps the log
             // only, never the fallback itself.
             if (typeof window !== 'undefined') {
-                window.__wirekit_tiptap_missing_warned__ ??= false;
-                if (!window.__wirekit_tiptap_missing_warned__) {
-                    window.__wirekit_tiptap_missing_warned__ = true;
+                window.__wirekit_editor_missing_warned__ ??= false;
+                if (!window.__wirekit_editor_missing_warned__) {
+                    window.__wirekit_editor_missing_warned__ = true;
                     // eslint-disable-next-line no-console
                     console.error(
-                        '[wirekit] editor: window.tiptapEditor is not defined — falling back to a plain '
-                        + 'textarea. Install @tiptap/core + @tiptap/starter-kit and expose '
-                        + 'window.tiptapEditor(config) (see https://docs.wirekit.app/components/editor).'
+                        '[wirekit] editor: no editor factory defined — falling back to a plain '
+                        + 'textarea. Install a ProseMirror editor (e.g. @tiptap/core + @tiptap/starter-kit) '
+                        + 'and expose window.wirekitEditor(config) (see https://docs.wirekit.app/components/editor).'
                     );
                 }
             }

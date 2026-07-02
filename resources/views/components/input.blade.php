@@ -3,6 +3,13 @@
     'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
     'hint' => null,
     'error' => null,
+    // When true (default), the error message renders as an ARIA live region
+    // (aria-live="polite") so a validation error that appears dynamically — e.g.
+    // after a Livewire round-trip — is announced by screen readers without the
+    // focus having to return to the field. Set false when the surrounding page
+    // runs its own live region for form errors (avoids a double announcement).
+    // The aria-describedby link on the input is unaffected either way.
+    'announceError' => true,
     // Success / valid state. Pass a string to show a green confirmation message
     // below the field (e.g. "Username available"), or `true` for just the green
     // border with no message. `error` always wins when both are set.
@@ -297,7 +304,7 @@
 
     {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hasSuccess && $successMessage)
         <p id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
     @elseif($hint)

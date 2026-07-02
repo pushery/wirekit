@@ -2,6 +2,11 @@
     'icon' => null,
     'title' => null,
     'description' => null,
+    // Heading level for the title (1–6). Defaults to 3 (the v1.5.0-identical
+    // <h3>); set it to match the surrounding document outline so screen-reader
+    // heading navigation stays correct (e.g. level=2 directly under a page <h1>,
+    // or level=1 when the empty-state IS the page's main content).
+    'level' => 3,
     // Container chrome: default (no border/bg — v1.5.0-identical) · outline (dashed
     // border, reads as a placeholder drop-zone) · muted (filled muted surface).
     'variant' => config('wirekit.components.empty-state.variant', 'default'),
@@ -21,6 +26,15 @@
         'default', 'outline', 'muted' => $variant,
         default => WireKit::validateProp('empty-state', 'variant', $variant, ['default', 'outline', 'muted']),
     };
+
+    // Heading level (1–6). An invalid value signals in debug (validateProp throws
+    // with a did-you-mean) and falls back to the h3 default in production — we
+    // never emit h1 as a side-effect of validateProp's first-allowed fallback,
+    // which would break the outline worse than the default.
+    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
+    if ($levelValue !== (int) $level) {
+        WireKit::validateProp('empty-state', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    }
 
     // Container chrome per variant. `default` adds nothing (back-compat); the others
     // wrap the centered content in a rounded surface for use as a standalone card.
@@ -60,9 +74,10 @@
     @endif
 
     @if($title)
-        <h3 class="mb-1 text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        {{-- Dynamic heading tag — level is validated to 1–6 in the @php block. --}}
+        <h{{ $levelValue }} class="mb-1 text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $title }}
-        </h3>
+        </h{{ $levelValue }}>
     @endif
 
     @if($description)

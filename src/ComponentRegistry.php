@@ -26,7 +26,7 @@ class ComponentRegistry
             'color-picker' => ['category' => 'Form', 'description' => 'Native color picker with preview swatch'],
             'combobox' => ['category' => 'Form', 'description' => 'Autocomplete select with search filtering'],
             'date-picker' => ['category' => 'Form', 'description' => 'Calendar-based date input'],
-            'editor' => ['category' => 'Form', 'description' => 'Rich-text editor (Tiptap peer-dependency adapter) with toolbar + hidden-input form binding'],
+            'editor' => ['category' => 'Form', 'description' => 'Rich-text editor (ProseMirror-based peer-dependency adapter; Tiptap recommended) with toolbar + hidden-input form binding'],
             'field' => ['category' => 'Form', 'description' => 'Form field wrapper with label, hint, and error'],
             'file-upload' => ['category' => 'Form', 'description' => 'Drag-and-drop file upload area'],
             'filter-builder' => ['category' => 'Form', 'description' => 'Active-filter chip bar with a typed add/edit popover (field/operator/value)'],

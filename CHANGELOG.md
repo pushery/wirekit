@@ -10,6 +10,20 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.11.0] — 2026-07-02
+
+**Minor release.** Overridable navigation-landmark and heading-level semantics, screen-reader-announced form errors, and an engine-neutral rich-text-editor factory — all backward-compatible.
+
+### Added
+
+- **[`<x-wirekit::sidebar>`](https://docs.wirekit.app/components/sidebar) gains a `label` prop for the navigation landmark's accessible name.** It defaults to `"Sidebar"`; override it — or pass `aria-label` / `aria-labelledby` directly — when a page has more than one navigation landmark, so assistive technology can tell them apart. No duplicate or conflicting name is emitted.
+- **[`<x-wirekit::empty-state>`](https://docs.wirekit.app/components/empty-state) gains a `level` prop for the title's heading level.** Choose `1`–`6` (default `3`) to fit the surrounding document outline so screen-reader heading navigation stays correct. The default still renders an `<h3>`.
+- **[`<x-wirekit::field>`](https://docs.wirekit.app/components/field) and [`<x-wirekit::input>`](https://docs.wirekit.app/components/input) announce validation errors to screen readers.** The error message now renders as a polite ARIA live region by default, so an error that appears dynamically — for example after a Livewire round-trip — is announced without the focus having to return to the field. Opt out with `announceError="false"` when your page runs its own live region.
+
+### Changed
+
+- **The [`<x-wirekit::editor>`](https://docs.wirekit.app/components/editor) rich-text component now uses an engine-neutral `window.wirekitEditor(config)` factory.** The previous `window.tiptapEditor` name keeps working as a deprecated alias, so upgrading is a one-line rename in your editor bootstrap.
+
 ## [2.10.0] — 2026-07-01
 
 **Minor release.** An opt-in accent stripe for callouts, a readable line-length measure for prose, a refined intent treatment on KPI tiles and stage cards, and refreshed marketing-blueprint copy — all backward-compatible.
