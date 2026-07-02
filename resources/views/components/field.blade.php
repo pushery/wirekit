@@ -3,6 +3,13 @@
     'name' => null,
     'hint' => null,
     'error' => null,
+    // When true (default), the error message renders as an ARIA live region
+    // (aria-live="polite") so a validation error that appears dynamically — e.g.
+    // after a Livewire round-trip — is announced by screen readers without the
+    // focus having to return to the field. Set false when the surrounding page
+    // runs its own live region for form errors (avoids a double announcement).
+    // The aria-describedby link to the field is unaffected either way.
+    'announceError' => true,
     'required' => false,
     'for' => null,
     'orientation' => 'vertical', // vertical (label above) | horizontal (label beside)
@@ -47,7 +54,7 @@
             <div class="flex-1 min-w-0 space-y-1.5">
                 {{ $slot }}
                 @if($hasError && $errorMessage)
-                    <p @if($errorId) id="{{ $errorId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+                    <p @if($errorId) id="{{ $errorId }}" @endif @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
                 @elseif($hint)
                     <p @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
                 @endif
@@ -68,7 +75,7 @@
 
         {{-- Error takes precedence over hint — show one, not both --}}
         @if($hasError && $errorMessage)
-            <p @if($errorId) id="{{ $errorId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
+            <p @if($errorId) id="{{ $errorId }}" @endif @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
                 {{ $errorMessage }}
             </p>
         @elseif($hint)

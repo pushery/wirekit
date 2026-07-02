@@ -3,7 +3,7 @@
     'id' => null,
     'value' => null,
     'format' => 'html',          // html | json
-    'extensions' => null,        // array of Tiptap extension NAMES (hint for window.tiptapEditor)
+    'extensions' => null,        // array of editor extension NAMES (hint for window.wirekitEditor)
     'toolbar' => 'basic',        // false | 'basic' | 'full' | 'custom'
     'placeholder' => null,
     'maxLength' => null,
@@ -65,7 +65,7 @@
         default => 'min-h-[12rem]',
     };
 
-    // Config handed to the wirekitEditor Alpine factory (→ window.tiptapEditor).
+    // Config handed to the wirekitEditor Alpine factory (→ window.wirekitEditor).
     $jsConfig = [
         'value' => $value !== null && ! is_string($value) ? json_encode($value) : $value,
         'format' => $formatValue,

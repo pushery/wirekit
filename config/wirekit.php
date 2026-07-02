@@ -85,11 +85,12 @@ return [
         'label' => [],
         'select' => ['size' => 'md'],
         'textarea' => ['size' => 'md', 'rows' => 3],
-        // Tiptap is a peer dependency (install @tiptap/core + @tiptap/starter-kit and
-        // expose window.tiptapEditor). `extensions` is an OPTIONAL list of name
-        // hints forwarded to YOUR factory; the factory owns the real Tiptap
-        // extension set (see docs/components/editor.md). It defaults to an empty
-        // array so a factory that naively spreads it into Tiptap can't throw on a
+        // The editor engine is a peer dependency (Tiptap recommended: install
+        // @tiptap/core + @tiptap/starter-kit and expose window.wirekitEditor — the
+        // legacy window.tiptapEditor name still works as a deprecated alias).
+        // `extensions` is an OPTIONAL list of name hints forwarded to YOUR factory;
+        // the factory owns the real extension set (see docs/components/editor.md). It
+        // defaults to an empty array so a factory that naively spreads it can't throw on a
         // bare string — set your own hints here only if your factory reads them.
         'editor' => ['extensions' => [], 'format' => 'html', 'toolbar' => 'basic', 'size' => 'md'],
         'editor.toolbar' => [],

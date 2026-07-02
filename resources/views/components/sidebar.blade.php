@@ -7,11 +7,27 @@
     'collapsed' => false,
     // Optional localStorage key — persists the collapsed state across reloads.
     'persist' => null,
+    // Accessible name for the navigation landmark. Defaults to "Sidebar" so
+    // assistive tech can tell it apart from the main <nav>; override it when the
+    // page carries more than one navigation landmark. Passing aria-label OR
+    // aria-labelledby directly on the component also wins over this default
+    // (and suppresses it, so the <nav> never gets a duplicate/conflicting name).
+    'label' => 'Sidebar',
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
+
+    // Landmark accessible name. Only emit our default `aria-label` when the
+    // developer supplied NEITHER aria-label NOR aria-labelledby directly on the
+    // component — a raw aria-label / aria-labelledby always wins and suppresses
+    // the default, so the <nav> never carries a duplicate or conflicting name.
+    // Merging (vs a hardcoded literal) also keeps every other passed-through
+    // attribute (id, data-*) intact instead of dropping it.
+    $navLabelAttrs = ($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
+        ? []
+        : ['aria-label' => $label];
 
     // Sidebar root: a semantic <nav> landmark that holds grouped navigation
     // items. Uniform `p-[var(--padding-wk-y-sm)]` (= 0.375rem all four
@@ -52,11 +68,10 @@
          3.5rem is the structural icon-rail width (icon + padding), not a theme
          value, so it stays a literal like the structural w-9 day cells. --}}
     <nav
-        aria-label="Sidebar"
         x-data="{ collapsed: {{ $collapsed ? 'true' : 'false' }}, _key: @js($persist), init() { if (this._key) { try { const s = localStorage.getItem(this._key); if (s !== null) this.collapsed = s === '1'; } catch (e) {} } }, toggle() { this.collapsed = ! this.collapsed; if (this._key) { try { localStorage.setItem(this._key, this.collapsed ? '1' : '0'); } catch (e) {} } } }"
         :data-collapsed="collapsed ? '' : null"
         :class="collapsed ? 'w-[3.5rem]' : 'w-[var(--wk-sidebar-w,16rem)]'"
-        {{ $attributes->class([$classes, 'group/wk-sidebar transition-[width] duration-[var(--transition-wk-duration)]']) }}
+        {{ $attributes->class([$classes, 'group/wk-sidebar transition-[width] duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
     >
         <button
             type="button"
@@ -72,8 +87,9 @@
         {{ $slot }}
     </nav>
 @else
-    {{-- <nav aria-label="Sidebar"> — named so AT distinguishes it from the main nav. --}}
-    <nav aria-label="Sidebar" {{ $attributes->class([$classes]) }}>
+    {{-- <nav> carries a default aria-label so AT distinguishes it from the main
+         nav; a developer-supplied aria-label / aria-labelledby / `label` prop overrides it. --}}
+    <nav {{ $attributes->class([$classes])->merge($navLabelAttrs) }}>
         {{ $slot }}
     </nav>
 @endif
