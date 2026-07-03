@@ -10,6 +10,16 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.11.1] — 2026-07-04
+
+**Patch release.** Documentation-only clarifications to the Getting Started guide. No component code changed — upgrading is optional.
+
+### Documentation
+
+- **[Getting Started](https://docs.wirekit.app/getting-started) — JavaScript pipeline.** Clarified that `resources/js/app.js` and `resources/js/bootstrap.js` already ship with a standard Laravel app, so there is nothing to create there. The one thing that matters is not importing Alpine yourself — Livewire provides it.
+- **Getting Started — layout example.** The example layout now shows the `@wirekitStyles` directive in `<head>` alongside `@wirekitScripts`, so pasting it verbatim loads WireKit's design tokens (colors, spacing, radii, shadows).
+- **Getting Started — your first Livewire page.** Clarified that `make:livewire` scaffolds empty files whose contents you then replace with the example shown, and that the example route replaces Laravel's default welcome route instead of adding a second route for `/`.
+
 ## [2.11.0] — 2026-07-02
 
 **Minor release.** Overridable navigation-landmark and heading-level semantics, screen-reader-announced form errors, and an engine-neutral rich-text-editor factory — all backward-compatible.
