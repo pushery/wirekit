@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.12.0 — MIT License
+ * WireKit CSS v2.13.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -1000,6 +1000,46 @@
 @keyframes wk-spring-out {
     0%   { opacity: 1; transform: translateY(0) scale(1); }
     100% { opacity: 0; transform: translateY(-0.5rem) scale(0.98); }
+}
+
+/* Countdown "segments" change pulse. When a boxed unit's value changes its
+   keyed node re-mounts, replaying this animation: the card flashes its border +
+   a light accent-tinted background and gives a small scale pop, then settles
+   back to the resting card style (border/bg end at the same values the base
+   Tailwind classes set, so nothing is left overridden). Accent-driven, so it
+   re-tints with the active theme. Gated for prefers-reduced-motion below. */
+@keyframes wk-countdown-pulse {
+    0% {
+        border-color: var(--color-wk-accent);
+        background-color: color-mix(in srgb, var(--color-wk-accent) 22%, var(--color-wk-bg-elevated));
+        transform: scale(1.08);
+    }
+    60% {
+        border-color: var(--color-wk-accent);
+        background-color: color-mix(in srgb, var(--color-wk-accent) 10%, var(--color-wk-bg-elevated));
+        transform: scale(1);
+    }
+    100% {
+        border-color: var(--color-wk-border);
+        background-color: var(--color-wk-bg-elevated);
+        transform: scale(1);
+    }
+}
+.wk-countdown-pulse {
+    animation: wk-countdown-pulse 700ms ease-out;
+}
+
+/* Countdown "segments" text-flash change style (the alternative to the box
+   pulse). Only the changing NUMBER flashes: its color starts at the accent and
+   eases back to its inherited resting color (theme / state aware). Applied to a
+   keyed node that re-mounts on each value change, so it replays every tick.
+   Gated for prefers-reduced-motion below. */
+@keyframes wk-countdown-text-flash {
+    0%   { color: var(--color-wk-accent); }
+    100% { color: inherit; }
+}
+.wk-countdown-text-flash {
+    animation: wk-countdown-text-flash 700ms ease-out;
 }
 
 /* Utility classes — apply directly OR via the wirekitAnimate Alpine helper.
@@ -2416,6 +2456,13 @@
     .wk-reading-minimap__preview,
     .wk-reading-minimap__anchor {
         transition-duration: 0.01ms !important;
+    }
+    /* Countdown change animations (box pulse + text flash): users who ask for
+       less motion get an instant, motionless value update (the keyed node still
+       re-mounts, but with no flash / pop / color change). */
+    .wk-countdown-pulse,
+    .wk-countdown-text-flash {
+        animation: none !important;
     }
 }
 

@@ -10,6 +10,17 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.13.0] — 2026-07-16
+
+**Feature release.** Four new components for user-content media and running deadlines — three Display (countdown, image, image gallery) and a reusable media-viewer Overlay (lightbox). All additive — nothing changes for existing components.
+
+### Added
+
+- **[Countdown](https://docs.wirekit.app/components/countdown).** A live countdown to an absolute deadline, ticking down client-side with no polling. The display scales from years down to seconds (a far-off deadline reads in years and days, not tens of thousands of days), or you can pick an exact set of units. It colors itself when the deadline is near (urgent) and again once it has passed (overdue). Large values get locale-aware thousands separators, an optional `segments` variant renders each unit as a labeled box that animates when its value changes — either the whole box pulses (`animate="box"`, the default) or only the changing number flashes color (`animate="text"`), both honoring `prefers-reduced-motion` — and it stays accessible — the ticking value is exposed to screen readers as a stable deadline label, not announced every second.
+- **[Image](https://docs.wirekit.app/components/image).** A content image rendered as a semantic `<figure>` with required alt text, native lazy loading, an optional CLS-safe ratio box (space reserved before the image loads), `cover`/`contain` fit, and an optional caption. Renders only — a signed, ACL-protected download URL works unchanged.
+- **[Image Gallery](https://docs.wirekit.app/components/image-gallery).** A responsive grid of content images with an accessible lightbox. Clicking a thumbnail opens a focus-trapped dialog that navigates with the arrow keys, closes on Escape, and returns focus to the thumbnail it opened from. Set `:lightbox="false"` for a plain responsive grid.
+- **[Lightbox](https://docs.wirekit.app/components/lightbox).** The gallery's zoom overlay as a standalone component you can drive from any trigger and any layout — images, video, and embeds. It is a focus-trapped dialog that steps through its items with the arrow keys, closes on Escape, and returns focus to whatever opened it. Open it from a control inside the component or from anywhere on the page via a `wirekit-lightbox-open` event; configure looping, captions, and a per-instance backdrop color. Media fills most of the viewport (very wide and very tall images, and video, scale to ~90% of the screen with their aspect ratio intact); off-screen slides load lazily and show a loading spinner until they resolve; captions sit on a semi-transparent dark scrim for readability and wrap centered under the media. The Image Gallery now builds on it internally.
+
 ## [2.12.0] — 2026-07-16
 
 **Feature release.** A wave of accessibility and Livewire-integration improvements across the form controls, plus new infrastructure icons. Every change defaults to the current behavior, so upgrading is safe and requires no code changes.
