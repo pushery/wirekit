@@ -7,6 +7,16 @@
     'disabled' => false,
     'loading' => false,
     'forceLoading' => false,
+    // Scope the loading spinner + disable to THIS button's own Livewire action,
+    // e.g. loading-target="redeliver". The spinner is a child <svg wire:loading>
+    // with no target of its own, so Livewire falls back to hasActionForComponent()
+    // and flashes it on EVERY commit — including wire:poll refreshes and unrelated
+    // sibling actions. Setting loadingTarget emits wire:target so the spinner only
+    // reacts to that action. NOTE: this is `loadingTarget`, NOT `target` — a
+    // `target` prop would collide with the HTML target attribute (target="_blank"
+    // + the rel tabnabbing auto-inject). Null = today's untargeted behavior
+    // (byte-identical); scoping is strictly opt-in.
+    'loadingTarget' => null,
     'scope' => null,
 ])
 
@@ -154,7 +164,7 @@
     @disabled($disabled || $declarativeLoading)
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{ $attributes->except('rel')->class([$baseClasses, $variantClasses, $sizeClasses]) }}
-    @if($loading && ! $declarativeLoading) wire:loading.attr="disabled" @endif
+    @if($loading && ! $declarativeLoading) wire:loading.attr="disabled" @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif @endif
 >
     {{-- Loading spinner: declarative path renders always; wire:loading
          path renders only while a Livewire request is in flight. --}}
@@ -164,7 +174,7 @@
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
     @elseif($loading)
-        <svg wire:loading class="animate-spin -ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+        <svg wire:loading @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif class="animate-spin -ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>

@@ -67,7 +67,7 @@
 @endphp
 
 <div
-    {{ $attributes->except('aria-label')->class([$wrapperClasses]) }}
+    {{ $attributes->except('aria-label')->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }}
     x-data="{ rating: {{ $clamped }}, hovered: 0 }"
 >
     @if($label)
@@ -75,7 +75,7 @@
     @endif
 
     {{-- Hidden input for form submission / wire:model --}}
-    <input type="hidden" id="{{ $id }}" name="{{ $name }}" :value="rating" {{ $attributes->only('wire:model') }} />
+    <input type="hidden" id="{{ $id }}" name="{{ $name }}" :value="rating" {{ $attributes->whereStartsWith('wire:model') }} />
 
     <div
         role="radiogroup"

@@ -43,6 +43,15 @@ return [
 
     'validation' => [
         'strict' => env('WIREKIT_STRICT_VALIDATION'),
+
+        // Whether an invalid value (a bad prop value, an unknown icon alias)
+        // should THROW rather than degrade to a fallback. Null (default) uses the
+        // context: console / artisan / test fail fast so a typo breaks the build
+        // loudly, while an HTTP request degrades so one bad value cannot 500 a
+        // whole view (an unknown icon renders an inert placeholder). Set true to
+        // always throw, false to always degrade — an explicit value wins in both
+        // directions.
+        'throw_on_invalid' => env('WIREKIT_THROW_ON_INVALID'),
     ],
 
     /*

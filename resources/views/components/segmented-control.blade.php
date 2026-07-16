@@ -46,7 +46,7 @@
     @endif
 
     <div
-        {{ $attributes->except(['wire:model'])->class([$containerClasses]) }}
+        {{ $attributes->whereDoesntStartWith('wire:model')->class([$containerClasses]) }}
         x-data="{ selected: '{{ $selected }}' }"
         x-init="$refs.hiddenInput.value = selected"
         role="radiogroup"
@@ -54,7 +54,7 @@
     >
         {{-- Hidden input inside x-data scope so $refs.hiddenInput resolves correctly.
              Must be within the same Alpine component for x-ref to work. --}}
-        <input type="hidden" id="{{ $id }}" name="{{ $name }}" {{ $attributes->only('wire:model') }} x-ref="hiddenInput" />
+        <input type="hidden" id="{{ $id }}" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" />
 
         @foreach($options as $optValue => $optLabel)
             {{-- Static aria-checked + tabindex mirror the initial state so

@@ -12,6 +12,7 @@ use Pushery\WireKit\Icons\Presets\HeroiconsPreset;
 use Pushery\WireKit\Icons\Presets\LucidePreset;
 use Pushery\WireKit\Icons\Presets\PhosphorPreset;
 use Pushery\WireKit\Icons\Presets\TablerPreset;
+use Pushery\WireKit\Support\StrictnessGate;
 use Pushery\WireKit\Support\SuggestSimilar;
 
 final class IconResolver
@@ -139,6 +140,21 @@ final class IconResolver
             $message .= $hint.' ';
         }
         $message .= 'Available aliases: '.implode(', ', $available);
+
+        // Graceful degradation. In console / test / explicit-throw contexts we
+        // fail fast (a typo should break the build loudly). But in an HTTP
+        // request — where a package rendering <x-wirekit::icon name="…"> with an
+        // unaliased name, blade-icons absent, would otherwise throw and 500 the
+        // WHOLE page (icons render transitively through buttons, dropdowns,
+        // modals) — we log the error and return an empty identifier. The <x-wirekit::icon>
+        // view then renders its inert placeholder instead of taking the page down.
+        if (! StrictnessGate::shouldThrowOnInvalid()) {
+            if (function_exists('logger')) {
+                logger()->error($message.' Rendering an empty placeholder.');
+            }
+
+            return '';
+        }
 
         throw new InvalidArgumentException($message);
     }
