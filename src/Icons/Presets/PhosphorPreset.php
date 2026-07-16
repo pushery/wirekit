@@ -74,6 +74,16 @@ final class PhosphorPreset implements IconPreset
             'dashboard' => 'phosphor-squares-four',
             'billing' => 'phosphor-credit-card',
             'credit-card' => 'phosphor-credit-card',
+
+            // Infrastructure & system — mapped to Phosphor's icon names.
+            'server' => 'phosphor-server',
+            'database' => 'phosphor-database',
+            'cloud' => 'phosphor-cloud',
+            'shield' => 'phosphor-shield-check', // parity with the base `shield` alias
+            'shield-check' => 'phosphor-shield-check',
+            'inbox' => 'phosphor-tray', // phosphor calls the inbox glyph `tray`
+            'bolt' => 'phosphor-lightning', // phosphor calls it `lightning`
+            'refresh' => 'phosphor-arrows-clockwise', // phosphor's rotate glyph
         ];
     }
 

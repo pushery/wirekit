@@ -35,6 +35,74 @@ use Pushery\WireKit\ComponentRegistry;
 final class StrictnessGate
 {
     /**
+     * HTML global attributes — valid on ANY element, so they can never be a
+     * prop typo. Closed set per the WHATWG HTML living standard's "global
+     * attributes" section (plus the widely-supported input-hint attributes
+     * `autocapitalize` / `autocorrect` that the spec lists as global). Splitting
+     * these out of the old ad-hoc `$reserved` grab-bag makes the rule structural:
+     * a valid HTML attribute is passthrough by definition, not by whether someone
+     * remembered to list it. `inputmode` / `enterkeyhint` sitting here is what
+     * stops `<x-wirekit::input inputmode="numeric">` — a correct, accessible
+     * mobile-keyboard hint — from logging a spurious "unknown prop" warning
+     * (WIRE-111).
+     *
+     * @var list<string>
+     */
+    public const HTML_GLOBAL_ATTRIBUTES = [
+        'id', 'class', 'style', 'title', 'lang', 'dir', 'hidden', 'inert',
+        'tabindex', 'accesskey', 'draggable', 'translate', 'contenteditable',
+        'spellcheck', 'autocapitalize', 'autocorrect', 'inputmode', 'enterkeyhint',
+        'role', 'slot', 'part', 'nonce', 'is', 'autofocus',
+    ];
+
+    /**
+     * HTML attributes that are valid on form controls / links / media / tables —
+     * element-specific rather than global, but equally never a WireKit prop typo
+     * when they land in the attribute bag. Kept separate from the global set so
+     * each list stays auditable against its spec section.
+     *
+     * @var list<string>
+     */
+    public const HTML_ELEMENT_ATTRIBUTES = [
+        'name', 'value', 'type', 'placeholder', 'autocomplete', 'disabled',
+        'readonly', 'required', 'checked', 'selected', 'multiple', 'min', 'max',
+        'step', 'pattern', 'minlength', 'maxlength', 'size', 'for', 'form',
+        'method', 'action', 'formaction', 'formmethod', 'novalidate', 'accept',
+        'rel', 'target', 'href', 'download', 'ping', 'referrerpolicy',
+        'src', 'srcset', 'sizes', 'alt', 'loading', 'decoding', 'width', 'height',
+        'poster', 'preload', 'controls', 'muted', 'loop', 'autoplay',
+        'colspan', 'rowspan', 'scope', 'headers', 'datetime', 'open', 'cite',
+    ];
+
+    /**
+     * Whether an invalid value should THROW rather than degrade to a fallback.
+     *
+     * Defaults to console / artisan / test (fail-fast — a typo should break the
+     * build or the command loudly); an HTTP request degrades so a single bad
+     * value cannot 500 a whole view. An explicit `wirekit.validation.throw_on_invalid`
+     * config overrides both directions.
+     *
+     * Exposed so callers that throw their OWN exception (e.g. IconResolver on an
+     * unknown alias, which must degrade to a placeholder in an HTTP request
+     * instead of taking down every page that renders an icon) can share the same
+     * decision without re-implementing it. This is a pure decision helper — it
+     * does NOT run enforce()'s validation, so routing IconResolver through it
+     * has zero blast radius on the prop-validation path.
+     */
+    public static function shouldThrowOnInvalid(): bool
+    {
+        // An explicit config wins in BOTH directions: `true` forces fail-fast
+        // even in an HTTP request, `false` forces degradation even in console.
+        // Unset (null) falls back to the console/HTTP default.
+        $explicit = config('wirekit.validation.throw_on_invalid');
+        if ($explicit !== null) {
+            return (bool) $explicit;
+        }
+
+        return app()->runningInConsole();
+    }
+
+    /**
      * Whether the gate currently runs in strict mode.
      */
     public static function isStrict(): bool
@@ -74,10 +142,7 @@ final class StrictnessGate
             //   - HTTP dev request → log at ERROR + render fallback
             // The HTTP-dev fall-through a
             // typo in one prop shouldn't 500 the whole blade view.
-            $shouldThrow = app()->runningInConsole()
-                || (bool) config('wirekit.validation.throw_on_invalid', false);
-
-            if ($shouldThrow) {
+            if (self::shouldThrowOnInvalid()) {
                 throw new InvalidArgumentException($message);
             }
 
@@ -153,18 +218,15 @@ final class StrictnessGate
             }
         }
 
-        // Allowed passthrough prefixes: Blade-framework reserved, ARIA,
-        // data-, Livewire wire:, Alpine x-/@/:, and the bare reserved
-        // HTML attributes Blade always strips into the bag.
-        $reserved = ['style', 'class', 'id', 'name', 'slot', 'rel', 'role', 'target',
-            'tabindex', 'title', 'autofocus', 'autocomplete', 'disabled',
-            'readonly', 'required', 'placeholder', 'value', 'checked',
-            'selected', 'multiple', 'min', 'max', 'step', 'pattern',
-            'href', 'type', 'for', 'form', 'method', 'action',
-            'src', 'srcset', 'alt', 'loading', 'decoding', 'width', 'height',
-            'colspan', 'rowspan', 'scope', 'headers', 'datetime',
-            'open', 'hidden', 'inert', 'contenteditable', 'spellcheck',
-            'draggable', 'translate'];
+        // Allowed passthrough: any valid HTML attribute (global or element-
+        // specific) is never a WireKit prop typo, so it passes unflagged. The
+        // two closed sets are declared as class constants above so each stays
+        // auditable against its spec section — a valid attribute is passthrough
+        // by definition, not by whether it was remembered in an ad-hoc list.
+        $reserved = [...self::HTML_GLOBAL_ATTRIBUTES, ...self::HTML_ELEMENT_ATTRIBUTES];
+        // Prefix-matched passthrough: ARIA, data-, Livewire wire:, Alpine
+        // x-/@/:, Vue v-. Any attribute starting with one of these is framework
+        // wiring, never a prop.
         $prefixes = ['aria-', 'data-', 'wire:', 'x-', '@', ':', 'v-'];
 
         foreach (array_keys($actual) as $key) {

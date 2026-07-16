@@ -77,6 +77,17 @@ final class HeroiconsPreset implements IconPreset
             'dashboard' => 'heroicon-m-squares-2x2',
             'billing' => 'heroicon-m-credit-card',
             'credit-card' => 'heroicon-m-credit-card',
+
+            // Infrastructure & system — subprocessor / breach registers, hosting,
+            // status dashboards. Verified against blade-heroicons Mini SVGs.
+            'server' => 'heroicon-m-server',
+            'database' => 'heroicon-m-circle-stack', // heroicons has no `database`
+            'cloud' => 'heroicon-m-cloud',
+            'shield' => 'heroicon-m-shield-check', // heroicons has no plain `shield`
+            'shield-check' => 'heroicon-m-shield-check',
+            'inbox' => 'heroicon-m-inbox',
+            'bolt' => 'heroicon-m-bolt',
+            'refresh' => 'heroicon-m-arrow-path', // heroicons calls it arrow-path
         ];
     }
 

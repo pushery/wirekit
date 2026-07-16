@@ -84,9 +84,12 @@
      then re-inject our resolved choice (or none, for informative icons).
      This guarantees the rendered SVG carries AT MOST ONE aria-hidden
      attribute, matching the developer's declared intent. --}}
-@if (function_exists('svg'))
+@if (function_exists('svg') && $resolved !== '')
 @php
     // BladeUI\Icons\Svg implements Htmlable, not __toString — use toHtml().
+    // $resolved is guaranteed non-empty here: an unknown alias in an HTTP
+    // request degrades to '' in IconResolver (logged), so we fall through to
+    // the inert placeholder below instead of calling svg('') (which would throw).
     $svgHtml = svg($resolved, $mergedAttributes->getAttributes())->toHtml();
     // Strip EVERY aria-hidden attribute from the OUTER <svg ...> open tag.
     // The blade-heroicons source bakes `aria-hidden="true"` into the SVG

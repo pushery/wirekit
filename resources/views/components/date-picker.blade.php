@@ -1,4 +1,8 @@
 @props([
+    // A11y: render the error message in a polite live region by default so a
+    // server-side validation error that appears after submit (when focus is
+    // elsewhere) is announced. Mirrors the input component. Set false to opt out.
+    'announceError' => true,
     'name' => null,
     'id' => null,
     'label' => null,
@@ -167,6 +171,6 @@
 
     @if($hasError)
         {{-- Error message linked via aria-describedby for assistive tech. --}}
-        <p id="{{ $errorId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 </div>

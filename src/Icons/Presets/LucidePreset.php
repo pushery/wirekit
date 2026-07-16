@@ -71,6 +71,16 @@ final class LucidePreset implements IconPreset
             'dashboard' => 'lucide-layout-dashboard',
             'billing' => 'lucide-credit-card',
             'credit-card' => 'lucide-credit-card',
+
+            // Infrastructure & system — mapped to Lucide's icon names.
+            'server' => 'lucide-server',
+            'database' => 'lucide-database',
+            'cloud' => 'lucide-cloud',
+            'shield' => 'lucide-shield-check', // parity with the base `shield` alias
+            'shield-check' => 'lucide-shield-check',
+            'inbox' => 'lucide-inbox',
+            'bolt' => 'lucide-zap', // lucide calls the bolt glyph `zap`
+            'refresh' => 'lucide-refresh-cw', // lucide's rotate glyph
         ];
     }
 

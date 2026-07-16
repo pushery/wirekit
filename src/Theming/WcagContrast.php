@@ -110,7 +110,121 @@ final class WcagContrast
             return self::oklchToLinearRgb($L, $C, $H);
         }
 
+        // color-mix(in srgb, <c1> [p1%], <c2> [p2%]) — the softened tinted
+        // surfaces (badge / alert / stat) are built with color-mix, so without
+        // this arm every tinted background is unauditable (returns null) and a
+        // real AA failure on a soft surface can only be caught downstream by a
+        // developer's axe run (WIRE-104). Mix in the sRGB space per the CSS
+        // spec: convert operands to gamma-encoded sRGB, blend by weight, convert
+        // back to linear. Only `in srgb` is supported (the space WireKit uses);
+        // other interpolation spaces return null rather than guess.
+        if (preg_match('#^color-mix\(\s*in\s+srgb\s*,\s*(.+)\)$#is', $color, $m) === 1) {
+            $parts = self::splitTopLevelComma($m[1]);
+            if (count($parts) !== 2) {
+                return null;
+            }
+
+            [$color1, $pct1] = self::parseMixOperand($parts[0]);
+            [$color2, $pct2] = self::parseMixOperand($parts[1]);
+
+            $lin1 = self::parseToLinearRgb($color1);
+            $lin2 = self::parseToLinearRgb($color2);
+            if ($lin1 === null || $lin2 === null) {
+                return null;
+            }
+
+            // Normalize weights: if one percentage is omitted it takes the
+            // remainder; if both are omitted it is a 50/50 mix (CSS default).
+            if ($pct1 === null && $pct2 === null) {
+                $w1 = 0.5;
+            } elseif ($pct1 === null) {
+                $w1 = 1.0 - ($pct2 / 100.0);
+            } elseif ($pct2 === null) {
+                $w1 = $pct1 / 100.0;
+            } else {
+                $sum = $pct1 + $pct2;
+                $w1 = $sum > 0 ? $pct1 / $sum : 0.5;
+            }
+            $w2 = 1.0 - $w1;
+
+            // Blend in gamma-encoded sRGB, then return linear for luminance.
+            $srgb1 = array_map(self::linearToSrgb(...), $lin1);
+            $srgb2 = array_map(self::linearToSrgb(...), $lin2);
+            $mixed = [
+                self::srgbToLinear($srgb1[0] * $w1 + $srgb2[0] * $w2),
+                self::srgbToLinear($srgb1[1] * $w1 + $srgb2[1] * $w2),
+                self::srgbToLinear($srgb1[2] * $w1 + $srgb2[2] * $w2),
+            ];
+
+            return $mixed;
+        }
+
         return null;
+    }
+
+    /**
+     * Split a comma-separated list on top-level commas only, respecting nested
+     * parentheses (so `oklch(…)` / `color-mix(…)` operands stay intact).
+     *
+     * @return list<string>
+     */
+    private static function splitTopLevelComma(string $s): array
+    {
+        $parts = [];
+        $depth = 0;
+        $buf = '';
+        $len = strlen($s);
+        for ($i = 0; $i < $len; $i++) {
+            $ch = $s[$i];
+            if ($ch === '(') {
+                $depth++;
+            } elseif ($ch === ')') {
+                $depth--;
+            }
+            if ($ch === ',' && $depth === 0) {
+                $parts[] = trim($buf);
+                $buf = '';
+
+                continue;
+            }
+            $buf .= $ch;
+        }
+        if (trim($buf) !== '') {
+            $parts[] = trim($buf);
+        }
+
+        return $parts;
+    }
+
+    /**
+     * Parse a color-mix operand `<color> [<pct>%]` into [color, pct|null].
+     * The percentage, when present, is the trailing token.
+     *
+     * @return array{0: string, 1: float|null}
+     */
+    private static function parseMixOperand(string $operand): array
+    {
+        $operand = trim($operand);
+        if (preg_match('#\s+([\d.]+)%$#', $operand, $m) === 1) {
+            $color = trim(substr($operand, 0, -strlen($m[0])));
+
+            return [$color, (float) $m[1]];
+        }
+
+        return [$operand, null];
+    }
+
+    /**
+     * Gamma-encode a linear sRGB channel (inverse of srgbToLinear). Used to mix
+     * in the gamma-encoded sRGB space, as `color-mix(in srgb, …)` requires.
+     */
+    private static function linearToSrgb(float $channel): float
+    {
+        if ($channel <= 0.0031308) {
+            return 12.92 * $channel;
+        }
+
+        return 1.055 * $channel ** (1 / 2.4) - 0.055;
     }
 
     /**

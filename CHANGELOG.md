@@ -10,6 +10,31 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.12.0] — 2026-07-16
+
+**Feature release.** A wave of accessibility and Livewire-integration improvements across the form controls, plus new infrastructure icons. Every change defaults to the current behavior, so upgrading is safe and requires no code changes.
+
+### Added
+
+- **[Combobox](https://docs.wirekit.app/components/combobox) — accessible name.** New `label`, `hideLabel`, and `ariaLabel` props, matching Select and Multi-Select. A combobox in a facet toolbar can now carry a proper accessible name without hand-rolling an external `<label for>`.
+- **Form controls — announced validation errors.** Every error-rendering control (Select, Checkbox, Radio, Textarea, Toggle, [Number Input](https://docs.wirekit.app/components/number-input), OTP Input, Password Input, Multi-Select, Combobox, Tags Input, Time Picker, Date Picker, Editor) now renders its error message in a polite live region by default, so a server-side validation error that appears after submit is announced even when focus has moved to the submit button. Opt out per field with `:announce-error="false"`.
+- **[Slider](https://docs.wirekit.app/components/slider) — labeled-mark announcements.** When `marks` is a labeled map (`[0 => 'Low', 100 => 'High']`), the slider now exposes the label to assistive tech via a live `aria-valuetext` and shows it in the value tooltip — a screen reader announces "Low" instead of "0". Plain sliders are unchanged.
+- **[Button](https://docs.wirekit.app/components/button) — scoped loading spinner.** New `loading-target` prop scopes the loading spinner and disable to the button's own Livewire action, so on a polling page the spinner no longer flashes on every `wire:poll` refresh or unrelated action.
+- **[Table](https://docs.wirekit.app/components/table) — keyboard-operable Livewire sort.** New `sort-action` prop on `<x-wirekit::table.th>` wraps the header label in a real `<button>` with a focus ring, so server-side sorting is operable by keyboard, not mouse only.
+- **[Message](https://docs.wirekit.app/components/message) — accessible actions and localized time.** The actions slot now reveals on hover **or** keyboard focus (and `actions-reveal="always"` keeps it visible for touch). The timestamp is now locale-aware — `9:15 PM` for English, `21:15` for German and other 24-hour locales — with a `time-format` prop for an explicit format.
+- **[Icon](https://docs.wirekit.app/components/icon) — infrastructure glyphs.** New aliases across every base preset: `server`, `database`, `cloud`, `shield` / `shield-check`, `inbox`, `bolt`, and `refresh`.
+- **Theming — auditable tinted surfaces.** `Pushery\WireKit\Theming\WcagContrast` now parses `color-mix(in srgb, …)` values, so the soft (tinted) surfaces used by Badge, Alert, and Stat can be contrast-checked directly.
+
+### Fixed
+
+- **Brand — responsive logo no longer vanishes.** `<x-wirekit::brand>` built its responsive show/hide classes by splicing the breakpoint into the class name at render time, which a Tailwind v4 CSS-first build cannot discover — so the desktop logo could silently disappear after a WireKit upgrade. The classes are now emitted as full literals.
+- **Segmented Control, [Rating](https://docs.wirekit.app/components/rating), OTP Input — `wire:model` modifiers.** These controls dropped `wire:model` modifiers (`.live` / `.blur` / `.debounce`) when forwarding the binding to their hidden input, so a live binding never updated. All modifier forms are now forwarded.
+- **[Input](https://docs.wirekit.app/components/input) — `inputmode` no longer warns.** Standard HTML attributes like `inputmode`, `enterkeyhint`, `autocapitalize`, and `spellcheck` no longer log a spurious "unknown prop" warning.
+- **Icon — no more crash on an unknown alias.** An unknown icon name in a browser request now renders an inert placeholder and logs the problem, instead of throwing and taking down the whole page. Console and test runs still fail fast so typos surface early.
+- **[Combobox](https://docs.wirekit.app/components/combobox) — the dropdown now matches its size.** A large or small combobox opened a dropdown whose option rows stayed medium-sized; the option padding and text now scale with the `size` prop so the open panel matches its trigger.
+- **[Combobox](https://docs.wirekit.app/components/combobox) — no stray focus warning.** Clicking the chevron to close the dropdown could leave keyboard focus on the decorative toggle, which browsers flag as focus trapped on an `aria-hidden` element. Focus now always returns to the input.
+- **[Button](https://docs.wirekit.app/components/button) — a joined input abuts its button cleanly.** When an `<x-wirekit::input>` is joined to a trailing button inside `<x-wirekit::button.group>`, the field's seam-side corner is now squared and its duplicated seam border removed, so the input meets the button flush instead of showing a rounded edge and a doubled border.
+
 ## [2.11.1] — 2026-07-04
 
 **Patch release.** Documentation-only clarifications to the Getting Started guide. No component code changed — upgrading is optional.

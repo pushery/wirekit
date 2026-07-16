@@ -1,4 +1,8 @@
 @props([
+    // A11y: render the error message in a polite live region by default so a
+    // server-side validation error that appears after submit (when focus is
+    // elsewhere) is announced. Mirrors the input component. Set false to opt out.
+    'announceError' => true,
     'label' => null,
     'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
     'hint' => null,
@@ -119,7 +123,7 @@
 
     {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hasSuccess && $successMessage)
         <p id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
     @elseif($hint)

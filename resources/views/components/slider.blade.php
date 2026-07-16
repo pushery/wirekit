@@ -47,6 +47,23 @@
     // The track overlay (tooltip bubble + tick marks) needs a relative container.
     $hasTrackOverlay = $tooltip || ! empty($normalizedMarks);
 
+    // Value → semantic-text map (WIRE-12). When `marks` is a labeled MAP
+    // (`[0 => 'Low', 100 => 'High']`, i.e. NOT a plain list), the labels carry
+    // meaning a screen reader must hear — otherwise the native range input
+    // announces only the bare number ("0"), while sighted users read "Low" off
+    // the ticks. Build a string-keyed map (the Alpine `current` value is always a
+    // string) so the slider can announce the label via aria-valuetext and echo
+    // it in the tooltip / value display. A plain list of positions carries no
+    // extra meaning, so it does NOT get aria-valuetext — the number IS the value,
+    // and the DOM stays byte-identical to before.
+    $isLabeledMarkMap = ! empty($marks) && ! array_is_list($marks);
+    $valueTextMap = [];
+    if ($isLabeledMarkMap) {
+        foreach ($marks as $mValue => $mLabel) {
+            $valueTextMap[(string) $mValue] = (string) $mLabel;
+        }
+    }
+
     // Track height per size token.
     $trackHeight = match ($size) {
         'sm' => 'h-1',
@@ -113,9 +130,16 @@
         current: @js((string) $currentValue),
         min: {{ $min }},
         max: {{ $max }},
+        marksMap: @js((object) $valueTextMap),
         get pct() {
             const r = (this.max - this.min) || 1;
             return Math.max(0, Math.min(100, ((Number(this.current) - this.min) / r) * 100));
+        },
+        get valueText() {
+            // Labeled-mark map wins (announces 'Low' for value 0); otherwise the
+            // raw number IS the value. Kept live so keyboard / drag updates the
+            // announced text as the thumb moves.
+            return this.marksMap[this.current] ?? String(this.current);
         }
     }"
     {{-- Caller layout attributes (class / style — e.g. a width constraint)
@@ -150,7 +174,7 @@
                  right-aligns (extends inward/left), and centers (-50%) in the middle.
                  (The native thumb has no JS-readable width, so pct doubles as the shift.) --}}
             <div class="pointer-events-none absolute bottom-full z-10 mb-1.5" :style="`left: ${pct}%`" aria-hidden="true">
-                <span class="block whitespace-nowrap rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-tooltip-text)] shadow-[var(--shadow-wk-sm)]" :style="`transform: translateX(-${pct}%)`" x-text="current"></span>
+                <span class="block whitespace-nowrap rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-tooltip-text)] shadow-[var(--shadow-wk-sm)]" :style="`transform: translateX(-${pct}%)`" x-text="valueText"></span>
             </div>
         @endif
 
@@ -163,6 +187,10 @@
             step="{{ $step }}"
             :value="current"
             @input="current = $event.target.value"
+            {{-- Labeled discrete slider: announce the mark's label, not the bare
+                 number. Only bound for a labeled MAP so plain sliders stay
+                 byte-identical (the number is already the value). --}}
+            @if($isLabeledMarkMap) :aria-valuetext="valueText" @endif
             @if($disabled) disabled @endif
             {{-- class / style are consumed by the wrapper above; everything
                  else (wire:model, aria-*, data-*) stays on the input. --}}
@@ -186,6 +214,6 @@
     @if($showValue)
         {{-- aria-live="polite" so screen readers get the updated value when
              the user releases the slider, not on every tick. --}}
-        <span class="{{ $valueClasses }}" aria-live="polite" x-text="current"></span>
+        <span class="{{ $valueClasses }}" aria-live="polite" x-text="valueText"></span>
     @endif
 </div>

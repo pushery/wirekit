@@ -72,6 +72,16 @@ final class TablerPreset implements IconPreset
             'dashboard' => 'tabler-layout-dashboard',
             'billing' => 'tabler-credit-card',
             'credit-card' => 'tabler-credit-card',
+
+            // Infrastructure & system — mapped to Tabler's icon names.
+            'server' => 'tabler-server',
+            'database' => 'tabler-database',
+            'cloud' => 'tabler-cloud',
+            'shield' => 'tabler-shield-check', // parity with the base `shield` alias
+            'shield-check' => 'tabler-shield-check',
+            'inbox' => 'tabler-inbox',
+            'bolt' => 'tabler-bolt',
+            'refresh' => 'tabler-refresh',
         ];
     }
 

@@ -69,6 +69,26 @@
     $resolvedBreakpoint = $logo && $mobileLogo
         ? WireKit::validateProp('brand', 'mobileBreakpoint', $mobileBreakpoint, ['sm', 'md', 'lg', 'xl'])
         : 'sm';
+
+    // Responsive show/hide classes resolved to FULL literal strings — never
+    // `"{$resolvedBreakpoint}:hidden"`. Tailwind v4's content scanner reads the
+    // raw template TEXT and cannot resolve a PHP variable, so an interpolated
+    // class name (`sm:inline-flex` assembled at render time) is never generated
+    // in a developer's CSS-first build — it appears only by accident when the
+    // same literal exists elsewhere in their `@source` corpus, and vanishes on a
+    // WireKit bump, taking the logo's visibility with it. Emitting the literals
+    // here keeps every variant statically discoverable in the scanned vendor
+    // view. Same precedent as grid.blade.php's `$colsMap`. Guarded by
+    // tests/Feature/InterpolatedVariantClassGuardTest.php.
+    $bpHidden = match ($resolvedBreakpoint) {
+        'sm' => 'sm:hidden', 'md' => 'md:hidden', 'lg' => 'lg:hidden', 'xl' => 'xl:hidden',
+    };
+    $bpBlock = match ($resolvedBreakpoint) {
+        'sm' => 'sm:block', 'md' => 'md:block', 'lg' => 'lg:block', 'xl' => 'xl:block',
+    };
+    $bpInlineFlex = match ($resolvedBreakpoint) {
+        'sm' => 'sm:inline-flex', 'md' => 'md:inline-flex', 'lg' => 'lg:inline-flex', 'xl' => 'xl:inline-flex',
+    };
 @endphp
 
 <a
@@ -98,8 +118,8 @@
              single element carrying both `{bp}:block` and `wk-dark-only` is a
              0,1,0 specificity tie decided by stylesheet load order (fragile).
              Splitting them onto the span vs the imgs keeps it deterministic. --}}
-        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $resolvedBreakpoint }}:hidden" aria-hidden="true" />
-        <span class="hidden {{ $resolvedBreakpoint }}:inline-flex items-center">
+        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" aria-hidden="true" />
+        <span class="hidden {{ $bpInlineFlex }} items-center">
             <img src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" aria-hidden="true" />
             <img src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" aria-hidden="true" />
         </span>
@@ -108,8 +128,8 @@
              full-width wordmark at + breakpoint. Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label handles the accessible name. --}}
-        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $resolvedBreakpoint }}:hidden" aria-hidden="true" />
-        <img src="{{ $logo }}" alt="" class="hidden h-8 w-auto {{ $resolvedBreakpoint }}:block" aria-hidden="true" />
+        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" aria-hidden="true" />
+        <img src="{{ $logo }}" alt="" class="hidden h-8 w-auto {{ $bpBlock }}" aria-hidden="true" />
     @elseif($logo && $darkLogo)
         {{-- Mode-aware logo swap: light wordmark in light mode, dark wordmark
              under the `.dark` class (via the wk-light-only / wk-dark-only

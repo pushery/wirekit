@@ -4,6 +4,15 @@
     'side' => 'left',
     'intent' => 'neutral',
     'edited' => false,
+    // How the actions slot is revealed. 'hover' (default) shows it on hover OR
+    // keyboard focus; 'always' keeps it visible — the accessible path for touch
+    // (no hover) and for surfaces where the actions should always be reachable.
+    'actionsReveal' => config('wirekit.components.message.actions-reveal', 'hover'),
+    // Carbon format string for the timestamp. Null (default) renders the
+    // locale-aware short time via isoFormat('LT') — "9:15 PM" for en (identical
+    // to the old hardcoded format), "21:15" for de and other 24h locales. Pass an
+    // explicit format (e.g. 'H:i') to override.
+    'timeFormat' => null,
     'scope' => null,
 ])
 
@@ -25,6 +34,19 @@
         default => WireKit::validateProp('message', 'intent', $intent, ['neutral', 'primary', 'info', 'success', 'warning', 'danger']),
     };
 
+    // Actions reveal. 'hover' reveals on hover OR keyboard focus (focus-within),
+    // so a keyboard user tabbing to the action control makes it visible — the
+    // old group-hover-only reveal was invisible to touch AND keyboard (and never
+    // fired at all, since the <article> carried no `group` class). 'always' keeps
+    // the actions visible for touch surfaces.
+    $actionsRevealValue = match ($actionsReveal) {
+        'hover', 'always' => $actionsReveal,
+        default => WireKit::validateProp('message', 'actionsReveal', $actionsReveal, ['hover', 'always']),
+    };
+    $actionsRevealClasses = $actionsRevealValue === 'always'
+        ? ''
+        : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100 transition-opacity duration-[var(--transition-wk-duration)]';
+
     // Parse author data
     $authorName = is_array($author) ? ($author['name'] ?? '') : (string) $author;
     $authorAvatar = is_array($author) ? ($author['avatar'] ?? null) : null;
@@ -35,7 +57,13 @@
     $formattedTime = '';
     if ($timestamp !== null) {
         $carbonTimestamp = $timestamp instanceof Carbon ? $timestamp : Carbon::parse($timestamp);
-        $formattedTime = $carbonTimestamp->format('g:i A');
+        // Locale-aware short time by default (isoFormat('LT') honors the Carbon
+        // locale): "9:15 PM" for en — byte-identical to the old hardcoded
+        // 'g:i A' — but "21:15" for de and other 24h locales. An explicit
+        // timeFormat overrides with a raw Carbon format string.
+        $formattedTime = $timeFormat !== null
+            ? $carbonTimestamp->format($timeFormat)
+            : $carbonTimestamp->isoFormat('LT');
     }
 
     // Alignment
@@ -60,6 +88,10 @@
     };
 
     $baseClasses = WireKit::resolveClasses('message', 'base', implode(' ', [
+        // `group` enables the actions reveal on hover/focus of the whole message
+        // (the old markup referenced group-hover with no group ancestor, so the
+        // actions never appeared at all).
+        'group',
         'flex gap-[var(--space-wk-sm,0.5rem)]',
         $alignClass,
         'font-[family-name:var(--font-wk-sans)]',
@@ -128,9 +160,10 @@
         @endif
     </div>
 
-    {{-- Actions slot (dropdown menu) --}}
+    {{-- Actions slot (dropdown menu). Revealed on hover OR keyboard focus by
+         default; actions-reveal="always" keeps it visible (touch surfaces). --}}
     @if(isset($actions))
-        <div class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-[var(--transition-wk-duration)]">
+        <div class="shrink-0 {{ $actionsRevealClasses }}">
             {{ $actions }}
         </div>
     @endif

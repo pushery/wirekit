@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.11.1 — MIT License
+ * WireKit CSS v2.12.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -885,6 +885,26 @@
 }
 .wk-button-group:not([data-orientation="vertical"]) > :not(:first-child):not(:last-child) {
     border-radius: 0;
+}
+
+/* Nested form-control edge case: <x-wirekit::input> (and siblings) render the
+ * actual <input class="wk-field"> inside a wrapper <div>, so the direct-child
+ * radius rules above only square the WRAPPER — the field keeps its own rounded
+ * corner AND its seam-side border, which reads as a rounded field butting a
+ * squared button. Reach the nested field and square its seam edge + drop the
+ * duplicated seam border so the field abuts the neighbor cleanly. */
+.wk-button-group:not([data-orientation="vertical"]) > :first-child:not(:last-child) .wk-field {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+    border-inline-end: 0;
+}
+.wk-button-group:not([data-orientation="vertical"]) > :last-child:not(:first-child) .wk-field {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+}
+.wk-button-group:not([data-orientation="vertical"]) > :not(:first-child):not(:last-child) .wk-field {
+    border-radius: 0;
+    border-inline-end: 0;
 }
 
 /* Vertical: collapse the block seam + square inner edges. */

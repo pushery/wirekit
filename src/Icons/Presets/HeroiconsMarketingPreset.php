@@ -27,7 +27,8 @@ final class HeroiconsMarketingPreset implements IconPreset
     {
         return [
             // Energy & motion
-            'bolt' => 'heroicon-m-bolt',
+            // `bolt` promoted to the base presets in v2.12.0 — removed here to
+            // keep the marketing extension non-overlapping with the base set.
             'sparkles' => 'heroicon-m-sparkles',
             'rocket-launch' => 'heroicon-m-rocket-launch',
             'fire' => 'heroicon-m-fire',
@@ -51,8 +52,8 @@ final class HeroiconsMarketingPreset implements IconPreset
             'heart' => 'heroicon-m-heart',
 
             // Trust & security
-            'shield' => 'heroicon-m-shield-check',
-            'shield-check' => 'heroicon-m-shield-check',
+            // `shield` / `shield-check` promoted to the base presets in v2.12.0 —
+            // removed here to keep the marketing extension non-overlapping.
             'lock-closed' => 'heroicon-m-lock-closed',
             'finger-print' => 'heroicon-m-finger-print',
 

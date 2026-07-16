@@ -1,4 +1,8 @@
 @props([
+    // A11y: render the error message in a polite live region by default so a
+    // server-side validation error that appears after submit (when focus is
+    // elsewhere) is announced. Mirrors the input component. Set false to opt out.
+    'announceError' => true,
     'name' => null,
     'id' => null,
     'options' => [],
@@ -7,6 +11,15 @@
     'placeholder' => config('wirekit.components.combobox.placeholder', 'Select...'),
     'disabled' => false,
     'error' => null,
+    // Accessible name for the combobox. Mirrors select / multi-select: a visible
+    // `label` renders an associated x-wirekit::label (for={comboId}); `hideLabel`
+    // keeps it in the DOM for assistive tech but visually hidden (compact
+    // toolbar / header fields); `ariaLabel` sets aria-label directly on the
+    // role="combobox" input for the label-less case. All default to today's
+    // behavior (no label at all), so existing comboboxes render byte-identically.
+    'label' => null,
+    'hideLabel' => false,
+    'ariaLabel' => null,
     'scope' => null,
 ])
 
@@ -75,11 +88,27 @@
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($hasError && $name ? $errors->first($name) : null);
 
+    // Accessible name resolution. A visible label associates via <label for>
+    // (label wins, no aria-label needed). Otherwise fall back to the ariaLabel
+    // prop, then a caller-passed aria-label attribute — applied to the VISIBLE
+    // role="combobox" input (the labelable control), never the roleless wrapper.
+    $callerAriaLabel = $attributes->get('aria-label');
+    $resolvedAriaLabel = $ariaLabel ?? $callerAriaLabel;
+
     // Sizing.
     $heightClasses = match ($size) {
         'sm' => 'h-[var(--size-wk-sm)] text-[length:var(--text-wk-sm)]',
         'lg' => 'h-[var(--size-wk-lg)] text-[length:var(--text-wk-lg)]',
         default => 'h-[var(--size-wk-md)] text-[length:var(--text-wk-md)]',
+    };
+
+    // Option-row sizing — scales the DROPDOWN with `size` so the open panel
+    // matches its trigger (a `lg` combobox had `sm`-sized options before, which
+    // read as a mismatch). Text size mirrors the trigger; padding scales with it.
+    $optionRowClasses = match ($size) {
+        'sm' => 'p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)]',
+        'lg' => 'p-[var(--padding-wk-y-md)] text-[length:var(--text-wk-lg)]',
+        default => 'p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-md)]',
     };
 
     // Text input styling — identical to other form controls for visual cohesion.
@@ -118,15 +147,23 @@
         'py-1',
     ]), $scope);
 
-    // Shared padding/typography for the empty-state row. Option <li>
-    // entries inline their own classes since they need conditional cursor
-    // rules (cursor-pointer for enabled, cursor-not-allowed for disabled).
-    $emptyRowClasses = 'p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)]';
+    // Empty-state row shares the option-row sizing so "No results" scales with
+    // the combobox like the options do.
+    $emptyRowClasses = $optionRowClasses;
 @endphp
 
 {{-- Alpine state: `query` mirrors the text input, `open` controls visibility,
      `selected` holds the chosen option value, `highlight` tracks keyboard focus
      index within the *filtered* list. --}}
+{{-- Single always-present root wrapper (mirrors <x-wirekit::select>). The label,
+     when set, associates with the combobox input via `for={comboId}`; without a
+     label the wrapper is a layout-neutral div (space-y-1.5 applies no margin to a
+     single child, so no visual change). A single stable root keeps the anonymous
+     component's $attributes / $component scope intact. --}}
+<div class="space-y-1.5">
+    @if($label)
+        <x-wirekit::label :for="$comboId" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+    @endif
 <div
     x-data="{
         open: false,
@@ -236,7 +273,7 @@
     }"
     @click.outside="open = false"
     class="relative w-full"
-    {{ $attributes }}
+    {{ $attributes->except('aria-label') }}
 >
     {{-- Hidden input holding the selected *value* for form submission. --}}
     @if($name)
@@ -266,6 +303,10 @@
         @keydown.escape="open = false"
         @if($disabled) disabled @endif
         @if($hasError) aria-invalid="true" aria-describedby="{{ $errorId }}" @endif
+        {{-- Accessible name: a visible <label for> wins; otherwise aria-label
+             from the ariaLabel prop / caller attribute lands on this input (the
+             labelable role="combobox" control), never the roleless wrapper. --}}
+        @if(! $label && $resolvedAriaLabel) aria-label="{{ $resolvedAriaLabel }}" @endif
         class="wk-field {{ $inputClasses }}"
     />
 
@@ -293,7 +334,13 @@
          control per the WAI-ARIA combobox pattern. --}}
     <button
         type="button"
-        @click.stop="open = ! open; if (open) $refs.cbxInput?.focus();"
+        {{-- Always return focus to the input — on close too, not only on open.
+             This button is aria-hidden + tabindex=-1 (decorative; the input is
+             the focusable combobox control). If a click leaves focus ON this
+             button (which happens when it toggles the panel closed), the browser
+             flags "aria-hidden on a focused element". Refocusing the input every
+             time keeps focus on the real control and clears that warning. --}}
+        @click.stop="open = ! open; $refs.cbxInput?.focus();"
         @if($disabled) disabled @endif
         tabindex="-1"
         aria-hidden="true"
@@ -339,7 +386,7 @@
                                 : (opt._idx === highlight
                                     ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] cursor-pointer'
                                     : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
-                            class="p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)]"
+                            class="{{ $optionRowClasses }}"
                             @click="selectOption(opt)"
                             @mouseenter="if (! opt.disabled) highlight = opt._idx"
                             x-text="opt.label"
@@ -360,7 +407,7 @@
                     : (idx === highlight
                         ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] cursor-pointer'
                         : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
-                class="p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)]"
+                class="{{ $optionRowClasses }}"
                 @click="selectOption(opt)"
                 @mouseenter="if (! opt.disabled) highlight = idx"
                 x-text="opt.label"
@@ -379,6 +426,9 @@
     </div>
 
     @if($hasError)
-        <p id="{{ $errorId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
+</div>
+
+{{-- Close the always-present root wrapper. --}}
 </div>
