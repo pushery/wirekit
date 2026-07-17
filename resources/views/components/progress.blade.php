@@ -6,6 +6,11 @@
     'variant' => config('wirekit.components.progress.variant', 'primary'), // back-compat alias of `intent`
     'intent' => null,            // canonical color axis: primary | success | warning | danger | info | neutral (+ accent alias). null → falls back to `variant`
     'size' => config('wirekit.components.progress.size', 'md'),           // sm | md | lg
+    // Optional motion on the DETERMINATE fill — the "work in flight" affordance
+    // (uploads, streaming). none (default) | stripes (barber-pole) | shimmer
+    // (a light sweep). Purely additive polish: gated by prefers-reduced-motion,
+    // and the bar's value/width is unchanged, so nothing depends on the motion.
+    'animation' => 'none',
     'scope' => null,
 ])
 
@@ -58,11 +63,20 @@
         default => 'bg-[var(--color-wk-accent)]', // primary + accent + info
     };
 
+    // Optional fill motion (determinate only — the indeterminate bar already
+    // travels). Validated against the enum; 'none' adds nothing.
+    $animationValue = in_array($animation, ['none', 'stripes', 'shimmer'], true)
+        ? $animation
+        : WireKit::validateProp('progress', 'animation', $animation, ['none', 'stripes', 'shimmer']);
+    $animationClass = (! $isIndeterminate && $animationValue !== 'none')
+        ? ' wk-progress-'.$animationValue
+        : '';
+
     // Determinate: animate width transitions for smooth updates.
     // Indeterminate: rely on .wk-progress-indeterminate keyframes (see dist/wirekit.css)
     $fillClasses = $isIndeterminate
         ? $fillColor . ' absolute inset-y-0 rounded-[var(--radius-wk-full)] wk-progress-indeterminate'
-        : $fillColor . ' h-full rounded-[var(--radius-wk-full)] transition-[width] duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]';
+        : $fillColor . ' h-full rounded-[var(--radius-wk-full)] transition-[width] duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]' . $animationClass;
 
     // Auto-generate an id so label + progressbar can be linked via aria-labelledby
     $labelId = 'progress-' . \Illuminate\Support\Str::random(6) . '-label';

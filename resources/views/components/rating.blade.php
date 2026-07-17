@@ -62,6 +62,12 @@
     // Interactive mode always clamps to integers.
     $numericValue = max(0, min((float) $value, (float) $max));
     $clamped = $readonly ? $numericValue : (int) $numericValue;
+
+    // What a readonly rating announces. The component renders a partial star via
+    // clip-path, so rounding here would make the picture and the words disagree —
+    // it draws 4.2 and would say "4". Trailing zeros are dropped so a clean 4
+    // does not announce as "4.0".
+    $announcedValue = $readonly ? rtrim(rtrim(number_format($numericValue, 1, '.', ''), '0'), '.') : $numericValue;
     $fullStars = (int) floor($numericValue);
     $fraction = $numericValue - $fullStars; // 0.0–0.99 for partial star
 @endphp
@@ -71,15 +77,55 @@
     x-data="{ rating: {{ $clamped }}, hovered: 0 }"
 >
     @if($label)
-        <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
+        @if($readonly)
+            {{-- Plain text, not <label>. A readonly rating renders no form field
+                 for a label to point at, so a <label for="…"> here would name an
+                 element that does not exist — and a <label> with no control is
+                 not a label at all, it is an orphan that assistive tech may drop
+                 on the floor along with the text inside it. --}}
+            <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
+        @else
+            <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
+        @endif
     @endif
 
-    {{-- Hidden input for form submission / wire:model --}}
-    <input type="hidden" id="{{ $id }}" name="{{ $name }}" :value="rating" {{ $attributes->whereStartsWith('wire:model') }} />
+    {{-- Hidden input for form submission / wire:model.
 
+         Only when the rating is a CONTROL. A readonly rating is a record of what
+         someone gave — displaying it must not put a form field on the page. It
+         used to regardless, which meant a product grid shipped one stray field
+         per card, with a name regenerated on every render that the developer
+         could not even exclude from a submit. --}}
+    @unless($readonly)
+        <input type="hidden" id="{{ $id }}" name="{{ $name }}" :value="rating" {{ $attributes->whereStartsWith('wire:model') }} />
+    @endunless
+
+    {{-- Two different things wear the same stars.
+
+         A READONLY rating is a picture of a score: role="img" with one name, and
+         nothing inside it to operate. It used to claim role="radiogroup" and mark
+         every filled star aria-checked="true" — but a radiogroup is single-select
+         by definition, so a 4-star rating announced FOUR simultaneously selected
+         radios ("4 stars, selected, 3 stars, selected, …"). Nonsense, and it
+         invited the reader to interact with something inert.
+
+         An INTERACTIVE rating really is a radiogroup: picking a score IS choosing
+         one of five. That path is unchanged. --}}
     <div
-        role="radiogroup"
-        aria-label="{{ $label ?? $attributes->get('aria-label') ?? 'Rating' }}"
+        @if($readonly)
+            role="img"
+            {{-- The SCORE, not the label. A visible label is already read as text
+                 right above these stars, so naming the image with it would say it
+                 twice AND lose the number — "Average rating, image" tells the
+                 reader nothing about what was rated. Read together it comes out
+                 as "Average rating — 4.2 out of 5 stars".
+
+                 An explicit aria-label still wins: the caller knows their page. --}}
+            aria-label="{{ $attributes->get('aria-label') ?? $announcedValue.' out of '.$max.' stars' }}"
+        @else
+            role="radiogroup"
+            aria-label="{{ $label ?? $attributes->get('aria-label') ?? 'Rating' }}"
+        @endif
         class="inline-flex gap-0.5"
     >
         @for($i = 1; $i <= $max; $i++)
@@ -91,13 +137,9 @@
                     $isPartial = !$isFull && $i === $fullStars + 1 && $fraction > 0;
                     $isEmpty = !$isFull && !$isPartial;
                 @endphp
-                <span
-                    role="radio"
-                    aria-checked="{{ $isFull || $isPartial ? 'true' : 'false' }}"
-                    aria-disabled="true"
-                    aria-label="{{ $i }} {{ $i === 1 ? 'star' : 'stars' }}"
-                    class="cursor-default"
-                >
+                {{-- Silent: the container above already said "4.2 out of 5
+                     stars". Naming each star would repeat the score five times. --}}
+                <span aria-hidden="true" class="cursor-default">
                     @if($isPartial)
                         {{-- Partial icon: two overlapping SVGs — empty behind, filled clipped in front --}}
                         <span class="relative inline-block {{ $iconSize }}">
@@ -129,14 +171,21 @@
                 <button
                     type="button"
                     role="radio"
-                    aria-checked="{{ $value >= $i ? 'true' : 'false' }}"
+                    aria-checked="{{ (int) $value === $i ? 'true' : 'false' }}"
                     :aria-checked="rating >= {{ $i }} ? 'true' : 'false'"
                     aria-label="{{ $i }} {{ $i === 1 ? 'star' : 'stars' }}"
                     @click="rating = {{ $i }}; $el.closest('[x-data]').querySelector('input[type=hidden]').dispatchEvent(new Event('input', { bubbles: true }))"
                     @mouseenter="hovered = {{ $i }}"
                     @mouseleave="hovered = 0"
+                    {{-- Radiogroup keyboard model (APG): both axes move the
+                         selection, Home/End jump to the ends. ArrowUp aliases
+                         ArrowRight (more), ArrowDown aliases ArrowLeft (less). --}}
                     @keydown.arrow-right.prevent="if (rating < {{ $max }}) { rating++; $nextTick(() => $el.nextElementSibling?.focus()) }"
+                    @keydown.arrow-up.prevent="if (rating < {{ $max }}) { rating++; $nextTick(() => $el.nextElementSibling?.focus()) }"
                     @keydown.arrow-left.prevent="if (rating > 1) { rating--; $nextTick(() => $el.previousElementSibling?.focus()) }"
+                    @keydown.arrow-down.prevent="if (rating > 1) { rating--; $nextTick(() => $el.previousElementSibling?.focus()) }"
+                    @keydown.home.prevent="rating = 1; $nextTick(() => $el.parentElement.firstElementChild?.focus())"
+                    @keydown.end.prevent="rating = {{ $max }}; $nextTick(() => $el.parentElement.lastElementChild?.focus())"
                     :tabindex="rating === {{ $i }} || (rating === 0 && {{ $i }} === 1) ? '0' : '-1'"
                     class="transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
                 >

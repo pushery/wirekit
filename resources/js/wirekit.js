@@ -30,6 +30,8 @@ import wirekitTour from './components/tour.js';
 import wirekitResizableHandle from './components/resizable.js';
 import wirekitImageCompare from './components/image-compare.js';
 import wirekitLightbox from './components/lightbox.js';
+import wirekitConversation from './components/conversation.js';
+import wirekitAssistantMessage from './components/assistant-message.js';
 import wirekitStatAnimate from './components/stat-animate.js';
 import wirekitAnimate from './components/animate.js';
 import wirekitReadingSpine from './components/reading-spine.js';
@@ -77,6 +79,8 @@ function registerComponents() {
     Alpine.data('wirekitResizableHandle', wirekitResizableHandle);
     Alpine.data('wirekitImageCompare', wirekitImageCompare);
     Alpine.data('wirekitLightbox', wirekitLightbox);
+    Alpine.data('wirekitConversation', wirekitConversation);
+    Alpine.data('wirekitAssistantMessage', wirekitAssistantMessage);
     Alpine.data('wirekitStatAnimate', wirekitStatAnimate);
     Alpine.data('wirekitAnimate', wirekitAnimate);
     Alpine.data('wirekitReadingSpine', wirekitReadingSpine);
