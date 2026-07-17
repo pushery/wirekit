@@ -4,6 +4,15 @@
     'side' => 'left',
     'intent' => 'neutral',
     'edited' => false,
+    // Delivery ladder for an outgoing message: sending | sent | delivered |
+    // read | failed. Null (default) renders nothing — most threads only track
+    // status on the messages the current user sent.
+    'status' => null,
+    // When the status was reached (Carbon|string). Given → the status glyph
+    // carries a tooltip AND its accessible text reads "Read at 9:15 AM" instead
+    // of just "Read". Formatted with the same locale-aware short time as the
+    // message timestamp (or `timeFormat`).
+    'statusTime' => null,
     // How the actions slot is revealed. 'hover' (default) shows it on hover OR
     // keyboard focus; 'always' keeps it visible — the accessible path for touch
     // (no hover) and for surfaces where the actions should always be reachable.
@@ -97,6 +106,63 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
+    // Delivery status. Each rung carries its OWN text — the color and glyph are
+    // support, never the only signal (WCAG 1.4.1). `failed` shows its text
+    // VISIBLY because it needs the user to act; the rest are visually a glyph
+    // and announce their wording to assistive technology.
+    $statusValue = ($status === null || $status === '')
+        ? null
+        : (in_array($status, ['sending', 'sent', 'delivered', 'read', 'failed'], true)
+            ? $status
+            : WireKit::validateProp('message', 'status', $status, ['sending', 'sent', 'delivered', 'read', 'failed']));
+
+    $statusText = match ($statusValue) {
+        'sending' => __('Sending'),
+        'sent' => __('Sent'),
+        'delivered' => __('Delivered'),
+        'read' => __('Read'),
+        'failed' => __('Failed to send'),
+        default => null,
+    };
+
+    $statusIcon = match ($statusValue) {
+        'sending' => 'refresh',
+        'sent', 'delivered', 'read' => 'check',
+        'failed' => 'danger',
+        default => null,
+    };
+
+    // Delivery convention shared by every messaging app (WhatsApp / Telegram /
+    // iMessage): ONE check = sent to the server, TWO checks = delivered to the
+    // recipient, two ACCENT checks = read. delivered + read render the
+    // double-check glyph; the rung color ($statusClass) is what separates read
+    // (accent) from delivered (muted). sent keeps the single check.
+    $statusDouble = in_array($statusValue, ['delivered', 'read'], true);
+
+    $statusClass = match ($statusValue) {
+        'sending', 'sent' => 'text-[color:var(--color-wk-text-subtle)]',
+        'delivered' => 'text-[color:var(--color-wk-text-muted)]',
+        'read' => 'text-[color:var(--color-wk-accent)]',
+        'failed' => 'text-[color:var(--color-wk-danger-text)]',
+        default => '',
+    };
+
+    // Status time. When given, the glyph's accessible text and tooltip read
+    // "Read at 9:15 AM" — the WHEN behind the rung. Same locale-aware format as
+    // the message timestamp; an explicit timeFormat overrides.
+    $statusTimeText = '';
+    if ($statusValue !== null && $statusTime !== null && $statusTime !== '') {
+        $statusCarbon = $statusTime instanceof Carbon ? $statusTime : Carbon::parse($statusTime);
+        $statusTimeText = $timeFormat !== null
+            ? $statusCarbon->format($timeFormat)
+            : $statusCarbon->isoFormat('LT');
+    }
+    $statusHasTime = $statusTimeText !== '';
+    // "Read at 9:15 AM" when a time is present, else just "Read".
+    $statusFullText = $statusHasTime && $statusText !== null
+        ? $statusText.' '.__('at').' '.$statusTimeText
+        : $statusText;
+
     $messageId = 'message-' . md5($authorName . ($timestamp ?? uniqid()));
 @endphp
 
@@ -144,6 +210,55 @@
         <div class="{{ $bubbleClasses }} rounded-[var(--radius-wk-lg)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)]">
             {{ $slot }}
         </div>
+
+        {{-- Delivery status. Glyph + color are support; the wording is always
+             present (visible for `failed`, announced otherwise), so the rung is
+             never conveyed by color alone. --}}
+        @if($statusValue)
+            {{-- The glyph. Double-check ✓✓ (delivered / read) is inline, not via
+                 the icon preset: the default heroicons set has no double-check
+                 glyph, and the rung must render regardless of which preset the
+                 developer installed. Decorative — the wording beside it carries
+                 the meaning; currentColor inherits the rung color. --}}
+            @php
+                $statusGlyph = $statusDouble
+                    ? '<svg data-wk-check-double xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 15" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" class="h-3 w-auto shrink-0" aria-hidden="true"><path d="M1 8.2 4.4 11.6 10.8 4.2" /><path d="M7 8.2 10.4 11.6 16.8 4.2" /></svg>'
+                    : null;
+            @endphp
+            @if($statusHasTime)
+                {{-- With a status time, the glyph gets a tooltip ("Read at 9:15
+                     AM"). The time is ALSO in the sr-only / visible text, so
+                     assistive technology gets it without the (mouse-only) hover —
+                     the tooltip is pure visual enhancement, no keyboard trap. --}}
+                <x-wirekit::tooltip :text="$statusFullText" :placement="$sideValue === 'right' ? 'left' : 'right'">
+                    <span
+                        data-wk-message-status
+                        data-status="{{ $statusValue }}"
+                        class="flex items-center gap-[var(--space-wk-xs,0.25rem)] text-[length:var(--text-wk-xs)] {{ $statusClass }}"
+                    >
+                        @if($statusGlyph){!! $statusGlyph !!}@else<x-wirekit::icon :name="$statusIcon" size="xs" aria-hidden="true" />@endif
+                        @if($statusValue === 'failed')
+                            <span>{{ $statusFullText }}</span>
+                        @else
+                            <span class="sr-only">{{ $statusFullText }}</span>
+                        @endif
+                    </span>
+                </x-wirekit::tooltip>
+            @else
+                <span
+                    data-wk-message-status
+                    data-status="{{ $statusValue }}"
+                    class="flex items-center gap-[var(--space-wk-xs,0.25rem)] text-[length:var(--text-wk-xs)] {{ $statusClass }}"
+                >
+                    @if($statusGlyph){!! $statusGlyph !!}@else<x-wirekit::icon :name="$statusIcon" size="xs" aria-hidden="true" />@endif
+                    @if($statusValue === 'failed')
+                        <span>{{ $statusText }}</span>
+                    @else
+                        <span class="sr-only">{{ $statusText }}</span>
+                    @endif
+                </span>
+            @endif
+        @endif
 
         {{-- Reactions slot --}}
         @if(isset($reactions))

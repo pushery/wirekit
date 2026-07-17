@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.13.0 — MIT License
+ * WireKit CSS v2.14.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -200,6 +200,13 @@
     /* ─── Motion ─── */
     --transition-wk-duration: 150ms;
     --transition-wk-easing: cubic-bezier(0.4, 0, 0.2, 1);
+    /* Text-glyph shimmer (<x-wirekit::shimmer>). Override any of these per
+       instance via the same custom property on the element's inline style.
+       `band` is the HALF-WIDTH (in ch) of the bright traveling highlight;
+       `angle` tilts the band. */
+    --shimmer-wk-duration: 2s;
+    --shimmer-wk-band: 3ch;
+    --shimmer-wk-angle: 105deg;
 
     /* ─── Motion presets (v1.6.0+) ─── */
     /* Duration scale — drives wk-animate-* utilities and the wirekitAnimate Alpine helper.
@@ -252,6 +259,9 @@
     --size-wk-md: 2.5rem;
     --size-wk-lg: 3rem;
     --size-wk-xl: 6rem;
+    /* Depth of the scroll-area edge fade (<x-wirekit::scroll-area fade="…">).
+       Override globally in :root or per instance via inline style. */
+    --fade-wk-size: 2rem;
 
     /* ─── Horizontal Padding (Inputs, Buttons, Overlays) ─── */
     --padding-wk-x-xs: 0.375rem;
@@ -479,6 +489,64 @@
 /* Corner piece where horizontal and vertical scrollbars meet */
 .wk-scrollbar::-webkit-scrollbar-corner {
     background: var(--color-wk-scrollbar-track);
+}
+
+/* ─── Scroll-fade utility (<x-wirekit::scroll-area fade="…">) ── */
+/* Masks the overflow edge(s) along the scroll axis so the CONTENT itself   */
+/* dissolves — unlike a colored overlay gradient this adapts to ANY         */
+/* background automatically (nothing to keep in sync with the surface).     */
+/* Edge depth is token-driven via --fade-wk-size.                            */
+/*                                                                          */
+/* The `#000` in each gradient is the mask's ALPHA channel, not a themeable */
+/* color: a mask-image only reads opacity (opaque = keep, transparent =     */
+/* hide). Same exception class as the color-picker's HSV apparatus — a      */
+/* --color-wk-* token here would be meaningless and would break the mask.   */
+/*                                                                          */
+/* a11y: the mask is dropped entirely on :focus-within so a keyboard-       */
+/* focused child near an edge can never be faded out from under the user    */
+/* (WCAG 2.4.7 Focus Visible). Static — no animation, so nothing to gate    */
+/* behind prefers-reduced-motion.                                            */
+/* RTL: the x-axis start/end map to physical left/right today; logical      */
+/* mapping lands with the RTL/direction work.                                */
+.wk-scroll-fade[data-fade-axis="y"][data-fade="both"] {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-wk-size), #000 calc(100% - var(--fade-wk-size)), transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-wk-size), #000 calc(100% - var(--fade-wk-size)), transparent 100%);
+}
+.wk-scroll-fade[data-fade-axis="y"][data-fade="start"] {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-wk-size));
+    mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-wk-size));
+}
+.wk-scroll-fade[data-fade-axis="y"][data-fade="end"] {
+    -webkit-mask-image: linear-gradient(to top, transparent 0, #000 var(--fade-wk-size));
+    mask-image: linear-gradient(to top, transparent 0, #000 var(--fade-wk-size));
+}
+.wk-scroll-fade[data-fade-axis="x"][data-fade="both"] {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-wk-size), #000 calc(100% - var(--fade-wk-size)), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-wk-size), #000 calc(100% - var(--fade-wk-size)), transparent 100%);
+}
+.wk-scroll-fade[data-fade-axis="x"][data-fade="start"] {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-wk-size));
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-wk-size));
+}
+.wk-scroll-fade[data-fade-axis="x"][data-fade="end"] {
+    -webkit-mask-image: linear-gradient(to left, transparent 0, #000 var(--fade-wk-size));
+    mask-image: linear-gradient(to left, transparent 0, #000 var(--fade-wk-size));
+}
+/* Specificity note: the edge rules above are (0,3,0) — one class + two
+   attribute selectors. This reveal MUST out-specify them or it silently never
+   applies (a browser test caught exactly that), hence matching both attributes
+   here for (0,4,0). */
+.wk-scroll-fade[data-fade-axis][data-fade]:focus-within {
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+/* ─── Attachment group (row orientation) ──────────────────── */
+/* Row groups scroll-snap their children. The rule lives here rather   */
+/* than as a Tailwind arbitrary variant on the group, so it applies to */
+/* WHATEVER children the developer passes and stays statically         */
+/* traceable for the drift auditor.                                     */
+[data-wk-attachment-group][data-orientation="row"] > * {
+    scroll-snap-align: start;
 }
 
 /* ─── Scroll-shadow utility ───────────────────────────────── */
@@ -728,6 +796,44 @@
 }
 
 /* ─── Prose <pre> scrollbar theming ────────────────────────── */
+/* ─── Prose readability presets (<x-wirekit::prose preset="…">) ── */
+/* Tunings layered on top of size/density/measure. Leading is the point: a  */
+/* font-size bump alone makes large text read WORSE, so every preset moves  */
+/* size and leading together.                                                */
+.wk-prose[data-preset='chat'] {
+    line-height: 1.55;
+    /* A chat bubble already caps its own line length; a measure clamp on top
+       would only fight the bubble, so the preset does not add one. */
+}
+
+.wk-prose[data-preset='reading'] {
+    line-height: 1.75;
+}
+
+.wk-prose[data-preset='large'] {
+    font-size: var(--text-wk-lg);
+    line-height: 1.9;
+}
+
+/* Above-baseline progressive enhancement (house rule: feature-detected, purely
+   additive, nothing depends on it). Browsers without text-wrap simply get the
+   normal wrapping they always got — no shim, no fallback branch. */
+@supports (text-wrap: pretty) {
+    .wk-prose p,
+    .wk-prose li {
+        text-wrap: pretty;
+    }
+}
+
+@supports (text-wrap: balance) {
+    .wk-prose h1,
+    .wk-prose h2,
+    .wk-prose h3,
+    .wk-prose h4 {
+        text-wrap: balance;
+    }
+}
+
 /* Markdown-style prose code blocks (`<pre>` children of `.wk-prose`)
    inherit the themed scrollbar treatment. Without this, the prose
    component's `[&_pre]:overflow-x-auto` Tailwind utility produces a
@@ -828,6 +934,108 @@
 }
 .wk-skeleton[data-animation="none"] {
     animation: none;
+}
+
+/* ─── Text shimmer (<x-wirekit::shimmer>) ──────────────────── */
+/* A shimmer sweep that runs ACROSS the letterforms of live text  */
+/* (NOT a gray skeleton block): the gradient is clipped to the     */
+/* glyphs via background-clip:text, so real copy — "Generating     */
+/* response…" — reads as a shimmering loading affordance. The text */
+/* stays in the DOM and is announced by screen readers; the        */
+/* shimmer is purely decorative. Duration is token-driven          */
+/* (--shimmer-wk-duration) and overridable per instance.           */
+.wk-text-shimmer {
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+
+    /* Two layers, both clipped to the glyphs. A static (slightly dimmed) fill
+       underneath keeps the text readable at every frame; a bright band on top
+       travels across it — the highlight. Adapted from jh3y's "fluid" shimmer, but
+       token-driven (no hardcoded colors) and tuned to one band rather than a
+       rainbow. The band width is in `ch`, so it stays a couple of glyphs wide
+       whatever the text size — not a fixed fraction of the line.
+
+       The band carries a full-brightness PLATEAU across its central half (not a
+       single-point peak), so several glyphs light at once — a bolder, more
+       visible sweep — and the resting fill is dimmed a touch toward the surface
+       so the highlight pops harder against it. Both stay readable at every
+       frame. */
+    background-image:
+        linear-gradient(
+            var(--shimmer-wk-angle, 105deg),
+            transparent calc(50% - var(--shimmer-wk-band, 3ch)),
+            var(--color-wk-text) calc(50% - var(--shimmer-wk-band, 3ch) / 2),
+            var(--color-wk-text) calc(50% + var(--shimmer-wk-band, 3ch) / 2),
+            transparent calc(50% + var(--shimmer-wk-band, 3ch))
+        ),
+        linear-gradient(
+            color-mix(in oklab, var(--color-wk-text-muted) 88%, var(--color-wk-bg)),
+            color-mix(in oklab, var(--color-wk-text-muted) 88%, var(--color-wk-bg))
+        );
+    background-repeat: no-repeat;
+    background-size: 250% 100%, 100% 100%;
+    background-position: 125% 0, 0 0;
+    animation: wk-text-shimmer var(--shimmer-wk-duration) ease-in-out infinite;
+    will-change: background-position;
+}
+
+@keyframes wk-text-shimmer {
+    /* Only the band layer (the first background-position pair) moves — the muted
+       fill stays put. From fully off the right edge to fully off the left. */
+    to { background-position: -25% 0, 0 0; }
+}
+
+/* forced-colors (Windows High Contrast): transparent-fill + clipped */
+/* gradient would erase the text entirely — restore a solid,         */
+/* system-colored glyph. Most text-shimmer implementations omit    */
+/* this forced-colors fallback.                                     */
+@media (forced-colors: active) {
+    .wk-text-shimmer {
+        animation: none;
+        background-image: none;
+        color: currentColor;
+        -webkit-text-fill-color: currentColor;
+    }
+}
+
+/* prefers-reduced-transparency: the transparent glyph fill IS a      */
+/* transparency effect — restore solid inherited-color text.         */
+@media (prefers-reduced-transparency: reduce) {
+    .wk-text-shimmer {
+        animation: none;
+        background-image: none;
+        color: currentColor;
+        -webkit-text-fill-color: currentColor;
+    }
+}
+/* ─── Typing indicator (<x-wirekit::message-typing>) ───────── */
+/* Three dots that bounce in sequence — the universal "someone is    */
+/* composing" affordance. Purely decorative: the bubble carries a     */
+/* visually-hidden "… is typing…" text, so a reduced-motion user      */
+/* (dots frozen below) loses no information at all.                    */
+.wk-typing-dots {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.wk-typing-dot {
+    width: 0.375rem;
+    height: 0.375rem;
+    border-radius: var(--radius-wk-full);
+    background: var(--color-wk-text-subtle);
+    animation: wk-typing-bounce 1.2s infinite ease-in-out;
+}
+
+/* Stagger the three dots into a wave. */
+.wk-typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.wk-typing-dot:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes wk-typing-bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-25%); opacity: 1; }
 }
 
 /* ─── Avatar group (stacked / overlapping) ─────────────────── */
@@ -934,6 +1142,63 @@
 @keyframes wk-progress-indeterminate {
     0% { left: -40%; }
     100% { left: 100%; }
+}
+
+/* ─── Animated determinate fill (opt-in via `animation` prop) ──── */
+/* Overlay a moving highlight on the colored fill to signal "work in */
+/* flight" (uploads, streaming). The highlight is a translucent white */
+/* — an intrinsic motion effect ON the colored fill, the same class   */
+/* of raw value as the --shadow-wk-* rgba() overlays, not themeable    */
+/* chrome. Both are gated by prefers-reduced-motion below.             */
+
+/* stripes — the barber-pole. Diagonal translucent bands scroll along  */
+/* the fill. Frozen (but still visible as static stripes) under        */
+/* reduced-motion, so the affordance survives without the movement.    */
+.wk-progress-stripes {
+    background-image: repeating-linear-gradient(
+        45deg,
+        rgba(255, 255, 255, 0.22) 0,
+        rgba(255, 255, 255, 0.22) 0.5rem,
+        transparent 0.5rem,
+        transparent 1rem
+    );
+    background-size: 1.414rem 1.414rem;
+    animation: wk-progress-stripes 1s linear infinite;
+}
+
+@keyframes wk-progress-stripes {
+    from { background-position: 0 0; }
+    to { background-position: 1.414rem 0; }
+}
+
+/* shimmer — a single light sweep crosses the fill on a loop. The      */
+/* ::after carries the sweep so the fill's own background is untouched. */
+.wk-progress-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.wk-progress-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0,
+        rgba(255, 255, 255, 0.38) 50%,
+        transparent 100%
+    );
+    transform: translateX(-100%);
+    animation: wk-progress-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes wk-progress-shimmer {
+    to { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wk-progress-stripes { animation: none; }
+    .wk-progress-shimmer::after { content: none; }
 }
 
 /* ─── Circular progress indeterminate ─────────────────────── */
@@ -2408,7 +2673,9 @@
     .wk-skeleton::after,
     .wk-skeleton[data-pulse="true"],
     .wk-progress-indeterminate,
-    .wk-progress-circle-indeterminate {
+    .wk-progress-circle-indeterminate,
+    .wk-text-shimmer,
+    .wk-typing-dot {
         animation: none;
     }
     /* Neutralize transition-* utilities used by WireKit overlays, tooltips,

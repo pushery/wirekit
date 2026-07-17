@@ -142,6 +142,10 @@ return [
         'stat' => ['animate' => false],
         'skeleton' => ['animation' => 'shimmer'],
         'spinner' => ['size' => 'md', 'intent' => null],
+        'assistant-message' => ['announce' => 'sentence'],
+        'conversation' => ['max-height' => '24rem'],
+        'scroll-area' => ['fade' => false],
+        'shimmer' => ['active' => true, 'duration' => null],
 
         // Overlay components
         'dropdown' => ['placement' => 'bottom-start', 'offset' => 8],

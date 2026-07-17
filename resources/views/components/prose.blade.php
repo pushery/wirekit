@@ -21,6 +21,18 @@
     //   `wide` — ~78ch via --measure-wk-wide.
     //   `none` — no clamp (full container width; the pre-v2.10.0 behavior).
     'measure' => 'default',
+    // `preset` — a readability tuning applied on top of size/density/measure.
+    // Kept as its OWN axis (a data-preset attribute + CSS) rather than a bundle
+    // of prop defaults, so it composes with the existing props instead of
+    // fighting them for precedence — the same shape as `measure`.
+    //   `null` (default) — no tuning.
+    //   `chat` — tight leading for a message bubble; the bubble already caps
+    //       the line length, so the measure clamp would only fight it.
+    //   `reading` — long-form: roomier leading for sustained reading.
+    //   `large` — accessibility: bigger body text AND roomier leading, for
+    //       users who scale text up. Not just a font-size bump: leading has to
+    //       grow with it or large text reads worse, not better.
+    'preset' => null,
     'scope' => null,
 ])
 
@@ -35,6 +47,12 @@
     // pre-v2.0.0 scale (back-compat default); `compact` tightens the
     // h2/h3 mt + p mb tokens so the prose fits marketing-page rhythm
     // without developer-side overrides.
+    $presetValue = ($preset === null || $preset === '')
+        ? null
+        : (in_array($preset, ['chat', 'reading', 'large'], true)
+            ? $preset
+            : WireKit::validateProp('prose', 'preset', $preset, ['chat', 'reading', 'large']));
+
     $densityClasses = match ($density) {
         'comfortable' => [
             '[&_h1]:text-[length:var(--text-wk-2xl)] [&_h1]:mt-0 [&_h1]:mb-[var(--padding-wk-y-md)]',
@@ -141,6 +159,6 @@
     };
 @endphp
 
-<div @if($measureAttr) data-measure="{{ $measureAttr }}" @endif {{ $attributes->class([$classes, $sizeClasses, $variantClasses]) }}>
+<div @if($measureAttr) data-measure="{{ $measureAttr }}" @endif @if($presetValue) data-preset="{{ $presetValue }}" @endif {{ $attributes->class([$classes, $sizeClasses, $variantClasses]) }}>
     {{ $slot }}
 </div>
