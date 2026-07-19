@@ -24,6 +24,8 @@ import wirekitMenubar from './components/menubar.js';
 import wirekitNavigationMenu from './components/navigation-menu.js';
 import wirekitAlertDialog from './components/alert-dialog.js';
 import wirekitCarousel from './components/carousel.js';
+import wirekitThemeController from './components/theme-controller.js';
+import wirekitFab from './components/fab.js';
 import wirekitCalendar from './components/calendar.js';
 import wirekitTableSort from './components/table-sort.js';
 import wirekitTour from './components/tour.js';
@@ -74,6 +76,8 @@ function registerComponents() {
     Alpine.data('wirekitAlertDialog', wirekitAlertDialog);
     Alpine.data('wirekitTableSort', wirekitTableSort);
     Alpine.data('wirekitCarousel', wirekitCarousel);
+    Alpine.data('wirekitThemeController', wirekitThemeController);
+    Alpine.data('wirekitFab', wirekitFab);
     Alpine.data('wirekitCalendar', wirekitCalendar);
     Alpine.data('wirekitTour', wirekitTour);
     Alpine.data('wirekitResizableHandle', wirekitResizableHandle);

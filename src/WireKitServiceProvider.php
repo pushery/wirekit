@@ -177,6 +177,40 @@ class WireKitServiceProvider extends ServiceProvider
             ?>';
         });
 
+        // @wirekitThemeScript — the no-FOUC head script.
+        //
+        // Applies the stored theme BEFORE the first paint. This has to be an
+        // inline, synchronous script in <head>: any deferred or external script
+        // runs after the browser has already painted the light theme, and the
+        // reader sees a white flash before the page turns dark. That flash is
+        // the entire reason this directive exists, and it is why the script
+        // cannot be folded into the main bundle.
+        //
+        // Takes an optional CSP nonce: @wirekitThemeScript($nonce). Apps without
+        // a CSP pass nothing.
+        Blade::directive('wirekitThemeScript', function ($expression) {
+            $expression = trim($expression);
+            $nonceExpr = $expression === '' ? "''" : $expression;
+
+            return '<?php
+                $__wk_nonce = '.$nonceExpr.';
+                $__wk_key = config("wirekit.theme.storage_key", "wirekit-theme");
+                $__wk_nonceAttr = $__wk_nonce ? \' nonce="\' . e($__wk_nonce) . \'"\' : "";
+                echo \'<script\' . $__wk_nonceAttr . \'>\'
+                    . \'(function(){try{var s=localStorage.getItem(\' . json_encode($__wk_key) . \');\'
+                    // No stored choice means follow the OS — a first visit should
+                    // look like the rest of the reader\'s machine, not like our
+                    // default. An explicit choice always wins over the OS.
+                    . \'var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);\'
+                    . \'document.documentElement.classList.toggle("dark",d);\'
+                    // localStorage throws in private mode and when storage is
+                    // disabled entirely. Swallowing it leaves the OS preference
+                    // in charge, which is the right fallback — never a broken page.
+                    . \'}catch(e){}})();\'
+                    . \'</scr\' . \'ipt>\' . "\n";
+            ?>';
+        });
+
         // @wirekitScripts — outputs a <script> tag for the configured JS bundle.
         // Same two-tier staleness-detection + cache-busting strategy as
         // @wirekitStyles above. See that directive for the full rationale.

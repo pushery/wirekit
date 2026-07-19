@@ -1,3 +1,9 @@
+{{-- DEPRECATED: superseded by the radial-progress component, which is the canonical
+     radial (circular) progress — richer (threshold coloring, valueText, a required
+     accessible name) and consistently named. This sub-component still renders for
+     back-compat; it will be removed in v3.0.0. New code should use radial-progress.
+     (Component tag omitted from this comment on purpose — Blade compiles component
+     tags even inside comments.) --}}
 @props([
     'value' => null,
     'max' => 100,

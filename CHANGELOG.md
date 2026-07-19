@@ -10,6 +10,51 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.16.0] — 2026-07-19
+
+**Feature release.** Interaction and motion polish across the component set, plus a bento grid that reflows on its own width.
+
+### Added
+
+- **[Toggle Button](https://docs.wirekit.app/components/toggle-button) — `self-toggle`.** An opt-in mode where the button flips its own pressed state on click, so a formatting toolbar works with no wiring. The controlled form (the pressed state lives in your app) stays the default.
+- **[Announcement Banner](https://docs.wirekit.app/components/announcement-banner) — `persist`.** Turn it off for a session-only bar: dismissible without a key, and it reappears next visit instead of being remembered.
+- **[Progress Radial](https://docs.wirekit.app/components/radial-progress) — `animate`.** Sweeps the fill from empty to its value on first paint and animates later value changes instead of snapping, gated by `prefers-reduced-motion`.
+- **[Bottom Nav](https://docs.wirekit.app/components/bottom-nav) — `interactive`.** An opt-in mode that tracks the current tab client-side — clicking a tab marks it active with no page load.
+
+### Changed
+
+- **[Bento Grid](https://docs.wirekit.app/components/bento-grid) reflows on its own width, not the window's.** It is now a container query: cells collapse to a single stacked column when the grid itself is narrow — a sidebar, a card, a split view — independent of the viewport, and reclaim their spans once the grid is wide enough.
+
+### Fixed
+
+- **[Progress](https://docs.wirekit.app/components/progress) — label and value no longer jam at narrow widths.** The label / value row gained a column gap so the two can never touch.
+
+## [2.15.0] — 2026-07-18
+
+**Feature release.** A broad set of marketing, ecommerce, control and mobile components — the blocks a landing page, a store, and a mobile app-shell were missing — plus SEO structured-data builders and a drop-in dark-mode toggle. All additive; one existing component (Carousel) was rebuilt on a more robust foundation with no API break.
+
+### Added
+
+- **[Pricing Table](https://docs.wirekit.app/components/pricing-table).** The plan grid — tiers, features, a highlighted plan, monthly/annual framing — the shape a SaaS pricing page needs, composed from tokens rather than a bespoke layout.
+- **[Testimonial](https://docs.wirekit.app/components/testimonial).** A cited quote with author, role, avatar and an optional read-only star rating (announced as a single record, never an operable control), plus a grid to lay several out.
+- **[FAQ](https://docs.wirekit.app/components/faq).** An accordion of questions that emits `FAQPage` JSON-LD **derived from what it actually rendered** — the structured data can't drift from the visible copy because it is generated from it.
+- **[Logo Cloud](https://docs.wirekit.app/components/logo-cloud)** and **[Team Section](https://docs.wirekit.app/components/team-section).** The two marketing blocks WireKit had no exemplar for — a "trusted by" logo strip and a people grid.
+- **[Announcement Banner](https://docs.wirekit.app/components/announcement-banner).** A dismissible page-edge bar (top or bottom) with a persisted dismissal and an optional inline CTA.
+- **[Bento Grid](https://docs.wirekit.app/components/bento-grid).** An asymmetric feature showcase — cells span a real column/row ladder; an unknown span degrades to a normal cell rather than a broken track claim.
+- **[Mockup](https://docs.wirekit.app/components/mockup).** Frame chrome — browser, window, code, phone and tablet — for screenshots and demos. Every surface, border and shadow is a design token, so the frame follows the theme; the chrome is decorative and hidden from assistive technology.
+- **[Product Card](https://docs.wirekit.app/components/product-card).** The ecommerce keystone — image, price with an optional compare-at, rating, stock state, and a call-to-action.
+- **[Button Group](https://docs.wirekit.app/components/button-group).** Welds adjacent controls (buttons, an input + button) into one unit — inner radii collapsed to a single seam, RTL-safe via logical properties.
+- **[Toggle Button](https://docs.wirekit.app/components/toggle-button).** An `aria-pressed` toggle — a button that stays down, for a single on/off state.
+- **[Indicator](https://docs.wirekit.app/components/indicator).** A corner-badge positioner — a count or dot that rides the corner of any element (an avatar, an icon button) via logical insets.
+- **[Radial Progress](https://docs.wirekit.app/components/radial-progress).** A circular progress ring — a real `progressbar` with the value announced, drawn from tokens.
+- **[Bottom Nav](https://docs.wirekit.app/components/bottom-nav)** and **[FAB](https://docs.wirekit.app/components/fab).** The two mobile app-shell pieces WireKit was missing — a fixed bottom tab bar and a floating action button that fans out into secondary actions (keyboard-operable).
+- **[Theme Controller](https://docs.wirekit.app/components/theme-controller)** and **[Swap](https://docs.wirekit.app/components/swap).** Drop-in dark mode — a control that toggles the theme with no wiring and no flash-of-wrong-theme, and a `swap` primitive that cross-fades between two states (the sun/moon icon being the canonical case).
+- **Schema builders.** Typed PHP builders for schema.org JSON-LD (the same engine the FAQ block uses to derive its `FAQPage` data), for emitting structured data from your own components.
+
+### Changed
+
+- **[Carousel](https://docs.wirekit.app/components/carousel) was rebuilt on native scroll-snap.** The slider now rides the browser's own scroll-snap instead of a JavaScript transform, so it is smoother, keyboard- and touch-native, and lighter; autoplay gained a stop button, and a `perView` shows 2–4 slides at once. No API break — existing usage keeps working.
+
 ## [2.14.0] — 2026-07-18
 
 **Feature release.** The Chat / AI Conversation suite: six new components for building chat transcripts and AI-native surfaces, plus fade, delivery-status, readability, animated-progress and copy-affordance additions to existing components. All additive — nothing changes for existing components — with one accessibility fix to the rating component.

@@ -86,9 +86,26 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Theme
+    |--------------------------------------------------------------------------
+    |
+    | Where the theme-controller stores the reader's choice. The key is shared
+    | by the control and by the @wirekitThemeScript head script — they must agree
+    | or the page paints one theme and then switches to the other.
+    |
+    */
+    'theme' => [
+        'storage_key' => env('WIREKIT_THEME_STORAGE_KEY', 'wirekit-theme'),
+    ],
+
     'components' => [
         // Form components
         'button' => ['intent' => 'primary', 'surface' => 'filled', 'size' => 'md'],
+        'swap' => ['effect' => 'fade'],
+        'theme-controller' => ['variant' => 'button'],
+        'fab' => ['position' => 'end'],
         'button.group' => [],
         'input' => ['size' => 'md'],
         'label' => [],

@@ -141,8 +141,18 @@
                      stars". Naming each star would repeat the score five times. --}}
                 <span aria-hidden="true" class="cursor-default">
                     @if($isPartial)
-                        {{-- Partial icon: two overlapping SVGs — empty behind, filled clipped in front --}}
-                        <span class="relative inline-block {{ $iconSize }}">
+                        {{-- Partial icon: two overlapping SVGs — empty behind, filled clipped in front.
+
+                             `block`, NOT `inline-block`: every full/empty star is a
+                             bare <svg>, which Preflight renders display:block, so they
+                             sit flush at the top of the flex item. An inline-block
+                             wrapper instead baseline-aligns against the surrounding
+                             line box, so whenever the strut's ascent (driven by the
+                             INHERITED line-height) exceeds the icon height, the partial
+                             star drops by the difference — measured 4px low at
+                             size="sm" inside a product card. Block-level makes its box
+                             model identical to its siblings. --}}
+                        <span class="relative block {{ $iconSize }}">
                             {{-- Empty icon background --}}
                             <svg aria-hidden="true" class="{{ $iconSize }} text-[color:var(--color-wk-text-subtle)] fill-none absolute inset-0" viewBox="{{ $shape['viewBox'] }}" stroke="currentColor" stroke-width="1.5">
                                 <path d="{{ $shape['path'] }}"/>

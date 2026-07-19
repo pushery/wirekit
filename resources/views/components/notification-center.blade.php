@@ -65,7 +65,17 @@
         class="relative inline-flex items-center justify-center h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
     >
         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
-        {{-- Unread count pill (decorative — the count is in the bell's aria-label). --}}
+        {{-- Unread count pill (decorative — the count is in the bell's aria-label).
+
+             INTENTIONALLY hand-rolled, NOT <x-wirekit::indicator> + <x-wirekit::badge>
+             (maintainer decision 2026-07-18): a bell count wants a compact pill
+             anchored at the BUTTON corner. The indicator would anchor at the icon
+             corner (~10px inward) and badge's smallest size is a step taller — both
+             are visible changes we deliberately declined. Do NOT "dedupe" this into
+             the indicator; the compact custom pill is the choice.
+
+             (No literal Tailwind class names in this comment on purpose — Tailwind's
+             @source scans comments as text and would compile any class named here.) --}}
         <span
             x-show="unreadCount > 0"
             x-cloak
