@@ -105,8 +105,13 @@
          and to pin the decoration color to text-muted (border-token is too
          faint at 91% lightness to read as a strike). --}}
     @if($formattedBase !== null)
+        {{-- The compare-at matches the main price SIZE (same $sizeClasses); the
+             de-emphasis comes from the muted color + the strike, not a smaller
+             font. A one-step-smaller old price read as odd next to the current
+             one — equal size keeps the pair balanced while the strike still says
+             which is the old number. --}}
         <del
-            class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]"
+            class="text-[color:var(--color-wk-text-muted)] {{ $sizeClasses }}"
             style="text-decoration: line-through; text-decoration-color: var(--color-wk-text-muted); text-decoration-thickness: from-font;"
         >
             <bdi>{{ $formattedBase }}</bdi>

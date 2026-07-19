@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.14.0 — MIT License
+ * WireKit CSS v2.16.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -207,6 +207,10 @@
     --shimmer-wk-duration: 2s;
     --shimmer-wk-band: 3ch;
     --shimmer-wk-angle: 105deg;
+    /* Indicator badge (<x-wirekit::indicator>): how far the badge is nudged out
+       past its target's corner. 0 centers it exactly on the corner. Override per
+       instance via the same custom property on the element's inline style. */
+    --indicator-wk-offset: 0px;
 
     /* ─── Motion presets (v1.6.0+) ─── */
     /* Duration scale — drives wk-animate-* utilities and the wirekitAnimate Alpine helper.
@@ -1036,6 +1040,803 @@
 @keyframes wk-typing-bounce {
     0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
     30% { transform: translateY(-25%); opacity: 1; }
+}
+
+/* ─── Button group / join (<x-wirekit::button-group>) ──────── */
+/* Welds adjacent controls into ONE unit: inner corners squared off and the  */
+/* touching borders collapsed to a single hairline, so N buttons (or an      */
+/* input + button) read as a single control instead of a row of pills.       */
+/*                                                                           */
+/* Everything uses LOGICAL properties (border-start-start-radius,            */
+/* margin-inline-start) rather than left/right, so the weld mirrors          */
+/* correctly in RTL with no extra rules — right from day one.                */
+/*                                                                           */
+/* Applies to whatever children the developer passes (button, input, select),*/
+/* which is why it lives here instead of as a Tailwind arbitrary variant on  */
+/* the group.                                                                */
+/* Square the seam-facing corners on each child — AND on the bordered control
+   nested inside a composite child. A <x-wirekit::dropdown> wraps its trigger
+   button in a div, and <x-wirekit::input> wraps its <input> in a field div; the
+   wrapper carries no border, so squaring only `> *` left the actual control
+   rounded and the weld showed a rounded notch at the seam. Reaching the nested
+   button/input/select/textarea welds those too. */
+[data-wk-button-group][data-orientation="horizontal"] > *:not(:first-child):not(:last-child),
+[data-wk-button-group][data-orientation="horizontal"] > *:not(:first-child):not(:last-child) :where(button, input, select, textarea) {
+    border-radius: 0;
+}
+[data-wk-button-group][data-orientation="horizontal"] > *:first-child:not(:last-child),
+[data-wk-button-group][data-orientation="horizontal"] > *:first-child:not(:last-child) :where(button, input, select, textarea) {
+    border-start-end-radius: 0;
+    border-end-end-radius: 0;
+}
+[data-wk-button-group][data-orientation="horizontal"] > *:last-child:not(:first-child),
+[data-wk-button-group][data-orientation="horizontal"] > *:last-child:not(:first-child) :where(button, input, select, textarea) {
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+}
+/* Pull each neighbor onto its predecessor's border so the seam is one line,
+   not two stacked ones. */
+[data-wk-button-group][data-orientation="horizontal"] > *:not(:first-child) {
+    margin-inline-start: calc(var(--border-wk-width) * -1);
+}
+
+[data-wk-button-group][data-orientation="vertical"] > *:not(:first-child):not(:last-child),
+[data-wk-button-group][data-orientation="vertical"] > *:not(:first-child):not(:last-child) :where(button, input, select, textarea) {
+    border-radius: 0;
+}
+[data-wk-button-group][data-orientation="vertical"] > *:first-child:not(:last-child),
+[data-wk-button-group][data-orientation="vertical"] > *:first-child:not(:last-child) :where(button, input, select, textarea) {
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+}
+[data-wk-button-group][data-orientation="vertical"] > *:last-child:not(:first-child),
+[data-wk-button-group][data-orientation="vertical"] > *:last-child:not(:first-child) :where(button, input, select, textarea) {
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+}
+[data-wk-button-group][data-orientation="vertical"] > *:not(:first-child) {
+    margin-block-start: calc(var(--border-wk-width) * -1);
+}
+
+/* A focused control must paint its ring ABOVE its neighbors — otherwise the
+   negative margin above lets the next sibling clip the focus ring, which is
+   exactly the kind of quiet a11y regression a weld introduces. */
+[data-wk-button-group] > *:focus,
+[data-wk-button-group] > *:focus-visible,
+[data-wk-button-group] > *:focus-within {
+    position: relative;
+    z-index: 1;
+}
+
+/* ─── Indicator (<x-wirekit::indicator>) ───────────────────── */
+/* Anchors a count badge / status dot / ribbon to a corner of ANY target,   */
+/* so a bell, avatar or card stops needing hand-rolled                       */
+/* `absolute -top-1 -right-1 translate-x-…` — the raw-div pattern WireKit    */
+/* exists to replace.                                                        */
+/*                                                                           */
+/* Placement uses LOGICAL insets (inset-inline-start/end), so `end` is the   */
+/* right corner in LTR and the LEFT corner in RTL automatically — the badge   */
+/* follows the reading direction with no mirrored ruleset.                    */
+/*                                                                           */
+/* The badge is out of flow, so it never resizes the target it decorates.    */
+[data-wk-indicator] > [data-wk-indicator-badge] {
+    position: absolute;
+    display: inline-flex;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* pointer-events are restored for anything actually interactive inside. */
+[data-wk-indicator] > [data-wk-indicator-badge] a,
+[data-wk-indicator] > [data-wk-indicator-badge] button {
+    pointer-events: auto;
+}
+
+[data-wk-indicator][data-position="top-end"] > [data-wk-indicator-badge] {
+    inset-block-start: 0;
+    inset-inline-end: 0;
+    transform: translate(50%, -50%);
+    margin-inline-end: calc(var(--indicator-wk-offset) * -1);
+    margin-block-start: calc(var(--indicator-wk-offset) * -1);
+}
+[data-wk-indicator][data-position="top-start"] > [data-wk-indicator-badge] {
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    transform: translate(-50%, -50%);
+    margin-inline-start: calc(var(--indicator-wk-offset) * -1);
+    margin-block-start: calc(var(--indicator-wk-offset) * -1);
+}
+[data-wk-indicator][data-position="bottom-end"] > [data-wk-indicator-badge] {
+    inset-block-end: 0;
+    inset-inline-end: 0;
+    transform: translate(50%, 50%);
+    margin-inline-end: calc(var(--indicator-wk-offset) * -1);
+    margin-block-end: calc(var(--indicator-wk-offset) * -1);
+}
+[data-wk-indicator][data-position="bottom-start"] > [data-wk-indicator-badge] {
+    inset-block-end: 0;
+    inset-inline-start: 0;
+    transform: translate(-50%, 50%);
+    margin-inline-start: calc(var(--indicator-wk-offset) * -1);
+    margin-block-end: calc(var(--indicator-wk-offset) * -1);
+}
+
+/* RTL: `transform` is physical, so the translate must flip by hand — the
+   logical insets already moved the badge to the other corner, but the
+   half-step that centers it on that corner still points the old way. */
+[dir="rtl"] [data-wk-indicator][data-position="top-end"] > [data-wk-indicator-badge],
+[dir="rtl"] [data-wk-indicator][data-position="bottom-end"] > [data-wk-indicator-badge] {
+    transform: translate(-50%, var(--indicator-wk-translate-y));
+}
+[dir="rtl"] [data-wk-indicator][data-position="top-start"] > [data-wk-indicator-badge],
+[dir="rtl"] [data-wk-indicator][data-position="bottom-start"] > [data-wk-indicator-badge] {
+    transform: translate(50%, var(--indicator-wk-translate-y));
+}
+[data-wk-indicator][data-position^="top"] > [data-wk-indicator-badge] {
+    --indicator-wk-translate-y: -50%;
+}
+[data-wk-indicator][data-position^="bottom"] > [data-wk-indicator-badge] {
+    --indicator-wk-translate-y: 50%;
+}
+
+/* ─── Mockup frames (<x-wirekit::mockup>) ──────────────────── */
+/* Picture frames for a screenshot or a live composition: a browser window,  */
+/* a desktop window, a code editor, a phone, a tablet.                        */
+/*                                                                           */
+/* Every value is a design token, so a frame restyles with the theme instead */
+/* of being a hardcoded chrome drawing. Anti-slop: no gradient fake screens, */
+/* no invented brand chrome — the frame is a thin neutral surround and the    */
+/* content inside is the point.                                               */
+.wk-mockup {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--color-wk-bg-elevated);
+    border: var(--border-wk-width) solid var(--color-wk-border);
+    border-radius: var(--radius-wk-lg);
+    box-shadow: var(--shadow-wk-md);
+}
+
+.wk-mockup > [data-wk-mockup-bar] {
+    display: flex;
+    align-items: center;
+    gap: var(--gap-wk-sm);
+    padding: var(--padding-wk-y-sm) var(--padding-wk-x-md);
+    background: var(--color-wk-bg-muted);
+    border-block-end: var(--border-wk-width) solid var(--color-wk-border);
+}
+
+.wk-mockup [data-wk-mockup-dots] {
+    display: inline-flex;
+    gap: 0.375rem;
+    flex-shrink: 0;
+}
+
+/* The three lights are a genre convention, not a status signal — they stay
+   neutral rather than red/amber/green, because a colored dot in a WireKit
+   surface reads as state elsewhere in the system. */
+.wk-mockup [data-wk-mockup-dot] {
+    width: 0.625rem;
+    height: 0.625rem;
+    border-radius: var(--radius-wk-full);
+    background: var(--color-wk-border);
+}
+
+/* The address / filename plate. */
+.wk-mockup [data-wk-mockup-label] {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: center;
+    font-size: var(--text-wk-xs);
+    color: var(--color-wk-text-muted);
+    font-family: var(--font-wk-sans);
+}
+
+.wk-mockup[data-variant="browser"] [data-wk-mockup-label] {
+    background: var(--color-wk-bg);
+    border: var(--border-wk-width) solid var(--color-wk-border);
+    border-radius: var(--radius-wk-full);
+    padding: 0.125rem var(--padding-wk-x-md);
+}
+
+/* A code frame's plate is a filename tab: start-aligned, monospace. */
+.wk-mockup[data-variant="code"] [data-wk-mockup-label] {
+    text-align: start;
+    font-family: var(--font-wk-mono);
+}
+
+/* The mockup frame already IS the chrome — border, radius, title bar. A code-block
+   dropped into a code frame must go flush inside it, or its own border + radius
+   draw a second rounded box inside the first (a visible double-frame with a gap).
+   The frame owns the outer shell; the nested block fills it edge to edge. */
+.wk-mockup[data-variant="code"] > [data-wk-mockup-screen] [data-wk-code-block] {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.wk-mockup > [data-wk-mockup-screen] {
+    min-width: 0;
+    flex: 1;
+}
+
+/* Device frames: a thicker surround and a rounder shell, no top bar. */
+.wk-mockup[data-variant="phone"],
+.wk-mockup[data-variant="tablet"] {
+    position: relative;
+    padding: var(--padding-wk-x-sm);
+    background: var(--color-wk-bg-inverse);
+    border-radius: 2rem;
+}
+
+.wk-mockup[data-variant="tablet"] {
+    border-radius: 1.25rem;
+}
+
+/* Device frames need an intrinsic shape, or they collapse to the size of whatever
+   snippet is inside — a phone rendered as a tiny square. A sensible default width
+   plus a portrait MIN-HEIGHT makes the shell read as a device even when the content
+   is small. min-height, not aspect-ratio on the screen, is the point: the screen is
+   a flex item whose `overflow: hidden` pins its automatic min-height to 0, so an
+   aspect-ratio would WIN over content height and CLIP a taller composition (a real
+   screenshot / stacked components). A min-height on the frame is a FLOOR instead —
+   small content gets the phone shape, taller content grows the shell rather than
+   being cut. max-width: 100% keeps the frame inside a phone viewport. All overridable
+   via width / height on the element. */
+.wk-mockup[data-variant="phone"] {
+    width: 15rem;
+    max-width: 100%;
+    min-height: 30rem;
+}
+.wk-mockup[data-variant="tablet"] {
+    width: 22rem;
+    max-width: 100%;
+    min-height: 28rem;
+}
+
+/* Chrome-bar frames (browser / window / code) are a desktop-app shape — give them a
+   realistic default width so the framed content shows at a sensible size instead of
+   collapsing to the width of a small snippet in the docs preview box. max-width: 100%
+   keeps it responsive; override via width / max-width on the element. */
+.wk-mockup[data-variant="browser"],
+.wk-mockup[data-variant="window"],
+.wk-mockup[data-variant="code"] {
+    width: 34rem;
+    max-width: 100%;
+}
+
+.wk-mockup[data-variant="phone"] > [data-wk-mockup-screen],
+.wk-mockup[data-variant="tablet"] > [data-wk-mockup-screen] {
+    overflow: hidden;
+    background: var(--color-wk-bg);
+}
+/* Concentric corners: the screen radius is the frame's OUTER radius minus the frame
+   padding, so the inner rounding runs parallel to the outer shell instead of reading
+   as a squarer box sitting inside a rounder frame. */
+.wk-mockup[data-variant="phone"] > [data-wk-mockup-screen] {
+    border-radius: calc(2rem - var(--padding-wk-x-sm));
+}
+.wk-mockup[data-variant="tablet"] > [data-wk-mockup-screen] {
+    border-radius: calc(1.25rem - var(--padding-wk-x-sm));
+}
+
+/* The notch. Centered with a logical inset so it stays centered in RTL too. */
+.wk-mockup[data-variant="phone"] [data-wk-mockup-notch] {
+    position: absolute;
+    inset-block-start: calc(var(--padding-wk-x-sm) + 0.25rem);
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    width: 30%;
+    height: 0.75rem;
+    border-radius: var(--radius-wk-full);
+    background: var(--color-wk-bg-inverse);
+    z-index: 1;
+}
+
+/* ── Logo cloud ──────────────────────────────────────────────────────────────
+   The cells own their geometry, not the logos inside them. Two reasons, and the
+   second is the one that bites:
+
+   1. A logo wall only reads as a wall when the cells share a height. Left to
+      themselves, five logos with five different aspect ratios give a ragged row.
+   2. Logos are lazy-loaded, so an unloaded <img> measures 0x0. Without a floor on
+      the cell, the rows collapse to nothing and then snap open as each logo
+      arrives — the wall visibly jumps while you scroll to it. Reserving the
+      height here makes the layout independent of load state.
+
+   The max-height caps a tall logo so one outlier cannot blow the row out; width
+   stays auto so nothing is ever squashed out of proportion. */
+.wk-logo-cloud li {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+}
+
+.wk-logo-cloud li img,
+.wk-logo-cloud li svg {
+    max-height: 2.5rem;
+    width: auto;
+}
+
+/* The muted treatment ───────────────────────────────────────────────────────
+   The muted treatment lives here rather than on the component, because styling
+   a slot's children from Blade needs an arbitrary variant ([&>*]:…) and the
+   drift auditor cannot trace those back to a source emission.
+
+   Grayscale is decorative only: every logo carries its own alt text, so nothing
+   about a company's identity depends on seeing its color. The point is that a
+   row of clashing brand colors competes with the page's own brand.
+
+   The transition is a filter fade, not movement, and it is gated on hover — so
+   it never animates for someone who did not ask for it. */
+.wk-logo-cloud-muted img,
+.wk-logo-cloud-muted svg {
+    filter: grayscale(1);
+    opacity: 0.65;
+    transition: filter var(--transition-wk-duration) var(--transition-wk-easing),
+                opacity var(--transition-wk-duration) var(--transition-wk-easing);
+}
+
+.wk-logo-cloud-muted li:hover img,
+.wk-logo-cloud-muted li:hover svg,
+.wk-logo-cloud-muted li:focus-within img,
+.wk-logo-cloud-muted li:focus-within svg {
+    filter: grayscale(0);
+    opacity: 1;
+}
+
+/* A logo that is a link must reveal itself on keyboard focus too, not only under
+   a pointer — otherwise the reveal is a mouse-only affordance. */
+
+@media (prefers-reduced-motion: reduce) {
+    .wk-logo-cloud-muted img,
+    .wk-logo-cloud-muted svg {
+        transition: none;
+    }
+}
+
+/* ── Radial progress ─────────────────────────────────────────────────────────
+   The ring is one conic-gradient masked into an annulus. No canvas, no SVG arc
+   math: a value change is a single custom-property write, which is what makes
+   the component declarative and cheap to update.
+
+   --wk-radial-value (0..100) and --wk-radial-fill are written inline by the
+   component. The thickness is a token so a theme can make the ring heavier or
+   lighter without touching the component.
+
+   The track is drawn from --color-wk-bg-muted, the same track color the linear
+   progress uses, so the two shapes read as one family. */
+/* Register --wk-radial-value as a typed custom property so it can be INTERPOLATED:
+   an unregistered custom property snaps between values, a registered <number> one
+   transitions smoothly. @property is in the Tailwind browser baseline (Safari 16.4,
+   Firefox 128), so the value-change sweep below works at the floor. */
+@property --wk-radial-value {
+    syntax: "<number>";
+    inherits: true;
+    initial-value: 0;
+}
+
+.wk-radial {
+    --wk-radial-thickness: 0.5rem;
+    --wk-radial-size: 5rem;
+
+    /* Declared, not just referenced: the component writes both inline on every
+       render, but a ring with no inline style should still be a ring at rest
+       rather than an invisible transparent disc. */
+    --wk-radial-value: 0;
+    --wk-radial-fill: var(--color-wk-accent);
+
+    inline-size: var(--wk-radial-size);
+    block-size: var(--wk-radial-size);
+}
+
+.wk-radial::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-wk-full);
+    background:
+        conic-gradient(
+            var(--wk-radial-fill) calc(var(--wk-radial-value) * 1%),
+            var(--color-wk-bg-muted) 0
+        );
+    /* Cut the disc into a ring. Both properties are required: the unprefixed one
+       is the standard, the -webkit- one is what Safari still reads. */
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - var(--wk-radial-thickness)), #000 calc(100% - var(--wk-radial-thickness)));
+    mask: radial-gradient(farthest-side, transparent calc(100% - var(--wk-radial-thickness)), #000 calc(100% - var(--wk-radial-thickness)));
+    transition: background var(--transition-wk-duration) var(--transition-wk-easing);
+}
+
+/* Opt-in sweep animation (the `animate` prop). A keyframe animation sweeps the
+   registered --wk-radial-value from 0 up to the element's own value on mount; the
+   ::before conic-gradient re-reads it every frame, so the fill fills in instead of
+   jumping. A keyframe is used rather than a transition + @starting-style because
+   the component writes --wk-radial-value as an INLINE style, whose specificity
+   beats any @starting-style selector — so the 0 starting value never won and the
+   ring snapped straight to its value ("passiert nix"). The keyframe's implicit
+   `to` IS that inline value, so it interpolates cleanly regardless of specificity.
+   @property makes the custom property animatable (baseline: Safari 16.4 / FF 128);
+   the whole thing is gated behind prefers-reduced-motion. A re-mount (the docs
+   replay) restarts the animation. */
+@media (prefers-reduced-motion: no-preference) {
+    .wk-radial-animate {
+        animation: wk-radial-sweep var(--motion-wk-duration-slow, 600ms) var(--motion-wk-easing-out, ease-out);
+    }
+}
+
+@keyframes wk-radial-sweep {
+    from {
+        --wk-radial-value: 0;
+    }
+}
+
+.wk-radial-sm {
+    --wk-radial-size: 3rem;
+    --wk-radial-thickness: 0.3125rem;
+
+    font-size: var(--text-wk-xs);
+}
+
+.wk-radial-md {
+    --wk-radial-size: 5rem;
+    --wk-radial-thickness: 0.5rem;
+
+    font-size: var(--text-wk-sm);
+}
+
+.wk-radial-lg {
+    --wk-radial-size: 7rem;
+    --wk-radial-thickness: 0.625rem;
+
+    font-size: var(--text-wk-md);
+}
+
+.wk-radial-xl {
+    --wk-radial-size: 10rem;
+    --wk-radial-thickness: 0.875rem;
+
+    font-size: var(--text-wk-lg);
+}
+
+/* The sweep is the only motion here, and nobody asked for it. */
+@media (prefers-reduced-motion: reduce) {
+    .wk-radial::before {
+        transition: none;
+    }
+}
+
+/* ── Carousel ────────────────────────────────────────────────────────────────
+   The viewport is a real scroller: the browser owns snapping, momentum and the
+   touch swipe, and the Alpine component only observes where it landed. Driving
+   scrollLeft from JS instead is what makes these components feel broken under a
+   thumb.
+
+   scroll-behavior is NOT set here. It is passed per call in JS, because the
+   choice depends on prefers-reduced-motion and a CSS-only rule cannot tell the
+   auto-advance timer to stop — it would only make an unwanted motion smoother. */
+.wk-carousel-viewport {
+    /* The scrollbar is redundant: the dots and the arrows already say where you
+       are and how to move. The region stays keyboard-scrollable regardless. */
+    scrollbar-width: none;
+}
+
+.wk-carousel-viewport::-webkit-scrollbar {
+    display: none;
+}
+
+/* Horizontal carousels reserve an inline gutter on each side so the prev/next
+   arrows sit OUTSIDE the slide track instead of overlapping the slides. The
+   arrows are absolutely positioned at the root's inline edges (left-0 / right-0);
+   this margin pulls the scroller inward by the arrow's width plus a small gap, so
+   the control and the content never overlap — the reported per-view bug was the
+   arrows clipping the first / last card. The gutter is a custom property so a
+   developer can widen or remove it per instance. Vertical carousels keep their
+   top/bottom-centered controls and need no inline gutter. */
+[data-wk-carousel-orientation="horizontal"] {
+    --wk-carousel-gutter: 3rem;
+    /* Inline gap between slides for per-view > 1 (applied as slide padding below).
+       Overridable per instance, like the gutter. */
+    --wk-carousel-slide-gap: var(--gap-wk-sm);
+}
+
+[data-wk-carousel-orientation="horizontal"] .wk-carousel-viewport {
+    margin-inline: var(--wk-carousel-gutter);
+}
+
+/* Toggle button pressed look. The button renders the neutral OUTLINE surface as a
+   stable base; the PRESSED state is the neutral FILLED surface, applied here from
+   aria-pressed so the look follows the state from ANY source — a controlled app,
+   an Alpine binding, or the built-in self-toggle. Only the two tokens that differ
+   between outline and filled are overridden (bg + border); text, hover and shadow
+   are identical, so hover (bg-subtle) already matches the real filled surface.
+   The attribute-pair selector (0,2,0) beats the button's utility classes (0,1,0)
+   regardless of source order. */
+[data-wk-toggle-button][aria-pressed="true"] {
+    background-color: var(--color-wk-bg-muted);
+    border-color: var(--color-wk-bg-muted);
+}
+
+/* How many slides share the view. Set on the viewport by the component, applied
+   to the slides here — a slide never needs to know how many siblings it has.
+
+   Every step keeps a narrower phone layout than its name suggests: three-up on a
+   375px screen is three unreadable slivers, so the ladder only reaches its full
+   count once there is room. The 4/5 basis is deliberate — showing part of the
+   next slide is what tells the reader there IS a next slide. */
+[data-wk-carousel-per-view="1"] > .wk-carousel-slide {
+    flex-basis: 100%;
+}
+
+[data-wk-carousel-per-view="2"] > .wk-carousel-slide,
+[data-wk-carousel-per-view="3"] > .wk-carousel-slide,
+[data-wk-carousel-per-view="4"] > .wk-carousel-slide {
+    flex-basis: 80%;
+}
+
+@media (min-width: 640px) {
+    [data-wk-carousel-per-view="2"] > .wk-carousel-slide,
+    [data-wk-carousel-per-view="3"] > .wk-carousel-slide,
+    [data-wk-carousel-per-view="4"] > .wk-carousel-slide {
+        flex-basis: 50%;
+    }
+}
+
+@media (min-width: 768px) {
+    [data-wk-carousel-per-view="3"] > .wk-carousel-slide,
+    [data-wk-carousel-per-view="4"] > .wk-carousel-slide {
+        flex-basis: 33.3333%;
+    }
+}
+
+@media (min-width: 1024px) {
+    [data-wk-carousel-per-view="4"] > .wk-carousel-slide {
+        flex-basis: 25%;
+    }
+}
+
+/* Slide gap (per-view > 1). The gap is inline PADDING on each slide, not a flex
+   `gap` on the viewport, on purpose: with border-box the padding lives inside the
+   slide's flex-basis, so the slide box keeps its exact basis (33.3333% etc.) — the
+   snap alignment and the per-view count are untouched, and no basis rebalance is
+   needed. The card inside (w-full) is inset by the padding, so adjacent cards are a
+   full `--wk-carousel-slide-gap` apart instead of flush. per-view 1 is deliberately
+   excluded: a single-up slide should stay full-bleed. Overridable per instance via
+   `--wk-carousel-slide-gap`, like `--wk-carousel-gutter`. */
+[data-wk-carousel-per-view="2"] > .wk-carousel-slide,
+[data-wk-carousel-per-view="3"] > .wk-carousel-slide,
+[data-wk-carousel-per-view="4"] > .wk-carousel-slide {
+    padding-inline: calc(var(--wk-carousel-slide-gap, var(--gap-wk-sm)) / 2);
+}
+
+/* A vertical carousel is one slide tall by construction — there is no second
+   slot to share, so perView never applies to it. */
+[data-wk-carousel-orientation="vertical"] .wk-carousel-slide {
+    flex-basis: 100%;
+}
+
+/* ── Swap ────────────────────────────────────────────────────────────────────
+   A two-state icon. Both children stay in the DOM — you cannot crossfade between
+   an element and nothing — and are stacked in one grid cell so neither moves when
+   the other appears.
+
+   Visibility is driven from data-active rather than a class per state, so the
+   component stays declarative and the developer can bind `active` to whatever
+   they already have. */
+.wk-swap > [data-wk-swap-on],
+.wk-swap > [data-wk-swap-off] {
+    transition:
+        opacity var(--transition-wk-duration) var(--transition-wk-easing),
+        transform var(--transition-wk-duration) var(--transition-wk-easing);
+}
+
+.wk-swap[data-active="false"] > [data-wk-swap-on],
+.wk-swap[data-active="true"] > [data-wk-swap-off] {
+    opacity: 0;
+    /* Not display:none — a hidden child must keep occupying its grid cell or the
+       swap collapses to nothing mid-transition and the icon jumps. It is hidden
+       from assistive tech via aria-hidden and from the pointer here. */
+    pointer-events: none;
+}
+
+.wk-swap[data-active="true"] > [data-wk-swap-on],
+.wk-swap[data-active="false"] > [data-wk-swap-off] {
+    opacity: 1;
+}
+
+.wk-swap-rotate[data-active="false"] > [data-wk-swap-on] {
+    transform: rotate(-180deg);
+}
+
+.wk-swap-rotate[data-active="true"] > [data-wk-swap-off] {
+    transform: rotate(180deg);
+}
+
+.wk-swap-flip[data-active="false"] > [data-wk-swap-on] {
+    transform: rotateY(180deg);
+}
+
+.wk-swap-flip[data-active="true"] > [data-wk-swap-off] {
+    transform: rotateY(-180deg);
+}
+
+/* The state still changes under reduced motion — it just arrives instead of
+   traveling. Dropping the transform as well as the transition matters: a
+   half-turn that snaps is still a half-turn the reader did not ask for. */
+@media (prefers-reduced-motion: reduce) {
+    .wk-swap > [data-wk-swap-on],
+    .wk-swap > [data-wk-swap-off] {
+        transition: none;
+        transform: none;
+    }
+}
+
+/* ── Theme controller (switch variant) ───────────────────────────────────────
+   The knob's travel is keyed off the real checkbox, not off a class binding.
+
+   peer-checked: cannot do this: the variant only reaches SIBLINGS of the peer,
+   and the knob is a grandchild of the track. The class sat on the knob doing
+   nothing while an Alpine :class binding quietly did the work — two mechanisms,
+   one of them dead. This is the one that can actually see the checkbox. */
+.wk-theme-switch-track:has(> :checked) .wk-theme-switch-knob,
+input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
+    transform: translateX(1.25rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wk-theme-switch-knob {
+        transition: none;
+    }
+}
+
+/* ── Bottom navigation ───────────────────────────────────────────────────────
+   Two things the utility classes cannot express, both of which decide whether
+   this bar is usable on a real phone. */
+.wk-bottom-nav {
+    /* The bottom of the viewport is NOT the bottom of the usable screen on a
+       phone with a home indicator. Without this the labels sit under it, and the
+       bottom row of a swipe-up gesture eats the taps. env() resolves to 0 on
+       every device that has no inset, so it costs nothing elsewhere. */
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.wk-bottom-nav-item {
+    /* WCAG 2.5.5 / the platform minimum. A nav item is the primary control here,
+       and a 32px tab on a phone is a tap people miss. */
+    min-height: 3.25rem;
+}
+
+/* The second signal for the current tab. Color alone would leave it
+   indistinguishable for a reader who cannot separate the accent from the muted
+   text (WCAG 1.4.1) — this line says "you are here" without relying on hue.
+
+   It sits on the item's top edge, against the bar's own border, so it reads as a
+   marker rather than as a second border. */
+.wk-bottom-nav-item[data-active="true"]::before {
+    content: "";
+    position: absolute;
+    inset-inline: 25%;
+    inset-block-start: 0;
+    block-size: 2px;
+    border-radius: var(--radius-wk-full);
+    background: var(--color-wk-accent);
+}
+
+/* Active-tab text (accent color + heavier weight) follows data-active, like the
+   marker line above — so the look tracks the state from ANY source: the server
+   `active` prop, or the interactive client-active mode's Alpine binding. */
+.wk-bottom-nav-item[data-active="true"] {
+    color: var(--color-wk-accent);
+    font-weight: var(--font-wk-heading-weight);
+}
+
+.wk-bottom-nav-item[data-active="false"] {
+    color: var(--color-wk-text-muted);
+}
+
+/* Content sits UNDER a fixed bar unless the page reserves the room. This is the
+   opt-in helper: put it on whatever scrolls, and the last item stops hiding
+   behind the nav.
+
+   It is not applied automatically because this component cannot know which
+   element scrolls in the developer's layout, and guessing wrong would add padding
+   to the wrong box. */
+.wk-bottom-nav-offset {
+    padding-block-end: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+    /* The offset follows the bar: when the bar hides at md, the room it reserved
+       must go with it, or every desktop page carries dead space at the bottom. */
+    .wk-bottom-nav-offset:not(.wk-bottom-nav-offset-always) {
+        padding-block-end: 0;
+    }
+
+    /* The escape hatch for a bar kept on desktop with :mobile-only="false". It is
+       declared rather than only appearing inside the :not() above, so it is a real
+       class a developer can look up — a selector that exists only as an exception
+       is invisible to every tool and to the next reader. */
+    .wk-bottom-nav-offset-always {
+        padding-block-end: calc(3.25rem + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* ── FAB (speed dial) ────────────────────────────────────────────────────────
+   The bar this floats above is fixed too, so the FAB has to clear it — and on a
+   phone it also has to clear the home indicator. Both are additive. */
+.wk-fab {
+    inset-block-end: calc(var(--padding-wk-y-lg, 1.5rem) + env(safe-area-inset-bottom, 0px));
+}
+
+/* When a bottom nav is on the page, the FAB sits above it rather than on top of
+   it. Opt in with the modifier: the component cannot see whether a nav exists
+   elsewhere in the document, and guessing would lift every FAB off the corner. */
+.wk-fab-above-nav {
+    inset-block-end: calc(3.25rem + var(--padding-wk-y-md, 1rem) + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+    /* The nav hides at md, so the room reserved for it goes too. */
+    .wk-fab-above-nav:not(.wk-fab-above-nav-always) {
+        inset-block-end: calc(var(--padding-wk-y-lg, 1.5rem) + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Same escape hatch, same reason it is declared on its own. */
+    .wk-fab-above-nav-always {
+        inset-block-end: calc(3.25rem + var(--padding-wk-y-md, 1rem) + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* The FAB trigger's plus/close crossfade. Both icons stay stacked in one grid
+   cell so neither moves; data-shown is written by Alpine.
+
+   Hand-rolled rather than composed from the swap primitive because swap ships on
+   a different branch and this crossfade is cosmetic — a hard cross-branch
+   dependency for a nicety is a bad trade. Once both land this collapses into a
+   swap tag and these rules go away. */
+.wk-fab-icon {
+    transition:
+        opacity var(--transition-wk-duration) var(--transition-wk-easing),
+        transform var(--transition-wk-duration) var(--transition-wk-easing);
+}
+
+.wk-fab-icon[data-shown="false"] {
+    opacity: 0;
+    transform: rotate(-90deg);
+    pointer-events: none;
+}
+
+.wk-fab-icon[data-shown="true"] {
+    opacity: 1;
+    transform: rotate(0deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wk-fab-icon {
+        transition: none;
+        transform: none;
+    }
+}
+
+/* ── Product card ────────────────────────────────────────────────────────────
+   The stretched link: the whole card is clickable by pointer while the LINK
+   itself is still just the product name.
+
+   Why that matters. Wrapping the card in one anchor makes the link's accessible
+   name the entire card — image, price, rating, button — read as one breathless
+   sentence, and it swallows the add-to-cart button, which cannot nest inside an
+   anchor at all. This gives the pointer the big target and the screen reader a
+   short, honest name. They do not have to be the same rectangle. */
+.wk-product-card-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    /* Under anything the card marks relative + z-10 (the CTA), so the button
+       still gets its own clicks. */
+    z-index: 1;
 }
 
 /* ─── Avatar group (stacked / overlapping) ─────────────────── */

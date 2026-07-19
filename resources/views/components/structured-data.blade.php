@@ -2,6 +2,23 @@
     'data' => [],
 ])
 
+@php
+    // The `Schema` builders return bare `@type` fragments, so nesting an Offer
+    // inside a Product needs no repeated context to strip. The context belongs
+    // exactly once, at the top — so add it here when it is missing.
+    //
+    // Back-compatible: data that already carries '@context' (every hand-written
+    // usage) is passed through untouched. Data with neither '@context' nor
+    // '@type' is also left alone — that is not a schema.org document and
+    // stamping a context onto it would be a lie.
+    $payload = $data;
+    if (is_array($payload)
+        && ! array_key_exists('@context', $payload)
+        && array_key_exists('@type', $payload)) {
+        $payload = ['@context' => 'https://schema.org'] + $payload;
+    }
+@endphp
+
 {{--
     Structured Data — emits a <script type="application/ld+json"> block.
 
@@ -31,5 +48,5 @@
       ]" />
 --}}
 <script type="application/ld+json">
-{!! json_encode($data, JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
+{!! json_encode($payload, JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
 </script>

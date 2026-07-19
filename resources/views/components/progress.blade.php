@@ -92,7 +92,7 @@
 
 <div {{ $attributes->class(['w-full font-[family-name:var(--font-wk-sans)]']) }}>
     @if($label || $showValue)
-        <div class="mb-1 flex items-center justify-between text-[length:var(--text-wk-sm)]">
+        <div class="mb-1 flex items-center justify-between gap-[var(--gap-wk-sm)] text-[length:var(--text-wk-sm)]">
             @if($label)
                 <span id="{{ $labelId }}" class="text-[color:var(--color-wk-text)]">{{ $label }}</span>
             @else
