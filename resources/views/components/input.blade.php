@@ -9,7 +9,7 @@
     // focus having to return to the field. Set false when the surrounding page
     // runs its own live region for form errors (avoids a double announcement).
     // The aria-describedby link on the input is unaffected either way.
-    'announceError' => true,
+    'announceError' => config('wirekit.a11y.announce_error', true),
     // Success / valid state. Pass a string to show a green confirmation message
     // below the field (e.g. "Username available"), or `true` for just the green
     // border with no message. `error` always wins when both are set.
@@ -99,7 +99,7 @@
     $stateClasses = match (true) {
         (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]',
         $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success)]',
-        default => 'border-[var(--color-wk-border)]',
+        default => 'border-[var(--color-wk-border-strong)]',
     };
 
     // Size classes: height, padding, font size, radius — all from sizing tokens
@@ -198,7 +198,7 @@
             'hover:border-[var(--color-wk-border-hover)]',
             $hasError
                 ? 'border-[var(--color-wk-border-error)]'
-                : ($hasSuccess ? 'border-[var(--color-wk-border-success)]' : 'border-[var(--color-wk-border)]'),
+                : ($hasSuccess ? 'border-[var(--color-wk-border-success)]' : 'border-[var(--color-wk-border-strong)]'),
             $prefixWrapperSizeClass,
         ])>
             @if($prefix)

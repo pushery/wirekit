@@ -2,7 +2,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
-    'announceError' => true,
+    'announceError' => config('wirekit.a11y.announce_error', true),
     'name' => null,
     'id' => null,
     'value' => null,
@@ -54,8 +54,19 @@
     $errorId = "{$id}-error";
     $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($hasError ? $errorId : ''));
 
-    // Toolbar preset → command vocabulary. 'custom' uses the toolbar slot.
-    $toolbarValue = $toolbar === false ? false : (is_string($toolbar) ? $toolbar : 'basic');
+    // Route wire:model to the <textarea x-ref="input"> (the element the editor writes to
+    // and fires its input event on), NOT the wrapper div — otherwise Livewire binds to a
+    // div that never emits input and the value is silently lost. Modifiers (.live / .blur
+    // / .debounce) are preserved; everything else still lands on the wrapper (WIRE-167).
+    $wireModel = $attributes->whereStartsWith('wire:model');
+    $rest = $attributes->whereDoesntStartWith('wire:model');
+
+    // Toolbar preset → command vocabulary. A passed <x-slot:toolbar> (a ComponentSlot)
+    // selects the 'custom' path so the caller's toolbar actually renders — otherwise the
+    // slot silently collapsed to the 'basic' preset and was never shown (WIRE-168).
+    $toolbarValue = $toolbar === false
+        ? false
+        : ($toolbar instanceof \Illuminate\View\ComponentSlot ? 'custom' : (is_string($toolbar) ? $toolbar : 'basic'));
     $presetCommands = match ($toolbarValue) {
         'full' => ['bold', 'italic', 'underline', 'strike', 'code', 'link', '|', 'heading-1', 'heading-2', 'heading-3', 'paragraph', 'quote', '|', 'bullet-list', 'ordered-list', 'code-block', 'horizontal-rule', '|', 'undo', 'redo'],
         'basic' => ['bold', 'italic', 'strike', 'link', '|', 'bullet-list', 'ordered-list'],
@@ -105,7 +116,7 @@
 
     <div
         x-data="wirekitEditor(@js($jsConfig))"
-        {{ $attributes->class(['w-full', $wrapperClasses]) }}
+        {{ $rest->class(['w-full', $wrapperClasses]) }}
     >
         {{-- Toolbar: auto-rendered preset, OR the custom slot when toolbar="custom". --}}
         @if($editable && $toolbarValue === 'custom' && isset($toolbar) && $toolbar instanceof \Illuminate\View\ComponentSlot)
@@ -153,6 +164,8 @@
                      path scrolls at the same ceiling (a textarea scrolls natively). --}}
                 @if($maxHeight) style="max-height: {{ $maxHeight }}; overflow-y: auto;" @endif
                 class="wk-field block w-full bg-transparent px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] focus:outline-none {{ $minHeight }}"
+                {{-- wire:model binds to the textarea the editor writes to (WIRE-167). --}}
+                {{ $wireModel }}
             >{{ is_string($value) ? $value : ($value !== null ? json_encode($value) : '') }}</textarea>
         @endif
 

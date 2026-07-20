@@ -2,7 +2,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
-    'announceError' => true,
+    'announceError' => config('wirekit.a11y.announce_error', true),
     'label' => null,
     'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
     'hint' => null,
@@ -77,7 +77,7 @@
     $stateClasses = match (true) {
         (bool) $hasError => 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]',
         $hasSuccess => 'border-[var(--color-wk-border-success)] focus-visible:ring-[var(--color-wk-success)]',
-        default => 'border-[var(--color-wk-border)]',
+        default => 'border-[var(--color-wk-border-strong)]',
     };
 
     // Size classes: padding (horizontal + vertical), font size, radius — all from sizing tokens

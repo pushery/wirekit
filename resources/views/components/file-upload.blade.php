@@ -2,7 +2,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
-    'announceError' => true,
+    'announceError' => config('wirekit.a11y.announce_error', true),
     'name' => null,
     'id' => null,
     'multiple' => config('wirekit.components.file-upload.multiple', false),

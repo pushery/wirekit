@@ -4,6 +4,12 @@
     'offset' => config('wirekit.components.tooltip.offset', 6),
     'delayShow' => config('wirekit.components.tooltip.delay-show', 300),
     'delayHide' => config('wirekit.components.tooltip.delay-hide', 100),
+    // Make the trigger keyboard-focusable so the tooltip is reachable by keyboard,
+    // not just hover (WCAG 2.1.1). Default true covers the common case of a tooltip
+    // on a NON-interactive slot (an icon, a text span). Set false when the slot is
+    // already interactive (a button/link) to avoid a double tab-stop — the slot's own
+    // focus then bubbles to the trigger and still shows the tooltip.
+    'focusableTrigger' => true,
     'scope' => null,
 ])
 
@@ -57,7 +63,7 @@
     {{ $attributes->class(['relative inline-block']) }}
 >
     {{-- Trigger element — linked to tooltip via aria-describedby --}}
-    <div x-ref="trigger" aria-describedby="{{ $tooltipId }}">
+    <div x-ref="trigger" aria-describedby="{{ $tooltipId }}" @if($focusableTrigger) tabindex="0" @endif>
         {{ $slot }}
     </div>
 

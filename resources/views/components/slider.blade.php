@@ -11,6 +11,10 @@
     // Step marks: a list of values (`[0, 25, 50, 75, 100]`) for plain ticks, or a
     // value => label map (`[0 => 'Low', 100 => 'High']`) for labeled ticks.
     'marks' => [],
+    // Decouple the announced aria-valuetext from the visual tick labels: an explicit
+    // value => spoken-text map lets you show NUMERIC ticks but announce semantic meaning
+    // (e.g. [1 => 'Low', 5 => 'High']). Falls back to the `marks` labels (WIRE-160).
+    'valueTextMap' => null,
     // Show a value bubble above the thumb that follows it as the user drags.
     'tooltip' => false,
     'disabled' => false,
@@ -56,13 +60,33 @@
     // it in the tooltip / value display. A plain list of positions carries no
     // extra meaning, so it does NOT get aria-valuetext — the number IS the value,
     // and the DOM stays byte-identical to before.
-    $isLabeledMarkMap = ! empty($marks) && ! array_is_list($marks);
+    // A caller-supplied aria-valuetext binding wins over our own (mirrors the v2.8.0
+    // aria-label precedence rule). An explicit `valueTextMap` prop decouples the spoken
+    // text from the visual ticks entirely.
+    $callerBindsValueText = $attributes->has('aria-valuetext')
+        || $attributes->has('x-bind:aria-valuetext')
+        || $attributes->has(':aria-valuetext');
+    $explicitValueTextMap = is_array($valueTextMap) && $valueTextMap !== [] ? $valueTextMap : null;
+
+    // A marks MAP opts into aria-valuetext ONLY when a label carries meaning beyond the
+    // number (a numeric-label map — [-2 => '-2', …] — stays byte-identical to a plain
+    // slider: the number already IS the value).
+    $isLabeledMarkMap = ! empty($marks) && ! array_is_list($marks)
+        && collect($marks)->contains(fn ($lbl, $val) => (string) $lbl !== (string) $val);
+
     $valueTextMap = [];
-    if ($isLabeledMarkMap) {
+    if ($explicitValueTextMap !== null) {
+        foreach ($explicitValueTextMap as $mValue => $mLabel) {
+            $valueTextMap[(string) $mValue] = (string) $mLabel;
+        }
+    } elseif ($isLabeledMarkMap) {
         foreach ($marks as $mValue => $mLabel) {
             $valueTextMap[(string) $mValue] = (string) $mLabel;
         }
     }
+
+    // Bind aria-valuetext when we have a semantic map AND the caller didn't bind it.
+    $bindValueText = ($explicitValueTextMap !== null || $isLabeledMarkMap) && ! $callerBindsValueText;
 
     // Track height per size token.
     $trackHeight = match ($size) {
@@ -190,7 +214,7 @@
             {{-- Labeled discrete slider: announce the mark's label, not the bare
                  number. Only bound for a labeled MAP so plain sliders stay
                  byte-identical (the number is already the value). --}}
-            @if($isLabeledMarkMap) :aria-valuetext="valueText" @endif
+            @if($bindValueText) :aria-valuetext="valueText" @endif
             @if($disabled) disabled @endif
             {{-- class / style are consumed by the wrapper above; everything
                  else (wire:model, aria-*, data-*) stays on the input. --}}

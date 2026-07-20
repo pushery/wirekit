@@ -10,6 +10,38 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.16.0] — 2026-07-20
+
+**Minor release.** Two new components plus a broad set of accessibility, internationalization, and composition improvements, and a new form-control border token that meets WCAG non-text contrast. Everything here is additive and backward-compatible.
+
+### Added
+
+- **[Status Tiles](https://docs.wirekit.app/components/status-tiles).** N entities as colored status tiles read at a glance — a fleet light, with an optional count-per-intent legend. Status never rides on color alone: every tile carries a distinct icon shape and a screen-reader status word, and an `href` makes a tile a keyboard-operable link.
+- **[Stream](https://docs.wirekit.app/components/stream).** A primitive for streaming text output over Server-Sent Events, with the hard parts handled once — a single live region announces that a response is generating and then the result (never re-read on every token), `prefers-reduced-motion` reveals the buffered text at once, and a dropped connection or an explicit stop resolves to a defined terminal state. A `simulate` mode types a fixed string out from a local timer for a demo or typewriter effect with no endpoint.
+- **[Badge](https://docs.wirekit.app/components/badge) `wrap`.** A long label can now wrap across lines: the pill grows with the text instead of the second line spilling below its surface.
+- **[Image Gallery](https://docs.wirekit.app/components/image-gallery) per-item overlays.** An `itemOverlay` render-callback layers a control — a badge, a report button, a required content label — over each thumbnail as a sibling of the zoom trigger, so the thumbnail still opens the lightbox while the overlay stays interactive.
+- **[Command Palette](https://docs.wirekit.app/components/command-palette) server-side search.** The palette now emits a debounced query event on every keystroke, so you can drive a server-backed search — feed the query to a Livewire property and re-render the results — instead of only filtering a fixed list.
+- **[Slider](https://docs.wirekit.app/components/slider) `valueTextMap`.** The spoken `aria-valuetext` can now be decoupled from the visual tick labels — show numeric ticks yet announce semantic meaning (`1 => 'Low'`).
+- **[Countdown](https://docs.wirekit.app/components/countdown) completion event.** The countdown now dispatches an event when it expires and exposes its `done` state, so it can drive a sibling control without running a second clock.
+- **[Sidebar](https://docs.wirekit.app/components/sidebar) item badge.** `sidebar.item` gained a `badge` prop for a trailing unread counter — the common notifications / inbox nav pattern.
+- **[Table](https://docs.wirekit.app/components/table) row headers.** `table.th` gained a `headerScope` prop so a per-row header cell can be `scope="row"`, previously reachable only as a column header.
+- **[Tooltip](https://docs.wirekit.app/components/tooltip) `focusableTrigger`.** A tooltip on a non-interactive trigger — an icon, a text span — can now be reached by keyboard instead of being hover-only.
+- **Design tokens.** The `--gap-wk-*` scale is now the full `xs`…`2xl` ladder (matching `--space-wk-*`), and a new `--color-wk-border-strong` token gives form controls a contrast-compliant resting border. See [design tokens](https://docs.wirekit.app/theming/design-tokens).
+- **Error-announcement config default.** A new `wirekit.a11y.announce_error` config key lets an app that runs its own live region opt every form control out of the built-in error announcement in one place, instead of per control.
+
+### Fixed
+
+- **Form-control borders now meet WCAG non-text contrast (1.4.11).** [Input](https://docs.wirekit.app/components/input), [select](https://docs.wirekit.app/components/select), [textarea](https://docs.wirekit.app/components/textarea) and [checkbox](https://docs.wirekit.app/components/checkbox) drew their resting edge at 1.29:1 in the light theme — effectively invisible against the field fill. They now use the dedicated `--color-wk-border-strong` token (≥3:1 in both themes); the decorative border on cards and dividers is unchanged.
+- **Fonts no longer fall back to system fonts silently in production.** A configured but unpublished bundled font now leaves a visible signal in every environment plus a throttled server-side warning, instead of vanishing to system fonts with no trace outside local development.
+- **[Editor](https://docs.wirekit.app/components/editor) binding and custom toolbar.** `wire:model` on the editor now binds the textarea — it previously landed on the wrapper and lost input — and a custom `toolbar` slot now renders instead of being overridden by the default set.
+- **[Notification Center](https://docs.wirekit.app/components/notification-center) announcements.** New notifications are now announced to screen readers through a polite live region.
+- **[Pagination](https://docs.wirekit.app/components/pagination) nested-route 404.** The component now emits absolute hrefs, so a paginator under a nested Livewire route no longer 404s; and every user-visible string — body text and aria-labels — is now translatable.
+- **[Combobox](https://docs.wirekit.app/components/combobox) attribute forwarding.** Every caller attribute now reaches the `role="combobox"` input rather than a roleless wrapper.
+- **Translatable strings.** The "opens in new tab" screen-reader hint on the [link component](https://docs.wirekit.app/components/link) and its siblings, the threshold band labels and reset-cadence notes on the [usage meter](https://docs.wirekit.app/components/usage-meter), and the copy-confirmation text on the [clipboard button](https://docs.wirekit.app/components/clipboard-button), are now translatable instead of hardcoded English.
+- **[Checkbox](https://docs.wirekit.app/components/checkbox) description association.** A caller `aria-describedby` is now merged with the checkbox's own hint / error target instead of being silently dropped.
+- **[Table](https://docs.wirekit.app/components/table) sort headers.** A sortable column in Livewire sort mode no longer shows a pointer cursor across the whole cell when only the button is the click target.
+- **Contrast helper parses `rgb()`.** `WcagContrast::parseToLinearRgb()` now understands `rgb()` / `rgba()` color strings, not only `#hex` and `oklch()`.
+
 ## [2.15.0] — 2026-07-19
 
 **Feature release.** A broad set of marketing, ecommerce, control and mobile components — the blocks a landing page, a store, and a mobile app-shell were missing — plus SEO structured-data builders and a drop-in dark-mode toggle. All additive; one existing component (Carousel) was rebuilt on a more robust foundation with no API break.

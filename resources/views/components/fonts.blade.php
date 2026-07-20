@@ -15,9 +15,13 @@
         ? FontRegistry::get($fontConfig['mono'])
         : null;
 
-    // Helper: check if a font is activated but not yet published (local env only)
+    // Helper: check if a font is activated but not yet published. WIRE-108: this used
+    // to be gated on `app()->environment('local')`, so in production a configured but
+    // unpublished font fell back to system fonts with NO signal at all. The missing-
+    // publish HTML comment now renders in every environment (it's an inert comment,
+    // visible in view-source) so the fallback is never fully silent. The server-side
+    // log warning (WireKitServiceProvider::boot) is the ops-facing half of the fix.
     $warnMissing = fn (?FontPreset $preset) => $preset
-        && app()->environment('local')
         && ! file_exists(public_path($preset->publishedCssPath()));
 @endphp
 

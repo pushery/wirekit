@@ -52,6 +52,14 @@
         <input type="hidden" x-ref="model" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} :value="unreadCount" />
     @endif
 
+    {{-- Screen-reader announcement for new notifications (WIRE-173). Fed from the SAME
+         Alpine state as the badge; the text carries the LATEST item's title (items[0])
+         so a fresh notification re-announces even when the count is unchanged — a
+         count-only region would stay silent when one notification replaces another.
+         Polite (never assertive): a notification must not interrupt the user. --}}
+    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true"
+       x-text="unreadCount > 0 ? unreadCount + ' {{ __('unread. Latest:') }} ' + (items[0]?.title ?? '') : ''"></p>
+
     {{-- Bell trigger. The accessible name carries the live unread count so a
          screen reader announces "Notifications, 3 unread" (not color/dot alone). --}}
     <button

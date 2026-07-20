@@ -12,6 +12,11 @@
     'sortAction' => null,
     'align' => 'left', // left | center | right
     'scope' => null,
+    // HTML <th scope> attribute — 'col' (default) for a column header, 'row' for a
+    // per-row header cell (WCAG 1.3.1: a row-header cell identifies its data row).
+    // Distinct from the `scope` prop above, which is WireKit's token-scope override —
+    // overloading that would break scoped theming for the 200+ components that share it.
+    'headerScope' => 'col',
 ])
 
 @php
@@ -42,9 +47,15 @@
         '[table[data-wk-sticky-column]_&:first-child]:left-0',
         '[table[data-wk-sticky-column]_&:first-child]:z-20',
         '[table[data-wk-sticky-column]_&:first-child]:bg-[var(--color-wk-bg-subtle)]',
-        // Sortable headers get pointer cursor + hover color
-        $sortable ? 'cursor-pointer select-none hover:text-[color:var(--color-wk-text)]' : '',
+        // Sortable headers get pointer cursor + hover color. EXCEPT in sort-action
+        // mode: there the <button> below is the click target (it carries its own
+        // cursor-pointer), so advertising cursor-pointer on the whole cell would be a
+        // dead zone — the cell padding shows a pointer but is not clickable (WIRE-121).
+        $sortable ? ($sortAction ? 'select-none hover:text-[color:var(--color-wk-text)]' : 'cursor-pointer select-none hover:text-[color:var(--color-wk-text)]') : '',
     ]), $scope);
+
+    // Sanitize the <th scope> to the valid HTML set; anything else falls back to col.
+    $headerScope = in_array($headerScope, ['col', 'row', 'colgroup', 'rowgroup'], true) ? $headerScope : 'col';
 
     // ARIA: sortable columns expose their current sort state
     $ariaSort = match ($sortDirection) {
@@ -55,7 +66,7 @@
 @endphp
 
 <th
-    scope="col"
+    scope="{{ $headerScope }}"
     data-wk-table-th
     @if($column) data-wk-sort-column="{{ $column }}" @endif
     @if($sortable && $column)

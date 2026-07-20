@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit;
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Compilers\BladeCompiler;
@@ -269,33 +270,77 @@ class WireKitServiceProvider extends ServiceProvider
             .'" x-transition:leave-start=\"opacity-100 scale-100\" "'
             .'" x-transition:leave-end=\"opacity-0 scale-95\""; ?>');
 
-        // ── Config Validation (local only) ──
-        // Validate config keys in local environment only
-        // In production, invalid keys silently fall back to defaults
-        if (app()->environment('local')) {
-            // Validate font presets
-            $fontConfig = config('wirekit.fonts', []);
+        // ── Config Validation ──
+        // Two distinct font-config problems, two distinct severities:
+        //  - UNKNOWN preset key (a typo): FATAL in local so the developer sees it
+        //    immediately; in production the value silently falls back to defaults
+        //    (never fatally break a deployed page over a config typo).
+        //  - KNOWN preset that is not published: WARN in EVERY environment (WIRE-108).
+        //    The page still renders, but the developer's chosen font silently fell back
+        //    to system fonts. This used to be undetectable in production; a throttled
+        //    log line (once per preset per process) now surfaces it for ops, and the
+        //    <x-wirekit::fonts> component renders an inert HTML comment in every env.
+        $isLocal = app()->environment('local');
+        $fontConfig = config('wirekit.fonts', []);
 
-            foreach (['sans', 'serif', 'mono'] as $category) {
-                $presetKey = $fontConfig[$category] ?? null;
+        foreach (['sans', 'serif', 'mono'] as $category) {
+            $presetKey = $fontConfig[$category] ?? null;
 
-                if ($presetKey === null) {
-                    continue;
-                }
+            if ($presetKey === null) {
+                continue;
+            }
 
-                $preset = FontRegistry::get($presetKey);
+            $preset = FontRegistry::get($presetKey);
 
-                if ($preset === null) {
+            if ($preset === null) {
+                if ($isLocal) {
                     throw new \InvalidArgumentException(
                         "WireKit: Unknown font preset '{$presetKey}' for category '{$category}'. "
                         .'Available: '.implode(', ', array_keys(FontRegistry::category($category)))
                     );
                 }
+
+                continue; // production: unknown key falls back to defaults (unchanged)
             }
 
+            // Known preset but not published → warn in all environments (WIRE-108).
+            if (! file_exists(public_path($preset->publishedCssPath()))) {
+                static::warnUnpublishedFont($category, $presetKey);
+            }
+        }
+
+        if ($isLocal) {
             // Validate icon preset (checks preset exists without resolving aliases)
             app(IconResolver::class)->validatePreset();
         }
+    }
+
+    /**
+     * Guards the unpublished-font warning to once per preset key per process, so a
+     * persistent misconfiguration logs a single actionable line instead of flooding
+     * the log with one entry per request/render. Reset in tests via a direct assign.
+     *
+     * @var array<string, bool>
+     */
+    public static array $unpublishedFontWarned = [];
+
+    /**
+     * Log a single warning that a configured, known font preset is not published and
+     * text is therefore falling back to system fonts (WIRE-108). Throttled per process.
+     */
+    protected static function warnUnpublishedFont(string $category, string $presetKey): void
+    {
+        if (isset(static::$unpublishedFontWarned[$presetKey])) {
+            return;
+        }
+
+        static::$unpublishedFontWarned[$presetKey] = true;
+
+        Log::warning(
+            "WireKit: font preset '{$presetKey}' ({$category}) is configured but its CSS is not "
+            .'published — text is falling back to system fonts. Run '
+            .'`php artisan vendor:publish --tag=wirekit-fonts` to ship the bundled font.'
+        );
     }
 
     /**

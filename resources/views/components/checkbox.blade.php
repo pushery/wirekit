@@ -2,7 +2,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
-    'announceError' => true,
+    'announceError' => config('wirekit.a11y.announce_error', true),
     'label' => null,
     'hint' => null,
     'error' => null,
@@ -73,6 +73,16 @@
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
 
+    // aria-describedby: merge our own hint/error target with any caller-supplied
+    // value into ONE attribute. Two separate aria-describedby attributes would make
+    // the browser keep the first and silently drop the caller's association — the
+    // caller's intended description would be lost (WCAG). Own target first, then
+    // the caller's, matching the range-slider convention.
+    $ownDescribedBy = $hasError ? $id.'-error' : ($hint ? $id.'-hint' : null);
+    $callerDescribedBy = $attributes->get('aria-describedby');
+    $describedBy = trim(((string) ($ownDescribedBy ?? '')).' '.((string) ($callerDescribedBy ?? '')));
+    $describedBy = $describedBy !== '' ? $describedBy : null;
+
     // Visual box styling. The <input> uses .peer + .sr-only, and this box listens
     // to peer-checked / peer-focus-visible / peer-disabled via sibling selectors.
     $boxClasses = WireKit::resolveClasses('checkbox', 'base', implode(' ', [
@@ -80,7 +90,7 @@
         $sizing,
         'rounded-[var(--radius-wk-sm)]',
         'border-[length:var(--border-wk-width)]',
-        'border-[var(--color-wk-border)]',
+        'border-[var(--color-wk-border-strong)]',
         'peer-hover:border-[var(--color-wk-border-hover)]',
         'bg-[var(--color-wk-bg-input)]',
         'peer-checked:bg-[var(--color-wk-accent)]',
@@ -114,9 +124,9 @@
             name="{{ $name }}"
             class="peer sr-only"
             @if($indeterminate) x-init="$el.indeterminate = true" @endif
-            @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
-            @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
-            {{ $attributes->except(['id', 'name']) }}
+            @if($hasError) aria-invalid="true" @endif
+            @if($describedBy !== null) aria-describedby="{{ $describedBy }}" @endif
+            {{ $attributes->except(['id', 'name', 'aria-describedby']) }}
         />
 
         {{-- Visual box — sibling of .peer (consumes peer-checked bg/border). The

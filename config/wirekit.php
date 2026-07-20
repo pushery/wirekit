@@ -100,6 +100,22 @@ return [
         'storage_key' => env('WIREKIT_THEME_STORAGE_KEY', 'wirekit-theme'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Accessibility
+    |--------------------------------------------------------------------------
+    |
+    | Global a11y defaults. `announce_error` controls whether form controls
+    | wrap their error message in an aria-live="polite" region so screen
+    | readers announce it as it appears. Turn it OFF app-wide when your app
+    | runs its OWN error live-region and would otherwise double-announce; a
+    | per-control `:announce-error` still overrides this default.
+    |
+    */
+    'a11y' => [
+        'announce_error' => env('WIREKIT_ANNOUNCE_ERROR', true),
+    ],
+
     'components' => [
         // Form components
         'button' => ['intent' => 'primary', 'surface' => 'filled', 'size' => 'md'],

@@ -11,11 +11,14 @@ namespace Pushery\WireKit\Theming;
  * color string in OKLCH or hex form, returns its relative luminance,
  * and given a pair of strings, returns their WCAG contrast ratio.
  *
- * Scope: this helper covers the color formats WireKit itself emits
- * (`oklch(L C H)` with L either as a decimal 0–1 or a percentage, plus
- * standard `#rrggbb` hex). Unsupported formats (`color-mix(...)`,
- * `rgb(...)`, named colors) return `null` — callers should treat null
- * as "skip this pairing, can't audit it" rather than as a failure.
+ * Scope: this helper covers the color formats WireKit itself emits and the
+ * forms a browser hands back from `getComputedStyle` — `oklch(L C H)` (L as a
+ * decimal 0–1 or a percentage), `#rrggbb` / `#rgb` hex, `color-mix(in srgb, …)`,
+ * and `rgb()` / `rgba()` (both the comma and the modern space form). Anything
+ * else — named colors, `currentColor`, `color-mix` in a non-sRGB space — returns
+ * `null`, which means "unparseable, skip this pairing" and MUST be treated as such
+ * (assert on `null`; do not cast to float — `(float) null` reads as a false 0.00:1),
+ * never as a contrast failure.
  *
  * OKLCH → sRGB conversion follows the CSS Color Module 4 specification:
  *
@@ -157,6 +160,19 @@ final class WcagContrast
             ];
 
             return $mixed;
+        }
+
+        // rgb() / rgba() — getComputedStyle returns resolved colors in this form,
+        // so a form control's live border/background read back from the DOM was
+        // unauditable (returned null) without this arm (WIRE-115). Match both the
+        // legacy comma form (rgb(255, 0, 0) / rgba(255,0,0,.5)) AND the modern space
+        // form (rgb(255 255 255 / 50%)); alpha is ignored, as with oklch's `/ alpha`.
+        if (preg_match('/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/i', $color, $m) === 1) {
+            $r = ((float) $m[1]) / 255.0;
+            $g = ((float) $m[2]) / 255.0;
+            $b = ((float) $m[3]) / 255.0;
+
+            return [self::srgbToLinear($r), self::srgbToLinear($g), self::srgbToLinear($b)];
         }
 
         return null;

@@ -53,6 +53,7 @@ import wirekitDataTable from './components/data-table.js';
 import wirekitEventCalendar from './components/event-calendar.js';
 import wirekitMap from './components/map.js';
 import wirekitStickyPanelShadows from './components/sticky-panel.js';
+import wirekitStream from './components/stream.js';
 
 export default function (Alpine) {
     Alpine.data('wirekitChartJs', wirekitChartJs);
@@ -99,4 +100,5 @@ export default function (Alpine) {
     Alpine.data('wirekitEventCalendar', wirekitEventCalendar);
     Alpine.data('wirekitMap', wirekitMap);
     Alpine.data('wirekitStickyPanelShadows', wirekitStickyPanelShadows);
+    Alpine.data('wirekitStream', wirekitStream);
 }

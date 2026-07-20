@@ -2,7 +2,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
-    'announceError' => true,
+    'announceError' => config('wirekit.a11y.announce_error', true),
     'name' => null,
     'id' => null,
     'options' => [],
@@ -94,6 +94,14 @@
     // role="combobox" input (the labelable control), never the roleless wrapper.
     $callerAriaLabel = $attributes->get('aria-label');
     $resolvedAriaLabel = $ariaLabel ?? $callerAriaLabel;
+
+    // Merge a caller aria-describedby with our own error target into ONE attribute on
+    // the input, so a caller description reaches the labelable control (WIRE-162) and
+    // never collides with the error id as two attributes (the WIRE-118 double bug).
+    $ownDescribedBy = $hasError ? $errorId : null;
+    $callerDescribedBy = $attributes->get('aria-describedby');
+    $describedBy = trim(((string) ($ownDescribedBy ?? '')).' '.((string) ($callerDescribedBy ?? '')));
+    $describedBy = $describedBy !== '' ? $describedBy : null;
 
     // Sizing.
     $heightClasses = match ($size) {
@@ -272,8 +280,10 @@
         }
     }"
     @click.outside="open = false"
-    class="relative w-full"
-    {{ $attributes->except('aria-label') }}
+    {{-- The roleless wrapper carries ONLY layout — every caller attribute
+         (aria-describedby, data-*, autocomplete, required, …) is routed to the
+         role="combobox" input below, never left stranded on this <div> (WIRE-162). --}}
+    {{ $attributes->only(['style'])->class(['relative w-full']) }}
 >
     {{-- Hidden input holding the selected *value* for form submission. --}}
     @if($name)
@@ -302,11 +312,15 @@
         @keydown.enter.prevent="activateHighlighted()"
         @keydown.escape="open = false"
         @if($disabled) disabled @endif
-        @if($hasError) aria-invalid="true" aria-describedby="{{ $errorId }}" @endif
+        @if($hasError) aria-invalid="true" @endif
+        @if($describedBy) aria-describedby="{{ $describedBy }}" @endif
         {{-- Accessible name: a visible <label for> wins; otherwise aria-label
              from the ariaLabel prop / caller attribute lands on this input (the
              labelable role="combobox" control), never the roleless wrapper. --}}
         @if(! $label && $resolvedAriaLabel) aria-label="{{ $resolvedAriaLabel }}" @endif
+        {{-- Every OTHER caller attribute (data-*, autocomplete, required, readonly …)
+             reaches the actual control here, not the wrapper (WIRE-162). --}}
+        {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby']) }}
         class="wk-field {{ $inputClasses }}"
     />
 

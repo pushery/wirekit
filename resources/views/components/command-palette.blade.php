@@ -132,6 +132,11 @@
                             placeholder="{{ $placeholder }}"
                             class="wk-field {{ $inputClasses }}"
                             autocomplete="off"
+                            {{-- WIRE-174: emit the query on every keystroke (debounced, bubbling) so a
+                                 host can drive server-side search — hook it with x-on:wirekit-command-palette-query
+                                 or Livewire's @wirekit-command-palette-query / wire:command-palette-query.
+                                 Kept as an event (not a raw wire:model) to avoid double-binding the internal x-model. --}}
+                            x-on:input.debounce.300ms="$dispatch('wirekit-command-palette-query', { query })"
                         />
                     </div>
 

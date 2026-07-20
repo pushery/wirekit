@@ -29,6 +29,11 @@
     // there).
     'dismissible' => false,
     'dismissLabel' => 'Remove',
+    // Multi-line mode. A badge is a fixed-height single-line pill by default. Set
+    // `wrap` for a long label that must break across lines: the fixed height is
+    // swapped for `min-h-*` + vertical padding so the pill GROWS with the text
+    // instead of the second line spilling below the surface (WIRE-175).
+    'wrap' => false,
     'scope' => null,
 ])
 
@@ -56,11 +61,16 @@
     // global --border-wk-width so the outline stays visible even under a theme
     // that flattens soft badges; 'solid' uses the badge-width token (the fill
     // carries the shape, so a flattened border is fine).
+    // Normalize `wrap` up front — a stringly `wrap="false"` would otherwise be
+    // truthy (Blade passes it as the string "false"). See the stringly-false trap.
+    $wrap = filter_var($wrap, FILTER_VALIDATE_BOOLEAN);
+
     $baseClasses = WireKit::resolveClasses('badge', 'base', implode(' ', [
         'inline-flex items-center gap-x-1',
         'font-[family-name:var(--font-wk-sans)]',
         'font-[number:var(--font-wk-heading-weight)]',
-        'whitespace-nowrap',
+        // Single-line by default; wrap mode lets long labels break across lines.
+        $wrap ? 'whitespace-normal' : 'whitespace-nowrap',
     ]), $scope);
 
     $borderWidthClass = $surface === 'outline'
@@ -147,23 +157,28 @@
         default => $softClasses,
     };
 
-    // Size classes: height, padding, font size, radius
-    // Full rounded corners for pill-style badges
+    // Size classes: height, padding, font size, radius.
+    // Single-line badges are full-radius pills. In wrap mode the fixed height is swapped
+    // for min-height + a little more vertical padding so the pill grows with the wrapped
+    // text (WIRE-175); the radius also drops to the medium token, because a full radius —
+    // half the single-line height — reads as an oversized stadium once the badge is two+
+    // lines tall. The reduced radius makes a multi-line badge a tidy rounded rectangle.
+    $pillRadius = $wrap ? 'rounded-[var(--radius-wk-md)]' : 'rounded-[var(--radius-wk-full)]';
     $sizeClasses = match ($size) {
         'sm' => implode(' ', [
-            'h-5 px-2',
+            $wrap ? 'min-h-5 py-1 px-2' : 'h-5 px-2',
             'text-[length:var(--text-wk-sm)]',
-            'rounded-[var(--radius-wk-full)]',
+            $pillRadius,
         ]),
         'md' => implode(' ', [
-            'h-6 px-2.5',
+            $wrap ? 'min-h-6 py-1 px-2.5' : 'h-6 px-2.5',
             'text-[length:var(--text-wk-sm)]',
-            'rounded-[var(--radius-wk-full)]',
+            $pillRadius,
         ]),
         'lg' => implode(' ', [
-            'h-7 px-3',
+            $wrap ? 'min-h-7 py-1.5 px-3' : 'h-7 px-3',
             'text-[length:var(--text-wk-md)]',
-            'rounded-[var(--radius-wk-full)]',
+            $pillRadius,
         ]),
         default => WireKit::validateProp('badge', 'size', $size, ['sm', 'md', 'lg']),
     };
