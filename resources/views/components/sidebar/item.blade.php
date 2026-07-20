@@ -32,7 +32,9 @@
     // Individual nav link. Active items get a highlighted background and
     // aria-current="page" so AT announces "current page, <label>".
     $classes = WireKit::resolveClasses('sidebar.item', 'base', implode(' ', [
-        'flex items-center gap-[var(--padding-wk-x-sm)]',
+        // `relative` is the containing block the collapsed-rail counter dot
+        // positions against — without it the dot would anchor to the nav.
+        'relative flex items-center gap-[var(--padding-wk-x-sm)]',
         // Collapse-to-icon rail: center the lone icon when the sidebar collapses.
         'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
@@ -94,11 +96,31 @@
     {{-- In a collapsed rail the label becomes sr-only — visually hidden but
          still the link's accessible name (the icon is decorative). --}}
     <span class="flex-1 truncate group-data-[collapsed]/wk-sidebar:sr-only">{{ $slot }}</span>
-    {{-- Trailing counter/dot (an unread badge). Rendered OUTSIDE the truncating label
-         so it is never clipped, pushed to the end with ml-auto, and kept visible in the
-         collapsed rail (unlike the label, which goes sr-only) (WIRE-114). --}}
+    {{-- Trailing counter (an unread badge). Rendered OUTSIDE the truncating label
+         so a long label can never clip it, and pushed to the end with ml-auto.
+
+         In the collapsed rail it becomes a dot. The digits have no room at rail
+         width, but the counter must not simply vanish either — that is where an
+         unread signal matters most. Going `absolute` is what makes this work:
+         the dot leaves the flex row entirely, so the lone icon keeps the exact
+         center the rail gives it. Sharing the row (the shipped behavior) pushed
+         the icon visibly off-center, which is what the browser test measures.
+
+         The digits move to sr-only rather than being hidden, so the count stays
+         part of the link's accessible name in BOTH states — a screen-reader user
+         gets no icon cue at all and would otherwise lose the information
+         outright. Note this differs from hiding the counter and announcing it
+         separately; adopting `badge` over a hand-rolled counter changes what
+         assistive technology reads out. Documented on the component page. --}}
     @if(filled($badge))
-        <span class="shrink-0 ml-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]">{{ $badge }}</span>
+        <span class="shrink-0 ml-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]
+            group-data-[collapsed]/wk-sidebar:absolute
+            group-data-[collapsed]/wk-sidebar:top-[var(--padding-wk-y-sm)]
+            group-data-[collapsed]/wk-sidebar:right-[var(--padding-wk-x-sm)]
+            group-data-[collapsed]/wk-sidebar:ml-0
+            group-data-[collapsed]/wk-sidebar:p-0
+            group-data-[collapsed]/wk-sidebar:h-2
+            group-data-[collapsed]/wk-sidebar:w-2"><span class="group-data-[collapsed]/wk-sidebar:sr-only">{{ $badge }}</span></span>
     @endif
     @if($opensNewTab)
         <span class="sr-only">{{ __('(opens in new tab)') }}</span>

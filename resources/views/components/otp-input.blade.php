@@ -46,7 +46,7 @@
 
     $stateClasses = $hasError
         ? 'border-[var(--color-wk-border-error)]'
-        : 'border-[var(--color-wk-border)]';
+        : 'border-[var(--color-wk-border-strong)]';
 
     $wrapperClasses = WireKit::resolveClasses('otp-input', 'wrapper', implode(' ', [
         'space-y-1.5',

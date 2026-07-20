@@ -89,9 +89,33 @@ class WireKitServiceProvider extends ServiceProvider
             ], 'wirekit-views');
 
             // Font files — published to public/vendor/wirekit/fonts/
+            //
+            // This tag copies the WHOLE tree: 5.8 MB across sans, serif and mono.
+            // An app that activates two families uses roughly 430 KB of that, so
+            // the rest is dead weight in public/ — and it is re-copied on every
+            // composer install when the publish is wired into post-autoload-dump
+            // to survive deploys, which is the recommended setup.
             $this->publishes([
                 __DIR__.'/../resources/fonts' => public_path('vendor/wirekit/fonts'),
             ], 'wirekit-fonts');
+
+            // Per-preset publish tags, so an app can ship only what it activates
+            // (WIRE-108). Each registered font gets `wirekit-font-<key>`:
+            //
+            //     php artisan vendor:publish --tag=wirekit-font-ibm-plex-sans
+            //     php artisan vendor:publish --tag=wirekit-font-ibm-plex-mono
+            //
+            // Derived from FontRegistry rather than hand-listed, so a new preset
+            // gets its tag automatically and the two can never drift apart. The
+            // CSS path (e.g. "sans/inter/inter.css") locates the preset's own
+            // directory, which holds that family's CSS and its woff2 files.
+            foreach (FontRegistry::all() as $preset) {
+                $dir = dirname($preset->cssFile);
+
+                $this->publishes([
+                    __DIR__.'/../resources/fonts/'.$dir => public_path('vendor/wirekit/fonts/'.$dir),
+                ], 'wirekit-font-'.$preset->key);
+            }
 
             // JavaScript bundles — published to public/vendor/wirekit/
             // Optional: improves performance by serving via web server instead of PHP route

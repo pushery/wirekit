@@ -45,7 +45,26 @@ final class McpServeCommand extends Command
             return self::FAILURE;
         }
 
-        while (($line = fgets($in)) !== false) {
+        while (true) {
+            $line = fgets($in);
+
+            // A false read is NOT necessarily end-of-input. Node-based MCP
+            // clients (Claude Code, Cursor, Cline — all spawning through libuv)
+            // hand the child its stdio as a Unix socketpair rather than an
+            // anonymous pipe, and on a socket PHP applies default_socket_timeout
+            // (60s). An idle session therefore hits that timeout and fgets()
+            // returns false with no EOF — so treating every false as EOF exited
+            // cleanly after exactly 60 seconds of quiet, with status 0 and
+            // nothing on stderr. The client reported "server disconnected" and a
+            // reconnect worked instantly, which made it read as flakiness.
+            if ($line === false) {
+                if (self::isIdleTimeout($in)) {
+                    continue;
+                }
+
+                break; // genuine EOF — the client closed the stream
+            }
+
             $line = trim($line);
             if ($line === '') {
                 continue;
@@ -69,6 +88,32 @@ final class McpServeCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Did this false read come from an idle socket timeout rather than EOF?
+     *
+     * The reason for staying on a BLOCKING stream and distinguishing the two,
+     * instead of the more common non-blocking-plus-retry loop: a non-blocking
+     * fgets() returns whatever bytes have arrived, which for a half-delivered
+     * message is a partial line with no trailing newline. That splits one
+     * JSON-RPC message into two unparseable fragments, so the retry loop has to
+     * reassemble lines by hand. Blocking reads always yield whole lines, and the
+     * only thing that needed fixing was reading a timeout as a hangup.
+     *
+     * It is also cheaper: this loop wakes once per timeout interval, where a
+     * 10ms retry loop wakes a hundred times a second for the entire session.
+     *
+     * @param  resource  $stream
+     */
+    private static function isIdleTimeout($stream): bool
+    {
+        $meta = stream_get_meta_data($stream);
+
+        // Both conditions matter. A stream at EOF also reports no data, and
+        // `timed_out` alone would then spin on a closed stream forever.
+        return ($meta['timed_out'] ?? false) === true
+            && ($meta['eof'] ?? false) === false;
     }
 
     /**

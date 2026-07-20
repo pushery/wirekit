@@ -208,7 +208,12 @@ CSS,
     --color-wk-code-bg: oklch(0.97 0.02 var(--theme-hue));
 
     --color-wk-border: oklch(0.91 0 0);
-    --color-wk-border-strong: oklch(0.82 0 0);
+    /* Form-control borders — contrast-bound, not stylistic: 3:1 against the
+       input fill (WCAG 1.4.11), and hover moves AWAY from that fill. The softer
+       0.82 this preset used to carry reads well on a card edge but reaches only
+       1.75:1 around an input. Keep in lockstep with docs/theming/aurora.md. */
+    --color-wk-border-strong: oklch(0.66 0 0);
+    --color-wk-border-strong-hover: oklch(0.58 0 0);
 
     --shadow-wk-sm: 0 1px 2px 0 oklch(0.2 0.03 var(--theme-hue) / 0.04), 0 1px 1px 0 oklch(0.2 0.03 var(--theme-hue) / 0.03);
     --shadow-wk-md: 0 4px 6px -1px oklch(0.2 0.03 var(--theme-hue) / 0.06), 0 2px 4px -2px oklch(0.2 0.03 var(--theme-hue) / 0.04);
@@ -251,7 +256,11 @@ CSS,
     --color-wk-code-bg: oklch(0.27 0.04 var(--theme-hue));
 
     --color-wk-border: oklch(0.31 0.024 var(--theme-hue));
-    --color-wk-border-strong: oklch(0.4 0.02 var(--theme-hue));
+    /* Same floor as light, reached from the other side — on a dark fill the
+       border brightens away from it. Verified across the whole --theme-hue
+       range, not at one sample hue. */
+    --color-wk-border-strong: oklch(0.52 0.02 var(--theme-hue));
+    --color-wk-border-strong-hover: oklch(0.60 0.02 var(--theme-hue));
 
     --shadow-wk-sm: 0 1px 2px 0 oklch(0 0 0 / 0.30), 0 1px 1px 0 oklch(0 0 0 / 0.20);
     --shadow-wk-md: 0 4px 6px -1px oklch(0 0 0 / 0.35), 0 2px 4px -2px oklch(0.2 0.03 var(--theme-hue) / 0.25);

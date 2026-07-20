@@ -1,4 +1,4 @@
-/*! WireKit ApexCharts Adapter v2.16.1 | MIT License | https://wirekit.app
+/*! WireKit ApexCharts Adapter v2.17.0 | MIT License | https://wirekit.app
  * Adapter glue only — does NOT contain ApexCharts code.
  * ApexCharts is non-MIT and is the developer's separate install.
  * See https://apexcharts.com/license/ for ApexCharts terms. */

@@ -83,7 +83,7 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'hover:border-[var(--color-wk-border-hover)]',
+        'hover:border-[var(--color-wk-border-strong-hover)]',
         'focus:outline-none',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
@@ -195,7 +195,7 @@
             // :has() so we don't need any JS sync between input and wrapper.
             'has-[:user-invalid]:border-[var(--color-wk-border-error)]',
             'has-[:user-invalid:focus-visible]:ring-[var(--color-wk-danger)]',
-            'hover:border-[var(--color-wk-border-hover)]',
+            'hover:border-[var(--color-wk-border-strong-hover)]',
             $hasError
                 ? 'border-[var(--color-wk-border-error)]'
                 : ($hasSuccess ? 'border-[var(--color-wk-border-success)]' : 'border-[var(--color-wk-border-strong)]'),

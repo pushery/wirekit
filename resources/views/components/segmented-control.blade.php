@@ -21,6 +21,35 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
+    // Selected / unselected segment appearance (WIRE-178).
+    //
+    // These used to be string literals inside the Alpine `:class` ternary below.
+    // That put them out of reach of WireKit::scope(): resolveClasses runs at
+    // RENDER time in PHP, while `:class` is a RUNTIME reactive binding, so any
+    // state-dependent styling written there silently opts out of personalization.
+    // A brand that themes its active segment (gold on navy, say) could not adopt
+    // this component without losing that styling — the accent token does not help,
+    // because the selected pill is an elevated surface rather than an accent fill.
+    //
+    // Resolving both branches here and interpolating the results keeps the runtime
+    // behavior identical while making both reachable.
+    //
+    // NOTE: these class strings now only exist inside PHP, so Tailwind's content
+    // scanner no longer sees them where it used to. They are listed literally in
+    // resources/views/_safelist.blade.php — without that entry they get purged
+    // and the segments render unstyled.
+    $segmentSelectedClasses = WireKit::resolveClasses('segmented-control', 'segment-selected', implode(' ', [
+        'bg-[var(--color-wk-bg-elevated)]',
+        'text-[color:var(--color-wk-text)]',
+        'shadow-[var(--shadow-wk-sm)]',
+        'font-[number:var(--font-wk-heading-weight)]',
+    ]), $scope);
+
+    $segmentUnselectedClasses = WireKit::resolveClasses('segmented-control', 'segment-unselected', implode(' ', [
+        'text-[color:var(--color-wk-text-muted)]',
+        'hover:text-[color:var(--color-wk-text)]',
+    ]), $scope);
+
     // Individual segment button classes
     $segmentClasses = implode(' ', [
         'relative',
@@ -72,8 +101,8 @@
                 @keydown.arrow-left.prevent="$el.previousElementSibling?.focus(); $el.previousElementSibling?.click()"
                 class="{{ $segmentClasses }} {{ $sizeClasses }}"
                 :class="selected === '{{ $optValue }}'
-                    ? 'bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-sm)] font-[number:var(--font-wk-heading-weight)]'
-                    : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]'"
+                    ? '{{ $segmentSelectedClasses }}'
+                    : '{{ $segmentUnselectedClasses }}'"
             >
                 {{ $optLabel }}
             </button>

@@ -100,7 +100,7 @@
         'overflow-hidden',
         'rounded-[var(--radius-wk-md)]',
         'border-[length:var(--border-wk-width)]',
-        $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]',
+        $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]',
         'bg-[var(--color-wk-bg-input)]',
         'shadow-[var(--shadow-wk-sm)]',
         'transition-colors duration-[var(--transition-wk-duration)]',

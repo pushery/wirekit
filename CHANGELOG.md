@@ -10,18 +10,34 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.17.0] — 2026-07-20
+
+**Minor release.** Additive and backward-compatible throughout: a new form-control hover token, per-preset font publish tags, and a form-control accessibility pass finished across every control, every hover state, and every theme preset. A form-control accessibility pass that finishes what 2.16.0 started, an internationalization fix for pagination, and a stdio server that no longer gives up after a minute of quiet. Everything here is additive and backward-compatible.
+
+### Added
+
+- **`--color-wk-border-strong-hover` design token.** The hover border for form controls, and the counterpart to the `--color-wk-border-strong` resting border that shipped in 2.16.0. One value is correct in both themes: it sits below the resting border on light and above it on dark, so the edge always moves *away* from the field fill rather than toward it. See [design tokens](https://docs.wirekit.app/theming/design-tokens).
+- **Per-preset font publish tags.** `vendor:publish` now offers a tag per font preset instead of only the all-or-nothing bundle, so an app can publish just the family it uses. A newly added preset gets its tag automatically. See [fonts](https://docs.wirekit.app/components/fonts).
+- **[Segmented Control](https://docs.wirekit.app/components/segmented-control) selected / unselected appearance.** The two segment states are now addressable through theming and personalization, which previously could not reach them because the appearance was decided at runtime rather than at render time.
+
+### Fixed
+
+- **Every form control now keeps a 3:1 border, at rest and on hover.** 2.16.0 fixed the resting border on [input](https://docs.wirekit.app/components/input), [select](https://docs.wirekit.app/components/select), [textarea](https://docs.wirekit.app/components/textarea) and [checkbox](https://docs.wirekit.app/components/checkbox); fourteen sibling controls still drew theirs from the decorative border token at 1.29:1 in the light theme and 1.56:1 in the dark. All of them now use `--color-wk-border-strong`. Separately, the hover state pointed at a decorative token that is *lighter* than the resting border, so a control that met the contrast floor dropped to 1.87:1 precisely while the pointer was on it — the worst possible moment to lose a visible edge. Hover now uses the new `--color-wk-border-strong-hover`.
+- **Every theme preset keeps its form-control borders contrast-compliant.** Presets that tint their own control border — [Aurora](https://docs.wirekit.app/theming/aurora), Brutalist, Retro Terminal, Cupertino — now define `--color-wk-border-strong` and `--color-wk-border-strong-hover` alongside it, so a form control keeps the theme's edge instead of falling back to the stock neutral, and every one clears 3:1 against the field fill in both light and dark. Aurora's values were also corrected (they had reached 1.75:1 light / 2.13:1 dark). If you pasted a preset block into your own stylesheet, re-copy it.
+- **`wirekit:mcp-serve` no longer exits after 60 seconds of quiet.** Editors that launch the server over a socket rather than a pipe — which is what Node-based clients do — hit PHP's socket read timeout, and the server read that timeout as the client hanging up. It exited with status 0 and an empty error stream, so the editor reported a disconnect with nothing to go on, a reconnect worked instantly, and the whole thing looked like flakiness. Idle timeouts and real hangups are now told apart.
+- **[Countdown](https://docs.wirekit.app/components/countdown) segments no longer overflow on a narrow screen.** The boxed-segment row did not wrap, so a five-unit countdown ran past the edge of a phone-width viewport, and the box-pulse animation clipped its own outermost segment. The row now wraps and reserves room for the pulse.
+- **[Pagination](https://docs.wirekit.app/components/pagination) is translatable as whole sentences.** The summary and the page indicator were assembled from separate fragments, which cannot be translated correctly into languages that order those parts differently. Each is now a single translatable string with placeholders. The translation keys are documented for the first time.
+- **[Sidebar](https://docs.wirekit.app/components/sidebar) item counters no longer push the icon off-center in the collapsed rail.** A `sidebar.item` carrying a `badge` shared its flex row with the icon at rail width. The counter now becomes a corner dot when the rail is collapsed, with the digits kept available to screen readers.
+
+### Documentation
+
+- **Bundle sizes are quoted in one place.** [Dependencies](https://docs.wirekit.app/dependencies) is the only page that states them, and it is the only one measured against the shipped files; other pages link to it. Two pages had drifted apart on the same figure.
+
 ## [2.16.1] — 2026-07-20
 
-**Patch release — re-publishes 2.16.0.** Nothing here is new. The 2.16.0 package
-that reached Packagist was built from an incomplete tree: it is missing the
-[Status Tiles](https://docs.wirekit.app/components/status-tiles) and
-[Stream](https://docs.wirekit.app/components/stream) components entirely, along
-with most of the other changes listed under 2.16.0 below. The tag and the source
-were correct throughout; only the published package was not.
+**Patch release — re-publishes 2.16.0.** Nothing here is new. The 2.16.0 package that reached Packagist was built from an incomplete tree: it is missing the [Status Tiles](https://docs.wirekit.app/components/status-tiles) and [Stream](https://docs.wirekit.app/components/stream) components entirely, along with most of the other changes listed under 2.16.0 below. The tag and the source were correct throughout; only the published package was not.
 
-**If you installed 2.16.0, upgrade.** Everything the 2.16.0 notes describe is in
-this release and nothing else changes, so the upgrade carries no migration and no
-behavior difference beyond gaining what 2.16.0 promised.
+**If you installed 2.16.0, upgrade.** Everything the 2.16.0 notes describe is in this release and nothing else changes, so the upgrade carries no migration and no behavior difference beyond gaining what 2.16.0 promised.
 
 ## [2.16.0] — 2026-07-20
 

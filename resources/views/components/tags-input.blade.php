@@ -54,7 +54,7 @@
 
     $stateClasses = $hasError
         ? 'border-[var(--color-wk-border-error)]'
-        : 'border-[var(--color-wk-border)]';
+        : 'border-[var(--color-wk-border-strong)]';
 
     /*
      * Tag chip classes — `px-2 py-1` (8 px horizontal, 4 px vertical).

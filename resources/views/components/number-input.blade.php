@@ -60,7 +60,7 @@
     // below for the matching error-aware color on those buttons.
     $stateClasses = $hasError
         ? 'border-[var(--color-wk-border-error)] focus-visible:ring-[var(--color-wk-danger)]'
-        : 'border-[var(--color-wk-border)]';
+        : 'border-[var(--color-wk-border-strong)]';
 
     // Size classes
     $sizeClasses = match ($size) {
@@ -83,7 +83,7 @@
     // a visually broken "gapped" frame.
     $buttonBorderColor = $hasError
         ? 'border-[var(--color-wk-border-error)]'
-        : 'border-[var(--color-wk-border)]';
+        : 'border-[var(--color-wk-border-strong)]';
 
     // Stepper button classes — shared for both decrease/increase
     $buttonClasses = implode(' ', [
