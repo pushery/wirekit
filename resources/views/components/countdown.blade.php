@@ -105,6 +105,7 @@
 @endphp
 
 <div
+    x-modelable="done"
     x-data="{
         target: @js($targetMs),
         warnSeconds: @js($warnSeconds),
@@ -118,11 +119,28 @@
         _div: { years: 31536000, days: 86400, hours: 3600, minutes: 60, seconds: 1 },
         now: Date.now(),
         _timer: null,
+        // Completion state (WIRE-161). `done` is a plain reactive prop (so x-modelable
+        // can bind it, unlike the read-only `expired` getter); `_fired` de-dupes the
+        // one-shot event.
+        _fired: false,
+        done: false,
         init() {
             this.now = Date.now();
             // Client-side tick — no wire:poll (a visual clock does not need a
             // server round-trip).
             this._timer = setInterval(() => { this.now = Date.now(); }, 1000);
+            // Fire `wirekit-countdown-expired` + flip `done` exactly once at (or past)
+            // zero, so a sibling control can react and x-model can observe. $dispatch
+            // bubbles from the root, mirroring the wirekit-lightbox-open convention.
+            const fire = () => {
+                if (this.expired && ! this._fired) {
+                    this._fired = true;
+                    this.done = true;
+                    this.$dispatch('wirekit-countdown-expired');
+                }
+            };
+            fire(); // an already-past deadline still notifies
+            this.$watch('now', () => fire());
         },
         destroy() {
             if (this._timer) { clearInterval(this._timer); this._timer = null; }

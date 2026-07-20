@@ -148,6 +148,6 @@
         {{ $slot }}
     @endif
     @if($opensNewTab)
-        <span class="sr-only">(opens in new tab)</span>
+        <span class="sr-only">{{ __('(opens in new tab)') }}</span>
     @endif
 </a>

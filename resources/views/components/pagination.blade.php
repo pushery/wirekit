@@ -80,50 +80,64 @@
         'text-[color:var(--color-wk-accent-fg)]',
         'font-[number:var(--font-wk-heading-weight)]',
     ]);
+
+    // Absolute-ize paginator URLs. Under Livewire's WithPagination the current-path
+    // resolver returns a RELATIVE path, so previousPageUrl()/nextPageUrl()/link urls
+    // come out relative and 404 on a nested route. url()->to() host-qualifies them and
+    // is idempotent on already-absolute URLs (WIRE-122).
+    $abs = static fn (?string $u): ?string => $u === null ? null : url()->to($u);
+
+    // The nav's accessible name. __('Pagination') is intended as a JSON string key, but
+    // on a case-insensitive filesystem it ALSO matches Laravel's own pagination.php GROUP
+    // lang file and resolves to that ARRAY — so guard it, or a bare (untranslated) render
+    // echoes an array into aria-label and crashes. A real JSON translation still wins
+    // (the translator checks JSON before the group), so localization is unaffected.
+    $navLabel = __('Pagination');
+    $navLabel = is_string($navLabel) ? $navLabel : 'Pagination';
 @endphp
 
-<nav role="navigation" aria-label="Pagination" {{ $attributes->class([$navClasses]) }}>
+<nav role="navigation" aria-label="{{ $navLabel }}" {{ $attributes->class([$navClasses]) }}>
     @if($variant === 'simple' || $variant === 'mini')
         {{-- Simple: prev + next only (optionally with a "page X of Y" label) --}}
         <div class="flex items-center gap-2">
             @if($paginator->onFirstPage())
-                <span class="{{ $buttonDisabled }}" aria-hidden="true">&larr; Previous</span>
+                <span class="{{ $buttonDisabled }}" aria-hidden="true">&larr; {{ __('Previous') }}</span>
             @else
-                <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="{{ $buttonBase }}">&larr; Previous</a>
+                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}">&larr; {{ __('Previous') }}</a>
             @endif
         </div>
 
         @if($variant === 'simple')
             {{-- Centered "Page X of Y" label — hidden on mini variant for tighter footprint --}}
             <span class="text-[color:var(--color-wk-text-muted)]">
-                Page {{ $paginator->currentPage() }} of {{ $paginator->lastPage() }}
+                {{ __('Page') }} {{ $paginator->currentPage() }} {{ __('of') }} {{ $paginator->lastPage() }}
             </span>
         @endif
 
         <div class="flex items-center gap-2">
             @if($paginator->hasMorePages())
-                <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="{{ $buttonBase }}">Next &rarr;</a>
+                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}">{{ __('Next') }} &rarr;</a>
             @else
-                <span class="{{ $buttonDisabled }}" aria-hidden="true">Next &rarr;</span>
+                <span class="{{ $buttonDisabled }}" aria-hidden="true">{{ __('Next') }} &rarr;</span>
             @endif
         </div>
     @else
         {{-- Full: prev + numbered pages + next (standard Laravel paginator links) --}}
         <div class="text-[color:var(--color-wk-text-muted)]">
-            Showing
+            {{ __('Showing') }}
             <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $paginator->firstItem() ?? 0 }}</span>
-            to
+            {{ __('to') }}
             <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $paginator->lastItem() ?? 0 }}</span>
-            of
+            {{ __('of') }}
             <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $paginator->total() }}</span>
-            results
+            {{ __('results') }}
         </div>
 
         <div class="flex flex-wrap items-center gap-1">
             @if($paginator->onFirstPage())
-                <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="Previous">&larr;</span>
+                <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="{{ __('Previous') }}">&larr;</span>
             @else
-                <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="{{ $buttonBase }}" aria-label="Previous">&larr;</a>
+                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" aria-label="{{ __('Previous') }}">&larr;</a>
             @endif
 
             {{-- Numbered links: linkCollection() returns {url, label, active} per entry.
@@ -146,14 +160,14 @@
                 @elseif($link['active'])
                     <span class="{{ $buttonActive }}" aria-current="page">{!! $link['label'] !!}</span>
                 @else
-                    <a href="{{ $link['url'] }}" class="{{ $buttonBase }}" aria-label="Go to page {{ $link['label'] }}">{!! $link['label'] !!}</a>
+                    <a href="{{ $abs($link['url']) }}" class="{{ $buttonBase }}" aria-label="{{ __('Go to page :page', ['page' => $link['label']]) }}">{!! $link['label'] !!}</a>
                 @endif
             @endforeach
 
             @if($paginator->hasMorePages())
-                <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="{{ $buttonBase }}" aria-label="Next">&rarr;</a>
+                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" aria-label="{{ __('Next') }}">&rarr;</a>
             @else
-                <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="Next">&rarr;</span>
+                <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="{{ __('Next') }}">&rarr;</span>
             @endif
         </div>
     @endif

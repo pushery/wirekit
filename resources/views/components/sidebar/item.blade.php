@@ -3,6 +3,10 @@
     'active' => false,
     'icon' => null,
     'submenu' => false,
+    // A trailing counter/dot (an unread badge) — a count or short string renders a
+    // pill AFTER the label, OUTSIDE the truncating span so it is never clipped, and
+    // stays visible in the collapsed rail (WIRE-114).
+    'badge' => null,
     'scope' => null,
 ])
 
@@ -90,8 +94,14 @@
     {{-- In a collapsed rail the label becomes sr-only — visually hidden but
          still the link's accessible name (the icon is decorative). --}}
     <span class="flex-1 truncate group-data-[collapsed]/wk-sidebar:sr-only">{{ $slot }}</span>
+    {{-- Trailing counter/dot (an unread badge). Rendered OUTSIDE the truncating label
+         so it is never clipped, pushed to the end with ml-auto, and kept visible in the
+         collapsed rail (unlike the label, which goes sr-only) (WIRE-114). --}}
+    @if(filled($badge))
+        <span class="shrink-0 ml-auto inline-flex items-center justify-center px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]">{{ $badge }}</span>
+    @endif
     @if($opensNewTab)
-        <span class="sr-only">(opens in new tab)</span>
+        <span class="sr-only">{{ __('(opens in new tab)') }}</span>
     @endif
     @if($submenu)
         {{-- Submenu indicator — signals a flyout or sub-navigation exists.

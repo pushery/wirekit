@@ -72,6 +72,7 @@ import wirekitDataTable from './components/data-table.js';
 import wirekitEventCalendar from './components/event-calendar.js';
 import wirekitMap from './components/map.js';
 import wirekitStickyPanelShadows from './components/sticky-panel.js';
+import wirekitStream from './components/stream.js';
 
 /**
  * Detect a pre-existing Alpine instance. Loading wirekit-alpine.js when
@@ -136,6 +137,7 @@ if (alreadyHasAlpine()) {
     Alpine.data('wirekitEventCalendar', wirekitEventCalendar);
     Alpine.data('wirekitMap', wirekitMap);
     Alpine.data('wirekitStickyPanelShadows', wirekitStickyPanelShadows);
+    Alpine.data('wirekitStream', wirekitStream);
 
     // Expose Alpine on window so developers (and the docs site's replay
     // button) can call Alpine.initTree(element) for re-mounting.

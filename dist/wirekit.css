@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.15.0 — MIT License
+ * WireKit CSS v2.16.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -146,6 +146,13 @@
        lightness keeps the line visible without competing with the variant
        palette — matches the band subtle decorative borders typically occupy. */
     --color-wk-border: oklch(91.4% 0 0);
+    /* Interactive-control resting border. WCAG 1.4.11 wants 3:1 for a control's
+       boundary — the decorative --color-wk-border (kept light for cards / dividers /
+       tables, which are 1.4.11-exempt) is only 1.29:1. Form controls (input / select /
+       textarea / checkbox) draw their resting edge with THIS token: 3.05:1 vs the #fff
+       input fill. Theme presets inherit it — none override --color-wk-border or
+       --color-wk-bg-input, so it stays compliant across every theme (WIRE-113/116). */
+    --color-wk-border-strong: oklch(66% 0 0);
     --color-wk-border-hover: oklch(80% 0 0);
     --color-wk-border-subtle: oklch(94% 0 0);
     /* border-error matches --color-wk-danger-text so error-state border and
@@ -156,7 +163,6 @@
        border-error) so a success-state input border and its confirmation text
        read as one coherent pair. */
     --color-wk-border-success: oklch(45.6% 0.17 149.7);
-    --color-wk-border-strong: oklch(70.8% 0 0);
 
     /* ─── Focus Ring ─── */
     --color-wk-ring: oklch(14.5% 0 0);
@@ -282,8 +288,12 @@
     --padding-wk-y-xl: 1rem;
 
     /* ─── Gap / Spacing ─── */
+    --gap-wk-xs: 0.25rem;
     --gap-wk-sm: 0.5rem;
     --gap-wk-md: 0.75rem;
+    --gap-wk-lg: 1rem;
+    --gap-wk-xl: 1.5rem;
+    --gap-wk-2xl: 2rem;
 
     /* ─── Spacing Scale (Stack, Row, Grid, Section, Container) ─── */
     --space-wk-xs: 0.25rem;
@@ -430,11 +440,13 @@
        so border itself can step back. Previous neutral-600 (43.9%) read
        too heavy against the deeper bg surfaces. */
     --color-wk-border: oklch(32% 0 0);
+    /* Interactive-control resting border (dark). 3.06:1 vs the elevated surround and
+       higher vs the input fill — WCAG 1.4.11 for form controls (WIRE-113/116). */
+    --color-wk-border-strong: oklch(51% 0 0);
     --color-wk-border-hover: oklch(43.9% 0 0);
     --color-wk-border-subtle: oklch(26.9% 0 0);
     --color-wk-border-error: oklch(70.4% 0.191 22.216);
     --color-wk-border-success: oklch(79.2% 0.209 151.711);
-    --color-wk-border-strong: oklch(55.6% 0 0);
 
     /* Focus Ring */
     --color-wk-ring: oklch(98.5% 0 0);
