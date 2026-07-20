@@ -10,6 +10,19 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.16.1] — 2026-07-20
+
+**Patch release — re-publishes 2.16.0.** Nothing here is new. The 2.16.0 package
+that reached Packagist was built from an incomplete tree: it is missing the
+[Status Tiles](https://docs.wirekit.app/components/status-tiles) and
+[Stream](https://docs.wirekit.app/components/stream) components entirely, along
+with most of the other changes listed under 2.16.0 below. The tag and the source
+were correct throughout; only the published package was not.
+
+**If you installed 2.16.0, upgrade.** Everything the 2.16.0 notes describe is in
+this release and nothing else changes, so the upgrade carries no migration and no
+behavior difference beyond gaining what 2.16.0 promised.
+
 ## [2.16.0] — 2026-07-20
 
 **Minor release.** Two new components plus a broad set of accessibility, internationalization, and composition improvements, and a new form-control border token that meets WCAG non-text contrast. Everything here is additive and backward-compatible.
