@@ -110,7 +110,10 @@
         @if($variant === 'simple')
             {{-- Centered "Page X of Y" label — hidden on mini variant for tighter footprint --}}
             <span class="text-[color:var(--color-wk-text-muted)]">
-                {{ __('Page') }} {{ $paginator->currentPage() }} {{ __('of') }} {{ $paginator->lastPage() }}
+                {{ __('Page :current of :last', [
+                    'current' => $paginator->currentPage(),
+                    'last' => $paginator->lastPage(),
+                ]) }}
             </span>
         @endif
 
@@ -123,14 +126,48 @@
         </div>
     @else
         {{-- Full: prev + numbered pages + next (standard Laravel paginator links) --}}
+        {{-- ONE translatable sentence, not four fragments (WIRE-177). The earlier
+             form concatenated __('Showing') / __('to') / __('of') / __('results')
+             around the numbers, which handed a translator four context-free words
+             ("to" is untranslatable without knowing it sits between two numbers)
+             and locked the output into English word order — a locale that puts the
+             total first simply could not be expressed.
+
+             The numbers keep their emphasis by passing pre-built markup as the
+             placeholder values, so the translator moves the placeholders freely
+             and the styling travels with them. {!! !!} is required for that, and
+             is safe here: every value is an integer straight off the paginator,
+             never developer input, and each is escaped before being wrapped. --}}
+        @php
+            $emphasize = fn (int $value): string => '<span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">'.e((string) $value).'</span>';
+
+            // The markup is substituted AFTER translation, never passed through
+            // it. Laravel's translator also honors :Placeholder and :PLACEHOLDER
+            // as case variants, applying ucfirst / strtoupper to the value — and
+            // an uppercased value here would wreck the markup, since Tailwind
+            // classes and CSS custom-property names are case-sensitive. A
+            // translator writing ":TOTAL" for emphasis would silently lose the
+            // number styling. All-caps sentinels are immune: ucfirst and
+            // strtoupper both leave them unchanged, whichever case the
+            // translation uses.
+            $summary = __('Showing :first to :last of :total results', [
+                'first' => 'WKPAGEFIRST',
+                'last' => 'WKPAGELAST',
+                'total' => 'WKPAGETOTAL',
+            ]);
+
+            $summary = str_replace(
+                ['WKPAGEFIRST', 'WKPAGELAST', 'WKPAGETOTAL'],
+                [
+                    $emphasize($paginator->firstItem() ?? 0),
+                    $emphasize($paginator->lastItem() ?? 0),
+                    $emphasize($paginator->total()),
+                ],
+                $summary,
+            );
+        @endphp
         <div class="text-[color:var(--color-wk-text-muted)]">
-            {{ __('Showing') }}
-            <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $paginator->firstItem() ?? 0 }}</span>
-            {{ __('to') }}
-            <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $paginator->lastItem() ?? 0 }}</span>
-            {{ __('of') }}
-            <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $paginator->total() }}</span>
-            {{ __('results') }}
+            {!! $summary !!}
         </div>
 
         <div class="flex flex-wrap items-center gap-1">

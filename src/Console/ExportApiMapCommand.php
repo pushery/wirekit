@@ -166,7 +166,10 @@ class ExportApiMapCommand extends Command
         $items = array_map(fn (string $p): array => [
             'id' => $p,
             'install' => 'php artisan wirekit:theme '.$p,
-            'docs_url' => WireKit::DOCS_URL.'/theming#'.$p,
+            // Each preset moved to its own page; the per-preset headings that made
+            // `#aurora` resolve are gone from the parent page, so the anchor form
+            // pointed all eight at nothing.
+            'docs_url' => WireKit::DOCS_URL.'/theming/'.$p,
         ], $presets);
 
         return ['id' => 'themes', 'count' => count($items), 'items' => $items];
@@ -183,7 +186,9 @@ class ExportApiMapCommand extends Command
                 'id' => $key,
                 'category' => $preset->category,
                 'family' => $preset->family,
-                'docs_url' => WireKit::DOCS_URL.'/fonts',
+                // The page is components/fonts, not /fonts — 21 entries pointed at a
+                // URL that has never existed.
+                'docs_url' => WireKit::DOCS_URL.'/components/fonts',
             ];
         }
 
@@ -199,7 +204,10 @@ class ExportApiMapCommand extends Command
         $items = array_map(fn (string $p): array => [
             'id' => $p,
             'install' => 'php artisan wirekit:publish-icons '.$p,
-            'docs_url' => WireKit::DOCS_URL.'/icons#'.$p,
+            // components/icon, and WITHOUT the per-preset anchor: that page has no
+            // per-preset headings, so `#lucide` would be dead at the new target too.
+            // The presets are listed under one heading, which is where this lands.
+            'docs_url' => WireKit::DOCS_URL.'/components/icon#available-presets',
         ], $presets);
 
         return ['id' => 'icons', 'count' => count($items), 'items' => $items];
@@ -336,7 +344,9 @@ class ExportApiMapCommand extends Command
 
             return [
                 'id' => $c,
-                'docs_url' => WireKit::DOCS_URL.'/cli#'.str_replace(':', '', $canonical),
+                // The page is cli-reference. The anchor scheme is unchanged — the 19
+                // `## `wirekit:x`` headings slugify with the colon dropped.
+                'docs_url' => WireKit::DOCS_URL.'/cli-reference#'.str_replace(':', '', $canonical),
             ];
         }, $commands);
 

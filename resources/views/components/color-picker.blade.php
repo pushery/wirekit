@@ -310,7 +310,7 @@
                     :aria-invalid="invalidInput ? 'true' : 'false'"
                     spellcheck="false"
                     class="wk-field w-full rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] bg-[var(--color-wk-bg-input)] px-[var(--padding-wk-x-sm)] py-1 font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                    :class="invalidInput ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]'"
+                    :class="invalidInput ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]'"
                 />
                 @if($withEyedropper)
                     <button

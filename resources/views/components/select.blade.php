@@ -47,7 +47,7 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'hover:border-[var(--color-wk-border-hover)]',
+        'hover:border-[var(--color-wk-border-strong-hover)]',
         'focus:outline-none',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',

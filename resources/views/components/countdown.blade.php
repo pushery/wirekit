@@ -96,7 +96,18 @@
 
     $baseClasses = WireKit::resolveClasses('countdown', 'base', implode(' ', [
         $variantValue === 'segments'
-            ? 'inline-flex items-stretch gap-[var(--space-wk-sm)]'
+            // flex-wrap, weil die Segmente eine harte Mindestbreite tragen
+            // (min-w-[3.5rem] je Box). Ohne Umbruch braucht die Zeile mit fünf
+            // Einheiten 398px und ragt auf einem 393px-Gerät 29px über ihren
+            // Elternteil hinaus — gemessen, nicht geschätzt. Umbrechen ist die
+            // einzige Anpassung, die die Boxgröße erhält; Schrumpfen würde die
+            // Ziffern unlesbar machen.
+            // Das px-… hält Platz fuer die eigene Animation vor: der Box-Puls
+            // laeuft ueber transform: scale(1.08), eine 90px-Box waechst dadurch
+            // um gut 7px, also ~3.6px je Seite — genau der 3px-Ueberlauf, den der
+            // Mobile-Sweep an der aeussersten Box gemeldet hat. Den Puls kleiner
+            // zu machen waere eine Designaenderung; Raum vorzuhalten ist keine.
+            ? 'inline-flex flex-wrap items-stretch justify-center gap-[var(--space-wk-sm)] px-[var(--space-wk-xs)]'
             : 'inline-flex items-baseline gap-[var(--space-wk-xs)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[length:var(--text-wk-md)]',
@@ -218,7 +229,7 @@
          Each unit is its own node keyed by value, so a changed value re-mounts
          and its enter transition plays (the change animation). --}}
     <template x-if="! expired">
-        <span aria-hidden="true" class="{{ $variantValue === 'segments' ? 'inline-flex items-stretch gap-[var(--space-wk-sm)]' : 'inline-flex items-baseline gap-[var(--space-wk-xs)]' }}">
+        <span aria-hidden="true" class="{{ $variantValue === 'segments' ? 'inline-flex flex-wrap items-stretch justify-center gap-[var(--space-wk-sm)] px-[var(--space-wk-xs)]' : 'inline-flex items-baseline gap-[var(--space-wk-xs)]' }}">
             <template x-for="(seg, index) in computed" :key="segKey(seg)">
                 @if($variantValue === 'segments')
                     {{-- The box re-mounts on each value change (segKey includes the

@@ -48,7 +48,7 @@
         'w-full',
         'bg-[var(--color-wk-bg-input)]',
         'text-[color:var(--color-wk-text)] text-[length:var(--text-wk-sm)]',
-        'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
+        'border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]',
         'rounded-[var(--radius-wk-md)]',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
@@ -131,7 +131,7 @@
                 @click="open ? close() : openAdd()"
                 :aria-expanded="open"
                 aria-haspopup="dialog"
-                class="inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] border-dashed rounded-[var(--radius-wk-full)] hover:text-[color:var(--color-wk-text)] hover:border-[var(--color-wk-border-hover)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                class="inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] border-dashed rounded-[var(--radius-wk-full)] hover:text-[color:var(--color-wk-text)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
             >
                 <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 2v10M2 7h10"/></svg>
                 <span>{{ $addLabel }}</span>

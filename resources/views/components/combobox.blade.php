@@ -128,7 +128,7 @@
         'text-[color:var(--color-wk-text)]',
         'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-[length:var(--border-wk-width)]',
-        $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]',
+        $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]',
         'rounded-[var(--radius-wk-md)]',
         'focus:outline-none',
         'focus-visible:ring-[length:var(--ring-wk-width)]',

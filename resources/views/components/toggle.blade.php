@@ -55,7 +55,7 @@
         'absolute inset-0',
         'rounded-full',
         'border-[length:var(--border-wk-width)]',
-        'border-[var(--color-wk-border)]',
+        'border-[var(--color-wk-border-strong)]',
         'bg-[var(--color-wk-border)]',
         'peer-checked:bg-[var(--color-wk-accent)]',
         'peer-checked:border-[var(--color-wk-accent)]',

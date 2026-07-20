@@ -53,7 +53,7 @@
 
     $stateClasses = $hasError
         ? 'border-[var(--color-wk-border-error)]'
-        : 'border-[var(--color-wk-border)]';
+        : 'border-[var(--color-wk-border-strong)]';
 
     // Pill classes for selected values — py-1 for balanced vertical padding
     $pillClasses = implode(' ', [

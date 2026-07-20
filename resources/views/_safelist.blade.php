@@ -153,4 +153,22 @@
       p-0
       h-auto
 
+    ────────────────────────────────────────────────────────────────────────
+    segmented-control() — selected / unselected segment appearance
+    ────────────────────────────────────────────────────────────────────────
+
+    Same problem, different origin (WIRE-178). These used to be literals inside
+    an Alpine `:class` ternary, where Tailwind's scanner did see them — but that
+    also put them out of reach of WireKit::scope(), because resolveClasses runs
+    at render time in PHP while `:class` is a runtime binding. Moving them into
+    resolveClasses made them personalizable and, in the same step, invisible to
+    the scanner. Both branches are listed here so the move stays purely additive.
+
+      bg-[var(--color-wk-bg-elevated)]
+      text-[color:var(--color-wk-text)]
+      shadow-[var(--shadow-wk-sm)]
+      font-[number:var(--font-wk-heading-weight)]
+      text-[color:var(--color-wk-text-muted)]
+      hover:text-[color:var(--color-wk-text)]
+
 --}}

@@ -91,7 +91,7 @@
         'rounded-[var(--radius-wk-sm)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border-strong)]',
-        'peer-hover:border-[var(--color-wk-border-hover)]',
+        'peer-hover:border-[var(--color-wk-border-strong-hover)]',
         'bg-[var(--color-wk-bg-input)]',
         'peer-checked:bg-[var(--color-wk-accent)]',
         'peer-checked:border-[var(--color-wk-accent)]',
