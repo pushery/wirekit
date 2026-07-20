@@ -10,6 +10,15 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.17.1] — 2026-07-20
+
+**Patch release — dependency maintenance.** No API change and nothing to migrate: the bundled positioning engine moves forward a minor version, and the chart adapter is confirmed against the next major of its optional peer.
+
+### Changed
+
+- **Bundled Floating UI updated to 1.8.** This is the positioning engine behind [dropdown](https://docs.wirekit.app/components/dropdown), [tooltip](https://docs.wirekit.app/components/tooltip), [modal](https://docs.wirekit.app/components/modal), [combobox](https://docs.wirekit.app/components/combobox) and [menubar](https://docs.wirekit.app/components/menubar). It ships inside the WireKit bundle, so there is nothing to install — placement, flipping and collision behavior are unchanged.
+- **The [Chart](https://docs.wirekit.app/components/chart) ApexCharts adapter now supports ApexCharts 6 alongside 5.** The peer dependency you install can be either major; the adapter's option shape and theming are the same on both.
+
 ## [2.17.0] — 2026-07-20
 
 **Minor release.** Additive and backward-compatible throughout: a new form-control hover token, per-preset font publish tags, and a form-control accessibility pass finished across every control, every hover state, and every theme preset. A form-control accessibility pass that finishes what 2.16.0 started, an internationalization fix for pagination, and a stdio server that no longer gives up after a minute of quiet. Everything here is additive and backward-compatible.
