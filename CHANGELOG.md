@@ -10,6 +10,18 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.18.3] — 2026-07-22
+
+**Patch release — rendering and accessibility corrections.** Four defects that were invisible in the markup you write and visible in what your users get: a stray space in running text, a boolean attribute that did the opposite of what it said, an accessible name that never arrived, and invalid attributes on rendered elements.
+
+### Fixed
+
+- **Inline components put a visible space in front of whatever followed them.** `Run <x-wirekit::code>wirekit:install</x-wirekit::code>.` rendered as `Run wirekit:install .` — the component's view ended with a newline, and HTML collapses that to a space. It also reached structured data: [faq](https://docs.wirekit.app/components/faq)'s plain-text mode derives its schema answer from the rendered HTML, so the space shipped inside the FAQPage JSON-LD. Sixteen components were affected, among them [code](https://docs.wirekit.app/components/code), [link component](https://docs.wirekit.app/components/link), [kbd](https://docs.wirekit.app/components/kbd), [mark](https://docs.wirekit.app/components/mark) and [badge](https://docs.wirekit.app/components/badge). There was no way to work around this from the call site, because the space originated inside the component's own output.
+- **`<x-wirekit::faq schema="false">` emitted the FAQPage JSON-LD anyway.** An unbound Blade attribute arrives as a string, and the string `"false"` is true — so switching the schema off switched it on, silently, with the page rendering normally either way. That is precisely the spelling you reach for when a page carries a second FAQ block and must not emit two competing FAQPage nodes. `schema`, `multiple` and `plain-text` now read `"false"`, `"0"`, `"off"` and `"no"` the way they are written; the bound form `:schema="false"` behaves exactly as before.
+- **[faq](https://docs.wirekit.app/components/faq)'s accessible name was not exposed to screen readers.** The `label` prop was applied to an element that ARIA does not allow to carry a name, so assistive technology did not announce it and accessibility scans reported a violation on a page that had done nothing wrong. The question list now carries a role that can hold the name, and only when a name is actually set.
+- **`variant`, `size` and `announce-errors` rendered as invalid HTML attributes.** Passing one of these to a component left it in the markup — `<div variant="flush" size="lg">`, `<input announce-errors="false">`. Harmless to the display, but invalid HTML from a library that promises clean semantic output, and visible in any validator. Fixed across all eighteen affected components, including [faq](https://docs.wirekit.app/components/faq), [input](https://docs.wirekit.app/components/input), [select](https://docs.wirekit.app/components/select), [textarea](https://docs.wirekit.app/components/textarea) and [toggle](https://docs.wirekit.app/components/toggle).
+- **[range-slider](https://docs.wirekit.app/components/range-slider)'s merged value badge faded in on page load.** When two thumbs sit close enough for their value badges to combine, the combined badge animated in from nothing on first paint instead of simply being there — a visible blink for a state that was never in question. It now paints its initial state outright; moving a thumb into or out of the merge still animates.
+
 ## [2.18.2] — 2026-07-22
 
 **Patch release — setup-documentation corrections.** No code changes: the package renders exactly as it did in 2.18.1. What changed is the getting-started walkthrough, which in two places described a setup step inaccurately enough to leave a first-time reader with a failing build.

@@ -16,6 +16,16 @@
     'plainText' => false,
 ])
 
+@php
+    // `@aware` reads a value from the parent component, but — unlike `@props` —
+    // it does NOT remove that key from the attribute bag. So when the key is also
+    // written as an attribute on the tag, it survives into `{{ $attributes }}` and
+    // renders as a stray HTML attribute on the element. Blade accepts both
+    // spellings on a tag, so both are dropped here.
+    $attributes = $attributes->except(['variant', 'size', 'plainText', 'plain-text']);
+@endphp
+
+
 @props([
     // The question. Rendered as the accordion trigger AND recorded for the
     // FAQPage schema — one string, both jobs, so they cannot disagree.
@@ -30,6 +40,13 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
+
+    // See faq.blade.php: an unbound `plain-text="false"` is the truthy string
+    // 'false'. Getting this backwards puts markup into Answer.text, the exact
+    // defect plain-text exists to prevent.
+    $plainText = BooleanProp::from($plainText);
+
     use Pushery\WireKit\Support\FaqCollector;
 
     // Resolve the slot to a string once: it is both the visible answer and the

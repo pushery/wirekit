@@ -71,6 +71,17 @@
         isOpen(id) { return this.opened.includes(id); }
     }"
     data-wk-accordion-mode="{{ $mode }}"
+    {{-- WAI-ARIA 1.2 forbids author naming on an element with an implicit
+         role="generic": a bare <div> carrying aria-label is not reliably exposed
+         by assistive technology, and axe reports aria-prohibited-attr. So the
+         name a caller asks for was silently not arriving.
+
+         `role="group"` is added ONLY when a name is actually present. Naming it
+         unconditionally would push an empty group into the accessibility tree of
+         every plain accordion, which is noise rather than structure. --}}
+    @if(($attributes->get('aria-label') ?? $attributes->get('aria-labelledby')) !== null)
+        role="group"
+    @endif
     {{ $attributes->class([$classes]) }}
 >
     {{ $slot }}

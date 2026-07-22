@@ -183,6 +183,25 @@
             _step: {{ $step }},
             _dragging: null,
             _merged: false,
+            /**
+             * Gates the badge fade so it never runs on the FIRST measurement.
+             *
+             * `_merged` starts false and `_measureBubbles()` may immediately flip
+             * it to true, which — with `transition-opacity` applied
+             * unconditionally — animated the merged badge in from nothing on page
+             * load. Two costs: the developer sees the badge blink in when the
+             * layout was never in doubt, and for the duration of that fade the
+             * text sits at a PARTIAL opacity. A partially transparent
+             * near-black on white is mid-gray, so an accessibility scan that
+             * samples mid-fade reads a contrast of ~4.3:1 against a token that
+             * is 15:1 when settled. That is what reddened CI on the storefront
+             * blueprint while every local run passed: the scan raced the fade.
+             *
+             * Flipped to true after the first measurement settles, so the
+             * initial state is painted outright and every LATER change (dragging
+             * a thumb into or out of the merge) still animates.
+             */
+            _ready: false,
             marksMap: @js((object) $rangeValueTextMap),
             /**
              * What a thumb announces. The map wins where it has an entry;
@@ -234,6 +253,14 @@
                 if (!tw) return;
                 const need = (lo.offsetWidth + hi.offsetWidth) / 2 + 6;
                 this._merged = ((this.maxPercent - this.minPercent) / 100 * tw) < need;
+
+                // Enable the fade only AFTER the first measurement has been
+                // painted. Deferring by a frame is what makes the initial state
+                // a paint rather than an animation — setting it synchronously
+                // here would still let the very first `_merged` flip transition.
+                if (!this._ready) {
+                    requestAnimationFrame(() => { this._ready = true });
+                }
             }
         }"
         x-effect="minVal; maxVal; $nextTick(() => _measureBubbles())"
@@ -332,9 +359,9 @@
                     <span
                         aria-hidden="true"
                         x-ref="minBubble"
-                        :class="_merged ? 'opacity-0' : 'opacity-100'"
+                        :class="[_merged ? 'opacity-0' : 'opacity-100', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
                         :style="`left: ${minPercent}%; transform: translateX(-${minPercent}%)`"
-                        class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none transition-opacity duration-[var(--transition-wk-duration)]"
+                        class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
                         x-text="minVal"
                     >{{ $initialMin }}</span>
                 @endif
@@ -365,9 +392,9 @@
                     <span
                         aria-hidden="true"
                         x-ref="maxBubble"
-                        :class="_merged ? 'opacity-0' : 'opacity-100'"
+                        :class="[_merged ? 'opacity-0' : 'opacity-100', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
                         :style="`left: ${maxPercent}%; transform: translateX(-${maxPercent}%)`"
-                        class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none transition-opacity duration-[var(--transition-wk-duration)]"
+                        class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
                         x-text="maxVal"
                     >{{ $initialMax }}</span>
                 @endif
@@ -413,8 +440,8 @@
                 >
                     <span
                         aria-hidden="true"
-                        :class="_merged ? 'opacity-100' : 'opacity-0'"
-                        class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] z-30 transition-opacity duration-[var(--transition-wk-duration)]"
+                        :class="[_merged ? 'opacity-100' : 'opacity-0', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
+                        class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] z-30"
                         x-text="`${minVal} – ${maxVal}`"
                     ></span>
                 </div>
