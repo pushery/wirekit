@@ -1,5 +1,15 @@
 @aware(['interactive' => false])
 
+@php
+    // `@aware` reads a value from the parent component, but — unlike `@props` —
+    // it does NOT remove that key from the attribute bag. So when the key is also
+    // written as an attribute on the tag, it survives into `{{ $attributes }}` and
+    // renders as a stray HTML attribute on the element. Blade accepts both
+    // spellings on a tag, so both are dropped here.
+    $attributes = $attributes->except(['interactive']);
+@endphp
+
+
 @props([
     'href' => '#',
     'label' => '',

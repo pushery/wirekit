@@ -34,8 +34,18 @@
 
 @php
     use Pushery\WireKit\Schema\Schema;
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\FaqCollector;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `schema="false"` used to switch the JSON-LD ON. That is the exact spelling a
+    // developer reaches for when a page carries a second FAQ and must not emit two
+    // competing FAQPage nodes, and the page rendered normally either way, so
+    // nothing surfaced the mistake. Both spellings now agree.
+    $schema = BooleanProp::from($schema, true);
+    $multiple = BooleanProp::from($multiple);
+    $plainText = BooleanProp::from($plainText);
 
     // The children have already rendered by the time this body runs, so every
     // faq-item has pushed itself. Draining here — rather than reading — is what
