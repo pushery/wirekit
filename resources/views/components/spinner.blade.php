@@ -7,7 +7,7 @@
     // colored indicator.
     'intent' => config('wirekit.components.spinner.intent', null),
     // Screen-reader accessible name announced via the role="status" live region.
-    'label' => 'Loading',
+    'label' => __('Loading'),
     'scope' => null,
 ])
 
@@ -30,7 +30,11 @@
 
     // Color: null/'' inherits currentColor; a semantic intent maps to its token.
     // Full literal class strings (not interpolated) so the Tailwind scanner sees
-    // them. info has no own base color, so it borrows the accent token.
+    // them. info has no own base color, so it borrows the accent token. A spinner
+    // is a non-text GRAPHIC (WCAG 1.4.11, 3:1) — its intent color is the semantic
+    // FILL token (like success/warning/danger below), NOT the readable accent-text
+    // alias links use; accent-text defaults to near-black, which would strip the
+    // brand color from an accent spinner (WIRE-238 accent-as-text repoint exempts it).
     $intentColors = [
         'accent' => 'text-[color:var(--color-wk-accent)]',
         'primary' => 'text-[color:var(--color-wk-accent)]',

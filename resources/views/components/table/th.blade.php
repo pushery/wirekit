@@ -29,14 +29,26 @@
         default => 'text-left',
     };
 
-    // Base th styling — heading weight, muted text, compact-aware padding
+    // Sanitize the <th scope> to the valid HTML set; anything else falls back to col.
+    // Resolved BEFORE the class builder so a row-header can drop the column-header look.
+    $headerScope = in_array($headerScope, ['col', 'row', 'colgroup', 'rowgroup'], true) ? $headerScope : 'col';
+    $isRowHeader = $headerScope === 'row';
+
+    // A ROW header labels its own data row (WCAG 1.3.1) and reads as a heading
+    // for that row — NOT as a column header. The muted, nowrap column-header
+    // treatment made a row header render small, greyed-out and clipped; it now
+    // uses the regular text color and is allowed to wrap (WIRE-217 / WIRE-227).
+    $scopeText = $isRowHeader
+        ? 'text-[color:var(--color-wk-text)]'
+        : 'text-[color:var(--color-wk-text-muted)] whitespace-nowrap';
+
+    // Base th styling — heading weight, scope-aware text, compact-aware padding
     // via table[data-wk-compact] selector
     $classes = WireKit::resolveClasses('table.th', 'base', implode(' ', [
         'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'text-[length:var(--text-wk-sm)]',
-        'text-[color:var(--color-wk-text-muted)]',
-        'whitespace-nowrap',
+        $scopeText,
         $alignClass,
         // Compact variant: reduce vertical padding
         '[table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)]',
@@ -53,9 +65,6 @@
         // dead zone — the cell padding shows a pointer but is not clickable (WIRE-121).
         $sortable ? ($sortAction ? 'select-none hover:text-[color:var(--color-wk-text)]' : 'cursor-pointer select-none hover:text-[color:var(--color-wk-text)]') : '',
     ]), $scope);
-
-    // Sanitize the <th scope> to the valid HTML set; anything else falls back to col.
-    $headerScope = in_array($headerScope, ['col', 'row', 'colgroup', 'rowgroup'], true) ? $headerScope : 'col';
 
     // ARIA: sortable columns expose their current sort state
     $ariaSort = match ($sortDirection) {

@@ -1,6 +1,6 @@
 @props([
     // The fleet: a list of entities to render as status tiles. Each entry:
-    //   ['key' => 'app-1', 'label' => 'shop.example', 'intent' => 'danger', 'href' => '…', 'meta' => '2 issues']
+    //   ['key' => 'app-1', 'label' => __('shop.example'), 'intent' => 'danger', 'href' => '…', 'meta' => '2 issues']
     // intent ∈ success | warning | danger | info | neutral (anything else → neutral).
     // 'href' makes the tile a keyboard-operable link; 'meta' is an optional caption.
     'items' => [],
@@ -10,6 +10,10 @@
     // interpolated here — the literal-class safelist lives in grid).
     'columns' => '2 sm:3 md:4 lg:6',
     'gap' => 'sm',
+    // Promote the status word from the screen-reader-only span into a visible,
+    // intent-tinted caption on every tile. Off by default so existing tiles are
+    // unchanged (WIRE-194).
+    'showStatus' => false,
     'scope' => null,
 ])
 
@@ -74,7 +78,10 @@
     // another). A block outer's padding IS counted in the grid row, so it always applies
     // and adapts to the real content; the inner flex then vertically centers, balancing
     // both the two-line tiles and the single-line (no-caption) ones at the same row height.
-    $tileBase = 'block rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] px-[var(--padding-wk-x-sm)] py-1';
+    // h-full so the tile fills the listitem wrapper the grid now stretches (the
+    // wrapper, not the tile, is the grid item since WIRE-244 moved role="listitem"
+    // off the <a> to preserve its native link role).
+    $tileBase = 'block h-full rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] px-[var(--padding-wk-x-sm)] py-1';
     $tileInner = 'flex h-full flex-col justify-center gap-[var(--gap-wk-xs)]';
     $tileLink = ' transition-shadow hover:shadow-[var(--shadow-wk-sm)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]';
 
@@ -94,6 +101,8 @@
             'color' => $intentColor($intent),
             'icon' => $intentIcon($intent),
             'statusText' => __('Status: :status', ['status' => $intentWord($intent)]),
+            // The blank status word (no "Status:" prefix) for the visible caption.
+            'statusWord' => $intentWord($intent),
             // NB the space before $intentSurface: without it the last $tileBase class
             // (py-1) glued onto the first surface class (bg-…), silently killing the
             // tile's vertical padding — the real cause of the "no padding" bug.
@@ -125,33 +134,48 @@
          attributes forward onto it. --}}
     <x-wirekit::grid role="list" :cols="$columns" :gap="$gap" {{ $attributes->except('class') }}>
         @foreach($tiles as $tile)
-            @if($tile['href'] !== null)
-                <a role="listitem" href="{{ $tile['href'] }}" @if($tile['key'] !== '') data-key="{{ $tile['key'] }}" @endif title="{{ $tile['label'] }}" class="{{ $tile['class'] }}">
-                    <span class="{{ $tileInner }}">
-                        <span class="flex items-center gap-[var(--gap-wk-xs)] min-w-0">
-                            <span class="shrink-0" style="color: {{ $tile['color'] }}">{!! $tile['icon'] !!}</span>
-                            <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
+            {{-- The listitem role sits on the WRAPPER, never on the <a> — an explicit
+                 role on a link REPLACES its implicit `link` role, so the tile would
+                 vanish from the link list and from "step through all links" navigation
+                 (WIRE-244). Both branches share this wrapper so the linked and
+                 non-linked tiles are structurally identical grid items. --}}
+            <div role="listitem" @if($tile['key'] !== '') data-key="{{ $tile['key'] }}" @endif>
+                @if($tile['href'] !== null)
+                    <a href="{{ $tile['href'] }}" title="{{ $tile['label'] }}" class="{{ $tile['class'] }}">
+                        <span class="{{ $tileInner }}">
+                            <span class="flex items-center gap-[var(--gap-wk-xs)] min-w-0">
+                                <span class="shrink-0" style="color: {{ $tile['color'] }}">{!! $tile['icon'] !!}</span>
+                                <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
+                            </span>
+                            @if($tile['meta'] !== null)
+                                <span class="truncate text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
+                            @endif
+                            @if($showStatus)
+                                <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('Status:') }}</span>{{ $tile['statusWord'] }}</span>
+                            @else
+                                <span class="sr-only">{{ $tile['statusText'] }}</span>
+                            @endif
                         </span>
-                        @if($tile['meta'] !== null)
-                            <span class="truncate text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
-                        @endif
-                        <span class="sr-only">{{ $tile['statusText'] }}</span>
-                    </span>
-                </a>
-            @else
-                <div role="listitem" @if($tile['key'] !== '') data-key="{{ $tile['key'] }}" @endif title="{{ $tile['label'] }}" class="{{ $tile['class'] }}">
-                    <span class="{{ $tileInner }}">
-                        <span class="flex items-center gap-[var(--gap-wk-xs)] min-w-0">
-                            <span class="shrink-0" style="color: {{ $tile['color'] }}">{!! $tile['icon'] !!}</span>
-                            <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
+                    </a>
+                @else
+                    <div title="{{ $tile['label'] }}" class="{{ $tile['class'] }}">
+                        <span class="{{ $tileInner }}">
+                            <span class="flex items-center gap-[var(--gap-wk-xs)] min-w-0">
+                                <span class="shrink-0" style="color: {{ $tile['color'] }}">{!! $tile['icon'] !!}</span>
+                                <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
+                            </span>
+                            @if($tile['meta'] !== null)
+                                <span class="truncate text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
+                            @endif
+                            @if($showStatus)
+                                <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('Status:') }}</span>{{ $tile['statusWord'] }}</span>
+                            @else
+                                <span class="sr-only">{{ $tile['statusText'] }}</span>
+                            @endif
                         </span>
-                        @if($tile['meta'] !== null)
-                            <span class="truncate text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
-                        @endif
-                        <span class="sr-only">{{ $tile['statusText'] }}</span>
-                    </span>
-                </div>
-            @endif
+                    </div>
+                @endif
+            </div>
         @endforeach
     </x-wirekit::grid>
 </div>

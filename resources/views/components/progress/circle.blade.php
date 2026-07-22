@@ -73,7 +73,7 @@
                 aria-valuemin="0"
                 aria-valuemax="{{ (int) $max }}"
             @else
-                aria-label="Loading"
+                aria-label="{{ __('Loading') }}"
             @endif
             class="w-full h-full -rotate-90"
             viewBox="0 0 36 36"

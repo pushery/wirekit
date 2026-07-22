@@ -9,7 +9,7 @@
     'hidden' => [],                 // initially-hidden column keys
     'server' => false,              // server-driven: stop local sort/filter, emit events only
     'searchPlaceholder' => 'Search…',
-    'emptyText' => 'No results',
+    'emptyText' => __('No results'),
     'caption' => null,              // accessible table caption / name
     'name' => null,                 // hidden-input name mirroring the selected ids
     'scope' => null,
@@ -69,14 +69,19 @@
                         @input="onSearch()"
                         placeholder="{{ $searchPlaceholder }}"
                         aria-label="{{ $searchPlaceholder }}"
-                        class="wk-field w-[16rem] max-w-full bg-[var(--color-wk-bg-input)] text-[color:var(--color-wk-text)] text-[length:var(--text-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        {{-- Search input is a form control (WCAG 1.4.11): its border
+                             comes from the communicating --color-wk-border-strong token
+                             (3:1), never the decorative --color-wk-border (~1.29:1) — the
+                             category-scoped 2.17.0 sweep missed it because data-table is
+                             not in the Form category. --}}
+                        class="wk-field w-[16rem] max-w-full bg-[var(--color-wk-bg-input)] text-[color:var(--color-wk-text)] text-[length:var(--text-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] rounded-[var(--radius-wk-md)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] transition-colors duration-[var(--transition-wk-duration)] hover:border-[var(--color-wk-border-strong-hover)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     />
                 @endif
             </div>
             <div class="flex items-center gap-[var(--space-wk-sm)]">
                 {{ $toolbar ?? '' }}
                 {{-- Density toggle --}}
-                <div class="inline-flex rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] overflow-hidden" role="group" aria-label="Row density">
+                <div class="inline-flex rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] overflow-hidden" role="group" aria-label="{{ __('Row density') }}">
                     <button type="button" @click="setDensity('comfortable')" :aria-pressed="density === 'comfortable'" :class="density === 'comfortable' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">Comfortable</button>
                     <button type="button" @click="setDensity('compact')" :aria-pressed="density === 'compact'" :class="density === 'compact' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">Compact</button>
                 </div>
@@ -104,7 +109,7 @@
 
     {{-- Bulk-action bar — appears when rows are selected. --}}
     @if($selectable)
-        <div x-show="selectedCount > 0" x-cloak role="region" aria-label="Bulk actions" class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-muted)] rounded-[var(--radius-wk-md)]">
+        <div x-show="selectedCount > 0" x-cloak role="region" aria-label="{{ __('Bulk actions') }}" class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-muted)] rounded-[var(--radius-wk-md)]">
             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" aria-live="polite"><span x-text="selectedCount"></span> selected</span>
             <div class="flex items-center gap-[var(--space-wk-sm)]">
                 {{ $bulkActions ?? '' }}
@@ -114,7 +119,7 @@
     @endif
 
     {{-- Table — labeled, keyboard-reachable scroll region (WCAG 2.1.1). --}}
-    <div role="region" @if($caption) aria-labelledby="{{ $captionId }}" @else aria-label="Data table" @endif tabindex="0" class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+    <div role="region" @if($caption) aria-labelledby="{{ $captionId }}" @else aria-label="{{ __('Data table') }}" @endif tabindex="0" class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
         <table class="w-full border-collapse text-[length:var(--text-wk-sm)]">
             @if($caption)
                 <caption id="{{ $captionId }}" class="sr-only">{{ $caption }}</caption>
@@ -124,7 +129,7 @@
                     @if($selectable)
                         <th scope="col" class="w-10 px-[var(--padding-wk-x-md)]">
                             {{-- Tri-state header selection (indeterminate set reactively). --}}
-                            <input type="checkbox" :checked="allSelected" @change="toggleSelectAll()" x-effect="$el.indeterminate = someSelected" aria-label="Select all rows" class="{{ $checkboxClass }}" />
+                            <input type="checkbox" :checked="allSelected" @change="toggleSelectAll()" x-effect="$el.indeterminate = someSelected" aria-label="{{ __('Select all rows') }}" class="{{ $checkboxClass }}" />
                         </th>
                     @endif
                     <template x-for="col in visibleColumns" :key="col.key">

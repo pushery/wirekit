@@ -95,7 +95,7 @@
 
     {{-- Optional sparkline via chart component --}}
     @if($trend !== null)
-        <span role="img" aria-label="Trend visualization" class="h-8 w-full">
+        <span role="img" aria-label="{{ __('Trend visualization') }}" class="h-8 w-full">
             {{ $slot }}
         </span>
     @endif

@@ -7,6 +7,13 @@
     'minValue' => null,
     'maxValue' => null,
     'showValues' => null,
+    // Spoken value per stop, e.g. [0 => 'Free', 100 => 'Enterprise']. Each thumb
+    // announces its OWN value through it — the dual-handle equivalent of the same
+    // prop on the single-value slider component. (Written without the tag syntax
+    // on purpose: Blade compiles component tags even inside comments.) Without it
+    // a screen reader reads the bare number, which is right for a price and wrong
+    // for a tier.
+    'valueTextMap' => null,
     'scope' => null,
 ])
 
@@ -23,6 +30,16 @@
     // Compute defaults: minValue defaults to min, maxValue defaults to max
     $initialMin = $minValue ?? $min;
     $initialMax = $maxValue ?? $max;
+
+    // Spoken-value map, string-keyed so the JS lookup matches (Alpine compares the
+    // numeric value against object keys, which are always strings).
+    $rangeValueTextMap = [];
+    if (is_array($valueTextMap)) {
+        foreach ($valueTextMap as $mValue => $mLabel) {
+            $rangeValueTextMap[(string) $mValue] = (string) $mLabel;
+        }
+    }
+    $bindRangeValueText = $rangeValueTextMap !== [];
 
     // Per-thumb value badge ("bubble") visibility.
     //
@@ -166,6 +183,14 @@
             _step: {{ $step }},
             _dragging: null,
             _merged: false,
+            marksMap: @js((object) $rangeValueTextMap),
+            /**
+             * What a thumb announces. The map wins where it has an entry;
+             * otherwise the number IS the value. Live, so dragging and arrow keys
+             * update the announcement as the thumb moves — the same contract the
+             * single-value slider keeps.
+             */
+            valueTextFor(v) { return this.marksMap[String(v)] ?? String(v); },
             get minPercent() { return ((this.minVal - this._min) / (this._max - this._min)) * 100; },
             get maxPercent() { return ((this.maxVal - this._min) / (this._max - this._min)) * 100; },
             stepMin(dir) {
@@ -283,6 +308,7 @@
                 @if($thumbDescribedBy) aria-describedby="{{ $thumbDescribedBy }}" @endif
                 aria-valuenow="{{ $initialMin }}"
                 :aria-valuenow="minVal"
+                @if($bindRangeValueText) :aria-valuetext="valueTextFor(minVal)" @endif
                 aria-valuemin="{{ $min }}"
                 aria-valuemax="{{ $initialMax }}"
                 :aria-valuemax="maxVal"
@@ -324,6 +350,7 @@
                 @if($thumbDescribedBy) aria-describedby="{{ $thumbDescribedBy }}" @endif
                 aria-valuenow="{{ $initialMax }}"
                 :aria-valuenow="maxVal"
+                @if($bindRangeValueText) :aria-valuetext="valueTextFor(maxVal)" @endif
                 aria-valuemin="{{ $initialMin }}"
                 :aria-valuemin="minVal"
                 aria-valuemax="{{ $max }}"

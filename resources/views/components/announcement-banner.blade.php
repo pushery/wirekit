@@ -17,7 +17,7 @@
     // brings the bar back instead of reading a stored "dismissed" flag.
     'persist' => true,
     // Accessible name for the region.
-    'label' => 'Announcement',
+    'label' => __('Announcement'),
     'scope' => null,
 ])
 

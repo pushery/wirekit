@@ -6,8 +6,8 @@
     'styleUrl' => null,             // tile/style URL (provider-specific)
     'attribution' => null,          // tile attribution HTML, e.g. '© OpenStreetMap contributors' — shown by Leaflet's attribution control; required by some tile sources (OSM)
     'height' => '24rem',            // map canvas height (CSS length)
-    'ariaLabel' => 'Map',
-    'listLabel' => 'Locations',
+    'ariaLabel' => __('Map'),
+    'listLabel' => __('Locations'),
     // Show the marker-list sidebar. Set list="false" for a map-only surface — the
     // list stays in the DOM as an sr-only accessible companion (a map is opaque to
     // assistive tech, so the locations must remain reachable), only the visual

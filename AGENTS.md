@@ -39,6 +39,10 @@ editor, the WireKit MCP server exposes the same catalog as live tools.
   `main` system. `navbar` is a separate, alternative top-nav shell with its own
   mobile menu — do not nest it inside the app-shell header.
 - Icons use `<x-wirekit::icon name="..." size="..." />` — never `class="h-N w-N"`.
+  To put an icon inside a `button` or `link`, use the `iconLeft` / `iconRight`
+  slots — `button` has NO `icon` prop (a stray `icon="…"` renders nothing and
+  leaks a dead attribute). `icon` IS a prop on ~20 other components (e.g.
+  `sidebar.item`), so don't carry the attribute form over to `button` / `badge`.
 
 ## Full reference
 

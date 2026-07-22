@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.17.1 — MIT License
+ * WireKit CSS v2.18.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -151,14 +151,18 @@
        tables, which are 1.4.11-exempt) is only 1.29:1. Form controls (input / select /
        textarea / checkbox and every other form control) draw their resting edge with
        THIS token: 3.05:1 vs the #fff input fill.
-       Presets do NOT simply inherit their way to compliance, and an earlier version
-       of this comment claimed they did: four of them retint --color-wk-border and
-       four move --color-wk-bg-input, so both operands can differ from the values
-       above. A preset that retints the decorative border for its controls without
-       also setting this token loses the themed edge entirely — its inputs fall back
-       to the stock neutral — and a preset that darkens the input fill while
-       inheriting the light borders inverts the hover direction. Both are checked
-       per preset, in both modes, across the hue range. */
+       Preset reality (bundled set): exactly ONE preset — Aurora — retints
+       --color-wk-border and defines its own --color-wk-border-strong pair; NO
+       bundled preset moves --color-wk-bg-input, so a control's fill is the stock
+       value under every shipped preset. The two failure modes below are therefore
+       CONDITIONAL, not an active balance: a preset that retints the decorative
+       border for its controls without also setting this token would lose the themed
+       edge (inputs fall back to the stock neutral), and a preset that darkened the
+       input fill while inheriting the light borders would invert the hover
+       direction. The full pasteable palette for each preset lives on its theming
+       documentation page, not in the light-touch modifier blocks; the ThemePresetContrastTest
+       sweep verifies the accent + control-border pairs per preset, in both modes,
+       across the hue range. */
     --color-wk-border-strong: oklch(66% 0 0);
     /* Hover for form controls. MUST be reached by moving AWAY from the input
        fill, never toward it: --color-wk-border-hover is a decorative-surface
@@ -1677,6 +1681,19 @@
 .wk-swap[data-active="true"] > [data-wk-swap-on],
 .wk-swap[data-active="false"] > [data-wk-swap-off] {
     opacity: 1;
+}
+
+/* Pre-hydration default for a DYNAMIC swap (expression-driven). Until Alpine
+   evaluates the `:data-active` binding, the element carries NO data-active
+   attribute, so neither state rule above matches and both children would paint
+   at full opacity for a frame — a dual-icon flash on first load (e.g. the theme
+   toggle showing sun AND moon before Alpine boots). Until data-active exists,
+   show only the on-slot; the instant Alpine sets the attribute the rules above
+   take over. A STATIC swap always ships data-active in its HTML, so it never
+   matches this and is unaffected. */
+.wk-swap:not([data-active]) > [data-wk-swap-off] {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .wk-swap-rotate[data-active="false"] > [data-wk-swap-on] {

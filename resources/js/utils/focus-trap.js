@@ -22,6 +22,7 @@ export function createFocusTrap(container, {
     clickOutsideDeactivates = false,
     allowOutsideClick = false,
     initialFocus = undefined,
+    setReturnFocus = undefined,
 } = {}) {
     const opts = {
         // Whether clicking outside deactivates the trap entirely
@@ -41,9 +42,20 @@ export function createFocusTrap(container, {
         fallbackFocus: container,
     };
 
-    // Optional initial focus override (e.g. command palette search input)
+    // Optional initial focus override (e.g. command palette search input,
+    // alert-dialog's Cancel button).
     if (initialFocus !== undefined) {
         opts.initialFocus = initialFocus;
+    }
+
+    // Optional return-focus override. `returnFocusOnDeactivate` above sends focus
+    // back to whatever was focused before the trap opened — but that element may
+    // no longer BE in the document: a destructive confirmation typically removes
+    // the very row that held its own trigger, and a detached node cannot take
+    // focus, so the browser drops it on <body>. A `setReturnFocus` function gets
+    // the previously-focused element and can name a survivor instead.
+    if (setReturnFocus !== undefined) {
+        opts.setReturnFocus = setReturnFocus;
     }
 
     return createFocusTrapLib(container, opts);

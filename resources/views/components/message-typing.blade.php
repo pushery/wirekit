@@ -34,8 +34,8 @@
     ]), $scope);
 
     $announcement = $hasAuthor
-        ? $author.' is typing…'
-        : 'Typing…';
+        ? __(':author is typing…', ['author' => $author])
+        : __('Typing…');
 @endphp
 
 <div

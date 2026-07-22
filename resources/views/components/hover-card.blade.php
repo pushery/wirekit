@@ -99,7 +99,7 @@
             @mouseleave="mouseleave()"
             @keydown.escape.prevent="close()"
             role="dialog"
-            aria-label="Hover card"
+            aria-label="{{ __('Hover card') }}"
             class="{{ $panelClasses }}"
             x-cloak
         >

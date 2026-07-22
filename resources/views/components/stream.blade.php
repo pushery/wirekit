@@ -13,6 +13,22 @@
     'autoStart' => true,
     // Seed text — resume a completed response (SSR) or show a static example.
     'initialText' => null,
+    // Where the tokens come from:
+    //   'sse' (default) — the browser's EventSource. GET-only and body-less.
+    //   'fetch'         — POST (or any method) and read the response body. The
+    //                     shape LLM APIs use, because the request IS the payload:
+    //                     prompt, options and model belong in a body, not a URL.
+    //   'manual'        — no transport at all. Feed the component yourself with
+    //                     push()/finish()/fail() or the wirekit-stream-* events,
+    //                     e.g. from Laravel's own Reverb/Echo WebSocket stack.
+    'source' => null,
+    // fetch mode only — request shape.
+    'method' => null,
+    'body' => null,
+    'headers' => null,
+    // Names this stream so the wirekit-stream-* events can address one of several
+    // on the same page (a pane per voice).
+    'name' => null,
     // Simulate mode: stream THIS text token-by-token from a local timer, with no SSE
     // endpoint. Drives a live-looking demo (and a typewriter effect), and opts the
     // component into the docs "↻ Replay" affordance so a reader can re-watch it.
@@ -39,6 +55,18 @@
         'initialText' => $initialText,
         'simulate' => $simulate,
         'simulateSpeed' => $simulateSpeed !== null ? (int) $simulateSpeed : null,
+        'source' => in_array($source, ['sse', 'fetch', 'manual'], true) ? $source : null,
+        'method' => $method,
+        'body' => $body,
+        'headers' => $headers,
+        'name' => $name,
+        // Screen-reader announcements, translated HERE. They used to default
+        // inside the plugin as bare English literals — a string that never passes
+        // through __() cannot be localized by any developer, and these are the
+        // only thing a screen-reader user hears about the stream's state.
+        'startMessage' => __('Generating response…'),
+        'readyMessage' => __('Response ready'),
+        'stoppedMessage' => __('Response stopped'),
     ], fn ($v) => $v !== null);
     // autoStart is a bool the filter would drop when false — re-assert it.
     $config['autoStart'] = (bool) $autoStart;

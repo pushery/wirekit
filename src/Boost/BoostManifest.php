@@ -45,6 +45,45 @@ final class BoostManifest
         ];
     }
 
+    /**
+     * The component's sub-components, each with its own props.
+     *
+     * A Boost manifest that lists `card` but not `card.body` teaches an editor to
+     * autocomplete content straight into the card — which has no padding of its
+     * own, and is the mistake the shipped AGENTS.md spends a paragraph
+     * preventing. Nested under the parent rather than listed flat, so the
+     * manifest's component count keeps meaning what it says (WIRE-237).
+     *
+     * @param  array<string, mixed>  $component
+     * @return array<string, mixed>
+     */
+    private function parts(array $component): array
+    {
+        $subs = [];
+
+        foreach ($component['sub_components'] ?? [] as $name) {
+            $detail = $this->catalog->getComponent($name);
+
+            if ($detail === null) {
+                continue;
+            }
+
+            $subs[] = [
+                'name' => $name,
+                'tag' => $detail['tag'],
+                'props' => array_map(
+                    static fn (array $p): array => [
+                        'name' => $p['name'],
+                        'default' => $p['default'],
+                    ] + ($p['comment'] !== null ? ['hint' => $p['comment']] : []),
+                    $detail['props']
+                ),
+            ];
+        }
+
+        return $subs === [] ? [] : ['sub_components' => $subs];
+    }
+
     /** @return array<string, mixed> */
     private function componentSkill(): array
     {
@@ -60,11 +99,14 @@ final class BoostManifest
             }
             $components[] = [
                 'name' => $c['name'],
-                'tag' => "<x-wirekit::{$c['name']}>",
+                // Reuse the catalog's registry-derived tag — the interpolated
+                // "<x-wirekit::{name}>" form is wrong for the class-based `chart`
+                // (real tag <x-wirekit-chart>) (WIRE-209).
+                'tag' => $detail['tag'] ?? "<x-wirekit::{$c['name']}>",
                 'category' => $c['category'],
                 'description' => $c['description'],
                 'props' => $props,
-            ];
+            ] + $this->parts($c);
         }
 
         return [

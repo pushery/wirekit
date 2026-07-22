@@ -1,6 +1,15 @@
 @props([
     'name' => null,
     'dismissible' => config('wirekit.components.alert-dialog.dismissible', false),
+    // CSS selector, resolved inside the panel, for the control that should hold
+    // focus when the dialog opens. Unset, focus goes to Cancel — the least
+    // destructive action, per the APG alertdialog pattern.
+    'initialFocus' => null,
+    // CSS selector for where focus should land when the dialog closes and its own
+    // trigger is gone — the normal case for a delete-in-a-list confirmation, whose
+    // Livewire re-render removes the very row that held the trigger. Unset, the
+    // dialog falls back to the nearest ancestor of the trigger that survived.
+    'focusReturnTo' => null,
     'scope' => null,
 ])
 
@@ -43,7 +52,7 @@
 @endphp
 
 <div
-    x-data="wirekitAlertDialog({ name: '{{ $name }}', dismissible: {{ $dismissible ? 'true' : 'false' }} })"
+    x-data="wirekitAlertDialog({ name: @js((string) $name), dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: @js($initialFocus), focusReturnTo: @js($focusReturnTo) })"
     {{ $attributes }}
 >
     {{-- Trigger slot — clicking opens the alert dialog --}}

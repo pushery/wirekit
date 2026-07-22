@@ -26,8 +26,13 @@
     $classes = WireKit::resolveClasses('alert-dialog.cancel', 'base', '', $scope);
 @endphp
 
+{{-- data-wk-alert-cancel is what the dialog looks for to place initial focus on
+     the least destructive action (the APG alertdialog rule). It sits on the
+     wrapper because the wrapper is what this component always renders; the
+     dialog then focuses the control inside it. --}}
 <div
     x-on:click="close()"
+    data-wk-alert-cancel
     {{ $attributes->class([$classes]) }}
 >
     @if(trim((string) $slot) === '')

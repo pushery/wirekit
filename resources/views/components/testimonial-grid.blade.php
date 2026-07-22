@@ -1,6 +1,6 @@
 @props([
     // Accessible name for the set of quotes.
-    'label' => 'Testimonials',
+    'label' => config('wirekit.components.testimonial-grid.label') ?? __('Testimonials'),
     'scope' => null,
 ])
 

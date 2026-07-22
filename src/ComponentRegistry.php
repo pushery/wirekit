@@ -30,6 +30,7 @@ class ComponentRegistry
             'field' => ['category' => 'Form', 'description' => 'Form field wrapper with label, hint, and error'],
             'file-upload' => ['category' => 'Form', 'description' => 'Drag-and-drop file upload area'],
             'filter-builder' => ['category' => 'Form', 'description' => 'Active-filter chip bar with a typed add/edit popover (field/operator/value)'],
+            'form' => ['category' => 'Form', 'description' => 'Form wrapper that inherits an error-announcement policy to every control inside'],
             'input' => ['category' => 'Form', 'description' => 'Text input with prefix/suffix support'],
             'label' => ['category' => 'Form', 'description' => 'Form label with required indicator'],
             'multi-select' => ['category' => 'Form', 'description' => 'Multi-value select with tag display'],
@@ -294,6 +295,117 @@ class ComponentRegistry
     }
 
     /**
+     * Every sub-component the package ships, keyed `parent.child`.
+     *
+     * Derived from the filesystem rather than hand-listed. A hand-maintained
+     * list of 72 entries drifts the first time someone adds a file and forgets
+     * the array; deriving it means the catalog cannot disagree with what ships.
+     *
+     * Sub-components are deliberately NOT in `all()`. They are part of the public
+     * API — AGENTS.md tells an agent to reach for `card.body`, and `table.th`
+     * carries its own documented props — but they are not components in the sense
+     * every count in this project means by the word. Folding them in would turn
+     * "173 components" into "245" overnight without a single new component
+     * shipping. They are a separate surface, discoverable on their own terms.
+     *
+     * `index.blade.php` is excluded: that file IS the parent (the directory-
+     * component form), not a child of it.
+     *
+     * @return array<string, array{parent: string, child: string}>
+     */
+    public static function subComponents(): array
+    {
+        static $cache = null;
+
+        if ($cache !== null) {
+            return $cache;
+        }
+
+        $base = __DIR__.'/../resources/views/components/';
+        $subs = [];
+
+        foreach ((array) glob($base.'*', GLOB_ONLYDIR) as $dir) {
+            $parent = basename((string) $dir);
+
+            // A directory with no registry entry is not a component's sub-tree.
+            if (! isset(self::all()[$parent])) {
+                continue;
+            }
+
+            foreach ((array) glob($dir.'/*.blade.php') as $file) {
+                $child = basename((string) $file, '.blade.php');
+
+                if ($child === 'index') {
+                    continue;
+                }
+
+                $subs[$parent.'.'.$child] = ['parent' => $parent, 'child' => $child];
+            }
+        }
+
+        ksort($subs);
+
+        return $cache = $subs;
+    }
+
+    /**
+     * The sub-component names belonging to one parent, sorted.
+     *
+     * @return list<string>
+     */
+    public static function subComponentsOf(string $parent): array
+    {
+        return array_keys(array_filter(
+            self::subComponents(),
+            static fn (array $meta): bool => $meta['parent'] === $parent
+        ));
+    }
+
+    /** Is this a `parent.child` name the package actually ships? */
+    public static function isSubComponent(string $name): bool
+    {
+        return isset(self::subComponents()[$name]);
+    }
+
+    /**
+     * Metadata for a name of EITHER kind — `card` or `card.body`.
+     *
+     * The three discovery surfaces (the show command, the JSON export, the MCP
+     * catalog) each used to answer "what is card.body?" their own way, or not at
+     * all: the MCP server returned null, which reads to an agent as "there is no
+     * such component" — and it then writes content straight into <x-wirekit::card>,
+     * the exact mistake AGENTS.md exists to prevent. One resolver, one answer.
+     *
+     * A sub-component inherits its parent's category (it belongs to the same part
+     * of the library) and describes itself in terms of that parent, because that
+     * is the only honest description available without hand-writing 72 of them.
+     *
+     * @return array{category: string, description: string, parent?: string}|null
+     */
+    public static function resolve(string $name): ?array
+    {
+        $top = self::get($name);
+
+        if ($top !== null) {
+            return $top;
+        }
+
+        $sub = self::subComponents()[$name] ?? null;
+
+        if ($sub === null) {
+            return null;
+        }
+
+        $parentMeta = self::get($sub['parent']);
+
+        return [
+            'category' => $parentMeta['category'] ?? 'Display',
+            'description' => "The {$sub['child']} part of the {$sub['parent']} component",
+            'parent' => $sub['parent'],
+        ];
+    }
+
+    /**
      * Get all components in a given category.
      *
      * @return array<string, array{category: string, description: string}>
@@ -371,9 +483,43 @@ class ComponentRegistry
 
     /**
      * Get the blade file path for a component.
+     *
+     * Resolves the top-level `components/<name>.blade.php` first, and falls back
+     * to the directory-component form `components/<name>/index.blade.php` when the
+     * top-level file does not exist (e.g. `list` lives at `list/index.blade.php`).
+     * Without this fallback the registry read that component's props from a
+     * non-existent path and reported it with zero props (WIRE-206). Mirrors the
+     * dual enumeration ComponentRegistryTest already uses for membership.
      */
     private static function bladeFilePath(string $name): string
     {
-        return __DIR__.'/../resources/views/components/'.$name.'.blade.php';
+        $base = __DIR__.'/../resources/views/components/';
+
+        // `parent.child` → components/parent/child.blade.php. Without this the
+        // props of every sub-component were unreachable: `table.th` has carried a
+        // documented `headerScope` prop since 2.16.0 that no discovery surface
+        // could report, because the path it looked at did not exist.
+        if (str_contains($name, '.')) {
+            [$parent, $child] = explode('.', $name, 2);
+            $nested = $base.$parent.'/'.$child.'.blade.php';
+
+            if (is_file($nested)) {
+                return $nested;
+            }
+        }
+
+        $topLevel = $base.$name.'.blade.php';
+        if (is_file($topLevel)) {
+            return $topLevel;
+        }
+
+        $indexed = $base.$name.'/index.blade.php';
+        if (is_file($indexed)) {
+            return $indexed;
+        }
+
+        // Neither exists — return the top-level path so downstream behavior
+        // (PropsParser → []) is unchanged for a genuinely missing component.
+        return $topLevel;
     }
 }

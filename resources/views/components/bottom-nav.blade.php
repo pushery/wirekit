@@ -2,7 +2,7 @@
     // What this bar navigates. Every page has more than one nav landmark once you
     // count the header, so an unnamed one is announced as "navigation" and the
     // reader has to go in to find out which.
-    'label' => 'Main',
+    'label' => __('Main'),
     // Hide the bar from `md` up, where a sidebar or a header does this job. A bar
     // pinned to the bottom of a 27-inch screen is a long way from the content it
     // belongs to.

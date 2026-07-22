@@ -9,7 +9,7 @@
     'perView' => 1,
     // What this carousel is FOR. A carousel of testimonials is not an image
     // carousel, and the name is the first thing a screen reader reads.
-    'label' => 'Carousel',
+    'label' => __('Carousel'),
     'scope' => null,
 ])
 
@@ -154,7 +154,7 @@
         x-on:click="prev()"
         :disabled="!loop && current === 0"
         class="{{ $buttonClasses }} {{ $prevPosClass }}"
-        aria-label="Previous slide"
+        aria-label="{{ __('Previous slide') }}"
         data-wk-carousel-prev
     >
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
@@ -167,7 +167,7 @@
         x-on:click="next()"
         :disabled="!loop && current === total - 1"
         class="{{ $buttonClasses }} {{ $nextPosClass }}"
-        aria-label="Next slide"
+        aria-label="{{ __('Next slide') }}"
         data-wk-carousel-next
     >
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
@@ -180,7 +180,7 @@
          scroll the track, they do not select a panel — and with perView > 1 there
          is no single selected panel to point at. aria-current says which slide
          leads the view. --}}
-    <div class="{{ $indicatorClasses }}" role="group" aria-label="Choose slide">
+    <div class="{{ $indicatorClasses }}" role="group" aria-label="{{ __('Choose slide') }}">
         <template x-for="(_, i) in total" :key="i">
             <button
                 type="button"

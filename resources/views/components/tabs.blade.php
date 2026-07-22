@@ -3,7 +3,7 @@
     'default' => null,
     'variant' => config('wirekit.components.tabs.variant', 'underline'),
     'orientation' => 'horizontal', // horizontal (default) | vertical
-    'label' => 'Tabs',
+    'label' => __('Tabs'),
     'scope' => null,
 ])
 

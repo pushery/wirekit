@@ -233,7 +233,7 @@
     <button
         type="button"
         @click="dismiss()"
-        aria-label="Dismiss"
+        aria-label="{{ __('Dismiss') }}"
         class="wk-reading-bookmark__dismiss inline-flex items-center justify-center w-6 h-6 rounded-full text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
     >
         <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

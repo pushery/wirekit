@@ -25,7 +25,7 @@
         'default' => 'text-[color:var(--color-wk-text)]',
         'muted' => 'text-[color:var(--color-wk-text-muted)]',
         'subtle' => 'text-[color:var(--color-wk-text-subtle)]',
-        'accent' => 'text-[color:var(--color-wk-accent)]',
+        'accent' => 'text-[color:var(--color-wk-accent-text)]',
         'success' => 'text-[color:var(--color-wk-success-text)]',
         'warning' => 'text-[color:var(--color-wk-warning-text)]',
         'danger' => 'text-[color:var(--color-wk-danger-text)]',

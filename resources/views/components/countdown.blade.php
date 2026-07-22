@@ -158,6 +158,23 @@
         },
         get remainingMs() { return this.target - this.now; },
         get expired() { return this.remainingMs <= 0; },
+        // Full remaining-time breakdown for a HEADLESS display (WIRE-202): a
+        // developer whose app renders its own copy around the number (e.g. a localized
+        // 'Resend in N seconds', with its own pluralization) reads this instead of
+        // rebuilding the clock/resync/expiry core. Unlike `computed` — which is
+        // filtered to the active units + variant and drops leading zeros — this is
+        // the ALWAYS-COMPLETE canonical ladder plus the totals, so `remaining.seconds`
+        // and `remaining.totalSeconds` are stable regardless of the `units` prop.
+        get remaining() {
+            const totalMs = Math.max(0, this.remainingMs);
+            let s = Math.floor(totalMs / 1000);
+            const totalSeconds = s;
+            const years = Math.floor(s / 31536000); s -= years * 31536000;
+            const days = Math.floor(s / 86400); s -= days * 86400;
+            const hours = Math.floor(s / 3600); s -= hours * 3600;
+            const minutes = Math.floor(s / 60); s -= minutes * 60;
+            return { years, days, hours, minutes, seconds: s, totalSeconds, totalMs };
+        },
         get urgent() {
             return this.warnSeconds !== null && ! this.expired && this.remainingMs <= this.warnSeconds * 1000;
         },
@@ -218,6 +235,17 @@
         : (urgent ? 'text-[color:var(--color-wk-warning-text)]' : 'text-[color:var(--color-wk-text)]')"
     {{ $attributes->class([$baseClasses]) }}
 >
+    @if($slot->isNotEmpty())
+    {{-- Headless mode (WIRE-202): the developer's markup renders its own copy around the
+         live number and owns the a11y text, while WireKit keeps the clock tick,
+         resync, expiry event, and `done` state. Their Alpine directives resolve
+         against this scope, so `remaining` (full breakdown + totalSeconds),
+         `expired`, `urgent`, `done`, `srText`, and `expiredText` are all
+         available — e.g. <span x-text="`Resend in ${remaining.totalSeconds}s`">.
+         The default sr <time>/units are intentionally NOT rendered here so the
+         developer's own copy is the single source of truth. --}}
+    {{ $slot }}
+    @else
     {{-- Machine-readable target instant + coarse remaining time for assistive
          tech and crawlers. --}}
     <time datetime="{{ $targetIso }}" class="sr-only" x-text="srText"></time>
@@ -258,4 +286,5 @@
             </template>
         </span>
     </template>
+    @endif
 </div>

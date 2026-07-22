@@ -3,6 +3,10 @@
     'options' => [],
     'value' => null,
     'size' => config('wirekit.components.segmented-control.size', 'md'),
+    // Disable the whole control: aria-disabled on the radiogroup + each segment,
+    // the buttons become non-interactive, and the group dims via
+    // --opacity-wk-disabled (WIRE-213).
+    'disabled' => false,
     'scope' => null,
 ])
 
@@ -75,10 +79,11 @@
     @endif
 
     <div
-        {{ $attributes->whereDoesntStartWith('wire:model')->class([$containerClasses]) }}
+        {{ $attributes->whereDoesntStartWith('wire:model')->class([$containerClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)]' : '']) }}
         x-data="{ selected: '{{ $selected }}' }"
         x-init="$refs.hiddenInput.value = selected"
         role="radiogroup"
+        @if($disabled) aria-disabled="true" @endif
         @if($label) aria-label="{{ $label }}" @endif
     >
         {{-- Hidden input inside x-data scope so $refs.hiddenInput resolves correctly.
@@ -92,13 +97,17 @@
             <button
                 type="button"
                 role="radio"
+                @disabled($disabled)
+                aria-disabled="{{ $disabled ? 'true' : 'false' }}"
                 aria-checked="{{ $selected === $optValue ? 'true' : 'false' }}"
                 :aria-checked="selected === '{{ $optValue }}' ? 'true' : 'false'"
-                tabindex="{{ $selected === $optValue ? '0' : '-1' }}"
-                :tabindex="selected === '{{ $optValue }}' ? '0' : '-1'"
-                @click="selected = '{{ $optValue }}'; $refs.hiddenInput.value = selected; $refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }))"
-                @keydown.arrow-right.prevent="$el.nextElementSibling?.focus(); $el.nextElementSibling?.click()"
-                @keydown.arrow-left.prevent="$el.previousElementSibling?.focus(); $el.previousElementSibling?.click()"
+                tabindex="{{ $disabled ? '-1' : ($selected === $optValue ? '0' : '-1') }}"
+                @if(! $disabled)
+                    :tabindex="selected === '{{ $optValue }}' ? '0' : '-1'"
+                    @click="selected = '{{ $optValue }}'; $refs.hiddenInput.value = selected; $refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }))"
+                    @keydown.arrow-right.prevent="$el.nextElementSibling?.focus(); $el.nextElementSibling?.click()"
+                    @keydown.arrow-left.prevent="$el.previousElementSibling?.focus(); $el.previousElementSibling?.click()"
+                @endif
                 class="{{ $segmentClasses }} {{ $sizeClasses }}"
                 :class="selected === '{{ $optValue }}'
                     ? '{{ $segmentSelectedClasses }}'

@@ -1,7 +1,7 @@
 @props([
     'items' => [],                  // [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
     'groupBy' => config('wirekit.components.notification-center.group-by', 'none'), // none | time | type ('time' groups by each item's `group` label)
-    'title' => 'Notifications',
+    'title' => __('Notifications'),
     'filters' => config('wirekit.components.notification-center.filters', false), // show type-filter tabs
     'realtimeEvent' => null,        // window event name to listen for new items
     'open' => false,                // start with the panel open (inline embeds / demos)
@@ -121,7 +121,7 @@
                 {{-- Ghost button (subtle hover surface), not a hover-underline
                      text-link — matches WireKit's other in-panel actions
                      (e.g. data-table "Clear", filter-builder "Clear all"). --}}
-                class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
+                class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent-text)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
             >Mark all read</button>
         </div>
 
@@ -130,7 +130,7 @@
                  filter one list in place and own no tabpanels, so radio semantics
                  (aria-checked + roving tabindex + arrows move-and-select, wrapping)
                  are the honest contract. --}}
-            <div x-show="types.length > 0" x-cloak role="radiogroup" aria-label="Filter notifications"
+            <div x-show="types.length > 0" x-cloak role="radiogroup" aria-label="{{ __('Filter notifications') }}"
                 @keydown.arrow-right.prevent="filterMove(1)"
                 @keydown.arrow-down.prevent="filterMove(1)"
                 @keydown.arrow-left.prevent="filterMove(-1)"
@@ -177,7 +177,7 @@
                                         <span class="block leading-snug text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" :class="item.read ? '' : 'font-[number:var(--font-wk-heading-weight)]'" x-text="item.title"></span>
                                         <span x-show="item.body" x-cloak class="block leading-snug text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="item.body"></span>
                                         <span x-show="item.timeLabel" x-cloak class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]" x-text="item.timeLabel"></span>
-                                        <span x-show="item.actionLabel" x-cloak class="mt-0.5 block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-accent)]" x-text="item.actionLabel"></span>
+                                        <span x-show="item.actionLabel" x-cloak class="mt-0.5 block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-accent-text)]" x-text="item.actionLabel"></span>
                                     </span>
                                 </a>
                             </template>
@@ -197,7 +197,7 @@
                                         <span class="block leading-snug text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" :class="item.read ? '' : 'font-[number:var(--font-wk-heading-weight)]'" x-text="item.title"></span>
                                         <span x-show="item.body" x-cloak class="block leading-snug text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="item.body"></span>
                                         <span x-show="item.timeLabel" x-cloak class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)]" x-text="item.timeLabel"></span>
-                                        <span x-show="item.actionLabel" x-cloak class="mt-0.5 block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-accent)]" x-text="item.actionLabel"></span>
+                                        <span x-show="item.actionLabel" x-cloak class="mt-0.5 block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-accent-text)]" x-text="item.actionLabel"></span>
                                     </span>
                                 </button>
                             </template>
@@ -211,7 +211,7 @@
             {{-- Footer — ghost action (subtle full-width hover surface), NOT a
                  hover-underline text-link, matching the "Mark all read" header
                  action and WireKit's in-panel-action standard. --}}
-            <a href="{{ $seeAllHref }}" class="block px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent)] hover:bg-[var(--color-wk-bg-muted)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors">{{ $seeAllLabel }}</a>
+            <a href="{{ $seeAllHref }}" class="block px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] hover:bg-[var(--color-wk-bg-muted)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors">{{ $seeAllLabel }}</a>
         @endif
     </div>
     </template>

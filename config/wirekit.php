@@ -18,6 +18,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Default Currency
+    |--------------------------------------------------------------------------
+    |
+    | ISO 4217 currency code the <x-wirekit::price> / <x-wirekit::pricing-tier>
+    | components use when no per-call `currency` is passed. Uppercase (EUR, USD,
+    | GBP). The components read this key; it is declared here so a global default
+    | is settable AND visible (WIRE-191).
+    |
+    */
+
+    'currency' => env('WIREKIT_CURRENCY', 'USD'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Runtime Validation Strictness
     |--------------------------------------------------------------------------
     |
@@ -95,9 +109,30 @@ return [
     | by the control and by the @wirekitThemeScript head script — they must agree
     | or the page paints one theme and then switches to the other.
     |
+    | `storage` picks the backing store:
+    |   'local'  — localStorage (default, client-only). The head script must read
+    |              it and apply `.dark` before paint; the server never sees it.
+    |   'cookie' — document.cookie, which the SERVER can read on the next request.
+    |              With this driver your Laravel layout can resolve the theme from
+    |              the request cookie and render <html class="dark"> itself, so the
+    |              first paint is already correct and the head script is only a
+    |              safety net for the 'system' case. Required for any server-
+    |              rendered dark mode. IMPORTANT: the control writes the cookie from
+    |              JavaScript (unencrypted), so if your app runs the EncryptCookies
+    |              middleware you MUST add this key to its `$except` list, or Laravel
+    |              drops it as tampered on the server read. `cookie_attributes`
+    |              tunes the written cookie (a UI preference: Lax + one-year Max-Age
+    |              is the sensible default; Secure is added automatically on HTTPS).
+    |
     */
     'theme' => [
+        'storage' => env('WIREKIT_THEME_STORAGE', 'local'),
         'storage_key' => env('WIREKIT_THEME_STORAGE_KEY', 'wirekit-theme'),
+        'cookie_attributes' => [
+            'same_site' => env('WIREKIT_THEME_COOKIE_SAME_SITE', 'Lax'),
+            'max_age' => (int) env('WIREKIT_THEME_COOKIE_MAX_AGE', 31536000),
+            'path' => env('WIREKIT_THEME_COOKIE_PATH', '/'),
+        ],
     ],
 
     /*
@@ -120,7 +155,7 @@ return [
         // Form components
         'button' => ['intent' => 'primary', 'surface' => 'filled', 'size' => 'md'],
         'swap' => ['effect' => 'fade'],
-        'theme-controller' => ['variant' => 'button'],
+        'theme-controller' => ['variant' => 'button', 'size' => 'md', 'surface' => 'filled'],
         'fab' => ['position' => 'end'],
         'button.group' => [],
         'input' => ['size' => 'md'],
@@ -173,6 +208,33 @@ return [
         'calendar' => ['week-starts-on' => 1],
         'map' => ['provider' => 'maplibre', 'zoom' => 2, 'highlight' => 'ring', 'highlight-color' => 'accent'],
         'stat' => ['animate' => false],
+
+        // Layout primitives. These read a config default but were absent from the
+        // stub, so the surface they expose was invisible to anyone reading their
+        // own published file (WIRE-193). Values here mirror the in-Blade fallback
+        // exactly — declaring them changes nothing, it only makes them settable.
+        'bento-grid' => ['gap' => 'md'],
+        'brand-bar' => ['max' => 'xl'],
+        'container' => ['max' => 'xl', 'padding' => 'md'],
+        'feature-grid' => ['cols' => '1 sm:2 lg:3'],
+        'footer' => ['max' => 'xl'],
+        'grid' => ['cols' => 1, 'gap' => 'md'],
+        'main' => ['padding' => 'lg', 'max' => '2xl'],
+        'row' => ['gap' => 'md'],
+        'section' => ['padding' => 'xl'],
+        'stack' => ['gap' => 'md'],
+
+        // Display components in the same position.
+        'message' => ['actions-reveal' => 'hover'],
+        'radial-progress' => ['size' => 'md', 'intent' => 'primary'],
+
+        // Region labels — the accessible name of each group. Null keeps the
+        // translated default (via __()); set one here to name the region once
+        // app-wide instead of repeating `label` on every instance.
+        'faq' => ['label' => null],
+        'pricing-table' => ['label' => null],
+        'testimonial-grid' => ['label' => null],
+        'attachment-group' => ['label' => null],
         'skeleton' => ['animation' => 'shimmer'],
         'spinner' => ['size' => 'md', 'intent' => null],
         'assistant-message' => ['announce' => 'sentence'],
@@ -358,8 +420,9 @@ return [
     |
     | Choose which JavaScript bundle @wirekitScripts loads.
     |
-    | 'full' — All Alpine components including overlays (~43 KB gzip)
+    | 'full' — All Alpine components including overlays (~47 KB gzip)
     |          Includes Floating UI + focus-trap, bundled.
+    |          Current measured sizes: docs.wirekit.app/dependencies.
     |
     | 'core' — Only chart Alpine component (~4 KB gzip)
     |          For projects that only use form components + charts.

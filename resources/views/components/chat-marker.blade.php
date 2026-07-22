@@ -74,8 +74,15 @@
                  to assistive technology — the gotcha this bakes out. --}}
             role="status"
             aria-live="polite"
-            aria-busy="{{ $shimmer ? 'true' : 'false' }}"
         @endif
+        {{-- aria-busy tracks shimmer, and is global — it does NOT depend on the
+             live region. A `status` region carries it either way so the settled
+             state reads as an explicit "not busy" that flips to "busy" when work
+             starts; `shimmer` on its own also carries it, because the docs say
+             shimmer implies aria-busy and it used to sit inside the @if above,
+             emitting nothing at all without `status`. Present whenever there is
+             something to say about — a region to settle, or a shimmer to flag. --}}
+        @if($status || $shimmer) aria-busy="{{ $shimmer ? 'true' : 'false' }}" @endif
         {{ $attributes->class([$classes]) }}
     >
         @if($icon)

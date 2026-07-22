@@ -69,7 +69,7 @@
     ]), $scope);
 @endphp
 
-<div role="toolbar" aria-label="Editor commands" {{ $attributes->class([$toolbarClasses]) }}>
+<div role="toolbar" aria-label="{{ __('Editor commands') }}" {{ $attributes->class([$toolbarClasses]) }}>
     @foreach($commands as $command)
         @if($command === '|')
             <span class="mx-1 h-5 w-px shrink-0 bg-[var(--color-wk-border)]" aria-hidden="true"></span>

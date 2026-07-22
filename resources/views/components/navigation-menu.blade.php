@@ -20,7 +20,7 @@
          teleport to <body>, so a Blade x-on:click.outside on this root would
          fire when clicking inside an open panel (no longer a DOM descendant)
          and close it before an in-panel click registered. --}}
-    aria-label="Main navigation"
+    aria-label="{{ __('Main navigation') }}"
     {{ $attributes->class([$classes]) }}
 >
     {{ $slot }}

@@ -1,7 +1,7 @@
 @props([
     // Accessible name for the roster, so a screen reader announces how many
     // people are in it rather than reading a run of names with no boundary.
-    'label' => 'Team',
+    'label' => __('Team'),
     'scope' => null,
 ])
 

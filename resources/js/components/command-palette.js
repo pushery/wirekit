@@ -24,6 +24,8 @@ export default function wirekitCommandPalette(config = {}) {
         query: '',
         _activeIndex: -1,
         _trap: null,
+        _observer: null,
+        _lastSignature: '',
         _navCleanup: null,
         _hotkeyHandler: null,
         _showHandler: null,
@@ -58,6 +60,7 @@ export default function wirekitCommandPalette(config = {}) {
         },
 
         destroy() {
+            this._unwatchList();
             if (this._hotkeyHandler) {
                 document.removeEventListener('keydown', this._hotkeyHandler);
             }
@@ -102,6 +105,9 @@ export default function wirekitCommandPalette(config = {}) {
                     });
                     this._trap.activate();
                 }
+
+                // The list only exists once the panel has rendered.
+                this._watchList();
             });
         },
 
@@ -201,11 +207,96 @@ export default function wirekitCommandPalette(config = {}) {
             const item = items[this._activeIndex];
             if (item) {
                 item.scrollIntoView({ block: 'nearest' });
-                // Update all items' active state
-                items.forEach((el, i) => {
-                    el.setAttribute('data-active', i === this._activeIndex ? 'true' : 'false');
-                });
             }
+
+            this._paintActive(items);
+        },
+
+        /**
+         * Write the highlight onto the list from `_activeIndex`.
+         *
+         * Split out of _scrollToActive because it has a second caller: a
+         * re-render. `data-active` exists only in the live DOM — the server never
+         * emits it — so Livewire's morph strips it from every row on every
+         * response, and the highlight would vanish on each keystroke of a
+         * server-driven search. Re-painting after a mutation puts it back.
+         */
+        _paintActive(items = this._getItems()) {
+            items.forEach((el, i) => {
+                el.setAttribute('data-active', i === this._activeIndex ? 'true' : 'false');
+            });
+        },
+
+        /**
+         * Identity of the current result set — the ids, in order.
+         *
+         * Used to tell "the same list was re-rendered" (restore the highlight)
+         * from "these are different results" (the old index means nothing now).
+         */
+        _itemsSignature(items = this._getItems()) {
+            return items.map((el) => el.id).join('|');
+        },
+
+        /**
+         * Keep the keyboard state honest across re-renders.
+         *
+         * `_activeIndex` used to be reset only in show(), which is correct only
+         * while the list is rendered once. With server-side search the list is
+         * rebuilt on every keystroke: the index survived and pointed into the NEW
+         * results, so Enter activated whatever now sat at that position — the user
+         * arrowed to the third hit, typed one more character, and confirmed
+         * something they never looked at.
+         *
+         * A changed result set therefore clears the selection; an unchanged one
+         * that merely re-rendered gets its highlight painted back on.
+         */
+        _watchList() {
+            const list = this.$refs.list;
+            if (!list || typeof MutationObserver === 'undefined') return;
+
+            this._lastSignature = this._itemsSignature();
+
+            this._observer = new MutationObserver(() => {
+                const signature = this._itemsSignature();
+
+                if (signature !== this._lastSignature) {
+                    this._lastSignature = signature;
+                    this._activeIndex = -1;
+                }
+
+                this._paintActive();
+            });
+
+            // childList only, deliberately: _paintActive writes attributes, and
+            // observing attributes as well would make this observer retrigger
+            // itself on its own write, forever.
+            this._observer.observe(list, { childList: true, subtree: true });
+        },
+
+        _unwatchList() {
+            if (this._observer) {
+                this._observer.disconnect();
+                this._observer = null;
+            }
+        },
+
+        /**
+         * Emit the query for a host driving server-side search.
+         *
+         * Dispatched from the component ROOT, not from the input. The input lives
+         * inside `<template x-teleport="body">`, so at runtime it is a child of
+         * <body>: an event fired there never passes the root element, and
+         * `<x-wirekit::command-palette x-on:wirekit-command-palette-query="…">` —
+         * the obvious way to wire this up — silently never fired. Alpine only
+         * forwards events across a teleport when they are registered on the
+         * <template> itself.
+         */
+        emitQuery() {
+            this.$root.dispatchEvent(new CustomEvent('wirekit-command-palette-query', {
+                detail: { query: this.query },
+                bubbles: true,
+                composed: true,
+            }));
         },
 
         /**

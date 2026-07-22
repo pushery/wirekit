@@ -76,7 +76,7 @@
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
         role="dialog"
-        aria-label="Popover"
+        aria-label="{{ __('Popover') }}"
         class="{{ $panelClasses }}"
         x-cloak
     >

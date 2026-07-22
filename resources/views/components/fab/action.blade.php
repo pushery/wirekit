@@ -11,6 +11,14 @@
 
     $tag = $href ? 'a' : 'button';
 
+    // An icon-only action with no label has no accessible name at all — a menu
+    // item a screen reader can only announce as "button". Nothing downstream can
+    // recover that, so say it where the developer will see it (throws in debug,
+    // logs in production — the house strictness gate).
+    if ($label === '' && $icon !== null) {
+        WireKit::validateProp('fab.action', 'label', '', ['a non-empty label describing the action']);
+    }
+
     $classes = WireKit::resolveClasses('fab.action', 'base', implode(' ', [
         'wk-fab-action',
         'flex h-11 w-11 cursor-pointer items-center justify-center rounded-[var(--radius-wk-full)]',
@@ -31,7 +39,13 @@
 <{{ $tag }}
     @if($href) href="{{ $href }}" @else type="button" @endif
     role="menuitem"
-    aria-label="{{ $label }}"
+    {{-- Only emit the name when there IS one. `aria-label=""` is worse than no
+         aria-label at all: it suppresses the fallback to the element's own text
+         content, so an action rendering a text slot would lose the name it
+         already had. With no label AND no text (the icon-only case) nothing can
+         invent one — the strict-mode validation below says so out loud instead of
+         shipping a nameless menu item. --}}
+    @if($label !== '') aria-label="{{ $label }}" @endif
     data-wk-fab-action
     {{ $attributes->class([$classes]) }}
 >

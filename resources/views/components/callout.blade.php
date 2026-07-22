@@ -74,7 +74,7 @@
         default => [ // primary, info
             'border' => 'border-[color-mix(in_srgb,var(--color-wk-accent)_40%,var(--color-wk-border))]',
             'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_15%,var(--color-wk-bg-elevated))]',
-            'icon' => 'text-[color:var(--color-wk-accent)]',
+            'icon' => 'text-[color:var(--color-wk-accent-text)]',
             'stripe' => 'bg-[var(--color-wk-accent)]',
         ],
     };

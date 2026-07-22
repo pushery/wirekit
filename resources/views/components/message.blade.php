@@ -142,7 +142,7 @@
     $statusClass = match ($statusValue) {
         'sending', 'sent' => 'text-[color:var(--color-wk-text-subtle)]',
         'delivered' => 'text-[color:var(--color-wk-text-muted)]',
-        'read' => 'text-[color:var(--color-wk-accent)]',
+        'read' => 'text-[color:var(--color-wk-accent-text)]',
         'failed' => 'text-[color:var(--color-wk-danger-text)]',
         default => '',
     };

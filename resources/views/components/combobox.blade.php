@@ -2,7 +2,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
-    'announceError' => config('wirekit.a11y.announce_error', true),
+    'announceError' => null,
     'name' => null,
     'id' => null,
     'options' => [],
@@ -23,7 +23,12 @@
     'scope' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config (WIRE-204).
+    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 
@@ -265,6 +270,22 @@
                 if (next === max && delta > 0) return;
             }
         },
+        highlightFirst() {
+            // Jump to the first ENABLED option (WAI-ARIA combobox Home key).
+            const max = this.filtered.length - 1;
+            if (max < 0) return;
+            for (let i = 0; i <= max; i++) {
+                if (! this.filtered[i].disabled) { this.highlight = i; return; }
+            }
+        },
+        highlightLast() {
+            // Jump to the last ENABLED option (WAI-ARIA combobox End key).
+            const max = this.filtered.length - 1;
+            if (max < 0) return;
+            for (let i = max; i >= 0; i--) {
+                if (! this.filtered[i].disabled) { this.highlight = i; return; }
+            }
+        },
         activateHighlighted() {
             if (this.filtered[this.highlight] && ! this.filtered[this.highlight].disabled) {
                 this.selectOption(this.filtered[this.highlight]);
@@ -309,6 +330,8 @@
         @input="open = true; highlight = 0"
         @keydown.arrow-down.prevent="open = true; moveHighlight(1)"
         @keydown.arrow-up.prevent="moveHighlight(-1)"
+        @keydown.home.prevent="open = true; highlightFirst()"
+        @keydown.end.prevent="open = true; highlightLast()"
         @keydown.enter.prevent="activateHighlighted()"
         @keydown.escape="open = false"
         @if($disabled) disabled @endif
@@ -332,7 +355,7 @@
             x-cloak
             @click.stop="clearSelection()"
             class="absolute right-8 top-1/2 -translate-y-1/2 inline-flex items-center justify-center min-w-[24px] min-h-[24px] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
-            aria-label="Clear selection"
+            aria-label="{{ __('Clear selection') }}"
         >
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>

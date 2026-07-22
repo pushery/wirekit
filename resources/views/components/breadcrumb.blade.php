@@ -49,7 +49,7 @@
     };
 @endphp
 
-<nav aria-label="Breadcrumb" {{ $attributes->class([$navClasses]) }}>
+<nav aria-label="{{ __('Breadcrumb') }}" {{ $attributes->class([$navClasses]) }}>
     <ol class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($items as $i => $item)
             @php

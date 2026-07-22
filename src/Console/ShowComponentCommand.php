@@ -150,19 +150,11 @@ class ShowComponentCommand extends Command
     {
         $props = ComponentRegistry::extractProps($name);
 
-        // Discover sub-components from the file system (same heuristic
-        // as the human-readable path below).
-        $subComponents = [];
-        $subDir = __DIR__.'/../../resources/views/components/'.$name;
-        if (is_dir($subDir)) {
-            foreach (glob($subDir.'/*.blade.php') ?: [] as $file) {
-                $subName = basename($file, '.blade.php');
-                if ($subName === 'index') {
-                    continue;
-                }
-                $subComponents[] = "{$name}.{$subName}";
-            }
-        }
+        // One source for what sub-components exist. This used to be a local
+        // filesystem walk, duplicated again in the JSON exporter and absent from
+        // the MCP catalog — three surfaces answering the same question their own
+        // way, which is how the MCP one ended up answering it with null.
+        $subComponents = ComponentRegistry::subComponentsOf($name);
 
         $payload = [
             'name' => $name,

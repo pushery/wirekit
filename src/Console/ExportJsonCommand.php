@@ -86,7 +86,7 @@ class ExportJsonCommand extends Command
                 ? ClassPropsExtractor::publicPropertyNames($componentClass)
                 : [];
             $slots = $bladePath !== null ? $this->extractSlots($bladePath, $classPublicProps) : [];
-            $subComponents = $this->discoverSubComponents($name);
+            $subComponents = $this->describeSubComponents($name);
 
             // docs_url resolves to a publicly visitable page on
             // docs.wirekit.app. When the component's dedicated docs page
@@ -228,25 +228,34 @@ class ExportJsonCommand extends Command
      *
      * @return list<string>
      */
-    private function discoverSubComponents(string $name): array
+    /**
+     * The parent's sub-components, each with the props it actually declares.
+     *
+     * Before: a list of bare name strings. That told a tool the name existed and
+     * nothing else — so `table.th`'s `headerScope`, shipped and documented in
+     * 2.16.0, was unreachable through the manifest, `.wirekit-schema.json`, and
+     * every tool fed by them. A name without its props is not discovery; it is a
+     * pointer to documentation the tool cannot read.
+     *
+     * Discovery itself lives in ComponentRegistry. It used to live here AND in
+     * the show command AND nowhere in the MCP catalog — three answers to one
+     * question, which is how the MCP surface ended up simply not having one.
+     *
+     * @return list<array{name: string, tag: string, props: list<array<string, mixed>>}>
+     */
+    private function describeSubComponents(string $name): array
     {
-        $subDir = __DIR__.'/../../resources/views/components/'.$name;
-        if (! is_dir($subDir)) {
-            return [];
+        $out = [];
+
+        foreach (ComponentRegistry::subComponentsOf($name) as $sub) {
+            $out[] = [
+                'name' => $sub,
+                'tag' => "<x-wirekit::{$sub}>",
+                'props' => ComponentRegistry::extractProps($sub),
+            ];
         }
 
-        $subFiles = glob($subDir.'/*.blade.php') ?: [];
-        $subs = [];
-        foreach ($subFiles as $file) {
-            $subName = basename($file, '.blade.php');
-            if ($subName === 'index') {
-                continue;
-            }
-            $subs[] = $name.'.'.$subName;
-        }
-        sort($subs);
-
-        return $subs;
+        return $out;
     }
 
     /**

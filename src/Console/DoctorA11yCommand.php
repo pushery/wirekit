@@ -33,13 +33,17 @@ use Pushery\WireKit\Theming\WcagContrast;
  *      `--color-wk-accent-fg`.
  *
  *      Border handling follows WCAG 1.4.11. The COMMUNICATING borders
- *      (focus ring, stateful error / success borders) are hard-checked
- *      at 3:1, while the RESTING DECORATIVE borders (`border`,
- *      `border-strong` on `bg`) are exempt — printed as advisory INFO
- *      with their ratio but never counted toward the verdict or exit
- *      code. This matches docs/theming.md "Intentional trade-offs" and
- *      keeps WireKit's own default palette (intentionally ~1.3-2.5:1
- *      decorative borders) auditing clean.
+ *      (focus ring, stateful error / success borders, AND the
+ *      `border-strong` / `border-strong-hover` form-control edge — the
+ *      2.16.0/2.17.0 token whose whole purpose is 1.4.11 compliance) are
+ *      hard-checked at 3:1, `border-strong` against the field fill
+ *      (`--color-wk-bg-input`) it actually sits on. Only the RESTING
+ *      DECORATIVE border (`--color-wk-border`, the card / divider edge)
+ *      is exempt — printed as advisory INFO with its ratio but never
+ *      counted toward the verdict or exit code. This matches
+ *      docs/theming.md "Intentional trade-offs" and keeps WireKit's own
+ *      decorative border (intentionally ~1.3-2.5:1) auditing clean while
+ *      no longer letting a sub-3:1 CONTROL border pass silently.
  */
 class DoctorA11yCommand extends Command
 {
@@ -202,17 +206,24 @@ class DoctorA11yCommand extends Command
             ['name' => 'focus ring on ring-offset', 'fg' => '--color-wk-ring', 'bg' => '--color-wk-ring-offset', 'threshold' => 'ui'],
             ['name' => 'border-error on bg', 'fg' => '--color-wk-border-error', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
             ['name' => 'border-success on bg', 'fg' => '--color-wk-border-success', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
+            // border-strong is the COMMUNICATING form-control border introduced in
+            // 2.16.0 precisely because WCAG 1.4.11 requires >= 3:1 for it (WIRE-230).
+            // It is NOT decorative — it is the resting + hover edge of input / select
+            // / textarea / checkbox, so it is hard-checked, and against the field
+            // FILL (--color-wk-bg-input) it actually sits on, not the page bg.
+            ['name' => 'border-strong on bg-input', 'fg' => '--color-wk-border-strong', 'bg' => '--color-wk-bg-input', 'threshold' => 'ui'],
+            ['name' => 'border-strong-hover on bg-input', 'fg' => '--color-wk-border-strong-hover', 'bg' => '--color-wk-bg-input', 'threshold' => 'ui'],
 
             // Decorative resting borders — WCAG 1.4.11 EXEMPTS pure dividers that
-            // neither convey state nor identify an active boundary. WireKit ships
-            // these intentionally low-contrast (~1.3-2.5:1), matching every major
-            // design system; see docs/theming.md "Intentional trade-offs". They are
+            // neither convey state nor identify an active boundary. Only
+            // --color-wk-border qualifies: it is the card / divider edge WireKit
+            // ships intentionally low-contrast (~1.3-2.5:1), matching every major
+            // design system; see docs/theming.md "Intentional trade-offs". It is
             // audited for INFORMATION ONLY ('advisory'): the ratio is printed, but
-            // the result never counts toward PASS/WARN/FAIL totals and never affects
-            // the exit code. Hard-FAILing them contradicted both the docs AND
-            // WireKit's own default palette (which sits squarely in the exempt band).
+            // never counts toward PASS/WARN/FAIL totals and never affects the exit
+            // code. (border-strong used to live here too — that was the WIRE-230
+            // bug: the tool was blind to the one token it mattered most for.)
             ['name' => 'border on bg', 'fg' => '--color-wk-border', 'bg' => '--color-wk-bg', 'threshold' => 'ui', 'advisory' => true],
-            ['name' => 'border-strong on bg', 'fg' => '--color-wk-border-strong', 'bg' => '--color-wk-bg', 'threshold' => 'ui', 'advisory' => true],
         ];
 
         $totals = ['pass' => 0, 'warn' => 0, 'fail' => 0, 'skip' => 0, 'exempt' => 0];

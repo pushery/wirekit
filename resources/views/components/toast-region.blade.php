@@ -122,7 +122,7 @@
             'info' => [
                 'border' => 'border-[color-mix(in_srgb,var(--color-wk-accent)_35%,var(--color-wk-border))]',
                 'bg' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_10%,var(--color-wk-bg-elevated))]',
-                'icon' => 'text-[color:var(--color-wk-accent)]',
+                'icon' => 'text-[color:var(--color-wk-accent-text)]',
                 'text' => 'text-[color:var(--color-wk-text)]',
                 'muted' => 'text-[color:var(--color-wk-text-muted)]',
             ],
@@ -147,7 +147,7 @@
     {{ $attributes->class([$containerClasses, $positionClasses]) }}
     style="{{ $offsetStyle }}"
     role="region"
-    aria-label="Notifications"
+    aria-label="{{ __('Notifications') }}"
 >
     <template x-for="toast in toasts" :key="toast.id">
         <div
@@ -225,7 +225,7 @@
             <button
                 type="button"
                 @click="remove(toast.id)"
-                aria-label="Dismiss notification"
+                aria-label="{{ __('Dismiss notification') }}"
                 class="shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[color:var(--color-wk-accent-fg)] hover:opacity-80' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
