@@ -84,7 +84,7 @@
     // Absolute-ize paginator URLs. Under Livewire's WithPagination the current-path
     // resolver returns a RELATIVE path, so previousPageUrl()/nextPageUrl()/link urls
     // come out relative and 404 on a nested route. url()->to() host-qualifies them and
-    // is idempotent on already-absolute URLs (WIRE-122).
+    // is idempotent on already-absolute URLs.
     $abs = static fn (?string $u): ?string => $u === null ? null : url()->to($u);
 
     // The nav's accessible name. __('Pagination') is intended as a JSON string key, but
@@ -126,11 +126,11 @@
         </div>
     @else
         {{-- Full: prev + numbered pages + next (standard Laravel paginator links) --}}
-        {{-- ONE translatable sentence, not four fragments (WIRE-177). The earlier
+        {{-- ONE translatable sentence, not four fragments. The earlier
              form concatenated the fragments 'Showing' / 'to' / 'of' / 'results'
              (deliberately written WITHOUT the translation-helper syntax here, so a
              naive grep of this file for translation keys does not pick up four
-             phantom keys that never render — WIRE-207)
+             phantom keys that never render)
              around the numbers, which handed a translator four context-free words
              ("to" is untranslatable without knowing it sits between two numbers)
              and locked the output into English word order — a locale that puts the

@@ -31,7 +31,7 @@
     // Control (button-variant) chrome. Full literal class strings so the Tailwind
     // scanner sees them. The inner <button> routes through resolveClasses with its
     // OWN 'control' block (the wrapper 'base' block only ever reached the outer
-    // <div>), so config/scoped classes can now restyle the button too (WIRE-186).
+    // <div>), so config/scoped classes can now restyle the button too.
     $controlSize = match ($size) {
         'sm' => 'h-8 w-8',
         default => 'h-9 w-9',

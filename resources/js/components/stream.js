@@ -345,7 +345,7 @@ export default function wirekitStream(config = {}) {
             }
         },
 
-        // ── Public door to the state machine (WIRE-222) ───────────────────────
+        // ── Public door to the state machine ───────────────────────
         //
         // The transitions below were private by convention, driven only by the
         // EventSource listener or the simulate timer. That made the component

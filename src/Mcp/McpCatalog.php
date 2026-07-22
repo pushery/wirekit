@@ -116,7 +116,7 @@ final class McpCatalog
             'description' => $meta['description'] ?? '',
             // Derive the tag from the registry — the interpolated "<x-wirekit::{name}>"
             // form is wrong for a class-based component like `chart`, whose real tag is
-            // the hyphenated <x-wirekit-chart> (WIRE-209).
+            // the hyphenated <x-wirekit-chart>.
             'tag' => ComponentRegistry::tag($name),
             'props' => $props,
         ] + (isset($meta['parent']) ? ['parent' => $meta['parent']] : []);

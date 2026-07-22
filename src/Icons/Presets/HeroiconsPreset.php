@@ -88,7 +88,7 @@ final class HeroiconsPreset implements IconPreset
             'inbox' => 'heroicon-m-inbox',
             'bolt' => 'heroicon-m-bolt',
             'refresh' => 'heroicon-m-arrow-path', // heroicons calls it arrow-path
-            // Media controls (WIRE-226). An app with audio playback had to
+            // Media controls. An app with audio playback had to
             // hand-roll inline SVGs — against the catalog's own "use the icon
             // component" rule — because the base set had no play/pause at all.
             'play' => 'heroicon-m-play',

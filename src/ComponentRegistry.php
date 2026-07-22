@@ -488,7 +488,7 @@ class ComponentRegistry
      * to the directory-component form `components/<name>/index.blade.php` when the
      * top-level file does not exist (e.g. `list` lives at `list/index.blade.php`).
      * Without this fallback the registry read that component's props from a
-     * non-existent path and reported it with zero props (WIRE-206). Mirrors the
+     * non-existent path and reported it with zero props. Mirrors the
      * dual enumeration ComponentRegistryTest already uses for membership.
      */
     private static function bladeFilePath(string $name): string

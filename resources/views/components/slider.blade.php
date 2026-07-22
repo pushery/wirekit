@@ -13,7 +13,7 @@
     'marks' => [],
     // Decouple the announced aria-valuetext from the visual tick labels: an explicit
     // value => spoken-text map lets you show NUMERIC ticks but announce semantic meaning
-    // (e.g. [1 => 'Low', 5 => 'High']). Falls back to the `marks` labels (WIRE-160).
+    // (e.g. [1 => 'Low', 5 => 'High']). Falls back to the `marks` labels.
     'valueTextMap' => null,
     // Show a value bubble above the thumb that follows it as the user drags.
     'tooltip' => false,
@@ -51,7 +51,7 @@
     // The track overlay (tooltip bubble + tick marks) needs a relative container.
     $hasTrackOverlay = $tooltip || ! empty($normalizedMarks);
 
-    // Value → semantic-text map (WIRE-12). When `marks` is a labeled MAP
+    // Value → semantic-text map. When `marks` is a labeled MAP
     // (`[0 => 'Low', 100 => 'High']`, i.e. NOT a plain list), the labels carry
     // meaning a screen reader must hear — otherwise the native range input
     // announces only the bare number ("0"), while sighted users read "Low" off

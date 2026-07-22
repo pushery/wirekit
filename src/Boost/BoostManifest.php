@@ -52,7 +52,7 @@ final class BoostManifest
      * autocomplete content straight into the card — which has no padding of its
      * own, and is the mistake the shipped AGENTS.md spends a paragraph
      * preventing. Nested under the parent rather than listed flat, so the
-     * manifest's component count keeps meaning what it says (WIRE-237).
+     * manifest's component count keeps meaning what it says.
      *
      * @param  array<string, mixed>  $component
      * @return array<string, mixed>
@@ -101,7 +101,7 @@ final class BoostManifest
                 'name' => $c['name'],
                 // Reuse the catalog's registry-derived tag — the interpolated
                 // "<x-wirekit::{name}>" form is wrong for the class-based `chart`
-                // (real tag <x-wirekit-chart>) (WIRE-209).
+                // (real tag <x-wirekit-chart>).
                 'tag' => $detail['tag'] ?? "<x-wirekit::{$c['name']}>",
                 'category' => $c['category'],
                 'description' => $c['description'],

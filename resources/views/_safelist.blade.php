@@ -157,7 +157,7 @@
     segmented-control() — selected / unselected segment appearance
     ────────────────────────────────────────────────────────────────────────
 
-    Same problem, different origin (WIRE-178). These used to be literals inside
+    Same problem, different origin. These used to be literals inside
     an Alpine `:class` ternary, where Tailwind's scanner did see them — but that
     also put them out of reach of WireKit::scope(), because resolveClasses runs
     at render time in PHP while `:class` is a runtime binding. Moving them into
@@ -172,7 +172,7 @@
       hover:text-[color:var(--color-wk-text)]
 
     ────────────────────────────────────────────────────────────────────────
-    pricing-table() — selected / unselected billing-interval toggle (WIRE-190)
+    pricing-table() — selected / unselected billing-interval toggle
     ────────────────────────────────────────────────────────────────────────
 
     Same mechanism as segmented-control above: both branches of the interval

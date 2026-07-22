@@ -34,7 +34,7 @@
     // is a non-text GRAPHIC (WCAG 1.4.11, 3:1) — its intent color is the semantic
     // FILL token (like success/warning/danger below), NOT the readable accent-text
     // alias links use; accent-text defaults to near-black, which would strip the
-    // brand color from an accent spinner (WIRE-238 accent-as-text repoint exempts it).
+    // brand color from an accent spinner, which the accent-as-text repoint exempts.
     $intentColors = [
         'accent' => 'text-[color:var(--color-wk-accent)]',
         'primary' => 'text-[color:var(--color-wk-accent)]',

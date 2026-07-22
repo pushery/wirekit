@@ -10,6 +10,7 @@
 
 @php
     use Pushery\WireKit\WireKit;
+    use Pushery\WireKit\Support\LocalizedNumber;
 
     $id = $attributes->get('id', $attributes->get('name', 'rating-' . \Illuminate\Support\Str::random(6)));
     $name = $attributes->get('name', $id);
@@ -65,9 +66,11 @@
 
     // What a readonly rating announces. The component renders a partial star via
     // clip-path, so rounding here would make the picture and the words disagree —
-    // it draws 4.2 and would say "4". Trailing zeros are dropped so a clean 4
-    // does not announce as "4.0".
-    $announcedValue = $readonly ? rtrim(rtrim(number_format($numericValue, 1, '.', ''), '0'), '.') : $numericValue;
+    // it draws 4.2 and would say "4". maxPrecision keeps that precision while
+    // dropping a trailing zero, so a clean 4 does not announce as "4.0"; the
+    // trim this replaces assumed "." was the decimal separator and would have
+    // mangled a localized "4,0".
+    $announcedValue = $readonly ? LocalizedNumber::format((float) $numericValue, maxPrecision: 1) : $numericValue;
     $fullStars = (int) floor($numericValue);
     $fraction = $numericValue - $fullStars; // 0.0–0.99 for partial star
 @endphp
@@ -121,10 +124,10 @@
                  as "Average rating — 4.2 out of 5 stars".
 
                  An explicit aria-label still wins: the caller knows their page. --}}
-            aria-label="{{ $attributes->get('aria-label') ?? $announcedValue.' out of '.$max.' stars' }}"
+            aria-label="{{ $attributes->get('aria-label') ?? __(':value out of :max stars', ['value' => $announcedValue, 'max' => $max]) }}"
         @else
             role="radiogroup"
-            aria-label="{{ $label ?? $attributes->get('aria-label') ?? 'Rating' }}"
+            aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('Rating') }}"
         @endif
         class="inline-flex gap-0.5"
     >

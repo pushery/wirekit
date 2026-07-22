@@ -32,7 +32,7 @@
     // Multi-line mode. A badge is a fixed-height single-line pill by default. Set
     // `wrap` for a long label that must break across lines: the fixed height is
     // swapped for `min-h-*` + vertical padding so the pill GROWS with the text
-    // instead of the second line spilling below the surface (WIRE-175).
+    // instead of the second line spilling below the surface.
     'wrap' => false,
     'scope' => null,
 ])
@@ -160,7 +160,7 @@
     // Size classes: height, padding, font size, radius.
     // Single-line badges are full-radius pills. In wrap mode the fixed height is swapped
     // for min-height + a little more vertical padding so the pill grows with the wrapped
-    // text (WIRE-175); the radius also drops to the medium token, because a full radius —
+    // text; the radius also drops to the medium token, because a full radius —
     // half the single-line height — reads as an oversized stadium once the badge is two+
     // lines tall. The reduced radius makes a multi-line badge a tidy rounded rectangle.
     $pillRadius = $wrap ? 'rounded-[var(--radius-wk-md)]' : 'rounded-[var(--radius-wk-full)]';

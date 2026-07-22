@@ -37,7 +37,7 @@
     // A ROW header labels its own data row (WCAG 1.3.1) and reads as a heading
     // for that row — NOT as a column header. The muted, nowrap column-header
     // treatment made a row header render small, greyed-out and clipped; it now
-    // uses the regular text color and is allowed to wrap (WIRE-217 / WIRE-227).
+    // uses the regular text color and is allowed to wrap.
     $scopeText = $isRowHeader
         ? 'text-[color:var(--color-wk-text)]'
         : 'text-[color:var(--color-wk-text-muted)] whitespace-nowrap';
@@ -62,7 +62,7 @@
         // Sortable headers get pointer cursor + hover color. EXCEPT in sort-action
         // mode: there the <button> below is the click target (it carries its own
         // cursor-pointer), so advertising cursor-pointer on the whole cell would be a
-        // dead zone — the cell padding shows a pointer but is not clickable (WIRE-121).
+        // dead zone — the cell padding shows a pointer but is not clickable.
         $sortable ? ($sortAction ? 'select-none hover:text-[color:var(--color-wk-text)]' : 'cursor-pointer select-none hover:text-[color:var(--color-wk-text)]') : '',
     ]), $scope);
 

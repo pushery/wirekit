@@ -117,7 +117,7 @@ final class WcagContrast
         // surfaces (badge / alert / stat) are built with color-mix, so without
         // this arm every tinted background is unauditable (returns null) and a
         // real AA failure on a soft surface can only be caught downstream by a
-        // developer's axe run (WIRE-104). Mix in the sRGB space per the CSS
+        // developer's axe run. Mix in the sRGB space per the CSS
         // spec: convert operands to gamma-encoded sRGB, blend by weight, convert
         // back to linear. Only `in srgb` is supported (the space WireKit uses);
         // other interpolation spaces return null rather than guess.
@@ -164,7 +164,7 @@ final class WcagContrast
 
         // rgb() / rgba() — getComputedStyle returns resolved colors in this form,
         // so a form control's live border/background read back from the DOM was
-        // unauditable (returned null) without this arm (WIRE-115). Match both the
+        // unauditable (returned null) without this arm. Match both the
         // legacy comma form (rgb(255, 0, 0) / rgba(255,0,0,.5)) AND the modern space
         // form (rgb(255 255 255 / 50%)); alpha is ignored, as with oklch's `/ alpha`.
         if (preg_match('/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/i', $color, $m) === 1) {

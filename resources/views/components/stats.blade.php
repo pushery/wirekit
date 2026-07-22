@@ -26,7 +26,7 @@
     $classes = WireKit::resolveClasses('stats', 'base', implode(' ', [
         'grid',
         // Token, not the raw gap-4 (1rem == --space-wk-md; no visual change, and
-        // it stops violating the "no hardcoded sizes" rule — WIRE-200).
+        // it stops violating the "no hardcoded sizes" rule).
         'gap-[var(--space-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',
         $hasStagger ? 'wk-stagger' : '',

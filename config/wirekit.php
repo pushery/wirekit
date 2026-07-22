@@ -24,7 +24,7 @@ return [
     | ISO 4217 currency code the <x-wirekit::price> / <x-wirekit::pricing-tier>
     | components use when no per-call `currency` is passed. Uppercase (EUR, USD,
     | GBP). The components read this key; it is declared here so a global default
-    | is settable AND visible (WIRE-191).
+    | is settable AND visible.
     |
     */
 
@@ -211,7 +211,7 @@ return [
 
         // Layout primitives. These read a config default but were absent from the
         // stub, so the surface they expose was invisible to anyone reading their
-        // own published file (WIRE-193). Values here mirror the in-Blade fallback
+        // own published file. Values here mirror the in-Blade fallback
         // exactly — declaring them changes nothing, it only makes them settable.
         'bento-grid' => ['gap' => 'md'],
         'brand-bar' => ['max' => 'xl'],

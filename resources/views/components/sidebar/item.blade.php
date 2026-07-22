@@ -5,7 +5,7 @@
     'submenu' => false,
     // A trailing counter/dot (an unread badge) — a count or short string renders a
     // pill AFTER the label, OUTSIDE the truncating span so it is never clipped, and
-    // stays visible in the collapsed rail (WIRE-114).
+    // stays visible in the collapsed rail.
     'badge' => null,
     'scope' => null,
 ])
