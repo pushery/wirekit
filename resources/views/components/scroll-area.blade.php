@@ -47,7 +47,7 @@
 <div
     tabindex="0"
     role="region"
-    aria-label="Scrollable content"
+    aria-label="{{ __('Scrollable content') }}"
     @if($fadeValue) data-fade-axis="{{ $fadeAxis }}" data-fade="{{ $fadeValue }}" @endif
     {{ $attributes->class([$classes]) }}
     @if($inlineStyle) style="{{ $inlineStyle }}" @endif

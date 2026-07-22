@@ -2,20 +2,25 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
-    'announceError' => config('wirekit.a11y.announce_error', true),
+    'announceError' => null,
     'name' => null,
     'id' => null,
     'multiple' => config('wirekit.components.file-upload.multiple', false),
     'accept' => config('wirekit.components.file-upload.accept', null),
     'size' => config('wirekit.components.file-upload.size', 'md'),
     'disabled' => false,
-    'label' => 'Drop files here or click to browse',
+    'label' => __('Drop files here or click to browse'),
     'hint' => null,
     'error' => null,
     'scope' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config (WIRE-204).
+    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 

@@ -3,6 +3,12 @@
     'icon' => null,
     'shortcut' => null,
     'disabled' => false,
+    // Stable DOM id for this item. It anchors the combobox's
+    // aria-activedescendant, so it must survive a re-render: with server-side
+    // search the list is rebuilt on every keystroke, and an id that changes each
+    // time keeps moving the screen reader's announcement target and makes
+    // Livewire's morph patch every row. Pass one when you have a natural key.
+    'id' => null,
     'scope' => null,
 ])
 
@@ -10,7 +16,29 @@
     use Pushery\WireKit\WireKit;
 
     // Command item — selectable option in the command palette.
-    $itemId = 'wk-cmd-item-' . \Illuminate\Support\Str::random(6);
+    //
+    // The id is DERIVED, in this order: an explicit `id`, then the href (the
+    // natural key for a link item), then the item's own text. Only when none of
+    // those exist does it fall back to a random string — which is what every
+    // item used to get, and what made the list a different set of elements on
+    // every render.
+    $wkCmdSlug = static function (string $value): string {
+        $slug = strtolower(preg_replace('/[^A-Za-z0-9]+/', '-', $value) ?? '');
+
+        return trim($slug, '-');
+    };
+
+    $itemId = $id
+        ?? ($href !== null && $href !== ''
+            ? 'wk-cmd-item-'.$wkCmdSlug((string) $href)
+            : null);
+
+    if ($itemId === null) {
+        $label = $wkCmdSlug(trim(strip_tags((string) $slot)));
+        $itemId = $label !== ''
+            ? 'wk-cmd-item-'.$label
+            : 'wk-cmd-item-'.\Illuminate\Support\Str::random(6);
+    }
 
     $classes = WireKit::resolveClasses('command-palette.item', 'base', implode(' ', [
         'flex items-center gap-x-[var(--gap-wk-sm)] w-full',

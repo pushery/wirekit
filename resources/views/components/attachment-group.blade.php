@@ -1,6 +1,6 @@
 @props([
     // Accessible name for the group (e.g. "3 attachments").
-    'label' => 'Attachments',
+    'label' => config('wirekit.components.attachment-group.label') ?? __('Attachments'),
     // 'row' scroll-snaps horizontally (chat bubbles, tight rows);
     // 'stack' lists them vertically (mail, detail panels).
     'orientation' => 'stack',

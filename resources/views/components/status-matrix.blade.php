@@ -5,7 +5,7 @@
     'cellType' => config('wirekit.components.status-matrix.cell-type', 'status'), // tristate | toggle | status | heat
     'editable' => false,            // tristate / toggle become interactive
     'cornerLabel' => '',            // top-left header cell label (the row-axis name)
-    'ariaLabel' => 'Status matrix', // accessible name for the grid
+    'ariaLabel' => __('Status matrix'), // accessible name for the grid
     'name' => null,                 // hidden-input name for form submission (editable)
     // Heat scale endpoints — a cold→hot ramp. Defaults map to the existing
     // state tokens (warning = amber "cold-warm" → danger = red "hot"), so the

@@ -16,6 +16,11 @@ export default function wirekitThemeController(config = {}) {
         // 'system' | 'light' | 'dark'
         theme: 'system',
         storageKey: config.storageKey || 'wirekit-theme',
+        // 'local' (localStorage, client-only) | 'cookie' (server-readable). The
+        // state machine below is identical for both — only _read()/_write() differ.
+        storage: config.storage === 'cookie' ? 'cookie' : 'local',
+        // Only consulted for the 'cookie' driver. { same_site, max_age, path }.
+        cookieAttributes: config.cookieAttributes || {},
         _media: null,
         _onSystemChange: null,
         _onPeerChange: null,
@@ -125,6 +130,14 @@ export default function wirekitThemeController(config = {}) {
             // back to 'system' is the right answer — the page follows the OS,
             // which is what someone with no stored preference wanted anyway.
             try {
+                if (this.storage === 'cookie') {
+                    const value = this._readCookie();
+
+                    // 'system' is never written (it is the absence of a cookie),
+                    // so a stored value is always an explicit light/dark choice.
+                    return ['light', 'dark'].includes(value) ? value : null;
+                }
+
                 const value = localStorage.getItem(this.storageKey);
 
                 return ['system', 'light', 'dark'].includes(value) ? value : null;
@@ -135,6 +148,12 @@ export default function wirekitThemeController(config = {}) {
 
         _write(theme) {
             try {
+                if (this.storage === 'cookie') {
+                    this._writeCookie(theme);
+
+                    return;
+                }
+
                 // 'system' is stored as the ABSENCE of a choice, so it agrees with
                 // the head script — which reads "no key" as "follow the OS". A
                 // literal "system" string there would fall through to the OS check
@@ -148,6 +167,50 @@ export default function wirekitThemeController(config = {}) {
                 // Nothing to do: the choice applies to this page, it just will not
                 // survive a reload. Better than throwing on a click.
             }
+        },
+
+        /**
+         * Parse the theme out of document.cookie. Scans the pair list by exact
+         * name rather than a regex so a storageKey with regex-special characters
+         * cannot break the match. Mirrors the head script's own reader so both
+         * resolve the SAME cookie to the same theme.
+         */
+        _readCookie() {
+            const cookies = document.cookie ? document.cookie.split('; ') : [];
+
+            for (const pair of cookies) {
+                const eq = pair.indexOf('=');
+                const name = eq === -1 ? pair : pair.slice(0, eq);
+
+                if (name === this.storageKey) {
+                    return decodeURIComponent(pair.slice(eq + 1));
+                }
+            }
+
+            return null;
+        },
+
+        _writeCookie(theme) {
+            const attrs = this.cookieAttributes || {};
+            const sameSite = attrs.same_site || 'Lax';
+            const path = attrs.path || '/';
+            // Secure only on HTTPS: a Secure cookie set over plain http is
+            // silently dropped by the browser, which would break local dev.
+            const secure = typeof location !== 'undefined' && location.protocol === 'https:'
+                ? '; Secure'
+                : '';
+
+            if (theme === 'system') {
+                // Delete: Max-Age=0 expires it now. 'system' is the absence of a
+                // cookie, exactly like localStorage stores it as a removed key.
+                document.cookie = `${this.storageKey}=; Max-Age=0; Path=${path}; SameSite=${sameSite}${secure}`;
+
+                return;
+            }
+
+            const maxAge = attrs.max_age ?? 31536000;
+
+            document.cookie = `${this.storageKey}=${encodeURIComponent(theme)}; Max-Age=${maxAge}; Path=${path}; SameSite=${sameSite}${secure}`;
         },
     };
 }

@@ -2,7 +2,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
-    'announceError' => config('wirekit.a11y.announce_error', true),
+    'announceError' => null,
     'label' => null,
     'hint' => null,
     'error' => null,
@@ -12,7 +12,12 @@
     'scope' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config (WIRE-204).
+    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -128,7 +133,7 @@
                 @click="showPassword = !showPassword"
                 {{-- Static aria-label guards pre-Alpine render (axe scans DOM
                      before hydration may complete). :aria-label overrides live. --}}
-                aria-label="Show password"
+                aria-label="{{ __('Show password') }}"
                 :aria-label="showPassword ? 'Hide password' : 'Show password'"
             >
                 {{-- Eye icon (show) --}}

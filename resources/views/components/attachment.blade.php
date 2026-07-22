@@ -78,9 +78,9 @@
 
     // The state is never color-only: each carries its own text/icon.
     [$stateText, $stateIntent] = match ($stateValue) {
-        'uploading' => ['Uploading', 'info'],
-        'done' => ['Uploaded', 'success'],
-        'error' => ['Upload failed', 'danger'],
+        'uploading' => [__('Uploading'), 'info'],
+        'done' => [__('Uploaded'), 'success'],
+        'error' => [__('Upload failed'), 'danger'],
         default => [null, null],
     };
 
@@ -160,7 +160,7 @@
                 size="sm"
                 :animation="$animate ? 'shimmer' : 'none'"
                 class="mt-[var(--space-wk-xs)]"
-                aria-label="Uploading {{ $name }}"
+                aria-label="{{ __('Uploading :name', ['name' => $name]) }}"
             />
         @endif
     </span>

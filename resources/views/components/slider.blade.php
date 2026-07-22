@@ -148,13 +148,50 @@
 
 {{-- Alpine tracks the current value so the display (and the tooltip bubble /
      fill) update on input. `pct` is the thumb position as a 0–100 percentage,
-     used to place the tooltip bubble over the thumb. --}}
+     used to place the tooltip bubble over the thumb.
+
+     `current` is a MIRROR of the input's own value, and it is kept honest in both
+     directions. It used to be written once at render and mutated only by @input,
+     which is correct exactly as long as the browser is the only thing that moves
+     the thumb. It is not: with `wire:model`, a server-side change writes
+     `el.value` directly and fires NO input event, so the mirror kept the old
+     number while the thumb showed the new one — and everything derived from the
+     mirror (aria-valuetext, the tooltip, showValue, the fill) announced a value
+     the reader could no longer see. Assigning a property fires no event and
+     mutates no attribute, so it is invisible to x-effect and to a
+     MutationObserver alike (verified) — the one reliable signal is Livewire's own
+     commit hook, which is exactly the moment the two can diverge. --}}
 <div
     x-data="{
         current: @js((string) $currentValue),
         min: {{ $min }},
         max: {{ $max }},
         marksMap: @js((object) $valueTextMap),
+        /** Pull the element's own value back into the mirror. */
+        syncFromInput() {
+            const el = this.$refs.input;
+            if (el && String(el.value) !== String(this.current)) {
+                this.current = String(el.value);
+            }
+        },
+        /**
+         * Watch for a value that changed without the browser telling us.
+         *
+         * Assigning `el.value` fires no event and mutates no attribute, so it is
+         * invisible to both x-effect and a MutationObserver (verified). Livewire's
+         * x-model effect does exactly that on a server-side change, so the one
+         * reliable signal is Livewire's own commit hook — after a round trip, look
+         * at the element again. Apps without Livewire never call it and pay
+         * nothing; there, only the browser moves the thumb and @input suffices.
+         */
+        initResync() {
+            if (typeof window === 'undefined' || ! window.Livewire?.hook) {
+                return;
+            }
+
+            this._resync = () => queueMicrotask(() => this.syncFromInput());
+            window.Livewire.hook('commit', ({ succeed }) => succeed(this._resync));
+        },
         get pct() {
             const r = (this.max - this.min) || 1;
             return Math.max(0, Math.min(100, ((Number(this.current) - this.min) / r) * 100));
@@ -166,6 +203,8 @@
             return this.marksMap[this.current] ?? String(this.current);
         }
     }"
+    x-modelable="current"
+    x-init="initResync()"
     {{-- Caller layout attributes (class / style — e.g. a width constraint)
          bind to the WRAPPER, not the <input>. The tooltip bubble + tick marks
          are positioned `left: pct%` relative to the overlay container, which
@@ -209,7 +248,16 @@
             min="{{ $min }}"
             max="{{ $max }}"
             step="{{ $step }}"
-            :value="current"
+            x-ref="input"
+            {{-- NOT `:value="current"`. Binding the mirror back onto the element
+                 makes Alpine re-assert the stale value over whatever Livewire just
+                 wrote, which is the other half of the same bug. The element owns
+                 its value; the mirror follows it.
+
+                 initResync() above re-reads it after every Livewire commit — a
+                 server-side change writes el.value and fires NO input event, so
+                 that is the one moment the two can silently diverge. --}}
+            value="{{ $currentValue }}"
             @input="current = $event.target.value"
             {{-- Labeled discrete slider: announce the mark's label, not the bare
                  number. Only bound for a labeled MAP so plain sliders stay

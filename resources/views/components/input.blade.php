@@ -9,7 +9,7 @@
     // focus having to return to the field. Set false when the surrounding page
     // runs its own live region for form errors (avoids a double announcement).
     // The aria-describedby link on the input is unaffected either way.
-    'announceError' => config('wirekit.a11y.announce_error', true),
+    'announceError' => null,
     // Success / valid state. Pass a string to show a green confirmation message
     // below the field (e.g. "Username available"), or `true` for just the green
     // border with no message. `error` always wins when both are set.
@@ -38,7 +38,12 @@
     'placeholder' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config (WIRE-204).
+    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -246,7 +251,7 @@
                     type="button"
                     @click="copy()"
                     @if($disabled) disabled @endif
-                    aria-label="Copy to clipboard"
+                    aria-label="{{ __('Copy to clipboard') }}"
                     :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
                     class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                 >
@@ -269,7 +274,7 @@
                     x-cloak
                     @click="clear()"
                     @if($disabled) disabled @endif
-                    aria-label="Clear input"
+                    aria-label="{{ __('Clear input') }}"
                     class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                 >
                     <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

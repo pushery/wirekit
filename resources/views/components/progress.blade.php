@@ -117,7 +117,7 @@
         @if($label) aria-labelledby="{{ $labelId }}"
         @elseif($ariaLabelledbyAttr) aria-labelledby="{{ $ariaLabelledbyAttr }}"
         @elseif($ariaLabelAttr) aria-label="{{ $ariaLabelAttr }}"
-        @else aria-label="Progress"
+        @else aria-label="{{ __('Progress') }}"
         @endif
         @if(! $isIndeterminate)
             aria-valuenow="{{ (int) $clamped }}"

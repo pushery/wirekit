@@ -51,12 +51,29 @@ export default function wirekitStream(config = {}) {
 
         // ── Internal config / buffers ──
         _url: config.url || '',
+        // Transport. 'sse' (default) is the EventSource path. 'fetch' POSTs and
+        // reads the response body — the shape LLM APIs actually use, because the
+        // request IS the payload and EventSource is GET-only and body-less.
+        // 'manual' opens no transport at all: the developer drives the component
+        // through push()/finish()/fail() or the wirekit-stream-* events, which is
+        // what a Reverb/Echo (WebSocket) app needs.
+        _source_kind: config.source === 'fetch' || config.source === 'manual' ? config.source : 'sse',
+        _method: (config.method || 'POST').toUpperCase(),
+        _body: config.body ?? null,
+        _headers: config.headers || {},
+        _abort: null,   // AbortController (fetch mode)
+        _onHostEvent: null,
+        _name: config.name || '',
         _eventName: config.eventName || 'message',
         _doneSignal: config.doneSignal ?? '[DONE]',
         _announceMode: config.announce === 'status' ? 'status' : 'result',
         _autoStart: config.autoStart !== false,
         _startMessage: config.startMessage || 'Generating response…',
         _readyMessage: config.readyMessage || 'Response ready',
+        // Announced on abort. Was a bare literal with no override at all, so a
+        // translated app could not reach it — the other two at least had a config
+        // key. All three are handed in from Blade, already translated.
+        _stoppedMessage: config.stoppedMessage || 'Response stopped',
         // Simulate mode: stream this text token-by-token from a local timer, no SSE —
         // the docs demo (and any typewriter effect) without a live endpoint.
         _simulate: config.simulate || '',
@@ -72,12 +89,44 @@ export default function wirekitStream(config = {}) {
                 && typeof window.matchMedia === 'function'
                 && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-            if (this._autoStart && (this._url || this._simulate)) {
+            // Manual mode has nothing to open but still auto-enters `streaming`
+            // so the "generating" announcement happens once, up front, exactly as
+            // it does for a live source.
+            if (this._autoStart && (this._url || this._simulate || this._source_kind === 'manual')) {
                 this.start();
+            }
+
+            // Event door onto the same public methods, for a host that is not
+            // Alpine (a plain Echo listener, a Livewire dispatch). Mirrors the
+            // wirekit-* event convention the other components use. Scoped by
+            // `name` so several streams on one page stay independent, and
+            // listened for on the element so a dispatch from the host bubbles in.
+            if (typeof window !== 'undefined') {
+                this._onHostEvent = (event) => {
+                    const detail = (event && event.detail) || {};
+
+                    if (this._name && detail.name && detail.name !== this._name) {
+                        return;
+                    }
+
+                    if (event.type === 'wirekit-stream-push') this.push(detail.chunk ?? detail.text ?? '');
+                    if (event.type === 'wirekit-stream-finish') this.finish();
+                    if (event.type === 'wirekit-stream-fail') this.fail(detail.message);
+                };
+
+                for (const name of ['wirekit-stream-push', 'wirekit-stream-finish', 'wirekit-stream-fail']) {
+                    window.addEventListener(name, this._onHostEvent);
+                }
             }
         },
 
         destroy() {
+            if (this._onHostEvent && typeof window !== 'undefined') {
+                for (const name of ['wirekit-stream-push', 'wirekit-stream-finish', 'wirekit-stream-fail']) {
+                    window.removeEventListener(name, this._onHostEvent);
+                }
+                this._onHostEvent = null;
+            }
             this._close();
         },
 
@@ -90,7 +139,11 @@ export default function wirekitStream(config = {}) {
 
         /** Begin (or restart) streaming. No-op while already streaming. */
         start() {
-            if (this.status === 'streaming' || (!this._url && !this._simulate)) {
+            // 'manual' has no transport to open, so it needs no url — the whole
+            // point is that the developer feeds it. Every other mode still does.
+            const needsUrl = this._source_kind !== 'manual' && !this._simulate;
+
+            if (this.status === 'streaming' || (needsUrl && !this._url)) {
                 return;
             }
             this.text = '';
@@ -112,7 +165,7 @@ export default function wirekitStream(config = {}) {
                 this._buffer = '';
             }
             this.status = 'aborted';
-            this._announceText = 'Response stopped';
+            this._announceText = this._stoppedMessage;
             this._close();
         },
 
@@ -128,6 +181,19 @@ export default function wirekitStream(config = {}) {
             // Simulate mode: type the configured text out from a local timer, no SSE.
             if (this._simulate) {
                 this._runSimulation();
+                return;
+            }
+
+            // Manual mode: nothing to open. The component sits in `streaming`
+            // until the developer calls finish()/fail() — every a11y guarantee
+            // (one "generating" announcement, one result announcement, a defined
+            // terminal state) applies exactly as it does to a live source.
+            if (this._source_kind === 'manual') {
+                return;
+            }
+
+            if (this._source_kind === 'fetch') {
+                this._openFetch();
                 return;
             }
             // node / SSR has no EventSource; transitions are then driven directly
@@ -159,6 +225,156 @@ export default function wirekitStream(config = {}) {
         },
 
         /** Append one chunk. Buffered (not shown) under reduced motion. */
+        /**
+         * POST the request and read the response body as it arrives.
+         *
+         * EventSource cannot do this: it is GET-only and body-less by spec, while
+         * an LLM request carries the prompt, the options and the model in its
+         * body — none of which belongs in a URL (length, encoding, and the fact
+         * that user text has no business in logs, referrers or history).
+         *
+         * The server still speaks SSE FRAMING (`data:` lines, blank-line
+         * separated); it just does so over a POST response. That is the shape
+         * OpenAI-, Anthropic- and compatible APIs use, and any proxy in front.
+         *
+         * Deliberately NOT auto-reconnecting. EventSource retries by itself, and
+         * `_open()` above works around it; here the question does not arise, and
+         * it must not: a token stream is billed and not idempotent, so a dropped
+         * connection is a terminal state the reader is told about, never a silent
+         * replay of a request that already cost money.
+         */
+        _openFetch() {
+            if (typeof fetch === 'undefined') {
+                return;
+            }
+
+            this._abort = typeof AbortController !== 'undefined' ? new AbortController() : null;
+
+            const headers = { Accept: 'text/event-stream', ...this._headers };
+            const hasBody = this._body !== null && this._method !== 'GET';
+
+            if (hasBody && !Object.keys(headers).some((k) => k.toLowerCase() === 'content-type')) {
+                headers['Content-Type'] = 'application/json';
+            }
+
+            fetch(this._url, {
+                method: this._method,
+                headers,
+                body: hasBody
+                    ? (typeof this._body === 'string' ? this._body : JSON.stringify(this._body))
+                    : undefined,
+                signal: this._abort ? this._abort.signal : undefined,
+            })
+                .then((response) => {
+                    if (!response.ok) {
+                        this._fail('Stream failed: HTTP ' + response.status);
+
+                        return null;
+                    }
+                    if (!response.body || typeof response.body.getReader !== 'function') {
+                        this._fail('Stream failed: response is not readable');
+
+                        return null;
+                    }
+
+                    return this._readFramedStream(response.body.getReader());
+                })
+                .catch((e) => {
+                    // An abort is the reader's own decision — stop() already put
+                    // the component in its terminal state, so it is not a failure.
+                    if (e && e.name === 'AbortError') {
+                        return;
+                    }
+                    this._fail((e && e.message) || 'Stream failed');
+                });
+        },
+
+        /**
+         * Consume a reader of SSE-framed bytes: events are separated by a blank
+         * line, and the payload is the concatenation of that event's `data:`
+         * lines. Anything else (`event:`, `id:`, `retry:`, comments) is skipped.
+         */
+        async _readFramedStream(reader) {
+            const decoder = new TextDecoder();
+            let pending = '';
+
+            // eslint-disable-next-line no-constant-condition
+            while (true) {
+                let result;
+
+                try {
+                    result = await reader.read();
+                } catch (e) {
+                    if (e && e.name === 'AbortError') return;
+                    this._fail((e && e.message) || 'Stream failed');
+
+                    return;
+                }
+
+                if (result.done) {
+                    // The body ended without an explicit done signal — the
+                    // response is complete, so this is a normal finish.
+                    if (this.status === 'streaming') this._finish();
+
+                    return;
+                }
+
+                pending += decoder.decode(result.value, { stream: true });
+
+                // Frames are blank-line separated; keep the trailing partial.
+                const frames = pending.split(/\r?\n\r?\n/);
+                pending = frames.pop() ?? '';
+
+                for (const frame of frames) {
+                    const data = frame
+                        .split(/\r?\n/)
+                        .filter((line) => line.startsWith('data:'))
+                        .map((line) => line.slice(5).replace(/^ /, ''))
+                        .join('\n');
+
+                    if (data === '') continue;
+
+                    if (data === this._doneSignal) {
+                        this._finish();
+
+                        return;
+                    }
+
+                    this._push(data);
+                }
+            }
+        },
+
+        // ── Public door to the state machine (WIRE-222) ───────────────────────
+        //
+        // The transitions below were private by convention, driven only by the
+        // EventSource listener or the simulate timer. That made the component
+        // unusable for the transport Laravel itself ships — Reverb/Echo over
+        // WebSocket — even though the state machine was already decoupled from
+        // EventSource. These are that decoupling, made public.
+
+        /** Append a chunk. Starts the stream if it has not begun. */
+        push(chunk) {
+            if (this.isTerminal || this.status === 'idle') {
+                this.start();
+            }
+            this._push(String(chunk ?? ''));
+        },
+
+        /** Settle the stream successfully — announces the result once. */
+        finish() {
+            if (this.status === 'streaming') {
+                this._finish();
+            }
+        },
+
+        /** Settle the stream as failed, with a message the reader is told. */
+        fail(message) {
+            if (this.status !== 'failed') {
+                this._fail(message || 'Stream failed');
+            }
+        },
+
         _push(chunk) {
             if (this.status !== 'streaming') {
                 return;
@@ -238,6 +454,13 @@ export default function wirekitStream(config = {}) {
             if (this._source) {
                 this._source.close();
                 this._source = null;
+            }
+            // Abort an in-flight fetch. Without this, stop() would leave the
+            // request running and its chunks arriving into a component that has
+            // already reached a terminal state.
+            if (this._abort) {
+                this._abort.abort();
+                this._abort = null;
             }
             this._clearSim();
         },

@@ -127,7 +127,10 @@
     @else
         {{-- Full: prev + numbered pages + next (standard Laravel paginator links) --}}
         {{-- ONE translatable sentence, not four fragments (WIRE-177). The earlier
-             form concatenated __('Showing') / __('to') / __('of') / __('results')
+             form concatenated the fragments 'Showing' / 'to' / 'of' / 'results'
+             (deliberately written WITHOUT the translation-helper syntax here, so a
+             naive grep of this file for translation keys does not pick up four
+             phantom keys that never render — WIRE-207)
              around the numbers, which handed a translator four context-free words
              ("to" is untranslatable without knowing it sits between two numbers)
              and locked the output into English word order — a locale that puts the

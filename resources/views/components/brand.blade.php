@@ -51,7 +51,7 @@
     // the `<a href>` root) AND the only visible content is the logo image
     // (no name, no slot content), the link has no accessible name. The img
     // is decorative (`alt=""` + `aria-hidden`) by design — the URL alone
-    // doesn't describe the destination. We auto-inject `aria-label="Home"`
+    // doesn't describe the destination. We auto-inject `aria-label="{{ __('Home') }}"`
     // for the logo-only case so screen readers announce a usable target.
     // Caller-provided `aria-label` always wins (`merge()` treats it as
     // default). Empty `name` + empty slot = logo-only; presence of either
@@ -93,7 +93,7 @@
 
 <a
     href="{{ $href }}"
-    @if($logoOnlyNeedsLabel) aria-label="Home" @endif
+    @if($logoOnlyNeedsLabel) aria-label="{{ __('Home') }}" @endif
     {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$classes]) }}
 >
     @if($logo instanceof \Illuminate\View\ComponentSlot)

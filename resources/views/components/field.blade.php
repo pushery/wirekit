@@ -9,14 +9,19 @@
     // focus having to return to the field. Set false when the surrounding page
     // runs its own live region for form errors (avoids a double announcement).
     // The aria-describedby link to the field is unaffected either way.
-    'announceError' => config('wirekit.a11y.announce_error', true),
+    'announceError' => null,
     'required' => false,
     'for' => null,
     'orientation' => 'vertical', // vertical (label above) | horizontal (label beside)
     'scope' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config (WIRE-204).
+    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+
     use Pushery\WireKit\WireKit;
 
     $orientationValue = match ($orientation) {

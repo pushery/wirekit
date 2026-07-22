@@ -85,7 +85,7 @@
                             });
                     "
                     class="shrink-0 cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors p-1"
-                    aria-label="Copy to clipboard"
+                    aria-label="{{ __('Copy to clipboard') }}"
                     :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
                 >
                     <template x-if="!copied">

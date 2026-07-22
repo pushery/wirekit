@@ -108,7 +108,7 @@
         '[&_h3]:font-[number:var(--font-wk-heading-weight)] [&_h3]:leading-[var(--leading-wk-tight)]',
         '[&_h4]:font-[number:var(--font-wk-heading-weight)]',
         // Inline
-        '[&_a]:text-[color:var(--color-wk-accent)] [&_a]:underline [&_a]:underline-offset-2',
+        '[&_a]:text-[color:var(--color-wk-accent-text)] [&_a]:underline [&_a]:underline-offset-2',
         '[&_strong]:font-[number:var(--font-wk-heading-weight)]',
         // Lists
         '[&_ul]:list-disc [&_ul]:pl-[var(--padding-wk-x-lg)] [&_ul]:mb-[var(--padding-wk-y-md)]',

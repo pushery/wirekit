@@ -226,7 +226,7 @@
             x-transition.opacity
             @click.outside="open = false"
             role="dialog"
-            aria-label="Color picker"
+            aria-label="{{ __('Color picker') }}"
             class="fixed z-[var(--z-wk-dropdown,50)] w-[18rem] space-y-3 rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] p-[var(--padding-wk-x-md)] shadow-[var(--shadow-wk-lg)]"
         >
             {{-- Saturation / value plane. The hue tints the base; white→transparent
@@ -237,7 +237,7 @@
                 @pointerdown="startPlane($event)"
                 role="slider"
                 tabindex="0"
-                aria-label="Saturation and brightness"
+                aria-label="{{ __('Saturation and brightness') }}"
                 :aria-valuetext="`saturation ${s}%, brightness ${v}%`"
                 @keydown.arrow-left.prevent="nudgePlane(-1, 0)"
                 @keydown.arrow-right.prevent="nudgePlane(1, 0)"
@@ -260,7 +260,7 @@
                 @pointerdown="startHue($event)"
                 role="slider"
                 tabindex="0"
-                aria-label="Hue"
+                aria-label="{{ __('Hue') }}"
                 :aria-valuenow="h"
                 aria-valuemin="0"
                 aria-valuemax="360"
@@ -279,7 +279,7 @@
                     @pointerdown="startAlpha($event)"
                     role="slider"
                     tabindex="0"
-                    aria-label="Opacity"
+                    aria-label="{{ __('Opacity') }}"
                     :aria-valuenow="Math.round(a * 100)"
                     aria-valuemin="0"
                     aria-valuemax="100"
@@ -299,14 +299,14 @@
                     type="button"
                     @click="cycleFormat()"
                     class="shrink-0 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                    aria-label="Cycle color format"
+                    aria-label="{{ __('Cycle color format') }}"
                     x-text="format"
                 ></button>
                 <input
                     type="text"
                     :value="{{ $withClear ? 'popoverValue' : 'formattedValue' }}"
                     @change="onInput($event.target.value)"
-                    aria-label="Color value"
+                    aria-label="{{ __('Color value') }}"
                     :aria-invalid="invalidInput ? 'true' : 'false'"
                     spellcheck="false"
                     class="wk-field w-full rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] bg-[var(--color-wk-bg-input)] px-[var(--padding-wk-x-sm)] py-1 font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
@@ -318,7 +318,7 @@
                         x-show="hasEyeDropper"
                         @click="eyedropper()"
                         class="shrink-0 rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                        aria-label="Pick a color from the screen"
+                        aria-label="{{ __('Pick a color from the screen') }}"
                     >
                         {{-- A recognizable PIPETTE silhouette (angled dropper barrel + tip).
                              The previous glyph was a pencil path — read as "edit", never as
@@ -347,7 +347,7 @@
                         type="button"
                         @click="clear()"
                         class="shrink-0 rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                        aria-label="Clear color"
+                        aria-label="{{ __('Clear color') }}"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
                         <span class="sr-only" aria-live="polite" x-text="cleared ? 'Color cleared' : ''"></span>
@@ -357,7 +357,7 @@
 
             @if(! empty($presets))
                 {{-- Developer preset swatches. --}}
-                <div class="flex flex-wrap gap-1.5" role="group" aria-label="Preset colors">
+                <div class="flex flex-wrap gap-1.5" role="group" aria-label="{{ __('Preset colors') }}">
                     @foreach($presets as $preset)
                         <button
                             type="button"
@@ -372,7 +372,7 @@
 
             @if($withRecents)
                 {{-- Recent colors (localStorage, capped at 8). --}}
-                <div x-show="recents.length" class="flex flex-wrap gap-1.5" role="group" aria-label="Recent colors">
+                <div x-show="recents.length" class="flex flex-wrap gap-1.5" role="group" aria-label="{{ __('Recent colors') }}">
                     <template x-for="recent in recents" :key="recent">
                         <button
                             type="button"

@@ -1,6 +1,6 @@
 @props([
     // Accessible name for the question list.
-    'label' => 'Frequently asked questions',
+    'label' => config('wirekit.components.faq.label') ?? __('Frequently asked questions'),
     // Visual treatment, passed through to the underlying accordion. 'flush' is
     // the default here (not 'bordered'): an FAQ almost always sits inline in
     // page content, where outer chrome only competes with the section around it.
@@ -23,6 +23,12 @@
     // or when this FAQ is one of several: a page must carry exactly one FAQPage,
     // and two of them compete rather than combine.
     'schema' => true,
+    // Strip markup from the SCHEMA answer text (the visible answer is untouched).
+    // Google's FAQPage accepts only a limited HTML subset, so answers containing
+    // nested components, data-* attributes or Alpine directives can fail
+    // rich-result validation. The schema text stays DERIVED from what is rendered
+    // — same content, markup removed — so it cannot drift from the page.
+    'plainText' => false,
     'scope' => null,
 ])
 

@@ -84,6 +84,13 @@ final class PhosphorPreset implements IconPreset
             'inbox' => 'phosphor-tray', // phosphor calls the inbox glyph `tray`
             'bolt' => 'phosphor-lightning', // phosphor calls it `lightning`
             'refresh' => 'phosphor-arrows-clockwise', // phosphor's rotate glyph
+            // Media controls (WIRE-226).
+            'play' => 'phosphor-play',
+            'pause' => 'phosphor-pause',
+            'stop' => 'phosphor-stop',
+            'speaker' => 'phosphor-speaker-high',
+            'mute' => 'phosphor-speaker-slash',
+            'microphone' => 'phosphor-microphone',
         ];
     }
 

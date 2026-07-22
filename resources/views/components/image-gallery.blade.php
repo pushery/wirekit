@@ -9,6 +9,11 @@
     'gap' => 'md',
     // Thumbnail aspect-ratio (CLS-safe). Null → images size themselves.
     'ratio' => '1/1',
+    // object-fit forwarded to each thumbnail. 'cover' (default) crops to a
+    // uniform grid — right for mixed-orientation photo sets. Use 'contain' when
+    // a single image must be shown whole (e.g. one portrait shot the crop would
+    // slice) — the thumbnail then letterboxes inside its ratio box instead.
+    'fit' => 'cover',
     // Enable the click-to-zoom lightbox. When false the grid is static.
     'lightbox' => true,
     // Per-item overlay render-callback (WIRE-120): a closure `fn($item, $i)` that
@@ -67,7 +72,7 @@
                         aria-label="{{ __('View image :n', ['n' => $i + 1]) }}{{ $item['alt'] !== '' ? ': '.$item['alt'] : '' }}"
                         class="group block w-full cursor-zoom-in appearance-none border-0 bg-transparent p-0 rounded-[var(--radius-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
-                        <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :ratio="$ratio" fit="cover" rounded />
+                        <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :ratio="$ratio" :fit="$fit" rounded />
                     </button>
                     @if(is_callable($itemOverlay))
                         {{-- WIRE-120: per-item overlay, a sibling of (not nested in) the
@@ -86,11 +91,11 @@
                 @if(is_callable($itemOverlay))
                     {{-- WIRE-120: static grid also supports the per-item overlay. --}}
                     <div class="relative">
-                        <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :caption="$item['caption']" :ratio="$ratio" fit="cover" rounded />
+                        <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :caption="$item['caption']" :ratio="$ratio" :fit="$fit" rounded />
                         <div class="pointer-events-none absolute inset-0">{{ $itemOverlay($item, $i) }}</div>
                     </div>
                 @else
-                    <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :caption="$item['caption']" :ratio="$ratio" fit="cover" rounded />
+                    <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :caption="$item['caption']" :ratio="$ratio" :fit="$fit" rounded />
                 @endif
             @endforeach
         </x-wirekit::grid>

@@ -87,6 +87,7 @@ class VerifyInstallationCommand extends Command
             $this->checkAlpineJs();
             $this->checkBundleConfig();
             $this->checkPublishedViewsStaleness();
+            $this->checkAiManifestStaleness();
             $this->checkFontAssets();
             $this->checkCssImportAntiPattern();
             $this->checkOptionalDependencies();
@@ -299,12 +300,84 @@ class VerifyInstallationCommand extends Command
      */
     private function checkConfigPublished(): void
     {
-        if (file_exists(config_path('wirekit.php'))) {
-            $this->reportPass('config/wirekit.php published');
-        } else {
+        if (! file_exists(config_path('wirekit.php'))) {
             $this->reportWarn('config/wirekit.php not published (optional but recommended)');
             $this->line('  Fix: php artisan vendor:publish --tag=wirekit-config');
+
+            return;
         }
+
+        $this->reportPass('config/wirekit.php published');
+
+        $this->checkConfigDrift();
+    }
+
+    /**
+     * Report top-level sections the published config never learned about.
+     *
+     * A published config is a snapshot of the day it was published. WireKit now
+     * merges recursively, so a missing key still resolves and nothing breaks —
+     * but the developer's own file no longer shows the full configurable surface,
+     * and they cannot set what they cannot see. Naming the gap is the difference
+     * between "my config lists everything" and "my config lists what existed in
+     * February".
+     *
+     * Deliberately a WARN and deliberately top-level-only: re-publishing
+     * overwrites the developer's edits, so this is information, not an
+     * instruction, and listing every nested component key would bury the signal.
+     */
+    private function checkConfigDrift(): void
+    {
+        $publishedPath = config_path('wirekit.php');
+        $packagePath = __DIR__.'/../../config/wirekit.php';
+
+        if (! is_file($packagePath)) {
+            return;
+        }
+
+        $published = require $publishedPath;
+        $package = require $packagePath;
+
+        if (! is_array($published) || ! is_array($package)) {
+            return;
+        }
+
+        $missingSections = array_diff(array_keys($package), array_keys($published));
+
+        // Components are the section that grows every release, so it gets its own
+        // count rather than being reported as one missing key among others.
+        $missingComponents = [];
+
+        if (isset($package['components'], $published['components'])
+            && is_array($package['components']) && is_array($published['components'])) {
+            $missingComponents = array_diff(
+                array_keys($package['components']),
+                array_keys($published['components'])
+            );
+        }
+
+        if ($missingSections === [] && $missingComponents === []) {
+            $this->reportPass('published config covers every option this version offers');
+
+            return;
+        }
+
+        $this->reportWarn('published config predates options this version offers');
+
+        if ($missingSections !== []) {
+            $this->line('  Missing sections: '.implode(', ', $missingSections));
+        }
+
+        if ($missingComponents !== []) {
+            $this->line('  Missing component defaults: '.count($missingComponents)
+                .' ('.implode(', ', array_slice($missingComponents, 0, 5))
+                .(count($missingComponents) > 5 ? ', …' : '').')');
+        }
+
+        $this->line('  They still resolve — WireKit merges recursively — but your file');
+        $this->line('  does not show them. Re-publish to see the full surface (this');
+        $this->line('  OVERWRITES your edits, so diff first):');
+        $this->line('  php artisan vendor:publish --tag=wirekit-config --force');
     }
 
     /**
@@ -505,6 +578,46 @@ class VerifyInstallationCommand extends Command
      * Published views override package views — after a WireKit update,
      * the published copies may be outdated and miss new features or fixes.
      */
+    /**
+     * The generated AI catalogs (`.boost/wirekit.json`, `.wirekit-schema.json`)
+     * are written ONCE and never refreshed on their own — `wirekit:boost-skills`
+     * and `wirekit:install` both bail early when the file already exists unless
+     * `--force` is passed. So after a `composer update` that adds components or
+     * props, a committed manifest silently goes stale and keeps feeding an AI
+     * tool the OLD API surface. Warn when a manifest is older than the installed
+     * package source it is derived from (WIRE-210).
+     */
+    private function checkAiManifestStaleness(): void
+    {
+        // The newest mtime among the package sources the manifests are built
+        // from — the registry + the component views. If a manifest predates it,
+        // it was generated against an older package.
+        $packageNewest = filemtime(__DIR__.'/../ComponentRegistry.php') ?: 0;
+        $componentsDir = __DIR__.'/../../resources/views/components';
+        if (is_dir($componentsDir)) {
+            foreach (File::allFiles($componentsDir) as $file) {
+                $packageNewest = max($packageNewest, $file->getMTime());
+            }
+        }
+
+        $manifests = [
+            '.boost/wirekit.json' => 'php artisan wirekit:boost-skills --force',
+            '.wirekit-schema.json' => 'php artisan wirekit:export-json --pretty > .wirekit-schema.json',
+        ];
+
+        foreach ($manifests as $relative => $refreshCmd) {
+            $target = base_path($relative);
+            if (! is_file($target)) {
+                continue; // not generated — nothing to check
+            }
+            if (filemtime($target) < $packageNewest) {
+                $this->reportWarn("Generated AI catalog {$relative} is older than the installed WireKit package");
+                $this->line('  It was generated against an earlier version — an AI tool reading it sees a stale API surface');
+                $this->line("  Fix: {$refreshCmd}");
+            }
+        }
+    }
+
     private function checkPublishedViewsStaleness(): void
     {
         $publishedViewsPath = resource_path('views/vendor/wirekit');

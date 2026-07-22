@@ -148,10 +148,72 @@ function unlockScroll() {
  *   "don't approve destructive action by stray click" safety case).
  * @returns {Object} Alpine component data object with overlay methods
  */
-export function createOverlay({ name, dismissible, showEvent, closeEvent, escapeAlwaysCloses = false }) {
+export function createOverlay({
+    name,
+    dismissible,
+    showEvent,
+    closeEvent,
+    escapeAlwaysCloses = false,
+    initialFocus = undefined,
+    focusReturnTo = undefined,
+}) {
     // Stable token identifying this overlay instance on the global stack —
     // not a string id, just an object reference equality check works.
     const stackToken = {};
+
+    // The ancestor chain of whatever was focused when the overlay opened,
+    // captured AT OPEN TIME because that is the last moment it is still
+    // attached. A destructive confirmation usually removes the row that held
+    // its own trigger, so by deactivation both the trigger and its parents are
+    // detached — but something further up (the table, the list, the section)
+    // almost always survives, and only a snapshot taken while the chain was
+    // still whole can name it.
+    let openerChain = [];
+
+    /**
+     * Where focus should land when the trap deactivates.
+     *
+     * Order: an explicit target the developer named > the original opener, if it
+     * is still in the document > the nearest surviving ancestor of the opener >
+     * the document body (the browser's own answer, and the one this exists to
+     * avoid).
+     *
+     * @param {HTMLElement|undefined} opener - element focused before the trap opened
+     * @returns {HTMLElement}
+     */
+    const resolveReturnFocus = (opener) => {
+        if (focusReturnTo) {
+            const named = typeof focusReturnTo === 'function'
+                ? focusReturnTo()
+                : document.querySelector(focusReturnTo);
+
+            if (named && named.isConnected) {
+                return makeFocusable(named);
+            }
+        }
+
+        if (opener && opener.isConnected) {
+            return opener;
+        }
+
+        const survivor = openerChain.find((el) => el && el.isConnected);
+
+        return survivor ? makeFocusable(survivor) : document.body;
+    };
+
+    /**
+     * A container that survived the removal is rarely focusable on its own.
+     * tabindex="-1" makes it programmatically focusable WITHOUT adding it to the
+     * tab order, which is the standard way to park focus on a region — the same
+     * thing an app would otherwise hand-roll after every destructive action.
+     */
+    const makeFocusable = (el) => {
+        if (!el.hasAttribute('tabindex')) {
+            el.setAttribute('tabindex', '-1');
+        }
+
+        return el;
+    };
 
     return {
         // Expose `dismissible` as a public Alpine property so descendant
@@ -250,6 +312,17 @@ export function createOverlay({ name, dismissible, showEvent, closeEvent, escape
             if (this.open) return;
             this.open = true;
 
+            // Snapshot the opener's ancestor chain while it is still attached —
+            // see openerChain above. Taken before anything renders, so the DOM is
+            // exactly the one the reader triggered from.
+            openerChain = [];
+            let node = document.activeElement;
+            while (node && node !== document.body) {
+                openerChain.push(node);
+                node = node.parentElement;
+            }
+            openerChain.push(document.body);
+
             // Reference-counted scroll lock — safe with multiple overlays
             lockScroll();
 
@@ -280,6 +353,15 @@ export function createOverlay({ name, dismissible, showEvent, closeEvent, escape
                         // escapeAlwaysCloses does NOT widen this — backdrop
                         // click stays gated by the safety-strict `dismissible`.
                         allowOutsideClick: dismissible,
+                        // Where focus starts. Passed straight through when the
+                        // overlay named one (alert-dialog points at Cancel);
+                        // undefined leaves focus-trap's own default in place.
+                        initialFocus: typeof initialFocus === 'function'
+                            ? () => initialFocus(panelEl)
+                            : initialFocus,
+                        // …and where it lands again, which the browser gets wrong
+                        // whenever the opener has been removed meanwhile.
+                        setReturnFocus: resolveReturnFocus,
                     });
                     this._trap.activate();
                 }

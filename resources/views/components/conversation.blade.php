@@ -1,6 +1,6 @@
 @props([
     // Accessible name for the transcript log region.
-    'label' => 'Conversation',
+    'label' => __('Conversation'),
     // Height cap of the scroll viewport. A transcript needs a bounded height —
     // without one there is nothing to scroll and follow-output is meaningless.
     'maxHeight' => config('wirekit.components.conversation.max-height', '24rem'),
@@ -15,8 +15,18 @@
     // Only pass what the developer actually set — the plugin owns the defaults.
     // Cast to object so an empty config encodes as `{}` (a JS object literal),
     // not `[]` — the plugin signature takes a config object.
+    // The jump-to-latest labels are translated HERE and handed to the plugin,
+    // never written into the attribute binding. A Blade `::`-escaped attribute on
+    // a component is passed through VERBATIM: an `@js()` inside it is not
+    // compiled, so the binding would carry the literal directive text, Alpine
+    // would fail to evaluate it, and the control would ship with no accessible
+    // name — silent, and exactly what happened.
     $alpineConfig = json_encode((object) array_filter(
-        ['threshold' => $threshold !== null ? (int) $threshold : null],
+        [
+            'threshold' => $threshold !== null ? (int) $threshold : null,
+            'jumpLabel' => __('Jump to latest'),
+            'jumpLabelCount' => __('Jump to latest, :count new'),
+        ],
         static fn ($v): bool => $v !== null,
     ), JSON_THROW_ON_ERROR);
 
@@ -82,7 +92,7 @@
         x-cloak
         x-transition.opacity
         @click="scrollToBottom()"
-        ::aria-label="unread > 0 ? ('Jump to latest, ' + unread + ' new') : 'Jump to latest'"
+        ::aria-label="unread > 0 ? jumpLabelCount.replace(':count', unread) : jumpLabel"
         class="absolute bottom-[var(--space-wk-sm)] left-1/2 -translate-x-1/2 shadow-[var(--shadow-wk-md)]"
     >
         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">

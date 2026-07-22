@@ -7,12 +7,22 @@ namespace Pushery\WireKit\Theming;
 use InvalidArgumentException;
 
 /**
- * Single source of truth for WireKit theme presets.
+ * Single source of truth for the preset LIST + its light-touch modifier
+ * blocks — NOT the full pasteable palette.
  *
  * Every CLI surface that touches presets (ThemeCommand, InstallCommand,
- * ExportApiMapCommand, future MCP server queries) reads from THIS class.
- * Drift between the lists those commands print becomes unrepresentable —
- * there is exactly one definition.
+ * ExportApiMapCommand, future MCP server queries) reads the preset list from
+ * THIS class. Drift between the lists those commands print becomes
+ * unrepresentable — there is exactly one definition.
+ *
+ * IMPORTANT scope note: the `vars` / `dark_vars` blocks here are a deliberately
+ * light-touch modifier set (they override only the tokens a preset actually
+ * retints). The COMPLETE, copy-pasteable palette a developer applies for each
+ * preset — including e.g. the full `--color-wk-border-strong` / `-strong-hover`
+ * control-border pairs — lives on that preset's theming documentation page, not
+ * here. A token being absent from a `vars` block below does NOT mean the preset
+ * omits it; check the documentation page before concluding a preset is missing
+ * a token.
  *
  * Schema per preset:
  *  - `label`     — human-readable display name (Title Case).
@@ -244,6 +254,13 @@ CSS,
     --color-wk-bg-elevated: oklch(0.21 0.028 var(--theme-hue));
     --color-wk-bg-muted: oklch(0.235 0.027 var(--theme-hue));
     --color-wk-bg-subtle: oklch(0.275 0.025 var(--theme-hue));
+    /* Form-control fill — carry the hue tint like every other dark surface
+       (WIRE-215). Without this the field fell back to the stock untinted
+       oklch(14.5% 0 0), reading as a flat neutral slightly DARKER than the
+       page and visually detached from the theme. Sits just above the page bg
+       (0.16) and below bg-elevated (0.21); border-strong (0.52) clears >= 3.37:1
+       against it across the whole hue wheel. */
+    --color-wk-bg-input: oklch(0.185 0.025 var(--theme-hue));
 
     /* Foreground text — a barely-warm off-white instead of pure neutral
        (default oklch(0.985 0 0)), carrying the same whisper of theme hue as

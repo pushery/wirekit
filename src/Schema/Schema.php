@@ -222,6 +222,140 @@ final class Schema
      * Expand a bare availability token to its schema.org URL. Passing an
      * already-expanded URL is left untouched, so both spellings work.
      */
+    /**
+     * The site itself. Pair it with `organization()` inside a `graph()` and give
+     * each an `@id` so they can reference one another.
+     *
+     * @param  array<string, mixed>|null  $publisher  An `organization()` node, or `['@id' => '…#org']` to point at one already in the graph.
+     * @param  list<string>|null  $sameAs
+     * @param  array<string, mixed>|null  $potentialAction  Usually a SearchAction — build it with `node()`.
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     */
+    public static function webSite(
+        string $name,
+        string $url,
+        ?string $id = null,
+        ?string $description = null,
+        ?string $inLanguage = null,
+        ?array $publisher = null,
+        ?array $sameAs = null,
+        ?array $potentialAction = null,
+        array $extra = [],
+    ): array {
+        return self::node('WebSite', [
+            '@id' => $id,
+            'name' => $name,
+            'url' => $url,
+            'description' => $description,
+            'inLanguage' => $inLanguage,
+            'publisher' => $publisher,
+            'sameAs' => $sameAs,
+            'potentialAction' => $potentialAction,
+        ], $extra);
+    }
+
+    /**
+     * The organization behind the site. `logo` takes a URL or a prebuilt
+     * ImageObject; `sameAs` is the list of profile URLs that ties the entity to
+     * its presence elsewhere, which is what search engines reconcile against.
+     *
+     * @param  list<string>|null  $sameAs
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     */
+    public static function organization(
+        string $name,
+        ?string $url = null,
+        ?string $id = null,
+        string|array|null $logo = null,
+        ?string $description = null,
+        ?string $email = null,
+        ?array $sameAs = null,
+        array $extra = [],
+    ): array {
+        return self::node('Organization', [
+            '@id' => $id,
+            'name' => $name,
+            'url' => $url,
+            'logo' => $logo,
+            'description' => $description,
+            'email' => $email,
+            'sameAs' => $sameAs,
+        ], $extra);
+    }
+
+    /**
+     * A piece of software — the type a library, app or SaaS product describes
+     * itself with. `offers` takes an `offer()` fragment (use price `0` for free),
+     * and `isAccessibleForFree` is what marks an open-source or free product.
+     *
+     * @param  array<string, mixed>|null  $offers
+     * @param  array<string, mixed>|null  $aggregateRating
+     * @param  array<string, mixed>  $extra
+     * @return array<string, mixed>
+     */
+    public static function softwareApplication(
+        string $name,
+        ?string $applicationCategory = null,
+        ?string $operatingSystem = null,
+        ?string $url = null,
+        ?string $id = null,
+        ?string $description = null,
+        ?string $softwareVersion = null,
+        ?bool $isAccessibleForFree = null,
+        ?array $offers = null,
+        ?array $aggregateRating = null,
+        array $extra = [],
+    ): array {
+        return self::node('SoftwareApplication', [
+            '@id' => $id,
+            'name' => $name,
+            'applicationCategory' => $applicationCategory,
+            'operatingSystem' => $operatingSystem,
+            'url' => $url,
+            'description' => $description,
+            'softwareVersion' => $softwareVersion,
+            // Explicit false is meaningful here ("this costs money"), so it must
+            // survive the null-pruning that drops empty values.
+            'isAccessibleForFree' => $isAccessibleForFree,
+            'offers' => $offers,
+            'aggregateRating' => $aggregateRating,
+        ], $extra);
+    }
+
+    /**
+     * Combine several nodes into one `@graph`.
+     *
+     * This is how a page describes more than one thing at once — the site, the
+     * organization behind it, the product it offers — as ONE connected document
+     * instead of a pile of separate scripts. Give the nodes `@id`s and they can
+     * reference each other by it.
+     *
+     * `@context` is deliberately absent: `<x-wirekit::structured-data>` stamps it
+     * once at the top level, on a `@graph` payload exactly as on a single node.
+     *
+     * ```php
+     * Schema::graph([
+     *     Schema::webSite(name: 'Acme', url: 'https://acme.test', id: 'https://acme.test/#site',
+     *         publisher: ['@id' => 'https://acme.test/#org']),
+     *     Schema::organization(name: 'Acme Inc', url: 'https://acme.test', id: 'https://acme.test/#org'),
+     * ])
+     * ```
+     *
+     * @param  list<array<string, mixed>>  $nodes
+     * @return array<string, mixed>
+     */
+    public static function graph(array $nodes): array
+    {
+        // Drop empties so a conditionally-built graph (`$showProduct ? … : null`)
+        // does not emit a null entry that would make the whole document invalid.
+        return ['@graph' => array_values(array_filter(
+            $nodes,
+            static fn (mixed $node): bool => is_array($node) && $node !== [],
+        ))];
+    }
+
     private static function availabilityUrl(string $availability): string
     {
         if (str_starts_with($availability, 'http')) {
@@ -232,14 +366,29 @@ final class Schema
     }
 
     /**
-     * Build one node: `@type` first, null properties dropped, `$extra` merged
-     * last so a developer can always override or add a property we do not model.
+     * Build one node of ANY schema.org type — the escape hatch.
+     *
+     * The typed builders above cover the types WireKit models. This is how you
+     * reach every other one without waiting for us to add it: same null-pruning
+     * and same `@type`-first shape, no modeling required.
+     *
+     * ```php
+     * Schema::node('Event', [
+     *     'name' => 'WireKit Conf',
+     *     'startDate' => '2026-09-01T09:00:00+02:00',
+     *     'location' => Schema::node('Place', ['name' => 'Berlin']),
+     * ])
+     * ```
+     *
+     * `@type` is a parameter rather than a property so it can never be shadowed:
+     * it is prepended AFTER the merge, which means an `@type` inside `$props` or
+     * `$extra` would be silently ignored.
      *
      * @param  array<string, mixed>  $props
      * @param  array<string, mixed>  $extra
      * @return array<string, mixed>
      */
-    private static function node(string $type, array $props, array $extra = []): array
+    public static function node(string $type, array $props, array $extra = []): array
     {
         $filtered = array_filter(
             $props,

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit;
 
+use Illuminate\Contracts\Foundation\CachesConfiguration;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,7 @@ use Pushery\WireKit\Console\ListFontsCommand;
 use Pushery\WireKit\Console\ListIconsCommand;
 use Pushery\WireKit\Console\MakeCommand;
 use Pushery\WireKit\Console\McpServeCommand;
+use Pushery\WireKit\Console\PublishFontsCommand;
 use Pushery\WireKit\Console\PublishIconsCommand;
 use Pushery\WireKit\Console\ShowComponentCommand;
 use Pushery\WireKit\Console\ThemeCommand;
@@ -38,8 +40,24 @@ class WireKitServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Merge package config with app config (user can override via vendor:publish)
-        $this->mergeConfigFrom(__DIR__.'/../config/wirekit.php', 'wirekit');
+        // Merge package config with app config (a developer overrides via
+        // vendor:publish). RECURSIVELY, not with the framework's own
+        // mergeConfigFrom, which is a flat array_merge:
+        //
+        //     $config->set($key, array_merge(require $path, $config->get($key, [])));
+        //
+        // A flat merge is correct only for a flat config. Ours nests — every
+        // component's defaults live under `components.<name>` — so a published
+        // `components` array REPLACES the package's entire section rather than
+        // adding to it. Measured: a config published when it carried one
+        // component override reduces 94 component sections to 1, and every key
+        // added since becomes unreachable. Nothing fails; the components simply
+        // fall back to their in-Blade defaults, and `config('wirekit.components.
+        // theme-controller.variant')` returns null forever.
+        //
+        // The published file is a snapshot by design; it must not also be a
+        // ceiling.
+        $this->mergeConfigRecursivelyFrom(__DIR__.'/../config/wirekit.php', 'wirekit');
 
         // Register WireKit as singleton so static state is scoped to the app container
         $this->app->singleton(WireKit::class, fn () => new WireKit);
@@ -74,6 +92,7 @@ class WireKitServiceProvider extends ServiceProvider
                 ListIconsCommand::class,
                 MakeCommand::class,
                 McpServeCommand::class,
+                PublishFontsCommand::class,
                 PublishIconsCommand::class,
                 ShowComponentCommand::class,
                 ThemeCommand::class,
@@ -87,6 +106,20 @@ class WireKitServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../resources/views/components' => resource_path('views/vendor/wirekit/components'),
             ], 'wirekit-views');
+
+            // Translation reference — the JSON string-key master list.
+            //
+            // WireKit's components run every user- and screen-reader-visible
+            // string through `__()` (JSON string keys — the English text IS the
+            // key). `lang/en.json` is the complete, generated reference of every
+            // such key. A localizing app publishes it and renames the copy to
+            // its locale (`de.json`, `fr.json`, …), then translates the values —
+            // Laravel's own JSON loader picks the app copy up automatically
+            // because the keys match. Published into the app's lang directory so
+            // it sits next to the developer's own translations.
+            $this->publishes([
+                __DIR__.'/../lang/en.json' => lang_path('vendor/wirekit/en.json'),
+            ], 'wirekit-lang');
 
             // Font files — published to public/vendor/wirekit/fonts/
             //
@@ -139,6 +172,15 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
             ], 'wirekit-assets');
         }
+
+        // ── Translations ──
+        // Register the package's JSON translations so any locale file WireKit
+        // ships (today: the `en.json` source reference) merges into the global
+        // JSON translation set. Runs OUTSIDE the console guard — translation
+        // resolution happens at request time, not only when publishing. The
+        // English text is the key, so an untranslated string falls back to
+        // itself; an app that adds `lang/de.json` overrides per key.
+        $this->loadJsonTranslationsFrom(__DIR__.'/../lang');
 
         // ── Views and Components ──
         // Load Blade views from resources/views with 'wirekit' namespace
@@ -211,6 +253,16 @@ class WireKitServiceProvider extends ServiceProvider
         // the entire reason this directive exists, and it is why the script
         // cannot be folded into the main bundle.
         //
+        // The reader half depends on the configured storage driver:
+        //   'local'  — reads localStorage (client-only; this script IS the only
+        //              thing that can apply the theme before paint).
+        //   'cookie' — reads document.cookie. With this driver the server can
+        //              already have rendered <html class="dark"> from the request
+        //              cookie, so this script is a safety net (chiefly for the
+        //              'system' case and for a first render the server did not
+        //              resolve). It scans the cookie pair list by exact name — the
+        //              same reader the Alpine control uses — so both agree.
+        //
         // Takes an optional CSP nonce: @wirekitThemeScript($nonce). Apps without
         // a CSP pass nothing.
         Blade::directive('wirekitThemeScript', function ($expression) {
@@ -220,16 +272,28 @@ class WireKitServiceProvider extends ServiceProvider
             return '<?php
                 $__wk_nonce = '.$nonceExpr.';
                 $__wk_key = config("wirekit.theme.storage_key", "wirekit-theme");
+                $__wk_storage = config("wirekit.theme.storage", "local") === "cookie" ? "cookie" : "local";
                 $__wk_nonceAttr = $__wk_nonce ? \' nonce="\' . e($__wk_nonce) . \'"\' : "";
+                if ($__wk_storage === "cookie") {
+                    // Scan document.cookie by exact name (no regex, so a key with
+                    // regex-special characters cannot break the match). Mirrors the
+                    // Alpine control\'s _readCookie().
+                    $__wk_reader = \'var s=null,wc=(document.cookie||"").split("; ");\'
+                        . \'for(var i=0;i<wc.length;i++){var we=wc[i].indexOf("="),wn=we<0?wc[i]:wc[i].slice(0,we);\'
+                        . \'if(wn===\' . json_encode($__wk_key) . \'){s=decodeURIComponent(wc[i].slice(we+1));break;}}\';
+                } else {
+                    $__wk_reader = \'var s=localStorage.getItem(\' . json_encode($__wk_key) . \');\';
+                }
                 echo \'<script\' . $__wk_nonceAttr . \'>\'
-                    . \'(function(){try{var s=localStorage.getItem(\' . json_encode($__wk_key) . \');\'
+                    . \'(function(){try{\' . $__wk_reader
                     // No stored choice means follow the OS — a first visit should
                     // look like the rest of the reader\'s machine, not like our
                     // default. An explicit choice always wins over the OS.
                     . \'var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);\'
                     . \'document.documentElement.classList.toggle("dark",d);\'
                     // localStorage throws in private mode and when storage is
-                    // disabled entirely. Swallowing it leaves the OS preference
+                    // disabled entirely; the cookie reader cannot throw but is
+                    // wrapped identically. Swallowing it leaves the OS preference
                     // in charge, which is the right fallback — never a broken page.
                     . \'}catch(e){}})();\'
                     . \'</scr\' . \'ipt>\' . "\n";
@@ -412,6 +476,44 @@ class WireKitServiceProvider extends ServiceProvider
             'wirekit/wirekit-alpine.js' => ['file' => 'wirekit-alpine.js', 'type' => 'application/javascript'],
         ];
 
+        // Bundled fonts, served straight from the package when they were never
+        // published (WIRE-108). Without this the fonts component emitted no
+        // <link> at all for a configured-but-unpublished family, and the page
+        // fell back to system fonts — a difference nobody notices in review and
+        // everybody notices in production, because the app looked right locally
+        // where the publish had been run once by hand.
+        //
+        // The route serves the family's whole directory: the CSS and the woff2
+        // files it @font-face-references, which are siblings of it.
+        Route::group(['middleware' => 'web'], function (): void {
+            Route::get('wirekit/fonts/{path}', function (string $path) {
+                $root = realpath(__DIR__.'/../resources/fonts');
+                $file = realpath(__DIR__.'/../resources/fonts/'.$path);
+
+                // Path traversal: a resolved path that escapes the font root is
+                // refused rather than served.
+                if ($root === false || $file === false || ! str_starts_with($file, $root) || ! is_file($file)) {
+                    abort(404);
+                }
+
+                $type = match (strtolower(pathinfo($file, PATHINFO_EXTENSION))) {
+                    'css' => 'text/css; charset=utf-8',
+                    'woff2' => 'font/woff2',
+                    'woff' => 'font/woff',
+                    'ttf' => 'font/ttf',
+                    default => abort(404),
+                };
+
+                return response(file_get_contents($file), 200, [
+                    'Content-Type' => $type,
+                    // Same one-year immutable policy as the other assets. The URL
+                    // carries a ?v={filemtime} from the component, so new content
+                    // is a new URL.
+                    'Cache-Control' => 'public, max-age=31536000, immutable',
+                ]);
+            })->where('path', '.*');
+        });
+
         Route::group(['middleware' => 'web'], function () use ($assets): void {
             foreach ($assets as $uri => $meta) {
                 Route::get($uri, function () use ($meta) {
@@ -436,5 +538,55 @@ class WireKitServiceProvider extends ServiceProvider
                 });
             }
         });
+    }
+
+    /**
+     * Merge package config into the app's, recursing into nested arrays.
+     *
+     * The framework's mergeConfigFrom is a flat array_merge, which silently
+     * freezes a nested section: a developer who published `config/wirekit.php`
+     * once keeps exactly the keys it had that day, and every key added by a later
+     * release is unreachable. For a config whose whole shape is
+     * `components.<name>.<option>`, that is the difference between 94 usable
+     * component sections and 1.
+     *
+     * The app always wins on a scalar — an override is an override. Recursion
+     * only ADDS what the app never mentioned.
+     */
+    protected function mergeConfigRecursivelyFrom(string $path, string $key): void
+    {
+        if ($this->app instanceof CachesConfiguration
+            && $this->app->configurationIsCached()) {
+            return;
+        }
+
+        $config = $this->app->make('config');
+
+        $config->set($key, $this->mergeConfigArrays(require $path, $config->get($key, [])));
+    }
+
+    /**
+     * @param  array<string, mixed>  $package
+     * @param  array<string, mixed>  $app
+     * @return array<string, mixed>
+     */
+    private function mergeConfigArrays(array $package, array $app): array
+    {
+        foreach ($package as $key => $value) {
+            if (! array_key_exists($key, $app)) {
+                $app[$key] = $value;
+
+                continue;
+            }
+
+            // Recurse only where BOTH sides are associative. A list (icon
+            // presets, a locale array) is a value the developer chose wholesale:
+            // merging into it would resurrect entries they deliberately removed.
+            if (is_array($value) && is_array($app[$key]) && ! array_is_list($value) && ! array_is_list($app[$key])) {
+                $app[$key] = $this->mergeConfigArrays($value, $app[$key]);
+            }
+        }
+
+        return $app;
     }
 }

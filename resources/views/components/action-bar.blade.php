@@ -43,7 +43,7 @@
 <div
     @if(!$visible) style="display: none;" @endif
     role="toolbar"
-    aria-label="Bulk actions"
+    aria-label="{{ __('Bulk actions') }}"
     {{ $attributes->class([$classes]) }}
 >
     {{-- Live region announces bar appearance --}}

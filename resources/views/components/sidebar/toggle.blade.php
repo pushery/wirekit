@@ -20,14 +20,20 @@
         'transition-colors',
         'cursor-pointer',
     ]), $scope);
+
+    // Accessible name: translatable default, but a caller-supplied aria-label
+    // wins — and is emitted exactly once. Rendering the default AND letting the
+    // attribute bag add the caller's value produced two aria-label attributes,
+    // the hardcoded English one winning (WIRE-231 / WIRE-243).
+    $ariaLabel = $attributes->get('aria-label', __('Toggle sidebar'));
 @endphp
 
 <button
     type="button"
     x-on:click="sidebarOpen = !sidebarOpen"
     :aria-expanded="sidebarOpen ? 'true' : 'false'"
-    aria-label="Toggle sidebar"
-    {{ $attributes->class([$classes]) }}
+    aria-label="{{ $ariaLabel }}"
+    {{ $attributes->except('aria-label')->class([$classes]) }}
 >
     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />

@@ -12,7 +12,7 @@
     // page carries more than one navigation landmark. Passing aria-label OR
     // aria-labelledby directly on the component also wins over this default
     // (and suppresses it, so the <nav> never gets a duplicate/conflicting name).
-    'label' => 'Sidebar',
+    'label' => __('Sidebar'),
     'scope' => null,
 ])
 

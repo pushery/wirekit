@@ -36,9 +36,14 @@ resolve to the package's anonymous-component path.
 Most interactive components support a unified Intent × Surface variant
 system. Acceptable values:
 
-- **Intent:** `primary`, `secondary`, `success`, `warning`, `danger`,
-  `info`, `neutral`, `accent`
-- **Surface:** `solid` (default), `soft`, `outline`, `ghost`, `link`
+- **Intent:** `primary`, `neutral`, `success`, `warning`, `danger`, `info`
+  (the shared set, from `VariantResolver::INTENTS`). `secondary` is NOT an
+  intent — it is a legacy `variant` value that maps to `intent="neutral"
+  surface="filled"`. `badge` additionally accepts `intent="accent"`.
+- **Surface:** `filled` (default), `soft`, `outline`, `ghost`, `link`
+  (from `VariantResolver::SURFACES`). `badge` uses a different surface set:
+  `soft` (default), `solid`, `outline` — `solid` is badge-only, not a button
+  surface.
 
 The color-role prop is `intent` (button / badge / progress); `surface` selects the
 visual treatment. When in doubt, prefer `intent="primary"` over hand-coding colors.
@@ -65,10 +70,10 @@ Common tokens:
 
 - `--color-wk-bg`, `--color-wk-bg-muted`, `--color-wk-bg-input`
 - `--color-wk-text`, `--color-wk-text-muted`, `--color-wk-text-subtle`
-- `--color-wk-border`, `--color-wk-border-subtle`
-- `--color-wk-accent`, `--color-wk-accent-fg`
+- `--color-wk-border`, `--color-wk-border-subtle`, `--color-wk-border-hover`, `--color-wk-border-strong`, `--color-wk-border-strong-hover` (form controls MUST use the `strong` pair — the communicating border, WCAG 1.4.11, ≥3:1), `--color-wk-border-error`, `--color-wk-border-success`
+- `--color-wk-accent` (fill), `--color-wk-accent-text` (accent-toned text on bg — alias of `--color-wk-accent-content`), `--color-wk-accent-fg` (text on an accent fill)
 - `--space-wk-xs|sm|md|lg|xl|2xl` (+ `--space-wk-section-sm|md|lg`)
-- `--gap-wk-sm|md` (the `stack`/`row`/`grid` gap scale — only `sm` and `md` exist)
+- `--gap-wk-xs|sm|md|lg|xl|2xl` (the full `xs`…`2xl` internal layout-gap ladder). Note: the `<x-wirekit::stack|row|grid>` `gap` prop maps to `--space-wk-*`, not these — the `--gap-wk-*` tokens are used internally by composed components (`brand`, `header`, `cta`, `hero`, `navbar`, …).
 - `--padding-wk-x-xs|sm|md|lg|xl` and `--padding-wk-y-xs|sm|md|lg|xl` (axis-split — no axis-less shorthand)
 - `--radius-wk-sm|md|lg|xl|full`
 - `--shadow-wk-sm|md|lg`
@@ -88,6 +93,17 @@ content — tokens auto-switch via the parent `.dark` class.
 Acceptable `size` values: `xs` (12px), `sm` (16px), `md` (20px),
 `lg` (24px), `xl` (32px). NEVER use `class="h-N w-N"` on
 `<x-wirekit::icon>` — the `size` prop is the canonical way.
+
+To place an icon inside a `<x-wirekit::button>` (or `link`), use the
+`iconLeft` / `iconRight` slots — they position and space the icon
+correctly and shrink-proof it:
+
+```blade
+<x-wirekit::button intent="primary">
+    <x-slot:iconLeft><x-wirekit::icon name="plus" size="sm" /></x-slot:iconLeft>
+    New item
+</x-wirekit::button>
+```
 
 Stackable presets — base preset (`heroicons`) plus optional
 `heroicons-app` and `heroicons-marketing` extensions add app- and
@@ -175,7 +191,10 @@ and create silent bugs.
     <x-slot:trigger>
         <x-wirekit::button>Open</x-wirekit::button>
     </x-slot:trigger>
-    <x-slot:body>…</x-slot:body>
+    {{-- Body is the DEFAULT slot — modal has no `body` slot. A named
+         <x-slot:body> is silently dropped and the modal opens empty. --}}
+    <x-wirekit::modal.header>Title</x-wirekit::modal.header>
+    <x-wirekit::modal.body>…</x-wirekit::modal.body>
 </x-wirekit::modal>
 ```
 
@@ -199,9 +218,9 @@ and create silent bugs.
 - `wire:click` MUST NOT be added directly to overlay triggers
   (`<x-wirekit::modal.trigger>`, etc.) — the Alpine handler dispatches
   the open event; competing `wire:click` will race.
-- `<x-wirekit::chart>` re-creates the Chart.js instance on every
-  data change — bind via `$wire.set()` and refresh on a debounced
-  trigger.
+- `<x-wirekit::chart>` re-creates its underlying chart instance
+  (Chart.js or ApexCharts, per `charts.library`) on every data
+  change — bind via `$wire.set()` and refresh on a debounced trigger.
 
 ## Browser support
 

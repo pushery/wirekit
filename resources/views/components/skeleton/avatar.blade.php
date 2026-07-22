@@ -24,7 +24,7 @@
 <div
     role="status"
     aria-live="polite"
-    aria-label="Loading"
+    aria-label="{{ __('Loading') }}"
     aria-busy="true"
     style="width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: auto 60px;"
     {{ $attributes->class([$wrapperClasses]) }}

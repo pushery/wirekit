@@ -1,7 +1,7 @@
 @props([
     // Accessible label for the button. Default is the well-known
     // "Replay" verb so screen readers announce a clear affordance.
-    'label' => 'Replay',
+    'label' => __('Replay'),
 
     // Optional explicit data-replay-target selector when the closest
     // ancestor isn't the right re-mount root. Pass a CSS selector and

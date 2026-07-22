@@ -11,7 +11,7 @@
     use Pushery\WireKit\WireKit;
 
     $variantClasses = match ($variant) {
-        'default' => 'text-[color:var(--color-wk-accent)]',
+        'default' => 'text-[color:var(--color-wk-accent-text)]',
         'subtle' => 'text-[color:var(--color-wk-text-subtle)]',
         'muted' => 'text-[color:var(--color-wk-text-muted)]',
         default => WireKit::validateProp('link', 'variant', $variant, ['default', 'subtle', 'muted']),

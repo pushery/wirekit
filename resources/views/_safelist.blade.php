@@ -171,4 +171,22 @@
       text-[color:var(--color-wk-text-muted)]
       hover:text-[color:var(--color-wk-text)]
 
+    ────────────────────────────────────────────────────────────────────────
+    pricing-table() — selected / unselected billing-interval toggle (WIRE-190)
+    ────────────────────────────────────────────────────────────────────────
+
+    Same mechanism as segmented-control above: both branches of the interval
+    toggle resolve through resolveClasses (so WireKit::scope() can reach them)
+    and are interpolated into an Alpine `:class`, which the scanner cannot see.
+
+    Every class here is already listed for segmented-control — repeated on
+    purpose. Without its own entry, a later cleanup of that section would remove
+    classes pricing-table has since come to depend on, and the toggle would lose
+    its appearance with nothing failing.
+
+      bg-[var(--color-wk-bg-elevated)]
+      text-[color:var(--color-wk-text)]
+      shadow-[var(--shadow-wk-sm)]
+      text-[color:var(--color-wk-text-muted)]
+
 --}}

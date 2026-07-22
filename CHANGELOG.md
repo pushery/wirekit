@@ -10,6 +10,36 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.18.0] — 2026-07-22
+
+**Minor release — a broad wave of developer-facing capability, accessibility and accuracy work.** Everything here is additive and backward-compatible: new props default to today's behavior, new commands and components are opt-in, and no existing tag renders differently unless you reach for one of the new options.
+
+### Added
+
+- **`wirekit:publish-fonts` publishes the font families your config names, not the whole tree.** Point `fonts.sans` / `fonts.serif` / `fonts.mono` at bundled families and this command copies exactly those into `public/`, roughly 430 KB for a typical two-family setup against 5.8 MB for everything. `--all` publishes the full tree (for an app with a runtime font picker), `--prune` removes families the config no longer names, `--force` overwrites. See [fonts](https://docs.wirekit.app/components/fonts).
+- **Fonts now load even when they were never published.** A configured family is served straight from the installed package over a `/wirekit/fonts/…` route, so a page can no longer silently fall back to system fonts because a publish step was missed. Publishing remains the fast path (a static file beats a PHP round trip); it is now a performance choice, not a correctness one.
+- **The whole component catalog is translatable.** Every user- and screen-reader-visible string routes through Laravel's translator, WireKit registers its own language directory, and a `wirekit-lang` publish tag drops a complete `en.json` reference into your app to rename per locale and fill in. A new [localization guide](https://docs.wirekit.app/localization) walks the publish → translate flow. A developer building a multilingual product can now localize WireKit itself, which was previously impossible without republishing every view.
+- **[range-slider](https://docs.wirekit.app/components/range-slider) announces a spoken value per handle.** A new `valueTextMap` prop gives each thumb its own `aria-valuetext` — a tier range can announce "Free" and "Enterprise" instead of "0" and "100". Unnamed stops fall back to their number.
+- **New `<x-wirekit::form>` wrapper sets one error-announcement policy for every control inside it**, so you configure `aria-live` error behavior once per form rather than per field.
+- **[theme-controller](https://docs.wirekit.app/components/theme-controller) gained a `cookie` storage driver and configurable button chrome.** The cookie driver lets the server render the correct theme on first paint (no flash); the chrome (size, surface, icon slots) is now overridable.
+- **[stream](https://docs.wirekit.app/components/stream) gained a `fetch` transport and a `manual` mode**, the two shapes it needed to drive a token stream from a plain fetch response or from your own code rather than only Server-Sent Events.
+- **[countdown](https://docs.wirekit.app/components/countdown) is now a headless clock** — a slot plus a full `remaining` breakdown (days/hours/minutes/seconds), so you can render the time however you like.
+- **[pricing-table](https://docs.wirekit.app/components/pricing-table) renders its own monthly/annual toggle and fits its grid to the plan count**; `pricing-tier` now forwards minor-unit and locale price formatting instead of dropping it.
+- **[status-tiles](https://docs.wirekit.app/components/status-tiles) gained an opt-in `showStatus`**, [image-gallery](https://docs.wirekit.app/components/image-gallery) a `fit` prop, and [faq](https://docs.wirekit.app/components/faq) a `plain-text` schema answer with a per-item escape hatch — each additive and byte-compatible by default.
+- **Media-playback icons ship in every base preset** (play / pause / stop / etc.), so a player UI has consistent glyphs without a custom icon set.
+- **Sub-components are discoverable through the AI-tooling surface.** `wirekit:show card.body`, the JSON export, the MCP catalog and the Boost manifest now report every sub-component with its own props — `table.th`'s column-scope option, `card.body`, and the rest — so an editor or agent authoring WireKit markup can find the composition pieces, not just the top-level tags.
+
+### Changed
+
+- **A published `config/wirekit.php` is no longer a ceiling.** The config merge is now recursive, so an app that published the config once keeps receiving every new component default a later release adds, while still winning on any value it actually set. Previously a published `components` array replaced the package's entire section, quietly freezing the config to the keys it had the day it was published. `wirekit:doctor` gained a check that names any section your published file is missing.
+- **The AI-tooling manifest and Boost skill derive each component's tag from the registry**, so the class-based chart's real tag is reported correctly, and **`ComponentRegistry` reads props for directory-form components**, not just top-level ones.
+
+### Fixed
+
+- **[slider](https://docs.wirekit.app/components/slider) announced a value the reader could no longer see.** Under `wire:model`, a server-driven change moved the thumb but not the spoken value, so a screen reader read the old number — and with a labeled mark map, the wrong *meaning*. The component now re-reads the element after each Livewire update. Apps without Livewire are unaffected.
+- **Accent-toned text no longer drops below contrast when a brand accent is re-tinted**, and the theme-controller `<select>` and data-table search `<input>` moved onto the contrast-compliant resting border token.
+- **A batch of documentation-accuracy and accessibility corrections** across component pages: row-header styling, a named radial-progress, correct status-tile link semantics, prop-list and default-value fixes on several pages, and the shipped Cursor rules no longer teach a handful of wrong patterns.
+
 ## [2.17.1] — 2026-07-20
 
 **Patch release — dependency maintenance.** No API change and nothing to migrate: the bundled positioning engine moves forward a minor version, and the chart adapter is confirmed against the next major of its optional peer.
@@ -64,7 +94,7 @@ Browse it online — one page per version — at
 - **[Sidebar](https://docs.wirekit.app/components/sidebar) item badge.** `sidebar.item` gained a `badge` prop for a trailing unread counter — the common notifications / inbox nav pattern.
 - **[Table](https://docs.wirekit.app/components/table) row headers.** `table.th` gained a `headerScope` prop so a per-row header cell can be `scope="row"`, previously reachable only as a column header.
 - **[Tooltip](https://docs.wirekit.app/components/tooltip) `focusableTrigger`.** A tooltip on a non-interactive trigger — an icon, a text span — can now be reached by keyboard instead of being hover-only.
-- **Design tokens.** The `--gap-wk-*` scale is now the full `xs`…`2xl` ladder (matching `--space-wk-*`), and a new `--color-wk-border-strong` token gives form controls a contrast-compliant resting border. See [design tokens](https://docs.wirekit.app/theming/design-tokens).
+- **Design tokens.** The `--gap-wk-*` scale is now the full `xs`…`2xl` ladder — the same rung labels as `--space-wk-*`, with its own tighter values, and a new `--color-wk-border-strong` token gives form controls a contrast-compliant resting border. See [design tokens](https://docs.wirekit.app/theming/design-tokens).
 - **Error-announcement config default.** A new `wirekit.a11y.announce_error` config key lets an app that runs its own live region opt every form control out of the built-in error announcement in one place, instead of per control.
 
 ### Fixed

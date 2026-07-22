@@ -38,6 +38,14 @@ export default function wirekitConversation(config = {}) {
         // px tolerance for "at bottom" — absorbs sub-pixel + zoom rounding so a
         // 0.5px gap does not silently disable follow-output.
         threshold: config.threshold ?? 24,
+        // Translated accessible names for the jump-to-latest control, handed in
+        // from Blade. They live in the Alpine scope rather than inside the
+        // attribute binding because a Blade `::`-escaped attribute is passed
+        // through VERBATIM — an `@js()` inside it is never compiled, so the
+        // binding would carry the literal directive text, fail to evaluate, and
+        // leave the button with no accessible name at all.
+        jumpLabel: config.jumpLabel ?? 'Jump to latest',
+        jumpLabelCount: config.jumpLabelCount ?? 'Jump to latest, :count new',
 
         _mutationObserver: null,
         _resizeObserver: null,

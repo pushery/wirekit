@@ -4,7 +4,7 @@
     'view' => config('wirekit.components.event-calendar.view', 'month'), // month | week | agenda
     'date' => null,                 // ISO date the calendar opens on (default today)
     'weekStartsOn' => config('wirekit.components.event-calendar.week-starts-on', 1), // 0 Sun .. 1 Mon
-    'ariaLabel' => 'Calendar',
+    'ariaLabel' => __('Calendar'),
     'scope' => null,
 ])
 
@@ -97,16 +97,16 @@
     <div class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)]">
         <div class="flex items-center gap-[var(--space-wk-sm)]">
             <div class="inline-flex items-center gap-1">
-                <button type="button" @click="prev()" aria-label="Previous" class="{{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg></button>
+                <button type="button" @click="prev()" aria-label="{{ __('Previous') }}" class="{{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg></button>
                 <button type="button" @click="today()" class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">Today</button>
-                <button type="button" @click="next()" aria-label="Next" class="{{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
+                <button type="button" @click="next()" aria-label="{{ __('Next') }}" class="{{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
             </div>
             <h2 class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" aria-live="polite" x-text="title"></h2>
         </div>
         {{-- View switcher — a single-select RADIOGROUP (not tabs: the buttons own
              no tabpanels; the views swap in place). aria-checked + roving tabindex
              + arrows move-and-select via viewMove(), wrapping at the ends. --}}
-        <div class="inline-flex rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] overflow-hidden" role="radiogroup" aria-label="Calendar view"
+        <div class="inline-flex rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] overflow-hidden" role="radiogroup" aria-label="{{ __('Calendar view') }}"
             @keydown.arrow-right.prevent="viewMove(1)"
             @keydown.arrow-down.prevent="viewMove(1)"
             @keydown.arrow-left.prevent="viewMove(-1)"
@@ -152,7 +152,7 @@
     </div>
 
     {{-- ── Week view (time grid) ───────────────────────────────────── --}}
-    <div x-show="view === 'week'" x-cloak role="region" aria-label="Week schedule" tabindex="0" class="max-h-[30rem] overflow-y-auto wk-scrollbar border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+    <div x-show="view === 'week'" x-cloak role="region" aria-label="{{ __('Week schedule') }}" tabindex="0" class="max-h-[30rem] overflow-y-auto wk-scrollbar border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
         {{-- Sticky top region: day-name headers + the all-day band. Both pin to
              the top of the scroll region so they stay visible while the hour grid
              scrolls underneath. --}}
@@ -163,7 +163,7 @@
                 <template x-for="day in weekDays" :key="day.date.toISOString()">
                     <div class="px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-center border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                         <div class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="day.weekday"></div>
-                        <div class="text-[length:var(--text-wk-sm)]" :class="day.isToday ? 'text-[color:var(--color-wk-accent)] font-[number:var(--font-wk-heading-weight)]' : 'text-[color:var(--color-wk-text)]'" x-text="day.label"></div>
+                        <div class="text-[length:var(--text-wk-sm)]" :class="day.isToday ? 'text-[color:var(--color-wk-accent-text)] font-[number:var(--font-wk-heading-weight)]' : 'text-[color:var(--color-wk-text)]'" x-text="day.label"></div>
                     </div>
                 </template>
             </div>
@@ -258,7 +258,7 @@
     </div>
 
     {{-- ── Agenda view ─────────────────────────────────────────────── --}}
-    <div x-show="view === 'agenda'" x-cloak aria-label="Agenda" x-effect="view; agendaDays; $nextTick(() => _measureAgendaTime())" class="relative overflow-hidden border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] divide-y divide-[var(--color-wk-border)]">
+    <div x-show="view === 'agenda'" x-cloak aria-label="{{ __('Agenda') }}" x-effect="view; agendaDays; $nextTick(() => _measureAgendaTime())" class="relative overflow-hidden border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] divide-y divide-[var(--color-wk-border)]">
         {{-- No vertical spine: each day's events stack cleanly under their day
              heading, so a continuous rule between the time column and the titles
              read as visual noise. The time column is still measured
@@ -266,7 +266,7 @@
              row's time shares one width and the titles line up. --}}
         <template x-for="day in agendaDays" :key="day.date.toISOString()">
             <div class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]">
-                <p class="mb-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)]" :class="day.isToday ? 'text-[color:var(--color-wk-accent)]' : 'text-[color:var(--color-wk-text)]'" x-text="day.label"></p>
+                <p class="mb-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)]" :class="day.isToday ? 'text-[color:var(--color-wk-accent-text)]' : 'text-[color:var(--color-wk-text)]'" x-text="day.label"></p>
                 {{-- Day markers as their own labeled line (R2's "Holiday: …" pattern).
                      The type is shown as text; blocked adds an sr-only "unavailable". --}}
                 <template x-for="(m, mi) in day.markers" :key="'am-'+day.date.toISOString()+mi">

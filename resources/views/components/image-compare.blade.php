@@ -15,7 +15,7 @@
     'afterLabel' => 'After',
     'labels' => true,
     'decorative' => false,
-    'ariaLabel' => 'Image comparison slider',
+    'ariaLabel' => __('Image comparison slider'),
     'loading' => 'lazy',
     'scope' => null,
 ])

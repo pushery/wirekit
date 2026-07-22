@@ -2,7 +2,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
-    'announceError' => config('wirekit.a11y.announce_error', true),
+    'announceError' => null,
     'name' => null,
     'id' => null,
     'label' => null,
@@ -21,7 +21,12 @@
     'scope' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config (WIRE-204).
+    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 

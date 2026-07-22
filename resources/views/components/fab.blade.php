@@ -1,7 +1,7 @@
 @props([
     // What the trigger does. REQUIRED in spirit: the trigger is an icon, so
     // without this it announces as "button" and nothing else.
-    'label' => 'Actions',
+    'label' => __('Actions'),
     // Where it floats. 'end' is the inline-end corner — it follows the writing
     // direction rather than assuming everyone reads left-to-right.
     'position' => config('wirekit.components.fab.position', 'end'),

@@ -82,6 +82,13 @@ final class TablerPreset implements IconPreset
             'inbox' => 'tabler-inbox',
             'bolt' => 'tabler-bolt',
             'refresh' => 'tabler-refresh',
+            // Media controls (WIRE-226).
+            'play' => 'tabler-player-play',
+            'pause' => 'tabler-player-pause',
+            'stop' => 'tabler-player-stop',
+            'speaker' => 'tabler-volume',
+            'mute' => 'tabler-volume-off',
+            'microphone' => 'tabler-microphone',
         ];
     }
 

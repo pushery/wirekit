@@ -5,16 +5,19 @@
 @php
     // The `Schema` builders return bare `@type` fragments, so nesting an Offer
     // inside a Product needs no repeated context to strip. The context belongs
-    // exactly once, at the top — so add it here when it is missing.
+    // exactly once, at the top — so add it here when it is missing. This applies
+    // to BOTH shapes of a top-level schema.org document: a single node (`@type`)
+    // AND a `@graph` composition of several nodes (WIRE-192) — a bare `@graph`
+    // with no `@context` is invalid JSON-LD.
     //
     // Back-compatible: data that already carries '@context' (every hand-written
-    // usage) is passed through untouched. Data with neither '@context' nor
-    // '@type' is also left alone — that is not a schema.org document and
-    // stamping a context onto it would be a lie.
+    // usage) is passed through untouched. Data with none of '@context' / '@type'
+    // / '@graph' is left alone — that is not a schema.org document and stamping a
+    // context onto it would be a lie.
     $payload = $data;
     if (is_array($payload)
         && ! array_key_exists('@context', $payload)
-        && array_key_exists('@type', $payload)) {
+        && (array_key_exists('@type', $payload) || array_key_exists('@graph', $payload))) {
         $payload = ['@context' => 'https://schema.org'] + $payload;
     }
 @endphp

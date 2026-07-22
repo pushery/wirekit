@@ -21,7 +21,7 @@
     ]), $scope);
 
     $colorClasses = $active
-        ? 'text-[color:var(--color-wk-accent)] font-[number:var(--font-wk-heading-weight)]'
+        ? 'text-[color:var(--color-wk-accent-text)] font-[number:var(--font-wk-heading-weight)]'
         : 'text-[color:var(--color-wk-text)]';
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".

@@ -7,7 +7,7 @@
     // in this comment: Blade's tag compiler scans even PHP comments.)
     'target' => 'main-content',
     // Label rendered inside the link when keyboard focus reveals it.
-    'label' => 'Skip to main content',
+    'label' => __('Skip to main content'),
     'scope' => null,
 ])
 

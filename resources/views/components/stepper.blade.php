@@ -77,7 +77,7 @@
     sandbox iframe runs WITHOUT Tailwind preflight; the `list-none m-0 p-0`
     classes in $listClasses are decorative only and don't apply there.
 --}}
-<ol aria-label="Progress" {{ $attributes->class([$listClasses]) }} style="list-style: none; margin: 0; padding: 0;">
+<ol aria-label="{{ __('Progress') }}" {{ $attributes->class([$listClasses]) }} style="list-style: none; margin: 0; padding: 0;">
     @foreach($steps as $i => $step)
         @php
             // Normalize: accept a string (label only) or ['label' => .., 'description' => ..].
@@ -94,7 +94,7 @@
             $stateClasses = $isCompleted
                 ? 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] border-[var(--color-wk-accent)]'
                 : ($isCurrent
-                    ? 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-accent)] border-[var(--color-wk-accent)]'
+                    ? 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-accent-text)] border-[var(--color-wk-accent)]'
                     : 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text-muted)] border-[var(--color-wk-border)]');
         @endphp
 

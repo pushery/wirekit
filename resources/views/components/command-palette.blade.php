@@ -1,6 +1,6 @@
 @props([
     'hotkey' => 'cmd+k',
-    'placeholder' => 'Search commands...',
+    'placeholder' => __('Search commands...'),
     // When true (default) the overlay teleports to <body> so it sits above
     // every other stacking context. Set to false to render the overlay inline
     // inside the parent element — useful for docs previews or when embedding
@@ -107,7 +107,7 @@
                     x-transition:leave-end="opacity-0 scale-95"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="Command palette"
+                    aria-label="{{ __('Command palette') }}"
                     class="{{ $panelClasses }}"
                     x-on:click.stop
                     @keydown="handleKeydown"
@@ -132,11 +132,23 @@
                             placeholder="{{ $placeholder }}"
                             class="wk-field {{ $inputClasses }}"
                             autocomplete="off"
-                            {{-- WIRE-174: emit the query on every keystroke (debounced, bubbling) so a
-                                 host can drive server-side search — hook it with x-on:wirekit-command-palette-query
-                                 or Livewire's @wirekit-command-palette-query / wire:command-palette-query.
-                                 Kept as an event (not a raw wire:model) to avoid double-binding the internal x-model. --}}
-                            x-on:input.debounce.300ms="$dispatch('wirekit-command-palette-query', { query })"
+                            {{-- Emit the query on every keystroke (debounced) so a host can drive
+                                 server-side search. Kept as an event rather than a raw wire:model to
+                                 avoid double-binding the internal x-model.
+
+                                 emitQuery() dispatches from the component ROOT, not from this input:
+                                 this input is teleported into <body>, so an event fired here would
+                                 never pass the root element and a listener placed on the component
+                                 would never hear it. Wire it up on the component:
+
+                                   <x-wirekit::command-palette
+                                       x-on:wirekit-command-palette-query="search($event.detail.query)" />
+
+                                 or, from Livewire, with the FULL event name:
+
+                                   <x-wirekit::command-palette
+                                       wire:wirekit-command-palette-query="search($event.detail.query)" /> --}}
+                            x-on:input.debounce.300ms="emitQuery()"
                         />
                     </div>
 

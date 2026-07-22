@@ -79,7 +79,7 @@
                 <span class="tabular-nums text-[color:var(--color-wk-text-muted)]">
                     @if($isUnlimited)
                         {{ $fmt($usedNum) }}@if($unit) {{ $unit }}@endif
-                        <span class="text-[color:var(--color-wk-text-subtle)]">· Unlimited</span>
+                        <span class="text-[color:var(--color-wk-text-subtle)]">· {{ __('Unlimited') }}</span>
                     @else
                         {{ $fmt($usedNum) }} / {{ $fmt($limitNum) }}@if($unit) {{ $unit }}@endif
                         @if($rawPercent !== null)

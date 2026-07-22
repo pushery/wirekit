@@ -2,7 +2,7 @@
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
-    'announceError' => config('wirekit.a11y.announce_error', true),
+    'announceError' => null,
     'label' => null,
     'hint' => null,
     'error' => null,
@@ -15,7 +15,12 @@
     'scope' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config (WIRE-204).
+    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
+
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -194,7 +199,7 @@
         <button
             type="button"
             class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusLeft }} {{ $sizeClasses }}"
-            aria-label="Decrease"
+            aria-label="{{ __('Decrease') }}"
             :disabled="atMin"
             :aria-disabled="atMin"
             @click="decrease()"
@@ -222,7 +227,7 @@
         <button
             type="button"
             class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusRight }} {{ $sizeClasses }}"
-            aria-label="Increase"
+            aria-label="{{ __('Increase') }}"
             :disabled="atMax"
             :aria-disabled="atMax"
             @click="increase()"
