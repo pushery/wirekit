@@ -30,7 +30,7 @@
 @aware(['announceErrors' => null])
 
 @php
-    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config (WIRE-204).
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
     use Pushery\WireKit\WireKit;
@@ -62,13 +62,13 @@
     // Route wire:model to the <textarea x-ref="input"> (the element the editor writes to
     // and fires its input event on), NOT the wrapper div — otherwise Livewire binds to a
     // div that never emits input and the value is silently lost. Modifiers (.live / .blur
-    // / .debounce) are preserved; everything else still lands on the wrapper (WIRE-167).
+    // / .debounce) are preserved; everything else still lands on the wrapper.
     $wireModel = $attributes->whereStartsWith('wire:model');
     $rest = $attributes->whereDoesntStartWith('wire:model');
 
     // Toolbar preset → command vocabulary. A passed <x-slot:toolbar> (a ComponentSlot)
     // selects the 'custom' path so the caller's toolbar actually renders — otherwise the
-    // slot silently collapsed to the 'basic' preset and was never shown (WIRE-168).
+    // slot silently collapsed to the 'basic' preset and was never shown.
     $toolbarValue = $toolbar === false
         ? false
         : ($toolbar instanceof \Illuminate\View\ComponentSlot ? 'custom' : (is_string($toolbar) ? $toolbar : 'basic'));
@@ -169,7 +169,7 @@
                      path scrolls at the same ceiling (a textarea scrolls natively). --}}
                 @if($maxHeight) style="max-height: {{ $maxHeight }}; overflow-y: auto;" @endif
                 class="wk-field block w-full bg-transparent px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] focus:outline-none {{ $minHeight }}"
-                {{-- wire:model binds to the textarea the editor writes to (WIRE-167). --}}
+                {{-- wire:model binds to the textarea the editor writes to. --}}
                 {{ $wireModel }}
             >{{ is_string($value) ? $value : ($value !== null ? json_encode($value) : '') }}</textarea>
         @endif

@@ -81,7 +81,7 @@ final class LucidePreset implements IconPreset
             'inbox' => 'lucide-inbox',
             'bolt' => 'lucide-zap', // lucide calls the bolt glyph `zap`
             'refresh' => 'lucide-refresh-cw', // lucide's rotate glyph
-            // Media controls (WIRE-226).
+            // Media controls.
             'play' => 'lucide-play',
             'pause' => 'lucide-pause',
             'stop' => 'lucide-square', // lucide's stop glyph is a filled square

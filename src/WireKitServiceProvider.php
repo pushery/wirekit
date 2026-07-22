@@ -133,7 +133,7 @@ class WireKitServiceProvider extends ServiceProvider
             ], 'wirekit-fonts');
 
             // Per-preset publish tags, so an app can ship only what it activates
-            // (WIRE-108). Each registered font gets `wirekit-font-<key>`:
+            // itself. Each registered font gets `wirekit-font-<key>`:
             //
             //     php artisan vendor:publish --tag=wirekit-font-ibm-plex-sans
             //     php artisan vendor:publish --tag=wirekit-font-ibm-plex-mono
@@ -363,7 +363,7 @@ class WireKitServiceProvider extends ServiceProvider
         //  - UNKNOWN preset key (a typo): FATAL in local so the developer sees it
         //    immediately; in production the value silently falls back to defaults
         //    (never fatally break a deployed page over a config typo).
-        //  - KNOWN preset that is not published: WARN in EVERY environment (WIRE-108).
+        //  - KNOWN preset that is not published: WARN in EVERY environment.
         //    The page still renders, but the developer's chosen font silently fell back
         //    to system fonts. This used to be undetectable in production; a throttled
         //    log line (once per preset per process) now surfaces it for ops, and the
@@ -391,7 +391,7 @@ class WireKitServiceProvider extends ServiceProvider
                 continue; // production: unknown key falls back to defaults (unchanged)
             }
 
-            // Known preset but not published → warn in all environments (WIRE-108).
+            // Known preset but not published → warn in all environments.
             if (! file_exists(public_path($preset->publishedCssPath()))) {
                 static::warnUnpublishedFont($category, $presetKey);
             }
@@ -414,7 +414,7 @@ class WireKitServiceProvider extends ServiceProvider
 
     /**
      * Log a single warning that a configured, known font preset is not published and
-     * text is therefore falling back to system fonts (WIRE-108). Throttled per process.
+     * text is therefore falling back to system fonts. Throttled per process.
      */
     protected static function warnUnpublishedFont(string $category, string $presetKey): void
     {
@@ -477,7 +477,7 @@ class WireKitServiceProvider extends ServiceProvider
         ];
 
         // Bundled fonts, served straight from the package when they were never
-        // published (WIRE-108). Without this the fonts component emitted no
+        // published. Without this the fonts component emitted no
         // <link> at all for a configured-but-unpublished family, and the page
         // fell back to system fonts — a difference nobody notices in review and
         // everybody notices in production, because the app looked right locally

@@ -1,6 +1,6 @@
 @props([
     // Error-announcement policy inherited by every WireKit form control nested
-    // inside this form (WIRE-204).
+    // inside this form.
     //   null  — inherit the global wirekit.a11y.announce_error config (the default)
     //   false — turn the per-control aria-live error region OFF for all controls
     //           inside. Use this when THIS form renders its OWN error summary — a

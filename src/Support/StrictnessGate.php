@@ -43,8 +43,7 @@ final class StrictnessGate
      * a valid HTML attribute is passthrough by definition, not by whether someone
      * remembered to list it. `inputmode` / `enterkeyhint` sitting here is what
      * stops `<x-wirekit::input inputmode="numeric">` — a correct, accessible
-     * mobile-keyboard hint — from logging a spurious "unknown prop" warning
-     * (WIRE-111).
+     * mobile-keyboard hint — from logging a spurious "unknown prop" warning.
      *
      * @var list<string>
      */

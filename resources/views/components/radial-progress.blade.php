@@ -107,7 +107,7 @@
     {{-- A progressbar MUST have an accessible name; aria-valuetext is the VALUE,
          not the name. `label` is the intended source, but it defaults to null, so
          a developer who omits it used to ship a nameless progressbar. Fall back to
-         a translatable generic name so the role is never anonymous (WIRE-195). --}}
+         a translatable generic name so the role is never anonymous. --}}
     aria-label="{{ $label ?? __('Progress') }}"
     {{-- Opt the animated ring INTO the docs.wirekit.app replay button so the sweep
          can be re-watched — a re-mount re-fires @starting-style. No-op in a

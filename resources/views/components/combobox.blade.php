@@ -26,7 +26,7 @@
 @aware(['announceErrors' => null])
 
 @php
-    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config (WIRE-204).
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
     use Illuminate\Support\Str;
@@ -101,8 +101,8 @@
     $resolvedAriaLabel = $ariaLabel ?? $callerAriaLabel;
 
     // Merge a caller aria-describedby with our own error target into ONE attribute on
-    // the input, so a caller description reaches the labelable control (WIRE-162) and
-    // never collides with the error id as two attributes (the WIRE-118 double bug).
+    // the input, so a caller description reaches the labelable control and
+    // never collides with the error id as two attributes.
     $ownDescribedBy = $hasError ? $errorId : null;
     $callerDescribedBy = $attributes->get('aria-describedby');
     $describedBy = trim(((string) ($ownDescribedBy ?? '')).' '.((string) ($callerDescribedBy ?? '')));
@@ -303,7 +303,7 @@
     @click.outside="open = false"
     {{-- The roleless wrapper carries ONLY layout — every caller attribute
          (aria-describedby, data-*, autocomplete, required, …) is routed to the
-         role="combobox" input below, never left stranded on this <div> (WIRE-162). --}}
+         role="combobox" input below, never left stranded on this <div>. --}}
     {{ $attributes->only(['style'])->class(['relative w-full']) }}
 >
     {{-- Hidden input holding the selected *value* for form submission. --}}
@@ -342,7 +342,7 @@
              labelable role="combobox" control), never the roleless wrapper. --}}
         @if(! $label && $resolvedAriaLabel) aria-label="{{ $resolvedAriaLabel }}" @endif
         {{-- Every OTHER caller attribute (data-*, autocomplete, required, readonly …)
-             reaches the actual control here, not the wrapper (WIRE-162). --}}
+             reaches the actual control here, not the wrapper. --}}
         {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby']) }}
         class="wk-field {{ $inputClasses }}"
     />

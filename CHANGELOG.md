@@ -10,6 +10,21 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.18.1] — 2026-07-22
+
+**Patch release — localization and accuracy fixes.** No new capability and no behavior change for an English application; every fix below either corrects output in a non-English locale or removes something that should never have shipped.
+
+### Fixed
+
+- **[alert](https://docs.wirekit.app/components/alert) announced its variant in English whatever the page language was.** The screen-reader prefix a reader speaks before every alert — "Notice", "Warning", "Error" — was a literal, so a German page announced "Notice: Alle Locales werden gemeinsam freigegeben". 2.18.0 made the catalog translatable and this component was missed. The five labels now route through the translator, with the matching keys in the published `en.json`.
+- **[alert](https://docs.wirekit.app/components/alert) silently ignored a `role` you passed it.** The component emitted its own `role` before your attributes, and HTML keeps the first occurrence, so your value sat inert in the markup beside the one that won. A caller-supplied `role` now takes precedence.
+- **Numbers rendered with English separators in every locale.** [usage-meter](https://docs.wirekit.app/components/usage-meter) grouped thousands as `1,234` where German, Italian, Spanish and Portuguese want `1.234` and French wants a space; [attachment](https://docs.wirekit.app/components/attachment) rendered file sizes as `2.4 MB` instead of `2,4 MB`; [rating](https://docs.wirekit.app/components/rating) announced `4.2`. All three now format for the active application locale. Applications without `ext-intl` keep exactly the output they had — the extension is not a new requirement.
+- **[rating](https://docs.wirekit.app/components/rating) announced a hardcoded English sentence.** A readonly rating told screen readers "4.2 out of 5 stars" and named its interactive group "Rating", in every language. Both are translatable now.
+
+### Documentation
+
+- **Structured data's site-identity builders were missing from the 2.18.0 notes.** `Schema::webSite(…)`, `Schema::organization(…)` and `Schema::softwareApplication(…)` build the three nodes almost every marketing page needs, `Schema::graph([…])` combines them into a single `@graph`, and `Schema::node(…)` is the escape hatch for any schema.org type the builders do not model. They shipped in 2.18.0; only the announcement was missing. The [structured-data](https://docs.wirekit.app/components/structured-data) page documents the full set.
+
 ## [2.18.0] — 2026-07-22
 
 **Minor release — a broad wave of developer-facing capability, accessibility and accuracy work.** Everything here is additive and backward-compatible: new props default to today's behavior, new commands and components are opt-in, and no existing tag renders differently unless you reach for one of the new options.

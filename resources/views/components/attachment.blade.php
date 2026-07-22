@@ -26,6 +26,7 @@
 
 @php
     use Pushery\WireKit\WireKit;
+    use Pushery\WireKit\Support\LocalizedNumber;
 
     $stateValue = in_array($state, ['idle', 'uploading', 'done', 'error'], true)
         ? $state
@@ -51,7 +52,7 @@
 
         // One decimal below 10 (2.4 MB), none above (24 MB) — the convention
         // every file manager uses.
-        return ($value < 10 ? number_format($value, 1) : (string) round($value)).' '.$units[$i];
+        return ($value < 10 ? LocalizedNumber::format($value, precision: 1) : (string) round($value)).' '.$units[$i];
     };
 
     // Short, human label. Prefer the file extension (PDF, DOCX) — it is more

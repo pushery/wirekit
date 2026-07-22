@@ -24,7 +24,7 @@
     // Accessible name: translatable default, but a caller-supplied aria-label
     // wins — and is emitted exactly once. Rendering the default AND letting the
     // attribute bag add the caller's value produced two aria-label attributes,
-    // the hardcoded English one winning (WIRE-231 / WIRE-243).
+    // the hardcoded English one winning.
     $ariaLabel = $attributes->get('aria-label', __('Toggle sidebar'));
 @endphp
 

@@ -5,7 +5,7 @@
     'size' => config('wirekit.components.segmented-control.size', 'md'),
     // Disable the whole control: aria-disabled on the radiogroup + each segment,
     // the buttons become non-interactive, and the group dims via
-    // --opacity-wk-disabled (WIRE-213).
+    // --opacity-wk-disabled.
     'disabled' => false,
     'scope' => null,
 ])
@@ -25,7 +25,7 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // Selected / unselected segment appearance (WIRE-178).
+    // Selected / unselected segment appearance.
     //
     // These used to be string literals inside the Alpine `:class` ternary below.
     // That put them out of reach of WireKit::scope(): resolveClasses runs at

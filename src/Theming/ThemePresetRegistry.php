@@ -254,8 +254,7 @@ CSS,
     --color-wk-bg-elevated: oklch(0.21 0.028 var(--theme-hue));
     --color-wk-bg-muted: oklch(0.235 0.027 var(--theme-hue));
     --color-wk-bg-subtle: oklch(0.275 0.025 var(--theme-hue));
-    /* Form-control fill — carry the hue tint like every other dark surface
-       (WIRE-215). Without this the field fell back to the stock untinted
+    /* Form-control fill — carry the hue tint like every other dark surface. Without this the field fell back to the stock untinted
        oklch(14.5% 0 0), reading as a flat neutral slightly DARKER than the
        page and visually detached from the theme. Sits just above the page bg
        (0.16) and below bg-elevated (0.21); border-strong (0.52) clears >= 3.37:1

@@ -16,7 +16,7 @@
     'fit' => 'cover',
     // Enable the click-to-zoom lightbox. When false the grid is static.
     'lightbox' => true,
-    // Per-item overlay render-callback (WIRE-120): a closure `fn($item, $i)` that
+    // Per-item overlay render-callback: a closure `fn($item, $i)` that
     // returns the markup to layer OVER thumbnail #$i (a badge, a report control, an
     // "AI-generated" label). It renders as a sibling of the zoom trigger — not nested
     // inside it — so the overlay wrapper is pointer-events-none and the thumbnail still
@@ -75,7 +75,7 @@
                         <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :ratio="$ratio" :fit="$fit" rounded />
                     </button>
                     @if(is_callable($itemOverlay))
-                        {{-- WIRE-120: per-item overlay, a sibling of (not nested in) the
+                        {{-- per-item overlay, a sibling of (not nested in) the
                              zoom trigger so its controls don't fire openAt(). Wrapper is
                              pointer-events-none; controls opt back in with pointer-events-auto. --}}
                         <div class="pointer-events-none absolute inset-0">{{ $itemOverlay($item, $i) }}</div>
@@ -89,7 +89,7 @@
         <x-wirekit::grid :cols="$columns" :gap="$gap">
             @foreach($items as $i => $item)
                 @if(is_callable($itemOverlay))
-                    {{-- WIRE-120: static grid also supports the per-item overlay. --}}
+                    {{-- static grid also supports the per-item overlay. --}}
                     <div class="relative">
                         <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :caption="$item['caption']" :ratio="$ratio" :fit="$fit" rounded />
                         <div class="pointer-events-none absolute inset-0">{{ $itemOverlay($item, $i) }}</div>

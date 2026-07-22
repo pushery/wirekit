@@ -26,7 +26,7 @@
     'priceLabel' => null,
     // Forwarded to the inner price component so a tier can render minor-unit
     // amounts (e.g. 4900 -> EUR 49.00), locale-format them, and size the amount —
-    // previously the wrapper hardcoded size="lg" and dropped the rest (WIRE-191).
+    // previously the wrapper hardcoded size="lg" and dropped the rest.
     'minorUnits' => false,
     'locale' => null,
     'priceSize' => 'lg',
@@ -41,7 +41,7 @@
     // The contact-us placeholder ("Let's talk") must not out-shout a real price.
     // It used a fixed --text-wk-2xl (1.5rem) while an actual amount rendered at
     // priceSize (lg = 1rem), so the tier WITHOUT a number looked the loudest —
-    // backwards. Match the placeholder to priceSize instead (WIRE-191).
+    // backwards. Match the placeholder to priceSize instead.
     $priceLabelTextClass = match ($priceSize) {
         'xs' => 'text-[length:var(--text-wk-xs)]',
         'sm' => 'text-[length:var(--text-wk-sm)]',

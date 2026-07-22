@@ -21,7 +21,7 @@
 @aware(['announceErrors' => null])
 
 @php
-    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config (WIRE-204).
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
     use Pushery\WireKit\WireKit;

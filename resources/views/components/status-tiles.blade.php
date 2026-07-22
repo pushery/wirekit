@@ -12,7 +12,7 @@
     'gap' => 'sm',
     // Promote the status word from the screen-reader-only span into a visible,
     // intent-tinted caption on every tile. Off by default so existing tiles are
-    // unchanged (WIRE-194).
+    // unchanged.
     'showStatus' => false,
     'scope' => null,
 ])
@@ -69,7 +69,7 @@
     // justify-center: the grid stretches every tile to the row's tallest (the ones with
     // a `meta` caption), so a tile WITHOUT meta would otherwise top-align its single line
     // and leave a lopsided gap below. Centering the content balances the vertical spacing
-    // in every tile regardless of whether it has a caption (WIRE-171 layout polish).
+    // in every tile regardless of whether it has a caption.
     // The tile is a BLOCK outer carrying the real padding, wrapping an inner flex
     // centerer ($tileInner). This is deliberate: a flex column used directly as a
     // stretched grid item sizes the auto row to its CONTENT height and then border-box
@@ -79,7 +79,7 @@
     // and adapts to the real content; the inner flex then vertically centers, balancing
     // both the two-line tiles and the single-line (no-caption) ones at the same row height.
     // h-full so the tile fills the listitem wrapper the grid now stretches (the
-    // wrapper, not the tile, is the grid item since WIRE-244 moved role="listitem"
+    // wrapper, not the tile, is the grid item since role="listitem" moved
     // off the <a> to preserve its native link role).
     $tileBase = 'block h-full rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] px-[var(--padding-wk-x-sm)] py-1';
     $tileInner = 'flex h-full flex-col justify-center gap-[var(--gap-wk-xs)]';
@@ -136,8 +136,7 @@
         @foreach($tiles as $tile)
             {{-- The listitem role sits on the WRAPPER, never on the <a> — an explicit
                  role on a link REPLACES its implicit `link` role, so the tile would
-                 vanish from the link list and from "step through all links" navigation
-                 (WIRE-244). Both branches share this wrapper so the linked and
+                 vanish from the link list and from "step through all links" navigation. Both branches share this wrapper so the linked and
                  non-linked tiles are structurally identical grid items. --}}
             <div role="listitem" @if($tile['key'] !== '') data-key="{{ $tile['key'] }}" @endif>
                 @if($tile['href'] !== null)

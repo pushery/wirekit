@@ -13,6 +13,7 @@
 
 @php
     use Pushery\WireKit\WireKit;
+    use Pushery\WireKit\Support\LocalizedNumber;
     use Illuminate\Support\Str;
 
     // The app supplies used/limit (never recompute usage in the view — see plan
@@ -52,7 +53,7 @@
     };
 
     $labelId = 'usage-meter-'.Str::random(6).'-label';
-    $fmt = fn ($n) => number_format((float) $n);
+    $fmt = fn ($n) => LocalizedNumber::format((float) $n);
 
     // Precompute the bar's accessible name (a visible label wins; else a
     // generic "Usage"). Computed here — NOT as inline @if inside the

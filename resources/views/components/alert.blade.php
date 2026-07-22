@@ -78,12 +78,12 @@
 
     // Accessible variant label for screen readers (prefix the alert content)
     $variantLabel = match ($variantValue) {
-        'success' => 'Success',
-        'warning' => 'Warning',
-        'danger' => 'Error',
-        'primary', 'info' => 'Information',
-        'neutral' => 'Notice',
-        default => 'Notice',
+        'success' => __('Success'),
+        'warning' => __('Warning'),
+        'danger' => __('Error'),
+        'primary', 'info' => __('Information'),
+        'neutral' => __('Notice'),
+        default => __('Notice'),
     };
 
     // Default inline SVG icons per variant (avoids blade-icons dependency)
@@ -111,8 +111,10 @@
     @elseif($animateAttr)
         {!! $animateAttr !!}
     @endif
-    role="{{ $role }}"
-    {{ $attributes->class([$baseClasses, $variantColors['border'], $variantColors['bg']]) }}
+    {{-- role goes through merge(), not ahead of the bag: HTML keeps the FIRST
+         occurrence of an attribute, so emitting it before the bag silently beat
+         a caller-supplied role while leaving both in the markup. --}}
+    {{ $attributes->merge(['role' => $role])->class([$baseClasses, $variantColors['border'], $variantColors['bg']]) }}
 >
     {{-- Visually hidden variant prefix for screen readers ("Warning: ...") --}}
     <span class="sr-only">{{ $variantLabel }}:</span>

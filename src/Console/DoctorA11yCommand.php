@@ -207,7 +207,7 @@ class DoctorA11yCommand extends Command
             ['name' => 'border-error on bg', 'fg' => '--color-wk-border-error', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
             ['name' => 'border-success on bg', 'fg' => '--color-wk-border-success', 'bg' => '--color-wk-bg', 'threshold' => 'ui'],
             // border-strong is the COMMUNICATING form-control border introduced in
-            // 2.16.0 precisely because WCAG 1.4.11 requires >= 3:1 for it (WIRE-230).
+            // 2.16.0 precisely because WCAG 1.4.11 requires >= 3:1 for it.
             // It is NOT decorative — it is the resting + hover edge of input / select
             // / textarea / checkbox, so it is hard-checked, and against the field
             // FILL (--color-wk-bg-input) it actually sits on, not the page bg.
@@ -221,7 +221,7 @@ class DoctorA11yCommand extends Command
             // design system; see docs/theming.md "Intentional trade-offs". It is
             // audited for INFORMATION ONLY ('advisory'): the ratio is printed, but
             // never counts toward PASS/WARN/FAIL totals and never affects the exit
-            // code. (border-strong used to live here too — that was the WIRE-230
+            // code. (border-strong used to live here too — that was the
             // bug: the tool was blind to the one token it mattered most for.)
             ['name' => 'border on bg', 'fg' => '--color-wk-border', 'bg' => '--color-wk-bg', 'threshold' => 'ui', 'advisory' => true],
         ];

@@ -585,7 +585,7 @@ class VerifyInstallationCommand extends Command
      * `--force` is passed. So after a `composer update` that adds components or
      * props, a committed manifest silently goes stale and keeps feeding an AI
      * tool the OLD API surface. Warn when a manifest is older than the installed
-     * package source it is derived from (WIRE-210).
+     * package source it is derived from.
      */
     private function checkAiManifestStaleness(): void
     {

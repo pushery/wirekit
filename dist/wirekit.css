@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.18.0 — MIT License
+ * WireKit CSS v2.18.1 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -168,7 +168,7 @@
        fill, never toward it: --color-wk-border-hover is a decorative-surface
        token and is LIGHTER than -strong, so pointing controls at it made their
        border weaken on hover — 3.11:1 dropping to 1.87:1, under WCAG 1.4.11
-       exactly when the user is interacting (WIRE-182).
+       exactly when the user is interacting.
        The same 58% works in both themes: below -strong on light, above it on
        dark, so it moves away from the background either way. */
     --color-wk-border-strong-hover: oklch(58% 0 0);
@@ -460,12 +460,12 @@
        too heavy against the deeper bg surfaces. */
     --color-wk-border: oklch(32% 0 0);
     /* Interactive-control resting border (dark). 3.06:1 vs the elevated surround and
-       higher vs the input fill — WCAG 1.4.11 for form controls (WIRE-113/116). */
+       higher vs the input fill — WCAG 1.4.11 for form controls. */
     --color-wk-border-strong: oklch(51% 0 0);
     /* Same value as light on purpose — see the note there. At 58% it sits ABOVE
        the dark -strong (51%) and so brightens away from the dark fill, where on
        light it sits below 66% and darkens away from white. One number, correct
-       in both directions (WIRE-182). */
+       in both directions. */
     --color-wk-border-strong-hover: oklch(58% 0 0);
     --color-wk-border-hover: oklch(43.9% 0 0);
     --color-wk-border-subtle: oklch(26.9% 0 0);
