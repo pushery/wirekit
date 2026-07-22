@@ -10,6 +10,17 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.18.2] — 2026-07-22
+
+**Patch release — setup-documentation corrections.** No code changes: the package renders exactly as it did in 2.18.1. What changed is the getting-started walkthrough, which in two places described a setup step inaccurately enough to leave a first-time reader with a failing build.
+
+### Documentation
+
+- **[Getting started](https://docs.wirekit.app/getting-started) told readers to create a `resources/js/bootstrap.js` that their build cannot resolve.** The page treated a missing `bootstrap.js` as a file to be recreated from the block shown. That holds for `laravel/laravel`, which ships the file and lists `axios` in `package.json` — but the Livewire Starter Kit ships neither, so following the instruction there ended in `failed to resolve import "axios"` on the next `npm run build`. The section now distinguishes the two scaffolds, states plainly that creating nothing is the correct action when axios is absent (WireKit never uses it), and gives the install command for readers who want Laravel's baseline regardless.
+- **The same block described the axios global as a Livewire requirement.** It is not: Livewire issues its own `fetch()` calls and never reads `window.axios`. The comments said otherwise, which made an explicitly optional step read as mandatory.
+- **The first-Livewire-page walkthrough named a command without the flag that produces its files.** The paragraph promised `app/Livewire/Showcase.php` and `resources/views/livewire/showcase.blade.php` while naming `make:livewire` alone. Livewire 4 defaults to a single-file component, so readers who ran it as written got `resources/views/components/⚡showcase.blade.php` and could not find any file the walkthrough went on to edit. The flag is now stated before the claim, together with what happens without it.
+- **[Code block](https://docs.wirekit.app/components/code-block) and the [Chart.js advanced guide](https://docs.wirekit.app/components/charts-chartjs/advanced) now install what their examples import.** Both showed an import for a package (`highlight.js` and `chart.js` respectively) whose install step lived on another page.
+
 ## [2.18.1] — 2026-07-22
 
 **Patch release — localization and accuracy fixes.** No new capability and no behavior change for an English application; every fix below either corrects output in a non-English locale or removes something that should never have shipped.
