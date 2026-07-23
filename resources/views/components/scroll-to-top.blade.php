@@ -7,7 +7,13 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $forceVisible = BooleanProp::from($forceVisible, false);
 
     // Scroll-to-top button — appears after scrolling past a configurable
     // viewport multiplier (default: 1.5x viewport height). Uses Alpine.js

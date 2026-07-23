@@ -17,7 +17,14 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $collapsible = BooleanProp::from($collapsible, false);
+    $collapsed = BooleanProp::from($collapsed, false);
 
     // Landmark accessible name. Only emit our default `aria-label` when the
     // developer supplied NEITHER aria-label NOR aria-labelledby directly on the

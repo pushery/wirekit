@@ -19,7 +19,14 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $inline = BooleanProp::from($inline, false);
+    $replayable = BooleanProp::from($replayable, false);
 
     // Chart-mixed — multi-type / multi-axis dashboard chart. Each dataset
     // carries its OWN `type` (line/bar/area) plus an optional `yAxisID`

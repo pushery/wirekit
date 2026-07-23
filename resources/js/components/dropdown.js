@@ -59,6 +59,11 @@ export default function wirekitDropdown(config = {}) {
                 await position(trigger, panel, {
                     placement: this._placement,
                     offset: this._offset,
+                    // Cap the panel to the viewport and let it scroll — a 12-item
+                    // menu opening upward from the foot of a short window used to
+                    // pin to the top edge and clip its first (often most
+                    // important) item. See floating.js size middleware.
+                    fitViewport: true,
                 });
 
                 // Focus first menu item for keyboard users

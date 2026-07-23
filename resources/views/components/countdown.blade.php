@@ -35,8 +35,15 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Carbon\Carbon;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $showSeconds = BooleanProp::from($showSeconds, true);
+    $separators = BooleanProp::from($separators, true);
 
     $variantValue = match ($variant) {
         'inline', 'segments' => $variant,
@@ -87,6 +94,12 @@
     // Resolve the change-animation style. `animate` accepts a bool or one of the
     // strings 'box' / 'text' / 'none'. 'box' (the default when true) pulses the
     // whole box; 'text' flashes only the changing number; anything falsey is off.
+    // NOT a boolean prop despite its `true` default: it is tri-state — true,
+    // off (false / 'none' / '0' / 0), or the string 'text'. It must NOT go
+    // through BooleanProp::from(), which would collapse 'text' to true and
+    // silently drop the text-only mode. The match below already handles the
+    // unbound-attribute case ('false' as a string), so the Blade stringly-false
+    // trap is covered here without a cast.
     $animateStyle = match (true) {
         $animate === false, $animate === 'false', $animate === 'none', $animate === '0', $animate === 0 => 'none',
         $animate === 'text' => 'text',

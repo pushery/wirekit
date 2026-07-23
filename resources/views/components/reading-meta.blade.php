@@ -12,7 +12,14 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $showRemaining = BooleanProp::from($showRemaining, false);
+    $perParagraph = BooleanProp::from($perParagraph, false);
 
     // Reading-meta — small text element showing "~12 min read" (initial) and
     // optionally "~5 min remaining" (after scroll). On mount, measures the

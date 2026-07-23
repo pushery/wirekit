@@ -7,8 +7,14 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
     use Illuminate\Support\Str;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $open = BooleanProp::from($open, false);
 
     // A standalone single disclosure: one trigger + one collapsible region. Unlike
     // <x-wirekit::accordion> there is no card chrome and no group coordination — it is

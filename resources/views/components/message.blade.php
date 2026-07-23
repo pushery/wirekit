@@ -26,8 +26,14 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
     use Carbon\Carbon;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $edited = BooleanProp::from($edited, false);
 
     $sideValue = match ($side) {
         'left', 'right' => $side,

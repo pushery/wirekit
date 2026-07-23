@@ -19,7 +19,16 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $numbered = BooleanProp::from($numbered, false);
+    $fillSections = BooleanProp::from($fillSections, false);
+    $sectionEvents = BooleanProp::from($sectionEvents, true);
+    $backToTop = BooleanProp::from($backToTop, false);
 
     // Reading-spine — sidebar mini-TOC that auto-builds from page headings,
     // tracks scroll-position via IntersectionObserver, and expands on hover

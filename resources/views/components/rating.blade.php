@@ -9,8 +9,21 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $readonly = BooleanProp::from($readonly, false);
+
     use Pushery\WireKit\WireKit;
     use Pushery\WireKit\Support\LocalizedNumber;
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // control — the opposite of what the call site says, with no error either way.
+    // Strip such flags when their value reads as false, before the bag reaches the control.
+    $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+
 
     $id = $attributes->get('id', $attributes->get('name', 'rating-' . \Illuminate\Support\Str::random(6)));
     $name = $attributes->get('name', $id);

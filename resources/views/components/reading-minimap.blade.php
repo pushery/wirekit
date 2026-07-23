@@ -20,7 +20,17 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $draggable = BooleanProp::from($draggable, true);
+    $hoverPreview = BooleanProp::from($hoverPreview, false);
+    $showBookmarks = BooleanProp::from($showBookmarks, true);
+    $headingAnchors = BooleanProp::from($headingAnchors, false);
+    $autoFadeIdle = BooleanProp::from($autoFadeIdle, true);
 
     // Reading-minimap — every-item density overview of a scrollable container.
     // Sibling primitive to reading-spine in the reading-* family.

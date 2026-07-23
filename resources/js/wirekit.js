@@ -4,6 +4,7 @@
  * Contains all Alpine components including overlay components.
  * Bundles Floating UI and focus-trap — no user install needed.
  */
+import { position } from './utils/floating.js';
 import wirekitChartJs from './components/chart.js';
 import wirekitDropdown from './components/dropdown.js';
 import wirekitSubmenu from './components/submenu.js';
@@ -112,3 +113,12 @@ document.addEventListener('alpine:init', registerComponents);
 if (window.Alpine?.version) {
     registerComponents();
 }
+
+// Positioning helper, exposed globally for components whose Alpine logic lives
+// INLINE in their Blade view and therefore has no module scope to import from —
+// combobox is the case that forced this (291 lines of inline x-data). Same shape
+// as the existing `window.wirekitEditor` factory. Without it such a component has
+// to hand-roll flip/shift positioning, and two implementations of the same
+// geometry drift apart. Assigned unconditionally so it is available whether Alpine
+// starts before or after this bundle loads.
+window.wirekitPosition = position;

@@ -12,9 +12,15 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
     use Pushery\WireKit\Support\LocalizedNumber;
     use Illuminate\Support\Str;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $showValue = BooleanProp::from($showValue, true);
 
     // The app supplies used/limit (never recompute usage in the view — see plan
     // pitfalls). limit === null is the "Unlimited" plan tier (no bar, no %).

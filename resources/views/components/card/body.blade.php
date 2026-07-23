@@ -9,7 +9,13 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $padded = BooleanProp::from($padded, true);
 
     // Body section — main content area. `wk-card-body` is the marker the
     // table-aware padding rule keys off; the padding utilities drop out when

@@ -23,8 +23,14 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\AvatarPalette;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $fromInitials = BooleanProp::from($fromInitials, false);
 
     // from-initials: deterministic background derived from the initials hash.
     // Only applies to the initials-fallback path (no image). The inline style

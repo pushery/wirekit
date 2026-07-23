@@ -9,6 +9,7 @@
  *   Alpine.plugin(WireKit);
  *   Livewire.start();
  */
+import { position } from './utils/floating.js';
 import wirekitChartJs from './components/chart.js';
 import wirekitDropdown from './components/dropdown.js';
 import wirekitSubmenu from './components/submenu.js';
@@ -56,6 +57,13 @@ import wirekitStickyPanelShadows from './components/sticky-panel.js';
 import wirekitStream from './components/stream.js';
 
 export default function (Alpine) {
+    // Inline-Alpine components (combobox, data-table column menu) read this global
+    // for panel positioning — they have no module scope to import from. Mirrors
+    // the full IIFE bundle. Guarded so it is set once even on repeat plugin use.
+    if (typeof window !== 'undefined') {
+        window.wirekitPosition = position;
+    }
+
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitDropdown', wirekitDropdown);
     Alpine.data('wirekitSubmenu', wirekitSubmenu);
