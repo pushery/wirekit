@@ -39,7 +39,13 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $autoStart = BooleanProp::from($autoStart, true);
 
     // Stream — a primitive for streaming text output (LLM responses, live logs). The
     // hard parts live in the Alpine component (resources/js/components/stream.js):

@@ -19,6 +19,13 @@
 @aware(['announceErrors' => null])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $required = BooleanProp::from($required, false);
+
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and

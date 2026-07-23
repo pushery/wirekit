@@ -30,8 +30,27 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $showValue = BooleanProp::from($showValue, true);
+    $disabled = BooleanProp::from($disabled, false);
+    $popover = BooleanProp::from($popover, false);
+    $withAlpha = BooleanProp::from($withAlpha, true);
+    $withEyedropper = BooleanProp::from($withEyedropper, true);
+    $withClear = BooleanProp::from($withClear, false);
+    $withRecents = BooleanProp::from($withRecents, true);
+
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // control — the opposite of what the call site says, with no error either way.
+    // Strip such flags when their value reads as false, before the bag reaches the control.
+    $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+
 
     $pickerId = $id ?? ($name ? 'wk-color-' . $name : 'wk-color-' . Str::random(6));
 

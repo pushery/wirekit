@@ -16,10 +16,18 @@
 @aware(['announceErrors' => null])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
+
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
     use Pushery\WireKit\WireKit;
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // control — the opposite of what the call site says, with no error either way.
+    // Strip such flags when their value reads as false, before the bag reaches the control.
+    $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
@@ -119,6 +127,7 @@
 
         {{-- Input container with pills --}}
         <div
+            x-ref="field"
             class="{{ $containerClasses }} {{ $stateClasses }}"
             @click="$refs.filterInput.focus(); dropdownOpen = true"
         >
@@ -172,10 +181,11 @@
             x-transition:leave="transition ease-in duration-[var(--transition-wk-duration)]"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0"
+            x-ref="panel"
             id="{{ $id }}-listbox"
             role="listbox"
             aria-multiselectable="true"
-            class="absolute z-[var(--z-wk-dropdown)] mt-1 w-full max-h-48 overflow-y-auto rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-lg)] wk-scrollbar"
+            class="fixed z-[var(--z-wk-dropdown)] overflow-y-auto rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-lg)] wk-scrollbar"
             x-cloak
         >
             <template x-for="opt in filteredOptions" :key="opt.value">

@@ -6,7 +6,14 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $checked = BooleanProp::from($checked, false);
+    $disabled = BooleanProp::from($disabled, false);
 
     // A self-toggling menu item with a checkmark (WAI-ARIA menuitemcheckbox). Alpine
     // owns the checked state (initialized from the `checked` prop) so it works in a

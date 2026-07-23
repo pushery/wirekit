@@ -22,8 +22,23 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $showValue = BooleanProp::from($showValue, false);
+    $tooltip = BooleanProp::from($tooltip, false);
+    $disabled = BooleanProp::from($disabled, false);
+
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // control — the opposite of what the call site says, with no error either way.
+    // Strip such flags when their value reads as false, before the bag reaches the control.
+    $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+
 
     // Slider = styled HTML <input type="range">. Native element gives us
     // arrow-key support, drag handling, and accessibility for free; we only

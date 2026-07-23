@@ -14,7 +14,14 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $pressed = BooleanProp::from($pressed, false);
+    $selfToggle = BooleanProp::from($selfToggle, false);
 
     $isPressed = filter_var($pressed, FILTER_VALIDATE_BOOLEAN);
     $selfTogglesLocally = filter_var($selfToggle, FILTER_VALIDATE_BOOLEAN);

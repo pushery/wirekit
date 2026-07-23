@@ -9,7 +9,7 @@
 [![Components](https://img.shields.io/badge/components-browse-5046e5)](https://docs.wirekit.app)
 
 [![PHP ≥ 8.4](https://img.shields.io/packagist/dependency-v/pushery/wirekit/php?logo=php&logoColor=white&color=777BB4&label=PHP)](https://www.php.net)
-[![Laravel 12+](https://img.shields.io/badge/Laravel-12+-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
+[![Laravel 12+/13+](https://img.shields.io/badge/Laravel-12%2B%20%2F%2013%2B-FF2D20?logo=laravel&logoColor=white)](https://laravel.com)
 [![Livewire 4+](https://img.shields.io/badge/Livewire-4+-FB70A9?logo=livewire&logoColor=white)](https://livewire.laravel.com)
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-v4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![Alpine.js](https://img.shields.io/badge/Alpine.js-%E2%9C%93-8BC0D0?logo=alpinedotjs&logoColor=white)](https://alpinejs.dev)
@@ -23,7 +23,7 @@ A comprehensive component library covering forms, navigation, overlays, layout, 
 ## Requirements
 
 - PHP 8.4+
-- Laravel 12+
+- Laravel 12+/13+
 - Livewire 4+
 - Tailwind CSS v4
 - Alpine.js

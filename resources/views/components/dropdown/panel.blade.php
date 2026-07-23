@@ -19,7 +19,7 @@
         'border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-md)]',
         'shadow-[var(--shadow-wk-md)]',
-        'overflow-hidden',
+        'overflow-y-auto',  // fitViewport caps the height; the panel scrolls its excess instead of clipping
     ]), $scope);
 
     // Width handling — 'auto' uses min-width only, 'trigger' matches trigger width

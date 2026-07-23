@@ -10,6 +10,24 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.19.0] — 2026-07-23
+
+**Minor release — overlay panels that escape their container, a boolean attribute that finally means what it says, and a slider that shows its labels.** Everything here is additive or a fix; existing code renders identically, except the `prop="false"` case, which was broken before and is now correct.
+
+### Added
+
+- **Dropdown, combobox, multi-select and data-table panels escape a clipping card and cap to the viewport.** Putting one of these inside a [card](https://docs.wirekit.app/components/card) — the most ordinary filter-bar layout there is — used to clip the open panel at the card's edge, and a long menu on a short window clipped its top items. The panels are now positioned against their field and capped to the available height, so they open in full and scroll when tall. No developer wrapper needed.
+- **`window.wirekitPosition`** exposes the same tested positioning helper WireKit uses internally, for developers who position their own overlays.
+
+### Fixed
+
+- **`prop="false"` now turns a feature off instead of on.** Passing an unbound boolean attribute — `disabled="false"`, `required="false"`, [faq](https://docs.wirekit.app/components/faq)'s `schema="false"` — used to do the opposite of what it read as, silently, because an unbound Blade attribute is the truthy string `"false"`. Every boolean prop across the component library now reads `"false"`, `"0"`, `"off"` and `"no"` the way they are written. Bound props (`:disabled="false"`) are unchanged. The direction that was broken is the one you reach for deliberately — turning something off.
+- **[range-slider](https://docs.wirekit.app/components/range-slider) shows its named values.** `value-text-map` gave each stop a word — "Free", "Enterprise" — but sent it only to screen readers, so the handles and legend still showed the raw number. They now show the word too; unnamed stops fall back to the number.
+
+### Documentation
+
+- **Supported Laravel versions are stated as `12+/13+`.** The package has been built and tested against Laravel 13 for a while; the docs now say so.
+
 ## [2.18.3] — 2026-07-22
 
 **Patch release — rendering and accessibility corrections.** Four defects that were invisible in the markup you write and visible in what your users get: a stray space in running text, a boolean attribute that did the opposite of what it said, an accessible name that never arrived, and invalid attributes on rendered elements.

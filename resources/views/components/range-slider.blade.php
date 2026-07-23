@@ -18,7 +18,15 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
+
     use Pushery\WireKit\WireKit;
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // control — the opposite of what the call site says, with no error either way.
+    // Strip such flags when their value reads as false, before the bag reaches the control.
+    $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
@@ -362,7 +370,7 @@
                         :class="[_merged ? 'opacity-0' : 'opacity-100', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
                         :style="`left: ${minPercent}%; transform: translateX(-${minPercent}%)`"
                         class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
-                        x-text="minVal"
+                        x-text="valueTextFor(minVal)"
                     >{{ $initialMin }}</span>
                 @endif
             </div>
@@ -395,7 +403,7 @@
                         :class="[_merged ? 'opacity-0' : 'opacity-100', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
                         :style="`left: ${maxPercent}%; transform: translateX(-${maxPercent}%)`"
                         class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
-                        x-text="maxVal"
+                        x-text="valueTextFor(maxVal)"
                     >{{ $initialMax }}</span>
                 @endif
             </div>
@@ -442,7 +450,7 @@
                         aria-hidden="true"
                         :class="[_merged ? 'opacity-100' : 'opacity-0', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
                         class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] z-30"
-                        x-text="`${minVal} – ${maxVal}`"
+                        x-text="`${valueTextFor(minVal)} – ${valueTextFor(maxVal)}`"
                     ></span>
                 </div>
             @endif
@@ -455,11 +463,11 @@
              current selection without duplicating the visible bound
              labels (which are constant). --}}
         <div class="mt-3 flex justify-between text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums">
-            <span>{{ $min }}</span>
-            <span>{{ $max }}</span>
+            <span>{{ $rangeValueTextMap[(string) $min] ?? $min }}</span>
+            <span>{{ $rangeValueTextMap[(string) $max] ?? $max }}</span>
         </div>
         <div class="sr-only" aria-live="polite">
-            <span x-text="`Range: ${minVal} to ${maxVal}`">Range: {{ $initialMin }} to {{ $initialMax }}</span>
+            <span x-text="`Range: ${valueTextFor(minVal)} to ${valueTextFor(maxVal)}`">Range: {{ $initialMin }} to {{ $initialMax }}</span>
         </div>
     </div>
 

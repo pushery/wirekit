@@ -12,7 +12,13 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $inline = BooleanProp::from($inline, false);
 
     // Sparkline — small, axis-less line/area chart for inline KPI strips and
     // dashboard cells. Delegates to <x-wirekit-chart type="sparkline"> so both

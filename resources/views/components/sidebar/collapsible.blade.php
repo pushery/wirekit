@@ -6,7 +6,13 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $open = BooleanProp::from($open, false);
 
     // Collapsible sidebar group — a disclosure widget that toggles child items.
     // The trigger looks like a sidebar item but acts as an expand/collapse toggle.

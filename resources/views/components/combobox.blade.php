@@ -26,6 +26,14 @@
 @aware(['announceErrors' => null])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $disabled = BooleanProp::from($disabled, false);
+    $hideLabel = BooleanProp::from($hideLabel, false);
+
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
@@ -41,6 +49,12 @@
 
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
+
+    // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
+    // control — the opposite of what the call site says, with no error either way.
+    // Strip such flags when their value reads as false, before the bag reaches the control.
+    $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+
 
     // Combobox = searchable select. Follows WAI-ARIA 1.2 combobox pattern:
     //   https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
@@ -159,7 +173,7 @@
     // Options list — dropdown panel.
     // list-none removes browser-default bullet points from the <ul>.
     $listClasses = WireKit::resolveClasses('combobox', 'list', implode(' ', [
-        'absolute z-[var(--z-wk-dropdown)] mt-1 w-full',
+        'fixed z-[var(--z-wk-dropdown)]',  // fixed escapes a clipping card; width + height come from _place()
         'list-none',
         'wk-scrollbar max-h-60 overflow-auto',
         'bg-[var(--color-wk-bg-elevated)]',
@@ -248,7 +262,25 @@
                     window.dispatchEvent(new CustomEvent('wirekit:combobox-open', {
                         detail: { source: this._uid },
                     }));
+                    // Anchor the panel once it is shown. `fixed` lets it escape a
+                    // clipping card; wirekitPosition carries the field width over
+                    // (the old `w-full` came from the wrapper) and caps the height
+                    // so a long list scrolls instead of running past the fold.
+                    this.$nextTick(() => this._place());
                 }
+            });
+        },
+        _place() {
+            // No-op on the core bundle, which ships no overlays and no position
+            // helper — the panel simply stays put. The full bundle exposes it.
+            if (typeof window.wirekitPosition !== 'function') return;
+            const list = this.$refs.cbxList;
+            if (! list) return;
+            window.wirekitPosition(this.$refs.cbxInput, list, {
+                placement: 'bottom-start',
+                offset: 4,
+                fitViewport: true,
+                matchReferenceWidth: true,
             });
         },
         destroy() {
@@ -403,6 +435,7 @@
          unique id + role=option so AT can announce them as the user navigates. --}}
     <ul
         id="{{ $listId }}"
+        x-ref="cbxList"
         role="listbox"
         class="{{ $listClasses }}"
         style="list-style: none; margin: 0; padding: 0;"

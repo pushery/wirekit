@@ -16,8 +16,15 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
     use Illuminate\Support\Str;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `prop="false"` used to mean the opposite of what the call site reads as, silently.
+    // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $columnManager = BooleanProp::from($columnManager, false);
+    $server = BooleanProp::from($server, false);
 
     $density = WireKit::validateProp('data-table', 'density', $density, ['comfortable', 'compact']);
     // Server-driven mode (client | server) — derived from the boolean `server`
@@ -88,12 +95,12 @@
                 @if($columnManager)
                     {{-- Column manager — a self-contained popover (nested scope; inherits
                          toggleColumn / isColumnVisible / columns from the table scope). --}}
-                    <div x-data="{ open: false }" @click.outside="open = false" @keydown.escape="open = false" class="relative">
-                        <button type="button" @click="open = !open" :aria-expanded="open" aria-haspopup="menu" class="{{ $iconBtn }}">
+                    <div x-data="{ open: false, _place() { if (typeof window.wirekitPosition !== 'function') return; const b = this.$refs.colBtn, m = this.$refs.colMenu; if (b && m) window.wirekitPosition(b, m, { placement: 'bottom-end', offset: 4, fitViewport: true }); } }" x-init="$watch('open', o => { if (o) $nextTick(() => _place()); })" @click.outside="open = false" @keydown.escape="open = false" class="relative">
+                        <button type="button" x-ref="colBtn" @click="open = !open" :aria-expanded="open" aria-haspopup="menu" class="{{ $iconBtn }}">
                             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
                             Columns
                         </button>
-                        <div x-show="open" x-cloak role="menu" class="absolute right-0 z-[var(--z-wk-dropdown)] mt-1 w-[12rem] p-[var(--padding-wk-x-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]">
+                        <div x-show="open" x-cloak x-ref="colMenu" role="menu" class="fixed z-[var(--z-wk-dropdown)] w-[12rem] max-h-[70vh] overflow-y-auto p-[var(--padding-wk-x-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]">
                             <template x-for="col in columns" :key="col.key">
                                 <label class="flex items-center gap-2 px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-sm)] hover:bg-[var(--color-wk-bg-muted)] cursor-pointer">
                                     <input type="checkbox" :checked="isColumnVisible(col.key)" @change="toggleColumn(col.key)" class="{{ $checkboxClass }}" />

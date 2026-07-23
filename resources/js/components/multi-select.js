@@ -9,6 +9,8 @@
  * @param {string} config.name - Input name for form submission
  * @param {Array<string>} [config.value] - Option keys to pre-select on load
  */
+import { position } from '../utils/floating.js';
+
 export default function wirekitMultiSelect(config = {}) {
     return {
         // Seed from the `value` prop so pre-selected pills render on load.
@@ -16,6 +18,17 @@ export default function wirekitMultiSelect(config = {}) {
         selected: Array.isArray(config.value) ? [...config.value] : [],
         filter: '',
         dropdownOpen: false,
+
+        init() {
+            // Position the panel each time it opens. It is `fixed` (to escape a
+            // clipping card) and therefore needs an explicit anchor + width; see
+            // _place(). $nextTick so the panel is in the DOM before measuring.
+            this.$watch('dropdownOpen', (open) => {
+                if (open) {
+                    this.$nextTick(() => this._place());
+                }
+            });
+        },
         _options: config.options || [],
 
         /**
@@ -67,6 +80,33 @@ export default function wirekitMultiSelect(config = {}) {
             if (event.target.value === '' && this.selected.length > 0) {
                 this.selected.pop();
             }
+        },
+
+        /**
+         * Anchor the panel to the field.
+         *
+         * The panel used to be `absolute` inside the field wrapper, which made it a
+         * descendant of any clipping ancestor — put the field in a card and the open
+         * panel was cut off at the card's edge, because clipping is not a z-index
+         * question. Positioning it `fixed` against the field escapes that, and
+         * `matchReferenceWidth` carries over the width that `w-full` used to provide
+         * for free. `fitViewport` caps the height to the room actually available so a
+         * long list scrolls instead of running past the fold.
+         */
+        async _place() {
+            const field = this.$refs.field;
+            const panel = this.$refs.panel;
+
+            if (! field || ! panel) {
+                return;
+            }
+
+            await position(field, panel, {
+                placement: 'bottom-start',
+                offset: 4,
+                fitViewport: true,
+                matchReferenceWidth: true,
+            });
         },
     };
 }

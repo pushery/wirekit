@@ -62,4 +62,43 @@ final class BooleanProp
 
         return (bool) $value;
     }
+
+    /**
+     * HTML attributes whose mere PRESENCE means "on", whatever their value.
+     *
+     * Per the HTML spec `disabled="false"` disables the control — the value is
+     * ignored entirely. A developer writing it means the opposite, and gets no
+     * error either way.
+     */
+    private const HTML_BOOLEAN_FLAGS = ['disabled', 'required', 'readonly', 'checked', 'multiple', 'autofocus'];
+
+    /**
+     * Drop HTML boolean flags whose value reads as false.
+     *
+     * Components that declare such a flag in `@props` already normalize it and
+     * emit it deliberately. This is for the ones that pass the attribute bag
+     * straight through to the control: there the string `"false"` reaches the
+     * DOM verbatim and the browser reads presence, not value.
+     *
+     * Removing the attribute is the correct normalization, because HTML has no
+     * way to spell "explicitly not disabled" other than leaving it out.
+     */
+    public static function stripFalseHtmlFlags(mixed $attributes): mixed
+    {
+        foreach (self::HTML_BOOLEAN_FLAGS as $flag) {
+            if (! $attributes->has($flag)) {
+                continue;
+            }
+
+            $value = $attributes->get($flag);
+
+            // A bare attribute compiles to "true" in Blade and must stay on. Only
+            // an explicitly false-ish value is stripped.
+            if (! self::from($value, true)) {
+                $attributes = $attributes->except($flag);
+            }
+        }
+
+        return $attributes;
+    }
 }
