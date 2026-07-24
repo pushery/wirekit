@@ -125,8 +125,19 @@ class WireKit
             return $scoped['classes'][$block];
         }
 
-        // 3. Config-based class overrides (wirekit.components.{name}.classes.{block})
-        $configClasses = config("wirekit.components.{$component}.classes.{$block}");
+        // 3. Config-based class overrides (wirekit.components.{name}.classes.{block}).
+        // A sub-component name carries a dot ('sidebar.item', 'card.header', 'table.th'),
+        // and the shipped config declares these as LITERAL dotted keys. config()/Arr::get()
+        // splits the key on '.', so config("wirekit.components.sidebar.item.classes.{block}")
+        // walks components -> 'sidebar' -> 'item' and never reaches the literal 'sidebar.item'
+        // key — the override silently no-ops for every dotted sub-component (the larger part of
+        // the catalog; top-level names without a dot always worked). Read the components map
+        // once and index the literal component key directly, then fall back to the dotted
+        // config() path so a developer who used the accidental nested-array form still resolves.
+        // Both forms work -> backward compatible. Do NOT "simplify" this back to a bare config().
+        $components = config('wirekit.components', []);
+        $configClasses = $components[$component]['classes'][$block]
+            ?? config("wirekit.components.{$component}.classes.{$block}");
         if ($configClasses !== null) {
             return $configClasses;
         }
@@ -260,6 +271,7 @@ class WireKit
         static::$defaults = [];
         static::$scoped = [];
         static::$personalizations = [];
+        Support\DomId::reset();
     }
 
     /**

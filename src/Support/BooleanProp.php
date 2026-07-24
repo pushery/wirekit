@@ -64,6 +64,36 @@ final class BooleanProp
     }
 
     /**
+     * Is this prop value an EXPLICIT false — WITHOUT collapsing a third state?
+     *
+     * For TRI-STATE props (countdown `animate`, `stats`/`feature-grid` `stagger`,
+     * form `success`, editor `toolbar`) whose value is `null | true | <something>`.
+     * Such a prop must NOT go through {@see from()} — that would collapse its third
+     * state (a message string, a step count, 'text') to a bool. But the guards that
+     * test `$value !== false` still let the UNBOUND-attribute string `'false'` (which
+     * is truthy) slip past, so `success="false"` paints the success state and
+     * `toolbar="false"` keeps the toolbar. This recognizes ONLY the genuine false
+     * spellings — bool `false` and the case-insensitive strings `'false'` / `'0'` /
+     * `'off'` / `'no'` — and returns false for everything else (null, a non-false
+     * bool, an int, and any string it cannot classify like `'text'` / `'basic'` /
+     * `'150'` / a success message), so the third state survives untouched. This is
+     * the string-hardening the countdown `animate` match already applies inline;
+     * sharing it here keeps the five other tri-state props consistent.
+     */
+    public static function isFalse(mixed $value): bool
+    {
+        if (is_bool($value)) {
+            return $value === false;
+        }
+
+        if (is_string($value)) {
+            return filter_var(trim($value), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE) === false;
+        }
+
+        return false;
+    }
+
+    /**
      * HTML attributes whose mere PRESENCE means "on", whatever their value.
      *
      * Per the HTML spec `disabled="false"` disables the control — the value is

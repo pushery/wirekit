@@ -48,8 +48,11 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('password-input', $attributes->getAttributes());
 
-    $id = $attributes->get('id', $attributes->get('name', 'password-input-' . \Illuminate\Support\Str::random(6)));
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'password-input-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
+    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
+    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
+    $attributes = $attributes->except('id');
 
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);

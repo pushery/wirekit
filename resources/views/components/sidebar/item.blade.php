@@ -47,8 +47,14 @@
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'rounded-[var(--radius-wk-md)]',
         'text-[color:var(--color-wk-text-muted)]',
-        'hover:bg-[var(--color-wk-bg-muted)]',
-        'hover:text-[color:var(--color-wk-text)]',
+        // Hover is scoped to NON-active items via `:not([aria-current])`. An active item
+        // already carries `aria-current="page"`, and an UNSCOPED `hover:bg` here (specificity
+        // 0,2,0) would override a retinted active block (a developer's 0,1,0 utilities) the
+        // instant the pointer arrives — the pill would snap back to muted mid-hover, forcing
+        // the developer to reach for `!important`. Scoping matches the common expectation too:
+        // the current page does not react to hover, it is already the target state.
+        'not-[[aria-current]]:hover:bg-[var(--color-wk-bg-muted)]',
+        'not-[[aria-current]]:hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-none',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',

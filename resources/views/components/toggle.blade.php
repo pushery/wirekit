@@ -41,7 +41,7 @@
     WireKit::warnUnknownProps('toggle', $attributes->getAttributes());
 
     // Auto-generate ID from name or fall back to a random identifier
-    $id = $attributes->get('id', $attributes->get('name', 'toggle-' . \Illuminate\Support\Str::random(6)));
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'toggle-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
 
     // Accessible name fallback: if the caller provided neither a visible `label`

@@ -10,6 +10,10 @@
     'size' => config('wirekit.components.file-upload.size', 'md'),
     'disabled' => false,
     'label' => __('Drop files here or click to browse'),
+    // Accessible name for each file's remove button. The `:name` placeholder is
+    // replaced with the file name at runtime, so translators control word order
+    // (some languages put the object before the verb). Overridable per call site.
+    'removeLabel' => __('Remove :name'),
     'hint' => null,
     'error' => null,
     'scope' => null,
@@ -106,6 +110,7 @@
         dragging: false,
         files: [],
         _rawFiles: [],
+        removeLabel: @js($removeLabel),
         formatBytes(bytes) {
             if (bytes === 0) return '0 B';
             const k = 1024;
@@ -195,11 +200,16 @@
                 <span class="text-[color:var(--color-wk-text-muted)] tabular-nums shrink-0" x-text="formatBytes(file.size)"></span>
                 {{-- Remove button — chip-style X aligned with <x-wirekit::tags-input>:
                      always visible, subtle rounded background on hover, danger text on hover. --}}
+                {{-- The visible chip stays small (p-0.5 + a 14px X), but a centered
+                     44x44 ::before expands the CLICKABLE target to the WCAG 2.5.5 AAA
+                     size — `relative` anchors it, `before:content-['']` renders it,
+                     h-11/w-11 = 44px. The hover background + focus ring stay on the
+                     small visual chip; only the pointer/touch target is enlarged. --}}
                 <button
                     type="button"
                     @click="removeFile(index)"
-                    class="shrink-0 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
-                    :aria-label="'Remove ' + file.name"
+                    class="relative shrink-0 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
+                    :aria-label="removeLabel.replace(':name', file.name)"
                 >
                     {{-- X icon — decorative, label is on the button. Matches the
                          12x12 viewBox + 3.5 sizing used by tags-input for visual parity. --}}

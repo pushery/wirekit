@@ -7,6 +7,8 @@ namespace Pushery\WireKit\Console;
 use BaconQrCode\Renderer\ImageRenderer;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Pushery\WireKit\Fonts\FontRegistry;
+use Pushery\WireKit\Support\DirectoryHash;
 use Pushery\WireKit\Support\TailwindVersion;
 use Pushery\WireKit\WireKit;
 
@@ -669,7 +671,19 @@ class VerifyInstallationCommand extends Command
             // correctly published, producing a false "no CSS files found" warning.
             $cssFiles = $this->findFontCssFiles($fontDir);
             if ($cssFiles !== []) {
-                $this->reportPass('Font assets published ('.count($cssFiles).' font CSS files)');
+                // Presence alone used to PASS — but a directory of the previous
+                // release's bytes satisfies that fully, so a stale-after-upgrade
+                // state had no signal. Compare the published bytes against the
+                // bundled ones, the same md5 check checkAssetFreshness runs for
+                // wirekit.css / wirekit.js.
+                $stale = $this->staleFontFamilies();
+
+                if ($stale !== []) {
+                    $this->reportWarn('Font assets are outdated — the bundled release differs from the published copy ('.implode(', ', $stale).')');
+                    $this->line('  Fix: php artisan wirekit:publish-fonts --force');
+                } else {
+                    $this->reportPass('Font assets published ('.count($cssFiles).' font CSS files)');
+                }
             } elseif ($this->isPackageDefaultFontConfig($fontConfig)) {
                 // Empty dir + the package default ('inter'): the system-ui
                 // fallback works out of the box, so this is an INFO — the same
@@ -698,6 +712,42 @@ class VerifyInstallationCommand extends Command
                 $this->line('  Fix: php artisan vendor:publish --tag=wirekit-fonts');
             }
         }
+    }
+
+    /**
+     * Configured font families whose PUBLISHED bytes differ from the bundled
+     * release — the stale-after-`composer update` state the presence-only check
+     * could not see. Mirrors checkAssetFreshness's md5 compare for the font tree.
+     *
+     * @return list<string>
+     */
+    private function staleFontFamilies(): array
+    {
+        $stale = [];
+
+        foreach (['sans', 'serif', 'mono'] as $category) {
+            $key = config("wirekit.fonts.{$category}");
+
+            if ($key === null || $key === '') {
+                continue;
+            }
+
+            $preset = FontRegistry::get((string) $key);
+
+            if ($preset === null) {
+                continue;
+            }
+
+            $relative = dirname($preset->cssFile);
+            $source = __DIR__.'/../../resources/fonts/'.$relative;
+            $target = public_path('vendor/wirekit/fonts/'.$relative);
+
+            if (is_dir($target) && ! DirectoryHash::matches($source, $target)) {
+                $stale[] = $preset->key;
+            }
+        }
+
+        return $stale;
     }
 
     /**

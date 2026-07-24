@@ -15,6 +15,11 @@ export default function wirekitMenubar() {
         _focusIndex: -1,
         _navCleanup: null,
         _onPointerDown: null,
+        // Floating UI autoUpdate teardown handle for the ONE open menu panel. Set in
+        // _positionActiveMenu (stopping the previous menu's first), cleared whenever
+        // activeMenu returns to null. Prevents leaked scroll/resize listeners when
+        // switching or closing menus (every teardown path must call stop()).
+        _stopAutoUpdate: null,
 
         init() {
             this._navCleanup = () => { this.activeMenu = null; };
@@ -47,6 +52,8 @@ export default function wirekitMenubar() {
             if (this._onPointerDown) {
                 document.removeEventListener('pointerdown', this._onPointerDown, { capture: true });
             }
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
         },
 
         /**
@@ -56,6 +63,8 @@ export default function wirekitMenubar() {
             if (this.activeMenu === name) {
                 this.activeMenu = null;
                 this._focusIndex = -1;
+                this._stopAutoUpdate?.();
+                this._stopAutoUpdate = null;
             } else {
                 this.activeMenu = name;
                 this._focusIndex = -1;
@@ -80,6 +89,8 @@ export default function wirekitMenubar() {
         closeAll() {
             this.activeMenu = null;
             this._focusIndex = -1;
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
         },
 
         /**
@@ -98,10 +109,13 @@ export default function wirekitMenubar() {
             const panel = this.$refs[`panel-${name}`];
 
             if (trigger && panel) {
-                await position(trigger, panel, {
+                this._stopAutoUpdate?.();
+                const { stop } = await position(trigger, panel, {
                     placement: 'bottom-start',
                     offset: 4,
+                    autoReposition: true,
                 });
+                this._stopAutoUpdate = stop;
             }
         },
 

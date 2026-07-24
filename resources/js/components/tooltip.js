@@ -16,10 +16,16 @@ import { position } from '../utils/floating.js';
 export default function wirekitTooltip(config = {}) {
     return {
         open: false,
+        // `||` is CORRECT here — placement is a string enum and '' is not a valid
+        // placement, so there is no falsy-but-legitimate value to preserve.
         _placement: config.placement || 'top',
-        _offset: config.offset || 6,
-        _delayShow: config.delayShow || 300,
-        _delayHide: config.delayHide || 100,
+        // `??` (not `||`) for the numeric props: 0 is a LEGITIMATE value (`offset="0"`
+        // = flush tooltip, `delay-show="0"` = instant), and `0 || default` would
+        // silently discard exactly that value and revert to the default. Only
+        // undefined/null should fall back. Do NOT "consistency-fix" these to `||`.
+        _offset: config.offset ?? 6,
+        _delayShow: config.delayShow ?? 300,
+        _delayHide: config.delayHide ?? 100,
         _showTimer: null,
         _hideTimer: null,
         _longPressTimer: null,

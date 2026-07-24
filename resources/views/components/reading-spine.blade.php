@@ -65,7 +65,7 @@
         default => 'right-4',
     };
 
-    // Expand mode — `always` and `always-md` (ES-1) force expanded state.
+    // Expand mode — `always` and `always-md` force expanded state.
     // `always` is unconditionally expanded; `always-md` is expanded only at
     // md+ (mirrors hideBelow's mobile-hidden default for symmetry).
     // `hover` and `focus` rely on the plugin's hover/focus handlers.
@@ -264,7 +264,7 @@
                             aria-hidden="true"
                         ></span>
 
-                        {{-- Optional numeric label (ES-3). Renders only when
+                        {{-- Optional numeric label. Renders only when
                              numbered=true; takes precedence over an empty
                              label slot (collapsed-state covered by CSS). --}}
                         @if (filter_var($numbered, FILTER_VALIDATE_BOOL))
@@ -288,7 +288,7 @@
         </ol>
 
         @if (filter_var($backToTop, FILTER_VALIDATE_BOOL))
-            {{-- ES-5 back-to-top pill — fixed at the spine bottom, scrolls
+            {{-- Back-to-top pill — fixed at the spine bottom, scrolls
                  to top on click. Reduced-motion respected via the same
                  matchMedia check as scrollTo. Visible only when expanded
                  OR when scrollY > 0 (you're past the top). --}}

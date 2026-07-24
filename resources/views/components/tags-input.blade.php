@@ -38,7 +38,7 @@
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
 
-    $id = $attributes->get('id', $attributes->get('name', 'tags-' . \Illuminate\Support\Str::random(6)));
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'tags-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
 
     $hasError = $error || ($errors ?? null)?->has($name);

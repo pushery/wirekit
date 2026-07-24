@@ -32,7 +32,7 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('range-slider', $attributes->getAttributes());
 
-    $id = $attributes->get('id', $attributes->get('name', 'range-slider-' . \Illuminate\Support\Str::random(6)));
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'range-slider-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
 
     // Compute defaults: minValue defaults to min, maxValue defaults to max

@@ -19,6 +19,11 @@ export default function wirekitDropdown(config = {}) {
 
         // Stored cleanup handler for destroy()
         _navCleanup: null,
+        // Floating UI autoUpdate teardown handle (set in show(), called in close()
+        // + destroy()). Keeping the panel pinned to its trigger on scroll/resize
+        // attaches ancestor-scroll + resize listeners; so every teardown path must call stop() or they leak
+        // they MUST be torn down on every close path or they leak.
+        _stopAutoUpdate: null,
 
         init() {
             // Cleanup on Livewire SPA navigation
@@ -30,6 +35,8 @@ export default function wirekitDropdown(config = {}) {
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
         },
 
         /**
@@ -56,7 +63,8 @@ export default function wirekitDropdown(config = {}) {
             const panel = this.$refs.panel;
 
             if (trigger && panel) {
-                await position(trigger, panel, {
+                this._stopAutoUpdate?.();
+                const { stop } = await position(trigger, panel, {
                     placement: this._placement,
                     offset: this._offset,
                     // Cap the panel to the viewport and let it scroll — a 12-item
@@ -64,7 +72,10 @@ export default function wirekitDropdown(config = {}) {
                     // pin to the top edge and clip its first (often most
                     // important) item. See floating.js size middleware.
                     fitViewport: true,
+                    // Follow the trigger while open; teardown handle stored for close().
+                    autoReposition: true,
                 });
+                this._stopAutoUpdate = stop;
 
                 // Focus first menu item for keyboard users
                 this._focusFirstItem();
@@ -89,6 +100,8 @@ export default function wirekitDropdown(config = {}) {
         close() {
             if (!this.open) return;
             this.open = false;
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
             // Return focus to the trigger button. Use preventScroll so the page
             // does not jump to the trigger when the dropdown closes — the trigger
             // is already in view (the user just clicked it) and browser scroll

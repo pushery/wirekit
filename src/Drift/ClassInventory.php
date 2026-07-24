@@ -453,7 +453,14 @@ final class ClassInventory
      */
     private function harvestAttributeClasses(string $contents, string $file, array &$inventory): void
     {
-        $pattern = '/(?<![:\w])class\s*=\s*(["\'])(?P<value>[^"\']*)\1/u';
+        // Match the value up to the SAME quote it opened with — `(?:(?!\1)[\s\S])*`
+        // instead of `[^"\']*`. The old form stopped at EITHER quote, so a single
+        // quote inside a double-quoted attribute (Tailwind's `before:content-['']`
+        // empty-content utility) truncated the match, `\1` then failed to close, and
+        // the WHOLE class attribute was skipped — orphaning every unique class in it
+        // (e.g. the file-upload remove button's 44px `before:*` hit-target expander)
+        // as reverse-dead. `[\s\S]` keeps newlines matching, as the old class did.
+        $pattern = '/(?<![:\w])class\s*=\s*(["\'])(?P<value>(?:(?!\1)[\s\S])*)\1/u';
 
         if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
             return;
@@ -1095,9 +1102,13 @@ final class ClassInventory
          * a first-class part of the class name and the next char follows
          * the same shape constraints as a positive-utility start).
          * Body chars are alphanumeric + the structural delimiters Tailwind
-         * uses inside arbitrary values + `&` (the v4 nesting marker).
+         * uses inside arbitrary values + `&` (the v4 nesting marker) + `+`
+         * (the calc()-addition operator: `z-[calc(var(--z-wk-sticky)+1)]`,
+         * `start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left))]`).
+         * Without `+` every calc-addition arbitrary value is rejected here and
+         * surfaces as reverse-dead in Tier 2 even though it has a static source.
          */
-        if (preg_match('/^-?(?:[a-z]|\[|\d[a-z])[a-zA-Z0-9:_\-\[\]\(\)\/.,#%*&]+$/', $candidate) !== 1) {
+        if (preg_match('/^-?(?:[a-z]|\[|\d[a-z])[a-zA-Z0-9:_\-\[\]\(\)\/.,#%*&+]+$/', $candidate) !== 1) {
             return false;
         }
 

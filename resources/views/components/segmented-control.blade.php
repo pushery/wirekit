@@ -19,7 +19,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false);
 
-    $id = $attributes->get('id', $attributes->get('name', 'segmented-' . \Illuminate\Support\Str::random(6)));
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'segmented-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
 
     // Container wrapping the pill-style segments

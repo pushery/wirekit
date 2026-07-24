@@ -18,6 +18,11 @@ export default function wirekitMultiSelect(config = {}) {
         selected: Array.isArray(config.value) ? [...config.value] : [],
         filter: '',
         dropdownOpen: false,
+        // Floating UI autoUpdate teardown handle — set in _place(), cleared when the
+        // panel closes (the $watch else-branch) and on destroy() (torn down while
+        // still open). Keeps the fixed panel following its field on scroll/resize
+        // without leaking listeners (every teardown path must call stop()).
+        _stopAutoUpdate: null,
 
         init() {
             // Position the panel each time it opens. It is `fixed` (to escape a
@@ -26,8 +31,18 @@ export default function wirekitMultiSelect(config = {}) {
             this.$watch('dropdownOpen', (open) => {
                 if (open) {
                     this.$nextTick(() => this._place());
+                } else {
+                    this._stopAutoUpdate?.();
+                    this._stopAutoUpdate = null;
                 }
             });
+        },
+
+        // Alpine teardown (Livewire morph / SPA nav): stop autoUpdate if the panel
+        // was still open, since the $watch only fires on an open→closed CHANGE.
+        destroy() {
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
         },
         _options: config.options || [],
 
@@ -101,12 +116,17 @@ export default function wirekitMultiSelect(config = {}) {
                 return;
             }
 
-            await position(field, panel, {
+            this._stopAutoUpdate?.();
+            const { stop } = await position(field, panel, {
                 placement: 'bottom-start',
                 offset: 4,
                 fitViewport: true,
                 matchReferenceWidth: true,
+                // Follow the field on scroll/resize; this is the panel the v2.19.0
+                // fixed-positioning switch made most visibly pin on scroll.
+                autoReposition: true,
             });
+            this._stopAutoUpdate = stop;
         },
     };
 }

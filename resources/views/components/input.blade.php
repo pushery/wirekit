@@ -16,6 +16,11 @@
     'success' => null,
     'size' => config('wirekit.components.input.size', 'md'),
     'type' => 'text',
+    // Monospace the field value — for SKUs, measurements, codes, hashes. Swaps the
+    // input font to --font-wk-mono; off by default (byte-identical). The <x-slot:leading>
+    // / <x-slot:trailing> named slots put an icon or addon INSIDE the field frame (a
+    // search glyph, a unit) — distinct from the text-only `prefix`/`suffix` props.
+    'mono' => false,
     'prefix' => null,
     'suffix' => null,
     // Optional trailing affordances (opt-in; default off for byte-identical
@@ -48,6 +53,13 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $hideLabel = BooleanProp::from($hideLabel, false);
     $clearable = BooleanProp::from($clearable, false);
+    $mono = BooleanProp::from($mono, false);
+
+    // The field-value font: mono for codes/measurements, otherwise the sans stack.
+    // Used by BOTH the bare input and the wrapped input so the two render alike.
+    $fontFamilyClass = $mono
+        ? 'font-[family-name:var(--font-wk-mono)]'
+        : 'font-[family-name:var(--font-wk-sans)]';
     $copyable = BooleanProp::from($copyable, false);
     $required = BooleanProp::from($required, false);
     $disabled = BooleanProp::from($disabled, false);
@@ -79,8 +91,11 @@
     WireKit::warnUnknownProps('input', $attributes->getAttributes());
 
     // Auto-generate ID from name attribute, or generate random if neither provided
-    $id = $attributes->get('id', $attributes->get('name', 'input-' . \Illuminate\Support\Str::random(6)));
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'input-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
+    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
+    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
+    $attributes = $attributes->except('id');
 
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
@@ -89,7 +104,10 @@
     // Success / valid state — only when there is NO error (error wins). A string
     // value renders a green confirmation message below the field; `true` shows the
     // green border alone. Not an `aria-invalid` state (the field is valid).
-    $hasSuccess = ! $hasError && $success !== null && $success !== false;
+    // Tri-state (null | true | string message): `!== false` alone let the unbound
+    // string 'false' (truthy) paint the success state — isFalse recognizes the
+    // stringly-false spellings without collapsing a real success message.
+    $hasSuccess = ! $hasError && $success !== null && ! BooleanProp::isFalse($success);
     $successMessage = is_string($success) ? $success : null;
 
     // Base classes: all values reference design tokens — no hardcoded colors or sizes
@@ -106,7 +124,7 @@
     // constraint violations. Both produce the same red border + red focus ring.
     $inputClasses = WireKit::resolveClasses('input', 'base', implode(' ', [
         'block w-full',
-        'font-[family-name:var(--font-wk-sans)]',
+        $fontFamilyClass,
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
         'text-[color:var(--color-wk-text)]',
@@ -185,7 +203,12 @@
     // flex wrapper so the buttons sit as inline siblings; when set, the wrapper
     // also carries the tiny Alpine island that drives clear() / copy().
     $hasAffordances = $clearable || $copyable;
-    $useWrapper = $prefix || $suffix || $hasAffordances;
+    // The leading/trailing icon slots live INSIDE the field frame, so — like
+    // prefix/suffix and the affordance buttons — they route the field through the
+    // flex wrapper.
+    $hasLeading = isset($leading) && ! $leading->isEmpty();
+    $hasTrailing = isset($trailing) && ! $trailing->isEmpty();
+    $useWrapper = $prefix || $suffix || $hasAffordances || $hasLeading || $hasTrailing;
 @endphp
 
 <div class="space-y-1.5">
@@ -234,6 +257,13 @@
                 : ($hasSuccess ? 'border-[var(--color-wk-border-success)]' : 'border-[var(--color-wk-border-strong)]'),
             $prefixWrapperSizeClass,
         ])>
+            @if($hasLeading)
+                {{-- Leading addon (an icon / unit glyph) INSIDE the frame. The slot
+                     owns its own a11y — a decorative <x-wirekit::icon> is aria-hidden
+                     already; the field's label is its accessible name. --}}
+                <span class="shrink-0 inline-flex items-center pl-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)]">{{ $leading }}</span>
+            @endif
+
             @if($prefix)
                 <span class="shrink-0 select-none pl-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $prefix }}</span>
             @endif
@@ -254,19 +284,25 @@
                 {{ $attributes->class([
                     'wk-field', // 16px iOS-zoom floor on phones (dist/wirekit.css)
                     'block w-full h-full bg-transparent border-none shadow-none',
-                    'font-[family-name:var(--font-wk-sans)]',
+                    $fontFamilyClass,
                     'text-[color:var(--color-wk-text)]',
                     'placeholder:text-[color:var(--color-wk-text-placeholder)]',
                     'focus:outline-none focus:ring-0',
                     'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed',
                     $prefixInputPadClass,
-                    'pl-1' => (bool) $prefix,
-                    'pr-1' => (bool) $suffix || $hasAffordances,
+                    'pl-1' => (bool) $prefix || $hasLeading,
+                    'pr-1' => (bool) $suffix || $hasAffordances || $hasTrailing,
                 ]) }}
             />
 
             @if($suffix)
                 <span class="shrink-0 select-none pr-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)] text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]">{{ $suffix }}</span>
+            @endif
+
+            @if($hasTrailing)
+                {{-- Trailing addon (an icon / unit glyph) INSIDE the frame, before any
+                     clearable/copyable affordance buttons. The slot owns its a11y. --}}
+                <span class="shrink-0 inline-flex items-center pr-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text-subtle)]">{{ $trailing }}</span>
             @endif
 
             @if($copyable)
