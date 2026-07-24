@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit;
 
 use Illuminate\Contracts\Foundation\CachesConfiguration;
+use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -35,6 +36,7 @@ use Pushery\WireKit\Console\ThemeCommand;
 use Pushery\WireKit\Console\VerifyInstallationCommand;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\DomId;
 
 class WireKitServiceProvider extends ServiceProvider
 {
@@ -71,6 +73,14 @@ class WireKitServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Reset the per-request DOM-id dedup registry after each request so ids start
+        // clean on the next one. Matters under Octane / a persistent worker; a fresh
+        // FPM process starts empty anyway, and WireKit::flush() covers tests.
+        $this->app['events']->listen(
+            RequestHandled::class,
+            static fn () => DomId::reset(),
+        );
+
         // ── Publishable assets (FIRST — must register before anything that could fail) ──
         // Registered early so vendor:publish always works, even if later steps throw.
         if ($this->app->runningInConsole()) {

@@ -7,6 +7,7 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Stats grid: responsive columns for <x-wirekit::stat> children.
@@ -20,7 +21,10 @@
     };
 
     // Stagger — see dist/wirekit.css `.wk-stagger` rules.
-    $hasStagger = $stagger !== null && $stagger !== false;
+    // Tri-state (null | true | int step): `!== false` alone let the unbound-attribute
+    // string 'false' (truthy) turn stagger ON — BooleanProp::isFalse recognizes the
+    // stringly-false spellings without collapsing an int step. See countdown `animate`.
+    $hasStagger = $stagger !== null && ! BooleanProp::isFalse($stagger);
     $staggerStep = is_int($stagger) ? $stagger : 75;
 
     $classes = WireKit::resolveClasses('stats', 'base', implode(' ', [

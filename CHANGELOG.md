@@ -10,6 +10,38 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.20.0] — 2026-07-24
+
+**Minor release — sidebar and app-shell layout controls, a floating action button, two form-field affordances, and a run of accessibility and correctness fixes.** Everything here is additive or a fix; existing code renders identically.
+
+### Added
+
+- **A single-action floating action button — [`<x-wirekit::fab.button>`](https://docs.wirekit.app/components/fab).** A circular, screen-corner button for the one primary action a screen offers (compose, add, feedback). It follows the writing direction, keeps clear of the iOS home indicator and a landscape notch via safe-area insets, and announces to assistive tech what it opens.
+- **[Sidebar](https://docs.wirekit.app/components/sidebar) sections fold and remember their state.** `<x-wirekit::sidebar.group collapsible>` turns a section heading into a disclosure that folds its items; `<x-wirekit::sidebar.collapsible>` gains the same, a `persist="key"` that remembers the open state across reloads, and a `variant="heading"` that styles its trigger as a small uppercase section label instead of a nav row.
+- **[App shell](https://docs.wirekit.app/components/app-shell) gains a `viewport` mode.** `<x-wirekit::app-shell viewport>` pins the shell to the viewport height so the sidebar and main region scroll internally — brand at the top, account menu at the bottom — instead of the page growing past the fold. The default keeps the document-scroll behavior.
+- **[Input](https://docs.wirekit.app/components/input) gains a `mono` variant and leading/trailing icon slots.** `mono` renders the field value in the monospace font (codes, SKUs, hashes); `<x-slot:leading>` / `<x-slot:trailing>` place an icon or addon inside the field frame.
+- **[Checkbox](https://docs.wirekit.app/components/checkbox) gains a `hideLabel` prop** — a checkbox with no visible label that keeps its accessible name, closing an API gap with the other form controls.
+- **[File upload](https://docs.wirekit.app/components/file-upload)'s remove button gains a translatable, overridable `removeLabel`** (default `Remove :name`), so its accessible name is no longer hardcoded English.
+
+### Changed
+
+- **[Dropdown](https://docs.wirekit.app/components/dropdown), popover, menubar, multi-select and color-picker panels follow their trigger on scroll and resize.** An open panel used to stay at its opening coordinates while the page scrolled; it now re-anchors to its trigger and tears its listeners down on close.
+
+### Fixed
+
+- **Form controls that share a `name` on one page now each get a unique DOM `id`.** [Input](https://docs.wirekit.app/components/input), textarea, select and the other name-derived controls emitted the same `id` twice when two fields shared a `name` (a create-and-edit form, a filter bar plus a modal), leaving every field after the first without an accessible name. Each instance now derives a page-unique id, so `label[for]` and `aria-describedby` resolve to the right field. Opt out with `wirekit.a11y.dedupe_ids`.
+- **[File upload](https://docs.wirekit.app/components/file-upload)'s remove button now meets the 44px touch-target size.** Its clickable area was ~18px; it now fills a 44×44 target while the visible chip stays small.
+- **[Sidebar](https://docs.wirekit.app/components/sidebar) sections no longer disappear in the collapsed icon rail.** A `<x-wirekit::sidebar.collapsible>` hid all its items when the sidebar folded to the icon rail; its child icons now stay reachable as a flat list, like a static group.
+- **A retinted active [sidebar](https://docs.wirekit.app/components/sidebar) item keeps its color on hover.** The base hover style is now scoped to non-active items, so a themed active state is not overridden while the pointer is over it.
+- **[Tooltip](https://docs.wirekit.app/components/tooltip) honors a `delay` or `offset` of `0`** instead of swallowing the zero and applying the default.
+- **Unbound `prop="false"` reads as off** across the remaining tri-state props that still treated the unbound string `"false"` as truthy.
+- **Config class overrides now reach dotted sub-components.** `wirekit.components.sidebar.item.classes.*` (and every other `parent.child` sub-component) applied only to top-level components before; the override now resolves for sub-components too.
+- **`php artisan wirekit:publish-fonts` re-publishes fonts when the bundled files change**, and `wirekit:doctor` reports stale published fonts, instead of silently leaving an old copy in place.
+
+### Documentation
+
+- **[Alert dialog](https://docs.wirekit.app/components/alert-dialog) and [field](https://docs.wirekit.app/components/field) docs clarify** the action-button count and where a validation error's accessible ownership lives.
+
 ## [2.19.0] — 2026-07-23
 
 **Minor release — overlay panels that escape their container, a boolean attribute that finally means what it says, and a slider that shows its labels.** Everything here is additive or a fix; existing code renders identically, except the `prop="false"` case, which was broken before and is now correct.

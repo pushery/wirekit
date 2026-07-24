@@ -1,9 +1,22 @@
 @props([
     'scope' => null,
+    // Viewport-fixer mode. Default (false) keeps `min-h-screen` — the shell grows
+    // with its content and the PAGE scrolls as a document. When true, the root is
+    // pinned to the viewport (`h-dvh overflow-hidden`) so the inner sidebar + main
+    // regions scroll INTERNALLY (brand pinned top, account menu pinned bottom) — the
+    // classic fixed-height admin-shell case. `dvh` (not `vh`) so the mobile browser
+    // toolbar collapse is handled.
+    'viewport' => false,
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `viewport="false"` would otherwise flip the mode on. Normalize against the
+    // prop's own default so a cast never engages a mode that was meant off.
+    $viewport = BooleanProp::from($viewport, false);
 
     // App Shell — orchestrates header + sidebar + main layout.
     // Uses CSS grid to position sidebar and main content area.
@@ -12,12 +25,14 @@
     // bare block-level `display:flex` div collapses to its intrinsic
     // content width inside prose / preview ancestors — making the
     // header + main visually too narrow with a wide gutter on the right.
-    // `min-h-screen` stays for real-page usage; developers wanting to
-    // contain the shell to a fixed height (e.g. doc previews) still pass
-    // an explicit `style="min-height: auto; height: ..."` override.
+    // Height: `min-h-screen` (default, document-scroll) vs `h-dvh overflow-hidden`
+    // (viewport-fixer). Only in the fixed-height mode does the inner
+    // `flex flex-1 overflow-hidden` row get a bounded height to distribute, so the
+    // sidebar/main internal scroll regions finally engage — the `viewport` prop
+    // replaces the old manual `style="height: ..."` override developers had to write.
     $classes = WireKit::resolveClasses('app-shell', 'base', implode(' ', [
         'flex flex-col w-full',
-        'min-h-screen',
+        $viewport ? 'h-dvh overflow-hidden' : 'min-h-screen',
         'bg-[var(--color-wk-bg)]',
         'text-[color:var(--color-wk-text)]',
         'font-[family-name:var(--font-wk-sans)]',

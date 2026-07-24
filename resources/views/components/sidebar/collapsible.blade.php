@@ -2,11 +2,19 @@
     'label' => '',
     'icon' => null,
     'open' => false,
+    // Optional localStorage key. When set, the open/closed state survives a reload —
+    // same semantics as the sidebar component's own `persist`. Null keeps it ephemeral.
+    'persist' => null,
+    // Trigger styling. 'default' looks like a sidebar.item (nav row). 'heading' makes
+    // it a small uppercase tracked section label (matching a collapsible sidebar.group)
+    // for designs that treat the group title as a section heading rather than a nav row.
+    'variant' => 'default',
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\PersistedToggle;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
@@ -14,9 +22,11 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $open = BooleanProp::from($open, false);
 
+    $variant = WireKit::validateProp('sidebar.collapsible', 'variant', $variant, ['default', 'heading']);
+
     // Collapsible sidebar group — a disclosure widget that toggles child items.
-    // The trigger looks like a sidebar item but acts as an expand/collapse toggle.
-    // Uses aria-expanded for AT, and indents child content by one level.
+    // The default trigger looks like a sidebar item but acts as an expand/collapse
+    // toggle. Uses aria-expanded for AT, and indents child content by one level.
     $triggerClasses = WireKit::resolveClasses('sidebar.collapsible', 'trigger', implode(' ', [
         'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
         'group-data-[collapsed]/wk-sidebar:justify-center',
@@ -33,6 +43,30 @@
         'cursor-pointer',
     ]), $scope);
 
+    // The 'heading' variant lives in its OWN resolvable block so a theme can restyle
+    // just the heading typography WITHOUT copying the ~12 default-trigger classes and
+    // drifting on the next release. Mirrors sidebar.group's collapsible-trigger tokens
+    // (small uppercase tracked label) while keeping the icon + label + chevron layout.
+    $headingTriggerClasses = WireKit::resolveClasses('sidebar.collapsible', 'trigger-heading', implode(' ', [
+        'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
+        'group-data-[collapsed]/wk-sidebar:justify-center',
+        'px-[var(--padding-wk-x-sm)] pt-[var(--padding-wk-y-sm)] pb-[2px]',
+        'text-[length:var(--text-wk-xs)]',
+        'font-[number:var(--font-wk-heading-weight)]',
+        'uppercase tracking-wider',
+        'text-[color:var(--color-wk-text-subtle)]',
+        'hover:text-[color:var(--color-wk-text-muted)]',
+        'focus-visible:outline-none',
+        'focus-visible:ring-[length:var(--ring-wk-width)]',
+        'focus-visible:ring-[var(--color-wk-ring)]',
+        'rounded-[var(--radius-wk-md)]',
+        'transition-colors',
+        'duration-[var(--transition-wk-duration)]',
+        'cursor-pointer',
+    ]), $scope);
+
+    $triggerClasses = $variant === 'heading' ? $headingTriggerClasses : $triggerClasses;
+
     // Child container — indented to show hierarchy.
     $childClasses = WireKit::resolveClasses('sidebar.collapsible', 'children', implode(' ', [
         'flex flex-col gap-[2px]',
@@ -41,16 +75,20 @@
 @endphp
 
 <div
-    x-data="{ open: @js($open) }"
+    x-data="{{ PersistedToggle::data('open', $open, $persist) }}"
     {{ $attributes }}
 >
     {{-- Trigger button — toggles the child items. aria-expanded announces
          the current state to screen readers. --}}
+    {{-- In the collapsed icon rail the disclosure trigger is `hidden`: the heading
+         (icon + label + chevron) is unreadable at 3.5rem and there is nothing to
+         disclose there — the children are force-shown as a flat icon list below,
+         matching the static sidebar.group's rail behavior. --}}
     <button
         type="button"
-        x-on:click="open = !open"
+        x-on:click="toggle()"
         :aria-expanded="open ? 'true' : 'false'"
-        class="{{ $triggerClasses }}"
+        class="{{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden"
     >
         @if($icon)
             {{-- Icon — decorative, hidden from AT. A bare name string resolves
@@ -76,9 +114,14 @@
         </svg>
     </button>
 
-    {{-- Collapsible children — shown/hidden with Alpine; always hidden in the
-         collapsed rail (there is no room to show indented children at 3.5rem). --}}
-    <div x-show="open" x-collapse x-cloak class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:hidden">
+    {{-- Collapsible children — shown/hidden with Alpine when the sidebar is expanded.
+         In the collapsed rail they are FORCE-SHOWN as a flat, centered icon list
+         (the indent is dropped via pl-0) instead of being hidden: the section icons
+         stay reachable, matching the static sidebar.group. The `typeof collapsed`
+         guard is mandatory — a sidebar.collapsible used inside a NON-collapsible
+         <x-wirekit::sidebar> has no `collapsed` in Alpine scope, so a bare
+         `open || collapsed` would throw a ReferenceError there. --}}
+    <div x-show="open || (typeof collapsed !== 'undefined' && collapsed)" x-collapse x-cloak class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:pl-0">
         {{ $slot }}
     </div>
 </div>

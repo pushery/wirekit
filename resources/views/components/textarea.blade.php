@@ -55,15 +55,21 @@
     WireKit::warnUnknownProps('textarea', $attributes->getAttributes());
 
     // Auto-generate ID from name attribute, or generate random if neither provided
-    $id = $attributes->get('id', $attributes->get('name', 'textarea-' . \Illuminate\Support\Str::random(6)));
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'textarea-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
+    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
+    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
+    $attributes = $attributes->except('id');
 
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
 
     // Success / valid state — only when there is no error (error wins).
-    $hasSuccess = ! $hasError && $success !== null && $success !== false;
+    // Tri-state (null | true | string message): `!== false` alone let the unbound
+    // string 'false' (truthy) paint the success state — isFalse recognizes the
+    // stringly-false spellings without collapsing a real success message.
+    $hasSuccess = ! $hasError && $success !== null && ! BooleanProp::isFalse($success);
     $successMessage = is_string($success) ? $success : null;
 
     // Auto-size: `rows="auto"` grows the textarea with its content via CSS

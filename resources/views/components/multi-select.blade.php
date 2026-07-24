@@ -33,7 +33,7 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('multi-select', $attributes->getAttributes());
 
-    $id = $attributes->get('id', $attributes->get('name', 'multi-select-' . \Illuminate\Support\Str::random(6)));
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'multi-select-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
     // When a parent <x-wirekit::field label="..."> wraps this component, the
     // field-emitted <label for="$id"> doesn't reach the internal combobox

@@ -10,6 +10,7 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Tailwind cannot extract runtime-concatenated class names — use literal lookup map.
@@ -45,7 +46,10 @@
     // wrapper sets the per-step ms value via inline custom property; CSS
     // `:nth-child` rules walk the index up to a cap of 8 to keep long
     // grids from producing runaway delays.
-    $hasStagger = $stagger !== null && $stagger !== false;
+    // Tri-state (null | true | int step): `!== false` alone let the unbound-attribute
+    // string 'false' (truthy) turn stagger ON — BooleanProp::isFalse recognizes the
+    // stringly-false spellings without collapsing an int step. See countdown `animate`.
+    $hasStagger = $stagger !== null && ! BooleanProp::isFalse($stagger);
     $staggerStep = is_int($stagger) ? $stagger : 75;
 
     $classes = WireKit::resolveClasses('feature-grid', 'base', implode(' ', [

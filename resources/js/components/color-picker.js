@@ -14,6 +14,11 @@ const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 export default function wirekitColorPicker(config = {}) {
     return {
         open: false,
+        // Floating UI autoUpdate teardown handle — set in _anchor(), cleared when
+        // the panel closes (the open $watch else-branch) and on destroy(). Keeps the
+        // fixed panel anchored to the swatch on scroll/resize without leaking
+        // listeners (every teardown path must call stop()).
+        _stopAutoUpdate: null,
         // Inline copy feedback: copy() flips this true for ~1.5s so the button
         // can swap its icon to a checkmark and announce "Copied" — self-contained,
         // unlike the wirekit-toast dispatch which needs an external toast listener.
@@ -76,12 +81,19 @@ export default function wirekitColorPicker(config = {}) {
             // swatch click, programmatic). The panel teleports to <body>, so it
             // needs Floating UI to position it relative to the swatch.
             this.$watch('open', (isOpen) => {
-                if (isOpen) this.$nextTick(() => this._anchor());
+                if (isOpen) {
+                    this.$nextTick(() => this._anchor());
+                } else {
+                    this._stopAutoUpdate?.();
+                    this._stopAutoUpdate = null;
+                }
             });
         },
 
         destroy() {
             this._endDrag();
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
         },
 
         // Position the teleported (fixed) panel below the swatch with the
@@ -92,11 +104,15 @@ export default function wirekitColorPicker(config = {}) {
         // when the swatch is near the right edge.
         async _anchor() {
             if (this.$refs.trigger && this.$refs.panel) {
-                await position(this.$refs.trigger, this.$refs.panel, {
+                this._stopAutoUpdate?.();
+                const { stop } = await position(this.$refs.trigger, this.$refs.panel, {
                     placement: 'bottom-start',
                     offset: 8,
                     crossAxisShift: true,
+                    // Follow the swatch on scroll/resize; torn down on close/destroy.
+                    autoReposition: true,
                 });
+                this._stopAutoUpdate = stop;
             }
         },
 

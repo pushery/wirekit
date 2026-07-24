@@ -4,7 +4,7 @@
  * Provides a simplified API around @floating-ui/dom for dropdown and tooltip
  * positioning with automatic flip and shift middleware.
  */
-import { computePosition, flip, shift, limitShift, size, offset as offsetMiddleware } from '@floating-ui/dom';
+import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as offsetMiddleware } from '@floating-ui/dom';
 
 /**
  * Position a floating element relative to a reference element.
@@ -39,7 +39,15 @@ import { computePosition, flip, shift, limitShift, size, offset as offsetMiddlew
  *   inherits the field's width through `w-full`; one positioned `fixed` (which
  *   is what lets it escape a clipping ancestor) has no such parent, so the width
  *   has to be carried over explicitly.
- * @returns {Promise<{x: number, y: number, placement: string}>}
+ * @param {boolean} options.autoReposition - Keep the panel pinned to its trigger
+ *   while it is open: re-run the SAME middleware pipeline on scroll, resize, and
+ *   ancestor-scroll via Floating UI's `autoUpdate`. Opt-in (default `false`, like
+ *   `fitViewport`/`crossAxisShift`) so existing callers stay byte-identical. When
+ *   enabled, `position()` resolves with a `stop` cleanup function on the result —
+ *   the caller MUST call it on close/destroy or the scroll/resize listeners leak
+ *   (the caller owns teardown). No `animationFrame` option: the default
+ *   scroll+resize listeners are cheap; a per-frame rAF loop would burn CPU here.
+ * @returns {Promise<{x: number, y: number, placement: string, stop?: () => void}>}
  */
 export async function position(reference, floating, {
     placement = 'bottom-start',
@@ -49,6 +57,7 @@ export async function position(reference, floating, {
     fitViewport = false,
     minHeight = 120,
     matchReferenceWidth = false,
+    autoReposition = false,
 } = {}) {
     const middleware = [
         offsetMiddleware(offset),
@@ -81,16 +90,34 @@ export async function position(reference, floating, {
         }));
     }
 
-    const result = await computePosition(reference, floating, {
-        strategy,
-        placement,
-        middleware,
-    });
+    // ONE code path for the initial placement AND every autoUpdate tick, so the
+    // first paint and the repositioned geometry never drift — important because the
+    // `size`/`matchReferenceWidth` middleware mutate inline styles on every run.
+    const run = async () => {
+        const result = await computePosition(reference, floating, {
+            strategy,
+            placement,
+            middleware,
+        });
 
-    Object.assign(floating.style, {
-        left: `${result.x}px`,
-        top: `${result.y}px`,
-    });
+        Object.assign(floating.style, {
+            left: `${result.x}px`,
+            top: `${result.y}px`,
+        });
 
-    return result;
+        return result;
+    };
+
+    const result = await run();
+
+    if (! autoReposition) {
+        return result;
+    }
+
+    // Follow the trigger on scroll / resize / ancestor-scroll. autoUpdate also
+    // fires `run` once immediately (a harmless recompute of what we just placed);
+    // the returned `stop` is the caller's teardown handle — call it on close.
+    const stop = autoUpdate(reference, floating, run);
+
+    return { ...result, stop };
 }

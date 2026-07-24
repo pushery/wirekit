@@ -4,6 +4,10 @@
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
     'announceError' => null,
     'label' => null,
+    // Render the label sr-only (kept as the control's accessible name) — for a
+    // checkbox in a table column whose header already names it, so the visible
+    // label is redundant. Mirrors input / select / textarea / combobox `hideLabel`.
+    'hideLabel' => false,
     'hint' => null,
     'error' => null,
     'indeterminate' => false,
@@ -23,6 +27,7 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $indeterminate = BooleanProp::from($indeterminate, false);
+    $hideLabel = BooleanProp::from($hideLabel, false);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -80,21 +85,13 @@
         ? 'group flex items-start gap-3 cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-subtle)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
         : 'group inline-flex items-start gap-2 cursor-pointer relative align-top';
 
-    // Resolve a stable, unique ID. Array-style names (e.g. "tags[]") cannot
-    // be used verbatim as DOM ids — multiple checkboxes would collide and
-    // <label for="..."> would always target the FIRST element with that id,
-    // making every click activate the wrong checkbox. In that case (or when
-    // no name is provided at all), fall back to a random suffix so each
-    // rendered checkbox is independently addressable.
+    // Resolve a page-unique DOM id. Array-style names ("tags[]") dedup on their
+    // base, plain duplicate names get a -2/-3 suffix, and the first occurrence keeps
+    // the clean id — so <label for> always targets the right checkbox even when a
+    // group or two forms share a name. Shared with every other control via
+    // Support\DomId; the form key `name` stays duplicated as required.
     $rawName = $attributes->get('name');
-    if ($attributes->has('id')) {
-        $id = $attributes->get('id');
-    } elseif ($rawName !== null && ! str_contains($rawName, '[')) {
-        $id = $rawName;
-    } else {
-        $idBase = $rawName !== null ? rtrim(preg_replace('/\[.*\]$/', '', $rawName), '-_') : 'checkbox';
-        $id = ($idBase !== '' ? $idBase : 'checkbox') . '-' . \Illuminate\Support\Str::random(6);
-    }
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $rawName, 'checkbox-');
     $name = $rawName ?? $id;
 
     // Error detection: explicit prop OR Laravel validation bag
@@ -183,9 +180,9 @@
 
         @if($slot->isNotEmpty())
             {{-- Slot-based label: supports rich HTML (links, formatting) for use cases like GDPR consent --}}
-            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $slot }}</span>
+            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5{{ $hideLabel ? ' sr-only' : '' }}">{{ $slot }}</span>
         @elseif($label)
-            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $label }}</span>
+            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
         @endif
     </label>
 

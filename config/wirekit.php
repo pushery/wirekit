@@ -149,6 +149,13 @@ return [
     */
     'a11y' => [
         'announce_error' => env('WIREKIT_ANNOUNCE_ERROR', true),
+
+        // Give each form control a page-unique DOM id even when several share a
+        // `name` (a create + an edit form, a filter bar + a modal, a repeater row).
+        // The first occurrence keeps the clean derived id; later collisions get a
+        // -2/-3 suffix, so `label[for]` and `aria-describedby` always resolve to
+        // the right control. Set false to restore the pre-2.20 verbatim behavior.
+        'dedupe_ids' => env('WIREKIT_DEDUPE_IDS', true),
     ],
 
     'components' => [
@@ -157,6 +164,7 @@ return [
         'swap' => ['effect' => 'fade'],
         'theme-controller' => ['variant' => 'button', 'size' => 'md', 'surface' => 'filled'],
         'fab' => ['position' => 'end'],
+        'fab.button' => [],
         'button.group' => [],
         'input' => ['size' => 'md'],
         'label' => [],

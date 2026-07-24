@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Console;
 use Illuminate\Console\Command;
 use Pushery\WireKit\Fonts\FontPreset;
 use Pushery\WireKit\Fonts\FontRegistry;
+use Pushery\WireKit\Support\DirectoryHash;
 
 /**
  * Publish exactly the font families the app has configured.
@@ -69,15 +70,29 @@ class PublishFontsCommand extends Command
                 return self::FAILURE;
             }
 
-            if (is_dir($target) && ! $this->option('force')) {
-                $this->line("  Skipped {$preset->key} — already published (use --force to overwrite)");
+            $alreadyPublished = is_dir($target);
+
+            // Skip ONLY when the published copy already mirrors the bundled bytes.
+            // The old skip-if-dir-exists check silently did nothing after a
+            // `composer update` left the vendor tree with new font bytes and
+            // public/ with the previous release's — the app kept serving stale
+            // fonts, and both this command and `wirekit:verify` reported success.
+            // Now a byte drift overwrites (an upgrade heals itself); `--force`
+            // still overwrites unconditionally.
+            if ($alreadyPublished && ! $this->option('force') && DirectoryHash::matches($source, $target)) {
+                $this->line("  Skipped {$preset->key} — already up to date");
                 $published[] = $relative;
 
                 continue;
             }
 
             $this->copyDirectory($source, $target);
-            $this->info("Published {$preset->key} → public/vendor/wirekit/fonts/{$relative}");
+
+            // Name what happened so an overwrite is visible — an upgrade refresh, or
+            // the rare case where it replaces a hand-edited published font file
+            // (which `--force` and `--prune` already cover for the deliberate workflow).
+            $verb = ($alreadyPublished && ! $this->option('force')) ? 'Updated' : 'Published';
+            $this->info("{$verb} {$preset->key} → public/vendor/wirekit/fonts/{$relative}");
             $published[] = $relative;
         }
 

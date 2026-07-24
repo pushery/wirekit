@@ -83,7 +83,11 @@
     // Toolbar preset → command vocabulary. A passed <x-slot:toolbar> (a ComponentSlot)
     // selects the 'custom' path so the caller's toolbar actually renders — otherwise the
     // slot silently collapsed to the 'basic' preset and was never shown.
-    $toolbarValue = $toolbar === false
+    // Tri-state (false | 'basic' | 'full' | 'custom slot'): `=== false` alone let the
+    // unbound string 'false' (truthy) fall to the is_string branch and keep the
+    // toolbar — isFalse recognizes the stringly-false spellings so `toolbar="false"`
+    // removes it, matching the docs and the bound `:toolbar="false"` form.
+    $toolbarValue = BooleanProp::isFalse($toolbar)
         ? false
         : ($toolbar instanceof \Illuminate\View\ComponentSlot ? 'custom' : (is_string($toolbar) ? $toolbar : 'basic'));
     $presetCommands = match ($toolbarValue) {

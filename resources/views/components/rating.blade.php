@@ -25,8 +25,11 @@
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
 
-    $id = $attributes->get('id', $attributes->get('name', 'rating-' . \Illuminate\Support\Str::random(6)));
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'rating-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
+    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
+    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
+    $attributes = $attributes->except('id');
 
     $wrapperClasses = WireKit::resolveClasses('rating', 'base', implode(' ', [
         'inline-flex flex-col gap-1',

@@ -46,8 +46,11 @@
     WireKit::warnUnknownProps('number-input', $attributes->getAttributes());
 
     // Auto-generate ID from name attribute
-    $id = $attributes->get('id', $attributes->get('name', 'number-input-' . \Illuminate\Support\Str::random(6)));
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'number-input-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
+    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
+    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
+    $attributes = $attributes->except('id');
 
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);

@@ -22,6 +22,10 @@ export default function wirekitPopover(config = {}) {
         _offset: config.offset || 8,
         _trap: null,
         _navCleanup: null,
+        // Floating UI autoUpdate teardown handle — set in show(), called in EVERY
+        // close path (close / _closeFromTrap / _forceClose) so the scroll+resize
+        // listeners never outlive the panel (every teardown path must call stop()).
+        _stopAutoUpdate: null,
 
         init() {
             // Cleanup on Livewire SPA navigation
@@ -56,7 +60,8 @@ export default function wirekitPopover(config = {}) {
             const panel = this.$refs.panel;
 
             if (trigger && panel) {
-                await position(trigger, panel, {
+                this._stopAutoUpdate?.();
+                const { stop } = await position(trigger, panel, {
                     placement: this._placement,
                     offset: this._offset,
                     // Keep the panel inside the viewport on narrow screens for
@@ -64,7 +69,10 @@ export default function wirekitPopover(config = {}) {
                     // shift can't pull a right-placed panel back from the right
                     // edge (main axis is vertical for left/right placements).
                     crossAxisShift: true,
+                    // Follow the trigger on scroll/resize; torn down in every close path.
+                    autoReposition: true,
                 });
+                this._stopAutoUpdate = stop;
 
                 // Activate focus trap — ESC deactivates and closes
                 this._trap = createFocusTrap(panel, {
@@ -83,6 +91,8 @@ export default function wirekitPopover(config = {}) {
         _closeFromTrap() {
             if (!this.open) return;
             this.open = false;
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
             this._trap = null;
         },
 
@@ -92,6 +102,8 @@ export default function wirekitPopover(config = {}) {
         close() {
             if (!this.open) return;
             this.open = false;
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
 
             if (this._trap) {
                 this._trap.deactivate();
@@ -105,6 +117,8 @@ export default function wirekitPopover(config = {}) {
         _forceClose() {
             if (!this.open) return;
             this.open = false;
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
 
             if (this._trap) {
                 this._trap.deactivate();
