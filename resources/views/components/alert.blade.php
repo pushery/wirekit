@@ -1,5 +1,6 @@
 @props([
-    'variant' => config('wirekit.components.alert.variant', 'info'),
+    'variant' => config('wirekit.components.alert.variant', 'info'), // back-compat alias of `intent`
+    'intent' => null,            // canonical color axis: primary | neutral | info | success | warning | danger. null → falls back to `variant`
     'title' => null,
     'dismissible' => false,
     'icon' => true,
@@ -24,13 +25,27 @@
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'alert');
 
-    // Validate variant against the canonical intent set. 'primary' and 'info'
+    // `intent` is the canonical name for this axis — it is what button and
+    // badge call the same thing, so it is what a developer moving between
+    // components reaches for. It used to land in the attribute bag, ship as a
+    // stray HTML attribute, and change nothing: a danger alert rendered as a
+    // calm info one, with no error and nothing in the page to notice.
+    // `variant` stays as the back-compat alias; when both are given the
+    // canonical name decides, matching progress.
+    $effectiveIntent = $intent ?? $variant;
+    // An error has to name the prop the CALLER wrote. Always saying `intent`
+    // would send someone who typed `variant="rainbow"` looking for a prop they
+    // never used — the same wrong-signpost problem this whole fix is about,
+    // pointing the other way.
+    $intentPropName = $intent !== null ? 'intent' : 'variant';
+
+    // Validate against the canonical intent set. 'primary' and 'info'
     // are visual synonyms on alert (both tint with --color-wk-accent — no
     // separate --color-wk-info token exists in the WireKit token surface);
     // 'neutral' is a quiet gray treatment for non-severity-bearing notices.
-    $variantValue = match ($variant) {
-        'primary', 'neutral', 'info', 'success', 'warning', 'danger' => $variant,
-        default => WireKit::validateProp('alert', 'variant', $variant, ['primary', 'neutral', 'info', 'success', 'warning', 'danger']),
+    $variantValue = match ($effectiveIntent) {
+        'primary', 'neutral', 'info', 'success', 'warning', 'danger' => $effectiveIntent,
+        default => WireKit::validateProp('alert', $intentPropName, $effectiveIntent, ['primary', 'neutral', 'info', 'success', 'warning', 'danger']),
     };
 
     // Base classes: flex layout with icon + content columns, tinted background via color-mix

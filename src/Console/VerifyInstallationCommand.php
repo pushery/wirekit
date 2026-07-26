@@ -1374,11 +1374,11 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
-        $twNormalised = $this->normalizeTokenValue($twValue);
-        $wkNormalised = $this->normalizeTokenValue($wkValue);
+        $twNormalized = $this->normalizeTokenValue($twValue);
+        $wkNormalized = $this->normalizeTokenValue($wkValue);
 
-        if ($twNormalised === $wkNormalised) {
-            $this->line("    <fg=green>✓</> {$label}: aligned ({$twNormalised})");
+        if ($twNormalized === $wkNormalized) {
+            $this->line("    <fg=green>✓</> {$label}: aligned ({$twNormalized})");
             $this->passed++;
         } else {
             $this->reportWarn("  {$label}: mismatch — Tailwind `{$twValue}` vs WireKit `{$wkValue}`. Fix: {$hint}");

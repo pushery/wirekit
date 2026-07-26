@@ -1,5 +1,6 @@
 @props([
-    'variant' => config('wirekit.components.callout.variant', 'info'),
+    'variant' => config('wirekit.components.callout.variant', 'info'), // back-compat alias of `intent`
+    'intent' => null,            // canonical color axis: primary | neutral | info | success | warning | danger. null → falls back to `variant`
     'icon' => true,
     'bordered' => true,
     // Opt-in one-sided accent stripe (default OFF). The plain callout is the
@@ -29,12 +30,18 @@
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'callout');
 
-    // Validate variant against the canonical intent set. 'primary' and 'info'
+    // `intent` is the canonical name for this axis; `variant` is the
+    // back-compat alias. When both are given the canonical one decides.
+    $effectiveIntent = $intent ?? $variant;
+    // The error names the prop the CALLER wrote, not the canonical one.
+    $intentPropName = $intent !== null ? 'intent' : 'variant';
+
+    // Validate against the canonical intent set. 'primary' and 'info'
     // are visual synonyms on callout (both use --color-wk-accent — there is
     // no separate --color-wk-info token in the WireKit token surface).
-    $variantValue = match ($variant) {
-        'primary', 'neutral', 'info', 'success', 'warning', 'danger' => $variant,
-        default => WireKit::validateProp('callout', 'variant', $variant, ['primary', 'neutral', 'info', 'success', 'warning', 'danger']),
+    $variantValue = match ($effectiveIntent) {
+        'primary', 'neutral', 'info', 'success', 'warning', 'danger' => $effectiveIntent,
+        default => WireKit::validateProp('callout', $intentPropName, $effectiveIntent, ['primary', 'neutral', 'info', 'success', 'warning', 'danger']),
     };
 
     // Callout is visually denser than Alert (15% vs 10% background tint), designed

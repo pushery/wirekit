@@ -56,6 +56,10 @@
             ]
         }
     },
+    "scripts": {
+        "post-install-cmd": "@php scripts/apply-vendor-patches.php",
+        "post-update-cmd": "@php scripts/apply-vendor-patches.php"
+    },
     "config": {
         "sort-packages": true,
         "allow-plugins": {

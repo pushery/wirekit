@@ -47,6 +47,11 @@
         // prevent the inner TEXT NODE from soft-wrapping at its own
         // whitespace; `whitespace-nowrap` clamps the text to one line.
         'inline-flex items-center justify-center gap-x-2 whitespace-nowrap',
+        // Marker for the coarse-pointer touch-target floor in dist/wirekit.css —
+        // the same hook `wk-field` gives the form controls. It carries no styling
+        // of its own; it exists so a stylesheet rule can reach this element with
+        // enough specificity to beat the size utility.
+        'wk-button',
         'cursor-pointer',
         'font-[family-name:var(--font-wk-sans)]',
         'font-[number:var(--font-wk-body-weight)]',

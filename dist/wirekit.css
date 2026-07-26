@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.20.0 — MIT License
+ * WireKit CSS v2.21.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -712,6 +712,33 @@
     input.wk-field,
     textarea.wk-field {
         font-size: 16px;
+    }
+
+    /* Touch-target floor. The size ladder is built for a mouse: --size-wk-md is
+       2.5rem (40px), which clears the WCAG 2.5.8 AA minimum of 24px but misses
+       the 2.5.5 AAA target of 44x44 — measured at 40px on a real device, in a
+       modal, for input / select / button alike.
+
+       AAA is the bar this library already holds itself to for touch targets
+       (the file-upload remove button was lifted the same way), so the floor
+       applies here rather than settling for AA.
+
+       min-height, not height: a textarea grows with its content and a fixed
+       height would cap it. And coarse-pointer only — the desktop render keeps
+       the designed 40px, so this is additive on touch rather than a size change
+       everybody pays for.
+
+       The element-qualified selectors carry specificity (0,1,1) so they beat the
+       Tailwind `h-[var(--size-wk-*)]` utility (0,1,0) whatever order the
+       developer's build emits. `xs` and `sm` buttons are deliberately included:
+       a small button is still a touch target, and a developer who picked a
+       compact size did not thereby ask for one that is hard to hit. */
+    select.wk-field,
+    input.wk-field,
+    textarea.wk-field,
+    button.wk-button,
+    a.wk-button {
+        min-height: 2.75rem;
     }
 }
 
@@ -1435,6 +1462,68 @@
     }
 }
 
+/* ── FAB action labels ───────────────────────────────────────────────────────
+   An icon-only speed-dial action carries its name in aria-label, so assistive
+   tech was always served. A sighted person with a mouse was not: a column of
+   circles, and the only way to find out what one does is to press it.
+
+   The label is revealed on hover AND on keyboard focus. Focus is not an extra —
+   without it the affordance is mouse-only, which leaves the keyboard user
+   exactly where the screen-reader user started.
+
+   `:focus-visible` rather than `:focus` so a pointer press does not leave the
+   label hanging around after the click; `:focus-within` is not used because the
+   action has no focusable descendants and it would only widen the surface.
+
+   Opacity rather than display, so the reduced-motion rule further down can
+   quiet the fade without the label losing its reveal entirely. */
+.wk-fab-action-labeled:hover .wk-fab-action-label,
+.wk-fab-action-labeled:focus-visible .wk-fab-action-label {
+    opacity: 1;
+}
+
+/* ── Reduced motion, across the catalog ────────────────────────────────────
+   Twenty components animate their enter/leave with Alpine's `x-transition`,
+   which compiles to Tailwind duration utilities on the element — `transition
+   ease-out duration-200` and friends. Those are plain CSS transitions, and
+   until this block NOTHING switched them off: the only reduced-motion rule in
+   the stylesheet covered one logo treatment. A modal opening under
+   `prefers-reduced-motion: reduce` still scaled and faded for 200 ms.
+
+   Why a blanket rule rather than per-component overrides: the failure here is
+   one of OMISSION. A list of components to quiet is a list somebody has to
+   remember to extend, and the twenty-first component would ship animated with
+   nothing going red — the same shape as a guard that only catches mistakes
+   already made once. Matching the utilities themselves covers whatever is
+   built next, for free.
+
+   Scoped to WireKit's own surface (`[class*="wk-"]` and the elements Alpine
+   transitions inside it) so a developer's own animations are their business:
+   a component library that silently disables motion across a whole application
+   has overstepped.
+
+   `!important` is load-bearing, not laziness. Tailwind's duration utilities are
+   arbitrary-value classes at the same specificity, and the cascade order
+   between two same-specificity rules is emission order — which a JIT build
+   controls, not us. Without it the rule wins or loses depending on how the
+   developer's build happened to order its utilities, which is the definition of
+   a rule that fails silently in someone else's project.
+
+   1ms rather than 0s: some browsers skip `transitionend` entirely at zero
+   duration, and Alpine's x-transition waits for that event before removing the
+   element. At 0s a leave transition can leave the node in the DOM forever. */
+@media (prefers-reduced-motion: reduce) {
+    [class*="wk-"],
+    [class*="wk-"] *,
+    [x-transition\:enter],
+    [x-transition\:leave] {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 /* ── Radial progress ─────────────────────────────────────────────────────────
    The ring is one conic-gradient masked into an annulus. No canvas, no SVG arc
    math: a value change is a single custom-property write, which is what makes
@@ -1818,6 +1907,19 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    phone it also has to clear the home indicator. Both are additive. */
 .wk-fab {
     inset-block-end: calc(var(--padding-wk-y-lg, 1.5rem) + env(safe-area-inset-bottom, 0px));
+}
+
+/* The other block edge. A single-action FAB may sit along the top instead —
+   reported by an application whose own configuration offers four corners, two of
+   which had no expression here at all.
+
+   `inset-block-end: auto` is not tidiness: without releasing the offset above,
+   the button would be pinned to BOTH edges and stretch between them. And the top
+   needs its own safe-area inset for the status bar and notch, the same way the
+   bottom needs one for the home indicator. */
+.wk-fab-block-start {
+    inset-block-end: auto;
+    inset-block-start: calc(var(--padding-wk-y-lg, 1.5rem) + env(safe-area-inset-top, 0px));
 }
 
 /* When a bottom nav is on the page, the FAB sits above it rather than on top of
@@ -2757,7 +2859,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         color-mix(in srgb, var(--color-wk-bg-elevated) 35%, transparent) 50%,
         color-mix(in srgb, var(--color-wk-bg-elevated) 65%, transparent)
     );
-    /* Per-item vertical rhythm. Equalising padding-y top/bottom on the
+    /* Per-item vertical rhythm. Equalizing padding-y top/bottom on the
        <ol> means the visual gutter above the first label matches the
        gutter below the last — previously the trailing margin from the
        last <li>'s child <a> made the bottom gutter visibly larger. */

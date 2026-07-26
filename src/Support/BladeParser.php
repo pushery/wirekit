@@ -115,13 +115,18 @@ final class BladeParser
         // the detected slot list.
         $contents = (string) preg_replace('/\{\{--.*?--\}\}/s', '', $contents);
 
+        // Collected as flag-less maps: the KEY is the name, and the value is
+        // never read. Storing `true` in them invited a mutation that flips it to
+        // `false` and changes nothing — a mutant no honest test can kill, since
+        // there is no behavior to assert. `null` says the same thing about the
+        // value while leaving nothing to flip.
         $issetNames = [];
         $bareNames = [];
 
         // Primary signal: isset($name) blocks identify slot-presence checks.
         if (preg_match_all('/\bisset\s*\(\s*\$([a-zA-Z][a-zA-Z0-9]*)\s*\)/', $contents, $matches)) {
             foreach ($matches[1] as $name) {
-                $issetNames[$name] = true;
+                $issetNames[$name] = null;
             }
         }
 
@@ -130,19 +135,19 @@ final class BladeParser
         // developer doesn't supply the slot, the component errors.
         if (preg_match_all('/\{\{\s*\$([a-zA-Z][a-zA-Z0-9]*)\b/', $contents, $bareMatches)) {
             foreach ($bareMatches[1] as $name) {
-                $bareNames[$name] = true;
+                $bareNames[$name] = null;
             }
         }
         if (preg_match_all('/\{!!\s*\$([a-zA-Z][a-zA-Z0-9]*)\b/', $contents, $rawMatches)) {
             foreach ($rawMatches[1] as $name) {
-                $bareNames[$name] = true;
+                $bareNames[$name] = null;
             }
         }
         // Method calls on slot vars — e.g. `$slot->isEmpty()`,
         // `$trigger->toHtml()`.
         if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9]*)->[a-zA-Z]/', $contents, $methodMatches)) {
             foreach ($methodMatches[1] as $name) {
-                $bareNames[$name] = true;
+                $bareNames[$name] = null;
             }
         }
 
@@ -152,7 +157,10 @@ final class BladeParser
         $propNames = $bladePathForPropExclusion !== null
             ? array_map(fn ($p) => $p['name'], PropsParser::parseBlade($bladePathForPropExclusion))
             : [];
-        $reserved = ['loop', 'attributes', 'errors', 'this', 'errors', 'message'];
+        // `errors` appeared twice here. Harmless to the result — the list is only
+        // ever read through in_array — but a duplicate in a hand-kept list is how
+        // the next name gets added twice instead of once.
+        $reserved = ['loop', 'attributes', 'errors', 'this', 'message'];
         $phpLocals = self::extractPhpLocalsFromSource($contents);
 
         $exclude = array_unique(array_merge($propNames, $reserved, $phpLocals, $additionalExcludes));

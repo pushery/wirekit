@@ -1,6 +1,7 @@
 @props([
     'size' => 'base',
-    'variant' => 'default',
+    'variant' => 'default', // back-compat alias of `intent`
+    'intent' => null,       // canonical color axis: default | muted | subtle | accent | success | warning | danger. null → falls back to `variant`
     'weight' => 'normal',
     'align' => null,
     'truncate' => false,
@@ -27,7 +28,16 @@
         default => WireKit::validateProp('text', 'size', $size, ['xs', 'sm', 'base', 'lg', 'xl']),
     };
 
-    $variantClasses = match ($variant) {
+    // `intent` is the canonical name for the color axis; `variant` is the
+    // back-compat alias. This axis is a typographic scale rather than a pure
+    // severity set — it has no `primary` — so an intent spelling this component
+    // does not carry still fails validation. That is the point: loud beats a
+    // silent fallback to the default color.
+    $effectiveIntent = $intent ?? $variant;
+    // The error names the prop the CALLER wrote, not the canonical one.
+    $intentPropName = $intent !== null ? 'intent' : 'variant';
+
+    $variantClasses = match ($effectiveIntent) {
         'default' => 'text-[color:var(--color-wk-text)]',
         'muted' => 'text-[color:var(--color-wk-text-muted)]',
         'subtle' => 'text-[color:var(--color-wk-text-subtle)]',
@@ -35,7 +45,7 @@
         'success' => 'text-[color:var(--color-wk-success-text)]',
         'warning' => 'text-[color:var(--color-wk-warning-text)]',
         'danger' => 'text-[color:var(--color-wk-danger-text)]',
-        default => WireKit::validateProp('text', 'variant', $variant, ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger']),
+        default => WireKit::validateProp('text', $intentPropName, $effectiveIntent, ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger']),
     };
 
     $weightClasses = match ($weight) {

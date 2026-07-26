@@ -59,7 +59,12 @@
      a discoverable, keyboard-reachable close affordance without authors
      having to remember `<x-wirekit::modal.close>`. Opt out via `:close="false"`
      when you want full control over the header layout. --}}
-<div {{ $attributes->class([$classes]) }}>
+{{-- data-wk-modal-header is the marker the parent modal looks for. The title id
+     itself is bound by Alpine at runtime, so it cannot tell the parent anything at
+     render time — but the parent has to know whether a header exists at all, or it
+     would point aria-labelledby at an id nothing carries and leave the dialog
+     nameless with no error. --}}
+<div data-wk-modal-header {{ $attributes->class([$classes]) }}>
     {{-- Title wrapper — bears the aria-labelledby target ID. The id is read
          from the parent panel's data-wk-title-id to complete the dialog's
          aria-labelledby chain. min-w-0 + flex-1 allow long titles to wrap

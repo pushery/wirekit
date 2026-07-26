@@ -3,6 +3,12 @@
     'size' => config('wirekit.components.modal.size', 'md'),
     'dismissible' => config('wirekit.components.modal.dismissible', true),
     'describedby' => null,
+    // Names the dialog when it has no header sub-component. A dialog with no
+    // accessible name is announced as just "dialog", and the failure is silent —
+    // see the aria-labelledby block below for why one had to be added.
+    // (No component tag in this comment: Blade compiles tags inside comments too,
+    // and one here breaks the @props array it sits in.)
+    'ariaLabel' => null,
     'scope' => null,
 ])
 
@@ -11,6 +17,50 @@
 
     // Title ID for aria-labelledby — links dialog to its header
     $titleId = 'wk-modal-title-' . ($name ?? uniqid());
+
+    // HOW THE DIALOG GETS ITS NAME, and why this is not just `aria-labelledby`.
+    //
+    // The panel used to carry aria-labelledby unconditionally, but only
+    // the header sub-component ever puts that id on an element. A modal built
+    // without a header — a confirmation, a media lightbox, anything whose heading
+    // is its own markup — therefore pointed aria-labelledby at an id nothing
+    // carried. Per ARIA that resolves to no name at all, so the dialog announced
+    // as bare "dialog", and nothing anywhere said so: the markup looked complete
+    // and axe cannot see a reference that is merely unfulfilled at runtime.
+    //
+    // Three sources, in priority order, and only one is ever emitted:
+    //   1. a caller `aria-label` attribute,
+    //   2. the `ariaLabel` prop,
+    //   3. the header, via aria-labelledby.
+    // A caller attribute wins over the prop because it is the more specific
+    // instruction; both win over the header because if someone named the dialog
+    // explicitly, that is the name they meant.
+    $callerAriaLabel = $attributes->get('aria-label');
+    $resolvedAriaLabel = $callerAriaLabel ?? $ariaLabel;
+
+    // Is there a header to point at? The header's own id is bound by Alpine at
+    // runtime and so is invisible here; the marker attribute is what makes the
+    // question answerable at render time. The slot is already rendered by now.
+    $hasHeader = str_contains((string) $slot, 'data-wk-modal-header');
+
+    if ($resolvedAriaLabel === null && ! $hasHeader) {
+        // Say it where the developer will see it — throws in debug, logs in
+        // production, the house strictness gate. Nothing downstream can recover a
+        // name that was never given, and a nameless dialog is a WCAG 4.1.2 failure
+        // that no automated scan of the page will catch.
+        WireKit::validateProp('modal', 'ariaLabel', '', [
+            'a non-empty label, or an <x-wirekit::modal.header> to name the dialog',
+        ]);
+    }
+
+    // aria-* belongs on the element that carries role="dialog", not on the
+    // x-data wrapper. `aria-label` on a roleless <div> is prohibited by ARIA and
+    // simply does not reach assistive tech — the same defect that was fixed on
+    // combobox, one component over.
+    $ariaAttributes = collect($attributes->getAttributes())
+        ->filter(fn ($value, string $key): bool => str_starts_with($key, 'aria-'))
+        ->all();
+    $attributes = $attributes->except(array_keys($ariaAttributes));
 
     // Backdrop classes — semi-transparent overlay behind the dialog
     $backdropClasses = WireKit::resolveClasses('modal', 'backdrop', implode(' ', [
@@ -114,8 +164,18 @@
                          marks the topmost as modal — ARIA spec compliance. --}}
                     :aria-modal="isTopmost ? 'true' : 'false'"
                     aria-modal="true"
-                    aria-labelledby="{{ $titleId }}"
+                    @if($resolvedAriaLabel !== null)
+                        aria-label="{{ $resolvedAriaLabel }}"
+                    @else
+                        aria-labelledby="{{ $titleId }}"
+                    @endif
                     @if($describedby) aria-describedby="{{ $describedby }}" @endif
+                    {{-- aria-* the caller passed, moved here from the roleless wrapper.
+                         aria-label is excluded: it is resolved above so an explicit name
+                         and the header can never both be emitted. --}}
+                    @foreach($ariaAttributes as $ariaKey => $ariaValue)
+                        @if($ariaKey !== 'aria-label') {{ $ariaKey }}="{{ $ariaValue }}" @endif
+                    @endforeach
                     class="{{ $panelClasses }} {{ $sizeClass }}"
                     x-on:click.stop
                     wire:ignore.self

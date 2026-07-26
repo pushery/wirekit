@@ -276,7 +276,7 @@ class ExportApiMapCommand extends Command
             $slug = preg_replace('/\.md$/', '', $relativePath);
             $slug = str_replace(DIRECTORY_SEPARATOR, '/', (string) $slug);
 
-            $title = $this->extractFrontmatterTitle($file->getPathname()) ?? $this->humanise(basename((string) $slug));
+            $title = $this->extractFrontmatterTitle($file->getPathname()) ?? $this->humanize(basename((string) $slug));
 
             $items[] = [
                 'id' => $slug,
@@ -303,7 +303,7 @@ class ExportApiMapCommand extends Command
         return null;
     }
 
-    private function humanise(string $slug): string
+    private function humanize(string $slug): string
     {
         $human = str_replace(['-', '_', '/'], [' ', ' ', ' › '], $slug);
 

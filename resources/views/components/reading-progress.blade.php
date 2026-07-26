@@ -1,7 +1,8 @@
 @props([
     'position' => 'top',
     'height' => 'md',
-    'variant' => 'primary',
+    'variant' => 'primary', // back-compat alias of `intent`
+    'intent' => null,       // canonical color axis: primary | neutral | success | warning | danger | info | auto. null → falls back to `variant`
     'showAfter' => 0,
     'target' => null,
     'indicator' => 'bar',
@@ -45,17 +46,23 @@
         default => 'var(--reading-progress-height-md)',
     };
 
-    // Variant validation — gates against the canonical 6-set + the auto value.
+    // `intent` is the canonical name for this axis; `variant` is the
+    // back-compat alias. When both are given the canonical one decides.
+    $effectiveIntent = $intent ?? $variant;
+    // The error names the prop the CALLER wrote, not the canonical one.
+    $intentPropName = $intent !== null ? 'intent' : 'variant';
+
+    // Validation — gates against the canonical 6-set + the auto value.
     // 'accent' (legacy) and 'inverse' (legacy) explicitly throw — both were
     // dropped during the family's first public release, no alias preserved.
     // Developers wanting the old 'inverse' behavior set
     // `--reading-progress-fill: var(--color-wk-text)` in their :root {} block.
-    $variantValue = match ($variant) {
-        'primary', 'neutral', 'success', 'warning', 'danger', 'info', 'auto' => $variant,
+    $variantValue = match ($effectiveIntent) {
+        'primary', 'neutral', 'success', 'warning', 'danger', 'info', 'auto' => $effectiveIntent,
         default => WireKit::validateProp(
             'reading-progress',
-            'variant',
-            $variant,
+            $intentPropName,
+            $effectiveIntent,
             ['primary', 'neutral', 'success', 'warning', 'danger', 'info', 'auto']
         ),
     };
