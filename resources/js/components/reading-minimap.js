@@ -508,7 +508,7 @@ export default (options = {}) => ({
         //   5. prose       (<p>, <li>, <dd>, <dt>, <figcaption>)
         //   6. wirekit     (any [class*="wk-"] except wk-reading-* —
         //                   to keep the minimap's own DOM out of the map)
-        //   7. default     (anything unrecognised)
+        //   7. default     (anything unrecognized)
         //
         // Image-like elements (<img>, <figure>, <picture>, <svg>,
         // <video>, <canvas>) carry no text and are handled in a

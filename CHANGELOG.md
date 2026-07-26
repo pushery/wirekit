@@ -10,6 +10,31 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.21.0] — 2026-07-26
+
+**Minor release — accessibility fixes across dialogs, touch targets and motion, plus a visible name for floating-action items.** Everything here is additive or a fix; existing markup renders the same.
+
+### Added
+
+- **[Modal](https://docs.wirekit.app/components/modal) gains an `ariaLabel` prop.** A dialog built without a [modal header](https://docs.wirekit.app/components/modal) — a confirmation, a media lightbox, anything whose heading is its own markup — can now be named directly. Without a name and without a header the component says so during development instead of rendering a dialog that screen readers announce as just "dialog".
+- **[Floating action](https://docs.wirekit.app/components/fab) items show their name on hover and on keyboard focus.** An icon-only action carried its name only for assistive tech; anyone looking at the screen saw a row of circles. The label appears on hover and on focus, is positioned so it never shifts the buttons, and cannot intercept a click.
+- **[Speed-dial actions](https://docs.wirekit.app/components/fab) can hide their visible name.** `hideLabel` takes the name off the screen while `aria-label` keeps it — the bare icon-only dial the pattern started as. The label still shows by default.
+- **The single-action [floating button](https://docs.wirekit.app/components/fab) can sit along the top edge.** `placement="block-start"` moves it there, combining with `position` so all four corners are reachable; `block-end` stays the default and existing markup is unchanged. The top offset clears the status bar and notch the same way the bottom one clears the home indicator.
+- **`intent` now works on every component whose colors carry a severity.** [Alert](https://docs.wirekit.app/components/alert), [callout](https://docs.wirekit.app/components/callout), [text](https://docs.wirekit.app/components/text), [reading progress](https://docs.wirekit.app/components/reading), timeline items and the circular progress accept `intent` alongside the `variant` they already had — the same spelling [button](https://docs.wirekit.app/components/button) and [badge](https://docs.wirekit.app/components/badge) use. Writing `intent` on one of them used to do nothing at all: it was emitted as a stray HTML attribute and the component rendered its default color. `variant` keeps working unchanged; when both are given, `intent` decides.
+
+### Changed
+
+- **Form controls and buttons reach a 44px touch target on touch devices.** Inputs, selects, textareas and buttons rendered 40px tall, which clears the WCAG 2.5.8 minimum but misses the 2.5.5 target of 44×44. The floor applies only where the pointer is coarse, so the desktop rendering is unchanged.
+- **`prefers-reduced-motion` is honored across the component library.** Twenty components animate their entrance and exit; only one treatment was previously covered, so a modal still faded and scaled for a user who had asked their system to reduce motion. The rule is scoped to WireKit's own elements — a developer's own animations are left alone.
+
+### Fixed
+
+- **A [modal](https://docs.wirekit.app/components/modal) without a header no longer renders a dialog with no accessible name.** The panel referenced a title element that only the header creates, so a headerless dialog pointed at nothing — which resolves to no name at all.
+- **`aria-*` attributes passed to a [modal](https://docs.wirekit.app/components/modal) now reach the dialog.** They were applied to an outer wrapper with no role, where ARIA prohibits them and assistive tech never sees them.
+- **The [floating button](https://docs.wirekit.app/components/fab) documentation now opens the dialog it describes.** The example titled *a single-action FAB that opens a dialog* opened nothing, while the button carried `aria-haspopup="dialog"` — an attribute that describes behavior to assistive technology rather than creating it, so the page was making a promise the code did not keep.
+- **A [floating button](https://docs.wirekit.app/components/fab) with words in it is announced by those words.** It carried `aria-label="Action"` unconditionally, so a button reading *Send feedback* was announced as *Action* — and someone using voice control could not activate it by the words on screen. Visible text now becomes the accessible name; an explicit label is kept when it contains that text, and an icon-only button is unaffected.
+- **The interactive component previews show WireKit markup in their code panel** instead of compiled HTML. The preview knew which markup it had rendered and did not pass it on, so the documentation site had nothing else to display.
+
 ## [2.20.0] — 2026-07-24
 
 **Minor release — sidebar and app-shell layout controls, a floating action button, two form-field affordances, and a run of accessibility and correctness fixes.** Everything here is additive or a fix; existing code renders identically.

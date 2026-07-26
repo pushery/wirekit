@@ -24,7 +24,7 @@
     // Reading-meta — small text element showing "~12 min read" (initial) and
     // optionally "~5 min remaining" (after scroll). On mount, measures the
     // target's textContent word count; for articles in CJK languages where
-    // whitespace tokenisation underestimates, falls back to a character-based
+    // whitespace tokenization underestimates, falls back to a character-based
     // estimate (--cjk-chars-per-minute / default 500).
     //
     // Skips text inside <pre>, <code>, <figure>, <figcaption>, [data-language],
@@ -136,7 +136,7 @@
             clone.querySelectorAll('pre, code, figure, figcaption, img, picture, svg, [data-language]').forEach((n) => n.remove());
             const text = (clone.textContent || '').trim();
             // CJK heuristic: if >40% of chars are CJK ideographs, switch to
-            // character-based estimation. Whitespace tokenisation under-counts
+            // character-based estimation. Whitespace tokenization under-counts
             // CJK because Chinese/Japanese/Korean text has no spaces between
             // logographic characters.
             const cjkChars = (text.match(/[一-鿿぀-ヿ가-힯]/g) || []).length;

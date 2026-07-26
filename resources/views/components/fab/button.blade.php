@@ -1,8 +1,16 @@
 @props([
-    // The trigger is an icon, so this is its whole accessible name.
-    'label' => __('Action'),
+    // The accessible name when the button carries no words of its own.
+    //
+    // Null rather than the default string, so the component can tell "the caller
+    // said nothing" from "the caller asked for this" — a distinction the name
+    // resolution below needs and could not otherwise make. The default is applied
+    // there, so an existing icon-only call renders exactly as before.
+    'label' => null,
     // Where it floats — the inline corner, following the writing direction.
     'position' => config('wirekit.components.fab.position', 'end'),
+    // Which block edge it sits on. `block-end` (the default) is the canonical
+    // bottom-corner FAB and is unchanged; `block-start` moves it to the top.
+    'placement' => 'block-end',
     // What the button opens, so assistive tech announces it correctly. A
     // single-action FAB is NOT a menu — the default is 'dialog' (the canonical use
     // is a feedback / compose modal). Pass 'menu' / 'true' / 'listbox' / 'grid' /
@@ -21,6 +29,30 @@
     use Pushery\WireKit\WireKit;
 
     $position = WireKit::validateProp('fab.button', 'position', $position, ['end', 'start', 'center']);
+    $placement = WireKit::validateProp('fab.button', 'placement', $placement, ['block-end', 'block-start']);
+
+    // The accessible name.
+    //
+    // `aria-label` used to be emitted unconditionally, so a FAB with words in it
+    // showed "Send feedback" and announced "Action". Visible name and accessible
+    // name have to agree — WCAG 2.5.3, Label in Name — and someone using voice
+    // control cannot activate a control by the words they can see if it answers
+    // to something else.
+    //
+    // Suppressing the label whenever the slot is FILLED would have been the
+    // obvious fix and the wrong one: a slot usually carries custom icon markup,
+    // which is non-empty and has nothing to read, so those buttons would have
+    // lost their name entirely. What decides is visible TEXT.
+    $slotText = trim(strip_tags((string) $slot));
+    $ariaLabel = match (true) {
+        // No words of its own — the canonical icon FAB. The label is the name.
+        $slotText === '' => $label ?? __('Action'),
+        // Words plus a label that CONTAINS them: allowed by 2.5.3 and useful,
+        // since the name may add context as long as it starts from what is written.
+        $label !== null && str_contains($label, $slotText) => $label,
+        // Words plus a label that contradicts them: that is the failure itself.
+        default => null,
+    };
 
     // Positioning mirrors the speed-dial <x-wirekit::fab>: the shared `.wk-fab`
     // class carries the block-end offset INCLUDING env(safe-area-inset-bottom) (so
@@ -31,6 +63,13 @@
         'center' => 'left-1/2 -translate-x-1/2',
         default => 'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right))]',
     };
+
+    // Resolved OUT of the class list, next to $positionClass, rather than as a
+    // ternary inside it. The drift guard reads bare quoted strings in that array
+    // as emitted classes, so a comparison value written there is reported as a
+    // class Tailwind never generated — a false positive that would have been
+    // silenced with an allowlist entry instead of removed.
+    $placementClass = $placement === 'block-start' ? 'wk-fab-block-start' : '';
 
     $tag = $href ? 'a' : 'button';
 
@@ -51,6 +90,7 @@
 
     $classes = WireKit::resolveClasses('fab.button', 'base', implode(' ', [
         'wk-fab',
+        $placementClass,
         'fixed z-40',
         'flex h-14 w-14 cursor-pointer items-center justify-center',
         $positionClass,
@@ -68,9 +108,10 @@
     @if($href) href="{{ $href }}" @else type="button" @endif
     @if($haspopupValue !== null) aria-haspopup="{{ $haspopupValue }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    aria-label="{{ $label }}"
+    @if($ariaLabel !== null) aria-label="{{ $ariaLabel }}" @endif
     data-wk-fab-button
     data-position="{{ $position }}"
+    data-placement="{{ $placement }}"
     {{ $attributes->except('rel')->class([$classes]) }}
 >
     {{-- Icon — decorative; the label is the accessible name. A slot wins; then a

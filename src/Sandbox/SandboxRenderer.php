@@ -76,7 +76,7 @@ final class SandboxRenderer
         }
 
         try {
-            $html = self::doRender($component, $result->clean);
+            $html = self::doRender($component, $result->clean, $source);
         } catch (\Throwable $e) {
             SandboxAuditLog::record('error:render', $component, $ipAddress, 1);
 
@@ -89,13 +89,13 @@ final class SandboxRenderer
         // render a prop-editor UI without a second round-trip to the
         // schema registry. Public-readable property contract: see
         // `RenderResult` docblock.
-        return RenderResult::success($html, $schema);
+        return RenderResult::success($html, $schema, $source);
     }
 
     /**
      * @param  array<string, mixed>  $props
      */
-    private static function doRender(string $component, array $props): string
+    private static function doRender(string $component, array $props, ?string &$source = null): string
     {
         // Build: <x-wirekit::{component} :prop="$__wk_pN" …>{!! $__wk_body !!}</…>
         //
@@ -116,6 +116,7 @@ final class SandboxRenderer
         $attrs = '';
         $data = [];
         $i = 0;
+        $sourceAttrs = '';
 
         foreach ($props as $key => $value) {
             if ($key === 'body') {
@@ -131,6 +132,7 @@ final class SandboxRenderer
                 // developer free-text.
                 if ($value) {
                     $attrs .= ' '.$key;
+                    $sourceAttrs .= ' '.$key;
                 }
 
                 continue;
@@ -142,6 +144,11 @@ final class SandboxRenderer
                 $var = '__wk_p'.$i++;
                 $data[$var] = $value;
                 $attrs .= ' :'.$key.'="$'.$var.'"';
+                // The same attribute with the literal value, for the snippet the
+                // caller shows. The bound form is how the value reaches Blade
+                // without being compiled as template source; it is not something
+                // anyone can paste into an application.
+                $sourceAttrs .= ' '.$key.'="'.$value.'"';
 
                 continue;
             }
@@ -167,6 +174,26 @@ final class SandboxRenderer
         $blade = $bodyExpr === ''
             ? '<'.$tag.$attrs.' />'
             : '<'.$tag.$attrs.'>'.$bodyExpr.'</'.$tag.'>';
+
+        // The snippet the caller shows, built alongside rather than recovered from
+        // the rendered markup. Everything the bound form exists for — passing
+        // values to Blade without compiling them as template source — is plumbing
+        // that resolves to nothing when pasted into an application, so the snippet
+        // carries literal values and the literal body instead.
+        //
+        // This is the whole point of returning it at all: a sandbox preview is
+        // interactive, so the code to show is whatever the CURRENT props amount
+        // to, and only this function knows that.
+        $sourceBody = $body === '' ? '' : $body;
+
+        if ($sourceBody !== '' && isset(self::BODY_WRAPPERS[$component])) {
+            $wrapTag = 'x-wirekit::'.self::BODY_WRAPPERS[$component];
+            $sourceBody = '<'.$wrapTag.'>'.$sourceBody.'</'.$wrapTag.'>';
+        }
+
+        $source = $sourceBody === ''
+            ? '<'.$tag.$sourceAttrs.' />'
+            : '<'.$tag.$sourceAttrs.'>'.$sourceBody.'</'.$tag.'>';
 
         if (! function_exists('app') || ! app()->bound('view')) {
             // Test environment without a Laravel container — return the raw Blade

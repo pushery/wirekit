@@ -1,7 +1,8 @@
 @props([
     'time' => null,
     'icon' => null,
-    'variant' => 'default', // default | success | warning | danger
+    'variant' => 'default', // back-compat alias of `intent`
+    'intent' => null,       // canonical color axis: default | success | warning | danger. null → falls back to `variant`
     'scope' => null,
 ])
 
@@ -16,8 +17,12 @@
         'gap-[var(--padding-wk-x-md)]',
     ]), $scope);
 
-    // Dot color per variant — matches component color tokens
-    $dotColor = match ($variant) {
+    // `intent` is the canonical name for this axis; `variant` is the
+    // back-compat alias. When both are given the canonical one decides.
+    $effectiveIntent = $intent ?? $variant;
+
+    // Dot color per intent — matches component color tokens
+    $dotColor = match ($effectiveIntent) {
         'success' => 'var(--color-wk-success)',
         'warning' => 'var(--color-wk-warning)',
         'danger' => 'var(--color-wk-danger)',

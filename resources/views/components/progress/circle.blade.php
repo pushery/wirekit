@@ -9,7 +9,8 @@
     'max' => 100,
     'label' => null,
     'showValue' => false,
-    'variant' => config('wirekit.components.progress.variant', 'accent'),
+    'variant' => config('wirekit.components.progress.variant', 'accent'), // back-compat alias of `intent`
+    'intent' => null,            // canonical color axis: success | warning | danger (anything else = accent). null → falls back to `variant`
     'size' => config('wirekit.components.progress.circle-size', 'md'),
     'scope' => null,
 ])
@@ -42,8 +43,14 @@
     $circumference = 2 * M_PI * $radius;
     $dashOffset = $circumference - ($percent / 100) * $circumference;
 
-    // Stroke color per variant — matches linear progress token usage
-    $strokeColor = match ($variant) {
+    // `intent` is the canonical name for this axis; `variant` is the
+    // back-compat alias. Deprecated as this sub-component is, it still renders
+    // for back-compat — which means people are still calling it, and they are
+    // exactly the population that would hit the silent-wrong-color bug.
+    $effectiveIntent = $intent ?? $variant;
+
+    // Stroke color per intent — matches linear progress token usage
+    $strokeColor = match ($effectiveIntent) {
         'success' => 'var(--color-wk-success)',
         'warning' => 'var(--color-wk-warning)',
         'danger' => 'var(--color-wk-danger)',
