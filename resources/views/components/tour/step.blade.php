@@ -47,7 +47,7 @@
     data-wk-target="{{ $target }}"
     data-wk-placement="{{ $placement }}"
     role="dialog"
-    aria-label="Tour step {{ $resolvedIndex + 1 }}"
+    aria-label="{{ __('Tour step :number', ['number' => $resolvedIndex + 1]) }}"
     {{ $attributes->class([$panelClasses]) }}
     x-cloak
 >

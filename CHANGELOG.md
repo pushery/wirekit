@@ -10,6 +10,30 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.21.1] — 2026-07-27
+
+**Patch release — accessibility fixes, most of them repairs to things 2.21.0 and 2.20.0 introduced.** No new props, no new configuration. One change renames a DOM id; it is called out below.
+
+### Fixed
+
+- **A [floating action button](https://docs.wirekit.app/components/fab) with words in it had no accessible name at all.** The wrapper around its content was hidden from assistive technology unconditionally, so a button reading *Send feedback* was announced as nothing and could not be reached by voice control. The wrapper is now hidden only when there is nothing in it to read. An icon-only button is unaffected.
+- **`prefers-reduced-motion` no longer reaches past WireKit's own markup.** The rule matched any element whose `class` attribute merely *contained* the characters `wk-`, which every design-token utility does — `bg-[var(--color-wk-bg)]` on a `<body>`, the documented way to tint a page, put the entire document in scope and clamped the application's own animations. It now matches a class token, so a developer's animations are their own again. Components animated through Alpine's shorthand transitions keep their coverage.
+- **The [modal](https://docs.wirekit.app/components/modal) and [drawer](https://docs.wirekit.app/components/drawer) close buttons reach the 44×44 target.** They rendered 32×32 with nothing widening them. A transparent centered expander supplies the hit area; the visible button is unchanged.
+- **The touch-target floor applies to both axes on text fields.** It set a minimum height only, so the [one-time-code](https://docs.wirekit.app/components/otp-input) digit boxes grew to 44px tall and stayed 40px wide — every box in the library's densest row of targets was still under the minimum. Buttons keep the height floor alone: widening them would grow a row of small icon buttons past its container, and giving those a real touch target needs its own treatment.
+- **The active [sidebar item](https://docs.wirekit.app/components/sidebar) renders its emphasized foreground.** The resting muted color and the active color are utilities of equal specificity, so which one wins is decided by the order Tailwind emits them — and the muted one came last. An application retinting the active state lost the same way, leaving `!important` as the only way out.
+- **[Radio](https://docs.wirekit.app/components/radio) ids are page-unique like every other name-derived control.** Two identical radio sets on one page — a filter bar and the same filter in a dialog — emitted the same ids, and because the hint and error ids derive from them, the second set's description pointed at the first set's help text.
+- **The [one-time-code](https://docs.wirekit.app/components/otp-input) digit boxes no longer collide with a same-named control.** `id="code-2"` meant both *digit 2 of the first control* and *the second control called code*, so one of these beside any same-named field emitted a duplicate id at the default length. **The digit ids change shape: `code-0` becomes `code-digit-0`.** They are not documented and nothing inside WireKit addresses them, but code reaching for them by id needs the new spelling.
+- **The [one-time-code](https://docs.wirekit.app/components/otp-input) row wraps instead of overflowing.** Each box has a fixed width and cannot shrink, so an eight-digit code needed more room than a sign-in card offers and ran past its edge.
+- **Eleven accessible names now go through the translator.** The [one-time-code](https://docs.wirekit.app/components/otp-input) group and its per-digit labels, plus names in [color picker](https://docs.wirekit.app/components/color-picker), [date picker](https://docs.wirekit.app/components/date-picker), [carousel](https://docs.wirekit.app/components/carousel), [stage card](https://docs.wirekit.app/components/stage-card), [notification center](https://docs.wirekit.app/components/notification-center), [tour](https://docs.wirekit.app/components/tour) and [map](https://docs.wirekit.app/components/map), were English text with a value interpolated into it — translatable in appearance, fixed in practice. They use placeholders, so a language that orders the words differently is served correctly.
+- **The component sandbox no longer offers two variants that [alert](https://docs.wirekit.app/components/alert) and [callout](https://docs.wirekit.app/components/callout) refuse.** Its schema advertised `secondary` and `accent`, which are not in either component's vocabulary, so picking one in the prop editor threw instead of rendering. Both components take the six canonical intents and the schema now says so.
+- **An inline event handler is no longer reported as an unknown prop.** Writing `<x-wirekit::button onclick="history.back()">` — ordinary HTML — produced a development-time warning saying the prop does not exist. Every `on*` handler was affected.
+- **The component sandbox shows a bound attribute for a numeric prop.** Its Show Code panel offered `level="4"` where the schema declares an integer; both render the same today, but the snippet is what a developer copies, and it should teach the shape that stays correct once anything compares the value strictly.
+- **The published package manifest no longer carries a development-only Composer `scripts` block.** It referenced a directory the distributed package does not contain. Composer never ran it for an installed dependency, so no existing installation is affected.
+
+### Documentation
+
+- **The `2.21.0` entry now names the 16px floor on text fields that shipped with the touch-target change.** Both live in the same coarse-pointer rule, and the 16px half is the one that stops iOS Safari from zooming the page in when a field takes focus — and not zooming back out. The behavior has been there since 2.21.0; only its description was missing.
+
 ## [2.21.0] — 2026-07-26
 
 **Minor release — accessibility fixes across dialogs, touch targets and motion, plus a visible name for floating-action items.** Everything here is additive or a fix; existing markup renders the same.
@@ -24,7 +48,7 @@ Browse it online — one page per version — at
 
 ### Changed
 
-- **Form controls and buttons reach a 44px touch target on touch devices.** Inputs, selects, textareas and buttons rendered 40px tall, which clears the WCAG 2.5.8 minimum but misses the 2.5.5 target of 44×44. The floor applies only where the pointer is coarse, so the desktop rendering is unchanged.
+- **Form controls and buttons reach a 44px touch target on touch devices, and text fields render at 16px there.** Inputs, selects, textareas and buttons rendered 40px tall, which clears the WCAG 2.5.8 minimum but misses the 2.5.5 target of 44×44. The 16px floor on [inputs](https://docs.wirekit.app/components/input), [selects](https://docs.wirekit.app/components/select) and [textareas](https://docs.wirekit.app/components/textarea) is what stops iOS Safari from zooming the page in when a field takes focus — and it does not zoom back out. Both apply only where the pointer is coarse, so the desktop rendering is unchanged.
 - **`prefers-reduced-motion` is honored across the component library.** Twenty components animate their entrance and exit; only one treatment was previously covered, so a modal still faded and scaled for a user who had asked their system to reduce motion. The rule is scoped to WireKit's own elements — a developer's own animations are left alone.
 
 ### Fixed

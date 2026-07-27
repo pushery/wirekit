@@ -226,7 +226,18 @@ final class StrictnessGate
         // Prefix-matched passthrough: ARIA, data-, Livewire wire:, Alpine
         // x-/@/:, Vue v-. Any attribute starting with one of these is framework
         // wiring, never a prop.
-        $prefixes = ['aria-', 'data-', 'wire:', 'x-', '@', ':', 'v-'];
+        //
+        // `on` covers the HTML event-handler family — onclick, onsubmit, oninput
+        // and the rest. They were missing, so a developer writing the perfectly
+        // ordinary `<x-wirekit::button onclick="history.back()">` was told their
+        // prop was unknown. Measured against a real render before the fix.
+        //
+        // A prefix rather than an enumeration: the handler list is long, it grows
+        // with the platform, and every name in it starts this way. Nothing in the
+        // component vocabulary begins with `on`, so it costs no coverage — the
+        // check below is prefix-based, so a hypothetical prop named `onset` would
+        // slip through, which is a false negative and the safe direction.
+        $prefixes = ['aria-', 'data-', 'wire:', 'x-', '@', ':', 'v-', 'on'];
 
         foreach (array_keys($actual) as $key) {
             if (! is_string($key) || $key === '') {

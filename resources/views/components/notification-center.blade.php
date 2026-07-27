@@ -150,7 +150,7 @@
         @endif
 
         {{-- List — a labeled, keyboard-reachable scroll region (WCAG 2.1.1). --}}
-        <div role="region" aria-label="{{ $title }} list" tabindex="0" class="max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+        <div role="region" aria-label="{{ __(':title list', ['title' => $title]) }}" tabindex="0" class="max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
             {{-- Empty state --}}
             <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
                 <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>

@@ -30,11 +30,23 @@
     ]), $scope);
 
     // Close button classes — icon button that invokes the parent modal's
-    // close() method. Sized for WCAG 2.5.5 AAA (≥44×44 CSS px hit area).
+    // close() method.
+    //
+    // The visible box stays at --size-wk-sm (32px); a centered transparent 44×44
+    // ::before supplies the WCAG 2.5.5 AAA hit area without changing the render.
+    // Same expander the file-upload remove button already ships.
+    //
+    // This comment used to claim the AAA target outright while the button was
+    // 32×32 with nothing widening it — no min-height, no expander — and the
+    // coarse-pointer floor does not reach it either, since that rule is
+    // element-qualified to .wk-field / .wk-button and this carries neither. A
+    // comment asserting a property nothing implements is worse than no comment:
+    // it is exactly what stops the next reader from checking.
     $closeClasses = WireKit::resolveClasses('modal.header', 'close', implode(' ', [
-        'shrink-0',
+        'relative shrink-0',
         'inline-flex items-center justify-center',
         'h-[var(--size-wk-sm)] w-[var(--size-wk-sm)]',
+        "before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']",
         '-mr-[var(--padding-wk-x-sm)]',
         'rounded-[var(--radius-wk-sm)]',
         'cursor-pointer',

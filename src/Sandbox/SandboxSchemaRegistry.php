@@ -99,7 +99,16 @@ final class SandboxSchemaRegistry
 
     private static function seed(): void
     {
-        $variantValues = ['primary', 'secondary', 'success', 'warning', 'danger', 'info', 'neutral', 'accent'];
+        // The SIX canonical intents, which is what callout and alert actually
+        // accept — they run their `variant` through validateProp against exactly
+        // this list and throw on anything else.
+        //
+        // This used to carry eight, with `secondary` and `accent` among them. Those
+        // two are not in either component's vocabulary, so the sandbox offered them
+        // in its prop editor and the preview threw the moment somebody picked one.
+        // A schema that advertises a value the component refuses is worse than a
+        // missing schema: the developer reads it as the API.
+        $intentValues = ['primary', 'neutral', 'info', 'success', 'warning', 'danger'];
 
         self::register('button', [
             'intent' => ['type' => 'string', 'default' => 'primary', 'allowed_values' => ['primary', 'neutral', 'success', 'warning', 'danger', 'info']],
@@ -132,12 +141,12 @@ final class SandboxSchemaRegistry
         // Note: Alert.title IS a real `@props` (different shape) — its
         // schema below correctly carries the title prop.
         self::register('callout', [
-            'variant' => ['type' => 'string', 'default' => 'info', 'allowed_values' => $variantValues],
+            'variant' => ['type' => 'string', 'default' => 'info', 'allowed_values' => $intentValues],
             'body' => ['type' => 'string', 'default' => 'Callout body'],
         ]);
 
         self::register('alert', [
-            'variant' => ['type' => 'string', 'default' => 'info', 'allowed_values' => $variantValues],
+            'variant' => ['type' => 'string', 'default' => 'info', 'allowed_values' => $intentValues],
             'title' => ['type' => 'string', 'default' => 'Heads up'],
             'body' => ['type' => 'string', 'default' => 'Alert body'],
             'dismissible' => ['type' => 'bool', 'default' => false],

@@ -46,7 +46,19 @@
         'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'rounded-[var(--radius-wk-md)]',
-        'text-[color:var(--color-wk-text-muted)]',
+        // The RESTING foreground is scoped to non-active items for the same reason
+        // the hover below is, and it is not optional. Unscoped, this and the active
+        // block's `text-[color:var(--color-wk-text)]` are both bare single-class
+        // selectors — specificity (0,1,0), same layer — so the winner is decided by
+        // EMISSION ORDER, and Tailwind v4 sorts arbitrary color utilities by value:
+        // `--color-wk-text` comes before `--color-wk-text-muted`, so the muted rule
+        // is emitted last and wins. The active item rendered muted, never the
+        // emphasized foreground the block below documents.
+        //
+        // Worse than a no-op: a developer retinting the active state with their own
+        // (0,1,0) utility loses to this one too, so the escape hatch was `!important`.
+        // Do not "simplify" the variant off — equal specificity is the whole problem.
+        'not-[[aria-current]]:text-[color:var(--color-wk-text-muted)]',
         // Hover is scoped to NON-active items via `:not([aria-current])`. An active item
         // already carries `aria-current="page"`, and an UNSCOPED `hover:bg` here (specificity
         // 0,2,0) would override a retinted active block (a developer's 0,1,0 utilities) the

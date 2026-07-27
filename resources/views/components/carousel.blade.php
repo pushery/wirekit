@@ -148,7 +148,7 @@
         x-ref="viewport"
         tabindex="0"
         role="group"
-        aria-label="{{ $label }} slides"
+        aria-label="{{ __(':label slides', ['label' => $label]) }}"
         data-wk-carousel-viewport
         data-wk-carousel-per-view="{{ $perViewValue }}"
         class="{{ $viewportClasses }}"

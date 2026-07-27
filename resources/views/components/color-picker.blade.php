@@ -215,7 +215,7 @@
                 @click="open = ! open"
                 :aria-expanded="open ? 'true' : 'false'"
                 aria-haspopup="dialog"
-                aria-label="{{ $name ? Str::headline((string) $name) . ' color' : 'Color picker' }}"
+                aria-label="{{ $name ? __(':name color', ['name' => Str::headline((string) $name)]) : __('Color picker') }}"
                 @if($disabled) disabled @endif
                 class="{{ $swatchClasses }} disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
                 style="{{ $checker }}"
@@ -383,7 +383,7 @@
                             @click="pickColor(@js($preset))"
                             class="h-6 w-6 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             style="background-color: {{ $preset }};"
-                            aria-label="Use {{ $preset }}"
+                            aria-label="{{ __('Use :color', ['color' => $preset]) }}"
                         ></button>
                     @endforeach
                 </div>

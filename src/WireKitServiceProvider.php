@@ -122,11 +122,21 @@ class WireKitServiceProvider extends ServiceProvider
             // WireKit's components run every user- and screen-reader-visible
             // string through `__()` (JSON string keys — the English text IS the
             // key). `lang/en.json` is the complete, generated reference of every
-            // such key. A localizing app publishes it and renames the copy to
-            // its locale (`de.json`, `fr.json`, …), then translates the values —
-            // Laravel's own JSON loader picks the app copy up automatically
-            // because the keys match. Published into the app's lang directory so
-            // it sits next to the developer's own translations.
+            // such key.
+            //
+            // WHAT THE PUBLISHED COPY IS: an inert REFERENCE, not a load path.
+            // Laravel's JSON loader reads `lang/{locale}.json` plus any directory
+            // registered through `addJsonPath()`, and `lang/vendor/wirekit/` is
+            // neither — so a `de.json` placed at the destination below is never
+            // read. To translate, COPY the reference to the app's lang root
+            // (`cp lang/vendor/wirekit/en.json lang/de.json`) and translate the
+            // values there; the keys match, so the app copy wins per key.
+            //
+            // This comment used to say the copy was RENAMED in place and picked up
+            // automatically. It is not, and renaming it does nothing at all — the
+            // failure is silent, which is the expensive kind. docs/localization.md
+            // has always described the working path correctly; only this comment,
+            // the one a developer reads while looking at the publish call, did not.
             $this->publishes([
                 __DIR__.'/../lang/en.json' => lang_path('vendor/wirekit/en.json'),
             ], 'wirekit-lang');

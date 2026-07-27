@@ -54,6 +54,20 @@
         default => null,
     };
 
+    // Whether the icon wrapper below may be hidden from assistive tech.
+    //
+    // `aria-hidden` is a claim that the content is DECORATIVE, and text is never
+    // decorative. The wrapper used to carry it unconditionally, which turned the
+    // branch above into a promise the next line broke: `default => null` means
+    // "the visible text is the name", and the text sat inside a hidden subtree,
+    // so a FAB with words in it shipped with NO accessible name at all — worse
+    // than the wrong name it replaced, because a control without a name cannot be
+    // reached by voice control and is announced as nothing at all.
+    //
+    // Same value the name resolution keys off, so the two cannot disagree: the
+    // wrapper is hidden exactly when there is nothing in it to read.
+    $slotIsDecorative = $slotText === '';
+
     // Positioning mirrors the speed-dial <x-wirekit::fab>: the shared `.wk-fab`
     // class carries the block-end offset INCLUDING env(safe-area-inset-bottom) (so
     // the iOS home indicator never overlaps it), and the inline offset folds in the
@@ -114,10 +128,12 @@
     data-placement="{{ $placement }}"
     {{ $attributes->except('rel')->class([$classes]) }}
 >
-    {{-- Icon — decorative; the label is the accessible name. A slot wins; then a
+    {{-- Icon — decorative ONLY when there is nothing to read. A slot wins; then a
          bare icon name resolves via the WireKit icon system (consistent with
-         sidebar.item / fab.action); otherwise a neutral plus stands in. --}}
-    <span class="inline-grid place-items-center" aria-hidden="true">
+         sidebar.item / fab.action); otherwise a neutral plus stands in. The
+         hidden-ness is conditional for the reason spelled out at $slotIsDecorative:
+         hiding visible text is what left this button nameless. --}}
+    <span class="inline-grid place-items-center" @if($slotIsDecorative) aria-hidden="true" @endif>
         @if(isset($slot) && $slot->isNotEmpty())
             {{ $slot }}
         @elseif(is_string($icon) && $icon !== '' && ! str_contains($icon, '<') && function_exists('svg'))

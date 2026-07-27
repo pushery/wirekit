@@ -131,7 +131,7 @@
              height, so `h-full` resolves there. The explicit min-height keeps
              clientHeight ≥ the wrapper height under EITHER computed position AND
              EITHER flex direction, so MapLibre never hits the 300px fallback. --}}
-        <div x-ref="canvas" class="absolute inset-0 h-full w-full" style="min-height: {{ $height }};" role="application" aria-label="{{ $ariaLabel }} (interactive)" tabindex="0"></div>
+        <div x-ref="canvas" class="absolute inset-0 h-full w-full" style="min-height: {{ $height }};" role="application" aria-label="{{ __(':label (interactive)', ['label' => $ariaLabel]) }}" tabindex="0"></div>
         <div x-show="!available" x-cloak class="absolute inset-0 flex flex-col items-center justify-center gap-1 p-[var(--padding-wk-x-md)] text-center pointer-events-none">
             <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.5 2.5V6L9 3.5m0 16.5l6 2.5m-6-2.5V3.5m6 19l5.5-2.5V2.5L15 5m0 17.5V5m0 0L9 3.5"/><circle cx="12" cy="9" r="2.5"/></svg>
             <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">Interactive map needs a map library — the locations are listed alongside.</p>

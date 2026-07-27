@@ -30,11 +30,17 @@
     ]), $scope);
 
     // Close button classes — mirrors modal.header close to keep both
-    // overlay sub-components visually consistent.
+    // overlay sub-components visually consistent. That claim is why this file
+    // changes alongside the modal: fixing only one of them turns the sentence
+    // above into a lie, and the next reader trusts it instead of looking.
+    //
+    // 32px visible box, 44×44 transparent ::before for the WCAG 2.5.5 AAA hit
+    // area — see modal/header.blade.php for the full rationale.
     $closeClasses = WireKit::resolveClasses('drawer.header', 'close', implode(' ', [
-        'shrink-0',
+        'relative shrink-0',
         'inline-flex items-center justify-center',
         'h-[var(--size-wk-sm)] w-[var(--size-wk-sm)]',
+        "before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']",
         '-mr-[var(--padding-wk-x-sm)]',
         'rounded-[var(--radius-wk-sm)]',
         'cursor-pointer',
