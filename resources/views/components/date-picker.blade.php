@@ -157,7 +157,7 @@
                 @if($required) required aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-                @unless($label) aria-label="{{ $fallbackLabel }} start" @endunless
+                @unless($label) aria-label="{{ __(':label start', ['label' => $fallbackLabel]) }}" @endunless
                 class="wk-field {{ $inputClasses }}"
             />
             <span aria-hidden="true" class="shrink-0 text-[color:var(--color-wk-text-muted)]">&ndash;</span>
@@ -173,7 +173,7 @@
                 @if($required) required aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-                aria-label="{{ $label ?: $fallbackLabel }} end"
+                aria-label="{{ __(':label end', ['label' => $label ?: $fallbackLabel]) }}"
                 class="wk-field {{ $inputClasses }}"
             />
         </div>

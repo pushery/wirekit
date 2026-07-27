@@ -89,7 +89,9 @@
 
 <div {{ $attributes->only('class')->class([$wrapperClasses]) }}>
     @if($label)
-        <x-wirekit::label :for="$id . '-0'">{{ $label }}</x-wirekit::label>
+        {{-- `-digit-0`, not `-0`. See the digit id below for why the segment is
+             there; this must move with it or every otp-input loses its label. --}}
+        <x-wirekit::label :for="$id . '-digit-0'">{{ $label }}</x-wirekit::label>
     @endif
 
     {{-- Hidden input holds the combined OTP value for form submission / wire:model --}}
@@ -142,9 +144,16 @@
                 if (hidden) { hidden.value = combined; hidden.dispatchEvent(new Event('input', { bubbles: true })); }
             }
         }"
-        class="flex gap-2"
+        {{-- flex-wrap because every digit box carries a hard `w-10` (40px) and is an
+             <input>, whose automatic minimum size resolves to that definite width —
+             the row cannot shrink, so without wrapping it overflows its parent. An
+             eight-digit code needs 8x40 + 7x8 = 376px, and the sign-in card an OTP
+             field normally sits in offers about 320px of content width, so it runs
+             past the edge. Wrapping is the only adjustment that keeps the boxes at
+             their designed size; shrinking them would make the digits unreadable. --}}
+        class="flex flex-wrap gap-2"
         role="group"
-        aria-label="{{ $label ?? $attributes->get('aria-label') ?? 'One-time code' }}"
+        aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('One-time code') }}"
     >
         @for($i = 0; $i < $length; $i++)
             <input
@@ -153,8 +162,19 @@
                 pattern="[0-9]"
                 maxlength="1"
                 autocomplete="one-time-code"
-                id="{{ $id }}-{{ $i }}"
-                aria-label="Digit {{ $i + 1 }} of {{ $length }}"
+                {{-- `-digit-N`, and the segment is load-bearing. `DomId::unique`
+                     dedupes a repeated name by appending `-2`, `-3`, … — so with a
+                     bare `-N` the digit index and the dedupe counter shared one
+                     namespace, and `code-2` meant both "digit 2 of the first
+                     control" and "the second control called code". One otp-input
+                     plus ANY second same-name control emitted that id twice, at
+                     the default length, which is precisely the state `dedupe_ids`
+                     exists to remove. A dedupe suffix is always numeric, so a word
+                     segment cannot collide with one. --}}
+                id="{{ $id }}-digit-{{ $i }}"
+                {{-- Placeholders rather than concatenation: a language that orders
+                     the words differently cannot be served by a fixed word order. --}}
+                aria-label="{{ __('Digit :position of :total', ['position' => $i + 1, 'total' => $length]) }}"
                 @if($hasError) aria-invalid="true" @endif
                 @if($i === 0 && $describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 class="wk-field {{ $digitClasses }} {{ $stateClasses }}"

@@ -145,10 +145,20 @@ final class SandboxRenderer
                 $data[$var] = $value;
                 $attrs .= ' :'.$key.'="$'.$var.'"';
                 // The same attribute with the literal value, for the snippet the
-                // caller shows. The bound form is how the value reaches Blade
-                // without being compiled as template source; it is not something
-                // anyone can paste into an application.
-                $sourceAttrs .= ' '.$key.'="'.$value.'"';
+                // caller shows. The bound form ABOVE is how the value reaches
+                // Blade without being compiled as template source; it is not
+                // something anyone can paste into an application.
+                //
+                // A number is bound here too, but for a different reason: the
+                // schema declares it as an int, and `level="4"` passes the string
+                // "4". Both render identically across the catalog today, since
+                // nothing compares a numeric prop strictly — so this is about the
+                // snippet teaching the right shape rather than about a bug. The
+                // first `=== 4` added anywhere would turn every quoted snippet
+                // into a silent miss, and the reader would have pasted it.
+                $sourceAttrs .= is_string($value)
+                    ? ' '.$key.'="'.$value.'"'
+                    : ' :'.$key.'="'.$value.'"';
 
                 continue;
             }

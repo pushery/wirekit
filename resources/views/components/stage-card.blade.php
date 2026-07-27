@@ -68,7 +68,7 @@
                 {{-- aria-label spells out "N items" (not a bare number) so the
                      count is announced with its unit. --}}
                 <span
-                    aria-label="{{ $count }} items"
+                    aria-label="{{ __(':count items', ['count' => $count]) }}"
                     class="inline-flex items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] tabular-nums"
                 >
                     {{ $count }}
@@ -78,7 +78,7 @@
     @endif
 
     @if($progressValue !== null)
-        <x-wirekit::progress :value="$progressValue" :intent="$validIntent" size="sm" aria-label="{{ $label ? $label.' progress' : 'Stage progress' }}" />
+        <x-wirekit::progress :value="$progressValue" :intent="$validIntent" size="sm" aria-label="{{ $label ? __(':label progress', ['label' => $label]) : __('Stage progress') }}" />
     @endif
 
     @if(trim($slot->toHtml()) !== '')

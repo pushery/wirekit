@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.21.0 — MIT License
+ * WireKit CSS v2.21.1 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -739,6 +739,32 @@
     button.wk-button,
     a.wk-button {
         min-height: 2.75rem;
+    }
+
+    /* min-WIDTH on the FIELDS ONLY, and the exclusion of buttons is the whole
+       point of the separate rule. 2.5.5 is a 44x44 target, so a floor on one axis
+       leaves a control that clears it vertically and misses horizontally — exactly
+       what the OTP digit boxes did: each carries a hard `w-10` (40px), so the row
+       grew to 44px tall and stayed 40px wide, and every box in the most
+       fumble-prone control in the library was still under the target.
+
+       BUTTONS ARE DELIBERATELY NOT HERE. Applying the same floor to `.wk-button`
+       widened every small icon button, and a row of them stops fitting: the
+       compose blueprint's B / I / U toolbar overflowed its container by 10px on a
+       phone — a layout that had already been tuned for exactly that cram. The
+       reported defect was about the digit boxes, which are inputs; widening
+       buttons was scope this rule invented for itself.
+
+       Giving component-internal icon buttons a real touch target is a genuine gap,
+       but it needs its own selector rather than a blanket widening, and a new
+       marker class is additive surface — a minor, not a patch.
+
+       Safe for the fields: no text field or select in this library is narrower
+       than 44px to begin with, so nothing but the digit boxes moves. */
+    select.wk-field,
+    input.wk-field,
+    textarea.wk-field {
+        min-width: 2.75rem;
     }
 }
 
@@ -1497,10 +1523,37 @@
    already made once. Matching the utilities themselves covers whatever is
    built next, for free.
 
-   Scoped to WireKit's own surface (`[class*="wk-"]` and the elements Alpine
-   transitions inside it) so a developer's own animations are their business:
-   a component library that silently disables motion across a whole application
-   has overstepped.
+   Scoped to WireKit's own surface — the elements carrying a `wk-` CLASS, and
+   the elements Alpine transitions inside it — so a developer's own animations
+   are their business: a component library that silently disables motion across
+   a whole application has overstepped.
+
+   THE SELECTOR MATCHES A CLASS TOKEN, NOT A SUBSTRING, and that pair of
+   attribute selectors is the whole point. `[class*="wk-"]` looks like the
+   obvious way to write it and does not do what it reads as: `*=` searches the
+   entire class attribute VALUE, and this library's own documented theming idiom
+   writes those three characters into arbitrary-value utilities —
+   `bg-[var(--color-wk-bg)]`, `text-[color:var(--color-wk-text)]`,
+   `rounded-[var(--radius-wk-lg)]`. Our own layout pages put the first of those
+   on `<body>`. So `<body>` matched, the descendant half then matched every
+   element in the document, and four `!important` declarations clamped the
+   developer's animations to 1ms — the exact overreach the paragraph above
+   promises not to commit, shipped for a release.
+
+   `[class^="wk-"]` catches it as the first token, `[class*=" wk-"]` as any
+   later one; both halves are needed, and together they are a word boundary. In
+   a token utility the `wk-` is always preceded by `-` (from `--color-`,
+   `--font-`, `--radius-`), never by a space, and a Tailwind arbitrary value
+   cannot contain a literal space — it uses `_` — so nothing can sneak one in.
+
+   The `x-transition.*` names are enumerated rather than globbed because CSS has
+   no wildcard for an attribute NAME, and Alpine's shorthand modifiers are part
+   of the name: `[x-transition\:enter]` does not match `x-transition.opacity`.
+   Two components using the shorthand (alert, stat) carry no literal `wk-` class
+   at all, so without these they would silently lose their coverage the moment
+   the class half stopped over-matching — narrowing one selector must not
+   quietly narrow the protection. The three names below are the ones present in
+   the tree; a new modifier combination needs a line here.
 
    `!important` is load-bearing, not laziness. Tailwind's duration utilities are
    arbitrary-value classes at the same specificity, and the cascade order
@@ -1513,10 +1566,15 @@
    duration, and Alpine's x-transition waits for that event before removing the
    element. At 0s a leave transition can leave the node in the DOM forever. */
 @media (prefers-reduced-motion: reduce) {
-    [class*="wk-"],
-    [class*="wk-"] *,
+    [class^="wk-"],
+    [class*=" wk-"],
+    [class^="wk-"] *,
+    [class*=" wk-"] *,
     [x-transition\:enter],
-    [x-transition\:leave] {
+    [x-transition\:leave],
+    [x-transition\.opacity],
+    [x-transition\.opacity\.duration\.200ms],
+    [x-transition\.origin\.top\.left] {
         animation-duration: 1ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 1ms !important;

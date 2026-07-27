@@ -73,12 +73,26 @@
         ? 'group flex items-start gap-3 cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-subtle)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
         : 'group inline-flex items-start gap-2 cursor-pointer relative align-top';
 
-    // Auto-generate ID: when multiple radios share a name, we suffix by value to stay unique
+    // Auto-generate ID: a radio set shares one `name` by definition, so the default
+    // folds the value in — that part was always right and is unchanged.
+    //
+    // What it did NOT do is go through the page-unique registry the other fourteen
+    // name-derived controls use, so two IDENTICAL sets on one page (a filter bar and
+    // the same filter inside a modal) still emitted the same ids. Radio's hint and
+    // error ids derive from $id too, so the second set's aria-describedby pointed at
+    // the FIRST set's help text — the reader hears the wrong hint, and nothing looks
+    // broken. The 2.20.0 changelog already promised "input, textarea, select and the
+    // other name-derived controls", so this was a shipped claim the component did
+    // not honor.
+    //
+    // The random fallback moves INTO DomId::unique, which does exactly the same
+    // thing for a null preferred id — keeping it here would register a value that is
+    // unique by construction and never collides, filling the registry for nothing.
     $nameAttr = $attributes->get('name');
     $defaultId = $nameAttr && $value !== null
         ? $nameAttr . '-' . \Illuminate\Support\Str::slug((string) $value)
-        : ($nameAttr ?? 'radio-' . \Illuminate\Support\Str::random(6));
-    $id = $attributes->get('id', $defaultId);
+        : $nameAttr;
+    $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $defaultId, 'radio-');
 
     // Error detection: explicit prop OR Laravel validation bag (grouped by name)
     $hasError = $error || ($errors ?? null)?->has($nameAttr ?? '');
