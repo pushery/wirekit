@@ -110,6 +110,40 @@ export default function wirekitImageCompare(config = {}) {
             this.setValue(pct);
         },
 
+        /**
+         * The three geometry bindings, as methods.
+         *
+         * They were template literals in the template — which is the one place
+         * they cannot be: Alpine's CSP build parses expressions instead of
+         * compiling them, and a backtick string is not in its grammar. So every
+         * page using image-compare was blank under a strict Content-Security
+         * Policy, in the quiet way — the images render, the wipe simply never
+         * moves.
+         *
+         * Style strings belong in JavaScript anyway. Reading the clip geometry
+         * next to the drag handler that produces `value` is easier than reading
+         * it inside an attribute.
+         */
+        clipStyle() {
+            return this.orientation === 'vertical'
+                ? `clip-path: inset(${100 - this.value}% 0 0 0)`
+                : `clip-path: inset(0 0 0 ${100 - this.value}%)`;
+        },
+
+        dividerStyle() {
+            const size = 'var(--wk-image-compare-divider-size, 2px)';
+
+            return this.orientation === 'vertical'
+                ? `top: ${this.value}%; left: 0; right: 0; height: ${size}; transform: translateY(-50%)`
+                : `left: ${this.value}%; top: 0; bottom: 0; width: ${size}; transform: translateX(-50%)`;
+        },
+
+        handleStyle() {
+            return this.orientation === 'vertical'
+                ? `top: ${this.value}%; left: 50%; transform: translate(-50%, -50%)`
+                : `left: ${this.value}%; top: 50%; transform: translate(-50%, -50%)`;
+        },
+
         _emit() {
             // Custom DOM event for listeners that want to observe slide
             // changes without a Livewire round-trip. Detail carries the

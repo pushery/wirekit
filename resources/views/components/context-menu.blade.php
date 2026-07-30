@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is open state and pointer position. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     // When true (default) the panel teleports to <body> so it escapes every
     // ancestor stacking context, overflow:hidden, and `contain: layout`

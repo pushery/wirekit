@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     // Activity kind — drives the leading dot color. The built-in set is
     // commit / merge / deploy / comment / system / user; extend or recolor

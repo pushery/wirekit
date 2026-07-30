@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is scroll position. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'target' => null,
     'itemSelector' => 'a, h2, h3, [data-minimap-item]',
@@ -192,7 +195,7 @@
                      texture rather than a sparse list of equal-height
                      lines). The controller populates item.heightFraction
                      when itemStyle === 'block'. --}}
-                :style="`top: ${item.fraction * 100}%; height: ${itemStyle === 'block' && item.heightFraction ? (item.heightFraction * 100) + '%' : 'var(--reading-minimap-stripe-height)'}; margin-bottom: var(--reading-minimap-stripe-gap);`"
+                :style="stripeStyle(item)"
                 @click="scrollToItem(item)"
                 @mouseenter="showTooltip(item, $event)"
                 @mouseleave="hideTooltip()"
@@ -205,7 +208,7 @@
          the iframe (z-index: 1 in CSS) so it stays visible in rendered mode. --}}
     <div
         class="wk-reading-minimap__viewport absolute left-0 right-0 pointer-events-auto"
-        :style="`top: ${viewportTop}px; height: ${viewportHeight}px;`"
+        :style="viewportStyle()"
         @if (filter_var($draggable, FILTER_VALIDATE_BOOL))
             @pointerdown="startDrag($event)"
             @pointermove="moveDrag($event)"
@@ -222,7 +225,7 @@
             class="wk-reading-minimap__bookmark-marker"
             x-show="bookmarkPct !== null"
             x-cloak
-            :style="`top: ${bookmarkPct * 100}%;`"
+            :style="bookmarkStyle()"
             data-test="reading-minimap-bookmark-marker"
         ></div>
     @endif
@@ -238,8 +241,8 @@
             <template x-for="(anchor, idx) in headingAnchorsList" :key="anchor.id">
                 <a
                     class="wk-reading-minimap__anchor"
-                    :href="`#${anchor.id}`"
-                    :style="`top: ${anchor.fraction * 100}%;`"
+                    :href="anchorHref(anchor)"
+                    :style="anchorStyle(anchor)"
                     :data-collapsed="anchor.collapsed ? 'true' : 'false'"
                     x-text="anchor.label"
                     @click="scrollToAnchor(anchor, $event)"
@@ -258,7 +261,7 @@
     <div
         class="wk-reading-minimap__tooltip absolute pointer-events-none px-2 py-1 text-xs rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] text-[color:var(--color-wk-tooltip-text)] truncate max-w-[16rem]"
         :class="tooltipText ? '' : 'hidden'"
-        :style="`top: ${tooltipTop}px; transform: translateY(-50%); ${side === 'left' ? 'left: 100%; margin-left: 0.5rem' : 'right: 100%; margin-right: 0.5rem'};`"
+        :style="tooltipStyle()"
         x-text="tooltipText"
     ></div>
 

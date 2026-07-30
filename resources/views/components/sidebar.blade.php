@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is rail collapse state. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     // Collapse-to-icon rail. When true, the sidebar can collapse to a narrow
     // icon-only rail: an auto-rendered toggle flips the state, item/group labels
@@ -75,7 +78,13 @@
          3.5rem is the structural icon-rail width (icon + padding), not a theme
          value, so it stays a literal like the structural w-9 day cells. --}}
     <nav
-        x-data="{ collapsed: {{ $collapsed ? 'true' : 'false' }}, _key: @js($persist), init() { if (this._key) { try { const s = localStorage.getItem(this._key); if (s !== null) this.collapsed = s === '1'; } catch (e) {} } }, toggle() { this.collapsed = ! this.collapsed; if (this._key) { try { localStorage.setItem(this._key, this.collapsed ? '1' : '0'); } catch (e) {} } } }"
+        {{-- The rail's folded state lives in resources/js/components/sidebar-rail.js.
+             It cannot live here: an inline object literal cannot declare methods
+             under Alpine's CSP build, so the fold button did nothing at all under
+             a strict policy. The key is emitted as a JSON literal rather than
+             through {{ \Pushery\WireKit\Support\AlpinePayload::from() }}, because {{ \Pushery\WireKit\Support\AlpinePayload::from() }} renders a non-empty payload as
+             JSON.parse(…) and JSON is a global the CSP evaluator cannot resolve. --}}
+        x-data="wirekitSidebarRail({ collapsed: {{ $collapsed ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
         :data-collapsed="collapsed ? '' : null"
         :class="collapsed ? 'w-[3.5rem]' : 'w-[var(--wk-sidebar-w,16rem)]'"
         {{ $attributes->class([$classes, 'group/wk-sidebar transition-[width] duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
@@ -84,7 +93,7 @@
             type="button"
             x-on:click="toggle()"
             :aria-expanded="collapsed ? 'false' : 'true'"
-            :aria-label="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+            :aria-label="collapsed ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Expand sidebar')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Collapse sidebar')) }}"
             class="{{ $collapseBtnClasses }}"
         >
             <svg class="h-5 w-5 transition-transform duration-[var(--transition-wk-duration)]" :class="collapsed ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">

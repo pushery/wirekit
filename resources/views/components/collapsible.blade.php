@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is open state. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     // Trigger label (string). For rich trigger content, pass a named "trigger" slot
     // instead — both surface as the $trigger variable, so the template renders either.
@@ -50,7 +53,7 @@
     ]), $scope);
 @endphp
 
-<div x-data="{ open: @js($openBool) }" {{ $attributes->class([$rootClasses]) }}>
+<div x-data="{ open: {{ \Pushery\WireKit\Support\AlpinePayload::from($openBool) }} }" {{ $attributes->class([$rootClasses]) }}>
     {{-- Trigger — a real <button> so it is keyboard-operable (Enter/Space) by default.
          aria-expanded announces state; aria-controls links it to the region below. --}}
     <button

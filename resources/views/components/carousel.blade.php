@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is the slide index. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'autoplay' => false,
     'interval' => 5000,
@@ -193,7 +196,7 @@
                 type="button"
                 x-on:click="goTo(i)"
                 :aria-current="current === i ? 'true' : 'false'"
-                :aria-label="`Go to slide ${i + 1}`"
+                :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Go to slide :number')) }}.replace(':number', i + 1)"
                 data-wk-carousel-dot
                 class="w-2 h-2 cursor-pointer rounded-full transition-colors duration-[var(--transition-wk-duration)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 :class="current === i ? 'bg-[var(--color-wk-accent)]' : 'bg-[var(--color-wk-border)]'"
@@ -215,7 +218,8 @@
                 type="button"
                 x-on:click="toggle()"
                 :aria-pressed="playing ? 'false' : 'true'"
-                :aria-label="playing ? 'Pause carousel' : 'Play carousel'"
+                {{-- Resolved server-side: a literal here would be untranslatable AND invisible to every __() extractor. --}}
+                :aria-label="playing ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Pause carousel')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Play carousel')) }}"
                 data-wk-carousel-playpause
                 class="ms-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >

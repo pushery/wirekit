@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is the copied-just-now flag. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'value' => '',
     'copiedText' => __('Copied!'),
@@ -63,12 +66,14 @@
 
 <button
     type="button"
-    x-data="{ copied: false }"
-    x-on:click="
-        navigator.clipboard.writeText('{{ addslashes($value) }}');
-        copied = true;
-        setTimeout(() => { copied = false }, {{ (int) $duration }});
-    "
+    {{-- The copy lives in resources/js/components/clipboard-button.js. It cannot
+         live here: three statements and an arrow function, none of which Alpine's
+         CSP build parses — under a strict policy the button took focus and copied
+         nothing. The value goes through Js::from rather than addslashes, which
+         escapes an apostrophe but leaves a newline or a backslash to end the
+         string it sits in. --}}
+    x-data="wirekitClipboardButton({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, duration: {{ (int) $duration }} })"
+    x-on:click="copy()"
     {{ $attributes->class([$classes]) }}
 >
     {{-- Copy icon (shown when not copied). Muted/gray at rest — a copy affordance

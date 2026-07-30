@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     'variant' => config('wirekit.components.callout.variant', 'info'), // back-compat alias of `intent`
     'intent' => null,            // canonical color axis: primary | neutral | info | success | warning | danger. null → falls back to `variant`

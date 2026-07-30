@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — query
+     Sorting, filtering and paging are query round trips. Nobody can show rows nobody has fetched; only the intent could be acknowledged, and that is a different state machine. --}}
 @props([
     'rows' => [],                   // row objects (client mode)
     'columns' => [],                // [{key,label,sortable?,align?,cellType?}] — cellType: text|number|badge
@@ -57,12 +59,16 @@
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitDataTable({ rows: @js($rowsArr), columns: @js($colsArr), rowKey: '{{ $rowKey }}', mode: '{{ $mode }}', density: '{{ $density }}', hidden: @js($hiddenArr) })"
+    x-data="wirekitDataTable({ rows: {{ \Pushery\WireKit\Support\AlpinePayload::from($rowsArr) }}, columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: '{{ $rowKey }}', mode: '{{ $mode }}', density: '{{ $density }}', hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }} })"
     {{ $attributes->only('class')->class([$base]) }}
 >
     @if($selectable && $name)
         {{-- Selection bridge for wire:model / form submission. --}}
-        <input type="hidden" x-ref="selModel" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} :value="JSON.stringify(selected)" />
+        {{-- Static value as well as the bound one: the field is empty until Alpine
+             boots, and a form submitted in that window sends nothing while the
+             visible control already shows the value. The serialization matches
+             what the factory's own getter produces from the same data. --}}
+        <input type="hidden" x-ref="selModel" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} value="[]" :value="selectedJson()" />
     @endif
 
     {{-- Toolbar: search + density toggle + column manager + caller actions. --}}
@@ -95,7 +101,12 @@
                 @if($columnManager)
                     {{-- Column manager — a self-contained popover (nested scope; inherits
                          toggleColumn / isColumnVisible / columns from the table scope). --}}
-                    <div x-data="{ open: false, _place() { if (typeof window.wirekitPosition !== 'function') return; const b = this.$refs.colBtn, m = this.$refs.colMenu; if (b && m) window.wirekitPosition(b, m, { placement: 'bottom-end', offset: 4, fitViewport: true }); } }" x-init="$watch('open', o => { if (o) $nextTick(() => _place()); })" @click.outside="open = false" @keydown.escape="open = false" class="relative">
+                    {{-- Disclosure + anchoring live in the factory
+                         (resources/js/components/data-table-column-menu.js).
+                         Neither the method shorthand nor the x-init arrow
+                         parsed under Alpine's CSP build, so the whole nested
+                         scope failed to build and the button toggled nothing. --}}
+                    <div x-data="wirekitDataTableColumnMenu()" @click.outside="open = false" @keydown.escape="open = false" class="relative">
                         <button type="button" x-ref="colBtn" @click="open = !open" :aria-expanded="open" aria-haspopup="menu" class="{{ $iconBtn }}">
                             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
                             Columns
@@ -172,7 +183,7 @@
                                 {{-- Unique accessible name per row: prefix with the first
                                      column's value so a screen reader doesn't hear "Select
                                      row" N identical times (WCAG name uniqueness). --}}
-                                <input type="checkbox" :checked="isSelected(row)" @change="toggleSelect(row)" :aria-label="columns.length ? 'Select row: ' + cellText(row, columns[0]) : 'Select row'" class="{{ $checkboxClass }}" />
+                                <input type="checkbox" :checked="isSelected(row)" @change="toggleSelect(row)" :aria-label="columns.length ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Select row: :name')) }}.replace(':name', cellText(row, columns[0])) : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Select row')) }}" class="{{ $checkboxClass }}" />
                             </td>
                         @endif
                         <template x-for="col in visibleColumns" :key="col.key">
@@ -181,7 +192,7 @@
                                 class="px-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text)] whitespace-nowrap"
                             >
                                 <template x-if="col.cellType === 'badge'">
-                                    <span class="inline-flex items-center px-[var(--padding-wk-x-sm)] py-0.5 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] capitalize" :class="@js($badgeClasses)[badgeIntent(cellText(row, col))]" x-text="cellText(row, col)"></span>
+                                    <span class="inline-flex items-center px-[var(--padding-wk-x-sm)] py-0.5 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] capitalize" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($badgeClasses) }}[badgeIntent(cellText(row, col))]" x-text="cellText(row, col)"></span>
                                 </template>
                                 <template x-if="col.cellType === 'number'">
                                     <span class="tabular-nums" x-text="cellText(row, col)"></span>

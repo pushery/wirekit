@@ -124,6 +124,7 @@ WireKit ships with a **4-level customization system** — from CSS-variable them
 
 - **Fonts** — Curated Google Fonts bundled locally for GDPR compliance. Configure via `config/wirekit.php`.
 - **Icons** — Stackable presets for `heroicons`, `lucide`, `phosphor`, `tabler` plus app/marketing extensions, with semantic aliases for common UI intents.
+- **Optimistic UI.** An opt-in bundle that shows an action's result before the server has confirmed it, then confirms silently or undoes itself audibly. Add `optimistic="yourMethod"` to a supported component and load `wirekit-optimistic.js`. Components that don't use it render byte-identically and pay nothing. See [Optimistic UI](https://docs.wirekit.app/extending/optimistic-ui).
 - **Charts** — Optional chart system with a Chart.js (MIT) adapter and an ApexCharts adapter. Switch the app default with one line: `'charts' => ['library' => 'apexcharts']` in `config/wirekit.php`, or override per-instance via `<x-wirekit-chart library="apexcharts" …>` for mixed-library pages. ApexCharts is **non-MIT** (free Community License under $2M USD revenue, Commercial License above) — WireKit ships only the adapter glue. See [Chart docs](https://docs.wirekit.app/components/chart) for the full terms.
 
 → **[Theming Guide](https://docs.wirekit.app/theming)** for fonts and presets · **[Icon docs](https://docs.wirekit.app/components/icon)** · **[Chart docs](https://docs.wirekit.app/components/chart)**

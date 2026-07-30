@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     Carries the developer's link or action; holds no state. --}}
 @props([
     'href' => null,
     'danger' => false,

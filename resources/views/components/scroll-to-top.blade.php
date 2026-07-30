@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is scroll position. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'threshold' => 1.5,
     'size' => config('wirekit.components.scroll-to-top.size', 'md'),
@@ -63,30 +66,11 @@
      Uses requestAnimationFrame to avoid jank on frequent scroll events. --}}
 <button
     type="button"
-    x-data="{
-        visible: {{ $forceVisible ? 'true' : 'false' }},
-        threshold: {{ (float) $threshold }},
-        _ticking: false,
-        init() {
-            if ({{ $forceVisible ? 'true' : 'false' }}) return;
-            this._onScroll = () => {
-                if (!this._ticking) {
-                    window.requestAnimationFrame(() => {
-                        this.visible = window.scrollY > (window.innerHeight * this.threshold);
-                        this._ticking = false;
-                    });
-                    this._ticking = true;
-                }
-            };
-            window.addEventListener('scroll', this._onScroll, { passive: true });
-        },
-        destroy() {
-            window.removeEventListener('scroll', this._onScroll);
-        },
-        scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    }"
+    {{-- The scroll watching lives in resources/js/components/scroll-to-top.js.
+         It cannot live here: three methods and two arrow functions, none of
+         which Alpine's CSP build parses — under a strict policy the button
+         never appeared, because nothing was listening to make it. --}}
+    x-data="wirekitScrollToTop({ forceVisible: {{ $forceVisible ? 'true' : 'false' }}, threshold: {{ (float) $threshold }} })"
     x-show="visible"
     @unless($forceVisible) x-cloak @endunless
     x-transition:enter="transition ease-out duration-200"

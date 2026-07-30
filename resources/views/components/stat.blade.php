@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is the count-up animation. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'label' => null,
     'value' => null,

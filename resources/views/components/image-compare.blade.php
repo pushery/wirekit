@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is the divider position. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'before',
     'after',
@@ -132,9 +135,14 @@
     {{-- Hidden input so plain-HTML form submission works without Livewire.
          The Alpine factory dispatches `input` events on this element so
          wire:model-less developers still get form value updates. --}}
+    {{-- Static value as well as the bound one: the field is empty until Alpine
+         boots, and a form submitted in that window sends nothing while the
+         visible control already shows the value. Both come from the same PHP
+         expression that feeds the factory, so they cannot drift. --}}
     <input
         type="hidden"
         x-ref="hiddenInput"
+        value="{{ $clampedValue }}"
         :value="value"
     />
 
@@ -178,9 +186,7 @@
         loading="{{ $loading }}"
         class="{{ $imgClasses }}"
         draggable="false"
-        :style="orientation === 'vertical'
-            ? `clip-path: inset(${100 - value}% 0 0 0)`
-            : `clip-path: inset(0 0 0 ${100 - value}%)`"
+        :style="clipStyle()"
     />
 
     {{-- Labels — optional; controlled by `labels` master toggle + individual props. --}}
@@ -215,9 +221,7 @@
     {{-- Divider line — visual separator between before/after halves. --}}
     <span
         class="{{ $dividerClasses }}"
-        :style="orientation === 'vertical'
-            ? `top: ${value}%; left: 0; right: 0; height: var(--wk-image-compare-divider-size, 2px); transform: translateY(-50%)`
-            : `left: ${value}%; top: 0; bottom: 0; width: var(--wk-image-compare-divider-size, 2px); transform: translateX(-50%)`"
+        :style="dividerStyle()"
         aria-hidden="true"
     ></span>
 
@@ -225,9 +229,7 @@
     <button
         type="button"
         class="{{ $handleClasses }}"
-        :style="orientation === 'vertical'
-            ? `top: ${value}%; left: 50%; transform: translate(-50%, -50%)`
-            : `left: ${value}%; top: 50%; transform: translate(-50%, -50%)`"
+        :style="handleStyle()"
         role="slider"
         aria-label="{{ $ariaLabel }}"
         aria-valuenow="{{ (int) $clampedValue }}"
@@ -262,6 +264,6 @@
     {{-- aria-live IS present here — do not flag as missing.
          Announces value changes during drag / keyboard interaction. --}}
     <span class="sr-only" aria-live="polite" aria-atomic="true">
-        <span x-text="`${value}% revealed`"></span>
+        <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__(':percent% revealed')) }}.replace(':percent', value)"></span>
     </span>
 </figure>

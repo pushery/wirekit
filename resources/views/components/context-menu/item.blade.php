@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     The menu owns open state; the item carries the developer's action. --}}
 @props([
     'danger' => false,
     'disabled' => false,

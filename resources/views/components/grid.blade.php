@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     'cols' => config('wirekit.components.grid.cols', 1), // @example "1 md:2 lg:4" @example "1 sm:2 md:3 lg:4 xl:6"
     'gap' => config('wirekit.components.grid.gap', 'md'),

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     The shared close button for overlays. It closes. --}}
 {{-- Shared close button logic for Modal and Drawer.
      Included via @include('wirekit::components.partials.overlay-close', ['component' => 'modal'])
      from modal/close.blade.php and drawer/close.blade.php.

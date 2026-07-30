@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     It opens the modal. The interaction never leaves the page. --}}
 @props([
     'scope' => null,
 ])

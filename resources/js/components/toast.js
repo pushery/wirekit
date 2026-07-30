@@ -10,6 +10,14 @@ export default function wirekitToast(config = {}) {
         /** @type {Array<{id: number, title: string, message: string, variant: string, _timer: number|null}>} */
         toasts: [],
 
+        /**
+         * The two persistent announcement slots. They are bound to live regions
+         * that exist from first render and start empty — see _announce() for why
+         * the region cannot be the toast element itself.
+         */
+        politeMessage: '',
+        assertiveMessage: '',
+
         /** Max visible toasts (oldest removed when exceeded) */
         _max: config.max || 5,
 
@@ -78,6 +86,32 @@ export default function wirekitToast(config = {}) {
          * @param {string} [detail.variant='info'] - info|success|warning|danger
          * @param {number} [detail.duration] - Override auto-dismiss ms (0 = persistent)
          */
+        /**
+         * Write a toast's text into the persistent live region.
+         *
+         * The regions live OUTSIDE the x-for and start empty, because a live region
+         * has to exist before the text it announces: an element created together
+         * with its message is a new node, not a region that changed, and assistive
+         * technology stays silent. Every toast in this component announced nothing
+         * until this existed.
+         *
+         * Two slots, because urgency is a property of the region and cannot be
+         * switched per message — an aria-live value that changes on an existing
+         * region is not reliably re-read. `danger` goes to the assertive slot,
+         * everything else to the polite one.
+         */
+        _announce(toast) {
+            const slot = toast.variant === 'danger' ? 'assertiveMessage' : 'politeMessage';
+
+            // Cleared first so two identical messages in a row still register as a
+            // change. Without this a repeated "Saved" is announced once.
+            this[slot] = '';
+
+            queueMicrotask(() => {
+                this[slot] = [toast.title, toast.message].filter(Boolean).join('. ');
+            });
+        },
+
         add(detail) {
             const id = this._nextId++;
             const duration = detail.duration !== undefined ? detail.duration : this._duration;
@@ -99,6 +133,7 @@ export default function wirekitToast(config = {}) {
             }
 
             this.toasts.push(toast);
+            this._announce(toast);
 
             // Enforce max queue length — remove oldest
             while (this.toasts.length > this._max) {
@@ -148,13 +183,5 @@ export default function wirekitToast(config = {}) {
             }
         },
 
-        /**
-         * ARIA role based on variant — danger is assertive, others are polite.
-         * @param {string} variant
-         * @returns {string}
-         */
-        ariaRole(variant) {
-            return variant === 'danger' ? 'alert' : 'status';
-        },
     };
 }

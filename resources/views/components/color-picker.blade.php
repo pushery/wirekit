@@ -1,4 +1,51 @@
+{{-- optimistic-ui: supported
+     The commit-boundary obstacle this used to carry is SOLVED — §10 named the
+     boundary and `_endDrag()` already is one (it now ends on pointercancel too,
+     which was a real listener leak, not just an optimistic concern).
+
+     What blocks it is a different rule, and it was not visible until the drag
+     path was looked at closely: this control is MIXED. The plane, the hue strip
+     and the swatches are discrete picks whose previous value belongs to the
+     server, so an undo there costs nothing. **The hex field is typed**, and §8
+     says a rollback may not delete what the user wrote.
+
+     Enabling only the drag paths is not a way out — it is the same trap as
+     number-input: a value typed into the field while a drag's request is in
+     flight would be overwritten by that request's rollback.
+
+     THAT BLOCKER IS GONE, and resolving it is what let this ship. It said the
+     component needs "the fourth exit for text (keep the value, mark it unsaved,
+     say so), which number-input, otp-input and the text fields are waiting on" —
+     and the fourth exit shipped. `failure: 'keep'` never rolls back, so nothing
+     typed can be destroyed and the mixed-control argument no longer applies. The
+     price is that a refused color stays on screen and says it was not saved,
+     which the reader can act on: the previous color is one click away in recents.
+
+     TWO THINGS ABOUT THE SHAPE, both found by counting call sites rather than
+     following the first plausible one.
+
+     The layer WRAPS this component instead of nesting inside it, and that follows
+     from the value being DERIVED. `h`/`s`/`v`/`a` with `formattedValue` computed
+     from them means there is no single writable property to bind — so the layer
+     holds the value and the component hands it up through `run()`. A child
+     reaches its parent, never the reverse, which puts the layer on the outside.
+     Every component wired before this one bound a real property and nested the
+     other way round.
+
+     The commit boundary is `_commitRecent()`, NOT `_sync(true)` as first assumed.
+     `_sync` looked like the seam because its argument separates drag-in-progress
+     from settled — but two of the four settled paths (`pickColor`, `eyedropper`)
+     call `_commitRecent()` directly and never pass through `_sync(true)` at all.
+     Hooking `_sync` would have left a swatch click silently uncommitted, with
+     nothing failing. `_commitRecent()` is where a color is settled in all four
+     cases, which is exactly why a color lands in "recents" there and nowhere
+     else — the boundary was already in the component, under another name. --}}
 @props([
+    // The Livewire method to call once a color is settled — a released drag, a
+    // swatch, an arrow-key nudge. A refusal KEEPS the color and says it was not
+    // saved: the hex field is typed, and §8 does not allow a rollback to delete
+    // what the reader wrote. See the note at the top of this file.
+    'optimistic' => null,
     'name' => null,
     'id' => null,
     'value' => '#000000',
@@ -113,7 +160,7 @@
          gives the readout clear separation. The appended gap-* utility wins over
          the base one in $wrapperClasses (later source order); the popover branch
          keeps the base gap untouched. --}}
-    <div x-data="{ current: @js($value) }" class="{{ $wrapperClasses }} gap-[var(--gap-wk-md)]">
+    <div x-data="{ current: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} }" class="{{ $wrapperClasses }} gap-[var(--gap-wk-md)]">
         <label for="{{ $pickerId }}" class="{{ $swatchClasses }}">
             <input
                 type="color"
@@ -151,11 +198,55 @@
         // Checkerboard backdrop so alpha is legible — a structural transparency
         // grid (like the SV-plane white/black axes, it is NOT themeable).
         $checker = 'background-image: linear-gradient(45deg, var(--color-wk-border) 25%, transparent 25%), linear-gradient(-45deg, var(--color-wk-border) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, var(--color-wk-border) 75%), linear-gradient(-45deg, transparent 75%, var(--color-wk-border) 75%); background-size: 8px 8px; background-position: 0 0, 0 4px, 4px -4px, -4px 0;';
+
+        // `value` rather than `bind`: the color here is DERIVED (h/s/v/a with
+        // formattedValue computed from them), so there is no single writable
+        // property for a layer to hold on the component's behalf. The layer keeps
+        // it, and the component hands it up through `run()` — which also decides
+        // the nesting: the component calls `this.run`, a child reaches its parent,
+        // so the layer wraps this one instead of nesting inside it.
+        //
+        // `keep`, not `undo`, and §8 is why: the hex field is TYPED. A rollback
+        // would delete what the reader wrote. The price is that a refused color
+        // stays on screen and says it was not saved — actionable, because the
+        // previous color is one click away in the recents strip.
+        //
+        // The JS DOES call `mark()` at pointerdown, and the reasoning that first
+        // said it should not is worth keeping because it is a tempting mistake:
+        // `keep` never rolls back, so why hold a baseline? Because `keep` covers
+        // only the SERVER's refusal. A CANCELED request still restores — and a
+        // second drag started during the first one's round trip is exactly that.
+        // Without the mark, the restore writes back the value the drag produced,
+        // so the marker stays put and the cancellation is invisible. §10 holds
+        // for every streaming control regardless of which failure exit it takes.
+        $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+            'value' => $value,
+            'action' => $optimistic,
+            'failure' => 'keep',
+            'debug' => (bool) config('app.debug'),
+            // Two colors settled in quick succession would otherwise resolve by
+            // whichever answer arrives last — network timing, which is both wrong
+            // and untestable.
+            'mode' => 'reject',
+            'messages' => [
+                'pending' => __('Saving'),
+                'kept' => __('Could not save. Your color is still here.'),
+            ],
+        ]);
     @endphp
 
+@if($optimisticConfig)
+    {{-- `display: contents` so the picker keeps its own layout and its `relative`
+         positioning context — the panel anchors through Floating UI and teleports
+         to <body>, so the wrapper adds no containing block of its own. --}}
+    <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+@endif
     <div
-        x-data="wirekitColorPicker(@js($jsConfig))"
+        x-data="wirekitColorPicker({{ \Pushery\WireKit\Support\AlpinePayload::from($jsConfig) }})"
         class="relative {{ $wrapperClasses }}"
+        {{-- Resolves because the layer WRAPS this element: `isPending` lives on
+             the parent, and a child reads its parent through the scope chain. --}}
+        @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
         {{-- escape is window-scoped: the panel teleports to <body>, so a keydown
              inside it bubbles to body (not this root) — a non-window escape here
              would never fire while focus is in the panel. --}}
@@ -220,7 +311,7 @@
                 class="{{ $swatchClasses }} disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
                 style="{{ $checker }}"
             >
-                <span class="absolute inset-0" :style="`background-color: ${cssColor}`"@if($withClear) x-show="!cleared"@endif></span>
+                <span class="absolute inset-0" :style="swatchStyle"@if($withClear) x-show="!cleared"@endif></span>
             </button>
         @endisset
         @if($nativeOnMobile)</template>@endif
@@ -257,20 +348,20 @@
                 role="slider"
                 tabindex="0"
                 aria-label="{{ __('Saturation and brightness') }}"
-                :aria-valuetext="`saturation ${s}%, brightness ${v}%`"
+                :aria-valuetext="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('saturation :saturation%, brightness :brightness%')) }}.replace(':saturation', s).replace(':brightness', v)"
                 @keydown.arrow-left.prevent="nudgePlane(-1, 0)"
                 @keydown.arrow-right.prevent="nudgePlane(1, 0)"
                 @keydown.arrow-up.prevent="nudgePlane(0, 1)"
                 @keydown.arrow-down.prevent="nudgePlane(0, -1)"
                 class="relative h-40 w-full cursor-crosshair touch-none overflow-hidden rounded-[var(--radius-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                :style="`background-color: ${hueCss}`"
+                :style="planeStyle"
             >
                 <div class="pointer-events-none absolute inset-0" style="background: linear-gradient(to right, #fff, transparent);"></div>
                 <div class="pointer-events-none absolute inset-0" style="background: linear-gradient(to top, #000, transparent);"></div>
                 {{-- Thumb ring stays theme-independent white (+ shadow) on all three
                      sliders: it must contrast against ARBITRARY colors underneath, so a
                      themed border would vanish against same-toned regions. --}}
-                <div class="pointer-events-none absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[var(--shadow-wk-sm)]" :style="`left: ${planeLeft}; top: ${planeTop}; background-color: ${hex}`"></div>
+                <div class="pointer-events-none absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[var(--shadow-wk-sm)]" :style="planeMarkerStyle"></div>
             </div>
 
             {{-- Hue slider — the full spectrum (structural, not themeable). --}}
@@ -288,7 +379,7 @@
                 class="relative h-3 w-full cursor-pointer touch-none rounded-full focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 style="background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);"
             >
-                <div class="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)]" :style="`left: ${hueLeft}`"></div>
+                <div class="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)]" :style="hueMarkerStyle"></div>
             </div>
 
             @if($withAlpha)
@@ -299,7 +390,7 @@
                     role="slider"
                     tabindex="0"
                     aria-label="{{ __('Opacity') }}"
-                    :aria-valuenow="Math.round(a * 100)"
+                    :aria-valuenow="alphaPercent()"
                     aria-valuemin="0"
                     aria-valuemax="100"
                     @keydown.arrow-left.prevent="nudgeAlpha(-0.05)"
@@ -307,8 +398,8 @@
                     class="relative h-3 w-full cursor-pointer touch-none rounded-full focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     style="{{ $checker }}"
                 >
-                    <div class="pointer-events-none absolute inset-0 rounded-full" :style="`background: linear-gradient(to right, transparent, ${hex})`"></div>
-                    <div class="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)]" :style="`left: ${alphaLeft}`"></div>
+                    <div class="pointer-events-none absolute inset-0 rounded-full" :style="alphaTrackStyle"></div>
+                    <div class="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)]" :style="alphaMarkerStyle"></div>
                 </div>
             @endif
 
@@ -349,7 +440,7 @@
                     type="button"
                     @click="copy()"
                     class="shrink-0 rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                    :aria-label="copied ? 'Copied' : 'Copy color value'"
+                    :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copy color value')) }}"
                 >
                     {{-- Canonical clipboard glyph (matches <x-wirekit::clipboard-button>);
                          stroke-width 2 on a clean single shape renders crisp at 16px —
@@ -357,7 +448,7 @@
                     <svg x-show="!copied" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
                     {{-- Copied confirmation — a success-colored checkmark. --}}
                     <svg x-show="copied" x-cloak class="h-4 w-4 text-[color:var(--color-wk-success)]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                    <span class="sr-only" aria-live="polite" x-text="copied ? 'Copied to clipboard' : ''"></span>
+                    <span class="sr-only" aria-live="polite" x-text="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied to clipboard')) }} : ''"></span>
                 </button>
                 @if($withClear)
                     {{-- Clear to "no color": empties the bound form value (popover
@@ -369,7 +460,7 @@
                         aria-label="{{ __('Clear color') }}"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
-                        <span class="sr-only" aria-live="polite" x-text="cleared ? 'Color cleared' : ''"></span>
+                        <span class="sr-only" aria-live="polite" x-text="cleared ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Color cleared')) }} : ''"></span>
                     </button>
                 @endif
             </div>
@@ -380,7 +471,7 @@
                     @foreach($presets as $preset)
                         <button
                             type="button"
-                            @click="pickColor(@js($preset))"
+                            @click="pickColor({{ \Pushery\WireKit\Support\AlpinePayload::from($preset) }})"
                             class="h-6 w-6 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             style="background-color: {{ $preset }};"
                             aria-label="{{ __('Use :color', ['color' => $preset]) }}"
@@ -397,8 +488,8 @@
                             type="button"
                             @click="pickColor(recent)"
                             class="h-6 w-6 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                            :style="`background-color: ${recent}`"
-                            :aria-label="`Use ${recent}`"
+                            :style="recentStyle(recent)"
+                            :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Use :color')) }}.replace(':color', recent)"
                         ></button>
                     </template>
                 </div>
@@ -406,4 +497,12 @@
         </div>
         </template>
     </div>
+@if($optimisticConfig)
+    {{-- Rendered unconditionally and starting empty: a live region that arrives
+         together with its text is a new node, and nothing is announced at all.
+         Outside the picker's own root because the layer wraps it — `announcement`
+         does not resolve inside the child. --}}
+    <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+</div>
+@endif
 @endif

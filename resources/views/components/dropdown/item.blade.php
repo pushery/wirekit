@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     The action is the developer's, arriving through the attribute bag. Optimism belongs to whatever that action changes. --}}
 @props([
     'href' => null,
     'danger' => false,

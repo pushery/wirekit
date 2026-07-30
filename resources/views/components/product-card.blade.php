@@ -1,3 +1,14 @@
+{{-- optimistic-ui: n/a — navigation
+     Reclassified after reading the component instead of the idea of it. I marked
+     this a candidate on the reasoning that "a favorite or cart action on a card
+     is the mutation case" — but this card has no such action and no slot to put
+     one in. Its only interactive element is a link to the product page, and a
+     link navigates.
+
+     The server-built review count that supposedly blocked it was never in the
+     way either: nothing here can change that number, so naming it on the server
+     is correct. The blocker and the candidacy were both inferred from what a
+     product card usually does rather than from what this one renders. --}}
 @props([
     // What it is. Rendered as the heading and used as the image's fallback name.
     'name' => '',

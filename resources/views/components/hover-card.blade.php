@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is visibility and placement. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'placement' => 'bottom',
     'offset' => 8,
@@ -49,13 +52,7 @@
         @mouseleave="mouseleave()"
         @focusin="focusin()"
         @focusout="focusout()"
-        x-init="(() => {
-            const interactive = $el.querySelector('button, [role=button], a');
-            if (!interactive) return;
-            interactive.setAttribute('aria-haspopup', 'dialog');
-            interactive.setAttribute('aria-expanded', 'false');
-            $watch('open', value => interactive.setAttribute('aria-expanded', value ? 'true' : 'false'));
-        })()"
+        x-init="initTriggerAria()"
     >
         {{ $trigger }}
     </span>

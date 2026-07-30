@@ -1,3 +1,15 @@
+{{-- optimistic-ui: candidate
+     Same, with the group-rollback wrinkle: the snapshot is the previously selected sibling.
+
+     That wrinkle is the same one `radio` carries, and it is the harder of the
+     two: a rollback here has to re-select a DIFFERENT element, so the value a
+     layer would hold does not live on this component at all. It needs a
+     group-level surface to bind to, which WireKit does not have — menu radio
+     items share a name, nothing more. A real design step, not wiring.
+
+     It also inherits the structural obstacle described on checkbox-item (the
+     announcer wrapper landing between `role="menu"` and its owned item), so both
+     would have to be settled before this one moves. --}}
 @props([
     'model' => null, // name of the Alpine variable holding the group's selected value
     'value' => null, // this option's value
@@ -39,8 +51,8 @@
     role="menuitemradio"
     tabindex="-1"
     @if($isBound)
-        x-on:click="{{ $model }} = @js($value)"
-        :aria-checked="{{ $model }} === @js($value) ? 'true' : 'false'"
+        x-on:click="{{ $model }} = {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}"
+        :aria-checked="{{ $model }} === {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} ? 'true' : 'false'"
     @else
         aria-checked="false"
     @endif
@@ -55,9 +67,9 @@
         @if($isBound)
             <span
                 class="w-3.5 h-3.5 rounded-full border-[length:var(--border-wk-width)] flex items-center justify-center transition-colors duration-[var(--transition-wk-duration)]"
-                :class="{{ $model }} === @js($value) ? 'border-[var(--color-wk-accent)]' : 'border-[var(--color-wk-border)]'"
+                :class="{{ $model }} === {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} ? 'border-[var(--color-wk-accent)]' : 'border-[var(--color-wk-border)]'"
             >
-                <span x-show="{{ $model }} === @js($value)" x-cloak class="w-1.5 h-1.5 rounded-full bg-[var(--color-wk-accent)]"></span>
+                <span x-show="{{ $model }} === {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}" x-cloak class="w-1.5 h-1.5 rounded-full bg-[var(--color-wk-accent)]"></span>
             </span>
         @else
             {{-- Static (non-model) radio item: a plain outline ring as the affordance. --}}

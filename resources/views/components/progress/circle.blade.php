@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 {{-- DEPRECATED: superseded by the radial-progress component, which is the canonical
      radial (circular) progress — richer (threshold coloring, valueText, a required
      accessible name) and consistently named. This sub-component still renders for

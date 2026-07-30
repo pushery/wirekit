@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is the parent's open state. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'scope' => null,
     // Optional fallback aria-label used when the trigger has no accessible
@@ -32,30 +35,13 @@
 <div
     x-ref="trigger"
     x-on:click="toggle()"
-    x-init="(() => {
-        const interactive = $el.querySelector('button, [role=button], a');
-        if (!interactive) {
-            // eslint-disable-next-line no-console
-            console.warn('[wirekit] dropdown.trigger: slot has no focusable element (button/link). Keyboard users cannot open the dropdown. Wrap the trigger content in a <button>.');
-            return;
-        }
-        interactive.setAttribute('aria-haspopup', 'menu');
-        const panelId = $el.closest('[data-wk-panel-id]')?.dataset.wkPanelId;
-        if (panelId) interactive.setAttribute('aria-controls', panelId);
-        interactive.setAttribute('aria-expanded', 'false');
-        $watch('open', value => interactive.setAttribute('aria-expanded', value ? 'true' : 'false'));
-
-        // Auto-derive aria-label when the interactive child has no
-        // accessible name. Heuristic: no aria-label, no aria-labelledby,
-        // AND empty trimmed textContent (covers both visible-text and
-        // sr-only spans — textContent includes screen-reader-only nodes).
-        const hasLabel = interactive.hasAttribute('aria-label');
-        const hasLabelledBy = interactive.hasAttribute('aria-labelledby');
-        const hasText = (interactive.textContent || '').trim().length > 0;
-        if (!hasLabel && !hasLabelledBy && !hasText) {
-            interactive.setAttribute('aria-label', @js($ariaLabelFallback));
-        }
-    })()"
+    {{-- The ARIA wiring lives in resources/js/components/dropdown-trigger.js,
+         over the same util popover and hover-card use. It was a third copy of
+         that logic and had already drifted; it was also an IIFE with two
+         declarations and an early return, which Alpine's CSP build parses none
+         of — so under a strict policy the trigger got no ARIA at all. It still
+         opened, and announced itself as a button that leads nowhere. --}}
+    x-data="wirekitDropdownTrigger({ labelFallback: {{ \Pushery\WireKit\Support\AlpinePayload::from($ariaLabelFallback) }} })"
     {{ $attributes->class([$classes]) }}
 >
     {{ $slot }}

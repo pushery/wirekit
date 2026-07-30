@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     'title' => null,        // optional panel heading (e.g. "Plan usage")
     'columns' => 1,         // responsive column count: 1 | 2 | 3

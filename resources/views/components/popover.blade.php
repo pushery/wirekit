@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is open state and placement. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'placement' => config('wirekit.components.popover.placement', 'bottom'),
     'offset' => config('wirekit.components.popover.offset', 8),
@@ -50,23 +53,15 @@
     <div
         x-ref="trigger"
         x-on:click="toggle()"
-        x-init="(() => {
-            const interactive = $el.querySelector('button, [role=button], a');
-            if (!interactive) {
-                // eslint-disable-next-line no-console
-                console.warn('[wirekit] popover: trigger slot has no focusable element (button/link). Keyboard users cannot open the popover. Wrap the trigger content in a <button>.');
-                return;
-            }
-            interactive.setAttribute('aria-haspopup', 'dialog');
-            interactive.setAttribute('aria-expanded', 'false');
-            $watch('open', value => interactive.setAttribute('aria-expanded', value ? 'true' : 'false'));
-        })()"
+        x-init="initTriggerAria()"
     >
         {{ $trigger }}
     </div>
 
     {{-- Popover panel — positioned via Floating UI, focus-trapped --}}
     <div
+        {{-- Theme marker — see docs/theming.md "Theme markers". --}}
+        data-wk-popover
         x-ref="panel"
         x-show="open"
         x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"

@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is open state. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'placement' => config('wirekit.components.dropdown.placement', 'bottom-start'),
     'offset' => config('wirekit.components.dropdown.offset', 8),

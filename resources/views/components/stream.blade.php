@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     It displays a stream in progress; there is no result to anticipate, only one to show as it arrives. --}}
 @props([
     // The Server-Sent Events endpoint to stream from. Null → the component stays
     // idle (seed it with `initial-text` and drive it from your own controls).
@@ -83,11 +85,11 @@
     $wrapperClasses = WireKit::resolveClasses('stream', 'base', 'wk-stream flex flex-col', $scope);
 @endphp
 
-{{-- Plain <div> host (never a component tag) so the @js(...) config is compiled and
+{{-- Plain <div> host (never a component tag) so the {{ \Pushery\WireKit\Support\AlpinePayload::from(...) }} config is compiled and
      reaches Alpine as a real object — see the @js-in-attribute traps. In simulate mode
      the demo is "used up" once it finishes, so it emits data-replayable="true" to opt
      into the docs preview frame's "↻ Replay" affordance (inert in a developer app). --}}
-<div x-data="wirekitStream(@js($config))" @if($simulate) data-replayable="true" @endif {{ $attributes->class([$wrapperClasses]) }}>
+<div x-data="wirekitStream({{ \Pushery\WireKit\Support\AlpinePayload::from($config) }})" @if($simulate) data-replayable="true" @endif {{ $attributes->class([$wrapperClasses]) }}>
     {{-- Single live region: announces that a response is GENERATING (once), then the
          RESULT (once) when it settles. The visible output below is deliberately NOT a
          live region, so a screen reader is not re-read on every token. --}}
@@ -107,16 +109,27 @@
             class="wk-stream-caret ml-px inline-block h-[1em] w-[0.5ch] translate-y-[0.1em] motion-safe:animate-pulse bg-[var(--color-wk-text-muted)]"
         ></span></div>
 
-    {{-- Terminal failure — a defined state, overridable via the `error` slot. --}}
-    <template x-if="isFailed">
-        <div role="alert" class="mt-[var(--gap-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
+    {{-- Terminal failure — a defined state, overridable via the `error` slot.
+
+         The alert container is rendered UNCONDITIONALLY and starts empty; only its
+         CONTENT is gated on `isFailed`. A live region has to exist before the text
+         it announces: an element that arrives already carrying its message is a new
+         node, not a region that changed, and assistive technology says nothing. This
+         was the repo's only "async failed" announcement and it had never once
+         announced anything.
+
+         `x-show` rather than `x-if` on the inner wrapper for the same reason — x-if
+         removes the node, and a region that comes and goes is a region that is not
+         there when it matters. --}}
+    <div role="alert" class="mt-[var(--gap-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
+        <div x-show="isFailed" x-cloak>
             @isset($error)
                 {{ $error }}
             @else
                 <span x-text="error"></span>
             @endisset
         </div>
-    </template>
+    </div>
 
     {{-- Developer controls (Stop / Retry) and custom state UIs render here, inside the
          component's Alpine scope — reference status / isStreaming / start() / stop().

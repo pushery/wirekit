@@ -51,6 +51,30 @@ export default function wirekitCalendar(config = {}) {
             return out;
         },
 
+        /**
+         * Chunk a month's flat day list into weeks of seven.
+         *
+         * The template used to do this inline, with
+         * `Array.from({ length: Math.ceil(days.length / 7) }, (_, i) => …)`.
+         * Under Alpine's CSP build that fails twice over: the arrow function is
+         * outside the grammar its parser accepts, and `Array` / `Math` are
+         * globals its evaluator cannot resolve. The grid simply did not render.
+         *
+         * `_daysFor` already pads to whole weeks, so the last chunk is never
+         * short — but the loop does not assume that, because a caller passing an
+         * unpadded list should get a short final week rather than undefined
+         * entries.
+         */
+        weeksOf(days) {
+            const weeks = [];
+
+            for (let i = 0; i < days.length; i += 7) {
+                weeks.push(days.slice(i, i + 7));
+            }
+
+            return weeks;
+        },
+
         // Year options (±10 around the view year) for the selectable header.
         get yearRange() {
             const years = [];
@@ -154,8 +178,26 @@ export default function wirekitCalendar(config = {}) {
          */
         selectDate(dateStr) {
             this.selected = dateStr;
-            // Dispatch input event for wire:model
-            this.$refs.hiddenInput?.setAttribute('value', dateStr);
+            this._notify();
+        },
+
+        /**
+         * Tell the form what `selected` now holds.
+         *
+         * Split out of selectDate() because the optimistic layer writes
+         * `selected` itself — on the flip AND on the rollback — and has to run
+         * the same sync afterwards. Without it a rolled-back calendar would
+         * show the old date while the form still submitted the new one.
+         *
+         * It reads `selected` rather than taking an argument for the same
+         * reason: after a rollback there is no argument, only the value the
+         * layer restored.
+         */
+        _notify() {
+            // setAttribute as well as the reactive :value binding — the
+            // attribute is what a form serializes, and assigning it fires
+            // nothing, so the event goes out by hand for wire:model.
+            this.$refs.hiddenInput?.setAttribute('value', this.selected ?? '');
             this.$refs.hiddenInput?.dispatchEvent(new Event('input', { bubbles: true }));
         },
 

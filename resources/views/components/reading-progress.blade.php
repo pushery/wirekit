@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is scroll position. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'position' => 'top',
     'height' => 'md',
@@ -174,164 +177,21 @@
          Uses `wk-reading-progress--dot` so reduced-motion / print rules can
          scope to the dot specifically. --}}
     <div
-        x-data="{
-            progress: 0,
-            _ticking: false,
-            _onScroll: null,
-            _milestonesFired: { 25: false, 50: false, 75: false, 100: false },
-            _milestonesEnabled: {{ $milestonesEnabled ? 'true' : 'false' }},
-            init() {
-                const target = '{{ $target }}' || null;
-                const boundarySelector = '{{ $boundarySelector }}' || null;
-                const showAfter = {{ (int) $showAfter }};
-                // v2.4.0 Ext 1 — warn when boundary='<css-selector>' does
-                // NOT resolve to any ancestor of this element. The bar's
-                // visual positioning is `position: sticky` regardless, but
-                // sticky only anchors correctly when the developer's
-                // selector targets a positioned + scrolling ancestor.
-                if (boundarySelector && !this.$el.closest(boundarySelector)) {
-                    console.warn(
-                        `[wirekit] reading-progress: boundary selector '${boundarySelector}' did not match any ancestor of this element. ` +
-                        `position: sticky will anchor to the nearest positioned ancestor instead. ` +
-                        `Pass boundary='container' for the no-selector form, or verify the selector matches an ancestor (e.g. add id/class to a wrapper).`
-                    );
-                }
-                // Warn-once when a developer-supplied target selector doesn't
-                // resolve. Without this signal the progress bar silently
-                // tracks viewport scroll instead of the scoped element,
-                // which looks correct on quick inspection but doesn't honor
-                // the developer's intent. Mirrors the same warn shape used
-                // in reading-spine / reading-toc / reading-minimap JS.
-                if (target && !document.querySelector(target)) {
-                    // Single-quote the interpolated value so the warning
-                    // string carries no literal double-quote that would
-                    // terminate the surrounding x-data HTML attribute
-                    // prematurely. An earlier form escaped the
-                    // double-quotes around the interpolation, which
-                    // worked at the JS layer but injected literal
-                    // attribute-terminating chars into the rendered HTML.
-                    console.warn(
-                        `[wirekit] reading-progress: target selector '${target}' matched no element. ` +
-                        `Falling back to viewport scroll. Check the target prop you passed to the reading-progress component.`
-                    );
-                }
-                const update = () => {
-                    const scope = target ? document.querySelector(target) : null;
-                    let scrollTop, scrollHeight, clientHeight;
-                    if (scope) {
-                        const rect = scope.getBoundingClientRect();
-                        scrollTop = Math.max(0, -rect.top);
-                        scrollHeight = scope.scrollHeight;
-                        clientHeight = window.innerHeight;
-                    } else {
-                        // Read scroll metrics from a SINGLE element consistently
-                        // — picking whichever candidate actually has scrollable
-                        // content. Reading scrollTop from one element and
-                        // scrollHeight from another mixes scroll roots and caps
-                        // the proportional math below 100% (the failure mode
-                        // that broke the bar's saturation while the dot stayed
-                        // visually 'close enough').
-                        //
-                        // Candidates in priority order:
-                        //   1. document.scrollingElement — the CSSOM scroll root
-                        //   2. document.documentElement  — html
-                        //   3. document.body
-                        //
-                        // We pick the FIRST candidate whose scrollHeight exceeds
-                        // its clientHeight (i.e. the one with overflow). In the
-                        // standard iframe-srcdoc case (html-scroll) that's html;
-                        // in body-scroll contexts (where body has overflow:auto
-                        // and html fills the viewport) it's body. Spec quirk:
-                        // document.scrollingElement always returns html in
-                        // standards mode regardless of which element actually
-                        // scrolls, so we can't rely on it alone — the
-                        // scrollHeight-vs-clientHeight probe is the deciding
-                        // factor.
-                        const candidates = [
-                            document.scrollingElement,
-                            document.documentElement,
-                            document.body,
-                        ].filter(Boolean);
-                        let root = candidates[0];
-                        for (const c of candidates) {
-                            if (c.scrollHeight > c.clientHeight) {
-                                root = c;
-                                break;
-                            }
-                        }
-                        scrollTop = root.scrollTop;
-                        scrollHeight = root.scrollHeight;
-                        clientHeight = root.clientHeight || window.innerHeight;
-                    }
-                    const max = Math.max(1, scrollHeight - clientHeight);
-                    // At-bottom override — saturates fill at 100 when the
-                    // reader is within `bottomTolerance` of the math-max
-                    // scroll position OR proportional math already crossed
-                    // 99%. The generous 32px tolerance covers the common
-                    // failure cases:
-                    //   - body { padding-bottom: 24px } inflates scrollHeight
-                    //     past reachable scrollTop (proportional math caps
-                    //     ~96% even when the scrollbar visually rests at end)
-                    //   - browser sub-pixel rounding leaves scrollTop a
-                    //     fraction short of `max`
-                    //   - iframe-srcdoc shapes report scrollHeight slightly
-                    //     larger than the actual scrollable distance
-                    // 32px is below one line-height of typical body text, so
-                    // it won't saturate prematurely while the user is still
-                    // reading a paragraph mid-article.
-                    //
-                    // (An earlier draft used `document.body.lastElementChild
-                    // .getBoundingClientRect().bottom` as a visual-bottom
-                    // detector — that backfired because the reading-progress
-                    // wrapper IS itself a child of body with position:fixed
-                    // top:0 height:3px, so its bottom edge is always near
-                    // the top of viewport, making the strategy return true
-                    // unconditionally and pinning the bar to 100% on load.)
-                    const bottomTolerance = 32;
-                    const atBottomMath = (scrollTop + clientHeight) >= (scrollHeight - bottomTolerance);
-                    const raw = Math.min(100, Math.max(0, (scrollTop / max) * 100));
-                    const next = atBottomMath || raw >= 99 ? 100 : raw;
-                    this.progress = (showAfter > 0 && scrollTop < showAfter) ? 0 : next;
-                    this._maybeFireMilestones(scrollTop, scrollHeight);
-                };
-                this._onScroll = () => {
-                    if (this._ticking) return;
-                    requestAnimationFrame(() => { update(); this._ticking = false; });
-                    this._ticking = true;
-                };
-                update();
-                // Listen on window AND document — some browsers (notably in
-                // iframe-srcdoc contexts where <body> is the scrollingElement)
-                // fire scroll events on document but not always reliably on
-                // window. The capture-phase document listener catches both.
-                window.addEventListener('scroll', this._onScroll, { passive: true });
-                window.addEventListener('resize', this._onScroll, { passive: true });
-                document.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
-            },
-            _maybeFireMilestones(scrollTop, scrollHeight) {
-                if (!this._milestonesEnabled) return;
-                const p = Math.round(this.progress);
-                [25, 50, 75, 100].forEach((threshold) => {
-                    if (!this._milestonesFired[threshold] && p >= threshold) {
-                        this._milestonesFired[threshold] = true;
-                        this.$dispatch('wirekit:reading-progress:milestone', {
-                            percent: threshold,
-                            scrollTop,
-                            scrollHeight,
-                        });
-                    }
-                });
-            },
-            destroy() {
-                window.removeEventListener('scroll', this._onScroll);
-                window.removeEventListener('resize', this._onScroll);
-                document.removeEventListener('scroll', this._onScroll, { capture: true });
-            },
-        }"
+        {{-- The scroll math, the milestone dispatch and the fill transform live in
+             the factory (resources/js/components/reading-progress.js). It was
+             ~150 lines of inline x-data, duplicated BYTE FOR BYTE between the
+             bar and the dot below, and it did not parse under Alpine's CSP
+             build. One factory now serves both renderings. --}}
+        x-data="wirekitReadingProgress({
+            target: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $target) }},
+            boundarySelector: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $boundarySelector) }},
+            showAfter: {{ (int) $showAfter }},
+            milestonesEnabled: {{ $milestonesEnabled ? 'true' : 'false' }},
+        })"
         role="progressbar"
         aria-valuemin="0"
         aria-valuemax="100"
-        x-bind:aria-valuenow="Math.round(progress)"
+        x-bind:aria-valuenow="roundedProgress()"
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
         {{ $attributes->class([$rootClass, 'wk-reading-progress--dot'])->merge(['aria-label' => 'Reading progress']) }}
         {{-- Inline-style the positioning + sizing so the dot pins to the
@@ -368,164 +228,21 @@
          (or bottom) of the viewport, full width. The fill uses
          `transform: scaleX` for compositor-only animation. --}}
     <div
-        x-data="{
-            progress: 0,
-            _ticking: false,
-            _onScroll: null,
-            _milestonesFired: { 25: false, 50: false, 75: false, 100: false },
-            _milestonesEnabled: {{ $milestonesEnabled ? 'true' : 'false' }},
-            init() {
-                const target = '{{ $target }}' || null;
-                const boundarySelector = '{{ $boundarySelector }}' || null;
-                const showAfter = {{ (int) $showAfter }};
-                // v2.4.0 Ext 1 — warn when boundary='<css-selector>' does
-                // NOT resolve to any ancestor of this element. The bar's
-                // visual positioning is `position: sticky` regardless, but
-                // sticky only anchors correctly when the developer's
-                // selector targets a positioned + scrolling ancestor.
-                if (boundarySelector && !this.$el.closest(boundarySelector)) {
-                    console.warn(
-                        `[wirekit] reading-progress: boundary selector '${boundarySelector}' did not match any ancestor of this element. ` +
-                        `position: sticky will anchor to the nearest positioned ancestor instead. ` +
-                        `Pass boundary='container' for the no-selector form, or verify the selector matches an ancestor (e.g. add id/class to a wrapper).`
-                    );
-                }
-                // Warn-once when a developer-supplied target selector doesn't
-                // resolve. Without this signal the progress bar silently
-                // tracks viewport scroll instead of the scoped element,
-                // which looks correct on quick inspection but doesn't honor
-                // the developer's intent. Mirrors the same warn shape used
-                // in reading-spine / reading-toc / reading-minimap JS.
-                if (target && !document.querySelector(target)) {
-                    // Single-quote the interpolated value so the warning
-                    // string carries no literal double-quote that would
-                    // terminate the surrounding x-data HTML attribute
-                    // prematurely. An earlier form escaped the
-                    // double-quotes around the interpolation, which
-                    // worked at the JS layer but injected literal
-                    // attribute-terminating chars into the rendered HTML.
-                    console.warn(
-                        `[wirekit] reading-progress: target selector '${target}' matched no element. ` +
-                        `Falling back to viewport scroll. Check the target prop you passed to the reading-progress component.`
-                    );
-                }
-                const update = () => {
-                    const scope = target ? document.querySelector(target) : null;
-                    let scrollTop, scrollHeight, clientHeight;
-                    if (scope) {
-                        const rect = scope.getBoundingClientRect();
-                        scrollTop = Math.max(0, -rect.top);
-                        scrollHeight = scope.scrollHeight;
-                        clientHeight = window.innerHeight;
-                    } else {
-                        // Read scroll metrics from a SINGLE element consistently
-                        // — picking whichever candidate actually has scrollable
-                        // content. Reading scrollTop from one element and
-                        // scrollHeight from another mixes scroll roots and caps
-                        // the proportional math below 100% (the failure mode
-                        // that broke the bar's saturation while the dot stayed
-                        // visually 'close enough').
-                        //
-                        // Candidates in priority order:
-                        //   1. document.scrollingElement — the CSSOM scroll root
-                        //   2. document.documentElement  — html
-                        //   3. document.body
-                        //
-                        // We pick the FIRST candidate whose scrollHeight exceeds
-                        // its clientHeight (i.e. the one with overflow). In the
-                        // standard iframe-srcdoc case (html-scroll) that's html;
-                        // in body-scroll contexts (where body has overflow:auto
-                        // and html fills the viewport) it's body. Spec quirk:
-                        // document.scrollingElement always returns html in
-                        // standards mode regardless of which element actually
-                        // scrolls, so we can't rely on it alone — the
-                        // scrollHeight-vs-clientHeight probe is the deciding
-                        // factor.
-                        const candidates = [
-                            document.scrollingElement,
-                            document.documentElement,
-                            document.body,
-                        ].filter(Boolean);
-                        let root = candidates[0];
-                        for (const c of candidates) {
-                            if (c.scrollHeight > c.clientHeight) {
-                                root = c;
-                                break;
-                            }
-                        }
-                        scrollTop = root.scrollTop;
-                        scrollHeight = root.scrollHeight;
-                        clientHeight = root.clientHeight || window.innerHeight;
-                    }
-                    const max = Math.max(1, scrollHeight - clientHeight);
-                    // At-bottom override — saturates fill at 100 when the
-                    // reader is within `bottomTolerance` of the math-max
-                    // scroll position OR proportional math already crossed
-                    // 99%. The generous 32px tolerance covers the common
-                    // failure cases:
-                    //   - body { padding-bottom: 24px } inflates scrollHeight
-                    //     past reachable scrollTop (proportional math caps
-                    //     ~96% even when the scrollbar visually rests at end)
-                    //   - browser sub-pixel rounding leaves scrollTop a
-                    //     fraction short of `max`
-                    //   - iframe-srcdoc shapes report scrollHeight slightly
-                    //     larger than the actual scrollable distance
-                    // 32px is below one line-height of typical body text, so
-                    // it won't saturate prematurely while the user is still
-                    // reading a paragraph mid-article.
-                    //
-                    // (An earlier draft used `document.body.lastElementChild
-                    // .getBoundingClientRect().bottom` as a visual-bottom
-                    // detector — that backfired because the reading-progress
-                    // wrapper IS itself a child of body with position:fixed
-                    // top:0 height:3px, so its bottom edge is always near
-                    // the top of viewport, making the strategy return true
-                    // unconditionally and pinning the bar to 100% on load.)
-                    const bottomTolerance = 32;
-                    const atBottomMath = (scrollTop + clientHeight) >= (scrollHeight - bottomTolerance);
-                    const raw = Math.min(100, Math.max(0, (scrollTop / max) * 100));
-                    const next = atBottomMath || raw >= 99 ? 100 : raw;
-                    this.progress = (showAfter > 0 && scrollTop < showAfter) ? 0 : next;
-                    this._maybeFireMilestones(scrollTop, scrollHeight);
-                };
-                this._onScroll = () => {
-                    if (this._ticking) return;
-                    requestAnimationFrame(() => { update(); this._ticking = false; });
-                    this._ticking = true;
-                };
-                update();
-                // Listen on window AND document — some browsers (notably in
-                // iframe-srcdoc contexts where <body> is the scrollingElement)
-                // fire scroll events on document but not always reliably on
-                // window. The capture-phase document listener catches both.
-                window.addEventListener('scroll', this._onScroll, { passive: true });
-                window.addEventListener('resize', this._onScroll, { passive: true });
-                document.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
-            },
-            _maybeFireMilestones(scrollTop, scrollHeight) {
-                if (!this._milestonesEnabled) return;
-                const p = Math.round(this.progress);
-                [25, 50, 75, 100].forEach((threshold) => {
-                    if (!this._milestonesFired[threshold] && p >= threshold) {
-                        this._milestonesFired[threshold] = true;
-                        this.$dispatch('wirekit:reading-progress:milestone', {
-                            percent: threshold,
-                            scrollTop,
-                            scrollHeight,
-                        });
-                    }
-                });
-            },
-            destroy() {
-                window.removeEventListener('scroll', this._onScroll);
-                window.removeEventListener('resize', this._onScroll);
-                document.removeEventListener('scroll', this._onScroll, { capture: true });
-            },
-        }"
+        {{-- The scroll math, the milestone dispatch and the fill transform live in
+             the factory (resources/js/components/reading-progress.js). It was
+             ~150 lines of inline x-data, duplicated BYTE FOR BYTE between the
+             bar and the dot below, and it did not parse under Alpine's CSP
+             build. One factory now serves both renderings. --}}
+        x-data="wirekitReadingProgress({
+            target: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $target) }},
+            boundarySelector: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $boundarySelector) }},
+            showAfter: {{ (int) $showAfter }},
+            milestonesEnabled: {{ $milestonesEnabled ? 'true' : 'false' }},
+        })"
         role="progressbar"
         aria-valuemin="0"
         aria-valuemax="100"
-        x-bind:aria-valuenow="Math.round(progress)"
+        x-bind:aria-valuenow="roundedProgress()"
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
         {{ $attributes->class([$rootClass])->merge(['aria-label' => 'Reading progress']) }}
         {{-- `max-width: none` defeats developer-side typography CSS that
@@ -553,7 +270,7 @@
              form merges with static styles via individual property
              assignment, preserving every static value. --}}
         <div
-            x-bind:style="{ transform: `scaleX(${progress / 100})` }"
+            x-bind:style="fillStyle()"
             class="wk-reading-progress__fill h-full w-full origin-left"
             style="height: 100%; width: 100%; transform-origin: left center; background-color: {{ $variantColor }}; transition: transform 75ms ease-out;"
         ></div>

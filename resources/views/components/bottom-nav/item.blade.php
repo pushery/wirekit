@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     Renders the developer's link or action; the item itself has no result to anticipate. --}}
 @aware(['interactive' => false])
 
 @php
@@ -61,7 +63,10 @@
     // as @if inside the tag. Keyed by label — nav labels are distinct.
     $isInteractive = filter_var($interactive, FILTER_VALIDATE_BOOLEAN);
     if ($isInteractive) {
-        $key = \Illuminate\Support\Js::from($label);
+        // AlpinePayload, not Js::from: this literal is spliced into four Alpine
+        // directives, and Js::from's \u escaping does not survive the CSP tokenizer —
+        // a label with an umlaut would compare against mangled text and never match.
+        $key = \Pushery\WireKit\Support\AlpinePayload::from($label);
         $attributes = $attributes->merge([
             'x-init' => 'if ('.($active ? 'true' : 'false').' && active === null) active = '.$key,
             'x-on:click.prevent' => 'active = '.$key,

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     It opens the action stack. --}}
 @props([
     // The accessible name when the button carries no words of its own.
     //

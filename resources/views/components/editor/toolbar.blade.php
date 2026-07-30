@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Its buttons command the editor in the page. --}}
 @props([
     // Command vocabulary to render. '|' is a visual separator. Commands the active
     // extension set doesn't support simply no-op (Tiptap's chain ignores them).

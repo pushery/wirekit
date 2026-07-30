@@ -10,6 +10,132 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.22.0] — 2026-07-30
+
+**Minor release — three themes in one version: an optimistic-UI layer, a Content-Security-Policy build, and a new component with five capabilities an application could not reach before.** Nothing existing changes shape: every prop added here has a default that renders exactly what the previous version rendered, and both new script bundles are ones nobody loads by accident.
+
+Read in one sentence each: a component can show the result of an action before the server confirms it and put it back if the answer is no; the whole catalog now works under a policy that forbids `unsafe-eval`, which took moving every inline expression into a registered factory; and a displayed value can become an editor in place.
+
+### Added
+
+- **[Optimistic UI](https://docs.wirekit.app/extending/optimistic-ui) — a component can show the result of an action before the server has confirmed it, and put it back if the answer is no.** Add `optimistic="yourMethod"` to a supported component and load `wirekit-optimistic.js` alongside whichever bundle you already use. Supported today on [toggle](https://docs.wirekit.app/components/toggle), [checkbox](https://docs.wirekit.app/components/checkbox), [rating](https://docs.wirekit.app/components/rating), [reaction](https://docs.wirekit.app/components/reaction), [select](https://docs.wirekit.app/components/select), [segmented control](https://docs.wirekit.app/components/segmented-control), [combobox](https://docs.wirekit.app/components/combobox), [multi-select](https://docs.wirekit.app/components/multi-select), [calendar](https://docs.wirekit.app/components/calendar), [date picker](https://docs.wirekit.app/components/date-picker), [time picker](https://docs.wirekit.app/components/time-picker), [input](https://docs.wirekit.app/components/input), [textarea](https://docs.wirekit.app/components/textarea), [password input](https://docs.wirekit.app/components/password-input), [slider](https://docs.wirekit.app/components/slider), [range slider](https://docs.wirekit.app/components/range-slider), [number input](https://docs.wirekit.app/components/number-input), [tags input](https://docs.wirekit.app/components/tags-input), [one-time code](https://docs.wirekit.app/components/otp-input), [toggle button](https://docs.wirekit.app/components/toggle-button), [editor](https://docs.wirekit.app/components/editor), [color picker](https://docs.wirekit.app/components/color-picker) and the checkbox item inside a [dropdown](https://docs.wirekit.app/components/dropdown).
+
+  Every one of them had to earn it. A component is not declared safe — it becomes reachable once its own rendered accessibility test is green, and some still do not make it: a date picker in `range` mode is excluded because an undo of two values has no single right answer. Components that are not covered say so, on the component, with the specific obstacle.
+
+  **A field you type into does not undo.** Putting the old value back costs a toggle or a select nothing — it is simply the other choice. In a text field the old value belongs to the server and the new one is your work, so restoring it would delete what you wrote because a save failed. Those fields keep the value instead, mark it unsaved, and say both: that it did not save, and that it is still there. Nothing is read back to you, which matters most in a password field.
+
+  **A control with two ways in takes the safer exit for both.** A number field has steppers and a box you can type in; a tag field has a list and a box you can type in. Stepping or removing is a discrete choice that could safely spring back — but a value typed while such a request is still out would be overwritten when it does, so the safety would depend on whether you happened to be typing. Neither half undoes: the change stays and says it was not saved.
+
+  **A slider commits when the gesture ends**, not per frame — at the end of a drag, or immediately on a keypress, since one press is already a finished decision. There is no settle delay anywhere in this: a timer would make the same gesture behave differently on a fast machine than on a slow one. A refusal returns the thumb to where the gesture began rather than to where it was released, and for a range the pair moves as one value, so both handles return together.
+
+  **What it announces is the part worth reading.** The flip announces once and hedged — "Saving" — so the new value is audible as provisional. Confirmation is **silent**, because what was announced is what happened; only a deviation speaks a second time, which is what makes an undo recognizable as an undo. Where the component sits in a form that already shows a validation message, the undo stays silent and leaves that message to speak. An aborted request announces nothing at all. Focus never moves.
+
+  The factory ships in its own bundle and in no other, so an application that does not use it pays nothing — neither the bytes nor the announcement behavior. A component without the prop renders exactly as it did before, down to the byte.
+
+---
+
+- **A Content-Security-Policy build: `'scripts' => ['bundle' => 'csp']`.** Alpine's standard build evaluates its expressions with `new Function(...)`, so a policy without `script-src 'unsafe-eval'` left every interactive component inert — a dropdown that never opened, a modal that never closed, and no error to say why. The CSP bundle is built against Alpine's own Content-Security-Policy distribution and brings its own Alpine, so it is loaded instead of yours, not alongside it.
+
+  Reaching that meant the whole catalog had to stop asking for what a strict policy forbids. Every inline `x-data` object moved into a registered factory, every directive payload is encoded rather than interpolated, and the expressions that remain are single expressions with no arrow functions, template literals or optional chaining. That work is invisible in the standard build and is what makes the strict one possible.
+
+  See [Content Security Policy](https://docs.wirekit.app/getting-started/integration#content-security-policy).
+
+- **Plural forms are chosen in the browser by the language's own rule.** A count that changes on the client cannot have its wording decided on the server: the page would show six and announce five. Translations now travel as forms and the browser picks between them with `Intl.PluralRules`. This replaces a `count === 1 ? singular : plural` choice, which is correct only for languages that have exactly two forms — Polish has three and Arabic six, and the wrong one was picked without ever looking wrong to a reader of English. Reaches the [countdown](https://docs.wirekit.app/components/countdown)'s screen-reader text and every accessible name that embeds a count.
+
+- **[Inline edit](https://docs.wirekit.app/components/inline-edit) — a displayed value becomes an editor in place, and nothing is written until the reader confirms.** The component owns the interaction and not the saving: it emits an event carrying the field name, the new value and the previous one, and your Livewire component decides what that means.
+
+  It waits for you to say the save worked. The end of a request is not evidence of success — a validation failure completes one too — so a component that closed there would discard the error message you just rendered and leave the reader looking at their old value with no explanation.
+
+  Four control types, an `editor` slot for anything else, and three affordance styles: the pencil always visible, on hover, or only once tabbed to. There is deliberately no way to remove it, because plain text is not focusable and a value with no button cannot be reached by keyboard at all.
+
+- **[One-time code](https://docs.wirekit.app/components/otp-input) fields accept a non-numeric alphabet.** A recovery code is often deliberately not digits — dropping the ambiguous pairs buys entropy per character and survives being read aloud. Such a code could not be typed into the field at all: every keystroke was discarded and the boxes stayed empty, with no message, while the reader held the correct code. One `alphabet` prop drives the keystroke filter, the paste filter, the validation pattern and the mobile keyboard together.
+
+- **An application can state its own motion preference.** Motion followed the operating system and nothing else, and the blanket reduced-motion rule made overriding it an arms race — it carries `!important` and matches the whole surface. `data-reduce-motion` on `<html>` takes `reduce` or `no-preference`; absent, the operating system decides exactly as before. The middle value is the point: a media query expresses two states, and someone who set the system flag for an unrelated reason needed a third.
+
+- **The stylesheet and script directives accept a CSP nonce.** `@wirekitStyles($nonce)` and `@wirekitScripts($nonce)`, matching `@wirekitThemeScript`. Under a `strict-dynamic` policy the nonce is the only thing that grants a resource, so without a parameter there was no way to allow the two tags that load the library.
+
+- **Component-internal icon buttons reach the 44px touch target.** The floor was bound to two marker classes, and a button rendered from inside another component carries neither — so a page built only from WireKit showed a row where two controls grew on touch and the third did not. The new `wk-touch-target` class centers a transparent 44×44 hit area inside a control without changing its size, and you can use it on your own icon buttons.
+
+- **[Usage meter](https://docs.wirekit.app/components/usage-meter) accepts its own word for the unlimited tier.** `unlimitedLabel` overrides the translated default, for the application whose fair-use tier is *named* "Unlimited" — a proper noun that has to read identically in every language. Until now that word could be held on surfaces the application rendered itself but not on the meter, so the rule survived only by nobody adding the key to a catalog.
+
+- **A theme can reach four surfaces it previously could not.** Dressing specific surfaces — putting a glass class on every panel, say — needs a stable way to find them, and only the card carried one. A dropdown panel, a popover panel, a modal body and a drawer body now each emit a `data-wk-*` attribute for exactly that purpose, and [theming](https://docs.wirekit.app/theming#theme-markers) documents the complete set.
+
+  Worth stating because of how the gap presented: a selector that matches nothing throws nothing, warns nothing, and produces no visual difference to compare against. A theme mapping six surfaces reached one, and read as though it reached six. The page now also names the one marker that is **not** a themeable surface — `data-wk-tip` marks an element that *has* a tooltip, not a tooltip, so dressing it frosts the wrong thing while looking like it worked.
+
+### Fixed
+
+- **Four announcements that never announced anything.** A live region that arrives on the page together with its text is a new node, and a screen reader says nothing at all — the region has to exist first and be filled afterwards. Affected the alert region behind failed streams and three sibling surfaces.
+
+- **A toast is no longer announced twice.** Each toast carried its own live region inside a container that was already one, so the same text was queued by two announcers.
+
+- **A rating set with the keyboard never reached the form.** Arrow keys moved the visible score without writing the hidden input, so submitting sent the score the page had before it was touched — and the star buttons had no translatable label at all.
+
+- **Clearing a combobox did not reach the form**, for the same reason: the visible field emptied and the submitted value did not.
+
+- **A range slider and a one-time-code field each shipped a fix that could never run** — both components registered a factory that nothing on the page used, so the corrected behavior was present in the bundle and unreachable from the markup.
+
+- **A slider's value bubble stopped overwriting the element's style attribute**, which discarded anything else set on it.
+
+- **`wirekit:doctor` warned about three things that were not wrong.** Each came from a check reading for a *shape* instead of the property it names, and a warning nobody can act on is worse than none — it teaches people the doctor is noisy, and then the real findings go unread too.
+
+  A null-guard written as `if (this._observer) { … }` was rejected because only the inverted and optional-chaining spellings were recognized, though the accepted forms do strictly less. An observer created once for the lifetime of the page was reported as a leak, when giving it teardown would have been the defect. And an application self-hosting Chart.js was told its charts "render but draw nothing" while they demonstrably drew — that registration step applies only to the module import, not to the self-hosted build.
+
+  The null-guard check now judges each `disconnect()` by its own surroundings rather than asking whether the file contains a guard anywhere. That distinction matters in both directions: the file-wide question rejected a correct guard, and simply teaching it the third spelling would have let a genuinely unguarded call hide behind a correct one elsewhere in the same file.
+
+- **[Inline edit](https://docs.wirekit.app/components/inline-edit) could not be opened at all.** Clicking the pencil did nothing — not on a busy page, not on an empty one with a single field. The editor opened and closed itself within the same tick, so nothing was logged, nothing threw, and the control simply looked dead.
+
+  The cause was an identity check comparing two values that are not the same element. Opening announces itself so that other open editors close; that announcement identified its sender by the element in scope, and "in scope" means the *button* when the announcement comes from a click, but the *component* when the announcement is received. No editor ever recognized itself, so each one closed itself the instant it opened.
+
+  It also resisted being debugged: instrumenting the open path changes which element is in scope, and the fault disappears while you look at it.
+
+- **[Inline edit](https://docs.wirekit.app/components/inline-edit) shrank its own field the moment you clicked it**, and put the confirm and cancel buttons above the field's center line rather than on it. Both applied to every control type.
+
+  The width is the interesting half, because the markup looked right. The control carried `w-full`, which reads as "fills the row" and does not: as a flex item it keeps its automatic basis and settles at its intrinsic size — around twenty characters — no matter how wide the row is. So a value that read across the full width opened into a field a fifth of that.
+
+  Moving the growth onto the control did not help either, and that is only visible in a measured box rather than in the markup: these are complete form controls, each rendering its own wrapper around label, field and hint, and that wrapper is the flex item while the field is a grandchild. Growth on a grandchild grows nothing. The editor now fills the row it is in, and the buttons sit on the midline of a single-line control — while a multi-line editor keeps them at the top edge, next to where typing starts, because centering against a box that has grown to six rows would float them far from both the first line and the last.
+
+- **[Liquid glass](https://docs.wirekit.app/components/liquid-glass) — the refraction never actually rendered.** `.wk-glass-refract` asked for its distortion inside `backdrop-filter`, as `blur(…) url(#wk-glass-refract)`, behind a support check for exactly that. The browser accepts the value, reports it as supported, keeps it — and draws nothing from it. Measured twice, independently: the card is pixel-for-pixel identical with the filter and without it. So the two tiers the page invites you to compare were the same image, and every check short of comparing rendered pixels agreed that all was well.
+
+  The distortion now sits on a layer behind the content, applied through `filter` — which does draw. The surface's own text is unaffected, because only the backdrop is displaced.
+
+  Moving it there was necessary and, on its own, still not enough to see anything, which is worth stating plainly because the reason generalizes. `.wk-glass-refract` had inherited Tier 1's `blur(20px)` over a 72% wash, and frosting exists precisely to destroy the structure behind it. A refraction can only bend a backdrop that still arrives, so displacing an already-flat wash produced an exactly flat wash — no error anywhere, and nothing on screen at any strength.
+
+  **Tier 2 is therefore now clear glass rather than frosted glass with an effect on top**, with a much thinner blur and a much thinner wash. That is a visible change to anything already using `.wk-glass-refract`: the backdrop shows through where it used to be hidden. `wk-glass` is unchanged and remains the surface to pick when content on top needs a calm background.
+
+  Two further consequences. The displacement moves the backdrop layer's own edge as well, which gave the surface a rippling outline — that layer now overshoots and the surface clips it, so the edge is straight again; **the cost is that a Tier 2 surface clips overflowing descendants** and cannot host a dropdown or tooltip. And it is no longer restricted to one browser: the mechanism is inside the supported baseline everywhere. The page said "Chrome only" and no longer does.
+
+  **And the strength was still too low to see.** With the backdrop restored, the displacement moved measurably and the pattern behind the surface stayed a *regular grid* — so the page's own sentence, "watch the dotted pattern bend behind the box", was still not true. Judged at three strengths as images rather than by a number: the grid only visibly curves from roughly triple the previous value, and beyond that it dissolves into swirls and stops reading as a pattern at all. The shipped value now sits where the dots are drawn into arcs and still read as dots.
+
+  Both failure modes are held by tests — a floor under the displacement strength, and a ceiling over the blur and the wash, so neither can quietly return to values that render nothing. The floor was raised with this change: it had been set at "moves at least one pixel", which is not what the page promises and let the effect stay invisible while passing.
+
+  A second, smaller defect on the same page: the SVG filter reaches a page only through `<x-wirekit::glass />`, and on the documentation page that component appeared solely inside a code example — something to copy, not something the page ran. So the demos referenced a filter that was not there. Both halves had to be fixed; either alone leaves the effect invisible.
+
+- **[Sparklines drew nothing under ApexCharts 6.](https://docs.wirekit.app/components/sparkline)** The chart configuration reached the library carrying keys from the other adapter's vocabulary. ApexCharts used to ignore what it did not recognize; version 6 iterates one of those keys and threw before drawing. The failure was quiet in the worst way — a sparkline is usually decoration beside the number it illustrates, so the page still looked complete and only an empty box gave it away. ApexCharts 5 and 6 are both verified in a real browser, and the [chart page](https://docs.wirekit.app/components/chart) now states the supported range.
+
+- **[Inline edit](https://docs.wirekit.app/components/inline-edit) closed itself when a save was refused.** The editor is meant to stay open until a save is confirmed, and it did — right up until the case that matters most. A validation failure re-renders the field *with* an error message, which changes it enough that Livewire replaces the element instead of patching it, and the component came back in read mode. The reader was returned to their old value, holding an error about an edit they could no longer see. A field carrying a validation error now opens as editable, which is both the fix and simply what is true of such a field.
+
+- **[Countdown](https://docs.wirekit.app/components/countdown) left a bound value false when the deadline had already passed.** Binding with `x-model` and a target in the past produced a countdown that showed its expired state while the bound value stayed false for the life of the page — a resend button, for instance, that never became clickable again without a reload. The completion event is one-shot by design; the bound value should never have been.
+
+- **Countdown's screen-reader text agrees in number.** It joined the value to a plural label, so a single second was announced as "1 seconds", and it lowercased the label — wrong in every language that capitalizes nouns. The units are now pluralized through the translator, which also means a translation decides its own casing and word order.
+
+- **[Table](https://docs.wirekit.app/components/table)'s scrollable region had an English name in every language.** A responsive table wraps itself in a focusable region whose accessible name fell back to a hard-coded English string, so a reader tabbing into it on a translated page heard English. Callers that pass `tableLabel` were never affected — which is why it lasted: the failure only appeared when the component was used exactly as documented.
+
+- **Twenty-eight strings inside component behavior are translatable.** Copy confirmations, sidebar collapse labels, password show/hide, filter-chip actions, map coordinates, calendar overflow, tour navigation and more were written as literals inside Alpine expressions rather than passed through the translator. That shape is invisible to every tool that hunts missing translations — they all look for the translator call — so unlike an ordinary oversight this one could not surface on its own.
+
+- **`wirekit:doctor` names the token that is actually missing.** When a token pair could not be compared it reported the Tailwind side as unset regardless of which side was absent, sending you to the file where nothing was wrong. It now names the specific token, so reading the line no longer requires knowing which side is which.
+
+### Changed
+
+- **[Product card](https://docs.wirekit.app/components/product-card) is documented as a navigation surface.** It renders a link and no server action, which is what its documentation now says.
+
+---
+
+### Documentation
+
+- **The Content Security Policy requirement is written down.** The interactive components need `script-src 'unsafe-eval'`, because Alpine evaluates expressions with `new Function`. Without it nothing throws — a one-time-code field still accepts typing and simply stops advancing — so this was previously learned by watching components quietly not work.
+- **The [liquid glass](https://docs.wirekit.app/components/liquid-glass) page states its theme requirement above the demos, and names the right theme.** It sat in a trailing section below every demo, and named a theme that does not show the effect.
+- **[Toast](https://docs.wirekit.app/components/toast) examples show the real integration.** The code panel carried demo scaffolding and a hardcoded payload, which read as though every click replays a fixed event. It now shows a Livewire action with the toast dispatched after the write returns, and the failure branch beside it.
+
 ## [2.21.1] — 2026-07-27
 
 **Patch release — accessibility fixes, most of them repairs to things 2.21.0 and 2.20.0 introduced.** No new props, no new configuration. One change renames a DOM id; it is called out below.

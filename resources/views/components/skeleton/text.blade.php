@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     'lines' => 3,
     'animation' => config('wirekit.components.skeleton.animation', 'shimmer'), // shimmer | pulse | none

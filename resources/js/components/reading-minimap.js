@@ -1,4 +1,5 @@
 import { sanitizeMinimapHtml } from '../utils/sanitize-minimap-html.js';
+import { prefersReducedMotion } from '../utils/motion.js';
 
 /**
  * Reading-minimap — every-item density overview + literal page-preview
@@ -284,12 +285,58 @@ export default (options = {}) => ({
         this.activeIndex = active;
     },
 
+    /**
+     * The minimap's geometry, as methods.
+     *
+     * Every one of these was a template literal in the template. That is the one
+     * place they cannot live: Alpine's CSP build parses expressions rather than
+     * compiling them, and a backtick string is not in its grammar — so the whole
+     * minimap was inert under a strict Content-Security-Policy, in the quiet way
+     * (it renders, nothing positions).
+     *
+     * They read better here anyway. The stripe height depends on itemStyle AND
+     * on whether the controller populated heightFraction, and that condition is
+     * legible next to the code that populates it.
+     */
+    stripeStyle(item) {
+        const top = `top: ${item.fraction * 100}%;`;
+        const height = this.itemStyle === 'block' && item.heightFraction
+            ? `${item.heightFraction * 100}%`
+            : 'var(--reading-minimap-stripe-height)';
+
+        return `${top} height: ${height}; margin-bottom: var(--reading-minimap-stripe-gap);`;
+    },
+
+    viewportStyle() {
+        return `top: ${this.viewportTop}px; height: ${this.viewportHeight}px;`;
+    },
+
+    bookmarkStyle() {
+        return `top: ${this.bookmarkPct * 100}%;`;
+    },
+
+    anchorStyle(anchor) {
+        return `top: ${anchor.fraction * 100}%;`;
+    },
+
+    anchorHref(anchor) {
+        return `#${anchor.id}`;
+    },
+
+    tooltipStyle() {
+        const placement = this.side === 'left'
+            ? 'left: 100%; margin-left: 0.5rem'
+            : 'right: 100%; margin-right: 0.5rem';
+
+        return `top: ${this.tooltipTop}px; transform: translateY(-50%); ${placement};`;
+    },
+
     scrollToItem(item) {
         if (!this._scrollHost) return;
         const host = this._scrollHost;
         const clientHeight = host === document.documentElement ? window.innerHeight : host.clientHeight;
         const targetScroll = Math.max(0, item.top - clientHeight / 2);
-        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reducedMotion = prefersReducedMotion();
         if (host === document.documentElement) {
             window.scrollTo({ top: targetScroll, behavior: reducedMotion ? 'auto' : 'smooth' });
         } else {
@@ -808,7 +855,7 @@ export default (options = {}) => ({
         event?.preventDefault?.();
         const el = document.getElementById(anchor.id);
         if (!el) return;
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reduced = prefersReducedMotion();
         el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
         // Update the URL fragment without pushing a history entry (back-
         // button still goes to the previous PAGE, not the previous heading).

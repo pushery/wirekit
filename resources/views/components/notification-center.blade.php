@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Open state and the list it was given. --}}
 @props([
     'items' => [],                  // [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
     'groupBy' => config('wirekit.components.notification-center.group-by', 'none'), // none | time | type ('time' groups by each item's `group` label)
@@ -47,7 +49,7 @@
     {{-- State-mutating demo (open/close, mark-read, realtime): opt into the docs
          replay affordance so a "used-up" preview can be reset (mirrors alert/badge). --}}
     data-replayable="true"
-    x-data="wirekitNotificationCenter({ items: @js($itemsArr), groupBy: '{{ $groupBy }}', open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: '{{ $realtimeEvent }}'@endif })"
+    x-data="wirekitNotificationCenter({ items: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemsArr) }}, latestLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('unread. Latest:')) }}, groupBy: '{{ $groupBy }}', open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: '{{ $realtimeEvent }}'@endif })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
          escape stays here (window-scoped, teleport-agnostic). --}}
     x-on:keydown.escape.window="open && close(true)"
@@ -55,7 +57,11 @@
 >
     @if($name)
         {{-- Mirrors the live unread count for a wire:model bridge. --}}
-        <input type="hidden" x-ref="model" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} :value="unreadCount" />
+        {{-- Static value as well as the bound one: the field is empty until Alpine
+         boots, and a form submitted in that window sends nothing while the
+         visible control already shows the value. Both come from the same PHP
+         expression that feeds the factory, so they cannot drift. --}}
+        <input type="hidden" x-ref="model" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} value="{{ $serverUnread }}" :value="unreadCount" />
     @endif
 
     {{-- Screen-reader announcement for new notifications. Fed from the SAME
@@ -64,7 +70,7 @@
          count-only region would stay silent when one notification replaces another.
          Polite (never assertive): a notification must not interrupt the user. --}}
     <p class="sr-only" role="status" aria-live="polite" aria-atomic="true"
-       x-text="unreadCount > 0 ? unreadCount + ' {{ __('unread. Latest:') }} ' + (items[0]?.title ?? '') : ''"></p>
+       x-text="summaryLine"></p>
 
     {{-- Bell trigger. The accessible name carries the live unread count so a
          screen reader announces "Notifications, 3 unread" (not color/dot alone). --}}
@@ -75,8 +81,9 @@
         :aria-expanded="open"
         aria-haspopup="dialog"
         aria-label="{{ $title }}"
-        :aria-label="unreadCount > 0 ? '{{ $title }}, ' + unreadCount + ' unread' : '{{ $title }}, none unread'"
-        class="relative inline-flex items-center justify-center h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+        {{-- Only :count is unknown server-side, so only :count is substituted here. --}}
+        :aria-label="unreadCount > 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__(':title, :count unread', ['title' => $title])) }}.replace(':count', unreadCount) : {{ \Pushery\WireKit\Support\AlpinePayload::from(__(':title, none unread', ['title' => $title])) }}"
+        class="wk-touch-target relative inline-flex items-center justify-center h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
     >
         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
         {{-- Unread count pill (decorative — the count is in the bell's aria-label).
@@ -158,7 +165,7 @@
             </div>
 
             {{-- Grouped notification list --}}
-            <template x-for="group in groups" :key="group.label ?? 'all'">
+            <template x-for="group in groups" :key="groupKey(group)">
                 <div>
                     <p x-show="group.label" x-cloak class="sticky top-0 px-[var(--padding-wk-x-md)] py-1 text-[length:var(--text-wk-xs)] uppercase tracking-wide font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-subtle)] bg-[var(--color-wk-bg-elevated)]" x-text="group.label"></p>
                     <template x-for="item in group.items" :key="item.id">
@@ -174,7 +181,7 @@
                                 <a
                                     :href="item.href"
                                     @click="activate(item)"
-                                    :aria-label="(item.read ? '' : 'Unread. ') + item.title + (item.actionLabel ? ', ' + item.actionLabel : '')"
+                                    :aria-label="(item.read ? '' : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Unread.')) }} + ' ') + item.title + (item.actionLabel ? ', ' + item.actionLabel : '')"
                                     class="{{ $row }}"
                                 >
                                     {{-- Unread dot — paired with the "Unread." prefix in aria-label (not color alone). --}}
@@ -191,7 +198,7 @@
                                 <button
                                     type="button"
                                     @click="activate(item)"
-                                    :aria-label="(item.read ? '' : 'Unread. ') + item.title + (item.actionLabel ? ', ' + item.actionLabel : '')"
+                                    :aria-label="(item.read ? '' : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Unread.')) }} + ' ') + item.title + (item.actionLabel ? ', ' + item.actionLabel : '')"
                                     class="{{ $row }}"
                                 >
                                     {{-- Unread dot — paired with the "Unread." prefix in aria-label (not color alone). --}}

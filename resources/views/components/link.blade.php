@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — navigation
+     The anchor primitive. Where a developer puts a wire:click on it, the optimism belongs to whatever that action changes — not to the link. --}}
 @props([
     'href' => null,
     'variant' => 'default',

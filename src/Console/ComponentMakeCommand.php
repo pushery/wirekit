@@ -89,7 +89,15 @@ class ComponentMakeCommand extends Command
         }
 
         File::ensureDirectoryExists(dirname($targetPath));
-        File::copy($baseSourcePath, $targetPath);
+
+        // Copy, minus our own bookkeeping.
+        //
+        // The optimistic-UI marker is an internal WireKit convention: it records
+        // that somebody asked whether THAT component could show its result before
+        // the server confirms it. Copied verbatim into a developer's file it
+        // would assert the same about a component nobody has looked at — a claim
+        // that is wrong the moment the copy is edited, and one they never made.
+        File::put($targetPath, $this->stripOptimisticMarker(File::get($baseSourcePath)));
 
         $this->info("Scaffolded custom component → {$targetPath}");
         $this->line('  Source: '.str_replace(base_path().'/', '', $baseSourcePath));
@@ -213,5 +221,18 @@ class ComponentMakeCommand extends Command
         }
 
         return null;
+    }
+
+    /**
+     * Remove WireKit's optimistic-UI marker from a copied component.
+     *
+     * The marker states that somebody asked whether that component could show
+     * its result before the server confirms it. It is true of the base and says
+     * nothing about the copy — and a comment that asserts consideration nobody
+     * gave is worse than no comment, because the next reader believes it.
+     */
+    protected function stripOptimisticMarker(string $source): string
+    {
+        return (string) preg_replace('/\{\{--\s*optimistic-ui:.*?--\}\}\s*/su', '', $source);
     }
 }

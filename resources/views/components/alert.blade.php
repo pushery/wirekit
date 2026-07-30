@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     Dismissal is local; if an application persists it, that action is the developer's and the optimism belongs with it. --}}
 @props([
     'variant' => config('wirekit.components.alert.variant', 'info'), // back-compat alias of `intent`
     'intent' => null,            // canonical color axis: primary | neutral | info | success | warning | danger. null → falls back to `variant`
@@ -126,7 +128,7 @@
              data-replayable opts the dismissed-then-empty preview into the docs
              site's replay affordance so a reader can restore the alert without a
              full page reload (inert in a developer app — no replay-button there). --}}
-        x-data="{ shown: true }"
+        x-data="wirekitDismissible()"
         x-show="shown"
         x-transition.opacity
         data-replayable="true"
@@ -167,7 +169,7 @@
     @if($dismissible)
         <button
             type="button"
-            @click="shown = false"
+            @click="dismiss()"
             aria-label="{{ __('Dismiss') }}"
             class="shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
         >

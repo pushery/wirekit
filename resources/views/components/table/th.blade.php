@@ -1,3 +1,8 @@
+{{-- optimistic-ui: n/a — query. The wire:click this component emits is a SORT: a
+     query round trip, not a mutation. We cannot show its result before the server
+     answers, because nobody knows the result — only the intent could be
+     acknowledged, and that is a different state machine and deliberately out of
+     scope. --}}
 @props([
     'sortable' => false,
     'sortDirection' => null, // null | 'asc' | 'desc' — current sort state (Livewire mode)

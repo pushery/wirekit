@@ -28,6 +28,20 @@ export default function wirekitLightbox(config = {}) {
         count: config.count || 0,
         loop: config.loop !== false,
         _name: config.name || '',
+        // The captions travel with the config so the template can ask for the
+        // current one by name. It used to reach into the array itself —
+        // `slides[current]?.caption` — which is an optional chain, and Alpine's
+        // CSP build has no such thing in its grammar. A getter also means the
+        // out-of-range case is handled once here rather than at each of the two
+        // bindings that need it.
+        _slides: Array.isArray(config.slides) ? config.slides : [],
+
+        /** The current slide's caption, or '' when there is none. */
+        get currentCaption() {
+            const slide = this._slides[this.current];
+
+            return slide && slide.caption ? slide.caption : '';
+        },
         _trap: null,
         _openHandler: null,
 

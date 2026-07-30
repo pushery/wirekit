@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is which tab is active. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'items' => [],
     'default' => null,
@@ -146,37 +149,31 @@
      Arrow-key navigation is handled inline (roving tabindex pattern): ArrowLeft/ArrowRight
      move focus between tab buttons, Home/End jump to first/last, Space/Enter activate. --}}
 <div
-    x-data="{
-        active: @js($activeTab),
-        labels: @js($tabLabels),
-        init() {
-            // Emit a namespaced, bubbling browser event on every tab change so a
-            // Livewire (or any) listener can OBSERVE the switch server-side without
-            // rebuilding the tablist by hand. $watch fires on CHANGE only (not the
-            // initial value), and an unobserved CustomEvent is a no-op — so this is
-            // zero-config and backward-compatible for every existing usage. Listen
-            // with @wirekit:tab-changed (the event bubbles to any ancestor / window).
-            this.$watch('active', (value) => this.$dispatch('wirekit:tab-changed', {
-                tab: value,
-                label: this.labels?.[value] ?? value,
-            }));
-        },
-        focusTab(direction) {
-            const buttons = $el.querySelectorAll('[role=tab]:not([disabled])');
-            const current = document.activeElement;
-            const idx = Array.from(buttons).indexOf(current);
-            if (idx === -1) return;
-            let next;
-            if (direction === 'next') next = (idx + 1) % buttons.length;
-            else if (direction === 'prev') next = (idx - 1 + buttons.length) % buttons.length;
-            else if (direction === 'first') next = 0;
-            else if (direction === 'last') next = buttons.length - 1;
-            buttons[next]?.focus();
-        }
-    }"
-    @if($warnWireModelInDebug)
-        x-init="console.warn('[wirekit] tabs: wire:model dropped — tabs are client-only Alpine state, not a Livewire input. Use named slots for content (<x-slot:keyname>...</x-slot:keyname>) per items[key]. See https://docs.wirekit.app/components/tabs for the contract.')"
-    @endif
+    {{-- Selection, the change event and the roving-focus model live in the
+         factory (resources/js/components/tabs.js). Alpine's CSP build parses
+         neither the method shorthand nor the arrow-function $watch callback, so
+         the whole object failed to build and the tablist stopped responding to
+         clicks AND arrow keys. --}}
+    {{-- The debug-only wire:model warning rides in the factory's config rather
+         than its own x-init: an element carries one Alpine component, and an
+         inline console.warn throws under the CSP build while BUILDING the
+         component — taking the tablist down with it. --}}
+    @php
+        // Composed in PHP, not inline in the directive: Blade's component-tag
+        // compiler rewrites an `<x-slot:…>` wherever it appears in TEMPLATE
+        // text — including inside a string literal in a `{{ }}` echo, where it
+        // is a parse error rather than a bad string. Inside @php it is ordinary
+        // PHP and survives whole, which also keeps it a single literal that the
+        // drift scanner recognizes as a warning rather than a class list.
+        $wireModelWarning = $warnWireModelInDebug
+            ? '[wirekit] tabs: wire:model dropped — tabs are client-only Alpine state, not a Livewire input. Use named slots for content (<x-slot:keyname>...</x-slot:keyname>) per items[key]. See https://docs.wirekit.app/components/tabs for the contract.'
+            : null;
+    @endphp
+    x-data="wirekitTabs({
+        active: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $activeTab) }},
+        labels: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $tabLabels) }},
+        warning: {{ \Pushery\WireKit\Support\AlpinePayload::from($wireModelWarning) }},
+    })"
     {{ $attributes->class([$rootClasses]) }}
 >
     {{-- Tablist — the row (or column, when vertical) of tab buttons.
@@ -188,9 +185,9 @@
                 role="tab"
                 id="{{ $uid }}-tab-{{ $key }}"
                 aria-controls="{{ $uid }}-panel-{{ $key }}"
-                :aria-selected="active === @js($key) ? 'true' : 'false'"
-                :tabindex="active === @js($key) ? '0' : '-1'"
-                @click="active = @js($key)"
+                :aria-selected="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? 'true' : 'false'"
+                :tabindex="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? '0' : '-1'"
+                @click="active = {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
                 @if($isVertical)
                     @keydown.arrow-down.prevent="focusTab('next')"
                     @keydown.arrow-up.prevent="focusTab('prev')"
@@ -200,7 +197,7 @@
                 @endif
                 @keydown.home.prevent="focusTab('first')"
                 @keydown.end.prevent="focusTab('last')"
-                :class="active === @js($key) ? '{{ $tabActiveClasses }}' : '{{ $tabInactiveClasses }}'"
+                :class="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? '{{ $tabActiveClasses }}' : '{{ $tabInactiveClasses }}'"
                 class="{{ $tabClasses }}"
             >
                 @if($tab['icon'])
@@ -224,7 +221,7 @@
                 id="{{ $uid }}-panel-{{ $key }}"
                 aria-labelledby="{{ $uid }}-tab-{{ $key }}"
                 tabindex="0"
-                x-show="active === @js($key)"
+                x-show="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
                 x-cloak
             >
                 {{-- Dynamic slot lookup: render the named slot whose name matches

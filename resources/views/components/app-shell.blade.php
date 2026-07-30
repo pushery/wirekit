@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Layout state — which panes are open at this viewport. --}}
 @props([
     'scope' => null,
     // Viewport-fixer mode. Default (false) keeps `min-h-screen` — the shell grows

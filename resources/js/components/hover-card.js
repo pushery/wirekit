@@ -1,3 +1,5 @@
+import { applyTriggerAria } from '../utils/trigger-aria.js';
+
 /**
  * WireKit Hover Card Alpine Component.
  *
@@ -18,6 +20,11 @@ import { position } from '../utils/floating.js';
  */
 export default function wirekitHoverCard(config = {}) {
     return {
+        /** Move the popup ARIA onto the trigger's focusable child. */
+        initTriggerAria() {
+            applyTriggerAria(this.$el, this.$watch.bind(this), {});
+        },
+
         open: false,
         _placement: config.placement || 'bottom',
         _offset: config.offset || 8,

@@ -1,4 +1,19 @@
+{{-- optimistic-ui: supported
+     The case the plan called the textbook one, and it was blocked until the
+     accessible name stopped being built on the server: `trans_choice` there
+     names the count the SERVER saw, so an optimistic flip would show six and
+     announce five, and the rollback would restore a number the reader was never
+     told about. The forms and the locale travel now, and Intl.PluralRules
+     chooses.
+
+     Only `active` is state. The count is derived from it, which is what makes
+     the rollback correct without anything having to remember to undo two
+     things. --}}
 @props([
+    // The Livewire method this reaction should call, when it should show the new
+    // state before the server has agreed to it. Null leaves the component
+    // exactly as it has always rendered: server markup, no Alpine.
+    'optimistic' => null,
     'emoji' => null,
     'count' => 0,
     'active' => false,
@@ -16,7 +31,31 @@
     $active = BooleanProp::from($active, false);
 
     $userList = is_array($users) ? $users : [];
+
+    // The server-side name stays the FIRST paint and the no-JS answer. It is
+    // replaced by the client's the moment Alpine runs, and only when this
+    // component is optimistic — a reaction that cannot change has no reason to
+    // compute its own name.
     $ariaLabel = $emoji . ', ' . trans_choice('{0} no reactions|{1} :count person reacted|[2,*] :count people reacted', $count, ['count' => $count]);
+
+    $reactionOptimistic = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'active' => (bool) $active,
+        'count' => (int) $count,
+        'emoji' => $emoji,
+        'phrases' => \Pushery\WireKit\Support\PluralPhrases::from('{0} no reactions|{1} :count person reacted|[2,*] :count people reacted'),
+        'locale' => str_replace('_', '-', app()->getLocale()),
+    ]);
+
+    $reactionLayer = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'bind' => 'active',
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+    ]);
 
     $baseClasses = WireKit::resolveClasses('reaction', 'base', implode(' ', [
         'inline-flex items-center gap-x-1',
@@ -46,9 +85,22 @@
         ]);
 @endphp
 
+@if($reactionOptimistic)
+    {{-- The component owns `active`; the optimistic layer nests inside it and
+         binds to that one boolean, so the count and the name follow a single
+         rollback. The button sits inside the layer to reach its run(). --}}
+<span x-data="wirekitReaction({{ $reactionOptimistic }})" class="inline-flex">
+<span x-data="wirekitOptimistic({{ $reactionLayer }})" class="inline-flex items-center gap-x-1">
+@endif
 <button
     type="button"
     aria-pressed="{{ $active ? 'true' : 'false' }}"
+    @if($reactionOptimistic)
+        x-bind:aria-pressed="active ? 'true' : 'false'"
+        x-bind:aria-label="label"
+        x-bind:aria-busy="isPending"
+        x-on:click="toggle()"
+    @endif
     @if(count($userList) > 0)
         aria-describedby="reaction-users-{{ md5($emoji . implode(',', $userList)) }}"
     @endif
@@ -58,7 +110,11 @@
     {{ $attributes->merge(['aria-label' => $ariaLabel])->class([$baseClasses, $stateClasses]) }}
 >
     <span class="font-[font-variant-emoji:emoji]" aria-hidden="true">{{ $emoji }}</span>
-    @if($count > 0)
+    @if($reactionOptimistic)
+        {{-- Shown whenever the live count is above zero, which the server-only
+             variant decides once at render time. --}}
+        <span class="font-[number:var(--font-wk-heading-weight)] tabular-nums" x-show="count > 0" x-text="count">{{ $count > 0 ? $count : '' }}</span>
+    @elseif($count > 0)
         <span class="font-[number:var(--font-wk-heading-weight)] tabular-nums">{{ $count }}</span>
     @endif
     @if(count($userList) > 0)
@@ -67,3 +123,10 @@
         </span>
     @endif
 </button>
+@if($reactionOptimistic)
+    {{-- Pre-existing and empty: a live region that arrives with its text is a
+         new node, and nothing is announced at all. --}}
+    <span class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></span>
+</span>
+</span>
+@endif

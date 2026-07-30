@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     A button that closes the dialog. Nothing is asked of the server. --}}
 @props([
     'scope' => null,
 ])

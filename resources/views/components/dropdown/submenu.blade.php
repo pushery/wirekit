@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is open state. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'label' => null,        // Parent item text (or pass a <x-slot:label> for rich content)
     'icon' => null,         // Optional leading icon (WireKit icon system)

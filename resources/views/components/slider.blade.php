@@ -1,4 +1,30 @@
+{{-- optimistic-ui: supported
+     Single-handle, over a native `<input type="range">`, so the commit boundary
+     is the CONTROL's own event rather than a pointerup handler this code owns.
+     Which event that is was MEASURED in chromium rather than assumed, because
+     assuming is what the marker mechanism is weakest against:
+
+       a five-move drag  → 5 × input, then exactly ONE change, at release
+       one arrow key     → 1 × input, then change, immediately
+       two arrow keys    → one input+change pair EACH, no coalescing
+       blur afterwards   → nothing further
+
+     So `change` is the boundary for both input modes at once, and it matches
+     §10 without a special case: it fires once at the end of a drag, and once per
+     keypress because one press is already a finished decision.
+
+     The mirror moves DURING the gesture (`@input="current = ..."`), so this
+     marks the gesture's start — otherwise the baseline would already be the
+     value being committed and a refusal would roll back onto itself. `after`
+     pushes the mirror back onto the element, because the element owns its value
+     and a rollback that moved only the mirror would leave the thumb where the
+     server refused to put it. --}}
 @props([
+    // The Livewire method to call when the slider should show the new value
+    // before the server has agreed to it. The value is sent when the gesture
+    // ends — see the note above. Null leaves the component exactly as it has
+    // always rendered.
+    'optimistic' => null,
     'name' => null,
     'id' => null,
     'label' => null,
@@ -159,6 +185,30 @@
     $hasExplicitAriaName = $attributes->has('aria-label') || $attributes->has('aria-labelledby');
     $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
     $fallbackLabel = $name ? Str::headline((string) $name) : 'Slider';
+
+    // `bind` rather than `value`: `current` already exists on the component this
+    // layer nests inside, so binding to it keeps ONE truth for the value.
+    //
+    // `after` is what keeps the ELEMENT in step. The mirror is deliberately not
+    // bound onto the input, so a write that moved only `current` would leave the
+    // thumb where the server refused to put it.
+    //
+    // The default `undo` exit is right here — a slider value is a choice, not
+    // typed work, so putting it back costs the user nothing.
+    $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'bind' => 'current',
+        'after' => 'syncToInput',
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        // A second commit while one is in flight would resolve by whichever
+        // answer arrives last — network timing, which is both wrong and
+        // untestable.
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+    ]);
 @endphp
 
 {{-- Alpine tracks the current value so the display (and the tooltip bubble /
@@ -177,47 +227,11 @@
      MutationObserver alike (verified) — the one reliable signal is Livewire's own
      commit hook, which is exactly the moment the two can diverge. --}}
 <div
-    x-data="{
-        current: @js((string) $currentValue),
-        min: {{ $min }},
-        max: {{ $max }},
-        marksMap: @js((object) $valueTextMap),
-        /** Pull the element's own value back into the mirror. */
-        syncFromInput() {
-            const el = this.$refs.input;
-            if (el && String(el.value) !== String(this.current)) {
-                this.current = String(el.value);
-            }
-        },
-        /**
-         * Watch for a value that changed without the browser telling us.
-         *
-         * Assigning `el.value` fires no event and mutates no attribute, so it is
-         * invisible to both x-effect and a MutationObserver (verified). Livewire's
-         * x-model effect does exactly that on a server-side change, so the one
-         * reliable signal is Livewire's own commit hook — after a round trip, look
-         * at the element again. Apps without Livewire never call it and pay
-         * nothing; there, only the browser moves the thumb and @input suffices.
-         */
-        initResync() {
-            if (typeof window === 'undefined' || ! window.Livewire?.hook) {
-                return;
-            }
-
-            this._resync = () => queueMicrotask(() => this.syncFromInput());
-            window.Livewire.hook('commit', ({ succeed }) => succeed(this._resync));
-        },
-        get pct() {
-            const r = (this.max - this.min) || 1;
-            return Math.max(0, Math.min(100, ((Number(this.current) - this.min) / r) * 100));
-        },
-        get valueText() {
-            // Labeled-mark map wins (announces 'Low' for value 0); otherwise the
-            // raw number IS the value. Kept live so keyboard / drag updates the
-            // announced text as the thumb moves.
-            return this.marksMap[this.current] ?? String(this.current);
-        }
-    }"
+    {{-- The mirror, the pct math and the announced text live in the factory
+         (resources/js/components/slider.js). An inline object literal cannot
+         carry methods or getters under Alpine's CSP build — it fails to parse,
+         the element gets an empty scope, and every directive here goes quiet. --}}
+    x-data="wirekitSlider({ current: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $currentValue) }}, min: {{ $min }}, max: {{ $max }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $valueTextMap) }} })"
     x-modelable="current"
     x-init="initResync()"
     {{-- Caller layout attributes (class / style — e.g. a width constraint)
@@ -233,6 +247,17 @@
          the <input> below via except(['class','style']). --}}
     {{ $attributes->only(['class', 'style'])->class([$wrapperClasses]) }}
 >
+@if($optimisticConfig)
+    {{-- The layer nests INSIDE the component that owns the mirror: a nested
+         Alpine component reads and writes its parent's properties through
+         `this` and never the reverse, so `bind: 'current'` only resolves this
+         way round.
+
+         `display: contents` because the wrapper is a flex row — a real box here
+         would make the label, the track and the value display one flex item
+         instead of three. --}}
+    <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+@endif
     @if($label)
         <label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</label>
     @elseif($needsSrOnlyFallback)
@@ -251,8 +276,8 @@
                  at 0% it left-aligns with the thumb (extends inward/right), at 100% it
                  right-aligns (extends inward/left), and centers (-50%) in the middle.
                  (The native thumb has no JS-readable width, so pct doubles as the shift.) --}}
-            <div class="pointer-events-none absolute bottom-full z-10 mb-1.5" :style="`left: ${pct}%`" aria-hidden="true">
-                <span class="block whitespace-nowrap rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-tooltip-text)] shadow-[var(--shadow-wk-sm)]" :style="`transform: translateX(-${pct}%)`" x-text="valueText"></span>
+            <div class="pointer-events-none absolute bottom-full z-10 mb-1.5" :style="bubbleStyle()" aria-hidden="true">
+                <span class="block whitespace-nowrap rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-tooltip-text)] shadow-[var(--shadow-wk-sm)]" :style="bubbleShiftStyle()" x-text="valueText"></span>
             </div>
         @endif
 
@@ -263,7 +288,7 @@
             min="{{ $min }}"
             max="{{ $max }}"
             step="{{ $step }}"
-            x-ref="input"
+            x-ref="control"
             {{-- NOT `:value="current"`. Binding the mirror back onto the element
                  makes Alpine re-assert the stale value over whatever Livewire just
                  wrote, which is the other half of the same bug. The element owns
@@ -274,6 +299,20 @@
                  that is the one moment the two can silently diverge. --}}
             value="{{ $currentValue }}"
             @input="current = $event.target.value"
+            @if($optimisticConfig)
+                x-bind:aria-busy="isPending"
+                {{-- MEASURED, not assumed (see the note at the top): `change`
+                     fires once at the end of a drag and once per keypress, which
+                     is exactly §10's boundary for both input modes. --}}
+                x-on:change="run($event.target.value)"
+                {{-- The gesture begins here, before the mirror moves. A drag
+                     writes `current` on every frame via @input above, so a
+                     baseline read at commit time would already BE the committed
+                     value. keydown lands before the browser applies the step,
+                     for the same reason. --}}
+                x-on:pointerdown="mark()"
+                x-on:keydown="mark()"
+            @endif
             {{-- Labeled discrete slider: announce the mark's label, not the bare
                  number. Only bound for a labeled MAP so plain sliders stay
                  byte-identical (the number is already the value). --}}
@@ -303,4 +342,11 @@
              the user releases the slider, not on every tick. --}}
         <span class="{{ $valueClasses }}" aria-live="polite" x-text="valueText"></span>
     @endif
+@if($optimisticConfig)
+        {{-- Rendered unconditionally and starting empty: a live region that
+             arrives together with its text is a new node, and nothing is
+             announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+    </div>
+@endif
 </div>

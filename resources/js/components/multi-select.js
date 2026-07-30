@@ -13,6 +13,14 @@ import { position } from '../utils/floating.js';
 
 export default function wirekitMultiSelect(config = {}) {
     return {
+        /** Focus the filter and open the list — one act, so one method. */
+        focusAndOpen() {
+            if (this.$refs.filterInput) {
+                this.$refs.filterInput.focus();
+            }
+            this.dropdownOpen = true;
+        },
+
         // Seed from the `value` prop so pre-selected pills render on load.
         // Copy the array (don't alias config) so splice/push never mutate it.
         selected: Array.isArray(config.value) ? [...config.value] : [],
@@ -69,6 +77,39 @@ export default function wirekitMultiSelect(config = {}) {
         /**
          * Toggle selection of an option.
          */
+        /**
+         * The selection this value would produce, as a NEW array.
+         *
+         * The optimistic layer needs it: toggle() mutates `selected` in place
+         * with splice/push, and an in-place mutation is invisible to a layer
+         * that has to write the value itself in order to snapshot what it
+         * replaced. Returning a fresh array keeps both halves honest — the
+         * snapshot points at the old one, the write installs the new one.
+         */
+        nextWith(value) {
+            const idx = this.selected.indexOf(value);
+
+            if (idx >= 0) {
+                return this.selected.filter((v) => v !== value);
+            }
+
+            return this.selected.concat([value]);
+        },
+
+        /**
+         * The part of toggle() that is not the selection itself — and NOT the
+         * focus move.
+         *
+         * Split out so the optimistic layer can run it after ITS write. It runs
+         * on the rollback too, which is exactly why focus is not in here: an
+         * undo arrives on the server's schedule, and pulling focus back to the
+         * filter at that moment would take the user out of wherever they had
+         * got to. Clearing the stale filter text is safe; moving focus is not.
+         */
+        _afterToggle() {
+            this.filter = '';
+        },
+
         toggle(value) {
             const idx = this.selected.indexOf(value);
             if (idx >= 0) {
@@ -76,7 +117,7 @@ export default function wirekitMultiSelect(config = {}) {
             } else {
                 this.selected.push(value);
             }
-            this.filter = '';
+            this._afterToggle();
             this.$refs.filterInput?.focus();
         },
 

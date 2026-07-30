@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Which entry reads as active; the navigation itself is the entry's. --}}
 @props([
     // What this bar navigates. Every page has more than one nav landmark once you
     // count the header, so an unnamed one is announced as "navigation" and the

@@ -13,6 +13,16 @@ const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
 export default function wirekitColorPicker(config = {}) {
     return {
+        /**
+         * The alpha slider announces a whole percentage, not the 0–1 fraction it
+         * stores. `Math` is unreachable from a directive under Alpine's CSP
+         * build — the evaluator resolves names against the Alpine scope only —
+         * so the rounding happens here.
+         */
+        alphaPercent() {
+            return Math.round(this.a * 100);
+        },
+
         open: false,
         // Floating UI autoUpdate teardown handle — set in _anchor(), cleared when
         // the panel closes (the open $watch else-branch) and on destroy(). Keeps the
@@ -162,6 +172,27 @@ export default function wirekitColorPicker(config = {}) {
         get hueLeft() { return `${(this.h / 360) * 100}%`; },
         get alphaLeft() { return `${this.a * 100}%`; },
 
+        /**
+         * The style strings, built here rather than in the template.
+         *
+         * A template literal is one of the forms Alpine's CSP build cannot
+         * parse, and this component is nothing but positioned gradients — so
+         * under a strict Content-Security-Policy the picker rendered with every
+         * marker stacked at the origin and no gradient at all.
+         *
+         * The getters above already produced the individual values; these only
+         * assemble them, which is why they sit next to each other.
+         */
+        get swatchStyle() { return `background-color: ${this.cssColor}`; },
+        get planeStyle() { return `background-color: ${this.hueCss}`; },
+        get planeMarkerStyle() {
+            return `left: ${this.planeLeft}; top: ${this.planeTop}; background-color: ${this.hex}`;
+        },
+        get hueMarkerStyle() { return `left: ${this.hueLeft}`; },
+        get alphaTrackStyle() { return `background: linear-gradient(to right, transparent, ${this.hex})`; },
+        get alphaMarkerStyle() { return `left: ${this.alphaLeft}`; },
+        recentStyle(recent) { return `background-color: ${recent}`; },
+
         // ── Pointer drag (plane + sliders) ────────────────────────────
 
         startPlane(e) { this._startDrag('plane', e); },
@@ -169,6 +200,11 @@ export default function wirekitColorPicker(config = {}) {
         startAlpha(e) { this._startDrag('alpha', e); },
 
         _startDrag(which, e) {
+            // The gesture starts HERE, at pointerdown — not at the pointerup that
+            // commits it. `_apply` below already moves the color, and every frame
+            // in between moves it again, so a baseline taken at commit time would
+            // be the value being handed over.
+            this._markGesture();
             this._drag = which;
             // Cache the target's rect ONCE per drag — the element is stationary while
             // dragging, so re-reading getBoundingClientRect on every pointermove (a hot
@@ -181,6 +217,13 @@ export default function wirekitColorPicker(config = {}) {
             // preventDefault); touch-scroll is stopped via the plane's `touch-none`.
             document.addEventListener('pointermove', this._moveHandler, { passive: true });
             document.addEventListener('pointerup', this._upHandler);
+            // pointercancel ends a drag too, and NO pointerup follows it — the
+            // browser fires it when it takes the pointer away (a touch that
+            // becomes a scroll, a system gesture). Without this the move handler
+            // stays on document for the life of the page, recomputing a value
+            // for a drag the user finished long ago, with text selection still
+            // disabled from the drag start.
+            document.addEventListener('pointercancel', this._upHandler);
             // Stop text selection during the drag.
             document.body.style.userSelect = 'none';
         },
@@ -189,6 +232,7 @@ export default function wirekitColorPicker(config = {}) {
             if (this._moveHandler) {
                 document.removeEventListener('pointermove', this._moveHandler);
                 document.removeEventListener('pointerup', this._upHandler);
+                document.removeEventListener('pointercancel', this._upHandler);
                 this._moveHandler = null;
                 this._upHandler = null;
             }
@@ -313,6 +357,17 @@ export default function wirekitColorPicker(config = {}) {
             }
         },
 
+        /**
+         * §10 — the commit boundary, and this method already WAS one before any of
+         * this existed. It is called from exactly the four places where a color is
+         * SETTLED rather than moving: the end of a drag, the eyedropper, a swatch
+         * or recent, and `_sync(true)` for a typed value or an arrow-key nudge.
+         * That is also why a color lands in "recents" here and nowhere else.
+         *
+         * `_sync(false)` runs for every frame of a drag and deliberately does not
+         * reach this. So the boundary is an event the component already knew about
+         * — never a timer, and nothing new had to be invented to find it.
+         */
         _commitRecent() {
             const hex = this.hex;
             this.recents = [hex, ...this.recents.filter((c) => c !== hex)].slice(0, 8);
@@ -320,6 +375,41 @@ export default function wirekitColorPicker(config = {}) {
                 window.localStorage.setItem(this._recentsKey, JSON.stringify(this.recents));
             } catch {
                 // storage blocked / full — ignore
+            }
+            this._commit();
+        },
+
+        /**
+         * Mark the START of a gesture, so the layer's rollback baseline is the
+         * color from BEFORE the drag rather than the one the drag produced.
+         *
+         * `failure: 'keep'` was very nearly the argument for leaving this out —
+         * a refused save never rolls back, so why hold a baseline at all? Because
+         * `keep` covers only the SERVER's refusal. A CANCELED request still
+         * restores, and canceling is exactly what a second drag started during
+         * the first one's round trip does. Without a mark, that restore writes
+         * back the value the drag itself produced: the plane marker stays put and
+         * the cancellation is invisible.
+         *
+         * Looked up rather than assumed, like `run` below: without a layer this
+         * component behaves exactly as before, down to the byte.
+         */
+        _markGesture() {
+            if (typeof this.mark === 'function') {
+                this.mark();
+            }
+        },
+
+        /**
+         * Hand the settled color to the optimistic layer, if one wraps this.
+         *
+         * `run` is looked up rather than assumed: without a layer this component
+         * behaves exactly as it did before, down to the byte — the property the
+         * whole opt-in shape rests on.
+         */
+        _commit() {
+            if (typeof this.run === 'function') {
+                this.run(this.formattedValue);
             }
         },
 

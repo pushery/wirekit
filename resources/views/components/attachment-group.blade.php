@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     A keyboard-reachable scroll region. Scrolling never reaches the server; the tabindex is there for WCAG 2.1.1, not for an action. --}}
 @props([
     // Accessible name for the group (e.g. "3 attachments").
     'label' => config('wirekit.components.attachment-group.label') ?? __('Attachments'),

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     The canonical passthrough: the developer's wire:click arrives through the attribute bag and this component never sees it. And a button holds no state of its own — the optimism belongs to whatever the click changes, which is why the prop lives there and not here. --}}
 @props([
     'intent' => config('wirekit.components.button.intent', 'primary'),
     'surface' => config('wirekit.components.button.surface', 'filled'),

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — sub-component
+     Open state lives on the accordion. --}}
 @props([
     'id' => null,
     'title' => '',
@@ -104,8 +106,8 @@
             type="button"
             id="{{ $buttonId }}"
             aria-controls="{{ $panelId }}"
-            :aria-expanded="isOpen(@js($itemId)) ? 'true' : 'false'"
-            @click="toggle(@js($itemId))"
+            :aria-expanded="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }}) ? 'true' : 'false'"
+            @click="toggle({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
             class="{{ $buttonClasses }}"
         >
             {{-- Title takes the remaining row width and wraps; min-w-0 unlocks
@@ -114,7 +116,7 @@
             <span class="flex-1 min-w-0">{{ $title !== '' ? $title : ($header ?? '') }}</span>
             <svg
                 class="{{ $chevronClasses }}"
-                :class="isOpen(@js($itemId)) ? 'rotate-180' : ''"
+                :class="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }}) ? 'rotate-180' : ''"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -131,7 +133,7 @@
         id="{{ $panelId }}"
         role="region"
         aria-labelledby="{{ $buttonId }}"
-        x-show="isOpen(@js($itemId))"
+        x-show="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
         x-cloak
         class="{{ $panelClasses }}"
     >

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     It renders a dataset the server already sent. --}}
 {{-- Chart component — renders a chart container with Alpine.js lifecycle management.
      The inner mount element branches on the active adapter's rendersTo():
        - 'canvas' for raster libraries (Chart.js)
@@ -124,7 +126,7 @@
     >
 @endif
 <{{ $wrapperTag }}
-    x-data="{{ $alpineComponent }}(@js($chartConfig))"
+    x-data="{{ $alpineComponent }}({{ \Pushery\WireKit\Support\AlpinePayload::from($chartConfig) }})"
     @if ($wireStreamEvent)
         data-wire-stream-event="{{ $wireStreamEvent }}"
         data-wire-stream-mode="{{ $wireStreamModeAttr }}"

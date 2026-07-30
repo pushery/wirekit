@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Hover and tooltip state over data the server sent. --}}
 @props([
     'rows' => [],                   // [{key,label}] — the matrix rows (left axis)
     'columns' => [],                // [{key,label}] — the matrix columns (top axis)
@@ -120,12 +122,16 @@
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitStatusMatrix({ cells: @js($flatCells), cellType: '{{ $cellType }}', editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ (float) $heatMin }}, heatMax: {{ (float) $heatMax }} })"
+    x-data="wirekitStatusMatrix({ cells: {{ \Pushery\WireKit\Support\AlpinePayload::from($flatCells) }}, cellType: '{{ $cellType }}', editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ (float) $heatMin }}, heatMax: {{ (float) $heatMax }} })"
     {{ $attributes->only('class')->class([$base]) }}
 >
     @if($isEditable)
         {{-- JSON bridge for wire:model / form submission of the edited cell map. --}}
-        <input type="hidden" x-ref="model" @if($name) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} :value="JSON.stringify(cells)" />
+        {{-- Static value as well as the bound one: the field is empty until Alpine
+             boots, and a form submitted in that window sends nothing while the
+             visible control already shows the value. The serialization matches
+             what the factory's own getter produces from the same data. --}}
+        <input type="hidden" x-ref="model" @if($name) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="{{ json_encode((object) $flatCells, JSON_THROW_ON_ERROR) }}" :value="cellsJson()" />
     @endif
 
     {{-- Scroll region — keyboard-reachable per WCAG 2.1.1 (region + tabindex +
@@ -198,7 +204,7 @@
                                                 @keydown.enter.prevent="toggleCell('{{ $rk }}', '{{ $ck }}')"
                                                 @keydown.space.prevent="toggleCell('{{ $rk }}', '{{ $ck }}')"
                                             @endif
-                                            :aria-label="'{{ $row['label'] }}, {{ $col['label'] }}: ' + (toggleOn('{{ $rk }}', '{{ $ck }}') ? 'On' : 'Off')"
+                                            :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($row['label'].', '.$col['label'].': ') }} + (toggleOn('{{ $rk }}', '{{ $ck }}') ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('On')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Off')) }})"
                                             class="{{ $cellButton }}"
                                         >
                                             <span x-show="toggleOn('{{ $rk }}', '{{ $ck }}')" x-cloak class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span>

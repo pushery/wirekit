@@ -38,6 +38,7 @@
  * @param {string} [config.initialText] - Seed text (SSR / resume a completed response,
  *                                         and it lets a static demo show content).
  */
+import { prefersReducedMotion } from '../utils/motion.js';
 export default function wirekitStream(config = {}) {
     return {
         // ── Public reactive state (bind these in Blade) ──
@@ -87,7 +88,7 @@ export default function wirekitStream(config = {}) {
             // buffering and revealing the whole response at the end.
             this._reduce = typeof window !== 'undefined'
                 && typeof window.matchMedia === 'function'
-                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                && prefersReducedMotion();
 
             // Manual mode has nothing to open but still auto-enters `streaming`
             // so the "generating" announcement happens once, up front, exactly as

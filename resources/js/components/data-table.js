@@ -24,6 +24,16 @@
  */
 export default function wirekitDataTable(config = {}) {
     return {
+        /**
+         * The selected row ids, serialized for the hidden input a form
+         * (or wire:model) submits. `JSON` is unreachable from a directive under
+         * Alpine's CSP build — the evaluator resolves names against the Alpine
+         * scope alone — so the encoding happens here.
+         */
+        selectedJson() {
+            return JSON.stringify(this.selected);
+        },
+
         rows: Array.isArray(config.rows) ? config.rows.map((r) => ({ ...r })) : [],
         columns: Array.isArray(config.columns) ? config.columns : [],
         rowKey: config.rowKey || 'id',

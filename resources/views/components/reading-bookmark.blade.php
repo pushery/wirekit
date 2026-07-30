@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     The bookmark lives in the browser. --}}
 @props([
     'key' => null,
     'target' => null,
@@ -100,123 +102,18 @@
          (reading-minimap E2) can wire to the same localStorage payload
          without re-declaring the key in their own prop list. --}}
     data-reading-bookmark-key="{{ $key }}"
-    x-data="{
-        showPrompt: false,
-        savedTop: 0,
-        _key: {{ json_encode($key, JSON_THROW_ON_ERROR) }},
-        _target: {{ json_encode($resolvedTarget, JSON_THROW_ON_ERROR) }},
-        _threshold: {{ $thresholdFloat }},
-        _promptEnabled: {{ $promptEnabled ? 'true' : 'false' }},
-        _minDwell: {{ $minDwell }},
-        _saveTimer: null,
-        _enterAt: 0,
-        _onScroll: null,
-        _onStorage: null,
-        init() {
-            this._enterAt = Date.now();
-            // Try to read existing bookmark on mount; show prompt if all conditions met.
-            try {
-                const raw = localStorage.getItem(this._key);
-                if (raw) {
-                    const data = JSON.parse(raw);
-                    if (data && typeof data.top === 'number' && data.top > 0
-                        && data.dwell >= this._minDwell
-                        && this._promptEnabled) {
-                        this.savedTop = data.top;
-                        this.showPrompt = true;
-                    }
-                }
-            } catch (_) { /* private mode / disabled / parse error — silently ignore */ }
-            // Throttled save on scroll: only persist if scroll moved > threshold * scrollHeight since last save.
-            // `top` resolution: when the target element is an internally-
-            // scrollable container (overflow:auto/scroll), use ITS
-            // scrollTop. Otherwise fall back to window.scrollY (the
-            // document-level scroll case). Without this scoping, the
-            // minimap's bookmark-marker (reading-minimap E2 extension)
-            // computed marker percentages against a different scroll
-            // root than the one the bookmark recorded — visible as the
-            // marker appearing in the wrong vertical position when the
-            // article lives in an internally-scrollable wrapper.
-            let lastSavedTop = 0;
-            this._onScroll = () => {
-                if (this._saveTimer) clearTimeout(this._saveTimer);
-                this._saveTimer = setTimeout(() => {
-                    const target = document.querySelector(this._target);
-                    const targetOverflowsInternally = target && (() => {
-                        const cs = getComputedStyle(target);
-                        return cs.overflowY === 'auto' || cs.overflowY === 'scroll';
-                    })();
-                    const scrollHeight = (target?.scrollHeight) || document.documentElement.scrollHeight;
-                    const top = targetOverflowsInternally
-                        ? target.scrollTop
-                        : window.scrollY;
-                    const movedFraction = scrollHeight > 0 ? Math.abs(top - lastSavedTop) / scrollHeight : 0;
-                    if (movedFraction < this._threshold) return;
-                    // User scrolled to the top: forget the bookmark (they're done).
-                    if (top <= 0) {
-                        try { localStorage.removeItem(this._key); } catch (_) {}
-                        lastSavedTop = 0;
-                        // Notify sibling primitives (reading-minimap E2)
-                        // within the same tab — the browser `storage`
-                        // event only fires for OTHER tabs.
-                        window.dispatchEvent(new CustomEvent('wirekit:reading-bookmark:cleared', { detail: { key: this._key } }));
-                        return;
-                    }
-                    const dwell = Math.floor((Date.now() - this._enterAt) / 1000);
-                    try {
-                        localStorage.setItem(this._key, JSON.stringify({ top, dwell, t: Date.now() }));
-                        lastSavedTop = top;
-                        window.dispatchEvent(new CustomEvent('wirekit:reading-bookmark:saved', { detail: { key: this._key, top, dwell } }));
-                    } catch (_) { /* quota / private — ignore */ }
-                }, 1000);
-            };
-            window.addEventListener('scroll', this._onScroll, { passive: true });
-            // Cross-tab consistency: react to localStorage events from the same key.
-            this._onStorage = (e) => {
-                if (e.key !== this._key) return;
-                if (!e.newValue) {
-                    this.showPrompt = false;
-                    this.savedTop = 0;
-                }
-            };
-            window.addEventListener('storage', this._onStorage);
-        },
-        resume() {
-            this.showPrompt = false;
-            const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-            // Resume to the SAME scroll root the save handler wrote to —
-            // internally-scrollable target → target.scrollTop; otherwise
-            // window.scrollY. Without this scoping, an internally-
-            // scrollable target's saved offset would be applied to the
-            // window-level scroll on resume, scrolling to the wrong
-            // position (or no-op if the document isn't scrollable).
-            const target = document.querySelector(this._target);
-            const targetOverflowsInternally = target && (() => {
-                const cs = getComputedStyle(target);
-                return cs.overflowY === 'auto' || cs.overflowY === 'scroll';
-            })();
-            if (targetOverflowsInternally) {
-                target.scrollTo({ top: this.savedTop, behavior: reduced ? 'auto' : 'smooth' });
-            } else {
-                window.scrollTo({ top: this.savedTop, behavior: reduced ? 'auto' : 'smooth' });
-            }
-        },
-        dismiss() {
-            this.showPrompt = false;
-            // Keep the saved bookmark — re-prompt on next visit.
-        },
-        clear() {
-            try { localStorage.removeItem(this._key); } catch (_) {}
-            this.showPrompt = false;
-            this.savedTop = 0;
-            window.dispatchEvent(new CustomEvent('wirekit:reading-bookmark:cleared', { detail: { key: this._key } }));
-        },
-        destroy() {
-            if (this._saveTimer) clearTimeout(this._saveTimer);
-            window.removeEventListener('scroll', this._onScroll);
-            window.removeEventListener('storage', this._onStorage);
-        },
-    }"
+    {{-- Saving, restoring and the cross-tab sync live in the factory
+         (resources/js/components/reading-bookmark.js). The block did not parse
+         under Alpine's CSP build, so nothing was saved and the resume prompt
+         never appeared — silently, which is this component's whole failure
+         mode. --}}
+    x-data="wirekitReadingBookmark({
+        key: {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }},
+        target: {{ \Pushery\WireKit\Support\AlpinePayload::from($resolvedTarget) }},
+        threshold: {{ \Pushery\WireKit\Support\AlpinePayload::from($thresholdFloat) }},
+        promptEnabled: {{ \Pushery\WireKit\Support\AlpinePayload::from($promptEnabled) }},
+        minDwell: {{ \Pushery\WireKit\Support\AlpinePayload::from($minDwell) }},
+    })"
     x-show="showPrompt"
     x-cloak
     x-transition:enter="transition ease-out duration-200"

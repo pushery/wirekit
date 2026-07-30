@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is open state and focus containment. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'name' => null,
     'dismissible' => config('wirekit.components.alert-dialog.dismissible', false),
@@ -52,7 +55,7 @@
 @endphp
 
 <div
-    x-data="wirekitAlertDialog({ name: @js((string) $name), dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: @js($initialFocus), focusReturnTo: @js($focusReturnTo) })"
+    x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }} })"
     {{ $attributes }}
 >
     {{-- Trigger slot — clicking opens the alert dialog --}}

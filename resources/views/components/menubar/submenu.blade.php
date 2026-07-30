@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is open state. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'label' => null,        // Parent item text (or pass a <x-slot:label> for rich content)
     'icon' => null,         // Optional leading icon (WireKit icon system)
@@ -65,7 +68,7 @@
      (ArrowRight opens a submenu when on a parent, else moves menus). --}}
 <div
     x-data="wirekitSubmenu({ placement: '{{ $placement }}', offset: {{ (int) $offset }} })"
-    x-effect="(activeMenu === ($el.closest('[data-wk-menubar-panel]')?.dataset.wkMenubarPanel)) || closeSub()"
+    x-effect="(activeMenu === ($wkAncestorData('[data-wk-menubar-panel]', 'wkMenubarPanel'))) || closeSub()"
     data-wk-submenu
     class="block w-full"
 >

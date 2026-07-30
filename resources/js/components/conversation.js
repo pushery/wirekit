@@ -28,6 +28,7 @@
  *   Every callback null-guards `_viewport` first: browser-queued observer and
  *   scroll callbacks can fire AFTER destroy() has torn the component down.
  */
+import { prefersReducedMotion } from '../utils/motion.js';
 export default function wirekitConversation(config = {}) {
     return {
         // True while the reader is parked at (or within `threshold` of) the
@@ -149,7 +150,7 @@ export default function wirekitConversation(config = {}) {
         },
 
         _prefersReducedMotion() {
-            return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+            return prefersReducedMotion();
         },
 
         /**

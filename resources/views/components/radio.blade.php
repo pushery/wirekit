@@ -1,3 +1,17 @@
+{{-- optimistic-ui: candidate
+     I marked this supported and the browser refuted it within the hour, which is
+     what the rendered test is for.
+
+     A radio is a GROUP control and this component is one element of it. Each
+     radio would carry its own optimistic layer holding its own `value`
+     attribute — not the group's selection — so there is nothing for a layer to
+     roll back to: by the time any handler runs the browser has already
+     deselected the sibling, and no per-element undo can put that back.
+
+     It needs a group-level surface to bind to, and WireKit has none: radios here
+     are standalone elements sharing a `name`. That is a real design step, not
+     wiring, so it stays a candidate rather than shipping something that looks
+     enabled and cannot roll back. --}}
 @props([
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is

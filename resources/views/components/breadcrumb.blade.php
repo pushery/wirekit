@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — navigation
+     A trail of links. Each one navigates; none changes state. --}}
 @props([
     'items' => [],
     'separator' => config('wirekit.components.breadcrumb.separator', 'chevron'),

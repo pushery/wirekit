@@ -7,7 +7,15 @@
  *
  * Usage: add alpine-sort to <x-wirekit::table> and column="name" to
  * sortable <x-wirekit::table.th> elements.
+ *
+ * @param {Object} config
+ * @param {string} [config.warning]  a debug-only composition warning to emit at
+ *   init. It arrives here rather than in its own x-init because an element
+ *   cannot carry two Alpine components, and because an inline console.warn
+ *   breaks the whole scope under the CSP build — see utils/dev-warning.js.
  */
+import { devWarn } from '../utils/dev-warning.js';
+
 export default function wirekitTableSort(config = {}) {
     return {
         sortColumn: null,
@@ -15,6 +23,8 @@ export default function wirekitTableSort(config = {}) {
         _originalOrder: [],
 
         init() {
+            devWarn(config.warning);
+
             // Snapshot original row order so we can restore it when sort is cleared.
             // Use $root (the x-data <table>), NOT $el — see _reorderRows for why.
             this.$nextTick(() => {

@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is the tree's expansion state. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'label' => '',
     'icon' => null,
@@ -46,7 +49,11 @@
     @if($hasChildren) aria-expanded="{{ $expanded ? 'true' : 'false' }}" @endif
     @if($selected) aria-selected="true" @endif
     {{ $attributes->class([$nodeClasses]) }}
-    x-data="{ nodeExpanded: {{ $expanded ? 'true' : 'false' }} }"
+    {{-- The toggle lives in resources/js/components/tree-view-node.js: it flips
+         the flag AND writes aria-expanded onto the treeitem above the clicked
+         row, which is two statements — one more than Alpine's CSP build
+         parses. --}}
+    x-data="wirekitTreeViewNode({ expanded: {{ $expanded ? 'true' : 'false' }} })"
 >
     {{-- Label row — click toggles expansion for branch nodes.
          Leaf nodes use margin-left instead of an inline spacer so the
@@ -57,7 +64,7 @@
         data-wk-tree-node
         @if(!$hasChildren) style="margin-left: 1.25rem;" @endif
         @if($hasChildren)
-            @click="nodeExpanded = !nodeExpanded; $el.closest('[role=treeitem]').setAttribute('aria-expanded', nodeExpanded)"
+            @click="toggle()"
         @endif
     >
         {{-- Expand/collapse chevron (only for branch nodes) --}}

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     A navigation entry with an optional developer action; nothing of its own to show early. --}}
 @props([
     'href' => '#',
     'active' => false,

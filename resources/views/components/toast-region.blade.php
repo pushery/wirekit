@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Transient display. It announces things that already happened. --}}
 @props([
     'position' => config('wirekit.components.toast-region.position', 'top-right'),
     'duration' => config('wirekit.components.toast-region.duration', 5000),
@@ -149,12 +151,26 @@
      Toasts are dispatched via: $dispatch('wirekit-toast', { title, message, variant })
      With name prop: $dispatch('wirekit-toast-{name}', { ... }) for scoped regions. --}}
 <div
-    x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: @js($name), scope: @js($eventScope) })"
+    x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, scope: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventScope) }} })"
     {{ $attributes->class([$containerClasses, $positionClasses]) }}
     style="{{ $offsetStyle }}"
     role="region"
     aria-label="{{ __('Notifications') }}"
 >
+    {{-- The announcement, separated from the toast that caused it.
+
+         A live region must exist BEFORE the text it announces — an element created
+         together with its message is a new node, not a region that changed, and
+         assistive technology says nothing. The per-toast binding this replaces had
+         never announced a single toast.
+
+         Two regions rather than one, because urgency belongs to the region: an
+         aria-live value that flips on an existing region is not reliably re-read.
+         They are visually hidden and carry no role, so they add nothing to the
+         visible stack. --}}
+    <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="politeMessage"></div>
+    <div class="sr-only" aria-live="assertive" aria-atomic="true" x-text="assertiveMessage"></div>
+
     <template x-for="toast in toasts" :key="toast.id">
         <div
             x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"
@@ -163,11 +179,30 @@
             x-transition:leave="transition ease-in duration-[var(--transition-wk-duration)]"
             x-transition:leave-start="opacity-100"
             x-transition:leave-end="opacity-0 translate-y-2"
-            :role="ariaRole(toast.variant)"
-            :aria-live="toast.variant === 'danger' ? 'assertive' : 'polite'"
-            aria-atomic="true"
+            {{-- NO live role and no aria-live on the toast itself.
+
+                 Not just aria-live: `role="alert"` carries an implicit
+                 `aria-live="assertive"`, so leaving the role here would put the
+                 element back in the announcement path — created inside x-for
+                 together with its text, which announces nothing, while the regions
+                 above announce correctly. Best case that is dead markup; worst case
+                 an assistive technology reads both and the user hears it twice.
+
+                 The visible toast is content. It is reachable and readable like any
+                 other content; the transient announcement is the region's job.
+
+                 focusin/focusout alongside mouseenter/mouseleave — a keyboard user
+                 who tabs to a toast's action watched it disappear mid-reach, because
+                 only the pointer paused the auto-dismiss. --}}
+            {{-- A stable hook for the toast element. It used to be findable by its
+                 live role, and removing that role — correctly — left nothing to
+                 select it by, which is how two browser tests came to look for an
+                 element that no longer existed. --}}
+            data-wk-toast
             @mouseenter="pause(toast.id)"
             @mouseleave="resume(toast.id)"
+            @focusin="pause(toast.id)"
+            @focusout="resume(toast.id)"
             :class="[
                 '{{ $toastClasses }}',
                 toast.variant === 'success' ? '{{ $variantMap['success']['border'] }} {{ $variantMap['success']['bg'] }}' : '',

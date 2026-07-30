@@ -24,8 +24,22 @@
  * @param {string} config.attribution - tile attribution HTML (Leaflet provider; shown
  *   in Leaflet's attribution control). Required by some tile sources (e.g. OSM).
  */
+import { prefersReducedMotion } from '../utils/motion.js';
 export default function wirekitMap(config = {}) {
     return {
+        /**
+         * A marker's coordinates, to four decimals — roughly 11 meters, which is
+         * the precision a list entry can usefully show.
+         *
+         * `Number` is unreachable from a directive under Alpine's CSP build, and
+         * the coercion is not decorative: a marker's lat/lng arrive from the
+         * developer's payload and may well be strings, on which toFixed does not
+         * exist.
+         */
+        formatCoordinates(marker) {
+            return `${Number(marker.lat).toFixed(4)}, ${Number(marker.lng).toFixed(4)}`;
+        },
+
         center: Array.isArray(config.center) ? config.center : [0, 0],
         zoom: Number(config.zoom) || 2,
         markers: Array.isArray(config.markers) ? config.markers.map((m) => ({ ...m })) : [],
@@ -371,7 +385,7 @@ export default function wirekitMap(config = {}) {
             } else if (typeof this._map.flyTo === 'function') {
                 // Respect reduced-motion: jump instead of fly.
                 const reduce = typeof window !== 'undefined' && window.matchMedia
-                    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    && prefersReducedMotion();
                 this._map.flyTo({ center: [marker.lng, marker.lat], zoom: Math.max(this.zoom, 12), animate: !reduce });
             }
         },

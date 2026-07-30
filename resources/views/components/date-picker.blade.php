@@ -1,4 +1,20 @@
+{{-- optimistic-ui: supported (single-date mode)
+     Pass `optimistic="method"` and the date lands the moment it is picked. A
+     native <input type="date">, so the layer owns the value exactly as it does
+     on time-picker — the previous date is the server's, and an undo destroys
+     nothing the user typed.
+
+     `range` mode stays OUT, and not for want of wiring: a range is TWO values,
+     so an undo has to answer what it restores when only one end moved, and the
+     two inputs constrain each other — rolling one back can leave the other
+     holding a bound that no longer applies. That is a contract question, not a
+     prop. Passing `optimistic` together with `range` is ignored rather than
+     half-applied. --}}
 @props([
+    // Livewire method to call optimistically. The date appears immediately and
+    // is put back if the call fails. Single-date mode only — see the note above.
+    // Absent -> this component renders exactly as it did before, down to the byte.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -122,7 +138,29 @@
     $fallbackLabel = $name ? Str::headline((string) $name) : 'Date';
 @endphp
 
-<div class="w-full">
+@php
+    // Range mode is excluded HERE rather than at the call site, so a developer
+    // who passes both gets the component they had rather than a half-applied
+    // layer that rolls back one end of a range and not the other.
+    $optimisticConfig = ($optimistic === null || $isRange || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        // `value` IS a declared prop here, unlike on time-picker where it passes
+        // through the attribute bag — read it from the prop, not from the bag,
+        // or the layer mounts empty and the first rollback restores nothing.
+        'value' => (string) ($value ?? ''),
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        // A second pick while one is in flight would resolve by whichever answer
+        // arrives last — network timing, which is both wrong and untestable.
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+        'errorRegion' => '#'.$errorId,
+    ]);
+@endphp
+
+<div class="w-full" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         <label for="{{ $dateId }}" class="block mb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
             {{ $label }}
@@ -142,7 +180,7 @@
              is additive — it doesn't touch the values, so wire:model / native form
              submission of the {name}[start] / {name}[end] fields still works. --}}
         <div
-            x-data="{ s: @js($startValue), e: @js($endValue) }"
+            x-data="{ s: {{ \Pushery\WireKit\Support\AlpinePayload::from($startValue) }}, e: {{ \Pushery\WireKit\Support\AlpinePayload::from($endValue) }} }"
             class="flex items-center gap-[var(--padding-wk-x-sm)]"
         >
             <input
@@ -151,8 +189,8 @@
                 id="{{ $dateId }}"
                 value="{{ $startValue }}"
                 x-on:change="s = $event.target.value"
-                :min="@js($min)"
-                :max="e || @js($max)"
+                :min="{{ \Pushery\WireKit\Support\AlpinePayload::from($min) }}"
+                :max="e || {{ \Pushery\WireKit\Support\AlpinePayload::from($max) }}"
                 @if($disabled) disabled @endif
                 @if($required) required aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
@@ -167,8 +205,8 @@
                 id="{{ $dateId }}-end"
                 value="{{ $endValue }}"
                 x-on:change="e = $event.target.value"
-                :min="s || @js($min)"
-                :max="@js($max)"
+                :min="s || {{ \Pushery\WireKit\Support\AlpinePayload::from($min) }}"
+                :max="{{ \Pushery\WireKit\Support\AlpinePayload::from($max) }}"
                 @if($disabled) disabled @endif
                 @if($required) required aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
@@ -190,6 +228,11 @@
             @if($required) required aria-required="true" @endif
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+            @if($optimisticConfig)
+                x-ref="control"
+                x-bind:aria-busy="isPending"
+                x-on:change="commitFromControl()"
+            @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
             {{ $attributes->class(['wk-field', $inputClasses]) }}
         />
@@ -202,5 +245,13 @@
     @if($hasError)
         {{-- Error message linked via aria-describedby for assistive tech. --}}
         <p id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    @endif
+
+    @if($optimisticConfig)
+        {{-- Rendered unconditionally and starting empty: a live region that
+             arrives together with its text is a new node, and nothing is
+             announced at all. It comes after the error paragraph, which is the
+             one the layer yields to when both would speak. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
     @endif
 </div>

@@ -38,12 +38,75 @@
                 inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* ── Tier 2 — SVG Displacement (Progressive Enhancement) ─── */
-@supports (backdrop-filter: url(#x)) {
-    .wk-glass-refract {
-        backdrop-filter:
-            blur(20px) saturate(1.8) brightness(1.05) url(#wk-glass-refract);
-        -webkit-backdrop-filter:
-            blur(20px) saturate(1.8) brightness(1.05) url(#wk-glass-refract);
-    }
+/* ── Tier 2 — SVG Displacement (Progressive Enhancement) ───
+ *
+ * The displacement is applied to a PSEUDO-ELEMENT that carries the backdrop,
+ * not to the element, and that shape is the whole fix.
+ *
+ * What it replaces: `backdrop-filter: blur(…) url(#wk-glass-refract)` behind an
+ * `@supports (backdrop-filter: url(#x))` gate. Chromium parses `url()` there,
+ * reports it supported so the gate opens, keeps it in computed style — and
+ * paints nothing from it. Measured twice, independently, at 0 differing pixels
+ * against the same declaration with the `url()` removed. `@supports` answers
+ * "can I parse this", never "will this paint", so nothing about that
+ * construction could have failed loudly.
+ *
+ * Why a pseudo-element rather than `filter:` on the element itself: `filter`
+ * displaces everything the element renders, including its own text. The
+ * pseudo-element holds only the frosted backdrop, so the distortion lands on
+ * the background and the text stays legible.
+ *
+ * No feature gate, deliberately. `filter: url()` and `backdrop-filter` are both
+ * inside the supported-browser baseline, and the enhancement is additive: where
+ * the displacement does not apply, what remains IS Tier 1. A gate that cannot
+ * detect painting — the only thing that matters here — is worse than none.
+ *
+ * TIER 2 IS A DIFFERENT MATERIAL FROM TIER 1, NOT TIER 1 PLUS AN EFFECT. That
+ * distinction is the whole reason this took four attempts, and it is the one
+ * thing to keep if any value below is ever retuned.
+ *
+ * Refraction can only bend structure that still reaches the eye. Tier 1's
+ * `blur(20px)` over a 72% white wash exists to DESTROY structure — that is what
+ * frosting is — so a displacement layered on top of it has nothing left to
+ * displace. Measured directly: an 8 px dot grid behind Tier 1 values is a flat
+ * wash with or without the filter, at any `scale`. Three fixes before this one
+ * were each structurally correct and each invisible for exactly that reason.
+ *
+ * So Tier 2 reads as CLEAR glass: a thin blur and a thin wash, where the
+ * backdrop survives and visibly bends. Raising either value back toward Tier 1
+ * returns the effect to zero without producing an error anywhere.
+ *
+ * `overflow: hidden` plus a pseudo-element that OVERSHOOTS by 40 px is the other
+ * half. The displacement moves the pseudo-element's own edge too, so an
+ * `inset: 0` pseudo-element hands the panel a rippled silhouette — the element
+ * reads as warped rather than as glass in front of something warped. Overshooting
+ * pushes that rippled edge outside the panel, and the clip restores a straight
+ * one. THE PRICE: `overflow: hidden` clips descendants, so a Tier 2 panel cannot
+ * host an overflowing popover. Tier 1 is unaffected and remains the default.
+ */
+.wk-glass-refract {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.wk-glass-refract::before {
+    content: '';
+    position: absolute;
+    /* Overshoot, not `inset: 0` — see the note above on the rippled silhouette.
+       No `border-radius: inherit`: the corner is cut by the clip, and inheriting
+       it here would only re-introduce a curve for the displacement to chew on. */
+    inset: -40px;
+    z-index: -1;
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(3px) saturate(1.6) brightness(1.03);
+    -webkit-backdrop-filter: blur(3px) saturate(1.6) brightness(1.03);
+    filter: url(#wk-glass-refract);
+}
+
+.dark .wk-glass-refract::before {
+    background: rgba(30, 30, 32, 0.32);
 }
