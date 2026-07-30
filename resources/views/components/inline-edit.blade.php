@@ -50,6 +50,25 @@
     // draws, so a page using both does not have to remember two spellings.
     'loadingTarget' => null,
     'announceError' => null,
+    // Textarea height, forwarded to the textarea's own `rows`. `auto` is its
+    // content-sizing mode: the editor opens as tall as the text it replaces and grows
+    // while typing. A row count pins a fixed height instead — which is what shipped,
+    // and it meant a four-line value opened into a three-row box the reader had to
+    // scroll to see their own text in. Ignored for every control except `textarea`.
+    'rows' => 'auto',
+    // How long to wait for the developer's `wirekit:inline-edit-saved` /
+    // `-failed` answer before giving up, in milliseconds. 0 disables the bound
+    // and lets the editor stay busy indefinitely — only sensible when the
+    // answer is genuinely guaranteed.
+    'saveTimeout' => 10000,
+    // What the reader is told when that bound is reached. It exists because the
+    // alternative shipped: the timeout path wrote `config.unknownMessage ?? ''`
+    // and nothing ever supplied the value, so the component set the live region
+    // to the EMPTY STRING and abandoned the save in silence. A field that
+    // announced itself busy and then says nothing at all is the worst of the
+    // three possible outcomes — a screen-reader user is left with no way to know
+    // whether the edit was kept, and sighted readers only see a spinner stop.
+    'unknownMessage' => null,
     'scope' => null,
 ])
 
@@ -187,6 +206,14 @@
         $triggerVisibility,
     ]), $scope);
 
+    // Deliberately says the state is UNKNOWN rather than claiming a failure. A
+    // timeout is not evidence that the save failed — the request may well have
+    // landed and only the acknowledgement went missing, so telling the reader it
+    // failed would invite a second edit over a value that was already stored.
+    // "Not confirmed" is the honest report, and it names what to do about it.
+    $resolvedUnknownMessage = $unknownMessage
+        ?? __('Still not confirmed. Your text is kept here — reload to see whether it was saved.');
+
     $actionClasses = 'wk-touch-target inline-flex shrink-0 items-center justify-center rounded-[var(--radius-wk-sm)] '
         .'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer';
 @endphp
@@ -202,6 +229,11 @@
         loading: {{ \Pushery\WireKit\Support\AlpinePayload::from($loading) }},
         describedBy: {{ \Pushery\WireKit\Support\AlpinePayload::from($describedBy) }},
         hasSlotEditor: {{ \Pushery\WireKit\Support\AlpinePayload::from(isset($editor)) }},
+        {{-- The give-up bound and what it says. Both were read from `config` by the
+             JS and neither was ever passed, so the bound worked only by its
+             hard-coded fallback and the message resolved to the empty string. --}}
+        saveTimeout: {{ \Pushery\WireKit\Support\AlpinePayload::from((int) $saveTimeout) }},
+        unknownMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from($resolvedUnknownMessage) }},
         {{-- A server-rendered error re-opens the editor after a morph replaced it. --}}
         hasError: {{ \Pushery\WireKit\Support\AlpinePayload::from($hasError) }},
         debug: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) config('app.debug')) }},
@@ -258,6 +290,32 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" />
             </svg>
         </button>
+
+        @if($width === 'full' && $actions)
+            {{-- Reserves the second action slot that only edit mode fills.
+                 `width="full"` promises that the read box and the edit box are the same
+                 width — the component's own prop comment says so — and it did not keep
+                 the promise: read mode has ONE trailing button, edit mode has TWO
+                 (confirm and cancel), so the field came out narrower than the text it
+                 replaced by exactly one button plus a gap. Measured 852 → 828 at a docs
+                 preview width. Subtle on a single-line input and obvious on a textarea,
+                 where a visible border makes the inset right edge easy to compare
+                 against the unbordered text above it.
+
+                 Reserved by rendering the same markup rather than by computing a width:
+                 an arithmetic reservation would silently drift the day the icon size or
+                 the action padding changes, and this one cannot — it is sized by the
+                 thing it is standing in for.
+
+                 `invisible` keeps it in flow while painting nothing; aria-hidden plus no
+                 focusable content keeps it out of the accessibility tree and out of the
+                 tab order, so nothing is announced and nothing is reachable. Skipped
+                 entirely when actions are off, because then edit mode has no second
+                 slot to match. --}}
+            <span class="{{ $actionClasses }} invisible" aria-hidden="true">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true"></svg>
+            </span>
+        @endif
     </div>
 
     {{-- Edit mode. x-show rather than x-if: Livewire stops patching attributes
@@ -296,6 +354,7 @@
             :actions="$actions"
             :options="$options"
             :action-classes="$actionClasses"
+            :rows="$rows"
             :editor="$editor ?? null"
         />
     </div>

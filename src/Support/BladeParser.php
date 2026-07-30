@@ -350,4 +350,111 @@ final class BladeParser
 
         return array_values($names);
     }
+
+    /**
+     * Every `<x-wirekit::…>` usage in a source string, with the attribute names it carries.
+     *
+     * WALKED, not matched, and the two boundaries are the whole reason this exists rather
+     * than a regex at the call site. Both were reported from a downstream repo that built
+     * the naive version first:
+     *
+     *   1. `<x-wirekit::[^>]*>` ends the tag at the first `>`, and a perfectly ordinary
+     *      `x-show="count > 3"` contains one. Every attribute after it is lost — silently,
+     *      so a guard built on that pattern reports a clean sweep over half a tag.
+     *   2. Collecting `name=` occurrences across the tag body reaches INSIDE values.
+     *      `class="flex items-center gap-[…]"` produced three phantom attributes and
+     *      `label="Live Visitors"` a fourth, so the first version of that guard reported
+     *      five findings that were not there.
+     *
+     * So the scan tracks quote state and only reads a name when it is genuinely between
+     * attributes. Values are not returned: the question this serves is whether a name is a
+     * declared prop, and carrying values would invite a second, weaker parser for them.
+     *
+     * @return list<array{name: string, attributes: list<string>}>
+     */
+    public static function extractWireKitComponentUsagesFromSource(string $contents): array
+    {
+        $usages = [];
+        $length = strlen($contents);
+        $offset = 0;
+
+        while (($start = strpos($contents, '<x-wirekit::', $offset)) !== false) {
+            $cursor = $start + strlen('<x-wirekit::');
+
+            // The component name: lowercase segments, optionally one dotted sub-component.
+            $name = '';
+            while ($cursor < $length && preg_match('/[a-z0-9\-.]/', $contents[$cursor]) === 1) {
+                $name .= $contents[$cursor];
+                $cursor++;
+            }
+
+            if ($name === '') {
+                $offset = $cursor + 1;
+
+                continue;
+            }
+
+            // Walk to the tag's real end, honoring quotes. A `>` inside a quoted value is
+            // part of the value, not the end of the tag.
+            $attributes = [];
+            $quote = null;
+            $token = '';
+
+            while ($cursor < $length) {
+                $char = $contents[$cursor];
+
+                if ($quote !== null) {
+                    if ($char === $quote) {
+                        $quote = null;
+                    }
+                    $cursor++;
+
+                    continue;
+                }
+
+                if ($char === '"' || $char === "'") {
+                    $quote = $char;
+                    $cursor++;
+
+                    continue;
+                }
+
+                if ($char === '>') {
+                    break;
+                }
+
+                // An attribute name runs until whitespace, `=`, `/` or `>`. Anything
+                // collected while a quote was open never reaches here, which is what keeps
+                // values out of the result.
+                if (preg_match('/[\s\/=]/', $char) === 1) {
+                    if ($token !== '') {
+                        $attributes[] = $token;
+                        $token = '';
+                    }
+                    $cursor++;
+
+                    continue;
+                }
+
+                $token .= $char;
+                $cursor++;
+            }
+
+            if ($token !== '') {
+                $attributes[] = $token;
+            }
+
+            // Blade's own prop-binding colon is not part of the name: `:value="$x"` binds
+            // the `value` prop. Left in, every bound prop would read as unknown.
+            $attributes = array_values(array_unique(array_map(
+                static fn (string $a): string => ltrim($a, ':'),
+                array_filter($attributes, static fn (string $a): bool => $a !== ''),
+            )));
+
+            $usages[] = ['name' => $name, 'attributes' => $attributes];
+            $offset = max($cursor, $start + 1);
+        }
+
+        return $usages;
+    }
 }

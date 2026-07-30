@@ -135,6 +135,28 @@ export default function wirekitOptimistic(config = {}) {
         _markBaseline: null,
 
         init() {
+            // Marks the subtree as carrying a provisional state, so the stylesheet can
+            // give the in-flight control a VISIBLE treatment.
+            //
+            // Rule 6 of this layer's own contract says "the pending state has to be
+            // visible and legible", and it was not: `aria-busy` was bound and nothing in
+            // the shipped stylesheet painted it, so the provisional state was audible to
+            // a screen reader and invisible to everyone else. A sighted user flipped a
+            // toggle and saw a finished change — which is the exact promise the contract
+            // says must be shown as withdrawable.
+            //
+            // Stamped by the FACTORY rather than added to each of the twenty-three
+            // templates. The factory is the one place that knows a subtree is optimistic;
+            // a per-template marker is twenty-three chances to forget, and a
+            // hand-mounted factory would never get one at all.
+            // Optional chaining because `$el` is an Alpine magic that a plain unit harness
+            // does not provide. Without it `init()` throws there, and the failure names
+            // setAttribute rather than anything about the layer — which is how the JS suite
+            // went red on a change that was correct in a browser. The marker is still
+            // asserted in that harness against an $el double, so the guard against crashing
+            // does not weaken the guard.
+            this.$el?.setAttribute('data-wk-optimistic', '');
+
             // The factory owns the value only in the default binding. With an
             // explicit bind, the property already exists on the component and
             // seeding it here would overwrite what the server rendered.

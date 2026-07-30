@@ -239,6 +239,46 @@ final class StrictnessGate
         // slip through, which is a false negative and the safe direction.
         $prefixes = ['aria-', 'data-', 'wire:', 'x-', '@', ':', 'v-', 'on'];
 
+        foreach (self::unknownPropNames($actual, $declared) as $key) {
+            // Levenshtein-rank against declared props for a Did-you-mean.
+            $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein($key, $declared));
+            $message = "WireKit [{$context}]: Unknown prop \"{$key}\". Declared: ".implode(', ', $declared).'.';
+            if ($hint !== null) {
+                $message .= ' '.$hint;
+            }
+
+            logger()->warning($message);
+        }
+    }
+
+    /**
+     * The attribute names in `$actual` that are neither declared props nor legitimate
+     * passthrough. The VERDICT, with no logging and no environment gate.
+     *
+     * Split out of `warnUnknownProps()` because a second caller needs the same answer for
+     * a different purpose: a guard over the Blade snippets in the README and in PHP
+     * docblocks. Those snippets are the most-copied lines the package has, and one of them
+     * taught `variant` on `button` — a prop the component does not declare, which Blade
+     * folds into the attribute bag where it renders as a literal HTML attribute nothing
+     * reads. The page looked finished, no test failed, and the `Delete` button rendered in
+     * the ACCENT color: a destructive action styled as the primary call to action.
+     *
+     * `warnUnknownProps()` could not have caught it. It only logs, so nothing can fail on
+     * it, and it returns early outside `app.debug` — so in production the signal does not
+     * exist at all. Hence a predicate a test can assert on, and the two share this one
+     * implementation so the rule cannot drift between them.
+     *
+     * @param  array<string, mixed>  $actual  attribute name => value
+     * @param  list<string>  $declared  the component's declared @props
+     * @return list<string> unknown names, in encounter order
+     */
+    public static function unknownPropNames(array $actual, array $declared): array
+    {
+        $reserved = [...self::HTML_GLOBAL_ATTRIBUTES, ...self::HTML_ELEMENT_ATTRIBUTES];
+        $prefixes = ['aria-', 'data-', 'wire:', 'x-', '@', ':', 'v-', 'on'];
+
+        $unknown = [];
+
         foreach (array_keys($actual) as $key) {
             if (! is_string($key) || $key === '') {
                 continue;
@@ -252,15 +292,10 @@ final class StrictnessGate
                 }
             }
 
-            // Levenshtein-rank against declared props for a Did-you-mean.
-            $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein($key, $declared));
-            $message = "WireKit [{$context}]: Unknown prop \"{$key}\". Declared: ".implode(', ', $declared).'.';
-            if ($hint !== null) {
-                $message .= ' '.$hint;
-            }
-
-            logger()->warning($message);
+            $unknown[] = $key;
         }
+
+        return $unknown;
     }
 
     /**

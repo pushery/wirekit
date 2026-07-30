@@ -73,7 +73,7 @@ Full setup walkthrough: **[Getting Started](https://docs.wirekit.app/getting-sta
 
 ```blade
 <x-wirekit::button>Save</x-wirekit::button>
-<x-wirekit::button variant="danger">Delete</x-wirekit::button>
+<x-wirekit::button intent="danger">Delete</x-wirekit::button>
 
 <x-wirekit::input label="Email" type="email" name="email" wire:model="email" />
 

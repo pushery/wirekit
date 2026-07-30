@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.22.0 — MIT License
+ * WireKit CSS v2.23.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -1046,6 +1046,73 @@
 
 @keyframes wk-shimmer {
     100% { transform: translateX(100%); }
+}
+
+/* ── The optimistic pending state, made VISIBLE ─────────────────────────────
+   The optimistic layer's own contract says the provisional state has to be
+   visible and legible. It was not: the control bound `aria-busy` and nothing
+   here painted it, so the state was audible to a screen reader and invisible to
+   everyone else. A sighted user flipped a toggle and saw a FINISHED change —
+   exactly the promise the contract says must read as withdrawable.
+
+   `data-wk-optimistic` is stamped on the subtree by the factory, so this reaches
+   every optimistic component and every hand-mounted one without any template
+   knowing about it.
+
+   DASHED, and an outline rather than a ring. Dashed because a solid ring in the
+   accent color is what focus looks like in this library, and a pending control
+   that borrows the focus appearance tells the user the wrong thing — dashed reads
+   as provisional and cannot be confused with it. An outline because it is drawn
+   outside the box and changes no layout, so nothing reflows when a value goes
+   in flight.
+
+   NOT a dim. The contract rejects that in as many words: "a pending style that
+   only dims fails 1.4.3 at the moment the user most wants to read it". Text
+   contrast here is untouched — only a non-text indicator is added, which is
+   1.4.11's 3:1 floor, and the accent token clears it against every surface in
+   the palette (asserted in tests/Feature/OptimisticPendingVisibilityTest.php). */
+/* TWO selectors, because `aria-busy` does not always sit on something that paints.
+   The first version of this rule had only the first of them and was invisible on the two
+   controls the paragraph above names.
+
+   `toggle` and `checkbox` hide the native input with `.sr-only` — `clip-path: inset(50%)`,
+   1x1px, `overflow: hidden` — and put the visible track/box in a SIBLING span marked
+   aria-hidden. The optimistic layer binds `aria-busy` to the input, because that is the
+   element assistive technology reads. So an outline on the element carrying the attribute
+   was clipped away with the box: the state was announced, the rule matched, and nothing
+   was drawn. Exactly the defect the treatment exists to fix, reproduced by the fix.
+
+   Worse, the browser test could not see it either: `getComputedStyle().outlineStyle`
+   returns the cascaded value for a clipped element, so it read `dashed` over something
+   that paints nothing. Computed style is not paint.
+
+   `+ *` and not `~ *`: a toggle has TWO visible siblings (track, then knob), and the
+   general sibling combinator would outline both. The immediately-following sibling is the
+   track on a toggle and the box on a checkbox — one outline, on the surface a reader
+   actually looks at. */
+[data-wk-optimistic] [aria-busy="true"]:not(.sr-only) {
+    outline: var(--ring-wk-width) dashed var(--color-wk-accent);
+    outline-offset: 2px;
+}
+
+[data-wk-optimistic] .sr-only[aria-busy="true"] + * {
+    outline: var(--ring-wk-width) dashed var(--color-wk-accent);
+    outline-offset: 2px;
+}
+
+/* The breathing is polish, not the signal. Someone who has asked for less motion
+   still gets the full dashed outline — the state stays just as visible, it simply
+   holds still. That is the difference between gating an enhancement and gating
+   the information. */
+@media (prefers-reduced-motion: no-preference) {
+    [data-wk-optimistic] [aria-busy="true"]:not(.sr-only),
+    [data-wk-optimistic] .sr-only[aria-busy="true"] + * {
+        animation: wk-optimistic-pending 1.4s ease-in-out infinite;
+    }
+}
+
+@keyframes wk-optimistic-pending {
+    50% { outline-color: color-mix(in srgb, var(--color-wk-accent) 45%, transparent); }
 }
 
 /* Pulse mode — opt-in via `:shimmer="false"` or `animation="pulse"` on the
