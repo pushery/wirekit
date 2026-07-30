@@ -10,9 +10,117 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.23.0] — 2026-07-30
+
+**Minor release — accessibility promises the library documented and did not keep.** Every
+item here corrects something that was already wrong; the three props and two helpers exist to
+make two of those corrections configurable, and it is those additions that make this a minor
+rather than a patch.
+
+**Three things do change what an unchanged call site renders**, so budget a look at them
+rather than treating the upgrade as visually inert: an
+[inline-edit](https://docs.wirekit.app/components/inline-edit) textarea now opens at the
+height of its content instead of a fixed three rows; an inline-edit with `width="full"`
+reserves one action slot in read mode, so the value's box is narrower by that much; and every
+control already using `optimistic` gains the pending outline described below. Nothing else
+moves, and no prop changes meaning.
+
+### Fixed
+
+- **A pending [optimistic](https://docs.wirekit.app/extending/optimistic-ui) value now looks
+  pending.** While an optimistic control waits for the server it drew nothing: the state was
+  announced to a screen reader through `aria-busy` and nothing in the stylesheet painted it,
+  so a sighted user saw a *finished* change where the contract says the change has to read as
+  withdrawable. In-flight controls now carry a dashed outline that breathes slowly.
+
+  Dashed rather than solid, because a solid outline in the accent color is what focus looks
+  like — a pending control drawn that way would say the wrong thing. An outline rather than a
+  ring, so nothing reflows when a value goes in flight. And never a dim: dimming degrades the
+  text exactly when the reader most wants to read the value. Under
+  `prefers-reduced-motion: reduce` the outline stays and only the breathing stops.
+
+  This reaches every component that supports `optimistic` and every hand-mounted
+  `wirekitOptimistic(...)`, with no change needed at your call site.
+
+- **[inline-edit](https://docs.wirekit.app/components/inline-edit) no longer abandons an
+  unanswered save in silence.** When your handler never reports the outcome — a missing
+  paired event, a dropped request — the editor stopped waiting and said nothing at all. It
+  now reports the save as **not confirmed**, and deliberately not as *failed*: a missing
+  acknowledgement is not evidence the write did not happen, and calling it a failure invites
+  a second edit over a value that is already stored. Your text stays in the field either way.
+
+- **[inline-edit](https://docs.wirekit.app/components/inline-edit) gives the editor the box
+  the value had.** With `width="full"` the field came out narrower than the text it replaced
+  by exactly one button's width, because edit mode has two trailing controls where read mode
+  has one. Subtle on a single-line input, obvious on a textarea. Both boxes are now one width.
+
+- **[inline-edit](https://docs.wirekit.app/components/inline-edit)'s textarea opens at the
+  height of the text it replaces.** It opened at three rows regardless, so a value that read
+  as four wrapped lines became a box you had to scroll to see your own text in.
+
+- **The Quick Start in `README.md` taught a prop `button` does not accept.** The `Delete`
+  example used `variant="danger"`, and `button` takes `intent` + `surface` — so the attribute
+  fell through to the markup unread and the button rendered in the accent color: a
+  destructive action styled as the primary call to action. `WireKit::defaults()`'s docblock
+  had the same mistake twice, including a `variant` for
+  [input](https://docs.wirekit.app/components/input), which has neither a `variant` nor a
+  `surface`.
+
+  `variant` is **not** retired in general — it is a real prop on
+  [alert](https://docs.wirekit.app/components/alert),
+  [card](https://docs.wirekit.app/components/card),
+  [text](https://docs.wirekit.app/components/text) and ten others. It is retired on `button`
+  and `badge` only, so do not sweep `variant=` across a codebase; and `variant="outline"` on
+  a button was a **surface**, not a renamed intent.
+
+### Added
+
+- **`saveTimeout` and `unknownMessage` on
+  [inline-edit](https://docs.wirekit.app/components/inline-edit)** — how long to wait for your
+  `saved` / `failed` answer before giving up, and what the live region says when that bound is
+  reached. Both were read by the component and never passed, which is why the report above was
+  silent.
+
+- **`rows` on [inline-edit](https://docs.wirekit.app/components/inline-edit)**, defaulting to
+  `auto`: the textarea sizes to its content and grows while you type. A row count pins a fixed
+  height, which is the previous behavior.
+
+- **`Pushery\WireKit\Support\StrictnessGate::unknownPropNames()`** — the attribute names on a
+  component that are neither declared props nor legitimate passthrough, as a return value
+  rather than a log line. Useful if you want to assert in your own test suite that your
+  templates only pass props the component declares; the existing warning path now calls it, so
+  your check and the runtime's cannot disagree.
+
+- **`Pushery\WireKit\Support\BladeParser::extractWireKitComponentUsagesFromSource()`** —
+  every `<x-wirekit::…>` usage in a string with the attribute names it carries. It walks each
+  tag rather than matching it, so a `>` inside `x-show="count > 3"` does not truncate the tag
+  and a class list does not read as attribute names.
+
+### Documentation
+
+- **The [inline-edit](https://docs.wirekit.app/components/inline-edit) previews look broken
+  and are not, and the page now says so.** Edit a title, confirm, and the value snaps back —
+  because nothing behind a documentation preview answers the confirmation, and the component
+  refuses to show a value as saved on its own authority. That is the whole contract in one
+  interaction, and it now reads that way instead of like a fault.
+
+- A section on what happens when nothing answers a confirmation, with both new props.
+
+- **The textarea demo contradicted its own copy.** Its value claimed to wrap onto more than
+  one line and fitted on one, in the single demo meant to tell a textarea from a text input.
+
+- **[Optimistic UI](https://docs.wirekit.app/extending/optimistic-ui) now lists the components
+  that have it.** Twenty-three components ship the optimistic path and the page named none of
+  them, so the one page you read to decide whether to use the feature could not tell you
+  whether your component supported it. The page also has a preview of what a pending control
+  looks like, and a shorter title.
+
+- Every `variant=` example in the theming and component pages was already correct; only the
+  README and the docblock had fallen behind.
+
 ## [2.22.0] — 2026-07-30
 
-**Minor release — three themes in one version: an optimistic-UI layer, a Content-Security-Policy build, and a new component with five capabilities an application could not reach before.** Nothing existing changes shape: every prop added here has a default that renders exactly what the previous version rendered, and both new script bundles are ones nobody loads by accident.
+**Minor release — three topics in one version: an optimistic-UI layer, a Content-Security-Policy build, and a new component with five capabilities an application could not reach before.** Nothing existing changes shape: every prop added here has a default that renders exactly what the previous version rendered, and both new script bundles are ones nobody loads by accident.
 
 Read in one sentence each: a component can show the result of an action before the server confirms it and put it back if the answer is no; the whole catalog now works under a policy that forbids `unsafe-eval`, which took moving every inline expression into a registered factory; and a displayed value can become an editor in place.
 

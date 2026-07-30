@@ -18,6 +18,7 @@
      @param bool         $actions
      @param array        $options
      @param string       $actionClasses
+     @param string|int   $rows        textarea height: 'auto' (content-sized) or a row count
      @param mixed|null   $editor      developer-supplied control, or null
 
      WHY THE CONTROL IS WRAPPED IN `flex-1 min-w-0` RATHER THAN CARRYING IT:
@@ -53,9 +54,20 @@
          is part of the documented contract rather than a convenience. --}}
     {{ $editor }}
 @elseif($control === 'textarea')
+    {{-- `rows` defaults to `auto`, which is the textarea's own content-sizing mode
+         (CSS `field-sizing: content`, inside the supported baseline). Without it the
+         editor opened at the config default of three rows regardless of how much text
+         it was replacing: a value that read as four wrapped lines became a
+         three-row box the reader had to scroll to see their own text in — measured
+         102px of read display collapsing to an 81px editor.
+
+         The library already had this mode, which is why nothing is built here. The
+         numeric value still works as a minimum, so a developer who wants a fixed
+         height passes `rows="3"` and gets exactly the previous behavior. --}}
     <x-wirekit::textarea
         :id="$id"
         :size="$size"
+        :rows="$rows"
         x-ref="control"
         x-model="draft"
         x-on:keydown="onKeydown($event)"

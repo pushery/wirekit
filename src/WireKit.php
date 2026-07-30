@@ -37,9 +37,22 @@ class WireKit
      *
      * Usage in AppServiceProvider::boot():
      *   WireKit::defaults([
-     *       'button' => ['variant' => 'primary', 'size' => 'md'],
-     *       'input'  => ['variant' => 'outlined'],
+     *       'button' => ['intent' => 'primary', 'size' => 'md'],
+     *       'input'  => ['size' => 'lg'],
      *   ]);
+     *
+     * Every key has to be a prop the component actually declares. Blade folds an
+     * unknown one into the attribute bag, where it renders as a literal HTML
+     * attribute that nothing reads — so the page looks finished and no test fails.
+     * This docblock taught `variant` on both of these for exactly that reason:
+     * `button` migrated to `intent` + `surface` and `input` never had a `variant`
+     * at all.
+     *
+     * `variant` is NOT retired in general — it is a live, declared prop on alert,
+     * card, text, checkbox, radio, timeline, tabs, cta, navbar, faq, countdown,
+     * reading-progress and theme-controller. It is retired on `button` and `badge`
+     * only, so a blanket search-and-replace across `variant=` breaks thirteen
+     * components that are correct.
      */
     public static function defaults(array|Closure $defaults): void
     {
