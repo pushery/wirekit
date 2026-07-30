@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.21.1 — MIT License
+ * WireKit CSS v2.22.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -765,6 +765,50 @@
     input.wk-field,
     textarea.wk-field {
         min-width: 2.75rem;
+    }
+
+    /* The own selector the note above asked for, now that a minor can carry new
+       surface. Component-internal icon buttons carry neither marker — they are
+       not `.wk-button` and not `.wk-field` — so the floor never reached them,
+       and a page built only from this library rendered a row where two controls
+       grew to 44px and the third stayed small. That inconsistency APPEARED with
+       the fix; before it, all three were equally undersized.
+
+       An expander rather than a size floor, and the difference is the whole
+       design. `min-height` changes layout: it is what widened a tuned toolbar
+       past its container and had to be reverted. A centerd pseudo-element is out
+       of flow, so the hit area reaches 44x44 while the visible control keeps the
+       size it was designed at and nothing around it moves. Same technique the
+       file-upload remove button and the modal / drawer close buttons already use;
+       this makes it a class instead of copying it a fourth time.
+
+       APPLIED TO ISOLATED CONTROLS ONLY. In a dense grid — calendar days at 36px
+       on a 7-column grid, the permission matrix at 32px, carousel dots a few px
+       apart — 44px hit areas would OVERLAP, and the one painted last would take
+       the taps meant for its neighbor. That trades a small target for an
+       unreachable one, which is worse than the defect. WCAG 2.5.8 says the same
+       thing in its spacing exception: an undersized target is acceptable when it
+       is spaced away from its siblings. Those grids need a layout answer rather
+       than a hit-area one, and that is a design decision rather than a fix.
+
+       Not clipped: the host must not carry `overflow: hidden`, which is why this
+       sets `position: relative` on the host rather than assuming one. */
+    .wk-touch-target {
+        position: relative;
+    }
+
+    .wk-touch-target::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 2.75rem;
+        height: 2.75rem;
+        transform: translate(-50%, -50%);
+        /* Purely a hit area — never paints, and never eats a tap meant for the
+           control's own content. */
+        background: transparent;
+        pointer-events: auto;
     }
 }
 
@@ -1565,21 +1609,68 @@
    1ms rather than 0s: some browsers skip `transitionend` entirely at zero
    duration, and Alpine's x-transition waits for that event before removing the
    element. At 0s a leave transition can leave the node in the DOM forever. */
+/* THE OS IS NOT THE ONLY VOICE. An application can hold a motion preference of
+   its own — a setting in an account, a toggle in a preferences dialog — and
+   before this it had no way to make that preference win. The rule above is
+   correct and deliberately heavy-handed (`!important`, whole-surface), which is
+   exactly what left an application with no lever: to allow motion it would have
+   had to out-specify `[class^="wk-"] *` AND add its own `!important`, an arms
+   race against the library it is built on.
+
+   Three states, because a media query can only express two:
+
+     data-reduce-motion="reduce"          reduce, whatever the OS says
+     data-reduce-motion="no-preference"   do NOT reduce, even though the OS asks
+                                          — for someone who set the OS flag for
+                                          an unrelated reason
+     attribute absent                     follow the OS (what shipped before,
+                                          and still the default)
+
+   The middle state is the one that cannot be written as a media query, and it
+   is the one a real application needed. */
 @media (prefers-reduced-motion: reduce) {
-    [class^="wk-"],
-    [class*=" wk-"],
-    [class^="wk-"] *,
-    [class*=" wk-"] *,
-    [x-transition\:enter],
-    [x-transition\:leave],
-    [x-transition\.opacity],
-    [x-transition\.opacity\.duration\.200ms],
-    [x-transition\.origin\.top\.left] {
+    /* The root element ITSELF, which carries wk-scrollbar — a descendant
+       combinator alone would drop it, and scroll-behavior lives there. */
+    :root:not([data-reduce-motion="no-preference"])[class^="wk-"],
+    :root:not([data-reduce-motion="no-preference"])[class*=" wk-"],
+    :root:not([data-reduce-motion="no-preference"]) [class^="wk-"],
+    :root:not([data-reduce-motion="no-preference"]) [class*=" wk-"],
+    :root:not([data-reduce-motion="no-preference"]) [class^="wk-"] *,
+    :root:not([data-reduce-motion="no-preference"]) [class*=" wk-"] *,
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\:enter],
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\:leave],
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\.opacity],
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\.opacity\.duration\.200ms],
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\.origin\.top\.left] {
         animation-duration: 1ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 1ms !important;
         scroll-behavior: auto !important;
     }
+}
+
+/* The forced half, deliberately OUTSIDE the media query: the application says
+   reduce and the OS does not, so no media condition can carry it. Same
+   declarations rather than a shared block — CSS cannot apply one rule under two
+   different conditions, and duplicating four lines is cheaper to read than any
+   indirection that would avoid it. */
+/* The root element ITSELF, which carries wk-scrollbar — a descendant
+   combinator alone would drop it, and scroll-behavior lives there. */
+:root[data-reduce-motion="reduce"][class^="wk-"],
+:root[data-reduce-motion="reduce"][class*=" wk-"],
+:root[data-reduce-motion="reduce"] [class^="wk-"],
+:root[data-reduce-motion="reduce"] [class*=" wk-"],
+:root[data-reduce-motion="reduce"] [class^="wk-"] *,
+:root[data-reduce-motion="reduce"] [class*=" wk-"] *,
+:root[data-reduce-motion="reduce"] [x-transition\:enter],
+:root[data-reduce-motion="reduce"] [x-transition\:leave],
+:root[data-reduce-motion="reduce"] [x-transition\.opacity],
+:root[data-reduce-motion="reduce"] [x-transition\.opacity\.duration\.200ms],
+:root[data-reduce-motion="reduce"] [x-transition\.origin\.top\.left] {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
 }
 
 /* ── Radial progress ─────────────────────────────────────────────────────────

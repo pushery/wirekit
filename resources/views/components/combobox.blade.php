@@ -1,4 +1,15 @@
+{{-- optimistic-ui: supported
+     Pass `optimistic="method"` and the choice lands the moment an option is
+     picked. A discrete value from a fixed list, and the previous one is the
+     server's — so an undo destroys nothing the user typed. The optimistic scope
+     nests INSIDE this component and binds to `selected`; the text field follows
+     via `after`, which derives its label from the value rather than from the
+     clicked option, so a rollback restores the PREVIOUS selection's label. --}}
 @props([
+    // Livewire method to call optimistically. The choice appears immediately
+    // and is put back if the call fails. Absent -> this component renders
+    // exactly as it did before, down to the byte.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -197,160 +208,57 @@
      label the wrapper is a layout-neutral div (space-y-1.5 applies no margin to a
      single child, so no visual change). A single stable root keeps the anonymous
      component's $attributes / $component scope intact. --}}
+@php
+    // The optimistic layer NESTS INSIDE this component, and the direction is not
+    // interchangeable: a nested Alpine component's method reads and writes its
+    // parent's properties through `this`, never the other way around. So it has
+    // to be the child to reach `selected`, and the options have to be inside it
+    // to reach its `run()`.
+    //
+    // `after: '_syncQuery'` is what makes the rollback readable. The field shows
+    // the chosen option's label, and after an undo it must show the PREVIOUS
+    // one's — an option nobody clicked, so it can only come from the value.
+    $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'bind' => 'selected',
+        'after' => '_syncQuery',
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        // A second pick while one is in flight would resolve by whichever answer
+        // arrives last — network timing, which is both wrong and untestable.
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+    ]);
+@endphp
+
 <div class="space-y-1.5">
     @if($label)
         <x-wirekit::label :for="$comboId" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 <div
-    x-data="{
-        open: false,
-        query: '',
-        selected: @js($value),
-        highlight: 0,
-        allOptions: @js($normalized),
-        // Cross-instance coordination — when ANY combobox on the page opens it
-        // broadcasts a `wirekit:combobox-open` event carrying a stable Symbol;
-        // every OTHER instance closes itself on receipt. Without this, two
-        // open comboboxes can visually overlap (a long option list spills into
-        // the next combobox's territory on a docs page). Matches the
-        // context-menu cross-close pattern. The Symbol is created in init()
-        // so each instance gets its own unforgeable identity that survives
-        // Alpine's Proxy wrap-and-unwrap.
-        _uid: null,
-        _otherOpenCleanup: null,
-        get filtered() {
-            if (this.query === '') return this.allOptions;
-            const q = this.query.toLowerCase();
-            return this.allOptions.filter(o => o.label.toLowerCase().includes(q));
-        },
-        // Groups the FILTERED options by their `group` label, preserving
-        // first-seen group order and each option's index into `filtered` (as
-        // `_idx`) so highlight + aria-activedescendant keep using the flat
-        // keyboard model unchanged. Empty groups never appear (built from
-        // `filtered`, so a group whose options all filtered out is absent).
-        get filteredGroups() {
-            const groups = [];
-            const byLabel = new Map();
-            this.filtered.forEach((opt, idx) => {
-                const label = opt.group || null;
-                let bucket = byLabel.get(label);
-                if (! bucket) {
-                    bucket = { label, options: [] };
-                    byLabel.set(label, bucket);
-                    groups.push(bucket);
-                }
-                bucket.options.push({ ...opt, _idx: idx });
-            });
-
-            return groups;
-        },
-        init() {
-            // Seed the query with the label of the initial value, if any.
-            const match = this.allOptions.find(o => o.value === this.selected);
-            if (match) this.query = match.label;
-
-            this._uid = Symbol('wirekitCombobox');
-            this._otherOpenCleanup = (event) => {
-                if (event.detail?.source !== this._uid && this.open) {
-                    this.open = false;
-                }
-            };
-            window.addEventListener('wirekit:combobox-open', this._otherOpenCleanup);
-            // Broadcast on every transition into the open state so siblings can close.
-            this.$watch('open', (val) => {
-                if (val) {
-                    window.dispatchEvent(new CustomEvent('wirekit:combobox-open', {
-                        detail: { source: this._uid },
-                    }));
-                    // Anchor the panel once it is shown. `fixed` lets it escape a
-                    // clipping card; wirekitPosition carries the field width over
-                    // (the old `w-full` came from the wrapper) and caps the height
-                    // so a long list scrolls instead of running past the fold.
-                    this.$nextTick(() => this._place());
-                }
-            });
-        },
-        _place() {
-            // No-op on the core bundle, which ships no overlays and no position
-            // helper — the panel simply stays put. The full bundle exposes it.
-            if (typeof window.wirekitPosition !== 'function') return;
-            const list = this.$refs.cbxList;
-            if (! list) return;
-            window.wirekitPosition(this.$refs.cbxInput, list, {
-                placement: 'bottom-start',
-                offset: 4,
-                fitViewport: true,
-                matchReferenceWidth: true,
-            });
-        },
-        destroy() {
-            if (this._otherOpenCleanup) {
-                window.removeEventListener('wirekit:combobox-open', this._otherOpenCleanup);
-            }
-        },
-        selectOption(opt) {
-            if (opt.disabled) return;
-            this.selected = opt.value;
-            this.query = opt.label;
-            this.open = false;
-        },
-        moveHighlight(delta) {
-            const max = this.filtered.length - 1;
-            if (max < 0) return;
-            // Skip disabled options when navigating with arrow keys.
-            // Walk in `delta` direction until we find an enabled option
-            // or wrap-back to where we started (no enabled options →
-            // bail without changing highlight).
-            let next = this.highlight;
-            for (let step = 0; step < this.filtered.length; step++) {
-                next = Math.max(0, Math.min(max, next + delta));
-                if (! this.filtered[next].disabled) {
-                    this.highlight = next;
-                    return;
-                }
-                if (next === 0 && delta < 0) return;
-                if (next === max && delta > 0) return;
-            }
-        },
-        highlightFirst() {
-            // Jump to the first ENABLED option (WAI-ARIA combobox Home key).
-            const max = this.filtered.length - 1;
-            if (max < 0) return;
-            for (let i = 0; i <= max; i++) {
-                if (! this.filtered[i].disabled) { this.highlight = i; return; }
-            }
-        },
-        highlightLast() {
-            // Jump to the last ENABLED option (WAI-ARIA combobox End key).
-            const max = this.filtered.length - 1;
-            if (max < 0) return;
-            for (let i = max; i >= 0; i--) {
-                if (! this.filtered[i].disabled) { this.highlight = i; return; }
-            }
-        },
-        activateHighlighted() {
-            if (this.filtered[this.highlight] && ! this.filtered[this.highlight].disabled) {
-                this.selectOption(this.filtered[this.highlight]);
-            }
-        },
-        clearSelection() {
-            this.selected = null;
-            this.query = '';
-            this.open = false;
-            // Trigger input event so wire:model picks up the cleared value.
-            const hidden = this.$el.querySelector('input[type=hidden]');
-            if (hidden) { hidden.value = ''; hidden.dispatchEvent(new Event('input', { bubbles: true })); }
-        }
-    }"
+    x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ \Pushery\WireKit\Support\AlpinePayload::from($normalized) }} })"
     @click.outside="open = false"
     {{-- The roleless wrapper carries ONLY layout — every caller attribute
          (aria-describedby, data-*, autocomplete, required, …) is routed to the
          role="combobox" input below, never left stranded on this <div>. --}}
     {{ $attributes->only(['style'])->class(['relative w-full']) }}
 >
+    @if($optimisticConfig)
+        {{-- `display: contents` — this element's `relative` is the containing
+             block the listbox is positioned against, and a real box here would
+             move the panel. --}}
+        <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+    @endif
+
     {{-- Hidden input holding the selected *value* for form submission. --}}
     @if($name)
-        <input type="hidden" name="{{ $name }}" :value="selected ?? ''" />
+        {{-- Static value as well as the bound one: the field is empty until Alpine
+             boots, and a form submitted in that window sends nothing while the
+             visible control already shows the value. Both come from the same PHP
+             expression that feeds the factory, so they cannot drift. --}}
+        <input type="hidden" name="{{ $name }}" value="{{ $value }}" :value="submittedValue" />
     @endif
 
     {{-- Visible text input — role=combobox + aria-expanded + aria-controls
@@ -369,12 +277,15 @@
         autocomplete="off"
         x-model="query"
         @focus="open = true"
-        @input="open = true; highlight = 0"
-        @keydown.arrow-down.prevent="open = true; moveHighlight(1)"
+        @input="openAndReset()"
+        @keydown.arrow-down.prevent="openAndMove(1)"
         @keydown.arrow-up.prevent="moveHighlight(-1)"
-        @keydown.home.prevent="open = true; highlightFirst()"
-        @keydown.end.prevent="open = true; highlightLast()"
-        @keydown.enter.prevent="activateHighlighted()"
+        @keydown.home.prevent="openAtFirst()"
+        @keydown.end.prevent="openAtLast()"
+        {{-- runIf, not run: Enter can fire with nothing highlighted, and
+             `run(undefined)` would send the server a value nobody chose and then
+             roll back from it. --}}
+        @keydown.enter.prevent="{{ $optimisticConfig ? 'runIf(highlightedValue())' : 'activateHighlighted()' }}"
         @keydown.escape="open = false"
         @if($disabled) disabled @endif
         @if($hasError) aria-invalid="true" @endif
@@ -395,7 +306,10 @@
             type="button"
             x-show="selected"
             x-cloak
-            @click.stop="clearSelection()"
+            {{-- run(null), not runIf: clearing IS a choice — "none of them" — and it
+                 is a mutation the server has to hear about. `undefined` would be
+                 the absence of a choice; null is a choice. --}}
+            @click.stop="{{ $optimisticConfig ? 'run(null)' : 'clearSelection()' }}"
             class="absolute right-8 top-1/2 -translate-y-1/2 inline-flex items-center justify-center min-w-[24px] min-h-[24px] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
             aria-label="{{ __('Clear selection') }}"
         >
@@ -419,7 +333,7 @@
              button (which happens when it toggles the panel closed), the browser
              flags "aria-hidden on a focused element". Refocusing the input every
              time keeps focus on the real control and clears that warning. --}}
-        @click.stop="open = ! open; $refs.cbxInput?.focus();"
+        @click.stop="toggleAndFocus()"
         @if($disabled) disabled @endif
         tabindex="-1"
         aria-hidden="true"
@@ -449,8 +363,8 @@
              options remain effective children of the group in the a11y tree.
              The flat keyboard model is untouched — selection + highlight key off
              opt._idx (each option's index into the flat `filtered` list). --}}
-        <template x-for="grp in filteredGroups" :key="grp.label ?? '__wk_ungrouped'">
-            <li role="group" :aria-label="grp.label || 'Options'" style="list-style: none;">
+        <template x-for="grp in filteredGroups" :key="groupKey(grp)">
+            <li role="group" :aria-label="grp.label || {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Options')) }}" style="list-style: none;">
                 <template x-if="grp.label">
                     <div aria-hidden="true" class="px-[var(--padding-wk-x-md)] pt-[var(--padding-wk-y-sm)] pb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] uppercase tracking-wider text-[color:var(--color-wk-text-muted)]" x-text="grp.label"></div>
                 </template>
@@ -467,8 +381,9 @@
                                     ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] cursor-pointer'
                                     : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
                             class="{{ $optionRowClasses }}"
-                            @click="selectOption(opt)"
-                            @mouseenter="if (! opt.disabled) highlight = opt._idx"
+                            @click="{{ $optimisticConfig ? 'run(opt.value)' : 'selectOption(opt)' }}"
+                            @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
+                            @mouseenter="hoverOption(opt, opt._idx)"
                             x-text="opt.label"
                         ></li>
                     </template>
@@ -488,8 +403,9 @@
                         ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] cursor-pointer'
                         : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] cursor-pointer')"
                 class="{{ $optionRowClasses }}"
-                @click="selectOption(opt)"
-                @mouseenter="if (! opt.disabled) highlight = idx"
+                @click="{{ $optimisticConfig ? 'run(opt.value)' : 'selectOption(opt)' }}"
+                @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
+                @mouseenter="hoverOption(opt, idx)"
                 x-text="opt.label"
             ></li>
         </template>
@@ -507,6 +423,19 @@
 
     @if($hasError)
         <p id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    @endif
+
+    @if($optimisticConfig)
+        {{-- Outside the listbox — a live region is not an option — and inside
+             the optimistic scope. Rendered unconditionally and starting empty: a
+             region that arrives together with its text is a new node, and
+             nothing is announced at all.
+
+             It sits AFTER the error paragraph on purpose: where that paragraph
+             is present and speaking, the layer's own rollback stays silent and
+             leaves it the floor. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+        </div>
     @endif
 </div>
 

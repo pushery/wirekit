@@ -1,4 +1,5 @@
 import { resolveThemeColors, palette, withOpacity } from '../utils/chart-theme-colors.js';
+import { prefersReducedMotion } from '../utils/motion.js';
 
 /**
  * WireKit Chart.js Alpine Component.
@@ -410,7 +411,7 @@ export default function wirekitChartJs(config) {
         _reducedMotion() {
             return typeof window !== 'undefined'
                 && window.matchMedia
-                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                && prefersReducedMotion();
         },
 
         /**

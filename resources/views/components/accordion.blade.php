@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is which panels are open. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'mode' => config('wirekit.components.accordion.mode', 'single'),
     // Visual treatment of the container + items:
@@ -54,22 +57,13 @@
      `opened` is an array of currently open item ids. Child items access
      toggle()/isOpen() directly via Alpine's scope chain inheritance. --}}
 <div
-    x-data="{
-        mode: @js($mode),
-        opened: [],
-        toggle(id) {
-            // In single mode: either open only this id, or close all if already open.
-            // In multiple mode: flip membership in the opened array.
-            if (this.mode === 'single') {
-                this.opened = this.opened.includes(id) ? [] : [id];
-            } else {
-                this.opened = this.opened.includes(id)
-                    ? this.opened.filter(x => x !== id)
-                    : [...this.opened, id];
-            }
-        },
-        isOpen(id) { return this.opened.includes(id); }
-    }"
+    {{-- Which panels are open lives in resources/js/components/accordion.js.
+         It cannot live here: an inline literal cannot declare methods under
+         Alpine's CSP build, and the spread and arrow function inside them are
+         out of its grammar too — no panel opened under a strict policy. The
+         mode is a validated enum, so it goes in as a plain quoted literal
+         rather than through {{ \Pushery\WireKit\Support\AlpinePayload::from() }}. --}}
+    x-data="wirekitAccordion({ mode: '{{ $mode }}' })"
     data-wk-accordion-mode="{{ $mode }}"
     {{-- WAI-ARIA 1.2 forbids author naming on an element with an implicit
          role="generic": a bare <div> carrying aria-label is not reliably exposed

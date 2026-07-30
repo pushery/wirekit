@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is the current section. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'target' => null,
     'levels' => '2,3',
@@ -156,6 +159,16 @@
         'numbered' => filter_var($numbered, FILTER_VALIDATE_BOOL),
         'fillSections' => filter_var($fillSections, FILTER_VALIDATE_BOOL),
         'sectionEvents' => filter_var($sectionEvents, FILTER_VALIDATE_BOOL),
+        // Were an `x-init` carrying Blade control flow. Alpine's CSP build parses
+        // ONE expression, so a pair of statements wrapped in `@if` was refused
+        // outright — and a refused x-init leaves the element with an empty scope,
+        // which takes every other directive on it down silently.
+        'forceExpanded' => filter_var($forceExpanded, FILTER_VALIDATE_BOOL),
+        'forceExpandedMd' => filter_var($forceExpandedMd, FILTER_VALIDATE_BOOL),
+        // The shallowest level in the spine — the link indent is measured from
+        // it, and passing it here keeps the arithmetic in one place instead of
+        // interpolated into a style string.
+        'baseLevel' => min($levelsArray),
     ], JSON_THROW_ON_ERROR);
 @endphp
 
@@ -171,11 +184,6 @@
 @endif
 <aside
     x-data="wirekitReadingSpine({{ $alpineOptions }})"
-    x-init="
-        @if ($forceExpanded) expanded = true;
-        @elseif ($forceExpandedMd) if (window.matchMedia('(min-width: 768px)').matches) expanded = true;
-        @endif
-    "
     x-bind:data-expand="expanded ? 'true' : 'false'"
     data-side="{{ $position === 'left' ? 'left' : 'right' }}"
     @if (! $forceExpanded)
@@ -233,12 +241,12 @@
                         only applies when Tailwind is loaded).
                     --}}
                     <a
-                        :href="`#${item.id}`"
+                        :href="'#' + item.id"
                         :data-active="item.index === activeIndex ? 'true' : 'false'"
                         :data-level="item.level"
                         :aria-current="item.index === activeIndex ? 'location' : null"
                         class="wk-reading-spine__link group flex items-center gap-2 cursor-pointer text-sm rounded-[var(--radius-wk-sm)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                        :style="`padding-left: calc((${item.level} - {{ min($levelsArray) }}) * 0.5rem); padding-top: 0.125rem; padding-bottom: 0.125rem; text-decoration: none;`"
+                        :style="linkStyle(item)"
                         @click="scrollTo(item.id, $event)"
                     >
                         {{--
@@ -260,7 +268,7 @@
                         <span
                             class="wk-reading-spine__tick rounded-[var(--radius-wk-full,9999px)]"
                             :class="tickWidthClass(item.level)"
-                            :style="`display: block; height: var(--reading-spine-tick-height); @if (filter_var($fillSections, FILTER_VALIDATE_BOOL)) background: linear-gradient(to right, var(--reading-spine-color-active) ${item.fill * 100}%, var(--reading-spine-color-idle) ${item.fill * 100}%); @endif`"
+                            :style="tickStyle(item)"
                             aria-hidden="true"
                         ></span>
 
@@ -296,7 +304,7 @@
                 type="button"
                 class="wk-reading-spine__back-to-top mt-2 ml-2 inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 aria-label="{{ __('Back to top') }}"
-                @click="window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })"
+                @click="scrollToTop()"
             >
                 <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04l-3.96-4.158V16.25A.75.75 0 0110 17z" clip-rule="evenodd"/>

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — navigation
+     Tiles that link somewhere. They navigate. --}}
 @props([
     // The fleet: a list of entities to render as status tiles. Each entry:
     //   ['key' => 'app-1', 'label' => __('shop.example'), 'intent' => 'danger', 'href' => '…', 'meta' => '2 issues']

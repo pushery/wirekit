@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is disclosure state. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'label' => '',
     'icon' => null,
@@ -14,7 +17,6 @@
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
-    use Pushery\WireKit\Support\PersistedToggle;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
@@ -75,7 +77,7 @@
 @endphp
 
 <div
-    x-data="{{ PersistedToggle::data('open', $open, $persist) }}"
+    x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
     {{ $attributes }}
 >
     {{-- Trigger button — toggles the child items. aria-expanded announces
@@ -121,7 +123,7 @@
          guard is mandatory — a sidebar.collapsible used inside a NON-collapsible
          <x-wirekit::sidebar> has no `collapsed` in Alpine scope, so a bare
          `open || collapsed` would throw a ReferenceError there. --}}
-    <div x-show="open || (typeof collapsed !== 'undefined' && collapsed)" x-collapse x-cloak class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:pl-0">
+    <div x-show="childrenVisible()" x-collapse x-cloak class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:pl-0">
         {{ $slot }}
     </div>
 </div>

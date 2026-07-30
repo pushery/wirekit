@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     A navigation entry that may carry a developer action; the action's result is not this component's. --}}
 @props([
     'href' => '#',
     'active' => false,

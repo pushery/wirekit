@@ -1,4 +1,27 @@
+{{-- optimistic-ui: supported
+     Uses §8's fourth exit — a refusal KEEPS what was typed and says so, because
+     for a typed value the previous one belongs to the server and the new one is
+     the user's work.
+
+     The component's own question was whether the announcement can read anything
+     back, since a password field is the one place where that would be a
+     disclosure. Confirmed at the source rather than assumed: the layer's
+     `_announce()` takes only the `messages` strings handed to it in this config,
+     and no path builds a message from the value. The wording names no value
+     either.
+
+     Nor does the VALUE reach the markup: this binds to the `password` property
+     the component already declares, so the config carries a property NAME rather
+     than a value. `value` in the config would have serialized a typed password
+     into an x-data attribute — correct for every other field, disqualifying
+     here. Binding also keeps one truth for the value instead of two, whether or
+     not the strength meter is on. --}}
 @props([
+    // The Livewire method to call when the field should show the new value
+    // before the server has agreed to it. A refusal KEEPS what was typed — see
+    // the note above. Null leaves the component exactly as it has always
+    // rendered.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -111,31 +134,52 @@
         . ($hasError ? $id . '-error' : '') . ' '
         . ($strengthMeter ? $id . '-strength' : '')
     );
+
+    // `failure: 'keep'` is what makes this component eligible at all — §8. A
+    // rollback here would delete a typed password, and re-typing one is the most
+    // expensive re-entry any field can ask for.
+    //
+    // `bind` rather than `value`: the property already exists on the component
+    // this layer nests inside, so the config names it instead of carrying it.
+    // That is the ordinary reason — and here it is also the safe one, because a
+    // `value` would have written the typed password into an x-data attribute.
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'bind' => 'password',
+        'action' => $optimistic,
+        'failure' => 'keep',
+        'debug' => (bool) config('app.debug'),
+        // A second commit while one is in flight would resolve by whichever
+        // answer arrives last — network timing, which is both wrong and
+        // untestable.
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            // Names no value, and that is load-bearing here rather than a
+            // stylistic choice: this is the one field where quoting what was
+            // typed would be a disclosure.
+            'kept' => __('Could not save. Your entry is still here.'),
+        ],
+        'errorRegion' => '#'.$id.'-error',
+    ]);
 @endphp
 
-<div class="space-y-1.5" x-data="{
-    showPassword: false,
-    @if($strengthMeter)
-        password: '',
-        get strength() {
-            const pw = this.password;
-            if (!pw) return 0;
-            let score = 0;
-            if (pw.length >= 8) score++;
-            if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
-            if (/\d/.test(pw)) score++;
-            if (/[^a-zA-Z0-9]/.test(pw)) score++;
-            return score;
-        },
-        barColor(index) {
-            if (index >= this.strength) return 'var(--color-wk-bg-muted)';
-            if (this.strength <= 1) return 'var(--color-wk-danger)';
-            if (this.strength === 2) return 'var(--color-wk-warning)';
-            if (this.strength === 3) return 'var(--color-wk-warning)';
-            return 'var(--color-wk-success)';
-        },
-    @endif
-}">
+{{-- The toggle and the meter live in resources/js/components/password-input.js.
+     They cannot live here: this used to be an inline object literal carrying a
+     getter and a method, and Alpine's CSP parser does not accept that as an
+     expression — under a strict policy the element got an EMPTY scope, so the
+     show/hide button and the whole meter were dead with no error to say why. --}}
+<div class="space-y-1.5" x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }} })">
+@if($optimisticConfig)
+    {{-- The layer nests INSIDE the component that owns the value, because a
+         nested Alpine component reads and writes its parent's properties
+         through `this` and never the reverse — so `bind: 'password'` only
+         resolves in this direction.
+
+         `display: contents` because the wrapper above is a `space-y-1.5` stack:
+         a real box here would make its children one flow item and collapse the
+         spacing between label, field and meter. --}}
+    <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+@endif
     @if($label)
         <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
     @endif
@@ -148,6 +192,12 @@
             @if($strengthMeter) x-model="password" @endif
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+            @if($optimisticConfig)
+                x-bind:aria-busy="isPending"
+                {{-- `change`, not `input`: typing fires input per keystroke, and
+                     the event that ends the input is leaving the field (§10). --}}
+                x-on:change="run($event.target.value)"
+            @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
             {{ $attributes->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
         />
@@ -161,7 +211,7 @@
                 {{-- Static aria-label guards pre-Alpine render (axe scans DOM
                      before hydration may complete). :aria-label overrides live. --}}
                 aria-label="{{ __('Show password') }}"
-                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                :aria-label="showPassword ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Hide password')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Show password')) }}"
             >
                 {{-- Eye icon (show) --}}
                 <svg x-show="!showPassword" aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -196,4 +246,12 @@
     @elseif($hint)
         <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
+
+@if($optimisticConfig)
+        {{-- Rendered unconditionally and starting empty: a live region that
+             arrives together with its text is a new node, and nothing is
+             announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+    </div>
+@endif
 </div>

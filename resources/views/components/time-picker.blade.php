@@ -1,4 +1,11 @@
+{{-- optimistic-ui: supported
+     A native time input bound to a server value — the same shape as the other
+     form controls. --}}
 @props([
+    // The Livewire method this component should call, when it should show the
+    // new value before the server has agreed to it. Null leaves the component
+    // exactly as it has always rendered.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -116,7 +123,24 @@
     }
 @endphp
 
-<div class="space-y-1.5">
+@php
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        // `value` is NOT a declared prop here — it passes through the bag. I
+        // assumed the opposite and the browser said so: the layer mounted with
+        // an empty value and the first assertion caught it.
+        'value' => (string) ($attributes->get('value') ?? ''),
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+        'errorRegion' => '#'.$id.'-error',
+    ]);
+@endphp
+
+<div class="space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
     @endif
@@ -126,10 +150,22 @@
         id="{{ $id }}"
         name="{{ $name }}"
         @if($hasError) aria-invalid="true" @endif
+            @if($optimisticConfig)
+                x-ref="control"
+                x-bind:aria-busy="isPending"
+                x-on:change="commitFromControl()"
+            @endif
         @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
         {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
         {{ $attributes->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
     />
+
+    @if($optimisticConfig)
+        {{-- Rendered unconditionally and starting empty: a live region that
+             arrives together with its text is a new node, and nothing is
+             announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+    @endif
 
     @if($hasError && $errorMessage)
         <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>

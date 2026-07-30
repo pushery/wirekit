@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     The monthly/yearly switch changes which prices are shown, all locally. --}}
 @props([
     // Accessible name for the group of plans.
     'label' => config('wirekit.components.pricing-table.label') ?? __('Pricing plans'),
@@ -73,7 +75,7 @@
      because a list may only contain list items, and the tiers read the value
      through the Alpine scope rather than a prop — Blade cannot pass anything
      into slot content that was already rendered in the caller's scope. --}}
-<div x-data="{ interval: @js($defaultInterval) }" data-wk-pricing-intervals>
+<div x-data="{ interval: {{ \Pushery\WireKit\Support\AlpinePayload::from($defaultInterval) }} }" data-wk-pricing-intervals>
     <div
         role="group"
         aria-label="{{ $intervalLabel }}"
@@ -84,9 +86,9 @@
                  state a reader who cannot see the fill still needs. --}}
             <button
                 type="button"
-                x-on:click="interval = @js((string) $intervalKey)"
-                :aria-pressed="interval === @js((string) $intervalKey) ? 'true' : 'false'"
-                :class="interval === @js((string) $intervalKey)
+                x-on:click="interval = {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}"
+                :aria-pressed="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }} ? 'true' : 'false'"
+                :class="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}
                     ? '{{ $intervalSelectedClasses }}'
                     : '{{ $intervalUnselectedClasses }}'"
                 class="cursor-pointer rounded-[var(--radius-wk-full)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"

@@ -1,4 +1,12 @@
+{{-- optimistic-ui: supported
+     A wire:model.live round trip on a checkbox is the mutation case, and the
+     browser has already flipped the box by the time any handler runs. What the
+     layer adds is confirmation, the undo, and the announcement. --}}
 @props([
+    // The Livewire method this component should call, when it should show the
+    // new value before the server has agreed to it. Null leaves the component
+    // exactly as it has always rendered.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -139,7 +147,21 @@
     }
 @endphp
 
-<div class="space-y-1.5">
+@php
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'value' => (bool) ($attributes->get('checked') ?? false),
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+        'errorRegion' => '#'.$id.'-error',
+    ]);
+@endphp
+
+<div class="space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     <label for="{{ $id }}" class="{{ $labelClasses }}">
         {{-- Native checkbox: visually hidden but fully accessible + Livewire-compatible.
              Siblings below consume its :checked / :indeterminate / :focus-visible / :disabled state via peer-*. --}}
@@ -150,6 +172,11 @@
             class="peer sr-only"
             @if($indeterminate) x-init="$el.indeterminate = true" @endif
             @if($hasError) aria-invalid="true" @endif
+            @if($optimisticConfig)
+                x-ref="control"
+                x-bind:aria-busy="isPending"
+                x-on:change="commitFromControl()"
+            @endif
             @if($describedBy !== null) aria-describedby="{{ $describedBy }}" @endif
             {{ $attributes->except(['id', 'name', 'aria-describedby']) }}
         />
@@ -185,6 +212,13 @@
             <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
         @endif
     </label>
+
+    @if($optimisticConfig)
+        {{-- Rendered unconditionally and starting empty: a live region that
+             arrives together with its text is a new node, and nothing is
+             announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+    @endif
 
     {{-- Error message or hint text --}}
     @if($hasError && $errorMessage)

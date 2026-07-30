@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is scroll shadows. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     // Distance from the viewport top when pinned (any CSS length). Also drives the
     // default max-height: calc(100dvh - 2*offset), leaving the offset above + below.

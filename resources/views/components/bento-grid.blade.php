@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     // Accessible name for the showcase. A bento is a set of related feature
     // claims, so a screen reader should get a boundary and a name for it rather

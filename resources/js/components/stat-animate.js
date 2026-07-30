@@ -24,6 +24,7 @@
  * is preserved verbatim. toLocaleString() formats the in-flight value
  * so thousand-separators appear during animation.
  */
+import { prefersReducedMotion } from '../utils/motion.js';
 export default () => ({
     value: '0',
     // animating: true while counter is running (used by descriptionDeferred Option A
@@ -50,7 +51,7 @@ export default () => ({
 
         // Reduced-motion shortcut: snap to target immediately, no animation.
         // Both `animating` and `progress` resolve to settled state for SR/CLS contract.
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        if (prefersReducedMotion()) {
             this.value = formatValue(numeric);
             this.animating = false;
             this.progress = 1;

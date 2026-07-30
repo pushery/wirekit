@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — navigation
+     A logo that links home. Navigation, not a mutation. --}}
 @props([
     'logo' => null,
     'mobileLogo' => null,

@@ -100,6 +100,14 @@ export default function wirekitEditor(config = {}) {
                     },
                 },
                 onCreate: () => { this._version++; this._writeOut(); this._updateCount(); },
+                // §10 — the commit boundary for rich text is LEAVING the editor.
+                //
+                // Not `onUpdate`, and not the `change` this component emits from
+                // it: that fires on a 200ms debounce, so committing there would
+                // be a request every fifth of a second while someone types — a
+                // timer wearing an event's name, which is the one thing §10
+                // forbids. Blur is the moment the writing stopped.
+                onBlur: () => { this._commitOptimistic(); },
                 onUpdate: () => { this._version++; this._scheduleSync(); this._updateCount(); },
                 onSelectionUpdate: () => { this._version++; },
                 onTransaction: () => { this._version++; },
@@ -211,6 +219,29 @@ export default function wirekitEditor(config = {}) {
             // input → Livewire wire:model; change → legacy listeners.
             this.$refs.input.dispatchEvent(new Event('input', { bubbles: true }));
             this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+
+        /**
+         * Hand the content to the optimistic layer, if one is nested here.
+         *
+         * Reads the value the same way _writeOut does, through the configured
+         * format — a JSON editor must not commit HTML, and the two would drift
+         * apart if this built its own.
+         *
+         * No `mark()`: this component takes `failure: 'keep'`, so a refusal never
+         * writes back and the baseline is never read.
+         *
+         * `run` is looked up rather than assumed — without the layer this
+         * component behaves exactly as before, down to the byte.
+         */
+        _commitOptimistic() {
+            if (typeof this.run !== 'function' || !this.editor) {
+                return;
+            }
+
+            this.run(this._format === 'json'
+                ? JSON.stringify(this.editor.getJSON())
+                : this.editor.getHTML());
         },
 
         // ── Toolbar command dispatch ─────────────────────────────────

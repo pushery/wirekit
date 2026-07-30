@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     'name' => '',
     // Raw amount — formatted by the price component, so a plan never
@@ -108,7 +112,7 @@
                  and no x-cloak rule is required. --}}
             @foreach($prices as $intervalKey => $intervalAmount)
                 <span
-                    x-show="interval === @js((string) $intervalKey)"
+                    x-show="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}"
                     @unless($loop->first) style="display: none;" @endunless
                     class="flex items-baseline gap-[var(--space-wk-xs)]"
                     data-wk-pricing-interval="{{ $intervalKey }}"

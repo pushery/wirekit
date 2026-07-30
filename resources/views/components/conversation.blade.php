@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Scroll anchoring for a message list. --}}
 @props([
     // Accessible name for the transcript log region.
     'label' => __('Conversation'),
@@ -17,7 +19,7 @@
     // not `[]` — the plugin signature takes a config object.
     // The jump-to-latest labels are translated HERE and handed to the plugin,
     // never written into the attribute binding. A Blade `::`-escaped attribute on
-    // a component is passed through VERBATIM: an `@js()` inside it is not
+    // a component is passed through VERBATIM: a Blade directive inside it is not
     // compiled, so the binding would carry the literal directive text, Alpine
     // would fail to evaluate it, and the control would ship with no accessible
     // name — silent, and exactly what happened.

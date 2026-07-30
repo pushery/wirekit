@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — query
+     A page change is a query round trip, not a mutation. Nobody can show a page nobody has fetched — only the intent could be acknowledged, and that is a different state machine and out of scope. --}}
 @props([
     'paginator' => null,
     'variant' => config('wirekit.components.pagination.variant', 'full'), // full | simple | mini

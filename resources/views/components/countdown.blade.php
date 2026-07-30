@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     A timer. --}}
 @props([
     // The ABSOLUTE target instant — a Carbon, an ISO-8601 string, or a unix
     // timestamp. Absolute, never a duration: a duration drifts the moment the
@@ -85,11 +87,50 @@
         $autoMode = false;
     }
 
-    // Localized unit labels for the segments variant + the screen-reader text.
+    // Localized unit labels for the SEGMENTS variant — a standalone caption under
+    // a big number, where the plural noun is the convention regardless of value.
     $unitLabels = [
         'years' => __('Years'), 'days' => __('Days'), 'hours' => __('Hours'),
         'minutes' => __('Minutes'), 'seconds' => __('Seconds'),
     ];
+
+    // Number-agreeing phrases for the SCREEN-READER text, which reads as a
+    // sentence and must agree ("1 second", not "1 seconds").
+    //
+    // Both forms travel to the client because the count is only known there —
+    // the clock ticks in Alpine. The phrase carries :count rather than being
+    // concatenated, so a language that puts the number elsewhere (or attaches a
+    // suffix to it) can say so in its own catalog. The old code lowercased the
+    // label, which is simply wrong for German and any language capitalizing
+    // nouns; casing belongs to the translation, never to a transformation.
+    // Passing :count back as the replacement keeps the placeholder literal so the
+    // client can substitute the live value into whichever form it picked.
+    //
+    // The keys are written out literally rather than looped over a variable, and
+    // that is deliberate: a key reachable only through a variable is invisible to
+    // `lang:extract` and to the drift guard that keeps lang/en.json honest — the
+    // same blindness that let a hardcoded string sit in an Alpine expression
+    // unnoticed. Six lines of repetition buy a key that every tool can see.
+    // Every form the locale distinguishes, not just two.
+    //
+    // These used to be two entries per unit — the singular and the plural —
+    // and the factory picked with `value === 1 ? 0 : 1`. That is right for
+    // English and German and silently wrong for Polish, Russian and Arabic,
+    // which have three to six categories. It also looked right to everyone who
+    // read the English output, which is why it survived.
+    //
+    // PluralPhrases renders the key at every count the supported locales
+    // distinguish and the browser chooses with Intl.PluralRules. The keys stay
+    // written out literally: one reachable only through a variable is invisible
+    // to `lang:extract` and to the drift guard that keeps lang/en.json honest.
+    $unitPhrases = [
+        'years' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count year|[2,*] :count years'),
+        'days' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count day|[2,*] :count days'),
+        'hours' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count hour|[2,*] :count hours'),
+        'minutes' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count minute|[2,*] :count minutes'),
+        'seconds' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count second|[2,*] :count seconds'),
+    ];
+    $countdownLocale = str_replace('_', '-', app()->getLocale());
 
     // Resolve the change-animation style. `animate` accepts a bool or one of the
     // strings 'box' / 'text' / 'none'. 'box' (the default when true) pulses the
@@ -130,117 +171,24 @@
 
 <div
     x-modelable="done"
-    x-data="{
-        target: @js($targetMs),
-        warnSeconds: @js($warnSeconds),
-        activeUnits: @js($activeUnits),
-        autoMode: @js($autoMode),
-        separators: @js((bool) $separators),
-        locale: @js($resolvedLocale),
-        animate: @js($animateOn),
-        expiredText: @js($expiredLabel),
-        unitSuffix: { years: 'y', days: 'd', hours: 'h', minutes: 'm', seconds: 's' },
-        _div: { years: 31536000, days: 86400, hours: 3600, minutes: 60, seconds: 1 },
-        now: Date.now(),
-        _timer: null,
-        // Completion state. `done` is a plain reactive prop (so x-modelable
-        // can bind it, unlike the read-only `expired` getter); `_fired` de-dupes the
-        // one-shot event.
-        _fired: false,
-        done: false,
-        init() {
-            this.now = Date.now();
-            // Client-side tick — no wire:poll (a visual clock does not need a
-            // server round-trip).
-            this._timer = setInterval(() => { this.now = Date.now(); }, 1000);
-            // Fire `wirekit-countdown-expired` + flip `done` exactly once at (or past)
-            // zero, so a sibling control can react and x-model can observe. $dispatch
-            // bubbles from the root, mirroring the wirekit-lightbox-open convention.
-            const fire = () => {
-                if (this.expired && ! this._fired) {
-                    this._fired = true;
-                    this.done = true;
-                    this.$dispatch('wirekit-countdown-expired');
-                }
-            };
-            fire(); // an already-past deadline still notifies
-            this.$watch('now', () => fire());
-        },
-        destroy() {
-            if (this._timer) { clearInterval(this._timer); this._timer = null; }
-        },
-        get remainingMs() { return this.target - this.now; },
-        get expired() { return this.remainingMs <= 0; },
-        // Full remaining-time breakdown for a HEADLESS display: a
-        // developer whose app renders its own copy around the number (e.g. a localized
-        // 'Resend in N seconds', with its own pluralization) reads this instead of
-        // rebuilding the clock/resync/expiry core. Unlike `computed` — which is
-        // filtered to the active units + variant and drops leading zeros — this is
-        // the ALWAYS-COMPLETE canonical ladder plus the totals, so `remaining.seconds`
-        // and `remaining.totalSeconds` are stable regardless of the `units` prop.
-        get remaining() {
-            const totalMs = Math.max(0, this.remainingMs);
-            let s = Math.floor(totalMs / 1000);
-            const totalSeconds = s;
-            const years = Math.floor(s / 31536000); s -= years * 31536000;
-            const days = Math.floor(s / 86400); s -= days * 86400;
-            const hours = Math.floor(s / 3600); s -= hours * 3600;
-            const minutes = Math.floor(s / 60); s -= minutes * 60;
-            return { years, days, hours, minutes, seconds: s, totalSeconds, totalMs };
-        },
-        get urgent() {
-            return this.warnSeconds !== null && ! this.expired && this.remainingMs <= this.warnSeconds * 1000;
-        },
-        // Break the remaining time across the active units. The FIRST active unit
-        // carries all overflow above it (so units='hours' shows total hours), the
-        // rest cascade down. A YEAR is a 365-day approximation — a running
-        // deadline reads in whole years/days, not calendar-exact leap math.
-        get computed() {
-            let s = Math.max(0, Math.floor(this.remainingMs / 1000));
-            const segs = [];
-            for (const u of this.activeUnits) {
-                const div = this._div[u];
-                const value = Math.floor(s / div);
-                s -= value * div;
-                segs.push({ unit: u, value });
-            }
-            // auto mode: drop leading zero-units, keeping at least the last one.
-            if (this.autoMode) {
-                let start = 0;
-                while (start < segs.length - 1 && segs[start].value === 0) start++;
-                return segs.slice(start);
-            }
-            return segs;
-        },
-        // Format one unit value: the leading unit gets locale separators (it can
-        // be large — years/days); the rest are zero-padded to two digits for a
-        // stable clock rhythm.
-        segValue(seg, index) {
-            if (index === 0) {
-                return this.separators
-                    ? new Intl.NumberFormat(this.locale).format(seg.value)
-                    : String(seg.value);
-            }
-            return String(seg.value).padStart(2, '0');
-        },
-        // Per-value key so a changed value re-mounts its node and the enter
-        // transition fires (the change animation). Stable per-unit when animation
-        // is off, so nothing re-mounts.
-        segKey(seg) {
-            return this.animate ? seg.unit + '-' + seg.value : seg.unit;
-        },
-        // Coarse, screen-reader text — NOT a per-second live region (role=timer
-        // is aria-live=off), so it is read on navigation, never announced every
-        // tick.
-        get srText() {
-            if (this.expired) return this.expiredText;
-            const names = @js($unitLabels);
-            const bits = this.computed
-                .filter((seg, i) => seg.value > 0 || i === this.computed.length - 1)
-                .map(seg => seg.value + ' ' + (names[seg.unit] || seg.unit).toLowerCase());
-            return bits.join(', ');
-        },
-    }"
+    {{-- The clock, the unit ladder, the expiry event and the screen-reader text
+         live in the factory (resources/js/components/countdown.js). Getters and
+         method shorthand do not parse under Alpine's CSP build, so the object
+         failed to build and the timer rendered once and then stood still. --}}
+    x-data="wirekitCountdown({
+        target: {{ \Pushery\WireKit\Support\AlpinePayload::from($targetMs) }},
+        warnSeconds: {{ \Pushery\WireKit\Support\AlpinePayload::from($warnSeconds) }},
+        activeUnits: {{ \Pushery\WireKit\Support\AlpinePayload::from($activeUnits) }},
+        autoMode: {{ \Pushery\WireKit\Support\AlpinePayload::from($autoMode) }},
+        separators: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $separators) }},
+        locale: {{ \Pushery\WireKit\Support\AlpinePayload::from($resolvedLocale) }},
+        animate: {{ \Pushery\WireKit\Support\AlpinePayload::from($animateOn) }},
+        expiredText: {{ \Pushery\WireKit\Support\AlpinePayload::from($expiredLabel) }},
+        unitPhrases: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $unitPhrases) }},
+        {{-- The APPLICATION's locale, not the browser's. A German page read on an
+             English-configured machine must still pluralize German. --}}
+        locale: {{ \Pushery\WireKit\Support\AlpinePayload::from($countdownLocale) }},
+    })"
     role="timer"
     aria-label="{{ __('Deadline') }}: {{ $humanDeadline }}"
     :class="expired
@@ -284,7 +232,7 @@
                         @class(['wk-countdown-pulse' => $animateStyle === 'box', 'flex min-w-[3.5rem] flex-col items-center rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]'])
                     >
                         <span @class(['wk-countdown-text-flash' => $animateStyle === 'text', 'text-[length:var(--text-wk-2xl)] font-[number:var(--font-wk-heading-weight)] leading-none tabular-nums']) x-text="segValue(seg, index)"></span>
-                        <span class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] uppercase tracking-wider text-[color:var(--color-wk-text-muted)]" x-text="{{ Js::from($unitLabels) }}[seg.unit]"></span>
+                        <span class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] uppercase tracking-wider text-[color:var(--color-wk-text-muted)]" x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from($unitLabels) }}[seg.unit]"></span>
                     </span>
                 @else
                     <span

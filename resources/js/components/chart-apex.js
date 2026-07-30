@@ -1,4 +1,5 @@
 import { resolveThemeColors, palette, resolveCssVarsDeep } from '../utils/chart-theme-colors.js';
+import { prefersReducedMotion } from '../utils/motion.js';
 
 /**
  * Unified tooltip renderer for every ApexCharts type. Emits ApexCharts'
@@ -1083,6 +1084,30 @@ window.ApexCharts = ApexCharts;</pre>
             for (const key of Object.keys(opts)) {
                 flat[key] = this._deepMerge(flat[key], opts[key]);
             }
+
+            // Drop Chart.js-only vocabulary before ApexCharts sees it.
+            //
+            // A WireKit chart config is written once and rendered by whichever
+            // adapter is active, so several components (sparkline is the clearest
+            // case) emit BOTH vocabularies and let the inactive one fall away.
+            // That worked only because ApexCharts used to ignore keys it did not
+            // know. It no longer does: ApexCharts gained a plugins feature and
+            // now runs `(config.plugins || []).map(...)` over it — and our
+            // `plugins` is a Chart.js OBJECT (`{legend, tooltip}`), so `.map` is
+            // not a function and the chart throws before drawing anything.
+            //
+            // The failure is silent where it hurts most. A sparkline is usually
+            // decorative and aria-hidden beside the number it illustrates, so the
+            // page still looks complete, the markup is unchanged, and only an
+            // empty box gives it away.
+            //
+            // Filtering here rather than at each call site is deliberate: the
+            // boundary is what must be clean, and a developer's own `:options`
+            // can carry the same foreign keys as our components do.
+            for (const foreign of ['plugins', 'scales', 'elements']) {
+                delete flat[foreign];
+            }
+
             return flat;
         },
 
@@ -1299,7 +1324,7 @@ window.ApexCharts = ApexCharts;</pre>
         _reducedMotion() {
             return typeof window !== 'undefined'
                 && window.matchMedia
-                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                && prefersReducedMotion();
         },
     };
 }

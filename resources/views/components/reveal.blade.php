@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is whether the element has entered the viewport. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     // Animation preset name. One of 11 in-presets:
     //   fade, slide-up, slide-down, slide-left, slide-right,

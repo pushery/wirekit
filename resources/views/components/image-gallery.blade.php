@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     The thumbnails switch which image is shown. All of it happens in the browser. --}}
 @props([
     // List of images: each an array with 'src' (required), 'alt' (required for a
     // content image), and optional 'caption'. A plain string is treated as a src

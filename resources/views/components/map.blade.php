@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Viewport and marker state, drawn from data the server already sent. Panning asks nothing of a server. --}}
 @props([
     'center' => [0, 0],             // [lat, lng]
     'zoom' => config('wirekit.components.map.zoom', 2),
@@ -84,7 +86,7 @@
 <div
     {{ $attributes->except(['id', 'class']) }}
     id="{{ $id }}"
-    x-data="wirekitMap({ center: @js($centerArr), zoom: {{ (int) $zoom }}, markers: @js($markersArr), provider: '{{ $provider }}'@if($styleUrl), styleUrl: '{{ $styleUrl }}'@endif @if($attribution), attribution: {{ \Illuminate\Support\Js::from($attribution) }}@endif })"
+    x-data="wirekitMap({ center: {{ \Pushery\WireKit\Support\AlpinePayload::from($centerArr) }}, zoom: {{ (int) $zoom }}, markers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, provider: '{{ $provider }}'@if($styleUrl), styleUrl: '{{ $styleUrl }}'@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution) }}@endif })"
     role="group"
     aria-label="{{ $ariaLabel }}"
     {{-- NO flex gap between canvas and list: the list's own divider border (a top
@@ -151,16 +153,16 @@
                     <button
                         type="button"
                         @click="selectMarker(m.id)"
-                        :aria-label="m.label + (m.body ? ', ' + m.body : '') + ', latitude ' + m.lat + ', longitude ' + m.lng"
+                        :aria-label="m.label + (m.body ? ', ' + m.body : '') + {{ \Pushery\WireKit\Support\AlpinePayload::from(__(', latitude :lat, longitude :lng')) }}.replace(':lat', m.lat).replace(':lng', m.lng)"
                         :aria-current="selectedId === m.id ? 'true' : null"
-                        :class="selectedId === m.id ? @js($selectedClasses) : ''"
+                        :class="selectedId === m.id ? {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedClasses) }} : ''"
                         class="w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset cursor-pointer transition-colors"
                     >
-                        <span class="mt-1 shrink-0 h-2.5 w-2.5 rounded-full" :class="@js($dotClasses)[m.intent || 'accent']"></span>
+                        <span class="mt-1 shrink-0 h-2.5 w-2.5 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($dotClasses) }}[m.intent || 'accent']"></span>
                         <span class="min-w-0 flex-1">
                             <span class="block text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] truncate" x-text="m.label"></span>
                             <span x-show="m.body" x-cloak class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] truncate" x-text="m.body"></span>
-                            <span class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)] tabular-nums" x-text="Number(m.lat).toFixed(4) + ', ' + Number(m.lng).toFixed(4)"></span>
+                            <span class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-subtle)] tabular-nums" x-text="formatCoordinates(m)"></span>
                         </span>
                     </button>
                 </li>

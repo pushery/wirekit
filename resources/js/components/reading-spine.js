@@ -23,6 +23,7 @@
  * width / opacity / color transition on this component to 0.01ms via the
  * global @media block. The plugin itself never animates anything in JS.
  */
+import { prefersReducedMotion } from '../utils/motion.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
     levels: Array.isArray(options.levels) ? options.levels : [2, 3],
@@ -30,6 +31,22 @@ export default (options = {}) => ({
     numbered: options.numbered === true,
     fillSections: options.fillSections === true,
     sectionEvents: options.sectionEvents !== false,
+
+    /**
+     * Start expanded — always, or only from the md breakpoint up.
+     *
+     * These arrive as options rather than as an `x-init` because the template's
+     * version was a pair of STATEMENTS wrapped in Blade `@if`, and Alpine's CSP
+     * build parses one expression: under a strict policy the whole attribute was
+     * refused, which does not fail loudly — it leaves the element with an empty
+     * scope, so every other directive on it goes quiet too. The condition is
+     * ordinary JavaScript here.
+     */
+    forceExpanded: options.forceExpanded === true,
+    forceExpandedMd: options.forceExpandedMd === true,
+
+    /** The minimum heading level in the spine — the indent is measured from it. */
+    baseLevel: typeof options.baseLevel === 'number' ? options.baseLevel : 2,
 
     items: [],
     activeIndex: -1,
@@ -53,7 +70,70 @@ export default (options = {}) => ({
     // smooth-scroll. Set by `scrollTo()` to `Date.now() + 600`.
     _programmaticScrollUntil: 0,
 
+    /**
+     * The indent for one entry, by how far its heading sits below the shallowest.
+     *
+     * Built here rather than in the template for the CSP build's sake — the
+     * template's version was a string concatenation carrying a Blade expression,
+     * and while concatenation itself parses, keeping the arithmetic beside the
+     * tick style is what stops the two from drifting apart. The base level comes
+     * from the options rather than from Blade, so the same number reaches both.
+     */
+    linkStyle(item) {
+        const depth = (Number(item.level) - this.baseLevel) * 0.5;
+
+        return `padding-left: ${depth}rem; padding-top: 0.125rem; padding-bottom: 0.125rem; text-decoration: none;`;
+    },
+
+    /**
+     * The tick's style, including the per-section progress fill when it is on.
+     *
+     * This was a TEMPLATE LITERAL in the attribute, which Alpine's CSP build
+     * cannot parse at all — and, as everywhere else, a refused expression does
+     * not announce itself: the element simply renders with no style, the tick
+     * collapses to zero width, and the spine loses the only affordance that says
+     * it can be expanded. The Blade `@if` around the gradient is now the
+     * `fillSections` flag, decided here where it is ordinary JavaScript.
+     */
+    tickStyle(item) {
+        const base = 'display: block; height: var(--reading-spine-tick-height);';
+
+        if (! this.fillSections) {
+            return base;
+        }
+
+        const pct = Number(item.fill || 0) * 100;
+
+        return `${base} background: linear-gradient(to right, var(--reading-spine-color-active) ${pct}%, var(--reading-spine-color-idle) ${pct}%);`;
+    },
+
+    /**
+     * Whether the spine starts expanded.
+     *
+     * A method rather than three lines inside init() so the decision can be
+     * measured on its own: init() goes on to collect headings and attach
+     * observers, so a test of the expansion rule would otherwise need a whole
+     * document to ask a question about two booleans.
+     *
+     * `matchMedia` is read ONCE, here, rather than watched — this is a starting
+     * position, not a responsive binding. The spine's own hover and focus
+     * handlers own the state from this point on, and re-deciding it on a resize
+     * would fight them.
+     */
+    initialExpanded() {
+        if (this.forceExpanded) {
+            return true;
+        }
+
+        return this.forceExpandedMd && window.matchMedia('(min-width: 768px)').matches;
+    },
+
     init() {
+        // Before anything else, so the first paint is already in the right state.
+        if (this.initialExpanded()) {
+            this.expanded = true;
+        }
+
         this.items = this.collectHeadings();
         this.assignIds(this.items);
         if (this.numbered) this.computeNumbering(this.items);
@@ -326,6 +406,18 @@ export default (options = {}) => ({
     },
 
     /**
+     * Back to the top of the article.
+     *
+     * A sibling of scrollTo() with no heading to aim at, so it does not touch
+     * the hash or the programmatic-scroll gate. It lives here rather than inline
+     * because `window` is unreachable from a directive under Alpine's CSP build
+     * — the evaluator resolves names against the Alpine scope alone.
+     */
+    scrollToTop() {
+        window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    },
+
+    /**
      * Smooth-scroll to a heading and replace the URL hash without
      * pushing a new history entry — back-button still goes to the
      * previous page rather than the previous heading.
@@ -335,7 +427,7 @@ export default (options = {}) => ({
         const el = document.getElementById(id);
         if (!el) return;
         const top = el.getBoundingClientRect().top + window.scrollY - this.offset + 8;
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reduced = prefersReducedMotion();
         window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
         // Suppress IO / scroll-driven `recomputeActive` callbacks during the
         // smooth-scroll window so the clicked link stays active without

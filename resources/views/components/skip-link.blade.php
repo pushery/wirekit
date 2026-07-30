@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — navigation
+     It is one anchor to the main landmark. There is nothing to anticipate: the browser moves focus, no server is asked. --}}
 @props([
     // The id (without leading "#") of the landmark this link jumps to.
     // Defaults to "main-content" to match the id the docs tell you to set

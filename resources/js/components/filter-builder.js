@@ -24,6 +24,16 @@ import { position } from '../utils/floating.js';
 
 export default function wirekitFilterBuilder(config = {}) {
     return {
+        /**
+         * The filter tree, serialized for the hidden input a form
+         * (or wire:model) submits. `JSON` is unreachable from a directive under
+         * Alpine's CSP build — the evaluator resolves names against the Alpine
+         * scope alone — so the encoding happens here.
+         */
+        filtersJson() {
+            return JSON.stringify(this.filters);
+        },
+
         // Field definitions (key/label/type/operators?/options?).
         fields: Array.isArray(config.fields) ? config.fields : [],
         // Active filters. Clone each entry so editing the draft never mutates

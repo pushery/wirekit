@@ -1,4 +1,17 @@
+{{-- optimistic-ui: supported
+     Pass `optimistic="method"` and the range is sent when the gesture ENDS —
+     pointerup for a drag, each keypress for the keyboard (§10: the boundary is
+     an event, never a timer). The method receives the pair `[min, max]`,
+     because the pair is one value: a rollback restores both, and an untouched
+     handle's restore is a no-op.
+
+     The optimistic scope nests INSIDE the slider and binds to the tuple
+     `['minVal', 'maxVal']`. --}}
 @props([
+    // Livewire method to call optimistically. It receives the full range as
+    // [min, max]. Absent -> this component renders exactly as it did before,
+    // down to the byte.
+    'optimistic' => null,
     'label' => null,
     'hint' => null,
     'min' => 0,
@@ -171,6 +184,32 @@
     $attributes = $attributes->except('aria-describedby');
 @endphp
 
+@php
+    // The optimistic layer NESTS INSIDE the slider's own scope, and the
+    // direction is not interchangeable: a nested Alpine component's method
+    // reads and writes its parent's properties through `this`, never the other
+    // way around. So it has to be the child to reach `minVal`/`maxVal`, and the
+    // thumbs have to be inside it to reach its `run()`.
+    //
+    // The bind is a TUPLE. §10: a range is one value, not two — snapshot the
+    // pair, restore the pair, and let an unchanged half be a no-op. A tuple of
+    // plain property names rather than a getter pair on the component, because
+    // that does not depend on how the two scopes get merged.
+    $optimisticConfig = ($optimistic === null || $attributes->has('disabled')) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'bind' => ['minVal', 'maxVal'],
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        // A second commit while one is in flight would resolve by whichever
+        // answer arrives last — network timing, which is both wrong and
+        // untestable.
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+    ]);
+@endphp
+
 <div
     role="group"
     @if($label) aria-labelledby="{{ $id }}-label" @endif
@@ -183,107 +222,31 @@
     {{-- Alpine logic inlined (no wirekit.js dependency needed).
          Handles dual-thumb drag, keyboard stepping, and percent calculation. --}}
     <div
-        x-data="{
-            minVal: {{ $initialMin }},
-            maxVal: {{ $initialMax }},
-            _min: {{ $min }},
-            _max: {{ $max }},
-            _step: {{ $step }},
-            _dragging: null,
-            _merged: false,
-            /**
-             * Gates the badge fade so it never runs on the FIRST measurement.
-             *
-             * `_merged` starts false and `_measureBubbles()` may immediately flip
-             * it to true, which — with `transition-opacity` applied
-             * unconditionally — animated the merged badge in from nothing on page
-             * load. Two costs: the developer sees the badge blink in when the
-             * layout was never in doubt, and for the duration of that fade the
-             * text sits at a PARTIAL opacity. A partially transparent
-             * near-black on white is mid-gray, so an accessibility scan that
-             * samples mid-fade reads a contrast of ~4.3:1 against a token that
-             * is 15:1 when settled. That is what reddened CI on the storefront
-             * blueprint while every local run passed: the scan raced the fade.
-             *
-             * Flipped to true after the first measurement settles, so the
-             * initial state is painted outright and every LATER change (dragging
-             * a thumb into or out of the merge) still animates.
-             */
-            _ready: false,
-            marksMap: @js((object) $rangeValueTextMap),
-            /**
-             * What a thumb announces. The map wins where it has an entry;
-             * otherwise the number IS the value. Live, so dragging and arrow keys
-             * update the announcement as the thumb moves — the same contract the
-             * single-value slider keeps.
-             */
-            valueTextFor(v) { return this.marksMap[String(v)] ?? String(v); },
-            get minPercent() { return ((this.minVal - this._min) / (this._max - this._min)) * 100; },
-            get maxPercent() { return ((this.maxVal - this._min) / (this._max - this._min)) * 100; },
-            stepMin(dir) {
-                const v = this.minVal + (dir * this._step);
-                this.minVal = Math.max(this._min, Math.min(v, this.maxVal - this._step));
-                this._dispatch();
-            },
-            stepMax(dir) {
-                const v = this.maxVal + (dir * this._step);
-                this.maxVal = Math.min(this._max, Math.max(v, this.minVal + this._step));
-                this._dispatch();
-            },
-            startDrag(handle, event) {
-                event.preventDefault();
-                this._dragging = handle;
-                const onMove = (e) => this._onDrag(e);
-                const onUp = () => { this._dragging = null; document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp); };
-                document.addEventListener('pointermove', onMove);
-                document.addEventListener('pointerup', onUp);
-            },
-            _onDrag(event) {
-                if (!this._dragging) return;
-                const rect = this.$refs.track.getBoundingClientRect();
-                const pct = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-                const stepped = Math.round((this._min + pct * (this._max - this._min)) / this._step) * this._step;
-                if (this._dragging === 'min') {
-                    this.minVal = Math.max(this._min, Math.min(stepped, this.maxVal - this._step));
-                } else {
-                    this.maxVal = Math.min(this._max, Math.max(stepped, this.minVal + this._step));
-                }
-                this._dispatch();
-            },
-            _dispatch() {
-                this.$refs.minInput?.dispatchEvent(new Event('input', { bubbles: true }));
-                this.$refs.maxInput?.dispatchEvent(new Event('input', { bubbles: true }));
-            },
-            _measureBubbles() {
-                const track = this.$refs.track, lo = this.$refs.minBubble, hi = this.$refs.maxBubble;
-                if (!track || !lo || !hi) return;
-                const tw = track.getBoundingClientRect().width;
-                if (!tw) return;
-                const need = (lo.offsetWidth + hi.offsetWidth) / 2 + 6;
-                this._merged = ((this.maxPercent - this.minPercent) / 100 * tw) < need;
-
-                // Enable the fade only AFTER the first measurement has been
-                // painted. Deferring by a frame is what makes the initial state
-                // a paint rather than an animation — setting it synchronously
-                // here would still let the very first `_merged` flip transition.
-                if (!this._ready) {
-                    requestAnimationFrame(() => { this._ready = true });
-                }
-            }
-        }"
-        x-effect="minVal; maxVal; $nextTick(() => _measureBubbles())"
+        x-data="wirekitRangeSlider({ min: {{ $min }}, max: {{ $max }}, step: {{ $step }}, minValue: {{ $initialMin }}, maxValue: {{ $initialMax }}, marksMap: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $rangeValueTextMap) }} })"
+        x-effect="remeasureOnValueChange()"
         class="relative"
         @if($resolvedShowValues)
             style="padding-top: 2rem;"
         @endif
     >
+        @if($optimisticConfig)
+            {{-- `display: contents` — this element's `relative` is the track's
+                 containing block, and a real box here would move the thumbs. --}}
+            <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+        @endif
+
         {{-- Hidden inputs for form submission. When the caller passed
              wire:model* on the component tag, also bind the matching
              nested-key directive to each input so Livewire picks up
              value updates as the user drags. --}}
+        {{-- Static value as well as the bound one: the field is empty until Alpine
+             boots, and a form submitted in that window sends nothing while the
+             visible control already shows the value. Both come from the same PHP
+             expression that feeds the factory, so they cannot drift. --}}
         <input
             type="hidden"
             name="{{ $name }}[min]"
+            value="{{ $initialMin }}"
             :value="minVal"
             @if($wireModel) {{ $wireModel }}="{{ $wireModelKey }}.min" @endif
             x-ref="minInput"
@@ -291,6 +254,7 @@
         <input
             type="hidden"
             name="{{ $name }}[max]"
+            value="{{ $initialMax }}"
             :value="maxVal"
             @if($wireModel) {{ $wireModel }}="{{ $wireModelKey }}.max" @endif
             x-ref="maxInput"
@@ -325,7 +289,7 @@
             {{-- Active range fill --}}
             <div
                 class="absolute h-full rounded-full bg-[var(--color-wk-accent)]"
-                :style="`left: ${minPercent}%; width: ${maxPercent - minPercent}%`"
+                :style="rangeFillStyle()"
             ></div>
 
             {{-- Min thumb. Static aria-valuenow / aria-valuemax mirror
@@ -336,7 +300,7 @@
                  horizontally (-translate-x-1/2 centers it on the thumb). --}}
             <div
                 class="{{ $thumbClasses }} z-10"
-                :style="`left: ${minPercent}%`"
+                :style="minThumbStyle()"
                 tabindex="0"
                 role="slider"
                 aria-label="{{ $minThumbLabel }}"
@@ -347,6 +311,15 @@
                 aria-valuemin="{{ $min }}"
                 aria-valuemax="{{ $initialMax }}"
                 :aria-valuemax="maxVal"
+                {{-- BOTH thumbs report the same pending state, because §10 says
+                     a range is one value and one value is one flight. Putting it
+                     on the thumb that happened to move would make the state
+                     depend on which end the user grabbed; putting it on the
+                     `role="group"` wrapper is not possible — that element sits
+                     OUTSIDE this layer's scope, and the layer itself is a
+                     `display: contents` scope carrier, which browsers do not
+                     reliably keep in the accessibility tree. --}}
+                @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                 @keydown.arrow-right.prevent="stepMin(1)"
                 @keydown.arrow-left.prevent="stepMin(-1)"
                 @pointerdown="startDrag('min', $event)"
@@ -368,7 +341,7 @@
                         aria-hidden="true"
                         x-ref="minBubble"
                         :class="[_merged ? 'opacity-0' : 'opacity-100', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
-                        :style="`left: ${minPercent}%; transform: translateX(-${minPercent}%)`"
+                        :style="minBadgeStyle()"
                         class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
                         x-text="valueTextFor(minVal)"
                     >{{ $initialMin }}</span>
@@ -378,7 +351,7 @@
             {{-- Max thumb. Same static-fallback pattern as the min thumb. --}}
             <div
                 class="{{ $thumbClasses }} z-20"
-                :style="`left: ${maxPercent}%`"
+                :style="maxThumbStyle()"
                 tabindex="0"
                 role="slider"
                 aria-label="{{ $maxThumbLabel }}"
@@ -389,6 +362,8 @@
                 aria-valuemin="{{ $initialMin }}"
                 :aria-valuemin="minVal"
                 aria-valuemax="{{ $max }}"
+                {{-- The same pending state as the min thumb — see the note there. --}}
+                @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                 @keydown.arrow-right.prevent="stepMax(1)"
                 @keydown.arrow-left.prevent="stepMax(-1)"
                 @pointerdown="startDrag('max', $event)"
@@ -401,7 +376,7 @@
                         aria-hidden="true"
                         x-ref="maxBubble"
                         :class="[_merged ? 'opacity-0' : 'opacity-100', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
-                        :style="`left: ${maxPercent}%; transform: translateX(-${maxPercent}%)`"
+                        :style="maxBadgeStyle()"
                         class="absolute -top-8 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] pointer-events-none"
                         x-text="valueTextFor(maxVal)"
                     >{{ $initialMax }}</span>
@@ -444,13 +419,13 @@
                      nudged its badge ~2px off the merged badge's row. --}}
                 <div
                     class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 wk-range-thumb border-2 border-transparent pointer-events-none"
-                    :style="`left: ${(minPercent + maxPercent) / 2}%`"
+                    :style="mergedBadgeStyle()"
                 >
                     <span
                         aria-hidden="true"
                         :class="[_merged ? 'opacity-100' : 'opacity-0', _ready ? 'transition-opacity duration-[var(--transition-wk-duration)]' : '']"
                         class="absolute -top-8 left-1/2 -translate-x-1/2 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-elevated)] border border-[var(--color-wk-border)] px-[var(--padding-wk-x-sm)] py-0.5 text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)] tabular-nums whitespace-nowrap shadow-[var(--shadow-wk-sm)] z-30"
-                        x-text="`${valueTextFor(minVal)} – ${valueTextFor(maxVal)}`"
+                        x-text="mergedBadgeText()"
                     ></span>
                 </div>
             @endif
@@ -467,8 +442,18 @@
             <span>{{ $rangeValueTextMap[(string) $max] ?? $max }}</span>
         </div>
         <div class="sr-only" aria-live="polite">
-            <span x-text="`Range: ${valueTextFor(minVal)} to ${valueTextFor(maxVal)}`">Range: {{ $initialMin }} to {{ $initialMax }}</span>
+            <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Range: :from to :to')) }}.replace(':from', valueTextFor(minVal)).replace(':to', valueTextFor(maxVal))">Range: {{ $initialMin }} to {{ $initialMax }}</span>
         </div>
+
+        @if($optimisticConfig)
+            {{-- Its own region, marked, and NOT the polite one above: that one
+                 tracks the value while you drag, this one carries the promise
+                 and its withdrawal. Rendered unconditionally and starting
+                 empty — a region that arrives with its text is a new node, and
+                 nothing is announced at all. --}}
+            <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+            </div>
+        @endif
     </div>
 
     @if($hint)

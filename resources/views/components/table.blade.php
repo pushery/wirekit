@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — query
+     Sort is a query round trip, same as the header cell it contains. --}}
 @props([
     'striped' => config('wirekit.components.table.striped', false),
     'hoverable' => config('wirekit.components.table.hoverable', false),
@@ -128,18 +130,26 @@
     class="w-full min-w-0 overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'max-h-96 overflow-y-auto' : '' }}"
     tabindex="0"
     role="region"
-    aria-label="{{ $tableLabel ?? 'Scrollable table' }}"
+    aria-label="{{ $tableLabel ?? __('Scrollable table') }}"
 >
 @endif
     <table
         {{ $attributes->class([$classes]) }}
         @foreach($tableAttrs as $attr) {{ $attr }} @endforeach
-        @if($alpineSort) x-data="wirekitTableSort()" @endif
-        @if($hasPlainHtmlDescendants && ! $alpineSort)
-            x-data
-            x-init="console.warn('[wirekit] table: plain thead/tbody/tr/th/td detected in slot — these inherit no styling (padding, row dividers, stripe, hover). Wrap your rows in the table.head / table.body / table.row / table.th / table.td sub-components. See https://docs.wirekit.app/components/table for the canonical composition.')"
-        @elseif($hasPlainHtmlDescendants && $alpineSort)
-            x-init="console.warn('[wirekit] table: plain HTML descendants detected (see https://docs.wirekit.app/components/table). Wrap rows in the table.* sub-components.')"
+        {{-- Debug-only composition warning. It cannot be an inline console.warn:
+             under Alpine's CSP build naming `console` throws while BUILDING the
+             component, which takes down the very element being warned about.
+
+             An element carries ONE Alpine component, so where the table is
+             already sorting, the message rides along in that factory's config
+             rather than claiming a second x-data. --}}
+        @php
+            $plainHtmlWarning = '[wirekit] table: plain thead/tbody/tr/th/td detected in slot — these inherit no styling (padding, row dividers, stripe, hover). Wrap your rows in the table.head / table.body / table.row / table.th / table.td sub-components. See https://docs.wirekit.app/components/table for the canonical composition.';
+        @endphp
+        @if($alpineSort)
+            x-data="wirekitTableSort({ warning: {{ $hasPlainHtmlDescendants ? \Pushery\WireKit\Support\AlpinePayload::from($plainHtmlWarning) : 'null' }} })"
+        @elseif($hasPlainHtmlDescendants)
+            x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from($plainHtmlWarning) }} })"
         @endif
     >
         {{ $slot }}

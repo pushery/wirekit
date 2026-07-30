@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is which image is shown. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     // Instance identifier. Any control can open this lightbox by dispatching
     // `wirekit-lightbox-open` with a matching `name` + `index`.
@@ -55,7 +58,7 @@
 @endphp
 
 <div
-    x-data="wirekitLightbox({ name: @js($lightboxId), count: {{ $count }}, loop: @js((bool) $loop) })"
+    x-data="wirekitLightbox({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from($lightboxId) }}, count: {{ $count }}, loop: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $loop) }}, slides: {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }} })"
     {{ $attributes->class([$wrapperClasses]) }}
 >
     {{-- Optional trigger content (thumbnails / buttons). Anything here can call
@@ -102,7 +105,7 @@
                     x-transition:enter-end="opacity-100 scale-100"
                     class="relative z-10 m-0 flex max-h-[90vh] max-w-[92vw] flex-col items-center gap-[var(--space-wk-sm)]"
                 >
-                    <template x-for="(item, idx) in {{ Js::from($slides) }}" :key="idx">
+                    <template x-for="(item, idx) in {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}" :key="idx">
                         <div x-show="current === idx" class="flex items-center justify-center">
                             <template x-if="item.type === 'video'">
                                 <video :src="item.src" :poster="item.poster" controls preload="metadata" class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]"></video>
@@ -130,7 +133,7 @@
                                         :alt="item.alt"
                                         loading="lazy"
                                         decoding="async"
-                                        x-init="if ($el.complete && $el.naturalWidth > 0) loaded = true"
+                                        x-init="loaded = $el.complete && $el.naturalWidth > 0"
                                         x-on:load="loaded = true"
                                         x-on:error="loaded = true"
                                         :class="loaded ? 'opacity-100' : 'opacity-0'"
@@ -149,8 +152,8 @@
                              scrim alone would dip below AA on the light theme. Wraps +
                              centers so a long caption never overruns the media. --}}
                         <figcaption
-                            x-show="{{ Js::from($slides) }}[current]?.caption"
-                            x-text="{{ Js::from($slides) }}[current]?.caption"
+                            x-show="currentCaption"
+                            x-text="currentCaption"
                             class="max-w-3xl text-balance rounded-[var(--radius-wk-md)] bg-[var(--color-wk-overlay)] px-[var(--space-wk-sm)] py-[var(--space-wk-xs)] text-center text-[length:var(--text-wk-sm)] leading-relaxed text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]"
                         ></figcaption>
                     @endif

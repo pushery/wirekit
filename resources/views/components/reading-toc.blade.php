@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is the current heading. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'target' => null,
     'levels' => '2',
@@ -141,7 +144,7 @@
         <template x-for="item in items" :key="item.id">
             <li class="wk-reading-toc__item shrink-0">
                 <a
-                    :href="`#${item.id}`"
+                    :href="'#' + item.id"
                     :data-active="item.index === activeIndex ? 'true' : 'false'"
                     :data-level="item.level"
                     :aria-current="item.index === activeIndex ? 'location' : null"

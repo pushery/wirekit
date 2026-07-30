@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     // Optional overflow counter. When set, a trailing "+N" chip is rendered
     // after the avatars (e.g. show 3 avatars + `:remaining="7"` → "+7"). The

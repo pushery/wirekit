@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — navigation
+     A link inside the menu. It navigates. --}}
 @props([
     'href' => '#',
     'active' => false,

@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     'scope' => null,
 ])
@@ -16,7 +20,7 @@
 @endphp
 
 <h2
-    x-bind:id="$el.closest('[data-wk-title-id]')?.dataset.wkTitleId"
+    x-bind:id="$wkAncestorData('[data-wk-title-id]', 'wkTitleId')"
     {{ $attributes->class([$classes]) }}
 >
     {{ $slot }}

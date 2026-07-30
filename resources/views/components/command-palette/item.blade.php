@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     Same: the palette owns selection, the item carries the developer's action. --}}
 @props([
     'href' => null,
     'icon' => null,

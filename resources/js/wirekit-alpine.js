@@ -27,6 +27,7 @@
  */
 
 import Alpine from 'alpinejs';
+import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 
 import wirekitChartJs from './components/chart.js';
 import wirekitDropdown from './components/dropdown.js';
@@ -39,7 +40,34 @@ import wirekitTreeView from './components/tree-view.js';
 import wirekitHoverCard from './components/hover-card.js';
 import wirekitOtpInput from './components/otp-input.js';
 import wirekitTagsInput from './components/tags-input.js';
+import wirekitInput from './components/input.js';
+import wirekitNumberInput from './components/number-input.js';
+import wirekitSidebarDisclosure from './components/sidebar-disclosure.js';
+import wirekitSidebarRail from './components/sidebar-rail.js';
+import wirekitClipboardButton from './components/clipboard-button.js';
+import wirekitReplayButton from './components/replay-button.js';
+import wirekitAccordion from './components/accordion.js';
+import wirekitTreeViewNode from './components/tree-view-node.js';
+import wirekitScrollToTop from './components/scroll-to-top.js';
+import wirekitDropdownTrigger from './components/dropdown-trigger.js';
+import wirekitCodeBlock from './components/code-block.js';
+import wirekitSlider from './components/slider.js';
+import wirekitPasswordInput from './components/password-input.js';
+import wirekitSegmentedControl from './components/segmented-control.js';
+import wirekitReadingProgress from './components/reading-progress.js';
+import wirekitFileUpload from './components/file-upload.js';
+import wirekitTabs from './components/tabs.js';
+import wirekitCountdown from './components/countdown.js';
+import wirekitReadingMeta from './components/reading-meta.js';
+import wirekitReadingBookmark from './components/reading-bookmark.js';
+import wirekitDevWarning from './components/dev-warning.js';
+import wirekitDataTableColumnMenu from './components/data-table-column-menu.js';
+import wirekitInlineEdit from './components/inline-edit.js';
 import wirekitMultiSelect from './components/multi-select.js';
+import wirekitCombobox from './components/combobox.js';
+import wirekitDismissible from './components/dismissible.js';
+import wirekitRating from './components/rating.js';
+import wirekitReaction from './components/reaction.js';
 import wirekitRangeSlider from './components/range-slider.js';
 import wirekitPopover from './components/popover.js';
 import wirekitCommandPalette from './components/command-palette.js';
@@ -93,7 +121,10 @@ if (alreadyHasAlpine()) {
         + 'self-contained bundle. Use dist/wirekit.js instead when BYO Alpine.',
     );
 } else {
-    Alpine.data('wirekitChart', wirekitChartJs);
+    // Magics before components: a component's own expressions may use them.
+    registerAncestorDataMagic(Alpine);
+
+    Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitDropdown', wirekitDropdown);
     Alpine.data('wirekitSubmenu', wirekitSubmenu);
     Alpine.data('wirekitTooltip', wirekitTooltip);
@@ -104,7 +135,34 @@ if (alreadyHasAlpine()) {
     Alpine.data('wirekitHoverCard', wirekitHoverCard);
     Alpine.data('wirekitOtpInput', wirekitOtpInput);
     Alpine.data('wirekitTagsInput', wirekitTagsInput);
+    Alpine.data('wirekitInput', wirekitInput);
+    Alpine.data('wirekitNumberInput', wirekitNumberInput);
+    Alpine.data('wirekitSidebarDisclosure', wirekitSidebarDisclosure);
+    Alpine.data('wirekitSidebarRail', wirekitSidebarRail);
+    Alpine.data('wirekitClipboardButton', wirekitClipboardButton);
+    Alpine.data('wirekitReplayButton', wirekitReplayButton);
+    Alpine.data('wirekitAccordion', wirekitAccordion);
+    Alpine.data('wirekitTreeViewNode', wirekitTreeViewNode);
+    Alpine.data('wirekitScrollToTop', wirekitScrollToTop);
+    Alpine.data('wirekitDropdownTrigger', wirekitDropdownTrigger);
+    Alpine.data('wirekitCodeBlock', wirekitCodeBlock);
+    Alpine.data('wirekitSlider', wirekitSlider);
+    Alpine.data('wirekitPasswordInput', wirekitPasswordInput);
+    Alpine.data('wirekitSegmentedControl', wirekitSegmentedControl);
+    Alpine.data('wirekitReadingProgress', wirekitReadingProgress);
+    Alpine.data('wirekitFileUpload', wirekitFileUpload);
+    Alpine.data('wirekitTabs', wirekitTabs);
+    Alpine.data('wirekitCountdown', wirekitCountdown);
+    Alpine.data('wirekitReadingMeta', wirekitReadingMeta);
+    Alpine.data('wirekitReadingBookmark', wirekitReadingBookmark);
+    Alpine.data('wirekitDevWarning', wirekitDevWarning);
+    Alpine.data('wirekitDataTableColumnMenu', wirekitDataTableColumnMenu);
+    Alpine.data('wirekitInlineEdit', wirekitInlineEdit);
     Alpine.data('wirekitMultiSelect', wirekitMultiSelect);
+    Alpine.data('wirekitRating', wirekitRating);
+    Alpine.data('wirekitReaction', wirekitReaction);
+    Alpine.data('wirekitCombobox', wirekitCombobox);
+    Alpine.data('wirekitDismissible', wirekitDismissible);
     Alpine.data('wirekitRangeSlider', wirekitRangeSlider);
     Alpine.data('wirekitPopover', wirekitPopover);
     Alpine.data('wirekitCommandPalette', wirekitCommandPalette);

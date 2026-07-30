@@ -19,6 +19,7 @@
  *
  * Bundle cost: ~1 KB raw / ~450 B gzip.
  */
+import { prefersReducedMotion } from '../utils/motion.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
     levels: Array.isArray(options.levels) ? options.levels : [2],
@@ -158,7 +159,7 @@ export default (options = {}) => ({
         if (!el) return;
         const tocHeight = this.$el ? this.$el.offsetHeight : 0;
         const top = el.getBoundingClientRect().top + window.scrollY - this.offset - tocHeight - 24;
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const reduced = prefersReducedMotion();
         window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
         // Suppress IO-driven activeIndex flips during the smooth-scroll
         // window so the clicked link stays active without flickering

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — sub-component
+     The tour owns which step is current. --}}
 @props([
     'target' => null,
     'placement' => 'bottom',
@@ -70,12 +72,12 @@
                 x-show="currentStep > 0"
                 x-on:click="prev()"
                 class="p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-sm)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-            >Back</button>
+            >{{ __('Back') }}</button>
             <button
                 type="button"
                 x-on:click="next()"
                 class="p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-accent-hover)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                x-text="currentStep === totalSteps - 1 ? 'Finish' : 'Next'"
+                x-text="currentStep === totalSteps - 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Finish')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Next')) }}"
             ></button>
         </div>
     </div>

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — sub-component
+     A header slot; the drawer owns everything that changes. --}}
 @props([
     'scope' => null,
     'close' => true,
@@ -66,7 +68,7 @@
 <div {{ $attributes->class([$classes]) }}>
     {{-- Title wrapper — bears the aria-labelledby target ID. --}}
     <div
-        x-bind:id="$el.closest('[data-wk-title-id]')?.dataset.wkTitleId"
+        x-bind:id="$wkAncestorData('[data-wk-title-id]', 'wkTitleId')"
         class="min-w-0 flex-1"
     >
         {{ $slot }}

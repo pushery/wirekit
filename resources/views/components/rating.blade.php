@@ -1,4 +1,18 @@
+{{-- optimistic-ui: supported
+     The second component through the gate, and the first whose value this layer
+     does NOT own — the shape twenty-six of the remaining candidates have. The
+     optimistic scope nests INSIDE this component and binds to `rating`; the
+     direction is not interchangeable, because a nested Alpine component reads
+     and writes its parent's properties and never the reverse.
+
+     Its labels were never in the way: the per-star label names the button's
+     POSITION, so building it on the server is correct and does not block the
+     announcement the way a value-bearing label does. --}}
 @props([
+    // The Livewire method this rating should call, when it should show the new
+    // score before the server has agreed to it. Null (the default) leaves this
+    // component byte-identical to what it has always rendered.
+    'optimistic' => null,
     'label' => null,
     'value' => 0,
     'max' => 5,
@@ -91,9 +105,34 @@
     $fraction = $numericValue - $fullStars; // 0.0–0.99 for partial star
 @endphp
 
+@php
+    // The optimistic layer NESTS INSIDE this component rather than wrapping it,
+    // and that direction is not interchangeable: a nested Alpine component's
+    // method reads and writes its parent's properties through `this`, never the
+    // other way around. So it has to be the child to reach `rating`, and the
+    // star buttons have to be inside it to reach its `run()`.
+    //
+    // `after: '_notify'` is what keeps a plain HTML form honest — the hidden
+    // input is synced there, and without the call a rollback would leave the
+    // form submitting the score that was just taken back.
+    $optimisticConfig = ($optimistic === null || $readonly) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'bind' => 'rating',
+        'after' => '_notify',
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        // A second pick while one is in flight would resolve by whichever answer
+        // arrives last — network timing, which is both wrong and untestable.
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+    ]);
+@endphp
+
 <div
     {{ $attributes->except('aria-label')->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }}
-    x-data="{ rating: {{ $clamped }}, hovered: 0 }"
+    x-data="wirekitRating({ value: {{ $clamped }}, max: {{ $max }} })"
 >
     @if($label)
         @if($readonly)
@@ -115,8 +154,25 @@
          used to regardless, which meant a product grid shipped one stray field
          per card, with a name regenerated on every render that the developer
          could not even exclude from a submit. --}}
+    @if($optimisticConfig)
+        {{-- The optimistic scope opens ABOVE the hidden input, not below it.
+             `_notify()` finds that input with `closest('[x-data]')` — and once
+             this layer is on the page, the nearest x-data from inside it is
+             THIS element. An input left outside would simply not be found, so
+             the after-hook would run and do nothing: no error, no event, and a
+             wire:model that never hears about the rollback. --}}
+        <div x-data="wirekitOptimistic({{ $optimisticConfig }})">
+    @endif
+
     @unless($readonly)
-        <input type="hidden" id="{{ $id }}" name="{{ $name }}" :value="rating" {{ $attributes->whereStartsWith('wire:model') }} />
+        {{-- The static `value` is not redundant next to `:value`. Alpine only
+             writes the bound value once it has booted, so between render and
+             hydration — and permanently, if Alpine never evaluates at all — the
+             field carried an EMPTY value while the stars showed a score. A form
+             submitted in that window silently sent nothing. The static
+             attribute makes the field agree with what is on screen from the
+             first paint; `:value` takes over the moment Alpine runs. --}}
+        <input type="hidden" id="{{ $id }}" name="{{ $name }}" value="{{ $clamped }}" :value="rating" {{ $attributes->whereStartsWith('wire:model') }} />
     @endunless
 
     {{-- Two different things wear the same stars.
@@ -202,19 +258,33 @@
                     role="radio"
                     aria-checked="{{ (int) $value === $i ? 'true' : 'false' }}"
                     :aria-checked="rating >= {{ $i }} ? 'true' : 'false'"
-                    aria-label="{{ $i }} {{ $i === 1 ? 'star' : 'stars' }}"
-                    @click="rating = {{ $i }}; $el.closest('[x-data]').querySelector('input[type=hidden]').dispatchEvent(new Event('input', { bubbles: true }))"
+                    {{-- Translated, like every other label on this component. And
+                         built on the SERVER on purpose: this names the button's
+                         POSITION, which never changes — unlike a label that
+                         embeds the current value, where server-side
+                         pluralization is exactly what blocks an optimistic
+                         update from being announced correctly. --}}
+                    aria-label="{{ trans_choice(':count star|:count stars', $i) }}"
+                    @if($optimisticConfig)
+                        {{-- run() writes through the binding, announces, and
+                             fires the Livewire method; select() would write the
+                             value directly and skip the snapshot. --}}
+                        @click="run({{ $i }})"
+                        x-bind:aria-busy="isPending"
+                    @else
+                        @click="select({{ $i }})"
+                    @endif
                     @mouseenter="hovered = {{ $i }}"
                     @mouseleave="hovered = 0"
                     {{-- Radiogroup keyboard model (APG): both axes move the
                          selection, Home/End jump to the ends. ArrowUp aliases
                          ArrowRight (more), ArrowDown aliases ArrowLeft (less). --}}
-                    @keydown.arrow-right.prevent="if (rating < {{ $max }}) { rating++; $nextTick(() => $el.nextElementSibling?.focus()) }"
-                    @keydown.arrow-up.prevent="if (rating < {{ $max }}) { rating++; $nextTick(() => $el.nextElementSibling?.focus()) }"
-                    @keydown.arrow-left.prevent="if (rating > 1) { rating--; $nextTick(() => $el.previousElementSibling?.focus()) }"
-                    @keydown.arrow-down.prevent="if (rating > 1) { rating--; $nextTick(() => $el.previousElementSibling?.focus()) }"
-                    @keydown.home.prevent="rating = 1; $nextTick(() => $el.parentElement.firstElementChild?.focus())"
-                    @keydown.end.prevent="rating = {{ $max }}; $nextTick(() => $el.parentElement.lastElementChild?.focus())"
+                    @keydown.arrow-right.prevent="stepUp()"
+                    @keydown.arrow-up.prevent="stepUp()"
+                    @keydown.arrow-left.prevent="stepDown()"
+                    @keydown.arrow-down.prevent="stepDown()"
+                    @keydown.home.prevent="selectFirst()"
+                    @keydown.end.prevent="selectLast()"
                     :tabindex="rating === {{ $i }} || (rating === 0 && {{ $i }} === 1) ? '0' : '-1'"
                     class="transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
                 >
@@ -234,4 +304,13 @@
             @endif
         @endfor
     </div>
+
+    @if($optimisticConfig)
+        {{-- Outside the radiogroup — a live region is not a radio — and inside
+             the optimistic scope. Rendered unconditionally and starting empty: a
+             region that arrives together with its text is a new node, and
+             nothing is announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+        </div>
+    @endif
 </div>

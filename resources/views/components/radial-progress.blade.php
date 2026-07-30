@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     // Current value. Determinate only — a ring that cannot say how far along it is
     // has nothing to draw; use the spinner for unknown-duration work.

@@ -41,6 +41,7 @@ class ComponentRegistry
             'radio' => ['category' => 'Form', 'description' => 'Radio button with label and hint'],
             'range-slider' => ['category' => 'Form', 'description' => 'Dual-thumb range slider'],
             'rating' => ['category' => 'Form', 'description' => 'Star rating input'],
+            'inline-edit' => ['category' => 'Form', 'description' => 'Edit a value in place, with an explicit confirm step'],
             'select' => ['category' => 'Form', 'description' => 'Native select dropdown'],
             'slider' => ['category' => 'Form', 'description' => 'Single-thumb slider with value display'],
             'tags-input' => ['category' => 'Form', 'description' => 'Tag entry input with add/remove'],

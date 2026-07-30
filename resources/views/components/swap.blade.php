@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     // An Alpine expression naming the state, e.g. expression="isDark". Use this
     // whenever the swap has to react to something on the client — which is nearly

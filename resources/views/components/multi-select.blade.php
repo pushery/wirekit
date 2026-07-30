@@ -1,4 +1,14 @@
+{{-- optimistic-ui: supported
+     Pass `optimistic="method"` and the pill appears (or disappears) the moment
+     an option is clicked. A selection is a discrete set of server values, so an
+     undo puts back what the server has and destroys nothing the user typed —
+     the filter text is separate state and is never rolled back. The optimistic
+     scope nests INSIDE this component and binds to `selected`. --}}
 @props([
+    // Livewire method to call optimistically. It receives the FULL new
+    // selection as an array. The pill appears immediately and is removed again
+    // if the call fails. Absent -> this component renders exactly as before.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -109,6 +119,31 @@
             : []);
 @endphp
 
+@php
+    // The optimistic layer NESTS INSIDE this component, and the direction is not
+    // interchangeable: a nested Alpine component's method reads and writes its
+    // parent's properties through `this`, never the other way around. So it has
+    // to be the child to reach `selected`, and the options have to be inside it
+    // to reach its `run()`.
+    //
+    // `after: '_afterToggle'` is the rest of what a pick does — clearing the
+    // filter and restoring focus — and it runs on the rollback too, because
+    // those are the same courtesy either way.
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'bind' => 'selected',
+        'after' => '_afterToggle',
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        // A second pick while one is in flight would resolve by whichever answer
+        // arrives last — network timing, which is both wrong and untestable.
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+    ]);
+@endphp
+
 <div class="space-y-1.5">
     @if($label)
         <x-wirekit::label :for="$id . '-input'">{{ $label }}</x-wirekit::label>
@@ -120,6 +155,12 @@
         @click.away="dropdownOpen = false"
         @keydown.escape="dropdownOpen = false"
     >
+        @if($optimisticConfig)
+            {{-- `display: contents` so the panel keeps `relative` above it as its
+                 containing block — an extra box here would move the dropdown. --}}
+            <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+        @endif
+
         {{-- Hidden inputs for form submission --}}
         <template x-for="(val, i) in selected" :key="i">
             <input type="hidden" :name="'{{ $name }}[]'" :value="val" />
@@ -129,7 +170,7 @@
         <div
             x-ref="field"
             class="{{ $containerClasses }} {{ $stateClasses }}"
-            @click="$refs.filterInput.focus(); dropdownOpen = true"
+            @click="focusAndOpen()"
         >
             {{-- Selected value pills --}}
             <template x-for="(val, i) in selected" :key="'pill-'+val">
@@ -137,8 +178,11 @@
                     <span x-text="getLabel(val)"></span>
                     <button
                         type="button"
-                        @click.stop="deselect(val)"
-                        :aria-label="'Remove ' + getLabel(val)"
+                        {{-- run(nextWith(val)), not deselect(val): removing a pill is
+                             the same server mutation as picking one, so it takes
+                             the same path and is undone the same way. --}}
+                        @click.stop="{{ $optimisticConfig ? 'run(nextWith(val))' : 'deselect(val)' }}"
+                        :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Remove :name')) }}.replace(':name', getLabel(val))"
                         class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                     >
                         <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
@@ -194,12 +238,26 @@
                     :aria-selected="selected.includes(opt.value) ? 'true' : 'false'"
                     class="{{ $optionClasses }}"
                     :class="selected.includes(opt.value) ? 'font-[number:var(--font-wk-heading-weight)]' : ''"
-                    @click="toggle(opt.value)"
+                    {{-- nextWith() returns a NEW array. toggle() splices in place,
+                         and an in-place mutation gives the layer nothing to
+                         snapshot — the rollback would restore the array it had
+                         just changed. --}}
+                    @click="{{ $optimisticConfig ? 'run(nextWith(opt.value))' : 'toggle(opt.value)' }}"
+                    @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                 >
                     <span x-text="opt.label"></span>
                 </div>
             </template>
         </div>
+
+        @if($optimisticConfig)
+            {{-- Outside the listbox — a live region is not an option — and inside
+                 the optimistic scope. Rendered unconditionally and starting
+                 empty: a region that arrives together with its text is a new
+                 node, and nothing is announced at all. --}}
+            <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+            </div>
+        @endif
     </div>
 
     @if($hasError && $errorMessage)

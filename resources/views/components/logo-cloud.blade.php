@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     // Optional lead-in ("Trusted by teams at"). Rendered as real text above the
     // wall, so the claim is readable rather than implied by layout alone.

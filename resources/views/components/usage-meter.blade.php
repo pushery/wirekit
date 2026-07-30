@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     'label' => null,                 // visible metric name (e.g. "Orders this month")
     'used' => 0,                     // current usage (numeric)
@@ -8,6 +12,7 @@
     'warn' => config('wirekit.components.usage-meter.warn', 0.8),   // warning threshold ratio
     'danger' => config('wirekit.components.usage-meter.danger', 1.0), // danger/over threshold ratio
     'showValue' => true,             // show "X / Y (Z%)" readout
+    'unlimitedLabel' => null,        // override the "Unlimited" word (a plan NAME is a proper noun)
     'scope' => null,
 ])
 
@@ -86,7 +91,10 @@
                 <span class="tabular-nums text-[color:var(--color-wk-text-muted)]">
                     @if($isUnlimited)
                         {{ $fmt($usedNum) }}@if($unit) {{ $unit }}@endif
-                        <span class="text-[color:var(--color-wk-text-subtle)]">· {{ __('Unlimited') }}</span>
+                        {{-- Translated by default. A caller passes the prop when the word is
+                             the NAME of a tier rather than a quantity, and must stay identical
+                             in every language — a thing the translator cannot know. --}}
+                        <span class="text-[color:var(--color-wk-text-subtle)]">· {{ $unlimitedLabel ?? __('Unlimited') }}</span>
                     @else
                         {{ $fmt($usedNum) }} / {{ $fmt($limitNum) }}@if($unit) {{ $unit }}@endif
                         @if($rawPercent !== null)

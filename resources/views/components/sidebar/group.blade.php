@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is disclosure state. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'label' => null,
     // When set, the group heading becomes a disclosure button that folds its items.
@@ -12,7 +15,6 @@
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
-    use Pushery\WireKit\Support\PersistedToggle;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — normalize
@@ -62,7 +64,7 @@
     <div
         role="group"
         @if($label) aria-label="{{ $label }}" @endif
-        x-data="{{ PersistedToggle::data('open', $open, $persist) }}"
+        x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
         {{ $attributes->class([$groupClasses]) }}
     >
         <button
@@ -93,7 +95,7 @@
              the static sidebar.group + sidebar.collapsible. The `typeof collapsed`
              guard avoids a ReferenceError when the group sits in a non-collapsible
              sidebar (no `collapsed` in Alpine scope). --}}
-        <div x-show="open || (typeof collapsed !== 'undefined' && collapsed)" x-collapse x-cloak class="flex flex-col gap-[2px]">
+        <div x-show="childrenVisible()" x-collapse x-cloak class="flex flex-col gap-[2px]">
             {{ $slot }}
         </div>
     </div>

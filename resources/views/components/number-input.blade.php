@@ -1,4 +1,21 @@
+{{-- optimistic-ui: supported
+     Half of this control is discrete and half is free text, and the two halves
+     want opposite things from an undo. The steppers are the easy case: +1 is a
+     discrete mutation and the previous number is the server's. The field is not
+     — a number typed into it is the reader's work.
+
+     Both take §8's FOURTH exit, `failure: 'keep'`, and that is a deliberate
+     decision rather than a shortcut. Splitting them was the obvious idea and the
+     wrong one: a value typed while a stepper's request is in flight would be
+     overwritten by that request's rollback, so a per-trigger exit makes safety
+     depend on timing. `keep` guarantees structurally that nothing typed is ever
+     destroyed. The price is visible and announced — a refused stepper step stays
+     on screen and says it was not saved, rather than springing back. --}}
 @props([
+    // The Livewire method to call when the value should be shown before the
+    // server has agreed to it. A refusal KEEPS what is there — see the note
+    // above for why that holds for the steppers too.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -139,73 +156,45 @@
 
     // Build aria-describedby from hint + error
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+    // `bind` rather than `value`: the property already exists on the component
+    // this layer nests inside — number-input is the case the factory's own
+    // comment names, where declaring `value` here would shadow the parent's.
+    //
+    // `failure: 'keep'` for BOTH halves. See the note at the top: a split exit
+    // makes safety depend on whether the reader happened to be typing.
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'bind' => 'value',
+        'action' => $optimistic,
+        'failure' => 'keep',
+        'debug' => (bool) config('app.debug'),
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'kept' => __('Could not save. Your entry is still here.'),
+        ],
+        'errorRegion' => '#'.$id.'-error',
+    ]);
+
 @endphp
 
-{{--
-    Alpine tracks the current value to reactively disable stepper buttons
-    at min/max boundaries. The `precision` getter pulls the decimal-place
-    count out of the step value's string representation so we can snap the
-    result of every increment / decrement back to that precision — without
-    this, JS binary floating-point arithmetic produces drift like
-    19.01 + 0.01 = 19.020000000000003 (visible as "19,02000…" on the German
-    locale display) and the same value oscillates between displayed
-    representations on every click. Snapping with `Number(next.toFixed(p))`
-    is the canonical fix.
---}}
+{{-- The stepper's arithmetic — precision snapping plus step-grid alignment —
+     lives in resources/js/components/number-input.js. It cannot live here: an
+     inline object literal cannot declare getters or methods under Alpine's CSP
+     build, so under a strict policy both buttons rendered, looked enabled, and
+     did nothing. --}}
 <div
     class="space-y-1.5"
-    x-data="{
-        value: {{ $attributes->get('value', $min ?? 0) }},
-        min: {{ $min !== null ? $min : 'null' }},
-        max: {{ $max !== null ? $max : 'null' }},
-        step: {{ $step }},
-        get precision() {
-            // Decimal places implied by the step value. `5` → 0, `0.1` → 1,
-            // `0.01` → 2, `0.001` → 3. Falls back to 0 for non-fractional
-            // or scientific-notation step values; the round() below is a
-            // no-op when precision is 0 so integer steps stay exact.
-            const s = String(this.step);
-            const dot = s.indexOf('.');
-            return dot === -1 ? 0 : s.length - dot - 1;
-        },
-        round(n) {
-            // toFixed() returns a string; Number() converts it back so
-            // the input element displays the unpadded representation
-            // (e.g. `19.02` not `19.020000000000003`).
-            return Number(n.toFixed(this.precision));
-        },
-        get atMin() { return this.min !== null && this.value <= this.min; },
-        get atMax() { return this.max !== null && this.value >= this.max; },
-        // Snap to the step grid anchored at `min` (or 0 when no min is set).
-        // Starting from an off-grid value (e.g. value=1.78, step=0.1), `+` must
-        // move to the next grid point ABOVE (1.8, not 1.78+0.1=1.88 which the
-        // old code then rounded to 1.9 via toFixed(1) — skipping 1.8 entirely).
-        // Matches the W3C native <input type=number> stepper contract.
-        // The 1e-10 tolerance absorbs binary-float drift so on-grid values
-        // like 1.8 (stored as 1.7999999998) advance to the correct next step.
-        decrease() {
-            const origin = this.min !== null ? this.min : 0;
-            const ratio = (this.value - origin) / this.step;
-            const prevSteps = Math.ceil(ratio - 1e-10) - 1;
-            const next = this.round(origin + prevSteps * this.step);
-            this.value = this.min !== null ? Math.max(this.min, next) : next;
-        },
-        increase() {
-            const origin = this.min !== null ? this.min : 0;
-            const ratio = (this.value - origin) / this.step;
-            const nextSteps = Math.floor(ratio + 1e-10) + 1;
-            const next = this.round(origin + nextSteps * this.step);
-            this.value = this.max !== null ? Math.min(this.max, next) : next;
-        },
-        clamp(val) {
-            let v = Number(val);
-            if (isNaN(v)) v = this.min ?? 0;
-            if (this.min !== null) v = Math.max(this.min, v);
-            if (this.max !== null) v = Math.min(this.max, v);
-            return this.round(v);
-        }
-    }"
+    x-data="wirekitNumberInput({ value: {{ $attributes->get('value', $min ?? 0) }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }} })"
 >
+@if($optimisticConfig)
+    {{-- The layer nests INSIDE the component that owns the value: a nested Alpine
+         component reads and writes its parent's properties through `this`, never
+         the reverse, so `bind: 'value'` only resolves this way round.
+
+         `display: contents` because the wrapper above is a `space-y-1.5` stack —
+         a real box here would make label, field and message one flow item. --}}
+    <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+@endif
     @if($label)
         <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
     @endif
@@ -235,6 +224,14 @@
             name="{{ $name }}"
             x-model.number="value"
             @blur="value = clamp(value)"
+            @if($optimisticConfig)
+                x-bind:aria-busy="isPending"
+                {{-- `change`, not `input`: typing fires input per keystroke, and
+                     the event that ends the input is leaving the field (§10). The
+                     steppers commit on their own, from the factory — one click is
+                     already a finished decision. --}}
+                x-on:change="run($event.target.value)"
+            @endif
             @if($min !== null) min="{{ $min }}" @endif
             @if($max !== null) max="{{ $max }}" @endif
             step="{{ $step }}"
@@ -267,4 +264,11 @@
     @elseif($hint)
         <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
+@if($optimisticConfig)
+        {{-- Rendered unconditionally and starting empty: a live region that
+             arrives together with its text is a new node, and nothing is
+             announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+    </div>
+@endif
 </div>

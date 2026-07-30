@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is the chosen theme, stored in the browser. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     // How the control looks.
     //   'button' — an icon button that flips light/dark (the compact default)
@@ -47,7 +50,7 @@
         default => 'border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)]',
     };
     $controlClasses = WireKit::resolveClasses('theme-controller', 'control', implode(' ', [
-        'inline-flex cursor-pointer items-center justify-center rounded-[var(--radius-wk)] border-[length:var(--border-wk-width)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'wk-touch-target inline-flex cursor-pointer items-center justify-center rounded-[var(--radius-wk)] border-[length:var(--border-wk-width)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         $controlSize,
         $surfaceChrome,
     ]), $scope);
@@ -77,7 +80,7 @@
 @endphp
 
 <div
-    x-data="wirekitThemeController({ storageKey: @js($storageKey), storage: @js($storage), cookieAttributes: @js($cookieAttributes) })"
+    x-data="wirekitThemeController({ storageKey: {{ \Pushery\WireKit\Support\AlpinePayload::from($storageKey) }}, storage: {{ \Pushery\WireKit\Support\AlpinePayload::from($storage) }}, cookieAttributes: {{ \Pushery\WireKit\Support\AlpinePayload::from($cookieAttributes) }} })"
     data-wk-theme-controller
     data-variant="{{ $variant }}"
     {{ $attributes->class([$classes]) }}

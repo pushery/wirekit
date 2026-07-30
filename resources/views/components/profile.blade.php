@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     A profile summary with a developer-supplied menu; it owns nothing that changes. --}}
 @props([
     'avatar' => null,
     'name' => null,

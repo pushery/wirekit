@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     It collapses and expands the sidebar. No server is asked. --}}
 @props([
     'scope' => null,
 ])

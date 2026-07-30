@@ -134,6 +134,24 @@ export default function wirekitEventCalendar(config = {}) {
         // the vertical line stays straight AND hugs the actual content width
         // Only measures while the agenda view is visible — hidden
         // elements measure 0 and would collapse the column.
+        /**
+         * Re-measure the agenda's time column when the view or its days change.
+         *
+         * Bound to `x-effect`. The template used to read both dependencies and
+         * then defer the measurement — `view; agendaDays; $nextTick(() => …)` —
+         * which is three statements and an arrow function, none of which the CSP
+         * build parses. The reads have to stay, and stay first: an effect tracks
+         * only what it touches, and the deferral means the measurement itself
+         * runs after the DOM has caught up rather than against the old one.
+         */
+        measureAgendaOnChange() {
+            const tracked = [this.view, this.agendaDays];
+
+            this.$nextTick(() => this._measureAgendaTime());
+
+            return tracked.length;
+        },
+
         _measureAgendaTime() {
             if (this.view !== 'agenda' || !this.$root || typeof this.$root.querySelectorAll !== 'function') {
                 return;

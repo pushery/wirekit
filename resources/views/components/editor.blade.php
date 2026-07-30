@@ -1,4 +1,17 @@
+{{-- optimistic-ui: supported
+     Rich-text content — the same shape as a text field, with more of the reader's
+     work in it, so it takes §8's fourth exit: a refusal keeps what was written
+     and says only that it was not saved.
+
+     The commit boundary is BLUR (§10), not the change this component emits. That
+     one rides a 200ms debounce, so committing on it would mean a request every
+     fifth of a second while someone types — a timer wearing an event's name,
+     which is exactly what §10 forbids. Leaving the editor is the moment the
+     writing stopped. --}}
 @props([
+    // The Livewire method to call when you leave the editor. A refusal KEEPS
+    // what you wrote — see the note above.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -130,6 +143,22 @@
         'focus-within:ring-[length:var(--ring-wk-width)]',
         $hasError ? 'focus-within:ring-[var(--color-wk-danger)]' : 'focus-within:ring-[var(--color-wk-ring)]',
     ]), $scope);
+    // `value` rather than `bind`: this layer is the OUTERMOST x-data here, so an
+    // undeclared property is in no scope at all — the binding would name nothing
+    // and init() would disarm, leaving a component that advertises support and
+    // does nothing. It seeds the baseline only, which `keep` never writes back.
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'value' => '',
+        'action' => $optimistic,
+        'failure' => 'keep',
+        'debug' => (bool) config('app.debug'),
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'kept' => __('Could not save. Your text is still here.'),
+        ],
+    ]);
+
 @endphp
 
 <div class="w-full space-y-1.5">
@@ -137,8 +166,22 @@
         <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
     @endif
 
+@if($optimisticConfig)
+    {{-- OUTSIDE the component here, which is the opposite of every other
+         component that takes this layer — and the reason is where the commit
+         comes from. Elsewhere a DOM handler inside the layer calls `run()`, so
+         the layer can nest within the component. Here the commit comes from
+         Tiptap's own `onBlur`, where `this` is the component scope: a nested
+         layer would be invisible to it. Alpine resolves a child's lookups
+         through its parent and never the reverse, so the layer has to be the
+         parent for the factory to see `run` at all.
+
+         `display: contents` so the stack spacing is untouched. --}}
+    <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+@endif
     <div
-        x-data="wirekitEditor(@js($jsConfig))"
+        x-data="wirekitEditor({{ \Pushery\WireKit\Support\AlpinePayload::from($jsConfig) }})"
+        @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
         {{ $rest->class(['w-full', $wrapperClasses]) }}
     >
         {{-- Toolbar: auto-rendered preset, OR the custom slot when toolbar="custom". --}}
@@ -216,4 +259,11 @@
     @elseif($hint)
         <p id="{{ $hintId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
+@if($optimisticConfig)
+        {{-- Rendered unconditionally and starting empty: a live region that
+             arrives together with its text is a new node, and nothing is
+             announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+    </div>
+@endif
 </div>

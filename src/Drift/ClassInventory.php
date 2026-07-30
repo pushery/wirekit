@@ -777,6 +777,23 @@ final class ClassInventory
                         continue;
                     }
 
+                    /*
+                     * Skip a developer-facing warning message. These are
+                     * composed in a @php block so they can be handed to a
+                     * component factory — an inline `console.warn(…)` does not
+                     * survive Alpine's CSP build — and they are prose, not a
+                     * class list. Whitespace-splitting one surfaces fragments
+                     * like `[wirekit]` and `items[key].` that pass the
+                     * bracket-shape filter while being nothing of the kind.
+                     *
+                     * The `[wirekit]` prefix is what every one of them opens
+                     * with, and no Tailwind class can begin that way, so the
+                     * skip cannot hide a real emission.
+                     */
+                    if (str_starts_with(ltrim($value), '[wirekit]')) {
+                        continue;
+                    }
+
                     foreach (preg_split('/\s+/', $value) ?: [] as $candidate) {
                         $candidate = trim($candidate);
 

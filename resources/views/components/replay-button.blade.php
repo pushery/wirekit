@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is whether the animation is replaying. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     // Accessible label for the button. Default is the well-known
     // "Replay" verb so screen readers announce a clear affordance.
@@ -39,19 +42,13 @@
     @if($target)
         data-replay-target-selector="{{ $target }}"
     @endif
-    x-on:click="
-        const selector = $el.dataset.replayTargetSelector;
-        const root = selector
-            ? $el.closest(selector)
-            : $el.closest('[data-replay-target]');
-        if (! root) return;
-        const source = root.dataset.replaySource;
-        if (source !== undefined) {
-            root.innerHTML = source;
-            if (window.Alpine) window.Alpine.initTree(root);
-            root.dispatchEvent(new CustomEvent('wirekit:replayed', { bubbles: true }));
-        }
-    "
+    {{-- The replay lives in resources/js/components/replay-button.js: two
+         declarations, an early return and a constructed event, none of which
+         Alpine's CSP build parses. The button had no scope of its own before —
+         it gains one because a directive that cannot hold statements has to
+         call something. --}}
+    x-data="wirekitReplayButton"
+    x-on:click="replay()"
 >
     {{-- Default circular-arrow icon when no slot content is given. `@isset($slot)`
          is always true (an empty slot is still a ComponentSlot), so the default

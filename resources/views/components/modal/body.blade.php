@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     'scope' => null,
 ])
@@ -15,6 +19,6 @@
 @endphp
 
 {{-- Modal body — scrollable content area --}}
-<div {{ $attributes->class([$classes]) }}>
+<div data-wk-modal-body {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </div>

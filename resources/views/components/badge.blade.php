@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     Same as alert; the dismissible variant only hides itself. --}}
 @props([
     'intent' => config('wirekit.components.badge.intent', 'neutral'),
     'size' => config('wirekit.components.badge.size', 'md'),
@@ -252,7 +254,7 @@
 @if($tooltip)
     <x-wirekit::tooltip :text="$tooltip" :scope="$scope">
         <span
-            @if($dismissible) x-data="{ shown: true }" x-show="shown" data-replayable="true" @endif
+            @if($dismissible) x-data="wirekitDismissible({ event: 'wirekit:badge-dismissed' })" x-show="shown" data-replayable="true" @endif
             {{ $attributes->class([$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses]) }}
             style="{{ $depthStyle }}"
         >
@@ -267,7 +269,7 @@
                 <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" class="shrink-0" />
             @endif
             @if($dismissible)
-                <button type="button" x-on:click="shown = false; $dispatch('wirekit:badge-dismissed')" aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
+                <button type="button" x-on:click="dismiss()" aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
                     <x-wirekit::icon name="x-mark" size="xs" aria-hidden="true" class="shrink-0" />
                 </button>
             @endif
@@ -275,7 +277,7 @@
     </x-wirekit::tooltip>
 @else
     <span
-        @if($dismissible) x-data="{ shown: true }" x-show="shown" data-replayable="true" @endif
+        @if($dismissible) x-data="wirekitDismissible({ event: 'wirekit:badge-dismissed' })" x-show="shown" data-replayable="true" @endif
         {{ $attributes->class([$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses]) }}
         style="{{ $depthStyle }}"
     >
@@ -290,7 +292,7 @@
             <x-wirekit::icon :name="$trailingIcon" size="xs" aria-hidden="true" class="shrink-0" />
         @endif
         @if($dismissible)
-            <button type="button" x-on:click="shown = false; $dispatch('wirekit:badge-dismissed')" aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
+            <button type="button" x-on:click="dismiss()" aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
                 <x-wirekit::icon name="x-mark" size="xs" aria-hidden="true" class="shrink-0" />
             </button>
         @endif

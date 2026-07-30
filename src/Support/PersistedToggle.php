@@ -12,6 +12,25 @@ namespace Pushery\WireKit\Support;
  * `init()`/`toggle()` mechanic inline into each. Internal helper (not part of the
  * developer-facing `WireKit` facade surface) — called from Blade the same way
  * {@see BooleanProp} is.
+ *
+ * @deprecated Nothing in the package calls this any more, and new code must not.
+ *
+ * What it emits is a JavaScript object literal that declares METHODS, and method
+ * shorthand is not in the grammar Alpine's CSP build parses. A component built
+ * this way is inert under a Content-Security-Policy without `'unsafe-eval'` — the
+ * disclosure renders, the chevron sits there, and the click does nothing, with
+ * nothing logged.
+ *
+ * It was one implementation, which was the right instinct; it was just an
+ * implementation living in a string. The same mechanic is now
+ * `resources/js/utils/persisted-flag.js`, used by the `wirekitSidebarRail` and
+ * `wirekitSidebarDisclosure` factories — readable, testable, and parseable by
+ * both Alpine builds.
+ *
+ * The class stays for now because removing a shipped class is a
+ * backward-compatibility decision rather than a cleanup; `PersistedToggleTest`
+ * keeps holding its behavior in the meantime, and a guard there refuses any new
+ * caller in the view layer.
  */
 final class PersistedToggle
 {

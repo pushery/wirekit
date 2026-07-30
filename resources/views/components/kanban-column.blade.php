@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Same: a scroll region made keyboard-operable. Any card move it holds belongs to the developer. --}}
 @props([
     'label' => null,
     'count' => null,

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     A file chip. Its download link and its remove action are both the developer's. --}}
 @props([
     // File name. Also the accessible name of the card.
     'name' => '',

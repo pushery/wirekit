@@ -156,6 +156,26 @@ return [
         // -2/-3 suffix, so `label[for]` and `aria-describedby` always resolve to
         // the right control. Set false to restore the pre-2.20 verbatim behavior.
         'dedupe_ids' => env('WIREKIT_DEDUPE_IDS', true),
+
+        // Motion is decided by the operating system unless your application
+        // states otherwise. Set `data-reduce-motion` on <html> to override it:
+        //
+        //   reduce          reduce motion whatever the OS says
+        //   no-preference   do NOT reduce, even though the OS asks — for someone
+        //                   who set the OS flag for an unrelated reason
+        //   attribute absent  follow the OS (the default)
+        //
+        // The middle state is why an attribute exists at all: a media query can
+        // express two states and an application needs three. Both halves of the
+        // library read the same attribute — the stylesheet for transitions, the
+        // Alpine components for the decisions CSS cannot make (stopping an
+        // auto-advance, revealing a streamed buffer at once) — so they cannot
+        // disagree on the same page.
+        //
+        // Renaming it is a call you make once and then live with; every rule and
+        // every component reads this name, so it belongs here rather than in ten
+        // places. Changing it means shipping your own stylesheet too.
+        'motion_attribute' => env('WIREKIT_MOTION_ATTRIBUTE', 'data-reduce-motion'),
     ],
 
     'components' => [
@@ -428,17 +448,41 @@ return [
     |
     | Choose which JavaScript bundle @wirekitScripts loads.
     |
-    | 'full' — All Alpine components including overlays (~47 KB gzip)
+    | 'full' — All Alpine components including overlays (~59 KB gzip)
     |          Includes Floating UI + focus-trap, bundled.
     |          Current measured sizes: docs.wirekit.app/dependencies.
     |
     | 'core' — Only chart Alpine component (~4 KB gzip)
     |          For projects that only use form components + charts.
     |
+    | 'csp'  — For a Content-Security-Policy without `script-src 'unsafe-eval'`.
+    |
+    |          Alpine's default build evaluates every directive by constructing
+    |          a function at runtime, which such a policy blocks. Nothing throws
+    |          when it does: a one-time-code field still accepts typing and
+    |          simply stops advancing to the next box. This bundle is built
+    |          against Alpine's CSP distribution, which parses and interprets
+    |          expressions instead.
+    |
+    |          ONE DIFFERENCE THAT MATTERS: unlike 'full' and 'core', this
+    |          bundle CONTAINS Alpine and starts it. Do not also load your own —
+    |          two Alpines on a page is its own class of bug.
+    |
+    |          Every directive in the catalog runs under this bundle. An audit
+    |          drives Alpine's own parser and evaluator over each one on every
+    |          build, and the budget for failures is zero.
+    |
+    |          WHAT IT DOES NOT COVER: Livewire brings its own directives and
+    |          compiles them at runtime the same way. Livewire ships a CSP
+    |          distribution for that — without it the page still needs
+    |          'unsafe-eval', whichever WireKit bundle you load.
+    |
+    | An unrecognized value falls back to 'full' rather than to no script at all.
+    |
     */
 
     'scripts' => [
-        'bundle' => 'full', // 'full' or 'core'
+        'bundle' => 'full', // 'full', 'core' or 'csp'
     ],
 
 ];

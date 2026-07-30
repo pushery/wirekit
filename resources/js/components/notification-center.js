@@ -23,6 +23,34 @@ import { position } from '../utils/floating.js';
 
 export default function wirekitNotificationCenter(config = {}) {
     return {
+        // The summary's middle phrase is translated server-side and travels in,
+        // because the expression that used to build the line lived in the
+        // template and interpolated it there.
+        _latestLabel: config.latestLabel || 'unread. Latest:',
+
+        /**
+         * The summary line, and the key a group renders under.
+         *
+         * Both used optional chaining or nullish coalescing in the template —
+         * neither exists in the grammar Alpine's CSP build parses, so this
+         * component went silent under a strict Content-Security-Policy. The
+         * fallbacks are the point of both expressions, so they move here whole
+         * rather than being spelled out again with && chains at the binding.
+         */
+        get summaryLine() {
+            if (this.unreadCount <= 0) {
+                return '';
+            }
+
+            const latest = this.items.length > 0 && this.items[0].title ? this.items[0].title : '';
+
+            return this.unreadCount + ' ' + this._latestLabel + ' ' + latest;
+        },
+
+        groupKey(group) {
+            return group && group.label ? group.label : 'all';
+        },
+
         items: Array.isArray(config.items) ? config.items.map((i) => ({ ...i })) : [],
         groupBy: config.groupBy || 'none',
         activeFilter: 'all',

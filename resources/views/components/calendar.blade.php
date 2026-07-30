@@ -1,4 +1,15 @@
+{{-- optimistic-ui: supported
+     Pass `optimistic="method"` and the date lands the moment a day is clicked.
+     A discrete server value, and the previous one is the server's — so an undo
+     destroys nothing the user typed. The optimistic scope nests INSIDE this
+     component and binds to `selected`; the DISPLAYED month is deliberately
+     outside the snapshot, so a refused pick leaves you looking at the month you
+     paged to rather than snapping back. --}}
 @props([
+    // Livewire method to call optimistically. The date appears selected
+    // immediately and is put back if the call fails. Absent -> this component
+    // renders exactly as it did before, down to the byte.
+    'optimistic' => null,
     'value' => null,
     // Multi-month display — render N consecutive months side by side (1 = the
     // classic single grid). Clamped 1..4 in the Alpine component.
@@ -13,6 +24,7 @@
 ])
 
 @php
+    use Illuminate\Support\Js;
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
@@ -90,14 +102,72 @@
     $weekdays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
     $wkStart = ((int) $weekStartsOn) % 7;
     $weekdays = array_merge(array_slice($weekdays, $wkStart), array_slice($weekdays, 0, $wkStart));
+
+    // Built here rather than assembled inside the attribute, for two reasons —
+    // and the second one is not cosmetic.
+    //
+    // An apostrophe used to end the JS string it sat in. `{{ }}` escapes it to
+    // &#039;, the browser decodes it back to ' inside the attribute, and
+    // everything after it is read as more of the expression: a name like
+    // "o'clock" was developer-controlled source injected into an evaluated
+    // directive. Js::from escapes it.
+    //
+    // And the literals keep a double quote out of the DIRECTIVE. An inner "
+    // ends the attribute for anything scanning the template, which is how this
+    // expression stayed invisible to the CSP audit — it was measuring a
+    // truncated fragment and reporting the component as broken.
+    //
+    // The (string) cast matters: without it Js::from would take the
+    // JsonSerializable path for a Carbon value and emit JSON.parse('…'), which
+    // is a global the CSP evaluator cannot resolve.
+    // AlpinePayload, not Js::from: inside a directive the latter emits \u escapes
+    // for non-ASCII, and Alpine's CSP tokenizer drops the backslash while keeping the
+    // letters — a name with an umlaut would arrive mangled with nothing logged.
+    $valueLiteral = $value ? \Pushery\WireKit\Support\AlpinePayload::from((string) $value) : 'null';
+    $nameLiteral = \Pushery\WireKit\Support\AlpinePayload::from($name);
+
+    // The optimistic layer NESTS INSIDE this component, and the direction is not
+    // interchangeable: a nested Alpine component's method reads and writes its
+    // parent's properties through `this`, never the other way around. So it has
+    // to be the child to reach `selected`, and the day buttons have to be inside
+    // it to reach its `run()`.
+    //
+    // `after: '_notify'` keeps a plain HTML form honest — the hidden input is
+    // synced there, and without the call a rollback would leave the form
+    // submitting the date that was just taken back.
+    //
+    // `viewYear` / `viewMonth` are NOT in the snapshot, and that is the design:
+    // a reader who paged to March and had their pick refused should still be
+    // looking at March. The date rolls back; the place you are looking does not.
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'bind' => 'selected',
+        'after' => '_notify',
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        // A second pick while one is in flight would resolve by whichever answer
+        // arrives last — network timing, which is both wrong and untestable.
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+    ]);
 @endphp
 
 <div
-    x-data="wirekitCalendar({ value: {{ $value ? "'" . $value . "'" : 'null' }}, name: '{{ $name }}', months: {{ (int) $months }}, weekStartsOn: {{ (int) $weekStartsOn }} })"
+    x-data="wirekitCalendar({ value: {{ $valueLiteral }}, name: {{ $nameLiteral }}, months: {{ (int) $months }}, weekStartsOn: {{ (int) $weekStartsOn }} })"
     {{ $attributes->class([$classes]) }}
 >
     {{-- Hidden input for form submission --}}
-    <input type="hidden" name="{{ $name }}" x-ref="hiddenInput" :value="selected" />
+    {{-- Static value as well as the bound one: the field is empty until Alpine boots, and a form submitted in that window sends nothing while the visible control already shows the value. Both come from the same PHP expression that feeds the factory, so they cannot drift. --}}
+    <input type="hidden" name="{{ $name }}" x-ref="hiddenInput" value="{{ $value }}" :value="selected" />
+
+    @if($optimisticConfig)
+        {{-- `display: contents` so the grid and header keep their place in this
+             element's layout — an extra box between them and it would change the
+             calendar's spacing without changing a class. --}}
+        <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+    @endif
 
     {{-- Month navigation header --}}
     <div class="{{ $headerClasses }}">
@@ -169,13 +239,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <template x-for="(week, weekIdx) in Array.from({ length: Math.ceil(month.days.length / 7) }, (_, i) => month.days.slice(i * 7, i * 7 + 7))" :key="weekIdx">
+                            <template x-for="(week, weekIdx) in weeksOf(month.days)" :key="weekIdx">
                                 <tr role="row">
                                     <template x-for="day in week" :key="day.date">
                                         <td role="gridcell" class="p-0.5 text-center" :aria-selected="day.isSelected ? 'true' : 'false'">
                                             <button
                                                 type="button"
-                                                x-on:click="day.isCurrentMonth && selectDate(day.date)"
+                                                x-on:click="day.isCurrentMonth && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
+                                                @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                                                 :data-wk-day="day.isCurrentMonth ? day.dayOfMonth : null"
                                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay && month.offset === focusOffset ? '0' : '-1'"
                                                 :disabled="!day.isCurrentMonth"
@@ -209,7 +280,7 @@
             </tr>
         </thead>
         <tbody>
-            <template x-for="(week, weekIdx) in Array.from({ length: Math.ceil(days.length / 7) }, (_, i) => days.slice(i * 7, i * 7 + 7))" :key="weekIdx">
+            <template x-for="(week, weekIdx) in weeksOf(days)" :key="weekIdx">
                 <tr role="row">
                     <template x-for="day in week" :key="day.date">
                         {{-- aria-selected lives on the gridcell, NOT the button.
@@ -220,7 +291,8 @@
                         <td role="gridcell" class="p-0.5 text-center" :aria-selected="day.isSelected ? 'true' : 'false'">
                             <button
                                 type="button"
-                                x-on:click="day.isCurrentMonth && selectDate(day.date)"
+                                x-on:click="day.isCurrentMonth && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
+                                                @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                                 :data-wk-day="day.isCurrentMonth ? day.dayOfMonth : null"
                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay ? '0' : '-1'"
                                 :disabled="!day.isCurrentMonth"
@@ -240,5 +312,14 @@
             </template>
         </tbody>
     </table>
+    @endif
+
+    @if($optimisticConfig)
+        {{-- Outside the grid — a live region is not a gridcell — and inside the
+             optimistic scope. Rendered unconditionally and starting empty: a
+             region that arrives together with its text is a new node, and
+             nothing is announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+        </div>
     @endif
 </div>

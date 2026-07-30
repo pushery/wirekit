@@ -14,6 +14,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/carousel/
  */
+import { prefersReducedMotion } from '../utils/motion.js';
 export default function wirekitCarousel(config = {}) {
     return {
         current: 0,
@@ -110,7 +111,7 @@ export default function wirekitCarousel(config = {}) {
         _prefersReducedMotion() {
             return typeof window !== 'undefined'
                 && typeof window.matchMedia === 'function'
-                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                && prefersReducedMotion();
         },
 
         /**

@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is whether the action stack is open. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     // What the trigger does. REQUIRED in spirit: the trigger is an icon, so
     // without this it announces as "button" and nothing else.

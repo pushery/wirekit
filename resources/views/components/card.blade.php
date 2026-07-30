@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Its only Alpine is a development-time warning about misuse. --}}
 @props([
     'variant' => config('wirekit.components.card.variant', 'outlined'),
     'as' => 'div',
@@ -95,8 +97,10 @@
 <{{ $tag }}
     data-wk-card
     @if($warnNoBody)
-        x-data
-        x-init="console.warn('[wirekit] card: content sits directly in the card with no card.body — the card root is a padding-free frame, so this content renders flush against the border. Wrap it in card.body (or card.header / card.footer). See https://docs.wirekit.app/components/card.')"
+        {{-- Debug-only composition warning. It cannot be an inline console.warn:
+             under Alpine's CSP build naming `console` throws while BUILDING the
+             component, which takes down the very element being warned about. --}}
+        x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from('[wirekit] card: content sits directly in the card with no card.body — the card root is a padding-free frame, so this content renders flush against the border. Wrap it in card.body (or card.header / card.footer). See https://docs.wirekit.app/components/card.') }} })"
     @endif
     @if($href) href="{{ $href }}" @endif
     @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif

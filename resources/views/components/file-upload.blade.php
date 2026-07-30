@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     Livewire owns the upload itself, including its own progress and error reporting. An optimistic layer here would duplicate a protocol that already reports what it is doing — and a file cannot be shown as stored before it is stored. --}}
 @props([
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
@@ -106,35 +108,12 @@
 {{-- Alpine: tracks drag-over state + an array of selected file metadata for preview.
      We read the files directly from the native input change event. --}}
 <div
-    x-data="{
-        dragging: false,
-        files: [],
-        _rawFiles: [],
-        removeLabel: @js($removeLabel),
-        formatBytes(bytes) {
-            if (bytes === 0) return '0 B';
-            const k = 1024;
-            const sizes = ['B', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return (bytes / Math.pow(k, i)).toFixed(1) + ' ' + sizes[i];
-        },
-        handleFiles(fileList) {
-            // Store raw File objects so we can rebuild the input's FileList on remove.
-            this._rawFiles = Array.from(fileList);
-            this.files = this._rawFiles.map(f => ({ name: f.name, size: f.size }));
-        },
-        removeFile(index) {
-            // Remove from both display list and raw File array.
-            this._rawFiles.splice(index, 1);
-            this.files.splice(index, 1);
-            // Rebuild the native input's FileList via DataTransfer.
-            const dt = new DataTransfer();
-            this._rawFiles.forEach(f => dt.items.add(f));
-            this.$refs.input.files = dt.files;
-            // Trigger change so Livewire picks up the updated file list.
-            this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-    }"
+    {{-- The file list, the byte formatting and the drop handling live in the
+         factory (resources/js/components/file-upload.js). The drop handler was
+         four statements and a `const`, which Alpine's CSP build does not parse —
+         under a strict Content-Security-Policy dropping a file did nothing while
+         clicking the label still worked. --}}
+    x-data="wirekitFileUpload({ removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }} })"
     {{ $attributes->except('aria-label')->class(['w-full']) }}
 >
     <label
@@ -145,15 +124,7 @@
         class="{{ $dropzoneClasses }}"
         @dragover.prevent="dragging = true"
         @dragleave.prevent="dragging = false"
-        @drop.prevent="
-            dragging = false;
-            const dt = $event.dataTransfer;
-            if (dt && dt.files) {
-                $refs.input.files = dt.files;
-                handleFiles(dt.files);
-                $refs.input.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        "
+        @drop.prevent="handleDrop($event)"
     >
         {{-- Upload icon — decorative; the label text describes the action. --}}
         <svg class="{{ $iconClasses }}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

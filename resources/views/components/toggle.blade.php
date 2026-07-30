@@ -1,4 +1,13 @@
+{{-- optimistic-ui: supported --}}
 @props([
+    // The Livewire method this toggle should call, when it should show the new
+    // state before the server has agreed to it. Null (the default) is today's
+    // behavior exactly: the developer's own wire:model / wire:click, untouched.
+    //
+    // It is a METHOD NAME rather than a boolean because the component cannot
+    // know the action otherwise — WireKit passes server actions through the
+    // attribute bag, so a component never sees the developer's wire:click.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -109,7 +118,35 @@
     ]);
 @endphp
 
-<div class="space-y-1.5">
+@php
+    // The optimistic wiring, built once so the markup below stays readable.
+    //
+    // Every string is a translation key, per the contract: an announcement is
+    // read aloud to somebody, and a literal here would be read aloud in English
+    // to everybody.
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'value' => (bool) ($attributes->get('checked') ?? false),
+        'action' => $optimistic,
+        // Developer warning only where warnings belong; the same gate every other
+        // dev-warning call site in the catalog uses.
+        'debug' => (bool) config('app.debug'),
+        // A toggle rejects a second flip while one is in flight rather than
+        // queueing it. With a queue the final state depends on the ORDER the
+        // responses come back in — network timing — which is both wrong and
+        // untestable.
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+        // The field's own error region. Where it carries a message, this layer
+        // stays silent on failure: "Email is required" is actionable, "could
+        // not save" is not, and WCAG 3.3.1 wants the specific one heard.
+        'errorRegion' => '#'.$id.'-error',
+    ]);
+@endphp
+
+<div class="space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     <label for="{{ $id }}" class="inline-flex items-center gap-3 cursor-pointer">
         {{-- Switch visual: wrapper contains input (.peer), track, and knob as siblings --}}
         {{-- so peer-checked:* selectors resolve correctly (peer-checked targets siblings only). --}}
@@ -123,6 +160,12 @@
                 role="switch"
                 class="peer sr-only"
                 @if($fallbackAriaLabel) aria-label="{{ $fallbackAriaLabel }}" @endif
+                @if($optimisticConfig)
+                    x-ref="control"
+                    x-bind:checked="value"
+                    x-bind:aria-busy="isPending"
+                    x-on:change="toggle()"
+                @endif
                 @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
                 @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
                 {{ $attributes->except(['id', 'name']) }}
@@ -139,6 +182,13 @@
             <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none">{{ $label }}</span>
         @endif
     </label>
+
+    @if($optimisticConfig)
+        {{-- Rendered unconditionally and starting EMPTY. A live region that
+             arrives together with its text is a new node rather than a changed
+             region, and nothing is announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+    @endif
 
     {{-- Error message or hint text --}}
     @if($hasError && $errorMessage)

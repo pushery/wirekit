@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Streaming display of text the server is sending. --}}
 @props([
     // Who is speaking: assistant (left, avatar + model chip), user (right),
     // system (centered, muted — a configuration/system turn, not a person).

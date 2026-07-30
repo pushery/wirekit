@@ -1,4 +1,19 @@
+{{-- optimistic-ui: supported
+     Pass `optimistic="method"` and the value is sent when you leave the field,
+     shown as saving while it goes.
+
+     **It uses the FOURTH exit** (§8): a refusal does NOT put the old value
+     back. For a typed value the previous one belongs to the server and the new
+     one is your work, so an undo would delete what you just wrote because a
+     save failed. The value stays, the state becomes `rejected`, and the
+     announcement says both — that it did not save and that the value is still
+     there. --}}
 @props([
+    // The Livewire method this component should call, when it should show the
+    // new value before the server has agreed to it. A refusal keeps your value —
+    // see the note above. Null leaves the component exactly as it has always
+    // rendered.
+    'optimistic' => null,
     'label' => null,
     'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
     'hint' => null,
@@ -211,7 +226,37 @@
     $useWrapper = $prefix || $suffix || $hasAffordances || $hasLeading || $hasTrailing;
 @endphp
 
-<div class="space-y-1.5">
+@php
+    // `failure: 'keep'` is what makes this component eligible at all — §8.
+    //
+    // No `x-ref="control"`: with affordances the field already carries
+    // `x-ref="wkField"` and an element gets one ref. The commit reads
+    // `$event.target.value` instead, which is what the change event hands over
+    // anyway, and `keep` never writes on failure — so the resync the ref would
+    // enable has nothing to do.
+    //
+    // `value` IS handed over, and it is not the same decision. The two were
+    // once treated as one, and the layer was dead in every render: this layer is
+    // the OUTERMOST x-data here, so an undeclared `value` is not in scope for
+    // the default binding either, `init()` sets `_bindMissing`, and `run()`
+    // returns before it ever reaches Livewire. Nothing flipped, nothing was
+    // announced, nothing was sent — and the component looked supported. What it
+    // seeds is only the baseline; `keep` never writes it back.
+    $optimisticConfig = ($optimistic === null || $disabled || $readonly) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'value' => (string) ($attributes->get('value') ?? ''),
+        'action' => $optimistic,
+        'failure' => 'keep',
+        'debug' => (bool) config('app.debug'),
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'kept' => __('Could not save. Your entry is still here.'),
+        ],
+        'errorRegion' => '#'.$id.'-error',
+    ]);
+@endphp
+
+<div class="space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         <x-wirekit::label :for="$id" :required="$required" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
@@ -222,16 +267,12 @@
              to the actual content width instead of a hardcoded value. --}}
         <div
             @if($hasAffordances)
-                {{-- Tiny inline Alpine island. clear() empties + refocuses the
-                     field and dispatches input/change so wire:model / x-model
-                     pick up the cleared value; copy() writes the live value to
-                     the clipboard with a brief "Copied" state. hasValue gates the
-                     clear button so the X only shows when the field has content
-                     (kept in sync via the bubbled input event from the field).
-                     execCommand is the fallback for non-secure (http) contexts
-                     where navigator.clipboard is unavailable. --}}
-                x-data="{ copied: false, hasValue: false, _t: null, init() { this.hasValue = (this.$refs.wkField?.value.length ?? 0) > 0; }, clear() { const f = this.$refs.wkField; if (! f) return; f.value = ''; f.dispatchEvent(new Event('input', { bubbles: true })); f.dispatchEvent(new Event('change', { bubbles: true })); this.hasValue = false; f.focus(); }, copy() { const f = this.$refs.wkField; if (! f) return; const done = () => { this.copied = true; clearTimeout(this._t); this._t = setTimeout(() => { this.copied = false; }, 2000); }; if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(f.value).then(done).catch(() => {}); } else { try { f.select(); document.execCommand('copy'); done(); } catch (e) {} } } }"
-                @input="hasValue = ($refs.wkField?.value.length ?? 0) > 0"
+                {{-- clear() / copy() live in resources/js/components/input.js.
+                     They cannot live here: an inline object literal cannot
+                     declare methods under Alpine's CSP build, so both buttons
+                     rendered and did nothing under a strict policy. --}}
+                x-data="wirekitInput"
+                @input="syncHasValue()"
             @endif
             @class([
             'flex items-center',
@@ -281,6 +322,13 @@
                 @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
                 @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
                 @if($hasAffordances) x-ref="wkField" @endif
+                @if($optimisticConfig)
+                    x-bind:aria-busy="isPending"
+                    {{-- `change`, not `input`: typing fires input per keystroke,
+                         and the event that ends the input is leaving the field
+                         (§10). --}}
+                    x-on:change="run($event.target.value)"
+                @endif
                 {{ $attributes->class([
                     'wk-field', // 16px iOS-zoom floor on phones (dist/wirekit.css)
                     'block w-full h-full bg-transparent border-none shadow-none',
@@ -316,7 +364,7 @@
                     @click="copy()"
                     @if($disabled) disabled @endif
                     aria-label="{{ __('Copy to clipboard') }}"
-                    :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
+                    :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copy to clipboard')) }}"
                     class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                 >
                     <svg x-show="! copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -349,7 +397,8 @@
 
             @if($hasAffordances)
                 {{-- Polite live region announces the copy success to screen readers. --}}
-                <span aria-live="polite" aria-atomic="true" class="sr-only" x-text="copied ? 'Copied to clipboard' : ''"></span>
+                {{-- The only feedback a screen-reader user gets after copying — nothing changes visually. --}}
+                <span aria-live="polite" aria-atomic="true" class="sr-only" x-text="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied to clipboard')) }} : ''"></span>
             @endif
         </div>
     @else
@@ -366,6 +415,10 @@
             @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
             @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
             @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
+            @if($optimisticConfig)
+                x-bind:aria-busy="isPending"
+                x-on:change="run($event.target.value)"
+            @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
             {{ $attributes->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
         />
@@ -378,5 +431,12 @@
         <p id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
     @elseif($hint)
         <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @endif
+
+    @if($optimisticConfig)
+        {{-- Rendered unconditionally and starting empty: a live region that
+             arrives together with its text is a new node, and nothing is
+             announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
     @endif
 </div>

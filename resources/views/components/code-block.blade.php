@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is copy state and line highlighting. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'language' => null,
     'filename' => null,
@@ -52,7 +55,13 @@
              Symmetric success/failure announcements: success path sets both; error path sets only srMessage. --}}
         <div
             class="flex items-center justify-between gap-2 border-b border-[var(--color-wk-border)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-xs,0.25rem)]"
-            @if($copy) x-data="{ copied: false, srMessage: '' }" @endif
+            {{-- The copy lives in resources/js/components/code-block.js: a promise
+                 chain with two arrow-function callbacks, which Alpine's CSP build
+                 parses none of. Unlike clipboard-button this one WAITS for the
+                 promise, because the outcome is announced in a live region and
+                 announcing a success that did not happen is worse than a moment's
+                 delay. --}}
+            @if($copy) x-data="wirekitCodeBlock({ copiedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Code copied to clipboard')) }}, failedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copy failed')) }} })" @endif
         >
             @if($filename)
                 {{-- Filename header truncates from the START (leading ellipsis) on narrow
@@ -78,21 +87,10 @@
             @if($copy)
                 <button
                     type="button"
-                    x-on:click="
-                        navigator.clipboard.writeText($el.closest('[data-wk-code-block]').querySelector('code').textContent)
-                            .then(() => {
-                                copied = true;
-                                srMessage = 'Code copied to clipboard';
-                                setTimeout(() => { copied = false; srMessage = ''; }, 2000);
-                            })
-                            .catch(() => {
-                                srMessage = 'Copy failed';
-                                setTimeout(() => { srMessage = ''; }, 2000);
-                            });
-                    "
-                    class="shrink-0 cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors p-1"
+                    x-on:click="copy()"
+                    class="wk-touch-target shrink-0 cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors p-1"
                     aria-label="{{ __('Copy to clipboard') }}"
-                    :aria-label="copied ? 'Copied to clipboard' : 'Copy to clipboard'"
+                    :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copy to clipboard')) }}"
                 >
                     <template x-if="!copied">
                         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">

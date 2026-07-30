@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     Same shape as navbar/item. --}}
 @props([
     'trigger' => null,
     'href' => null,

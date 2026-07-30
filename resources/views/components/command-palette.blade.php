@@ -1,3 +1,6 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is open state, query and highlighted entry. That is not a value a server owns, so there is
+     nothing to anticipate and nothing to roll back. --}}
 @props([
     'hotkey' => 'cmd+k',
     'placeholder' => __('Search commands...'),

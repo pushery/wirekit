@@ -1,3 +1,5 @@
+import { applyTriggerAria } from '../utils/trigger-aria.js';
+
 /**
  * WireKit Popover Alpine Component.
  *
@@ -17,6 +19,11 @@ import { createFocusTrap } from '../utils/focus-trap.js';
  */
 export default function wirekitPopover(config = {}) {
     return {
+        /** Move the popup ARIA onto the trigger's focusable child. */
+        initTriggerAria() {
+            applyTriggerAria(this.$el, this.$watch.bind(this), { missingTriggerWarning: '[wirekit] popover: trigger slot has no focusable element (button/link). Keyboard users cannot open the popover. Wrap the trigger content in a <button>.' });
+        },
+
         open: false,
         _placement: config.placement || 'bottom',
         _offset: config.offset || 8,

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     Whether the mobile menu is open. --}}
 @props([
     'variant' => config('wirekit.components.navbar.variant', 'default'),
     'sticky' => false,

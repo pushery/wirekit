@@ -30,6 +30,7 @@ export default function wirekitTagsInput(config = {}) {
             if (this._maxTags && this.tags.length >= this._maxTags) return;
 
             this.tags.push(value);
+            this._commit();
             input.value = '';
         },
 
@@ -38,6 +39,26 @@ export default function wirekitTagsInput(config = {}) {
          */
         removeTag(index) {
             this.tags.splice(index, 1);
+            this._commit();
+        },
+
+        /**
+         * Hand the set to the optimistic layer, if one is nested here.
+         *
+         * §10 — adding or removing a tag is a completed decision the moment it
+         * happens; there is nothing continuous to wait out. The set is ONE value,
+         * so the whole set travels, exactly as multi-select does.
+         *
+         * No `mark()`: this component takes `failure: 'keep'`, so a refusal never
+         * writes back and the baseline is never read.
+         *
+         * `run` is looked up rather than assumed — without the layer this
+         * component behaves exactly as before, down to the byte.
+         */
+        _commit() {
+            if (typeof this.run === 'function') {
+                this.run([...this.tags]);
+            }
         },
 
         /**
@@ -46,6 +67,7 @@ export default function wirekitTagsInput(config = {}) {
         onBackspace(event) {
             if (event.target.value === '' && this.tags.length > 0) {
                 this.tags.pop();
+                this._commit();
             }
         },
     };

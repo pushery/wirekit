@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — sub-component
+     Open state lives on the menubar. --}}
 @props([
     'label' => '',
     'scope' => null,

@@ -1,4 +1,13 @@
+{{-- optimistic-ui: supported
+     A native select with a server-side value is a mutation the browser has
+     already applied. The concurrency question is sharper here than on a toggle:
+     two changes in flight would resolve to whichever answered last, which is
+     why the mode is reject. --}}
 @props([
+    // The Livewire method this component should call, when it should show the
+    // new value before the server has agreed to it. Null leaves the component
+    // exactly as it has always rendered.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -134,7 +143,21 @@
     };
 @endphp
 
-<div class="space-y-1.5">
+@php
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'value' => (string) ($attributes->get('value') ?? ''),
+        'action' => $optimistic,
+        'debug' => (bool) config('app.debug'),
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'reverted' => __('Could not save. Change undone.'),
+        ],
+        'errorRegion' => '#'.$id.'-error',
+    ]);
+@endphp
+
+<div class="space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         <x-wirekit::label :for="$id" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
@@ -144,6 +167,11 @@
             id="{{ $id }}"
             name="{{ $name }}"
             @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
+            @if($optimisticConfig)
+                x-ref="control"
+                x-bind:aria-busy="isPending"
+                x-on:change="commitFromControl()"
+            @endif
             @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
             @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
             {{-- wk-field: lifts font-size to the 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
@@ -190,6 +218,13 @@
             </svg>
         </div>
     </div>
+
+    @if($optimisticConfig)
+        {{-- Rendered unconditionally and starting empty: a live region that
+             arrives together with its text is a new node, and nothing is
+             announced at all. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+    @endif
 
     {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}
     @if($hasError && $errorMessage)

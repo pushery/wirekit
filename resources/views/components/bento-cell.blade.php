@@ -1,3 +1,7 @@
+{{-- optimistic-ui: n/a — presentational
+     Renders no interactive element, so there is no action whose result could be
+     shown early. Measured rather than asserted: the guard refutes this reason for
+     any file that renders one. --}}
 @props([
     // How much room this cell claims once the grid is wide enough (the '@2xl'
     // container width). In a narrow grid every cell is full width regardless —

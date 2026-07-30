@@ -1,4 +1,23 @@
+{{-- optimistic-ui: supported
+     Pass `optimistic="method"` and the text is sent when you leave the field,
+     shown as saving while it goes.
+
+     **It uses the FOURTH exit** (§8): a refusal does NOT put the old text back.
+     For a free-text field the previous value is the server's and the new one is
+     your work, so an undo would delete what you just wrote because a save
+     failed. Instead the text stays, the state becomes `rejected`, and the
+     announcement says both — that it did not save AND that the text is still
+     there, which is the question a user actually has.
+
+     This component is where §8 came from: it was enabled, then taken back once
+     the rollback was looked at, and it is enabled again now that the exit it
+     needed exists. --}}
 @props([
+    // The Livewire method this component should call, when it should show the
+    // new value before the server has agreed to it. A refusal keeps your text —
+    // see the note above. Null leaves the component exactly as it has always
+    // rendered.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -140,7 +159,31 @@
     };
 @endphp
 
-<div class="space-y-1.5">
+@php
+    // `failure: 'keep'` is the whole reason this component can be here. Every
+    // other setting matches the discrete controls; that one is what makes an
+    // undo stop being hostile.
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'value' => (string) ($slot->isEmpty() ? '' : trim($slot)),
+        'action' => $optimistic,
+        'failure' => 'keep',
+        'debug' => (bool) config('app.debug'),
+        // A second commit while one is in flight would resolve by whichever
+        // answer arrives last — network timing, which is both wrong and
+        // untestable.
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            // Not the `reverted` string, because nothing was reverted. The
+            // reassurance is the point: the first thing a person needs to know
+            // is whether their text survived.
+            'kept' => __('Could not save. Your text is still here.'),
+        ],
+        'errorRegion' => '#'.$id.'-error',
+    ]);
+@endphp
+
+<div class="space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         <x-wirekit::label :for="$id" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
@@ -152,6 +195,14 @@
         @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
         @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
         @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
+        @if($optimisticConfig)
+            x-ref="control"
+            x-bind:aria-busy="isPending"
+            {{-- `change`, not `input`: the field fires input on every keystroke,
+                 and the commit boundary for typing is leaving the field (§10 —
+                 the event that ends the input, never a timer). --}}
+            x-on:change="commitFromControl()"
+        @endif
         {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
         {{ $attributes->class(['wk-field', $textareaClasses, $stateClasses, $sizeClasses, $resize ? 'resize-y' : 'resize-none', '[field-sizing:content]' => $autosize]) }}
     >{{ $slot }}</textarea>
@@ -163,5 +214,13 @@
         <p id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
     @elseif($hint)
         <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @endif
+
+    @if($optimisticConfig)
+        {{-- Rendered unconditionally and starting empty: a live region that
+             arrives together with its text is a new node, and nothing is
+             announced at all. After the error paragraph, which is the one this
+             layer yields to when both would speak. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
     @endif
 </div>

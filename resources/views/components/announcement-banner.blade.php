@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     Same as alert. --}}
 @props([
     // Where the bar lives. Sticky is opt-in — a bar that follows the reader is
     // a stronger claim on the viewport than most announcements deserve.
@@ -85,25 +87,7 @@
      before Alpine reads localStorage. --}}
 <div
     @if($isDismissible)
-        x-data="{
-            shown: true,
-            init() {
-                @if($persistsDismissal)
-                    try { this.shown = localStorage.getItem('wk-banner:{{ $dismissKey }}') !== '1'; } catch (e) { this.shown = true; }
-                @else
-                    {{-- Session-only ($persist=false): nothing to read — a fresh
-                         mount (page load OR a docs replay re-mount) always starts
-                         shown. Assign explicitly so re-running init() resets it. --}}
-                    this.shown = true;
-                @endif
-            },
-            dismiss() {
-                this.shown = false;
-                @if($persistsDismissal)
-                    try { localStorage.setItem('wk-banner:{{ $dismissKey }}', '1'); } catch (e) {}
-                @endif
-            },
-        }"
+        x-data="wirekitDismissible({@if($persistsDismissal) persistKey: 'wk-banner:{{ $dismissKey }}' @endif })"
         x-show="shown"
         x-cloak
         {{-- Opts the dismissed-then-empty preview into the docs preview frame's

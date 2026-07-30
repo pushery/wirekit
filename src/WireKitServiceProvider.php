@@ -178,7 +178,9 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../dist/wirekit.esm.js' => public_path('vendor/wirekit/wirekit.esm.js'),
                 __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
                 __DIR__.'/../dist/wirekit-tiptap.js' => public_path('vendor/wirekit/wirekit-tiptap.js'),
+                __DIR__.'/../dist/wirekit-optimistic.js' => public_path('vendor/wirekit/wirekit-optimistic.js'),
                 __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
+                __DIR__.'/../dist/wirekit-alpine.csp.js' => public_path('vendor/wirekit/wirekit-alpine.csp.js'),
             ], 'wirekit-scripts');
 
             // All assets (CSS + JS) — convenience tag for publishing everything at once
@@ -189,7 +191,9 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../dist/wirekit.esm.js' => public_path('vendor/wirekit/wirekit.esm.js'),
                 __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
                 __DIR__.'/../dist/wirekit-tiptap.js' => public_path('vendor/wirekit/wirekit-tiptap.js'),
+                __DIR__.'/../dist/wirekit-optimistic.js' => public_path('vendor/wirekit/wirekit-optimistic.js'),
                 __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
+                __DIR__.'/../dist/wirekit-alpine.csp.js' => public_path('vendor/wirekit/wirekit-alpine.csp.js'),
             ], 'wirekit-assets');
         }
 
@@ -248,18 +252,32 @@ class WireKitServiceProvider extends ServiceProvider
         // asset route now serves with `Cache-Control: public, max-age=31536000,
         // immutable` (standard fingerprinted-asset caching, see
         // `registerAssetRoutes()` below).
-        Blade::directive('wirekitStyles', function () {
+        // Takes an optional CSP nonce: @wirekitStyles($nonce). Apps without a CSP
+        // pass nothing and the attribute is omitted entirely.
+        //
+        // Why a stylesheet link needs one at all: under a 'self'-based policy it
+        // does not — same origin, allowed. Under the 'strict-dynamic' shape OWASP
+        // recommends, the nonce is the ONLY thing that grants a resource, so a
+        // <link> without one is blocked and the app has no lever to fix it from
+        // the outside. The seam already existed on @wirekitThemeScript; it was
+        // simply never carried to the other two directives.
+        Blade::directive('wirekitStyles', function ($expression) {
+            $expression = trim($expression);
+            $nonceExpr = $expression === '' ? "''" : $expression;
+
             return '<?php
+                $__wk_nonce = '.$nonceExpr.';
+                $__wk_nonceAttr = $__wk_nonce ? \' nonce="\' . e($__wk_nonce) . \'"\' : "";
                 $__wk_published = public_path(\'vendor/wirekit/wirekit.css\');
                 $__wk_dist = \Pushery\WireKit\WireKitServiceProvider::distPath(\'wirekit.css\');
                 $__wk_useRoute = ! file_exists($__wk_published)
                     || ($__wk_dist && filemtime($__wk_dist) > filemtime($__wk_published));
                 if ($__wk_useRoute) {
                     $__wk_v = $__wk_dist ? filemtime($__wk_dist) : time();
-                    echo \'<link rel="stylesheet" href="\' . url(\'/wirekit/wirekit.css\') . \'?v=\' . $__wk_v . \'">\' . "\n";
+                    echo \'<link rel="stylesheet"\' . $__wk_nonceAttr . \' href="\' . url(\'/wirekit/wirekit.css\') . \'?v=\' . $__wk_v . \'">\' . "\n";
                 } else {
                     $__wk_v = filemtime($__wk_published);
-                    echo \'<link rel="stylesheet" href="\' . asset(\'vendor/wirekit/wirekit.css\') . \'?v=\' . $__wk_v . \'">\' . "\n";
+                    echo \'<link rel="stylesheet"\' . $__wk_nonceAttr . \' href="\' . asset(\'vendor/wirekit/wirekit.css\') . \'?v=\' . $__wk_v . \'">\' . "\n";
                 }
             ?>';
         });
@@ -323,20 +341,41 @@ class WireKitServiceProvider extends ServiceProvider
         // @wirekitScripts — outputs a <script> tag for the configured JS bundle.
         // Same two-tier staleness-detection + cache-busting strategy as
         // @wirekitStyles above. See that directive for the full rationale.
-        Blade::directive('wirekitScripts', function () {
+        // Takes an optional CSP nonce: @wirekitScripts($nonce). Same reasoning as
+        // @wirekitStyles above — under 'strict-dynamic' the nonce is what grants
+        // the script, and without this parameter a developer had no way to supply
+        // one for the bundle tag.
+        Blade::directive('wirekitScripts', function ($expression) {
+            $expression = trim($expression);
+            $nonceExpr = $expression === '' ? "''" : $expression;
+
             return '<?php
+                $__wk_nonce = '.$nonceExpr.';
+                $__wk_nonceAttr = $__wk_nonce ? \' nonce="\' . e($__wk_nonce) . \'"\' : "";
                 $__wk_bundle = config("wirekit.scripts.bundle", "full");
-                $__wk_file = $__wk_bundle === "core" ? "wirekit.core.js" : "wirekit.js";
+                // An unknown value falls back to `full` rather than to nothing:
+                // a typo here would otherwise ship a page with no WireKit
+                // JavaScript, which fails silently — components simply stop
+                // being interactive with no error anywhere.
+                $__wk_file = match ($__wk_bundle) {
+                    "core" => "wirekit.core.js",
+                    // Self-contained AND Alpine-bundled, unlike its two
+                    // siblings: built against Alpine\'s CSP distribution so no
+                    // \'unsafe-eval\' is needed. An app on this option must NOT
+                    // also load its own Alpine.
+                    "csp" => "wirekit-alpine.csp.js",
+                    default => "wirekit.js",
+                };
                 $__wk_published = public_path("vendor/wirekit/" . $__wk_file);
                 $__wk_dist = \Pushery\WireKit\WireKitServiceProvider::distPath($__wk_file);
                 $__wk_useRoute = ! file_exists($__wk_published)
                     || ($__wk_dist && filemtime($__wk_dist) > filemtime($__wk_published));
                 if ($__wk_useRoute) {
                     $__wk_v = $__wk_dist ? filemtime($__wk_dist) : time();
-                    echo \'<script src="\' . url("/wirekit/" . $__wk_file) . \'?v=\' . $__wk_v . \'" defer></script>\' . "\n";
+                    echo \'<script\' . $__wk_nonceAttr . \' src="\' . url("/wirekit/" . $__wk_file) . \'?v=\' . $__wk_v . \'" defer></script>\' . "\n";
                 } else {
                     $__wk_v = filemtime($__wk_published);
-                    echo \'<script src="\' . asset("vendor/wirekit/" . $__wk_file) . \'?v=\' . $__wk_v . \'" defer></script>\' . "\n";
+                    echo \'<script\' . $__wk_nonceAttr . \' src="\' . asset("vendor/wirekit/" . $__wk_file) . \'?v=\' . $__wk_v . \'" defer></script>\' . "\n";
                 }
 
                 // Force Livewire to inject its asset stack on this page even
@@ -493,7 +532,9 @@ class WireKitServiceProvider extends ServiceProvider
             'wirekit/wirekit.esm.js' => ['file' => 'wirekit.esm.js', 'type' => 'application/javascript'],
             'wirekit/wirekit-apex.js' => ['file' => 'wirekit-apex.js', 'type' => 'application/javascript'],
             'wirekit/wirekit-tiptap.js' => ['file' => 'wirekit-tiptap.js', 'type' => 'application/javascript'],
+            'wirekit/wirekit-optimistic.js' => ['file' => 'wirekit-optimistic.js', 'type' => 'application/javascript'],
             'wirekit/wirekit-alpine.js' => ['file' => 'wirekit-alpine.js', 'type' => 'application/javascript'],
+            'wirekit/wirekit-alpine.csp.js' => ['file' => 'wirekit-alpine.csp.js', 'type' => 'application/javascript'],
         ];
 
         // Bundled fonts, served straight from the package when they were never

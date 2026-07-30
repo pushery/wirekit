@@ -1,4 +1,20 @@
+{{-- optimistic-ui: supported
+     The set shape is multi-select's, already through the gate. What differs is
+     where a tag comes from: it is TYPED, not picked from a list, so rolling back
+     a failed ADD deletes text the reader wrote (§8). Removing an existing tag
+     carries no such cost.
+
+     Both paths take the FOURTH exit anyway, and that is the decision rather than
+     an oversight. Splitting them is not available: the set is ONE value, so a
+     rollback restores the whole set — there is no way to undo a removal without
+     also undoing an addition that happened alongside it. `keep` guarantees
+     nothing typed is destroyed; the price is that a refused REMOVAL stays
+     removed and says so, which the reader can act on because the tag is one
+     keystroke away. --}}
 @props([
+    // The Livewire method to call when the set changes. A refusal KEEPS the
+    // change and says it was not saved — see the note above.
+    'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -100,6 +116,23 @@
     ]);
 
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+    // `bind` rather than `value`: `tags` already exists on the component this
+    // layer nests inside. A tuple is not needed — the set IS the value, and the
+    // factory snapshots an array by COPY, so a rollback cannot restore the same
+    // reference it was meant to replace.
+    $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+        'bind' => 'tags',
+        'action' => $optimistic,
+        'failure' => 'keep',
+        'debug' => (bool) config('app.debug'),
+        'mode' => 'reject',
+        'messages' => [
+            'pending' => __('Saving'),
+            'kept' => __('Could not save. Your entry is still here.'),
+        ],
+        'errorRegion' => '#'.$id.'-error',
+    ]);
+
 @endphp
 
 <div class="space-y-1.5">
@@ -108,15 +141,31 @@
     @endif
 
     <div
-        x-data="wirekitTagsInput({ name: '{{ $name }}', maxTags: {{ $maxTags ?? 'null' }}, tags: @js($initialTags) })"
+        x-data="wirekitTagsInput({ name: '{{ $name }}', maxTags: {{ $maxTags ?? 'null' }}, tags: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialTags) }} })"
         {{ $attributes->only('class') }}
     >
+@if($optimisticConfig)
+        {{-- INSIDE the component that owns the set, not around it: a nested
+             Alpine component reads and writes its parent's properties through
+             `this` and never the reverse, so `bind: 'tags'` only resolves this
+             way round. Wrapped the other way it binds to nothing — measured, and
+             it fails as `tags` being undefined rather than as anything that
+             names the cause.
+
+             `display: contents` so the chip row keeps its own layout. --}}
+        <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
+@endif
         {{-- Hidden inputs for form submission — one per tag --}}
         <template x-for="(tag, i) in tags" :key="i">
             <input type="hidden" :name="'{{ $name }}[]'" :value="tag" />
         </template>
 
-        <div class="{{ $containerClasses }} {{ $stateClasses }}" @click="$refs.input.focus()">
+        <div class="{{ $containerClasses }} {{ $stateClasses }}" @click="$refs.input.focus()"
+            {{-- Inside the layer's scope, which the component's own wrapper is
+                 not: the layer nests within it, so `isPending` does not resolve
+                 out there. --}}
+            @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
+        >
             {{-- Tag chips --}}
             <template x-for="(tag, i) in tags" :key="'tag-'+i">
                 <span class="{{ $tagClasses }}">
@@ -124,7 +173,7 @@
                     <button
                         type="button"
                         @click="removeTag(i)"
-                        :aria-label="'Remove ' + tag"
+                        :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Remove :name')) }}.replace(':name', tag)"
                         class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                     >
                         <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
@@ -163,6 +212,14 @@
                 class="wk-field flex-1 min-w-[80px] px-2 bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] outline-none"
             />
         </div>
+@if($optimisticConfig)
+        {{-- Inside the layer, or `announcement` does not resolve — the region
+             would render empty forever and the component would look wired.
+             Unconditional and starting empty: a live region that arrives
+             together with its text is a new node and announces nothing. --}}
+        <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
+        </div>
+@endif
     </div>
 
     @if($hasError && $errorMessage)

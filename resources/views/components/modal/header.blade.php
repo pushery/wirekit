@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — sub-component
+     A header slot; the modal owns visibility. --}}
 @props([
     'scope' => null,
     'close' => true,
@@ -82,7 +84,7 @@
          aria-labelledby chain. min-w-0 + flex-1 allow long titles to wrap
          without pushing the close button off the right edge. --}}
     <div
-        x-bind:id="$el.closest('[data-wk-title-id]')?.dataset.wkTitleId"
+        x-bind:id="$wkAncestorData('[data-wk-title-id]', 'wkTitleId')"
         class="min-w-0 flex-1"
     >
         {{ $slot }}

@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — client-only
+     A scroll region, keyboard-reachable by contract. Nothing here talks to a server. --}}
 @props([
     'orientation' => 'vertical', // vertical | horizontal | both
     'maxHeight' => null,

@@ -220,9 +220,28 @@ class VerifyInstallationCommand extends Command
             __DIR__.'/../../dist/wirekit.js',
             public_path('vendor/wirekit/wirekit.js')
         );
+
+        // The Liquid Glass extension, but ONLY where it has been installed —
+        // checkFileFreshness stays silent when the published file is absent, so
+        // an application that never opted in hears nothing about it.
+        //
+        // Its own command publishes it, not `vendor:publish`, and that is the
+        // whole reason this check exists: the extension is COPIED into
+        // public/, so a composer update refreshes vendor/ and leaves the served
+        // copy untouched. The page then keeps rendering the old stylesheet
+        // through any number of deploys, and nothing anywhere says so — which
+        // is exactly how a corrected refraction shipped and stayed invisible.
+        foreach (['wirekit-glass.css', 'wirekit-glass.js'] as $file) {
+            $this->checkFileFreshness(
+                $file,
+                __DIR__.'/../../resources/glass/'.$file,
+                public_path('vendor/wirekit/glass/'.$file),
+                'php artisan wirekit:glass install'
+            );
+        }
     }
 
-    private function checkFileFreshness(string $name, string $sourcePath, string $publishedPath): void
+    private function checkFileFreshness(string $name, string $sourcePath, string $publishedPath, ?string $fixCommand = null): void
     {
         if (! file_exists($publishedPath) || ! file_exists($sourcePath)) {
             return; // Already reported as missing in checkPublishedAssets
@@ -230,7 +249,7 @@ class VerifyInstallationCommand extends Command
 
         if (md5_file($sourcePath) !== md5_file($publishedPath)) {
             $this->reportWarn("{$name} is outdated (source differs from published)");
-            $this->line('  Fix: php artisan vendor:publish --tag=wirekit-assets --force');
+            $this->line('  Fix: '.($fixCommand ?? 'php artisan vendor:publish --tag=wirekit-assets --force'));
         } else {
             $this->reportPass("{$name} is up to date");
         }
@@ -1056,6 +1075,19 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
+        // The self-hosted UMD build is a second, equally valid way to provide
+        // Chart.js, and it needs no registration at all: it sets `window.Chart`
+        // and registers every controller itself. `Chart.register(...registerables)`
+        // is required only for the tree-shaken ESM import.
+        //
+        // Without this branch the doctor told applications whose charts demonstrably
+        // draw that every chart "renders but draws nothing" — a warning that is not
+        // just noise but actively misleading, and it was reported from an app doing
+        // exactly the supported thing.
+        if ($this->providesChartUmdBuild()) {
+            return;
+        }
+
         $this->reportWarn('Chart.js adapter selected but resources/js/app.js is missing the registration snippet');
         $this->line('  Fix: add the following to resources/js/app.js, then `npm run build`:');
         $this->line('');
@@ -1065,6 +1097,80 @@ class VerifyInstallationCommand extends Command
         $this->line('  Without this, every <x-wirekit-chart> renders but draws nothing — chart.js logs a friendly');
         $this->line('  console.error at runtime and gives up. See '.WireKit::DOCS_URL.'/getting-started/integration#optional-dependencies');
         $this->line('  for the full setup walkthrough.');
+    }
+
+    /**
+     * Does any `.disconnect()` in this source lack a guard of its own?
+     *
+     * Judged per call site. Guarded means one of:
+     *   - `this._observer?.disconnect()` — the optional-chaining form, on the line
+     *   - a guard on `this._…` in the lines just above: either `if (! this._x)`
+     *     (early return) or `if (this._x) {` (positive, wrapping the call)
+     *
+     * The look-back is small on purpose. A guard six lines up with a branch in
+     * between does not protect this call, and accepting it would reintroduce the
+     * file-wide blindness this replaced.
+     */
+    private function hasUnguardedDisconnect(string $source): bool
+    {
+        $lines = preg_split('/\R/', $source) ?: [];
+
+        foreach ($lines as $i => $line) {
+            if (preg_match('/\.disconnect\s*\(\s*\)/', $line) !== 1) {
+                continue;
+            }
+
+            // Optional chaining guards itself.
+            if (preg_match('/\?\.\s*disconnect\s*\(/', $line) === 1) {
+                continue;
+            }
+
+            $context = implode("\n", array_slice($lines, max(0, $i - 3), min(3, $i)));
+
+            $guarded = preg_match('/if\s*\(\s*!\s*this\._\w+/', $context) === 1
+                || preg_match('/if\s*\(\s*this\._\w+\s*\)/', $context) === 1;
+
+            if (! $guarded) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Is Chart.js provided as the self-hosted UMD build?
+     *
+     * That build sets `window.Chart` and registers its own controllers, so the
+     * ESM registration snippet is not merely optional there — it does not apply.
+     * Looked for in the two places it can legitimately live: shipped under
+     * `public/`, or referenced from a Blade layout (a CDN tag, or an asset()
+     * call pointing at a vendored copy).
+     *
+     * Deliberately a shallow filename check rather than a parse. The question is
+     * only "is there another route by which Chart reaches the page", and a false
+     * NEGATIVE here just restores the old warning — while a false positive costs
+     * a developer a hunt for a defect that does not exist.
+     */
+    private function providesChartUmdBuild(): bool
+    {
+        foreach (glob(public_path('vendor/**/chart*.js')) ?: [] as $path) {
+            if (str_contains(basename($path), 'chart')) {
+                return true;
+            }
+        }
+
+        $layouts = glob(resource_path('views/**/*.blade.php')) ?: [];
+
+        foreach (array_merge($layouts, glob(resource_path('views/*.blade.php')) ?: []) as $path) {
+            $blade = (string) file_get_contents($path);
+
+            if (preg_match('/chart(?:\.umd)?(?:\.min)?\.js/i', $blade) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -1360,9 +1466,20 @@ class VerifyInstallationCommand extends Command
         $twValue = $this->extractTokenValue($cssContent, $twToken);
         $wkValue = $this->extractTokenValue($cssContent, $wkToken);
 
-        // Skip if either token is unset
+        // Skip if either token is unset — and say WHICH one. The condition has
+        // always tested both sides, but the message named the Tailwind side
+        // unconditionally, so a missing WireKit-side token sent the reader to
+        // the one file where nothing was wrong. Printing the token name also
+        // removes the need to know which side is called "Tailwind" and which
+        // "WireKit" in order to read the line at all.
         if ($twValue === null || $wkValue === null) {
-            $this->line("    <fg=blue>i</> {$label}: skipped (Tailwind-side token unset)");
+            $reason = match (true) {
+                $twValue === null && $wkValue === null => "neither {$twToken} nor {$wkToken} set",
+                $twValue === null => "{$twToken} unset",
+                default => "{$wkToken} unset",
+            };
+
+            $this->line("    <fg=blue>i</> {$label}: skipped ({$reason})");
 
             return;
         }
@@ -1600,22 +1717,50 @@ class VerifyInstallationCommand extends Command
                     || preg_match('/\bdestroy\s*:\s*(?:function\s*)?\(/', $source) === 1
                 );
 
-                if ($hasObserver && ! $hasDestroy) {
+                // An observer built at MODULE level is not the same finding as one
+                // built per component instance, and only the second can accumulate.
+                // A page-lifetime observer — one MutationObserver on <html> or
+                // <body>, inside a top-level IIFE, driving something for as long as
+                // the document lives — has nothing to tear down; giving it a
+                // destroy() would be the defect. Reported as a leak, it sends people
+                // looking for a bug that is not there.
+                //
+                // The discriminator is where the construction sits: inside an Alpine
+                // factory (`Alpine.data(...)`, an `init()`, a returned object) it is
+                // per-instance; at top level it is not.
+                $perInstance = (
+                    preg_match('/Alpine\s*\.\s*data\s*\(/', $source) === 1
+                    || preg_match('/\binit\s*\(\s*\)\s*\{/', $source) === 1
+                    || preg_match('/\binit\s*:\s*(?:function\s*)?\(/', $source) === 1
+                );
+
+                if ($hasObserver && ! $hasDestroy && $perInstance) {
                     $issues[$relativePath][] = 'observer-without-destroy';
                 }
 
-                // Anti-pattern 2: disconnect() inside an observer callback
-                // without a preceding null-guard. We detect any
-                // `.disconnect()` call AND the absence of either:
-                //   - `if (! this._<obs>) return;` somewhere in the same file
-                //   - `this._<obs>?.disconnect()` optional-chaining form
-                $hasDisconnect = preg_match('/\.disconnect\s*\(\s*\)/', $source) === 1;
-                $hasGuard = (
-                    preg_match('/if\s*\(\s*!\s*this\._\w*[Oo]bserver\s*\)/', $source) === 1
-                    || preg_match('/this\._\w*[Oo]bserver\?\.disconnect\s*\(/', $source) === 1
-                );
-
-                if ($hasDisconnect && $hasObserver && ! $hasGuard) {
+                // Anti-pattern 2: a `disconnect()` that nothing guards.
+                //
+                // Checked PER CALL SITE rather than per file, and that distinction
+                // is the whole correctness of this detector. A file-wide question —
+                // "is there a guard anywhere in here" — gets both answers wrong:
+                //
+                //   • It rejected the POSITIVE guard form, `if (this._observer) { … }`,
+                //     because the pattern only knew the negative and optional-chaining
+                //     spellings. That is the same check written the other way round,
+                //     and it usually does MORE (it nulls the reference afterwards).
+                //     Reported from a consuming app as a false positive, twice over.
+                //
+                //   • Teaching it the positive form file-wide would have been worse:
+                //     a component that guards correctly in destroy() and calls
+                //     disconnect() unguarded inside its observer callback would then
+                //     read as clean. That is the real anti-pattern, and it lives in
+                //     the same files as the correct guard.
+                //
+                // So each call site is judged by its own immediate context: the
+                // optional-chaining form on the line itself, or a guard on `this._…`
+                // within the few lines above it. A heuristic, deliberately — but one
+                // whose failure mode is a warning rather than silence.
+                if ($hasObserver && $this->hasUnguardedDisconnect($source)) {
                     $issues[$relativePath][] = 'disconnect-without-null-guard';
                 }
             }

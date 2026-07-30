@@ -1,3 +1,5 @@
+{{-- optimistic-ui: n/a — passthrough
+     A labeled action button inside the fab; the action is the developer's. --}}
 @props([
     // What this action does. The button is an icon, so this is its whole name.
     'label' => '',
