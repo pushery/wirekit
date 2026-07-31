@@ -23,6 +23,13 @@
     // scroll listener with requestAnimationFrame for smooth performance.
     $buttonClasses = WireKit::resolveClasses('scroll-to-top', 'base', implode(' ', [
         'fixed z-[var(--z-wk-sticky)]',
+        // Expands the tap area to 44×44 on coarse pointers without changing the
+        // painted box. It was left off here while theme-controller and
+        // code-block carried it, so this button kept a 40×40 target — and it
+        // could not simply be added by hand, because the class used to force
+        // `position: relative` onto a host that is `fixed` by design and threw
+        // the button off-screen. Both halves are fixed together, on purpose.
+        'wk-touch-target',
         'inline-flex items-center justify-center',
         'rounded-full',
         'bg-[var(--color-wk-accent)]',

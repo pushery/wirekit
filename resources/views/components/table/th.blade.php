@@ -40,6 +40,16 @@
         default => 'text-left',
     };
 
+    // The same alignment as a flex justification, for the sort-action button: it is
+    // `w-full` so its hit area covers the cell, and a full-width flex container
+    // ignores the cell's text-align — the label would snap left in a right-aligned
+    // numeric column without this.
+    $justifyClass = match ($align) {
+        'center' => 'justify-center',
+        'right' => 'justify-end',
+        default => 'justify-start',
+    };
+
     // Sanitize the <th scope> to the valid HTML set; anything else falls back to col.
     // Resolved BEFORE the class builder so a row-header can drop the column-header look.
     $headerScope = in_array($headerScope, ['col', 'row', 'colgroup', 'rowgroup'], true) ? $headerScope : 'col';
@@ -53,16 +63,41 @@
         ? 'text-[color:var(--color-wk-text)]'
         : 'text-[color:var(--color-wk-text-muted)] whitespace-nowrap';
 
+    // In sort-action mode the padding MOVES to the <button> instead of sitting on
+    // the cell (see the button below). Measured at a coarse pointer, the button was
+    // 20px tall inside a 36px cell whose padding this mode deliberately leaves
+    // inert — under the 24px WCAG 2.5.8 (AA) minimum, with 16px of dead cell
+    // around the only clickable thing.
+    //
+    // Padding on the button rather than duplicated onto it: growing the button with
+    // `py` + a matching negative `my` reads like it should keep the row height, and
+    // it does NOT. An inline-flex child grows the line box, so the cell's own
+    // padding lands on top of the taller box — measured 52px where 36 was expected.
+    // Moving the padding keeps the cell exactly as tall as before AND makes the
+    // whole cell clickable, which is what the Alpine-sort mode always did.
+    //
+    // `$column === null` is load-bearing, not defensive. The button only renders in the
+    // `@elseif($sortable)` branch below, and `@if($sortable && $column)` wins before it — so
+    // in Alpine-sort mode the padding is REMOVED FROM THE CELL WITH NOTHING TO RECEIVE IT.
+    // Measured on the combination: the header collapsed from 35.5px to 19.5px, under the 24px
+    // WCAG 2.5.8 floor this change exists to reach, and the compact override went with it.
+    // The docblock above calls `sortAction` "ignored in Alpine-sort mode"; a prop documented
+    // as inert must not be able to break the cell.
+    $padOnButton = $sortable && $column === null && $sortAction !== null;
+    $cellPadding = $padOnButton
+        ? ''
+        : 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]';
+
     // Base th styling — heading weight, scope-aware text, compact-aware padding
     // via table[data-wk-compact] selector
     $classes = WireKit::resolveClasses('table.th', 'base', implode(' ', [
-        'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
+        $cellPadding,
         'font-[number:var(--font-wk-heading-weight)]',
         'text-[length:var(--text-wk-sm)]',
         $scopeText,
         $alignClass,
         // Compact variant: reduce vertical padding
-        '[table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)]',
+        $padOnButton ? '' : '[table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)]',
         // Sticky first column: freeze the leading header cell. It needs its own
         // background (it would otherwise show scrolling body cells through it) and
         // a z-index ABOVE the sticky header (z-10) so the top-left corner stays on top.
@@ -74,7 +109,13 @@
         // mode: there the <button> below is the click target (it carries its own
         // cursor-pointer), so advertising cursor-pointer on the whole cell would be a
         // dead zone — the cell padding shows a pointer but is not clickable.
-        $sortable ? ($sortAction ? 'select-none hover:text-[color:var(--color-wk-text)]' : 'cursor-pointer select-none hover:text-[color:var(--color-wk-text)]') : '',
+        // `$padOnButton` rather than `$sortAction` alone: the cursor belongs on the cell
+        // whenever the cell is what you click. With a button present the button is the target,
+        // so advertising a pointer on the whole cell would be a lie — but in Alpine-sort mode
+        // there is no button and the cell IS clickable, and gating on `$sortAction` alone took
+        // the pointer away there too. Same promise as the padding above: a prop documented as
+        // ignored may not change this cell.
+        $sortable ? ($padOnButton ? 'select-none hover:text-[color:var(--color-wk-text)]' : 'cursor-pointer select-none hover:text-[color:var(--color-wk-text)]') : '',
     ]), $scope);
 
     // ARIA: sortable columns expose their current sort state
@@ -120,10 +161,19 @@
             };
         @endphp
         @if($sortAction)
+            {{-- The button carries the cell's padding (the `$padOnButton` branch
+                 above drops it from the <th>), so its box IS the cell: the target
+                 reaches the 24px AA minimum on both axes and no part of the cell is
+                 inert. `w-full` + a justify matching the column's alignment keeps
+                 the label exactly where the text-align put it.
+
+                 ring-inset because the box now reaches the cell's edges, and the
+                 table's scroll wrapper (`overflow-x-auto`, which computes
+                 `overflow-y: auto`) would clip an outset ring on the header row. --}}
             <button
                 type="button"
                 wire:click="{{ $sortAction }}"
-                class="inline-flex items-center gap-1 hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
+                class="flex w-full items-center gap-1 {{ $justifyClass }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
             >
                 {{ $slot }}
                 {!! $sortIndicator !!}

@@ -280,9 +280,10 @@ final class BladeParser
             return [];
         }
         $directives = array_unique($matches[1]);
+        // sort() reindexes in place, so the list is already a list.
         sort($directives);
 
-        return array_values($directives);
+        return $directives;
     }
 
     /**
@@ -346,9 +347,10 @@ final class BladeParser
             return [];
         }
         $names = array_unique($matches[1]);
+        // sort() reindexes in place, so the list is already a list.
         sort($names);
 
-        return array_values($names);
+        return $names;
     }
 
     /**
@@ -404,6 +406,18 @@ final class BladeParser
                 $char = $contents[$cursor];
 
                 if ($quote !== null) {
+                    // A backslash escapes the next character, so `\"` inside a
+                    // double-quoted value does NOT close it. Without this, a real
+                    // documented snippet — `:sort-action="\"sortBy('{$field}')\""` on
+                    // `table.th` — ended its value at the first `\"`, and the walker then
+                    // read the PHP that followed as attribute names, reporting `sortBy()\`
+                    // as an undeclared prop. Skipping two characters is the whole fix.
+                    if ($char === '\\' && $cursor + 1 < $length) {
+                        $cursor += 2;
+
+                        continue;
+                    }
+
                     if ($char === $quote) {
                         $quote = null;
                     }
@@ -448,7 +462,8 @@ final class BladeParser
             // the `value` prop. Left in, every bound prop would read as unknown.
             $attributes = array_values(array_unique(array_map(
                 static fn (string $a): string => ltrim($a, ':'),
-                array_filter($attributes, static fn (string $a): bool => $a !== ''),
+                // Every entry here is already non-empty; the filter never removed anything.
+                $attributes,
             )));
 
             $usages[] = ['name' => $name, 'attributes' => $attributes];

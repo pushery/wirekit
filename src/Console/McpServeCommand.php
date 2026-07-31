@@ -112,8 +112,9 @@ final class McpServeCommand extends Command
 
         // Both conditions matter. A stream at EOF also reports no data, and
         // `timed_out` alone would then spin on a closed stream forever.
-        return ($meta['timed_out'] ?? false) === true
-            && ($meta['eof'] ?? false) === false;
+        // `stream_get_meta_data` always returns both keys, so the null-coalesce never fired.
+        return $meta['timed_out'] === true
+            && $meta['eof'] === false;
     }
 
     /**

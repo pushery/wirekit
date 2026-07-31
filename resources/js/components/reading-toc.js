@@ -153,13 +153,65 @@ export default (options = {}) => ({
      * TOC's own height entirely. Both reported as "scrolls too far and
      * ignores the TOC bar as an offset".
      */
+    /**
+     * The element that actually scrolls, or null when the window does.
+     *
+     * `scrollTo` used to move the WINDOW unconditionally, which works only for a page that
+     * scrolls as a whole. An application that owns its scroll region — and WireKit's own
+     * `<x-wirekit::main>` is one, it carries `overflow-y-auto` — got nothing: the window has
+     * nowhere to go, so clicking a heading did nothing at all and there was no error to see.
+     *
+     * Detected rather than configured. A `scroll-root` prop would put the burden on the
+     * developer to describe their own layout to a component that can look, and the answer it
+     * would be given is exactly what this walk finds.
+     *
+     * Both conditions matter: an ancestor may declare `overflow-y: auto` and have nothing to
+     * scroll, in which case it is not the container the user is moving through and scrolling it
+     * would move nothing while the real one stays put.
+     */
+    _scrollRoot(el) {
+        let node = el.parentElement;
+
+        while (node && node !== document.body && node !== document.documentElement) {
+            const overflowY = getComputedStyle(node).overflowY;
+
+            if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
+                return node;
+            }
+
+            node = node.parentElement;
+        }
+
+        return null;
+    },
+
     scrollTo(id, event) {
         if (event) event.preventDefault();
         const el = document.getElementById(id);
         if (!el) return;
         const tocHeight = this.$el ? this.$el.offsetHeight : 0;
-        const top = el.getBoundingClientRect().top + window.scrollY - this.offset - tocHeight - 24;
         const reduced = prefersReducedMotion();
+        const root = this._scrollRoot(el);
+
+        if (root) {
+            // Relative to the container's own scroll origin. `window.scrollY` is meaningless
+            // here — the page is not what moved — so the heading's offset inside the container
+            // is its position minus the container's, plus how far the container is scrolled.
+            const top = el.getBoundingClientRect().top
+                - root.getBoundingClientRect().top
+                + root.scrollTop
+                - this.offset - tocHeight - 24;
+
+            root.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
+            this._programmaticScrollUntil = Date.now() + 600;
+
+            const clicked = this.items.findIndex((it) => it.id === id);
+            if (clicked !== -1) this.activeIndex = clicked;
+
+            return;
+        }
+
+        const top = el.getBoundingClientRect().top + window.scrollY - this.offset - tocHeight - 24;
         window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
         // Suppress IO-driven activeIndex flips during the smooth-scroll
         // window so the clicked link stays active without flickering

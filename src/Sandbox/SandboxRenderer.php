@@ -75,6 +75,10 @@ final class SandboxRenderer
             return RenderResult::rejected($result->violations);
         }
 
+        // Declared before the by-ref call. PHP would create it implicitly, but a variable
+        // that first appears as an argument is a variable the next reader has to trace.
+        $source = '';
+
         try {
             $html = self::doRender($component, $result->clean, $source);
         } catch (\Throwable $e) {
@@ -95,7 +99,9 @@ final class SandboxRenderer
     /**
      * @param  array<string, mixed>  $props
      */
-    private static function doRender(string $component, array $props, ?string &$source = null): string
+    // `$source` is written on every path, never left null — the nullable by-ref type made
+    // callers guard against a state this method does not produce.
+    private static function doRender(string $component, array $props, string &$source = ''): string
     {
         // Build: <x-wirekit::{component} :prop="$__wk_pN" …>{!! $__wk_body !!}</…>
         //

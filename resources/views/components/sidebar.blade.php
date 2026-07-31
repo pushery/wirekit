@@ -8,6 +8,25 @@
     'collapsible' => false,
     // Initial collapsed state (only meaningful with `collapsible`).
     'collapsed' => false,
+    // Surface shape. `card` (default) is the self-contained panel: background,
+    // border on all four sides, rounded, meant to sit inside a padded column.
+    // `flush` is the full-bleed navigation COLUMN of the common admin layout —
+    // no radius, no surrounding border, the surface inherited from the host, and
+    // a single inline-end edge separating it from the content.
+    //
+    // Two variants rather than a set of booleans, because the halves are not
+    // independent: a rounded panel with no border reads as a rendering fault, and
+    // a full-bleed column with a radius shows a sliver of the page at each corner.
+    // Default stays `card` so no existing sidebar changes.
+    'variant' => 'card',
+    // Where the auto-rendered collapse toggle sits, or `none` to omit it and
+    // supply your own. `none` keeps the state machinery here — a developer who
+    // wanted the trigger elsewhere previously had to switch `collapsible` off and
+    // rebuild the rail's Alpine state, the persisted flag and the marker the
+    // descendant items read, which is vendor mechanics reimplemented in an app.
+    // An outside trigger reaches this sidebar through the `wirekit:sidebar:toggle`
+    // window event instead; see the docs page.
+    'toggle' => 'end',
     // Optional localStorage key — persists the collapsed state across reloads.
     'persist' => null,
     // Accessible name for the navigation landmark. Defaults to "Sidebar" so
@@ -46,21 +65,50 @@
     // and the label text. With asymmetric `px-x-sm py-y-sm` (0.625rem
     // horizontal, 0.375rem vertical) the outer gap looked 67% larger
     // than the inner — visually unbalanced.
+    $variant = in_array($variant, ['card', 'flush'], true) ? $variant : 'card';
+
+    // The surface half, split out so the two shapes read as alternatives rather
+    // than as a base with exceptions bolted on. `border-e` is the LOGICAL
+    // inline-end edge, so a right-to-left document gets the separator on the side
+    // that faces its content instead of the side that faces the page margin.
+    $surface = $variant === 'flush'
+        ? [
+            'border-e-[length:var(--border-wk-width)]',
+            'border-[var(--color-wk-border)]',
+            // Fills its column. Only the browser showed why this is needed: the edge
+            // is drawn on THIS element, so a nav sized to its content ends the
+            // separator wherever the last item happens to fall — measured 200px of
+            // line in a 340px column, which reads as a rendering fault rather than
+            // as a short list. The card variant must NOT have it, because a card is
+            // supposed to be as tall as its content.
+            'h-full',
+        ]
+        : [
+            'bg-[var(--color-wk-bg-elevated)]',
+            'border-[length:var(--border-wk-width)]',
+            'border-[var(--color-wk-border)]',
+            'rounded-[var(--radius-wk-lg)]',
+        ];
+
     $classes = WireKit::resolveClasses('sidebar', 'base', implode(' ', [
         'flex flex-col',
         'gap-[var(--space-wk-sm)]',
         'p-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-sm)]',
-        'bg-[var(--color-wk-bg-elevated)]',
-        'border-[length:var(--border-wk-width)]',
-        'border-[var(--color-wk-border)]',
-        'rounded-[var(--radius-wk-lg)]',
+        ...$surface,
     ]), $scope);
 
+    $toggle = in_array($toggle, ['start', 'end', 'none'], true) ? $toggle : 'end';
+
     // Collapse toggle button — only rendered (and only styled) for a collapsible
-    // sidebar. Sits at the inline-end so it reads as a chrome control.
-    $collapseBtnClasses = implode(' ', [
-        'self-end inline-flex items-center justify-center shrink-0',
+    // sidebar. Resolvable rather than a local variable: as a local it could not be
+    // themed, moved or replaced, so the only way to restyle the one chrome control
+    // in the component was a CSS rule against `> button:first-child` — a selector
+    // that depends on the vendor's child order and breaks the moment anything is
+    // rendered before it.
+    $collapseBtnClasses = WireKit::resolveClasses('sidebar', 'toggle', implode(' ', [
+        $toggle === 'start' ? 'self-start' : 'self-end',
+        'inline-flex items-center justify-center shrink-0',
         'p-1 rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
@@ -68,7 +116,19 @@
         'transition-colors duration-[var(--transition-wk-duration)] cursor-pointer',
         // In the collapsed rail the button centers with the icons.
         'group-data-[collapsed]/wk-sidebar:self-center',
-    ]);
+    ]), $scope);
+
+    // Three zones — fixed head, scrolling middle, fixed foot — but ONLY when a
+    // head or foot is actually supplied. A sidebar with neither keeps rendering
+    // its slot bare, so nothing about an existing call site changes.
+    //
+    // The zones exist because every developer building this layout writes the same
+    // three lines and makes the same mistake in them: without `min-h-0` on the
+    // middle, a flex item refuses to shrink below its content, so the head and
+    // foot are pushed out of view and scroll away with the list instead of staying
+    // put. The bug looks like the scroll region is missing when in fact it is the
+    // whole column that scrolled.
+    $hasZones = isset($header) || isset($footer);
 @endphp
 
 @if($collapsible)
@@ -89,6 +149,7 @@
         :class="collapsed ? 'w-[3.5rem]' : 'w-[var(--wk-sidebar-w,16rem)]'"
         {{ $attributes->class([$classes, 'group/wk-sidebar transition-[width] duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
     >
+        @if($toggle !== 'none')
         <button
             type="button"
             x-on:click="toggle()"
@@ -100,12 +161,13 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 4.5 11.25 12l7.5 7.5m-7.5-15L3.75 12l7.5 7.5" />
             </svg>
         </button>
-        {{ $slot }}
+        @endif
+        @include('wirekit::components.partials.sidebar-zones')
     </nav>
 @else
     {{-- <nav> carries a default aria-label so AT distinguishes it from the main
          nav; a developer-supplied aria-label / aria-labelledby / `label` prop overrides it. --}}
     <nav {{ $attributes->class([$classes])->merge($navLabelAttrs) }}>
-        {{ $slot }}
+        @include('wirekit::components.partials.sidebar-zones')
     </nav>
 @endif

@@ -76,7 +76,17 @@ final class PhosphorPreset implements IconPreset
             'credit-card' => 'phosphor-credit-card',
 
             // Infrastructure & system — mapped to Phosphor's icon names.
-            'server' => 'phosphor-server',
+            // `hard-drives` (plural), because Phosphor has no `server` at all —
+            // stacked drives is its rack metaphor. The alias pointed at
+            // `phosphor-server` and rendered nothing: Blade Icons throws on an
+            // unknown name, so a page using it broke rather than degraded.
+            //
+            // It survived because this preset's targets were UNCHECKABLE: the
+            // Phosphor package sat in `suggest`, so no test could resolve a single
+            // one of its 57 aliases. Heroicons was in require-dev and had no such
+            // defect. That asymmetry is the actual cause, and it is fixed alongside
+            // this line — see IconPresetTargetTest.
+            'server' => 'phosphor-hard-drives',
             'database' => 'phosphor-database',
             'cloud' => 'phosphor-cloud',
             'shield' => 'phosphor-shield-check', // parity with the base `shield` alias
@@ -91,6 +101,27 @@ final class PhosphorPreset implements IconPreset
             'speaker' => 'phosphor-speaker-high',
             'mute' => 'phosphor-speaker-slash',
             'microphone' => 'phosphor-microphone',
+            // ── Admin navigation ────────────────────────────────────────────
+            // Five concepts every administrative interface has, and none of them
+            // was expressible. An application's main navigation could name two of its
+            // seven items through this vocabulary and reached for the icon
+            // package's OWN glyph names for the rest — `users`, `stack`,
+            // `scales`, `clock-counter-clockwise`.
+            //
+            // Those raw names work, and that is the problem: they resolve because
+            // the full package happens to be installed, which is a dependency on
+            // the icon set rather than a contract with WireKit. When that application
+            // tried to ship only the icons it actually renders, four test files
+            // went red — the restriction removed the coincidence.
+            //
+            // `users` is a separate word from `user` on purpose: managing accounts
+            // is a different menu item from your own profile, and the two sharing
+            // one glyph was forced rather than chosen.
+            'users' => 'phosphor-users',
+            'history' => 'phosphor-clock-counter-clockwise',
+            'legal' => 'phosphor-scales',
+            'badge' => 'phosphor-identification-badge',
+            'layers' => 'phosphor-stack',
         ];
     }
 

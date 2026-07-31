@@ -366,6 +366,22 @@ export default (options = {}) => ({
             window.removeEventListener('resize', this._onScrollThrottledBound);
             this._onScrollThrottledBound = null;
         }
+        // The scroll-settle listeners. Three of them, on two targets, and none
+        // was ever removed — every teardown left a live handler holding this
+        // component alive and recomputing against a spine that is gone. Under
+        // Livewire navigation that accumulates one full set per visit.
+        //
+        // The capture flag has to be repeated here. `removeEventListener`
+        // matches on target, type, listener AND capture; leave it off and the
+        // call is a silent no-op, exactly like the stale-reference trap the
+        // comment above the first install site already documents.
+        if (this._scrollRecompute) {
+            window.removeEventListener('scroll', this._scrollRecompute);
+            document.removeEventListener('scroll', this._scrollRecompute, { capture: true });
+            window.removeEventListener('resize', this._scrollRecompute);
+            this._scrollRecompute = null;
+        }
+
         if (this._sectionEventTimer) clearTimeout(this._sectionEventTimer);
         if (this._collapseTimer) clearTimeout(this._collapseTimer);
     },

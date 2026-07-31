@@ -114,7 +114,14 @@
          under a strict Content-Security-Policy dropping a file did nothing while
          clicking the label still worked. --}}
     x-data="wirekitFileUpload({ removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }} })"
-    {{ $attributes->except('aria-label')->class(['w-full']) }}
+    {{-- `wire:model` is peeled off here and re-attached to the file input below.
+         Livewire decides what a model binding MEANS by reading the element's
+         type: on a `<input type="file">` it takes the upload path, and on
+         anything else it binds a plain value. On this `<div>` the type is
+         undefined, so the binding silently became a value binding reading a
+         `.value` that does not exist — the file list filled in, the server
+         received nothing, and neither side reported an error. --}}
+    {{ $attributes->except('aria-label')->whereDoesntStartWith('wire:model')->class(['w-full']) }}
 >
     <label
         for="{{ $uploadId }}"
@@ -144,6 +151,10 @@
             @if($disabled) disabled @endif
             @if($hasError) aria-invalid="true" @endif
             @if($attributes->get('aria-label')) aria-label="{{ $attributes->get('aria-label') }}" @endif
+            {{-- The binding belongs on the control, not the wrapper — same shape
+                 as segmented-control's hidden input. `whereStartsWith` keeps the
+                 modifiers (`wire:model.live`, `.blur`) attached to it. --}}
+            {{ $attributes->whereStartsWith('wire:model') }}
             aria-describedby="{{ trim(($hint ? $hintId : '') . ' ' . ($hasError ? $errorId : '')) }}"
             @change="handleFiles($event.target.files)"
             class="sr-only"

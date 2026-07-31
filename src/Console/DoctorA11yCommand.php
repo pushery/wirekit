@@ -302,6 +302,11 @@ class DoctorA11yCommand extends Command
             'error' => $totals['fail'] > 0 ? self::FAILURE : self::SUCCESS,
             'warning' => ($totals['fail'] > 0 || $totals['warn'] > 0) ? self::FAILURE : self::SUCCESS,
             'none' => self::SUCCESS,
+            // An unrecognized --fail-on. Without this arm PHP raises UnhandledMatchError,
+            // which reaches the developer as a stack trace rather than as a command telling
+            // them what they mistyped. Exit 1 like every other failure here: this repo uses
+            // FAILURE for invalid input too, never Symfony's INVALID (2).
+            default => $this->reportUnknownFailOn($failOn),
         };
     }
 
@@ -527,5 +532,19 @@ class DoctorA11yCommand extends Command
         }
 
         return $files;
+    }
+
+    /**
+     * Report an unrecognized --fail-on value and return the failure code.
+     *
+     * A separate method only because a `match` arm cannot hold a statement — the alternative
+     * was an inline `tap()`, which reads as cleverness at the exact moment a developer is
+     * trying to find out what they typed wrong.
+     */
+    private function reportUnknownFailOn(string $failOn): int
+    {
+        $this->error("Unknown --fail-on value '{$failOn}'. Expected one of: error, warning, none.");
+
+        return self::FAILURE;
     }
 }

@@ -251,6 +251,11 @@
                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                 class="wk-field {{ $digitClasses }} {{ $stateClasses }}"
                 x-ref="digit{{ $i }}"
+                {{-- Selects the cell on focus, so a filled cell overwrites like an empty
+                     one. Without it, `maxlength="1"` plus a caret after the existing
+                     character means the browser refuses the keystroke, `onInput` never
+                     fires, and correcting a code costs a deletion per cell. --}}
+                @focus="onFocus($event)"
                 @input="onInput($event, {{ $i }})"
                 @keydown="onKeydown($event, {{ $i }})"
                 @paste="onPaste($event)"

@@ -19,10 +19,9 @@ final class SandboxAuditLog
 {
     public static function record(string $outcome, string $component, string $ipAddress, int $violationsCount = 0): void
     {
+        // resolveLogDir() always produces a path; the early return guarded a state it
+        // cannot reach, and PHPStan named it the moment the return type stopped lying.
         $logDir = self::resolveLogDir();
-        if ($logDir === null) {
-            return;
-        }
 
         if (! is_dir($logDir)) {
             @mkdir($logDir, 0755, true);
@@ -70,7 +69,9 @@ final class SandboxAuditLog
         return mb_substr($clean, 0, 200);
     }
 
-    private static function resolveLogDir(): ?string
+    // Never returns null — every branch below produces a path. The nullable return type
+    // invited callers to handle a case that cannot happen.
+    private static function resolveLogDir(): string
     {
         // Use Laravel's storage_path() if available (developer app);
         // otherwise fall back to a sandbox-tests temp dir.

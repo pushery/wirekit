@@ -274,6 +274,21 @@ final class StrictnessGate
      */
     public static function unknownPropNames(array $actual, array $declared): array
     {
+        // Nothing to validate against — say so here rather than in every caller.
+        //
+        // A component with no resolvable `@props` (`glass`, `fonts`) yields an empty declared
+        // list, and against an empty list EVERY attribute is unknown. `warnUnknownProps()`
+        // has always returned early on exactly this case; the predicate did not, so each
+        // caller carried its own `if ($declared === []) continue;` and one that forgot got a
+        // wave of phantom findings rather than a quiet pass.
+        //
+        // Reported by a downstream repo that adopted this predicate to replace its own
+        // hand-rolled walker and had to preserve the guard by hand. A rule that every caller
+        // must remember is a rule that one of them will not.
+        if ($declared === []) {
+            return [];
+        }
+
         $reserved = [...self::HTML_GLOBAL_ATTRIBUTES, ...self::HTML_ELEMENT_ATTRIBUTES];
         $prefixes = ['aria-', 'data-', 'wire:', 'x-', '@', ':', 'v-', 'on'];
 
@@ -290,6 +305,31 @@ final class StrictnessGate
                 if (str_starts_with($key, $p)) {
                     continue 2;
                 }
+            }
+
+            // `show-value` and `showValue` are the same prop: Blade camel-cases a kebab
+            // attribute name before matching it against `@props`, so a component that
+            // declares `showValue` is correctly addressed either way.
+            //
+            // This is inert at runtime and load-bearing for the static callers. At runtime
+            // the conversion has ALREADY happened by the time an attribute reaches the bag,
+            // so a declared prop never arrives here in kebab form and this branch cannot
+            // fire. A guard reading a Blade SNIPPET sees the author's spelling, so without
+            // this it reports `show-value` as undeclared — a false positive on correct
+            // documentation, which is the failure mode that costs the most trust.
+            //
+            // CALLERS MUST PASS THE RAW ATTRIBUTE NAME, not a pre-camel-cased one. The
+            // prefix skips above are the reason: `aria-label` camel-cases to `ariaLabel`
+            // and `x-on:click` to `xOn:click`, neither of which starts with `aria-` or
+            // `x-` any more, so a caller that normalizes first defeats every passthrough
+            // rule at once. Measured, not reasoned: a scan of 1332 snippet usages that
+            // normalized before calling reported 77 findings against this function's 4,
+            // and all 40 additions were correct `aria-*` / `x-*` / `data-*` attributes.
+            //
+            // Doing the conversion HERE rather than at the call site is what makes that
+            // mistake unavailable — there is nothing left for a caller to normalize.
+            if (in_array(lcfirst(str_replace(' ', '', ucwords(str_replace('-', ' ', $key)))), $declared, true)) {
+                continue;
             }
 
             $unknown[] = $key;

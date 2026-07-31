@@ -213,9 +213,20 @@ final class Chart extends Component
             // Resolved via the `wirekit::internal.chart-disabled` view name —
             // a purely internal render target, NOT exposed as a Blade
             // component (`<x-wirekit::chart-disabled>` does not exist).
-            return view('wirekit::internal.chart-disabled');
+            /** @var view-string $disabled */
+            $disabled = 'wirekit::internal.chart-disabled';
+
+            return view($disabled);
         }
 
-        return view('wirekit::components.chart');
+        // Annotated rather than left bare: larastan verifies view names against the views it
+        // can DISCOVER, and a package's own namespaced views are not discoverable the same way
+        // in every environment — this passed locally and failed in CI, which is the environment
+        // that matters. The names are constants and correct; the annotation says so once
+        // instead of the check guessing differently per machine.
+        /** @var view-string $chart */
+        $chart = 'wirekit::components.chart';
+
+        return view($chart);
     }
 }

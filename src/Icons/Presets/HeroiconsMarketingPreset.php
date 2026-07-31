@@ -60,7 +60,12 @@ final class HeroiconsMarketingPreset implements IconPreset
             // Audience
             // (`globe` moved to the base preset in v2.6.4; `live` stays here —
             // no clean universal-core equivalent across icon libraries.)
-            'users' => 'heroicon-m-users',
+            // `users` moved to the BASE preset in v2.23.0 and is removed here, so a
+            // stacked setup does not define it twice. Same glyph either way
+            // (`heroicon-m-users`), so nothing a caller renders changes — this is
+            // the same promotion `copy`, `globe`, `book` and `lightbulb` went
+            // through in v2.6.4, for the same reason: managing accounts is not a
+            // marketing concept, it is what every signed-in application has.
             'user-group' => 'heroicon-m-user-group',
 
             // Developer / product

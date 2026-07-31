@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.23.0 — MIT License
+ * WireKit CSS v2.24.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -649,6 +649,45 @@
     background: radial-gradient(farthest-side at 50% 100%, var(--wk-scroll-shadow-color), transparent);
 }
 
+/* The same affordance on the inline axis, for a bar that scrolls sideways —
+   a tab strip, a chip row, a toolbar.
+
+   These exist because `fade` is not a substitute. That mask is STATIC: it dims
+   the edge whether or not anything follows, so at a strip's end the last item
+   stays greyed out as if it were unreachable. The overlay shadows are driven by
+   sentinels through an IntersectionObserver, so they appear exactly when there
+   is more to scroll toward — and that observer never cared which axis it was
+   watching. Only the names and the CSS were pinned to one.
+
+   `start` / `end` rather than `left` / `right`: these follow the writing
+   direction, so a right-to-left interface gets the affordance on the side its
+   content actually continues toward. `inset-inline-start` resolves that per
+   direction; hardcoded sides would be correct in one and backwards in the other.
+
+   Deliberately the SAME two custom properties as the block-axis pair, so a
+   theme tunes both axes in one place. Splitting them is how one axis ends up
+   restyled and the other left behind. */
+.wk-scroll-shadow-start,
+.wk-scroll-shadow-end {
+    --wk-scroll-shadow-color: color-mix(in oklab, var(--color-wk-text) 12%, transparent);
+    --wk-scroll-shadow-size: 0.875rem;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: var(--wk-scroll-shadow-size);
+    pointer-events: none;
+}
+
+.wk-scroll-shadow-start {
+    inset-inline-start: 0;
+    background: radial-gradient(farthest-side at 0 50%, var(--wk-scroll-shadow-color), transparent);
+}
+
+.wk-scroll-shadow-end {
+    inset-inline-end: 0;
+    background: radial-gradient(farthest-side at 100% 50%, var(--wk-scroll-shadow-color), transparent);
+}
+
 /* ─── Hero / CTA muted-text-on-dark contrast fix ───────────── */
 /* When a hero or cta runs variant="dark" / "accent", a nested
    <x-wirekit::text variant="muted"> would otherwise read a --color-wk-text-muted
@@ -793,7 +832,21 @@
 
        Not clipped: the host must not carry `overflow: hidden`, which is why this
        sets `position: relative` on the host rather than assuming one. */
-    .wk-touch-target {
+    /* Only a STATIC host gets `position: relative`.
+       The expander needs *some* positioned ancestor, and an element that is
+       already `fixed`, `absolute` or `sticky` is one — overwriting it does not
+       help the hit area and does break the layout. This rule is unlayered while
+       Tailwind's position utilities live in `@layer utilities`, and an unlayered
+       declaration wins over a layered one no matter the specificity or the order
+       the files are imported in. So `.fixed` lost, silently.
+       What that cost: `scroll-to-top` is fixed by design, which is what pins it
+       to the viewport corner. With the class applied it became `relative`, its
+       `right`/`bottom` turned into flow offsets, and the button landed at
+       `left: -16` — off-screen, on `pointer: coarse` ONLY, which is to say on
+       exactly the devices the class exists for.
+       The `:not()` list is complete for the audience: WireKit requires Tailwind,
+       and an INLINE `position` already beats this rule on its own. */
+    .wk-touch-target:not(.fixed):not(.absolute):not(.sticky) {
         position: relative;
     }
 
@@ -1729,6 +1782,14 @@
 :root[data-reduce-motion="reduce"] [class*=" wk-"],
 :root[data-reduce-motion="reduce"] [class^="wk-"] *,
 :root[data-reduce-motion="reduce"] [class*=" wk-"] *,
+/* Attribute-selected animations reach the clamp only if they are named here. The
+   optimistic pending outline is the first animation in this file selected purely by
+   attributes — no `wk-` class is involved — so every class-token branch above misses it and
+   an application that says "reduce" kept getting a breathing outline. The information (the
+   dashed outline) is unaffected: only the breathing stops, which is the same split the
+   media-query half makes. */
+:root[data-reduce-motion="reduce"] [data-wk-optimistic] [aria-busy="true"],
+:root[data-reduce-motion="reduce"] [data-wk-optimistic] .sr-only[aria-busy="true"] + *,
 :root[data-reduce-motion="reduce"] [x-transition\:enter],
 :root[data-reduce-motion="reduce"] [x-transition\:leave],
 :root[data-reduce-motion="reduce"] [x-transition\.opacity],

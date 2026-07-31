@@ -59,6 +59,31 @@ export default function wirekitOtpInput(config = {}) {
             return this._alphabet.includes(this._normalize(char));
         },
 
+        /**
+         * Select a cell's content when it takes focus, so a filled cell behaves like
+         * an empty one.
+         *
+         * Without this, correcting a code costs a deletion per cell — measured, not
+         * inferred: with `123456` in place, clicking cell 0 leaves the value `"1"` with
+         * `selectionStart` and `selectionEnd` both at 1, i.e. the caret AFTER the
+         * character and nothing selected. `maxlength="1"` is already satisfied, so the
+         * browser refuses the keystroke, `onInput` never fires, and the advance below
+         * never runs. Typing does nothing at all. The reader has to backspace every cell
+         * before they can retype it.
+         *
+         * Selecting on FOCUS rather than on click covers both ways in: a pointer, and the
+         * programmatic `next.focus()` that carries typing across the row. So a corrected
+         * code can be typed straight through from the left, which is what the control
+         * looks like it should do.
+         *
+         * `select()` and not `setSelectionRange(0, 1)`: an empty cell has nothing to
+         * select and `select()` is a no-op there, where a fixed range would move a caret
+         * that was already in the only place it can be.
+         */
+        onFocus(event) {
+            event.target.select();
+        },
+
         onInput(event, index) {
             const raw = event.target.value;
 

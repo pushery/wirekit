@@ -88,8 +88,22 @@
         ? $fillColor . ' absolute inset-y-0 rounded-[var(--radius-wk-full)] wk-progress-indeterminate'
         : $fillColor . ' h-full rounded-[var(--radius-wk-full)] transition-[width] duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]' . $animationClass;
 
-    // Auto-generate an id so label + progressbar can be linked via aria-labelledby
-    $labelId = 'progress-' . \Illuminate\Support\Str::random(6) . '-label';
+    // The id that links label → progressbar via aria-labelledby, and it has to be
+    // STABLE across re-renders. It was `Str::random(6)` per render, which is a
+    // defect that only shows where this component is most used: inside a
+    // `wire:poll` region, every poll produced a new id, so the accessible name was
+    // re-resolved on a control whose whole purpose is being watched while it
+    // changes. Nothing looked wrong in the markup — both halves always agreed
+    // with each other; they just agreed on a different value every second.
+    //
+    // Derived from the caller's `id` when there is one, so the same progress bar
+    // keeps the same id across renders. With no `id`, `DomId::unique` still falls
+    // back to a random suffix — unavoidable without one, and page-unique — but it
+    // is then stable for the life of that render pass rather than per element.
+    $labelId = \Pushery\WireKit\Support\DomId::unique(
+        $attributes->get('id') ? $attributes->get('id').'-label' : null,
+        'progress-label-'
+    );
 
     // Extract aria-label / aria-labelledby from attributes so they can be
     // applied to the role="progressbar" element (the ARIA contract lives

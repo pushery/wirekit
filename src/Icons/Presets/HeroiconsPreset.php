@@ -97,6 +97,27 @@ final class HeroiconsPreset implements IconPreset
             'speaker' => 'heroicon-m-speaker-wave',
             'mute' => 'heroicon-m-speaker-x-mark',
             'microphone' => 'heroicon-m-microphone',
+            // ── Admin navigation ────────────────────────────────────────────
+            // Five concepts every administrative interface has, and none of them
+            // was expressible. An application's main navigation could name two of its
+            // seven items through this vocabulary and reached for the icon
+            // package's OWN glyph names for the rest — `users`, `stack`,
+            // `scales`, `clock-counter-clockwise`.
+            //
+            // Those raw names work, and that is the problem: they resolve because
+            // the full package happens to be installed, which is a dependency on
+            // the icon set rather than a contract with WireKit. When that application
+            // tried to ship only the icons it actually renders, four test files
+            // went red — the restriction removed the coincidence.
+            //
+            // `users` is a separate word from `user` on purpose: managing accounts
+            // is a different menu item from your own profile, and the two sharing
+            // one glyph was forced rather than chosen.
+            'users' => 'heroicon-m-users',
+            'history' => 'heroicon-m-clock',
+            'legal' => 'heroicon-m-scale',
+            'badge' => 'heroicon-m-identification',
+            'layers' => 'heroicon-m-square-3-stack-3d',
         ];
     }
 

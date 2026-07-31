@@ -366,16 +366,22 @@ class WireKitServiceProvider extends ServiceProvider
                     "csp" => "wirekit-alpine.csp.js",
                     default => "wirekit.js",
                 };
-                $__wk_published = public_path("vendor/wirekit/" . $__wk_file);
-                $__wk_dist = \Pushery\WireKit\WireKitServiceProvider::distPath($__wk_file);
-                $__wk_useRoute = ! file_exists($__wk_published)
-                    || ($__wk_dist && filemtime($__wk_dist) > filemtime($__wk_published));
-                if ($__wk_useRoute) {
-                    $__wk_v = $__wk_dist ? filemtime($__wk_dist) : time();
-                    echo \'<script\' . $__wk_nonceAttr . \' src="\' . url("/wirekit/" . $__wk_file) . \'?v=\' . $__wk_v . \'" defer></script>\' . "\n";
-                } else {
-                    $__wk_v = filemtime($__wk_published);
-                    echo \'<script\' . $__wk_nonceAttr . \' src="\' . asset("vendor/wirekit/" . $__wk_file) . \'?v=\' . $__wk_v . \'" defer></script>\' . "\n";
+                echo \Pushery\WireKit\WireKitServiceProvider::scriptTag($__wk_file, $__wk_nonceAttr);
+
+                // The ApexCharts adapter, opt-in via config.
+                //
+                // It is a SEPARATE bundle so an app that draws no charts pays no bytes, and
+                // that is worth keeping — but the failure when it is missing was brutal and
+                // silent: `<x-wirekit::chart library="apexcharts">` with window.ApexCharts
+                // correctly loaded throws "wirekitApexChart is not defined" in the console,
+                // the page renders normally, and only the chart is absent. No build error, no
+                // server-side signal. Every developer who hit it had to discover that a second
+                // file existed and hand-write a script tag against a route whose path is not
+                // documented anywhere they were looking.
+                //
+                // One config line now emits it in the right place and order instead.
+                if (config("wirekit.scripts.apex", false)) {
+                    echo \Pushery\WireKit\WireKitServiceProvider::scriptTag("wirekit-apex.js", $__wk_nonceAttr);
                 }
 
                 // Force Livewire to inject its asset stack on this page even
@@ -513,6 +519,38 @@ class WireKitServiceProvider extends ServiceProvider
         $path = __DIR__.'/../dist/'.$file;
 
         return file_exists($path) ? $path : null;
+    }
+
+    /**
+     * Build one `<script>` tag for a bundle, published copy or package route.
+     *
+     * Extracted from the `@wirekitScripts` directive when the ApexCharts adapter became a
+     * second, optional tag. Duplicating the published-vs-route decision and the cache-busting
+     * timestamp would have meant two copies of a rule that is easy to get subtly wrong — the
+     * staleness check exists so a developer who published assets once and then upgraded the
+     * package does not silently keep serving the old file.
+     *
+     * @param  string  $file  bundle filename, e.g. `wirekit.js`
+     * @param  string  $nonceAttr  pre-escaped ` nonce="…"` or an empty string
+     */
+    public static function scriptTag(string $file, string $nonceAttr = ''): string
+    {
+        $published = public_path('vendor/wirekit/'.$file);
+        $dist = self::distPath($file);
+
+        // Prefer the package's own copy whenever the published one is missing OR older: an
+        // upgraded package with stale published assets is the case that fails silently.
+        $useRoute = ! file_exists($published)
+            || ($dist && filemtime($dist) > filemtime($published));
+
+        if ($useRoute) {
+            $version = $dist ? filemtime($dist) : time();
+            $src = url('/wirekit/'.$file).'?v='.$version;
+        } else {
+            $src = asset('vendor/wirekit/'.$file).'?v='.filemtime($published);
+        }
+
+        return '<script'.$nonceAttr.' src="'.$src.'" defer></script>'."\n";
     }
 
     /**

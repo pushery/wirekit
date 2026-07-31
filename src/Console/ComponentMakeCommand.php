@@ -198,7 +198,8 @@ class ComponentMakeCommand extends Command
      */
     private function knownComponentNames(): array
     {
-        return array_values(array_keys(ComponentRegistry::all()));
+        // array_keys already returns a list.
+        return array_keys(ComponentRegistry::all());
     }
 
     /**

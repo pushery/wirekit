@@ -59,7 +59,6 @@ class VerifyInstallationCommand extends Command
     private int $failed = 0;
 
     /** @var string[]|null Memoized layout file paths (used by multiple checks) */
-    private ?array $layoutFiles = null;
 
     /** @var string[]|null Memoized all blade file paths */
     private ?array $allBladeFiles = null;
@@ -343,9 +342,26 @@ class VerifyInstallationCommand extends Command
      * between "my config lists everything" and "my config lists what existed in
      * February".
      *
-     * Deliberately a WARN and deliberately top-level-only: re-publishing
-     * overwrites the developer's edits, so this is information, not an
-     * instruction, and listing every nested component key would bury the signal.
+     * Deliberately a WARN: re-publishing overwrites the developer's edits, so this
+     * is information, not an instruction.
+     *
+     * It used to be top-level-only as well, with the same reasoning — that listing
+     * every nested key would bury the signal. The reasoning was sound and the
+     * conclusion was not, because the check kept its PASS line: of 186 leaves in
+     * the shipped config it compared exactly TWO, and then told the developer
+     * their file "covers every option this version offers". Reconstructed against
+     * real tags: a config published at v2.20.0 and checked against v2.22.0 prints
+     * that line while `a11y.motion_attribute` is missing from the file.
+     *
+     * The damage is pure invisibility — the runtime still resolves the missing
+     * keys, since the merge is recursive — but an application cannot configure
+     * what its own config file does not show, and it was explicitly told there
+     * was nothing to see.
+     *
+     * So the comparison is now over flattened leaf paths, and the output is
+     * grouped by owning section so 184 findings read as a handful of lines
+     * instead of a wall. Burying the signal was the right fear; the answer is to
+     * summarize it, not to stop measuring.
      */
     private function checkConfigDrift(): void
     {
@@ -377,7 +393,16 @@ class VerifyInstallationCommand extends Command
             );
         }
 
-        if ($missingSections === [] && $missingComponents === []) {
+        // Every option, not just the two scalars at the top. A leaf missing inside
+        // a section the file already declares was invisible to the old comparison,
+        // and that is the common case: sections are added rarely, options within
+        // them every release.
+        $missingLeaves = array_diff(
+            array_keys(self::flattenConfig($package)),
+            array_keys(self::flattenConfig($published))
+        );
+
+        if ($missingSections === [] && $missingComponents === [] && $missingLeaves === []) {
             $this->reportPass('published config covers every option this version offers');
 
             return;
@@ -395,10 +420,63 @@ class VerifyInstallationCommand extends Command
                 .(count($missingComponents) > 5 ? ', …' : '').')');
         }
 
+        // Grouped by the section that owns them. An ungrouped list of 184 paths is
+        // the outcome the old top-level-only scope was avoiding, and it would be
+        // just as useless as measuring nothing.
+        if ($missingLeaves !== []) {
+            $byOwner = [];
+
+            foreach ($missingLeaves as $path) {
+                $owner = str_contains($path, '.') ? substr($path, 0, strrpos($path, '.')) : $path;
+                $byOwner[$owner] = ($byOwner[$owner] ?? 0) + 1;
+            }
+
+            arsort($byOwner);
+
+            $this->line('  Missing options: '.count($missingLeaves).' across '.count($byOwner).' key(s)');
+
+            foreach (array_slice($byOwner, 0, 8, true) as $owner => $count) {
+                $this->line('    '.$owner.': '.$count.($count === 1 ? ' option' : ' options'));
+            }
+
+            if (count($byOwner) > 8) {
+                $this->line('    … and '.(count($byOwner) - 8).' more');
+            }
+        }
+
         $this->line('  They still resolve — WireKit merges recursively — but your file');
         $this->line('  does not show them. Re-publish to see the full surface (this');
         $this->line('  OVERWRITES your edits, so diff first):');
         $this->line('  php artisan vendor:publish --tag=wirekit-config --force');
+    }
+
+    /**
+     * Flatten a config array to dotted leaf paths.
+     *
+     * A LEAF is any non-array value, plus an empty array — an empty array is a real, settable
+     * option (`'presets' => []`), and treating it as "nothing below here" would drop it from
+     * the comparison silently.
+     *
+     * @param  array<string, mixed>  $config
+     * @return array<string, mixed> dotted path => value
+     */
+    private static function flattenConfig(array $config, string $prefix = ''): array
+    {
+        $flat = [];
+
+        foreach ($config as $key => $value) {
+            $path = $prefix === '' ? (string) $key : $prefix.'.'.$key;
+
+            if (is_array($value) && $value !== []) {
+                $flat += self::flattenConfig($value, $path);
+
+                continue;
+            }
+
+            $flat[$path] = $value;
+        }
+
+        return $flat;
     }
 
     /**
@@ -1253,48 +1331,6 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Find Blade layout files in common locations.
-     * Laravel apps use various conventions for layout placement.
-     * Results are memoized because multiple checks need layout files.
-     *
-     * @return string[]
-     */
-    private function findLayoutFiles(): array
-    {
-        if ($this->layoutFiles !== null) {
-            return $this->layoutFiles;
-        }
-
-        $paths = [
-            // Traditional layout directory
-            resource_path('views/layouts'),
-            // Laravel 11+ component layout convention
-            resource_path('views/components/layouts'),
-            // Livewire layout directory
-            resource_path('views/livewire/layouts'),
-        ];
-
-        $files = [];
-
-        foreach ($paths as $path) {
-            if (is_dir($path)) {
-                $found = File::glob("{$path}/*.blade.php");
-                $files = array_merge($files, $found);
-            }
-        }
-
-        // Also check for single-file layout component
-        $singleLayout = resource_path('views/components/layout.blade.php');
-        if (file_exists($singleLayout)) {
-            $files[] = $singleLayout;
-        }
-
-        $this->layoutFiles = $files;
-
-        return $files;
-    }
-
-    /**
      * Find ALL Blade files in resources/views/ recursively.
      * Scans beyond layout directories to catch directives in any template.
      *
@@ -1344,11 +1380,16 @@ class VerifyInstallationCommand extends Command
     {
         $lockPath ??= base_path('composer.lock');
 
-        if (! file_exists($lockPath)) {
+        // `file_exists` is true for a DIRECTORY and for a file the process cannot read, and in
+        // both cases `file_get_contents` returns false. Under strict_types that is a TypeError
+        // inside `wirekit:verify` — a fatal on the machine of the person running the doctor to
+        // find out what is wrong. The five other json_decode sites in this file already cast;
+        // this one did not.
+        if (! is_file($lockPath) || ! is_readable($lockPath)) {
             return 0;
         }
 
-        $lock = json_decode(file_get_contents($lockPath), true);
+        $lock = json_decode((string) file_get_contents($lockPath), true);
         if (! is_array($lock)) {
             return 0;
         }
