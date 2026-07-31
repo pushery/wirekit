@@ -241,7 +241,8 @@ class ShowComponentCommand extends Command
         foreach ($tagMatches[1] as $i => $attrMatch) {
             $totalUsages++;
             $attrBlock = $attrMatch[0];
-            if ($attrBlock === '' || $attrBlock === null) {
+            // `$attrBlock` is a non-empty-string by this point; the null arm was dead.
+            if ($attrBlock === '') {
                 continue;
             }
             $offset = $tagMatches[0][$i][1];

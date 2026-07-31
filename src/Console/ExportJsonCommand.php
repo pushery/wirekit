@@ -138,6 +138,15 @@ class ExportJsonCommand extends Command
 
         $document = [
             'version' => $this->packageVersion(),
+            // The newest RELEASED version, which is a different question from
+            // `version` above: that one is the build installed here, and on a
+            // deployment pinned to a development branch it is literally that branch
+            // name. So it cannot be compared against a version a page claims to
+            // show. This field is the comparable half — it exists because a
+            // documentation page served a changelog frozen four minors back and no
+            // artifact anywhere carried both sides of a comparison that would have
+            // said so out loud.
+            'released_version' => VersionResolver::released(),
             'generated_at' => date('c'),
             'components' => $components,
         ];

@@ -76,7 +76,30 @@
         {{ $slot }}
     </div>
 
-    {{-- Tooltip panel — rendered via x-teleport to body for proper stacking --}}
+    {{-- Tooltip panel, teleported to <body>.
+
+         The comment above this block claimed the teleport for a long time while
+         the markup had none, and the gap was expensive: a tooltip inside a
+         `<x-wirekit::scroll-area fade="…">` was CUT OFF at the scroll area's
+         edge. The panel is `position: fixed` and so escapes overflow clipping —
+         but `fade` works by `mask-image`, and a mask applies to the whole
+         rendered subtree, fixed descendants included. Measured 18.5 px of the
+         panel missing above the bar.
+
+         The stylesheet already carried an escape hatch for this
+         (`.wk-scroll-fade…:focus-within { mask-image: none }`) and it could
+         never fire here: a tooltip opens on HOVER, and focus-within does not
+         see a hover.
+
+         Teleporting fixes it at the root rather than widening that hatch — the
+         panel leaves the masked subtree entirely, which also settles every
+         other stacking-context case (a clipping card, a transformed ancestor,
+         an `isolation: isolate` wrapper) in one move.
+
+         `$refs` survive the teleport: Alpine registers the ref in the ORIGINAL
+         scope, so the positioning code that reads `this.$refs.tooltip` is
+         unaffected. --}}
+    <template x-teleport="body">
     <div
         x-ref="tooltip"
         x-show="open"
@@ -98,4 +121,5 @@
             {{ $text }}
         @endif
     </div>
+    </template>
 </div>

@@ -10,6 +10,97 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.24.0] — 2026-07-31
+
+**Minor — the full-bleed sidebar column, two smaller additions, and five fixes.** Every addition defaults to what the library already did, so an unchanged call site renders exactly as before; opting in is what changes shape, and it changes it on purpose. The fixes are the quieter half — each one makes something that already looked fine actually be fine.
+
+### Added
+
+- **The [sidebar](https://docs.wirekit.app/components/sidebar) can be a full-bleed column, and the [application shell](https://docs.wirekit.app/components/app-shell) can seat it against its own edge.** The most common administrative layout — sidebar running the full height, topbar beginning beside it rather than above — could not be expressed, and the reason was the same in five separate places: the thing that needed changing existed only as a literal inside a template, where no call site could reach it.
+
+  Five props, all defaulting to today's behavior:
+
+  - `app-shell` `sidebar-inset` — `false` meets the shell's top and inline-start edge with nothing between them.
+  - `app-shell` `header-placement="content"` — the topbar renders inside the content column, so the sidebar runs the full height.
+  - `sidebar` `variant="flush"` — no radius, no surrounding border, surface from the host, one logical inline-end edge. Two variants rather than a set of booleans, because the in-between states are the broken-looking ones: a rounded panel without a border reads as a rendering fault, and a full-bleed column with a radius shows a sliver of page at each corner.
+  - `sidebar` `header` / `footer` slots — the three-zone column, and only when one is supplied, so no existing call site changes.
+  - `sidebar` `toggle="start|end|none"` — where the collapse control sits, or that there is none.
+
+  `toggle="none"` needed more than leaving the button out. Alpine merges scope downwards only, so a trigger in your topbar is not inside the sidebar's tree and can never call its `toggle()`. The state stays with the sidebar and the outside reaches it through a `wirekit:sidebar:toggle` window event — with no id it addresses every sidebar, with an id only that one. The sidebar answers with `wirekit:sidebar:toggled` **on init as well as on change**, because a button outside it has to render `aria-expanded` from its first paint and cannot read the sidebar's state to do so.
+
+- **The machine-readable manifests advertise the newest RELEASED version.** `components.json`, `api-map.json` and `blocks.json` each carry a `released_version` field — a bare version string, so a tool that serves or mirrors this package can compare what it is showing against what the package claims.
+
+  It is a separate field from `version`, deliberately. `version` answers "which build is installed here", which on a branch pin is a branch pseudo-version rather than a release; a check built on it would compare a branch name to a release number and stay green forever. Two fields that both read as "the version" would be the hazard, so the new one says which question it answers.
+
+- **[Slider](https://docs.wirekit.app/components/slider#marks-that-carry-a-meaning) tick marks can carry a meaning, not just a label.** A third `marks` shape takes `['label' => …, 'description' => …]` per position, for sliders whose steps stand for something the label cannot say — five positions from −2 to +2, each a policy.
+
+  Without it the alternative is worse than it sounds: a reader who wants to know what a position means has to **move the slider to find out**, changing the very thing they were still deciding about.
+
+  The description reaches a reader two ways, because either alone leaves a gap. It becomes the tick's `title`, which is a pointer affordance — and there is no hover on touch, so that alone would hide the meaning from the readers most likely to be guessing at it. So it is also **what the slider announces**: moving through the positions reads out the meaning of the one you are on instead of the bare number, one at a time rather than every mark at once. The label is what you see; the description is what the position means.
+
+  Both older shapes render exactly as before — no `title`, no description — so this is opt-in per mark.
+
+- **Five icon aliases for concepts every administrative interface has:** `users`, `history`, `legal`, `badge` and `layers`. Available on all four presets, so an alias resolves whichever one is configured.
+
+  These were missing, and the gap did not present as a gap: an application reaching for "user management" or "audit log" found no word for it and used the icon package's own glyph name instead. That works — and only because the full package happens to be installed, which is a dependency on the icon set rather than a contract with this library. One application discovered that when it tried to ship only the icons it renders: the restriction removed the coincidence and four of its test files went red.
+
+  `users` is a separate word from `user` on purpose. Managing accounts is a different menu item from your own profile, and the two sharing one glyph was forced rather than chosen. It also moves out of the marketing extension into the base set — same glyph, so nothing rendered changes.
+
+- **[reading-toc](https://docs.wirekit.app/components/reading) works inside your own scroll region.** Its jump moved the page, which does nothing in a shell that scrolls an inner container instead — a fixed header with the content scrolling beneath it. Clicking a heading simply did not move, and nothing said why: the page had nowhere to go, and not going there raises no error. It now finds the container that actually scrolls, with no prop to set.
+
+- **A collapsed [sidebar](https://docs.wirekit.app/components/sidebar) group can still say something is waiting.** `sidebar.collapsible` now takes a `trailing` slot on its trigger. A group is collapsed to keep the list short, and the counters on the items inside went with it — with `persist`, permanently: collapse once and the numbers are never seen again without going to look. Alpine's `open` is in scope, so `x-show="! open"` shows it only while the group is closed, which is usually what you want. A slot rather than a `badge` prop on purpose: a count is one answer and a silent dot is another, and a total across several queues asserts an urgency the number cannot know.
+
+- **Scroll shadows on the inline axis, for a bar that scrolls sideways.** `wk-scroll-shadow-start` and `wk-scroll-shadow-end` are the horizontal counterparts to the existing top/bottom pair — a tab strip, a chip row or a toolbar can now show the same "there is more this way" cue. They share the block-axis pair's two variables, so a theme tunes both axes in one place, and they are named for the writing direction rather than for left and right, so a right-to-left interface gets the cue on the side its content continues toward. `<x-wirekit::sticky-panel>` drives them from the same observer, which never cared which axis it was watching. This is not what `fade` does: that mask is static and dims the edge even where nothing follows, which leaves the last item of a strip looking disabled.
+
+### Fixed
+
+- **`wirekit:verify` no longer reports a completeness it never checked.** Its config-drift check compared section and component names — two of the 186 options the config actually has — and then said your published file "covers every option this version offers". A file published one minor earlier could be missing options inside sections it already had, and the command confirmed it was current. The comparison now covers every option, grouped by the section that owns them so the output stays readable. **Expect a longer warning the first time you run it** if you have not re-published in a while: the missing options were always there, only unmentioned. They still resolve at runtime — nothing behaves differently — but your file now shows you what you can set.
+
+- **`WireKit::defaults()` now changes what renders.** The documented way to set component defaults from PHP stored its values and nothing read them: the call succeeded, and every component rendered as though it had never been made. The repair is not a new resolution path — components already read their defaults from `wirekit.components.*` config, so there were two mechanisms for one job and only one was connected. The call feeds that config, which wires it for every component at once and keeps a single order of precedence. An explicit attribute at the call site still wins, as a default should.
+
+- **A [tooltip](https://docs.wirekit.app/components/tooltip) is no longer cut off by whatever it happens to sit inside.** Its panel now renders on the `<body>` rather than beside its trigger. The case that surfaced it was a tooltip inside a [scroll area](https://docs.wirekit.app/components/scroll-area) with `fade`, where roughly 18 px of the panel was missing: the panel is fixed-positioned and so escapes overflow clipping, but `fade` works with a mask, and a mask applies to everything an element renders — fixed descendants included. Leaving the subtree settles that case and every relative of it at once: a clipping card, a transformed ancestor, an isolated stacking context.
+
+- **`wk-touch-target` no longer moves an element that positions itself, and [scroll-to-top](https://docs.wirekit.app/components/scroll-to-top) finally gets the 44 px target.** The class guarantees the enlarged tap area a positioned ancestor, and did so by setting `position: relative` unconditionally. WireKit's stylesheet is unlayered while Tailwind's position utilities are not, and an unlayered declaration wins over a layered one whatever the specificity or import order — so a `fixed` element became `relative`, its `right`/`bottom` turned into flow offsets, and it moved. Scroll-to-top is fixed by design, so applying the class pushed it off the left edge of the screen; and because the rule is inside `@media (pointer: coarse)`, this happened only on the devices the class exists for. A host that already declares its position now keeps it, and scroll-to-top carries the class itself — it had been left at a 40 px target while sibling controls got 44.
+
+- **`@wirekitScripts` can load the ApexCharts adapter, so a chart no longer goes missing without saying why.** The adapter is a separate bundle — an app that draws no charts should ship no chart code — but leaving it out was punishing: the page rendered, the console said `wirekitApexChart is not defined`, and only the chart was absent. Nothing failed at build time and nothing appeared server-side, so the developer had to work out that a second file existed and hand-write a tag against a route path documented nowhere they were looking. Set `scripts.apex` to `true` in `config/wirekit.php` and both tags are emitted, in the order the adapter needs, with the same cache-busting and CSP nonce as the main bundle. It stays off by default, because that is the point of the split.
+
+- **`wire:model` on [file-upload](https://docs.wirekit.app/components/file-upload) now reaches the file input, so Livewire uploads work.** The binding was applied to the component's wrapping element, and Livewire decides what a model binding means by reading the element's type: on a file input it takes the upload path, on anything else it binds a plain value. A wrapper has no type, so the upload path was never entered — and the failure was quiet in the worst way, because the component's own list showed the chosen file's name and size. The field looked filled while the server had nothing, and submitting failed with "the field is required". Modifiers (`wire:model.live`, `.blur`) travel with the binding; `wire:key` and `wire:ignore` stay on the wrapper, where they describe what they are meant to describe.
+- **An [ApexCharts](https://docs.wirekit.app/components/chart) chart no longer puts keyboard focus somewhere screen readers are told to ignore.** The rendered chart carries the library's own tab stops — on the SVG itself and on each legend entry — while WireKit mounts it inside an `aria-hidden` container, because the chart's accessible name and `role="img"` belong to the element around it. Tabbing therefore landed inside a region assistive technology skips: the focus ring moved, nothing was announced, and there was nothing to operate once you arrived (the toolbar and zoom are off by default). Those tab stops are now removed — but only while the container is hidden, so a chart you deliberately expose keeps its focusable SVG. The tab stops are removed at the source rather than deflected by a handler that pushed focus back out as it arrived — one listener less per chart, and the behavior no longer depends on that handler running in time.
+
+- **A sortable [table](https://docs.wirekit.app/components/table) header's click target was its label, not its cell.** With `sortAction`, the label and sort indicator now sit in a full-width button that fills the header cell, so the whole cell is the target rather than the few characters of text — it was under the 24 px minimum that WCAG 2.5.8 asks for, on a control people click repeatedly while scanning a table.
+
+  Two details you may notice. The cell's padding moved onto the button rather than being added to it: an inline-flex child grows the line box, so keeping both made the row 52 px where 36 was expected. And the focus ring is inset, because a ring drawn outside a button that fills its cell is clipped by the cell.
+
+- **A filled [one-time code](https://docs.wirekit.app/components/otp-input) can be corrected by
+  typing from the left.** Every cell had to be clicked and cleared individually first, which is
+  what a row of single-character inputs does by default: `maxlength="1"` is already satisfied by
+  the character in the cell, so with the caret after it the browser refuses the keystroke —
+  nothing happens, and no advance to the next cell happens either. Focusing a cell now selects
+  its character, so typing replaces it and moves on exactly as if the row were empty. Clicking
+  and tabbing both, and pasting over a filled row is unchanged.
+
+- **An icon alias pointed at an icon that does not exist.** `server` resolved to a Phosphor glyph the package has never shipped, and unknown icon names throw rather than degrade — so a page using it broke. It now points at Phosphor's rack metaphor.
+
+  Worth naming the reason it lasted, because it was structural rather than careless: three of the four icon packages were optional dependencies, so no test could resolve a single one of their aliases, and the defect landed in one of those three. Those packages are now development dependencies and every alias of every resolvable preset is checked against the files actually shipped. The fourth cannot be installed alongside the Laravel versions this package supports, so it is reported as unverifiable rather than skipped quietly.
+
+- **[Alert dialog](https://docs.wirekit.app/components/alert-dialog#the-order-focus-is-resolved-in) documents the order focus is resolved in, and the two ways `focusReturnTo` can make things worse.** The prop existed and worked; what was missing is the part a reader needs before setting it.
+
+  It **beats a surviving trigger** rather than acting as a fallback for the case where the trigger disappears — so setting it on a dialog whose trigger usually survives pulls focus away from where the reader was, which is worse than the default. And the target must outlive the action: the selector resolves at close time, so pointing it inside the row you just deleted falls through silently, with no error, to the state the prop exists to avoid.
+
+- **[Using a raw icon name](https://docs.wirekit.app/components/icon#using-a-raw-icon-name-instead-of-an-alias) is documented as the trade it is.** An icon name the vocabulary does not define still resolves when the package provides one — that has always worked, was never written down, and is the reason applications reached for it without knowing what it costs.
+
+  What it costs: your application is coupled to the icon package rather than to this library. Restrict that package to the icons you actually render and the raw names stop resolving; one application had to revert exactly that change because four of its test files depended on them. The page now says when reaching for a raw name is legitimate, when it is not, and that a fallthrough is logged in development.
+
+- **[Progress](https://docs.wirekit.app/components/progress)'s label id changed on every render.** The id linking the visible label to the bar was regenerated each time, which only matters where this component is most used: inside a polling region, every poll produced a new id, so the accessible name was re-resolved on a control whose whole purpose is being watched while it changes.
+
+  It is invisible in any single render — the label and the bar always agreed with each other, just on a different value every second. The id now derives from the one you pass, and the page says to pass one when the bar sits in a polling region.
+
+### Documentation
+
+- **Every component that supports [optimistic UI](https://docs.wirekit.app/extending/optimistic-ui) now has a demo you can run.** The capability was documented on each component's page and shown running on none of them, which is a poor trade: the interesting part is what the screen does in the second before the server answers, and prose cannot show that. Each page now has a **Try it** section with one control per outcome — accepted, refused, and a slow answer that holds the provisional state on screen long enough to read.
+
+- The optimistic-UI page no longer states how many components support it. The list directly beneath the sentence already answers that, and a number in prose goes stale on the next release.
+
 ## [2.23.0] — 2026-07-30
 
 **Minor release — accessibility promises the library documented and did not keep.** Every

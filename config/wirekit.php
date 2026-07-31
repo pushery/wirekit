@@ -483,6 +483,17 @@ return [
 
     'scripts' => [
         'bundle' => 'full', // 'full', 'core' or 'csp'
+
+        /*
+         * Load the ApexCharts adapter alongside the bundle above.
+         *
+         * Turn this on if you use <x-wirekit::chart library="apexcharts">. It is off by
+         * default so an app that draws no charts ships no chart code — but leaving it off
+         * while using the component fails in a way that is easy to lose time to: the page
+         * renders, the console says "wirekitApexChart is not defined", and only the chart
+         * is missing. You still supply ApexCharts itself; this loads WireKit's glue for it.
+         */
+        'apex' => false,
     ],
 
 ];

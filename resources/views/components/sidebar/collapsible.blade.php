@@ -106,6 +106,26 @@
             </span>
         @endif
         <span class="flex-1 truncate text-left group-data-[collapsed]/wk-sidebar:sr-only">{{ $label }}</span>
+        @isset($trailing)
+            {{-- Anything the caller wants at the end of the trigger.
+                 A group is collapsed to keep the list short — and if it contains items with
+                 counters, those counters vanish with it. `persist` makes that permanent:
+                 collapse once and the numbers are never seen again without going to look.
+                 Collapsing stops being a decision about space and becomes one that destroys
+                 information.
+                 A slot rather than a `badge` prop, and the difference is not academic. The
+                 case that surfaced this wanted a SILENT DOT, not a sum: a total across three
+                 work queues would have asserted an urgency the number cannot know. A prop
+                 that takes a count cannot express "something is there" without saying how
+                 much.
+                 Alpine's `open` is in scope here, so the caller decides WHEN it shows —
+                 `x-show="! open"` gives the common case, where the individual counters are
+                 already visible once the group is expanded and a second summary of the same
+                 quantity is one too many. Deliberately not decided for them: a dot that
+                 means "unread" reads differently from one that means "attention", and only
+                 one of those is redundant when expanded. --}}
+            <span class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden">{{ $trailing }}</span>
+        @endisset
         {{-- Chevron indicator — rotates when open; hidden in the collapsed rail. --}}
         <svg
             class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden"

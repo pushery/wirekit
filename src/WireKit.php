@@ -61,6 +61,47 @@ class WireKit
         }
 
         static::$defaults = array_merge(static::$defaults, $defaults);
+
+        /*
+         * Feed the same config the components already read.
+         *
+         * This method stored its values and nothing ever asked for them: no template called
+         * `defaultsFor()`, so a documented feature did precisely nothing. The obvious repair
+         * was to teach 242 templates to consult it — and that would have been the wrong one,
+         * because they ALREADY resolve a default this way:
+         *
+         *     @props(['intent' => config('wirekit.components.button.intent', 'primary')])
+         *
+         * So the mechanism was never missing. There were two of them for one job, and only
+         * one was connected. Writing into that config wires this everywhere at once, with no
+         * per-component edits and no second resolution order to keep in step with the first.
+         *
+         * Runtime beats the published file, which is the right way round: a developer calling
+         * this in a service provider is being more specific than their config file, exactly as
+         * a later `config()->set()` is.
+         *
+         * The stored array is kept as well, because `defaultsFor()` is public and something
+         * may read it. It is now a record of what was set, not the thing that has the effect.
+         */
+        foreach ($defaults as $component => $props) {
+            if (! is_array($props)) {
+                continue;
+            }
+
+            foreach ($props as $prop => $value) {
+                // The component key is used LITERALLY. A sub-component carries a dot
+                // ('card.header'), and config() splits on dots — writing the dotted path would
+                // create a nested array the template never reads, which is the same silent
+                // no-op this method is being rescued from.
+                $components = config('wirekit.components', []);
+                $components[$component] = array_merge(
+                    is_array($components[$component] ?? null) ? $components[$component] : [],
+                    [$prop => $value],
+                );
+
+                config(['wirekit.components' => $components]);
+            }
+        }
     }
 
     /** @return array<string, mixed> */
@@ -271,6 +312,12 @@ class WireKit
             'md' => 'px-[var(--padding-wk-x-md)]',
             'lg' => 'px-[var(--padding-wk-x-lg)]',
             'xl' => 'px-[var(--padding-wk-x-xl)]',
+            // Unreachable through the gate above, which returns a member of $allowed or the
+            // lenient fallback. Present because PHPStan cannot see that, and written as the
+            // SAME fallback rather than a throw: the gate deliberately does not let one
+            // mistyped prop take down a whole Blade view, and a throw here would undo that
+            // decision from a place nobody would think to look.
+            default => 'px-[var(--padding-wk-x-md)]',
         };
     }
 

@@ -9,6 +9,27 @@
     // classic fixed-height admin-shell case. `dvh` (not `vh`) so the mobile browser
     // toolbar collapse is handled.
     'viewport' => false,
+    // Whether the in-flow sidebar column keeps its top and inline-start inset.
+    // True (default) is the card layout: the sidebar sits as a panel inside a
+    // padded column. False is the full-bleed navigation column — the sidebar meets
+    // the top and the inline-start edge of the shell with nothing between.
+    //
+    // A prop because the two utilities that produce the inset were literals on the
+    // <aside>, and the attribute bag lands on the ROOT element — so they were
+    // unreachable from a call site by any means except a CSS rule targeting the
+    // vendor's own marker class and out-specifying Tailwind by emission order.
+    // Pair it with the sidebar's own `variant="flush"`: this removes the gap around
+    // the column, that removes the card inside it. (Named without its tag on
+    // purpose — a component tag written inside this comment block is compiled by
+    // Blade, not ignored, and takes the whole component down with a 500.)
+    'sidebarInset' => true,
+    // Where the header slot renders. `shell` (default) spans the full width above
+    // the sidebar row. `content` puts it INSIDE the content column, so the sidebar
+    // runs the full height and the topbar begins beside it — the other common admin
+    // layout, and previously reachable only by hiding the header slot at lg and
+    // hand-placing a topbar in the default slot, which cost the header slot on
+    // desktop entirely and cost every developer the same discovery.
+    'headerPlacement' => 'shell',
 ])
 
 @php
@@ -19,6 +40,16 @@
     // `viewport="false"` would otherwise flip the mode on. Normalize against the
     // prop's own default so a cast never engages a mode that was meant off.
     $viewport = BooleanProp::from($viewport, false);
+    $sidebarInset = BooleanProp::from($sidebarInset, true);
+
+    $headerPlacement = in_array($headerPlacement, ['shell', 'content'], true) ? $headerPlacement : 'shell';
+
+    // The inset, as the two utilities it always was — now behind a name. Only at lg+:
+    // on mobile the sidebar is an off-canvas overlay anchored flush from the top, so
+    // an inset there would leave a strip of backdrop above it.
+    $asideInset = $sidebarInset
+        ? 'lg:mt-[var(--space-wk-md,1rem)] lg:ml-[var(--padding-wk-x-lg)]'
+        : '';
 
     // App Shell — orchestrates header + sidebar + main layout.
     // Uses CSS grid to position sidebar and main content area.
@@ -45,9 +76,11 @@
     x-data="{ sidebarOpen: false }"
     {{ $attributes->class([$classes]) }}
 >
-    @isset($header)
-        {{ $header }}
-    @endisset
+    @if($headerPlacement === 'shell')
+        @isset($header)
+            {{ $header }}
+        @endisset
+    @endif
 
     <div class="flex flex-1 overflow-hidden">
         @isset($sidebar)
@@ -80,7 +113,7 @@
                      lg:transition-[width] animates the column in sync with the sidebar's own
                      transition-[width] (compositor cost is a one-shot deliberate toggle, mirroring
                      the sidebar — kept out of dist so the shipped-CSS web-vitals guard stays clean). --}}
-                class="wk-app-shell-aside fixed inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-64 transform transition-transform duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] lg:mt-[var(--space-wk-md,1rem)] lg:ml-[var(--padding-wk-x-lg)]"
+                class="wk-app-shell-aside fixed inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-64 transform transition-transform duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] {{ $asideInset }}"
                 x-cloak
                 class:lg="!x-cloak"
             >
@@ -88,6 +121,23 @@
             </aside>
         @endisset
 
-        {{ $slot }}
+        @if($headerPlacement === 'content')
+            {{-- The content column owns its own topbar, so the sidebar beside it runs
+                 the full height of the shell.
+
+                 min-w-0 is load-bearing: a flex item's automatic minimum is its
+                 content, so a wide table or a long unbroken string inside the slot
+                 would push this column past the shell and squeeze the sidebar rather
+                 than scrolling within itself. --}}
+            <div class="flex min-w-0 flex-1 flex-col overflow-hidden">
+                @isset($header)
+                    {{ $header }}
+                @endisset
+
+                {{ $slot }}
+            </div>
+        @else
+            {{ $slot }}
+        @endif
     </div>
 </div>

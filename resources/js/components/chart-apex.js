@@ -221,8 +221,6 @@ export default function wirekitApexChart(config) {
         _darkModeDebounce: null,
         _manualColorIndices: new Set(),
         // Focus-guard for the aria-hidden mount (see _setupFocusGuard).
-        _focusGuardMount: null,
-        _focusBlurHandler: null,
 
         init() {
             // ApexCharts peer-dependency guard. WireKit ships only the
@@ -462,6 +460,7 @@ window.ApexCharts = ApexCharts;</pre>
                 const resolvedThemed = resolveCssVarsDeep(themed, style);
                 this.chart = new ApexCharts(mount, resolvedThemed);
                 this.chart.render();
+                this._removeHiddenTabStop(mount);
 
                 // Radar tooltip — bypass ApexCharts' event system.
                 // Three previous iterations relying on themed.chart.events.
@@ -788,29 +787,15 @@ window.ApexCharts = ApexCharts;</pre>
                 // can't cascade-crash a follow-up preview re-render.
                 this._setupDetachGuard(mount);
 
-                // A11y + visual fix (all ApexCharts types). The parent wrapper
-                // carries `role="img"` + aria-label (the accessible
-                // representation); THIS mount is `aria-hidden="true"` to hide
-                // ApexCharts' verbose SVG DOM from assistive tech. But the
-                // ApexCharts <svg> takes focus on click/tap, which both (a)
-                // trips Chrome's "Blocked aria-hidden because a descendant
-                // retained focus" console warning and (b) paints a stray focus
-                // ring on the chart's FIRST element (looks like the wrong bar
-                // is highlighted when you click another). Since the whole mount
-                // is decorative by design, nothing inside it should hold focus
-                // — immediately blur anything that gains it. Capture-phase so
-                // it fires before focus settles; pointer-driven tooltips are
-                // unaffected (blur does not cancel mouse/touch events, and
-                // ApexCharts' own dataPointSelection styling is pointer-based,
-                // not focus-based).
-                this._focusGuardMount = mount;
-                this._focusBlurHandler = (event) => {
-                    const target = event.target;
-                    if (target && typeof target.blur === 'function') {
-                        target.blur();
-                    }
-                };
-                mount.addEventListener('focusin', this._focusBlurHandler, { capture: true });
+                // The focus stops ApexCharts creates are removed at the source
+                // (see _removeHiddenTabStop). This used to be a runtime blur
+                // handler that fired on `focusin` and pushed focus straight back
+                // out — which treated the symptom without removing it. A tab stop
+                // that immediately blurs is still a tab stop: the keyboard user
+                // still lands there, axe still reports aria-hidden-focus because
+                // it reads the markup and cannot see a listener, and the ring
+                // still flashed on the chart's first element.
+
 
                 this._setupDarkModeObserver(rawConfig);
             });
@@ -980,6 +965,10 @@ window.ApexCharts = ApexCharts;</pre>
                     // initial-mount resolveCssVarsDeep() above.
                     const resolvedThemed = resolveCssVarsDeep(themed, style);
                     this.chart.updateOptions(resolvedThemed, false, !reduced);
+
+                    // A theme swap can rebuild the SVG root, which arrives
+                    // carrying ApexCharts' tabindex again. Re-apply.
+                    this._removeHiddenTabStop(this.$refs.mount || this.$el);
                 }, 50);
             });
 
@@ -989,11 +978,102 @@ window.ApexCharts = ApexCharts;</pre>
         },
 
         /**
+         * Take the rendered SVG out of the tab order when — and only when —
+         * it sits inside an aria-hidden subtree.
+         *
+         * ApexCharts stamps `tabindex="0"` on its own `<svg class="apexcharts-svg">`
+         * root. The chart component mounts that SVG inside a container marked
+         * `aria-hidden="true"`, because the semantics live on the PARENT
+         * (`role="img"` + `aria-label`). The two together are a real defect,
+         * not a lint opinion: a keyboard user tabs into a subtree assistive
+         * tech has been told to ignore, so focus lands somewhere that
+         * announces nothing (axe `aria-hidden-focus`, severity serious).
+         *
+         * The condition is the point. We do NOT strip unconditionally — if a
+         * chart is ever mounted WITHOUT aria-hidden, the SVG being focusable
+         * is correct and this must leave it alone. Stripping regardless would
+         * trade one accessibility bug for another.
+         *
+         * Nothing operable is lost: the toolbar and zoom are off by default,
+         * so the focus stop led to no keyboard-reachable action.
+         *
+         * Bounded rAF retry because `render()` resolves asynchronously — the
+         * SVG may not exist on the frame we are called.
+         */
+        _removeHiddenTabStop(container) {
+            if (! container) {
+                return;
+            }
+
+            let framesLeft = 10;
+
+            const attempt = () => {
+                this._hiddenTabStopRaf = null;
+
+                const svg = container.querySelector('.apexcharts-svg');
+
+                if (svg) {
+                    // Every tab stop in the subtree, not just the SVG root.
+                    // ApexCharts also gives each legend entry `tabindex="0"`,
+                    // which is the same defect one level down — the first cut
+                    // of this fix handled only the root and left the legends
+                    // reachable on pie, donut, radialBar and mixed charts.
+                    //
+                    // Two kinds of focusable, and they need OPPOSITE treatment.
+                    //
+                    // A uniform `tabindex="-1"` was the first version, chosen
+                    // because one rule with no branches cannot be half-right.
+                    // It was wrong, and the sweep that now watches the console
+                    // caught it: axe reports `nested-interactive` for a
+                    // negative tabindex inside an interactive control, because
+                    // assistive tech can still reach it. Silencing the tab stop
+                    // that way traded one serious finding for another.
+                    //
+                    // An element focusable BECAUSE of the attribute loses it
+                    // entirely — that is what ApexCharts stamps on its SVG and
+                    // on each legend entry. An element focusable BY NATURE — a
+                    // link, a button — keeps existing and only leaves the tab
+                    // order, so `-1` is the only option there.
+                    const FOCUSABLE = 'a[href],button,input,select,textarea,[tabindex],iframe,object,embed,area[href],summary';
+                    const NATIVE = 'a[href],button,input,select,textarea,iframe,object,embed,area[href],summary';
+
+                    for (const el of container.querySelectorAll(FOCUSABLE)) {
+                        // `closest()` walks ancestors, so this holds whether the
+                        // flag sits on the mount or higher up the chart root.
+                        if (! el.closest('[aria-hidden="true"]')) {
+                            continue;
+                        }
+
+                        if (el.matches(NATIVE)) {
+                            el.setAttribute('tabindex', '-1');
+
+                            continue;
+                        }
+
+                        el.removeAttribute('tabindex');
+                    }
+
+                    return;
+                }
+
+                if (framesLeft-- > 0) {
+                    this._hiddenTabStopRaf = requestAnimationFrame(attempt);
+                }
+            };
+
+            attempt();
+        },
+
+        /**
          * Idempotent destroy. Safe to call multiple times — Alpine's
          * teardown can fire alongside livewire:navigating; the chart instance
          * is nulled after the first destroy so the second call is a no-op.
          */
         destroy() {
+            if (this._hiddenTabStopRaf) {
+                cancelAnimationFrame(this._hiddenTabStopRaf);
+                this._hiddenTabStopRaf = null;
+            }
             clearTimeout(this._darkModeDebounce);
             if (this._detachRaf) {
                 cancelAnimationFrame(this._detachRaf);
@@ -1021,11 +1101,6 @@ window.ApexCharts = ApexCharts;</pre>
                 this._hoverEnterHandler = null;
                 this._hoverLeaveHandler = null;
                 this._mount = null;
-            }
-            if (this._focusGuardMount && this._focusBlurHandler) {
-                this._focusGuardMount.removeEventListener('focusin', this._focusBlurHandler, { capture: true });
-                this._focusBlurHandler = null;
-                this._focusGuardMount = null;
             }
             if (this._cellShapeTooltipCleanup) {
                 this._cellShapeTooltipCleanup();

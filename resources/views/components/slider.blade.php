@@ -78,14 +78,65 @@
     // tick along the track: (value − min) / (max − min) × 100, clamped to 0–100.
     $range = ($max - $min) ?: 1;
     $normalizedMarks = [];
+    // Initialized beside the marks it describes, so the reader below does not depend on
+    // `! empty($normalizedMarks) &&` short-circuiting to avoid an undefined variable.
+    $marksIsList = true;
     $hasLabeledMarks = false;
     if (! empty($marks)) {
-        $pairs = array_is_list($marks)
-            ? array_map(fn ($v) => [$v, (string) $v], $marks)
-            : array_map(fn ($v, $lbl) => [$v, (string) $lbl], array_keys($marks), array_values($marks));
-        foreach ($pairs as [$mValue, $mLabel]) {
+        // THREE accepted shapes, and the third is the reason this is not a simple
+        // cast any more:
+        //
+        //   [0, 50, 100]                                  a plain list of positions
+        //   [0 => 'Low', 100 => 'High']                   value => label
+        //   [0 => ['label' => 'Low', 'description' => …]] value => label + meaning
+        //
+        // The third exists because a slider whose positions MEAN something is the
+        // normal case once the values are not numbers — five steps from -2 to +2,
+        // each standing for a policy. Before it, a reader saw only the numbers and
+        // had to MOVE the slider to learn what a position means, which is the one
+        // thing they were trying to find out before changing it.
+        //
+        // `valueTextMap` already solved the screen-reader half well. This is the
+        // visual half: what gets announced was not readable without altering the
+        // value.
+        // `array_is_list` alone is not the list/map question, and reading it as if it were
+        // CRASHED on a legitimate call. `[0 => ['description' => …], 1 => [...]]` is a map
+        // whose positions happen to be 0 and 1 — a slider from 0 to 1 with a meaning at each
+        // end — and PHP cannot tell that from a list. The list branch then cast a spec array
+        // to string: "Array to string conversion", a fatal on markup that is documented as
+        // supported. Found by a test written for a different gap.
+        //
+        // A list element is a POSITION, never a spec, so an array element settles it: the
+        // caller wrote a map and PHP's key numbering is a coincidence.
+        $marksIsList = array_is_list($marks)
+            && ! collect($marks)->contains(fn ($m) => is_array($m));
+
+        $pairs = $marksIsList
+            ? array_map(fn ($v) => [$v, (string) $v, null], $marks)
+            : array_map(
+                fn ($v, $spec) => is_array($spec)
+                    ? [$v, (string) ($spec['label'] ?? $v), ($spec['description'] ?? null) !== null ? (string) $spec['description'] : null]
+                    : [$v, (string) $spec, null],
+                array_keys($marks),
+                array_values($marks)
+            );
+
+        foreach ($pairs as [$mValue, $mLabel, $mDescription]) {
             $pct = max(0, min(100, (($mValue - $min) / $range) * 100));
-            $normalizedMarks[] = ['value' => $mValue, 'label' => $mLabel, 'pct' => $pct];
+            $normalizedMarks[] = [
+                'value' => $mValue,
+                'label' => $mLabel,
+                'pct' => $pct,
+                'description' => $mDescription,
+                // A per-mark id, needed because the description is referenced by
+                // `aria-describedby` and a page can hold several sliders.
+                'descId' => $mDescription === null
+                    ? null
+                    : \Pushery\WireKit\Support\DomId::unique(
+                        ($attributes->get('id') ?: $name).'-mark-'.preg_replace('/[^a-z0-9-]/i', '', (string) $mValue),
+                        'slider-mark-'
+                    ),
+            ];
             $hasLabeledMarks = $hasLabeledMarks || $mLabel !== '';
         }
     }
@@ -112,8 +163,20 @@
     // A marks MAP opts into aria-valuetext ONLY when a label carries meaning beyond the
     // number (a numeric-label map — [-2 => '-2', …] — stays byte-identical to a plain
     // slider: the number already IS the value).
-    $isLabeledMarkMap = ! empty($marks) && ! array_is_list($marks)
-        && collect($marks)->contains(fn ($lbl, $val) => (string) $lbl !== (string) $val);
+    // Reads the NORMALIZED marks, not the raw prop. Both places used to cast the
+    // raw value with `(string)`, which was fine while a mark was a string and
+    // throws "Array to string conversion" the moment one is a spec array. Reading
+    // the normalized form means the shape is handled in exactly one place — the
+    // normalizer above — rather than in every reader of `$marks`.
+    // A DESCRIPTION counts as semantic content, not only a label that differs from the
+    // value. Without the second clause a map whose marks carry descriptions and no labels
+    // binds no `aria-valuetext` at all, so the descriptions reach nothing — while the docs
+    // say a mark may carry a description with no label and that the description is what the
+    // slider announces. Both cannot be true, and the docs describe the intent.
+    $isLabeledMarkMap = ! empty($normalizedMarks) && ! $marksIsList
+        && collect($normalizedMarks)->contains(
+            fn ($m) => $m['label'] !== (string) $m['value'] || $m['description'] !== null
+        );
 
     $valueTextMap = [];
     if ($explicitValueTextMap !== null) {
@@ -121,8 +184,12 @@
             $valueTextMap[(string) $mValue] = (string) $mLabel;
         }
     } elseif ($isLabeledMarkMap) {
-        foreach ($marks as $mValue => $mLabel) {
-            $valueTextMap[(string) $mValue] = (string) $mLabel;
+        foreach ($normalizedMarks as $m) {
+            // The DESCRIPTION wins over the label when both exist, and that is
+            // the point of the third shape: the label is what a sighted reader
+            // sees on the tick ("−2"), the description is what the position
+            // MEANS ("Single verdict"). A screen reader should hear the meaning.
+            $valueTextMap[(string) $m['value']] = $m['description'] ?? $m['label'];
         }
     }
 
@@ -327,11 +394,40 @@
             {{-- Tick marks under the track. Decorative; the native input announces value/min/max. --}}
             <div class="pointer-events-none absolute inset-x-0 top-full mt-1" aria-hidden="true">
                 @foreach($normalizedMarks as $mark)
-                    <div class="absolute flex -translate-x-1/2 flex-col items-center" style="left: {{ $mark['pct'] }}%">
+                    {{-- `title` AND a screen-reader description, not either/or.
+                         `title` is a hover affordance and there is no hover on
+                         touch, so alone it would hide the meaning from exactly the
+                         readers most likely to be guessing at it. The sr-only span
+                         carries the same text and is referenced by
+                         `aria-describedby`, so it reaches assistive technology
+                         without a pointer. --}}
+                    {{-- `pointer-events-auto` ONLY on a tick that carries a title, and only
+                         because the container above is `pointer-events-none` so ticks cannot
+                         swallow a drag. Without it the title can never appear: no pointer
+                         event reaches the element, so the browser has nothing to show a
+                         tooltip for. Measured — the attribute was there and the tooltip was
+                         unreachable. Ticks without a description stay transparent to the
+                         pointer, which keeps dragging over them unaffected. --}}
+                    <div
+                        class="absolute flex -translate-x-1/2 flex-col items-center{{ $mark['description'] !== null ? ' pointer-events-auto' : '' }}"
+                        style="left: {{ $mark['pct'] }}%"
+                        @if($mark['description'] !== null)
+                            title="{{ $mark['description'] }}"
+                        @endif
+                    >
                         <span class="h-1 w-px bg-[var(--color-wk-border)]"></span>
                         @if($mark['label'] !== '')
                             <span class="mt-0.5 text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-text-muted)]">{{ $mark['label'] }}</span>
                         @endif
+                        {{-- No `sr-only` description span here, and no `aria-describedby`.
+                             Both were shipped and both were inert: this whole container is
+                             `aria-hidden="true"` — correctly, because a tick label duplicates
+                             the value — so the span was dropped from the accessibility tree
+                             and the `aria-describedby` pointing at it resolved to nothing. An
+                             `aria-describedby` on a non-focusable div is inert regardless.
+                             The description reaches assistive technology through
+                             `aria-valuetext` on the input, which announces the meaning of the
+                             CURRENT position rather than reading every mark at once. --}}
                     </div>
                 @endforeach
             </div>
