@@ -45,11 +45,11 @@ export function pluralize(phrases, count, locale) {
         return String(count);
     }
 
-    let rules = null;
+    let rules;
 
     try {
         rules = new Intl.PluralRules(locale || 'en');
-    } catch (error) {
+    } catch {
         // An unusable locale tag must not take the announcement down with it.
         rules = new Intl.PluralRules('en');
     }

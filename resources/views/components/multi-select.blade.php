@@ -217,6 +217,9 @@
         </div>
 
         {{-- Dropdown listbox --}}
+        {{-- Teleported to <body>. `position: fixed` escapes a clipping ancestor but NOT
+             a stacking context — the same trap the combobox and dropdown panels were in. --}}
+        <template x-teleport="body">
         <div
             x-show="dropdownOpen && filteredOptions.length > 0"
             x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"
@@ -249,6 +252,7 @@
                 </div>
             </template>
         </div>
+        </template>
 
         @if($optimisticConfig)
             {{-- Outside the listbox — a live region is not an option — and inside

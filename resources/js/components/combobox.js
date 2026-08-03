@@ -117,6 +117,13 @@ export default function wirekitCombobox(config = {}) {
             });
         },
 
+        // Panel ids, handed in by the Blade so `_place()` can find the panels
+        // after they teleport. See the note in _place() — a ref does not survive
+        // the move and an id does.
+        _listId: config.listId || null,
+        _emptyId: config.emptyId || null,
+        _inputId: config.inputId || null,
+
         _place() {
             // No-op on the core bundle, which ships no overlays and no position
             // helper — the panel simply stays put. The full bundle exposes it.
@@ -124,18 +131,55 @@ export default function wirekitCombobox(config = {}) {
                 return;
             }
 
-            const list = this.$refs.cbxList;
+            // BOTH panels, because there are two: the options list and the
+            // "No results" panel, which is the same box with different content.
+            // Only the list was ever positioned — the empty state sat inline and
+            // `fixed`, so it landed wherever its static position happened to be.
+            // Teleporting them to escape the host's stacking context made that
+            // visible rather than causing it: an unpositioned fixed element at
+            // `<body>` goes to the viewport origin.
+            // By ID, not by `$refs`. Alpine does not carry a ref across an
+            // `x-teleport`: measured after the panels moved to `<body>`,
+            // `$refs.cbxList` is null, so this loop ran over two nulls and
+            // positioned nothing at all. The symptom looked like bad arithmetic —
+            // a panel at 0,1117 against a field at 12,451 — and was the absence of
+            // any arithmetic: a `fixed` element with no top/left sits at its static
+            // position, and getComputedStyle reports that resolved.
+            const panels = [
+                this._listId ? document.getElementById(this._listId) : this.$refs.cbxList,
+                this._emptyId ? document.getElementById(this._emptyId) : this.$refs.cbxEmpty,
+            ];
 
-            if (! list) {
+            // The ANCHOR by id as well, and this is the half that actually bit.
+            //
+            // `x-ref` registers into the NEAREST `x-data` scope. With `optimistic`
+            // set, the input sits inside the nested optimistic component — so every
+            // ref of this component lands in the CHILD scope and `_place()`, which
+            // lives in the parent, sees an empty registry. Measured: `$refs` has no
+            // keys at all and `$refs.cbxInput` is null, so the positioner ran twice
+            // against a null reference and did nothing. The panel then sat at its
+            // static position and looked like a placement bug rather than an
+            // absent one.
+            const anchor = this._inputId
+                ? document.getElementById(this._inputId)
+                : this.$refs.cbxInput;
+
+            if (! anchor) {
                 return;
             }
 
-            window.wirekitPosition(this.$refs.cbxInput, list, {
-                placement: 'bottom-start',
-                offset: 4,
-                fitViewport: true,
-                matchReferenceWidth: true,
-            });
+            for (const panel of panels) {
+                if (! panel) {
+                    continue;
+                }
+
+                window.wirekitPosition(anchor, panel, {
+                    placement: 'bottom-start',
+                    offset: 4,
+                    fitViewport: true,
+                    matchReferenceWidth: true,
+                });
+            }
         },
 
         destroy() {

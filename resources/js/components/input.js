@@ -98,7 +98,7 @@ export default function wirekitInput() {
                 field.select();
                 document.execCommand('copy');
                 this._markCopied();
-            } catch (error) {
+            } catch {
                 // Neither path available — nothing to report beyond the absent
                 // "Copied".
             }

@@ -110,6 +110,23 @@ final class TablerPreset implements IconPreset
             'legal' => 'tabler-scale',
             'badge' => 'tabler-badge',
             'layers' => 'tabler-stack-2',
+
+            // Notification, labeling, mail and media — concepts every
+            // administrative interface has, and none of them had a word here.
+            // A page that needed one reached for the icon package's own glyph
+            // name, which resolves only while that optional package happens to
+            // be installed: a dependency on the icon set rather than a contract
+            // with this library. `bell` and `bell-slash` move here from the
+            // app extension — same glyph, so nothing rendered changes.
+            'bell' => 'tabler-bell',
+            'bell-slash' => 'tabler-bell-off',
+            'tag' => 'tabler-tag',
+            'send' => 'tabler-send',
+            'archive' => 'tabler-archive',
+            'image' => 'tabler-photo',
+            'message' => 'tabler-message-circle',
+            'reply' => 'tabler-arrow-back-up',
+            'forward' => 'tabler-arrow-forward-up',
         ];
     }
 

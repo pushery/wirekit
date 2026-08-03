@@ -208,7 +208,7 @@
 
     // Deliberately says the state is UNKNOWN rather than claiming a failure. A
     // timeout is not evidence that the save failed — the request may well have
-    // landed and only the acknowledgement went missing, so telling the reader it
+    // landed and only the acknowledgment went missing, so telling the reader it
     // failed would invite a second edit over a value that was already stored.
     // "Not confirmed" is the honest report, and it names what to do about it.
     $resolvedUnknownMessage = $unknownMessage

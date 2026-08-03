@@ -60,7 +60,7 @@ export default (options = {}) => ({
             // have those landmarks); custom selectors that miss are almost
             // always developer typos worth surfacing.
             if (this.target !== 'main, article') {
-                // eslint-disable-next-line no-console
+                 
                 console.warn(
                     `[wirekit] reading-toc: target selector "${this.target}" matched no element. ` +
                     `TOC will render empty. Check the selector on <x-wirekit::reading-toc target="${this.target}" />.`
@@ -233,7 +233,7 @@ export default (options = {}) => ({
         // the visual jump, just without the URL hash mirror.
         try {
             history.replaceState(null, '', `#${id}`);
-        } catch (e) {
+        } catch {
             // Cross-origin iframe-srcdoc — URL hash mirror unavailable,
             // accept the scroll-only behavior.
         }

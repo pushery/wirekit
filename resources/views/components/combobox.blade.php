@@ -238,7 +238,7 @@
         <x-wirekit::label :for="$comboId" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 <div
-    x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ \Pushery\WireKit\Support\AlpinePayload::from($normalized) }} })"
+    x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ \Pushery\WireKit\Support\AlpinePayload::from($normalized) }}, listId: '{{ $listId }}', emptyId: '{{ $listId }}-empty', inputId: '{{ $comboId }}' })"
     @click.outside="open = false"
     {{-- The roleless wrapper carries ONLY layout — every caller attribute
          (aria-describedby, data-*, autocomplete, required, …) is routed to the
@@ -347,6 +347,22 @@
 
     {{-- Listbox — filtered options rendered via x-for. Each option gets a
          unique id + role=option so AT can announce them as the user navigates. --}}
+    {{-- Teleported to <body>, for the reason command-palette's overlay already
+         states: `position: fixed` escapes a clipping ancestor but NOT a stacking
+         context. Any ancestor with `contain: layout`, a transform or a filter
+         scopes this panel's z-index inside itself, and anything painted after
+         that ancestor then covers the list however high the z-index goes.
+         Reported from the documentation site, whose preview area carries
+         `contain: layout`: the open list rendered UNDER the code block below it.
+         `$refs` do NOT survive the teleport, and the comment that used to say so
+         here was an assumption nobody had measured. Once the panel moves to
+         `<body>`, `$refs.cbxList` is null — so `_place()` looped over two nulls,
+         positioned nothing, and left a `fixed` panel at its static position:
+         measured at 0,1117 while the field sat at 12,451. It never corrected,
+         because the positioner had not run at all.
+         `_place()` resolves both panels by id now, handed in through the factory
+         config. An id survives anything a teleport can do to a node. --}}
+    <template x-teleport="body">
     <ul
         id="{{ $listId }}"
         x-ref="cbxList"
@@ -411,15 +427,23 @@
         </template>
         @endif
     </ul>
+    </template>
 
-    {{-- Empty state when filter produces no matches. --}}
+    {{-- Empty state when filter produces no matches. Teleported for the same
+         reason as the list above — it is the same panel wearing different content,
+         and leaving it behind would fix the case with results and keep the bug for
+         the case without. --}}
+    <template x-teleport="body">
     <div
+        id="{{ $listId }}-empty"
         class="{{ $listClasses }}"
+        x-ref="cbxEmpty"
         x-show="open && filtered.length === 0 && query !== ''"
         x-cloak
     >
         <p class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]">No results</p>
     </div>
+    </template>
 
     @if($hasError)
         <p id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>

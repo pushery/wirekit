@@ -92,10 +92,29 @@ export default function wirekitInlineEdit(config = {}) {
                 // own open(). Nothing threw, nothing logged, the button just
                 // looked dead — and a single component on an empty page did it
                 // too, so it never read as a multi-instance problem.
-                const root = this.$el;
-
                 this._exclusiveHandler = (event) => {
                     if (!this._exclusiveHandler) return;      // torn down mid-flight
+
+                    // Resolved AT EVENT TIME, never captured at init.
+                    //
+                    // `open()` sends `this.$root` — live — and this listener used to
+                    // compare against a `this.$el` frozen here. Identical elements in
+                    // the ordinary case, which is why it worked. But a Livewire morph
+                    // can swap the root element while Alpine keeps this instance
+                    // alive, and then the frozen reference points at a node that is no
+                    // longer in the document: the sender's live root matches neither
+                    // the stale `===` nor the stale `.contains()`, so the component
+                    // treats its OWN open as somebody else's and cancels itself.
+                    //
+                    // That exact self-cancel already happened once on the SENDER side
+                    // and is documented above `open()`. It was fixed there and left
+                    // standing here — half a fix, and the half nobody looked at is the
+                    // one that broke. Seen as a morph-seam failure that reproduces only
+                    // under CI parallelism, with the node and scope ids UNCHANGED,
+                    // which is what says the instance survived and closed itself.
+                    const root = this.$root;
+
+                    if (!root) return;
                     if (event.detail?.source === root) return;
                     // The trigger lives inside the root, and so does any control
                     // a developer supplies through a slot — anything dispatching
@@ -354,8 +373,42 @@ export default function wirekitInlineEdit(config = {}) {
 
                 return;
             }
-            this.draft = this._snapshot(this._previous);
-            this.editing = false;
+
+            /*
+             * A blur is not evidence the reader left, and treating it as one threw away what
+             * they had typed.
+             *
+             * A Livewire morph anywhere on the page patches the DOM around a focused input, and
+             * the browser fires a blur while it does — focus returns immediately, so nobody went
+             * anywhere. This handler discarded on that event exactly as it discards on a real
+             * departure, so a round trip in an unrelated part of the page silently deleted an
+             * unsaved draft. No message, no undo.
+             *
+             * It read as a flaky test for weeks: the seam case failed in CI and in no local run,
+             * because a fast morph restores focus before anything observes the gap and a loaded
+             * machine does not. The instrumentation settled it — same node, same Alpine scope,
+             * value back at `_previous`, which only this function and cancel() write.
+             *
+             * So ask where the focus went, and ask AFTER the browser has moved it: during a blur
+             * activeElement is transitional whichever way it ends up, so a synchronous check
+             * cannot tell a departure from a morph. One tick later it can.
+             *
+             * The same check covers alt-tab, the other blur nobody performs on purpose:
+             * switching windows leaves activeElement on the control, so a draft survives that
+             * too. A `document.hasFocus()` test was tried and is worse in both directions —
+             * redundant here, and false in a headless browser, so it would suppress the
+             * legitimate close on every automated run while looking correct in a real one.
+             */
+            this.$nextTick(() => {
+                if (!this.editing || this.saving) return;
+
+                const control = this.$refs.control;
+
+                if (control && document.activeElement === control) return;
+
+                this.draft = this._snapshot(this._previous);
+                this.editing = false;
+            });
         },
 
         _focusTrigger() {

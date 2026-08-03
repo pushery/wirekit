@@ -423,7 +423,7 @@ export default function wirekitMap(config = {}) {
         _warnLoadFailure() {
             if (this._loadFailureWarned) return;
             this._loadFailureWarned = true;
-            // eslint-disable-next-line no-console
+             
             console.error(
                 '[wirekit::map] The map library loaded but its style/tiles failed to load'
                 + (this.styleUrl ? ` (${this.styleUrl})` : ' (default demo style)')
@@ -441,7 +441,7 @@ export default function wirekitMap(config = {}) {
             window.__wirekit_map_missing_warned__ ??= false;
             if (window.__wirekit_map_missing_warned__) return;
             window.__wirekit_map_missing_warned__ = true;
-            // eslint-disable-next-line no-console
+             
             console.error(
                 '[wirekit::map] No supported map library found on window. Install a '
                 + 'peer dependency (MapLibre GL or Leaflet) and load it before WireKit. '

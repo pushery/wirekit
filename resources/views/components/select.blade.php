@@ -22,6 +22,12 @@
     'size' => config('wirekit.components.select.size', 'md'),
     'placeholder' => null,
     'options' => [],
+    // The pre-selected option. It has to be a declared prop: `<select>` has no
+    // `value` content attribute, so an undeclared one fell into the attribute bag
+    // and rendered onto the element, where HTML ignores it. `value="pro"` then
+    // selected nothing and the browser fell back to the first option — the field
+    // showed one choice while everything reading the component believed another.
+    'value' => null,
     'scope' => null,
 ])
 
@@ -41,6 +47,12 @@
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
     $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+
+    // Compared as strings, deliberately. Option keys arrive from PHP arrays, where
+    // `['1' => 'One']` is an INT key, while a `value` written on a tag is always a
+    // string — a strict comparison would leave numeric-keyed option lists unable to
+    // pre-select anything, which is the same defect one type-cast further down.
+    $isSelected = fn ($candidate): bool => $value !== null && (string) $value === (string) $candidate;
 @endphp
 
 
@@ -145,7 +157,7 @@
 
 @php
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
-        'value' => (string) ($attributes->get('value') ?? ''),
+        'value' => (string) ($value ?? ''),
         'action' => $optimistic,
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
@@ -178,7 +190,10 @@
             {{ $attributes->class(['wk-field', $selectClasses, $stateClasses, $sizeClasses]) }}
         >
             @if($placeholder)
-                <option value="" disabled selected>{{ $placeholder }}</option>
+                {{-- The placeholder only pre-selects itself when nothing else is
+                     chosen. Marking it `selected` unconditionally is what made a
+                     `value` prop invisible even once the options below honored it. --}}
+                <option value="" disabled{{ ($value === null || $value === '') ? ' selected' : '' }}>{{ $placeholder }}</option>
             @endif
             {{--
                 Options accept three shapes (mix freely):
@@ -189,23 +204,23 @@
                 A group is an array value WITHOUT a 'label' key; a single option
                 with attributes is an array value WITH a 'label' key.
             --}}
-            @foreach($options as $value => $optionLabel)
+            @foreach($options as $optionValue => $optionLabel)
                 @if(is_array($optionLabel) && ! array_key_exists('label', $optionLabel))
-                    <optgroup label="{{ $value }}">
+                    <optgroup label="{{ $optionValue }}">
                         @foreach($optionLabel as $subValue => $subLabel)
                             @php
                                 $sLabel = is_array($subLabel) ? ($subLabel['label'] ?? $subValue) : $subLabel;
                                 $sDisabled = is_array($subLabel) && ! empty($subLabel['disabled']);
                             @endphp
-                            <option value="{{ $subValue }}"{{ $sDisabled ? ' disabled' : '' }}>{{ $sLabel }}</option>
+                            <option value="{{ $subValue }}"{{ $sDisabled ? ' disabled' : '' }}{{ $isSelected($subValue) ? ' selected' : '' }}>{{ $sLabel }}</option>
                         @endforeach
                     </optgroup>
                 @else
                     @php
-                        $oLabel = is_array($optionLabel) ? ($optionLabel['label'] ?? $value) : $optionLabel;
+                        $oLabel = is_array($optionLabel) ? ($optionLabel['label'] ?? $optionValue) : $optionLabel;
                         $oDisabled = is_array($optionLabel) && ! empty($optionLabel['disabled']);
                     @endphp
-                    <option value="{{ $value }}"{{ $oDisabled ? ' disabled' : '' }}>{{ $oLabel }}</option>
+                    <option value="{{ $optionValue }}"{{ $oDisabled ? ' disabled' : '' }}{{ $isSelected($optionValue) ? ' selected' : '' }}>{{ $oLabel }}</option>
                 @endif
             @endforeach
             {{ $slot }}

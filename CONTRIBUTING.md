@@ -4,25 +4,18 @@ Thank you for your interest in contributing to WireKit!
 
 ## Setup
 
-For the full developer setup guide (prerequisites, commands, architecture), see the project documentation at [docs.wirekit.app](https://docs.wirekit.app).
+Development setup — prerequisites, the local quality gate, and the architecture guide — lives in the
+project documentation at [docs.wirekit.app](https://docs.wirekit.app).
 
-Quick start:
+The commands are not repeated here on purpose. This file ships inside the published package, where
+the tooling it would name is absent: the test suite, the build scripts, the linter configuration and
+`package.json` are all stripped from the distributed tree. A command block here would resolve to
+nothing for every reader who has one.
 
-```bash
-git clone https://github.com/pushery/wirekit.git && cd wirekit
-composer install
-npm install
-```
+## Before Committing
 
-## Pre-Commit Checklist
-
-All of these must pass before committing:
-
-```bash
-vendor/bin/pint --test                     # Code style — 0 violations
-vendor/bin/pest                            # Tests — all green
-npx markdownlint-cli2 "docs/**/*.md"      # Markdown lint — 0 errors
-```
+Code style, the test suite and the Markdown lint must all pass. The exact invocations live in the
+development documentation, which is also where they stay correct when they change.
 
 ## Component Conventions
 
@@ -67,14 +60,14 @@ npx markdownlint-cli2 "docs/**/*.md"      # Markdown lint — 0 errors
 - Dependencies are bundled in `dist/wirekit.js` — users do NOT install them separately
 - Event naming: `wirekit-{component}-{action}` (kebab-case), e.g. `wirekit-modal-show`
 - All Alpine components must implement `livewire:navigating` cleanup via `destroy()` lifecycle method
-- Two bundles available: `wirekit.js` (full, with overlay deps) and `wirekit.core.js` (chart only)
+- Several bundles ship, each for a different loading strategy — `dist/README.md` is the decision tree and it sits beside them
 
 ## Icon System
 
-- 26 semantic aliases (e.g. `close`, `search`, `chevron-down`) resolved via presets
-- 4 built-in presets: Heroicons, Lucide, Phosphor, Tabler
+- A shared semantic alias vocabulary (e.g. `close`, `search`, `chevron-down`) resolved via presets
+- Four base presets — Heroicons, Lucide, Phosphor, Tabler — plus two stackable Heroicons extensions (`heroicons-app`, `heroicons-marketing`)
 - Custom presets implement `Pushery\WireKit\Contracts\IconPreset`
-- New aliases must be added to ALL 4 built-in presets
+- A new alias must be added to all four base presets, so it resolves whichever one is configured
 - Config overrides allow per-alias customization without a full preset
 
 ## Chart System

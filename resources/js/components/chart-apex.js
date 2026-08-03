@@ -219,6 +219,13 @@ export default function wirekitApexChart(config) {
         _navCleanup: null,
         _darkModeObserver: null,
         _darkModeDebounce: null,
+        // The bounded retry for the first render, and the standing watch that
+        // keeps the tab stops stripped through every later rebuild. Declared
+        // here with the other handles so destroy() has a complete list to work
+        // from — a handle that only ever appears inside a method is one nobody
+        // reading the teardown knows to look for.
+        _hiddenTabStopRaf: null,
+        _hiddenTabStopObserver: null,
         _manualColorIndices: new Set(),
         // Focus-guard for the aria-hidden mount (see _setupFocusGuard).
 
@@ -604,16 +611,16 @@ window.ApexCharts = ApexCharts;</pre>
                                     const baseRect = baseEl.getBoundingClientRect();
                                     const tipRect = tooltipEl.getBoundingClientRect();
                                     if (tipRect.width > 0 && tipRect.height > 0) {
-                                        const cellCentreX = cellRect.left + cellRect.width / 2;
-                                        const cellCentreY = cellRect.top + cellRect.height / 2;
+                                        const cellCenterX = cellRect.left + cellRect.width / 2;
+                                        const cellCenterY = cellRect.top + cellRect.height / 2;
                                         let left;
                                         let top;
                                         if (apexType === 'radar') {
                                             // Bottom-left anchor at marker center —
                                             // panel extends up-and-right of the vertex
                                             // so the marker stays visible.
-                                            left = cellCentreX - baseRect.left;
-                                            top = cellCentreY - baseRect.top - tipRect.height;
+                                            left = cellCenterX - baseRect.left;
+                                            top = cellCenterY - baseRect.top - tipRect.height;
                                         } else if (apexType === 'rangeBar' || apexType === 'rangeArea') {
                                             // Half-overlap anchor — tooltip's BOTTOM
                                             // edge sits at the bar's CENTER Y, so the
@@ -627,19 +634,19 @@ window.ApexCharts = ApexCharts;</pre>
                                             // tooltip's TOP edge at the bar's center Y.
                                             // The bar's bottom half gets covered; top
                                             // half stays visible.
-                                            left = cellCentreX - tipRect.width / 2 - baseRect.left;
-                                            const aboveTop = cellCentreY - baseRect.top - tipRect.height;
+                                            left = cellCenterX - tipRect.width / 2 - baseRect.left;
+                                            const aboveTop = cellCenterY - baseRect.top - tipRect.height;
                                             if (aboveTop >= 4) {
                                                 top = aboveTop;
                                             } else {
-                                                top = cellCentreY - baseRect.top;
+                                                top = cellCenterY - baseRect.top;
                                             }
                                         } else {
                                             // Center anchor on cell center —
                                             // cells are large enough that the panel
                                             // doesn't hide the data.
-                                            left = cellCentreX - tipRect.width / 2 - baseRect.left;
-                                            top = cellCentreY - tipRect.height / 2 - baseRect.top;
+                                            left = cellCenterX - tipRect.width / 2 - baseRect.left;
+                                            top = cellCenterY - tipRect.height / 2 - baseRect.top;
                                         }
                                         // Edge-clamp: keep the panel inside the
                                         // chart, with a 4 px gutter. Math.max
@@ -832,9 +839,9 @@ window.ApexCharts = ApexCharts;</pre>
             // is exceeded — left to userland because the trim-via-
             // updateSeries path produces a per-position-Y wobble that
             // breaks the streaming visual contract).
-            // eslint-disable-next-line no-unused-vars
+             
             const _mode = root.dataset.wireStreamMode || 'strict';
-            // eslint-disable-next-line no-unused-vars
+             
             const _cap = parseInt(root.dataset.wireStreamCap, 10) || 100;
 
             // Per-microtask batching queue. Streaming-demo / developer code
@@ -1053,6 +1060,45 @@ window.ApexCharts = ApexCharts;</pre>
                         el.removeAttribute('tabindex');
                     }
 
+                    // Keep watching, because a render is not the only moment
+                    // ApexCharts stamps these.
+                    //
+                    // This function used to be CALLED at moments — after
+                    // render, after a theme swap — and that is a list somebody
+                    // has to remember to extend. It was not extended: a page
+                    // streaming live data rebuilds its SVG on every tick, so
+                    // the strip ran once, correctly, and the next update put
+                    // the tab stops straight back. Invisible on every static
+                    // page, because there is no second render there to undo it.
+                    //
+                    // Found from outside, on one page out of 22, by an
+                    // accessibility pass that could see WHICH page differed and
+                    // what it did differently — not by anything here.
+                    //
+                    // An observer is a property rather than a list: whatever
+                    // rebuilds the subtree, and whenever, the stamp does not
+                    // survive it. No disconnect inside the callback — the sweep
+                    // makes at most one more batch of records, the next pass
+                    // finds nothing to change, and it settles. Disconnecting
+                    // and re-observing would be the post-destroy race this
+                    // codebase already guards against.
+                    if (! this._hiddenTabStopObserver) {
+                        this._hiddenTabStopObserver = new MutationObserver(() => {
+                            if (! container.isConnected) {
+                                return;
+                            }
+
+                            attempt();
+                        });
+
+                        this._hiddenTabStopObserver.observe(container, {
+                            subtree: true,
+                            childList: true,
+                            attributes: true,
+                            attributeFilter: ['tabindex', 'aria-hidden'],
+                        });
+                    }
+
                     return;
                 }
 
@@ -1073,6 +1119,13 @@ window.ApexCharts = ApexCharts;</pre>
             if (this._hiddenTabStopRaf) {
                 cancelAnimationFrame(this._hiddenTabStopRaf);
                 this._hiddenTabStopRaf = null;
+            }
+            // An observer that outlives its component keeps the whole scope
+            // alive and writes into it on every mutation of a subtree nobody
+            // owns any more.
+            if (this._hiddenTabStopObserver) {
+                this._hiddenTabStopObserver.disconnect();
+                this._hiddenTabStopObserver = null;
             }
             clearTimeout(this._darkModeDebounce);
             if (this._detachRaf) {

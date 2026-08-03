@@ -92,9 +92,16 @@
     $successMessage = is_string($success) ? $success : null;
 
     // Auto-size: `rows="auto"` grows the textarea with its content via CSS
-    // `field-sizing: content` (in the WireKit browser baseline). The numeric
-    // `rows` still serves as the minimum height; we never emit `rows="auto"`
-    // (invalid HTML) — auto falls back to a 2-row minimum.
+    // `field-sizing: content`, which is ABOVE the WireKit browser baseline —
+    // Chrome 123 and Safari 17.4, against a floor of 111 and 16.4. This comment
+    // claimed the opposite for thirteen releases.
+    //
+    // The field is complete without it: the numeric `rows` is the minimum height,
+    // the control scrolls and stays resizable, and we never emit `rows="auto"`
+    // (invalid HTML) — auto falls back to a 2-row minimum. What a reader on a
+    // baseline browser does NOT get is the growing, which is the thing the prop is
+    // named after. Recorded in BrowserBaselineGuardTest's accepted-use register
+    // with that degradation spelled out.
     $autosize = $rows === 'auto' || $rows === true;
     $minRows = $autosize ? 2 : (int) $rows;
 
@@ -204,7 +211,7 @@
             x-on:change="commitFromControl()"
         @endif
         {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-        {{ $attributes->class(['wk-field', $textareaClasses, $stateClasses, $sizeClasses, $resize ? 'resize-y' : 'resize-none', '[field-sizing:content]' => $autosize]) }}
+        {{ $attributes->class(['wk-field', $textareaClasses, $stateClasses, $sizeClasses, $resize ? 'resize-y' : 'resize-none', 'wk-autosize' => $autosize]) }}
     >{{ $slot }}</textarea>
 
     {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}

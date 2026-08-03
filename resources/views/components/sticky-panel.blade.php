@@ -7,7 +7,15 @@
     'offset' => '2rem',
     // Explicit max-height override (CSS length); null = the calc above.
     'maxHeight' => null,
-    // Panel width on desktop (the developer's two-column layout supplies the gutter).
+    // The panel's width CEILING, not a fixed width. It fills the column it is
+    // given and stops growing here — so a two-column desktop layout gets exactly
+    // this, and a stacked mobile layout gets the full width instead of a narrow
+    // card floating in a wide space.
+    //
+    // It used to be applied as `width: <this>; max-width: 100%`, which caps the
+    // wrong end: the ceiling only bites when the container is NARROWER, and the
+    // case that actually happens is the container being wider. Measured at 393px
+    // with the layout stacked, the summary came out 214px beside a 301px sibling.
     'width' => '20rem',
     // Tailwind breakpoint at/above which the panel sticks. Below it, mobileBehavior applies.
     'hideBelow' => 'md',
@@ -49,6 +57,22 @@
         'xl' => 'xl:sticky',
         default => 'md:sticky',
     };
+
+    // The width ceiling belongs to the STUCK layout only, and applying it
+    // everywhere was the defect. Below the breakpoint the panel un-sticks and
+    // renders in normal flow, where a ceiling meant for a side column leaves a
+    // narrow card sitting in a wide space: measured at 393px, the summary came
+    // out 240px beside a 301px sibling, which is what a reader notices.
+    //
+    // Literal classes rather than an interpolated prefix, for the same reason
+    // the sticky class above is literal: Tailwind scans source text, and a class
+    // it never sees in the source is a class it never generates.
+    $maxWidthClass = match ($hideBelowValue) {
+        'sm' => 'sm:max-w-[var(--wk-sticky-panel-w)]',
+        'lg' => 'lg:max-w-[var(--wk-sticky-panel-w)]',
+        'xl' => 'xl:max-w-[var(--wk-sticky-panel-w)]',
+        default => 'md:max-w-[var(--wk-sticky-panel-w)]',
+    };
     // 'hide' mode: collapse the panel entirely below the breakpoint.
     $hideClass = $mobileBehaviorValue === 'hide'
         ? match ($hideBelowValue) {
@@ -65,6 +89,7 @@
     $asideClasses = WireKit::resolveClasses('sticky-panel', 'aside', implode(' ', [
         'self-start',
         $stickyClass,
+        $maxWidthClass,
         $hideClass,
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
@@ -82,7 +107,7 @@
 
 <aside
     {{ $attributes->class([$asideClasses]) }}
-    style="top: {{ $offset }}; width: {{ $width }}; max-width: 100%;"
+    style="top: {{ $offset }}; width: 100%; --wk-sticky-panel-w: {{ $width }};"
     @if($label) aria-label="{{ $label }}" @endif
 >
     <div class="{{ $componentClasses }}" style="max-height: {{ $resolvedMaxHeight }};">

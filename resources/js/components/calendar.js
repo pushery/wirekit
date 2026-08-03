@@ -8,12 +8,33 @@
  */
 export default function wirekitCalendar(config = {}) {
     const today = new Date();
-    const initial = config.value ? new Date(config.value + 'T00:00:00') : null;
+
+    // `YYYY-MM-DD/YYYY-MM-DD` is the range spelling, the same one `date-picker`
+    // already reads and writes. Sharing it is the point: a value copied from one
+    // to the other keeps meaning, and a form receives the same two fields either
+    // way. A single date in range mode is a started range with no end yet, which
+    // is exactly the state a first click produces.
+    const [rawStart, rawEnd] = String(config.value || '').split('/');
+    const startValue = rawStart || null;
+    const endValue = rawEnd || null;
+
+    const initial = startValue ? new Date(startValue + 'T00:00:00') : null;
 
     return {
         viewYear: initial?.getFullYear() || today.getFullYear(),
         viewMonth: initial?.getMonth() || today.getMonth(),
-        selected: config.value || null,
+        selected: startValue,
+
+        // ── Range mode ────────────────────────────────────────────────────────
+        // `selected` is the start in both modes, so every existing read of it —
+        // the optimistic layer's bind, the hidden input, the keyboard model —
+        // keeps working untouched. Only `selectedEnd` is new.
+        range: !! config.range,
+        selectedEnd: endValue,
+        // The day under the pointer while a range is half-made. It drives the
+        // provisional shading and nothing else: a range that shows no in-between
+        // until the second click makes the reader guess what they are choosing.
+        hoverDate: null,
         focusedDay: initial?.getDate() || today.getDate(),
         _name: config.name || 'date',
         // Multi-month display: render N consecutive months side by side (1 = the
@@ -107,6 +128,7 @@ export default function wirekitCalendar(config = {}) {
                     isCurrentMonth: false,
                     isToday: false,
                     isSelected: false,
+                    ...this._rangeFlags(this._formatDate(new Date(year, month - 1, prevMonthLast - i))),
                 });
             }
 
@@ -118,7 +140,8 @@ export default function wirekitCalendar(config = {}) {
                     dayOfMonth: d,
                     isCurrentMonth: true,
                     isToday: dateStr === todayStr,
-                    isSelected: dateStr === this.selected,
+                    isSelected: dateStr === this.selected || (this.range && dateStr === this.selectedEnd),
+                    ...this._rangeFlags(dateStr),
                 });
             }
 
@@ -132,6 +155,7 @@ export default function wirekitCalendar(config = {}) {
                         isCurrentMonth: false,
                         isToday: false,
                         isSelected: false,
+                        ...this._rangeFlags(this._formatDate(new Date(year, month + 1, d))),
                     });
                 }
             }
@@ -177,8 +201,89 @@ export default function wirekitCalendar(config = {}) {
          * Select a date.
          */
         selectDate(dateStr) {
-            this.selected = dateStr;
+            if (! this.range) {
+                this.selected = dateStr;
+                this._notify();
+
+                return;
+            }
+
+            // Two clicks, and the SECOND one decides which end it is. Forcing the
+            // reader to click the earlier day first is the kind of rule that only
+            // reads as a rule after they have broken it — so a second click before
+            // the start simply becomes the start, and the range stays ordered.
+            if (! this.selected || this.selectedEnd) {
+                this.selected = dateStr;
+                this.selectedEnd = null;
+            } else if (dateStr < this.selected) {
+                this.selectedEnd = this.selected;
+                this.selected = dateStr;
+            } else {
+                this.selectedEnd = dateStr;
+            }
+
+            this.hoverDate = null;
             this._notify();
+        },
+
+        /** Shading state for one day. Cheap enough to run per cell, per render. */
+        _rangeFlags(dateStr) {
+            if (! this.range || ! this.selected) {
+                return { isRangeStart: false, isRangeEnd: false, isInRange: false };
+            }
+
+            // While only the start is set, the day under the pointer stands in for
+            // the end. That makes the shading answer the question the reader is
+            // actually asking — "what am I about to choose" — instead of showing
+            // nothing until the choice is already made.
+            const end = this.selectedEnd || (this.hoverDate && this.hoverDate > this.selected ? this.hoverDate : null);
+
+            const isInRange = !! end && dateStr > this.selected && dateStr < end;
+
+            return {
+                isRangeStart: dateStr === this.selected && !! end,
+                isRangeEnd: !! end && dateStr === end,
+                isInRange,
+                // The attribute VALUE, computed here rather than in the template.
+                // Alpine's CSP build holds one member access per directive — a
+                // ternary with `&&` and `!` in it does not parse there, and the
+                // failure is a directive that silently does nothing under a policy
+                // the library promises to support.
+                rangeMarker: isInRange && dateStr !== this.selected && dateStr !== this.selectedEnd ? '' : null,
+            };
+        },
+
+        /** Provisional end while the range is half-made. */
+        hoverDay(dateStr) {
+            if (this.range && this.selected && ! this.selectedEnd) {
+                this.hoverDate = dateStr;
+            }
+        },
+
+        /**
+         * The two ends as form values.
+         *
+         * Getters rather than `selected ?? ''` in the template: Alpine's CSP build
+         * does not parse `??`, and a directive it cannot parse does nothing at all
+         * under a policy this library promises to support. The combined field below
+         * was already a getter for the same reason — these two were written as
+         * expressions and the audit caught both.
+         */
+        get rangeStartValue() {
+            return this.selected || '';
+        },
+
+        get rangeEndValue() {
+            return this.selectedEnd || '';
+        },
+
+        /** The value a form or a server sees. */
+        get rangeValue() {
+            if (! this.range) {
+                return this.selected ?? '';
+            }
+
+            return this.selected ? (this.selectedEnd ? this.selected + '/' + this.selectedEnd : this.selected) : '';
         },
 
         /**
@@ -197,8 +302,19 @@ export default function wirekitCalendar(config = {}) {
             // setAttribute as well as the reactive :value binding — the
             // attribute is what a form serializes, and assigning it fires
             // nothing, so the event goes out by hand for wire:model.
-            this.$refs.hiddenInput?.setAttribute('value', this.selected ?? '');
+            this.$refs.hiddenInput?.setAttribute('value', this.rangeValue);
             this.$refs.hiddenInput?.dispatchEvent(new Event('input', { bubbles: true }));
+
+            // Two named fields as well, matching `date-picker`: a server that
+            // reads `name[start]` / `name[end]` from one gets them from the other.
+            // The combined `name` field stays, so an existing single-date handler
+            // is not broken by switching a calendar to range mode.
+            if (this.range) {
+                for (const [ref, value] of [['hiddenStart', this.selected], ['hiddenEnd', this.selectedEnd]]) {
+                    this.$refs[ref]?.setAttribute('value', value ?? '');
+                    this.$refs[ref]?.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
         },
 
         /**

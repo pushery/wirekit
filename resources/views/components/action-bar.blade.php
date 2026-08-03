@@ -27,7 +27,7 @@
     //   - 'static' — flows inline with the surrounding content. Useful when
     //     the bar is part of a card / panel / dashboard rather than a
     //     viewport-floating overlay. Drops the fixed positioning + the
-    //     viewport-centring transforms; keeps the same visual chrome.
+    //     viewport-centering transforms; keeps the same visual chrome.
     $isFloating = $mode !== 'static';
 
     $positioningClasses = $isFloating

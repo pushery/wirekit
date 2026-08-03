@@ -366,8 +366,9 @@ return [
     | Icon Configuration
     |--------------------------------------------------------------------------
     |
-    | WireKit uses 26 semantic icon aliases (e.g. 'close', 'search', 'chevron-down')
-    | that are resolved via presets to actual Blade Icon identifiers.
+    | WireKit uses a shared semantic icon vocabulary (e.g. 'close', 'search',
+    | 'chevron-down') resolved via presets to actual Blade Icon identifiers.
+    | `php artisan wirekit:icons` prints the set your configured presets provide.
     |
     | Available built-in presets:
     |   'heroicons'           — base, blade-ui-kit/blade-heroicons (~316 icons, Mini style)
@@ -423,7 +424,8 @@ return [
     | Set to null to disable chart support entirely (default).
     |
     | Available adapters:
-    |   'chartjs' — Chart.js (MIT, ~60KB, requires npm install chart.js)
+    |   'chartjs'    — Chart.js (MIT, ~60KB, requires npm install chart.js)
+    |   'apexcharts' — ApexCharts (NOT MIT — see apex_license below)
     |
     | You can also provide a fully qualified class name implementing
     | \Pushery\WireKit\Contracts\ChartAdapter for custom chart libraries.
@@ -435,10 +437,23 @@ return [
     |   import { Chart, registerables } from 'chart.js';
     |   Chart.register(...registerables);
     |
+    | apex_license records which ApexCharts tier you are on: 'community',
+    | 'commercial' or 'oem'. It changes nothing at runtime — it is a declaration,
+    | read only by `wirekit:doctor`, which reminds you that ApexCharts is not MIT.
+    |
+    | The key is listed here because the doctor tells you to set it in this file,
+    | and an instruction that points at a key the shipped file does not contain
+    | is one a reader cannot follow.
+    |
+    | Declaring 'community' does not stop the reminder, and that is deliberate:
+    | the $2M USD revenue threshold is a continuing condition rather than an
+    | install step, so a project passes it without any file here changing.
+    |
     */
 
     'charts' => [
-        'library' => null, // null = disabled, 'chartjs' = Chart.js
+        'library' => null, // null = disabled, 'chartjs' = Chart.js, 'apexcharts' = ApexCharts
+        'apex_license' => null, // null | 'community' | 'commercial' | 'oem' — declaration only
     ],
 
     /*

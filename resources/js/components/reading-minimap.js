@@ -181,7 +181,7 @@ export default (options = {}) => ({
                 // The minimap's `target` prop is `null` by default — only
                 // a developer-supplied selector reaches this branch. A
                 // miss is therefore always a typo worth surfacing.
-                // eslint-disable-next-line no-console
+                 
                 console.warn(
                     `[wirekit] reading-minimap: target selector "${this.target}" matched no element. ` +
                     `Minimap will not render. Check the selector on <x-wirekit::reading-minimap target="${this.target}" />.`
@@ -504,7 +504,7 @@ export default (options = {}) => ({
         // ports from the iframe-clone path; comparable enough.
         const tagCount = source.querySelectorAll('*').length;
         if (tagCount > RENDERED_MAX_TAGS) {
-            // eslint-disable-next-line no-console
+             
             console.warn(`[wirekit] reading-minimap: source DOM has ${tagCount} tags (>${RENDERED_MAX_TAGS}), falling back to stripe mode.`);
             this.mode = 'stripes';
             this.$el.setAttribute('data-mode', 'stripes');

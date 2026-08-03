@@ -141,7 +141,7 @@ export default function wirekitThemeController(config = {}) {
                 const value = localStorage.getItem(this.storageKey);
 
                 return ['system', 'light', 'dark'].includes(value) ? value : null;
-            } catch (e) {
+            } catch {
                 return null;
             }
         },
@@ -163,7 +163,7 @@ export default function wirekitThemeController(config = {}) {
                 } else {
                     localStorage.setItem(this.storageKey, theme);
                 }
-            } catch (e) {
+            } catch {
                 // Nothing to do: the choice applies to this page, it just will not
                 // survive a reload. Better than throwing on a click.
             }

@@ -133,6 +133,67 @@ export default function wirekitOptimistic(config = {}) {
         _unmorph: null,
         _marked: false,
         _markBaseline: null,
+        // The owning component's id, read at init and never re-derived — a
+        // teleported panel leaves the component and takes `$el` with it.
+        _hostId: null,
+
+        /**
+         * The `wire:id` of the component this control belongs to, teleport or not.
+         *
+         * The obvious walk — `$el.closest('[wire:id]')` — answers correctly for a
+         * control that sits where it was rendered, and returns null for one inside a
+         * panel Alpine has teleported to `<body>`. The layer then falls back to
+         * Livewire's component-less stub, which answers `$id` truthily and therefore
+         * passes the guard meant to catch exactly this, and every call into it returns
+         * undefined: the value changes on screen, no request is sent, no error is
+         * raised, and the control announces "saving" forever.
+         *
+         * Caching the id at init fixed HALF of that — the color picker, whose wrapper
+         * is inside the component and whose saturation plane teleports out of it. It
+         * does nothing for a wrapper that is born outside: measured on the dropdown's
+         * three optimistic demos, all three sit directly under `<body>` at init with
+         * `closest('[wire:id]')` already null. Alpine initializes the moved node, so
+         * there is no moment at which the naive walk would have worked.
+         *
+         * `_x_teleportBack` is what survives the move. Alpine leaves it on the moved
+         * node pointing at the `<template>` still inside the component, and that
+         * template is the only link back — position in the document is not, and no
+         * naming convention has to be maintained for it to keep working.
+         */
+        _resolveHostId() {
+            const el = this.$el;
+
+            if (! el || ! el.closest) {
+                return null;
+            }
+
+            const direct = el.closest('[wire\\:id]');
+
+            if (direct) {
+                return direct.getAttribute('wire:id');
+            }
+
+            if (typeof document === 'undefined' || ! document.body) {
+                return null;
+            }
+
+            for (const node of document.body.children) {
+                if (! node._x_teleportBack || ! node.contains(el)) {
+                    continue;
+                }
+
+                const origin = node._x_teleportBack.closest
+                    ? node._x_teleportBack.closest('[wire\\:id]')
+                    : null;
+
+                if (origin) {
+                    return origin.getAttribute('wire:id');
+                }
+            }
+
+            return null;
+        },
+
 
         init() {
             // Marks the subtree as carrying a provisional state, so the stylesheet can
@@ -156,6 +217,7 @@ export default function wirekitOptimistic(config = {}) {
             // asserted in that harness against an $el double, so the guard against crashing
             // does not weaken the guard.
             this.$el?.setAttribute('data-wk-optimistic', '');
+            this._stampState();
 
             // The factory owns the value only in the default binding. With an
             // explicit bind, the property already exists on the component and
@@ -234,11 +296,80 @@ export default function wirekitOptimistic(config = {}) {
                 this.value = control.checked;
             }
 
-            if (! this.action || ! this.$wire?.$intercept) {
+            // Remembered while `$el` is still inside the component — see `_wire()`.
+            this._hostId = this._resolveHostId();
+
+            const wire = this._wire();
+
+            if (! this.action || ! wire?.$intercept) {
                 return;
             }
 
-            this._unintercept = this.$wire.$intercept(this.action, (hooks) => this._onFire(hooks));
+            this._unintercept = wire.$intercept(this.action, (hooks) => this._onFire(hooks));
+        },
+
+        /**
+         * The component wire, resolved rather than assumed.
+         *
+         * `$wire` is Alpine's magic and is the right path whenever it resolves.
+         * In some render contexts it hands back a component-LESS stub instead:
+         * every property answers as a function, every call returns undefined,
+         * and nothing reaches the server. Measured on the documentation site's
+         * preview route, where the consequence was that every optimistic control
+         * painted its provisional state and then waited forever for an answer
+         * nobody had asked for — 24 pages, permanently.
+         *
+         * The stub cannot be recognized by asking whether the method exists.
+         * Livewire's wire is a proxy that answers `typeof … === 'function'` for
+         * ANY name, including one that is nonsense — verified on a page where
+         * everything works, so that is the proxy's nature and not the defect.
+         *
+         * What does separate them is whether the wire knows which component it
+         * is. A resolved wire carries `$id`; the stub carries nothing. When it
+         * carries nothing, ask Livewire directly for the component that owns
+         * this element — measured to work in exactly the context where the magic
+         * does not.
+         */
+        _wire() {
+            // Explicit resolution FIRST, the magic only as a fallback — and the
+            // order is the whole fix.
+            //
+            // Preferring the magic and falling back "when it looks unresolved"
+            // was the first attempt and it did not work, because there is no
+            // reliable way to tell the two apart from inside. `$id` reads as
+            // present through one access path and absent through another on the
+            // very same element, so a check built on it picks the stub about as
+            // often as not. Asking the DOM which component owns this element has
+            // no such ambiguity: there is one `[wire:id]` ancestor or there is
+            // none, and Livewire either knows that id or it does not.
+            // The id is REMEMBERED from init, and that is the second half of the
+            // fix — the first half only made the resolution explicit.
+            //
+            // `$el` is not stable. A panel that teleports moves out of the
+            // component and into `<body>`, so a control inside it has no
+            // `[wire:id]` ancestor at all: measured on the color picker, whose
+            // saturation plane sits in a teleported panel and whose parent chain
+            // from there reads DIV < DIV < BODY < HTML. The DOM lookup then found
+            // nothing, the magic fallback handed back the component-less stub —
+            // which answers `$id` truthily, so the guard above let it past — and
+            // the layer flipped to its provisional state and called into nothing.
+            // No request, no error, no rollback: the control said "saving" and
+            // stayed that way, and every arrow key on that plane did it again.
+            //
+            // Read at init and re-tried here, because "at init the wrapper is inside
+            // the component" is true for a control that MOVES and false for one that
+            // is born outside — see _resolveHostId().
+            const id = this._hostId || this._resolveHostId();
+
+            if (id && typeof window !== 'undefined' && window.Livewire && typeof window.Livewire.find === 'function') {
+                const found = window.Livewire.find(id);
+
+                if (found) {
+                    return found;
+                }
+            }
+
+            return this.$wire;
         },
 
         destroy() {
@@ -330,6 +461,7 @@ export default function wirekitOptimistic(config = {}) {
 
             this._write(next);
             this.state = 'optimistic';
+            this._stampState();
             this._installMorphGuard();
 
             // Announced once per BURST, not once per change. A debounced field
@@ -468,11 +600,24 @@ export default function wirekitOptimistic(config = {}) {
             // to make. Silent is the one thing it must not be: a control that
             // does nothing and says nothing is precisely the failure this file
             // is careful about everywhere else.
-            if (typeof this.$wire?.[this.action] !== 'function') {
+            // Asking `typeof wire[action] === 'function'` looks like the check to
+            // make here and is worth nothing: Livewire's wire is a proxy that
+            // answers "function" for every name, so this guard was true for a
+            // method that does not exist — and, worse, true for a wire attached
+            // to no component at all. It could never fail, which is the same as
+            // not being here.
+            //
+            // What can be false is whether a component was resolved. Without one
+            // there is nothing to call, and applying first would leave the
+            // control showing a change that nothing was ever asked to make.
+            const wire = this._wire();
+
+            if (! wire || ! wire.$id) {
                 if (this.debug) {
                     devWarn(
-                        `optimistic: no Livewire method "${this.action}" on this component. `
-                        + 'The control will not change state. Check the method name, and that Livewire is loaded.'
+                        `optimistic: no Livewire component owns this control, so "${this.action}" cannot be called. `
+                        + 'The control will not change state. Check that Livewire is loaded and that this markup '
+                        + 'is nested inside a Livewire component.'
                     );
                 }
 
@@ -493,7 +638,7 @@ export default function wirekitOptimistic(config = {}) {
             // server-side instead would mean every optimistic method had to
             // recompute what the client already decided, and the two could
             // disagree.
-            this.$wire[this.action](next, ...(this.args || []));
+            wire[this.action](next, ...(this.args || []));
 
             return true;
         },
@@ -544,7 +689,41 @@ export default function wirekitOptimistic(config = {}) {
             const failureExit = this.failure === 'keep' ? 'rejected' : 'rolled-back';
 
             onFailure(() => this._settle(failureExit));
-            onError(() => this._settle(failureExit));
+
+            // `preventDefault()` is the whole point, and its absence put a Laravel
+            // stack trace on a reader's phone. Livewire's default for a non-2xx is
+            // to render the server's error page into a full-screen iframe — which
+            // is right for an app that has not handled the failure, and wrong here
+            // by definition: a component that declares `optimistic` has said it
+            // OWNS this path. It rolls the value back and announces the refusal,
+            // and then Livewire covers that with a stack trace the reader can do
+            // nothing with.
+            //
+            // Reported from a phone on a public documentation page, on a demo whose
+            // label promises "the tick is taken back, and said out loud".
+            //
+            // The failure is not swallowed — it goes to the console, where a
+            // developer looks and a reader does not. Handling something and hiding
+            // it are different acts, and only the second would be a defect.
+            onError(({ response, body, preventDefault } = {}) => {
+                preventDefault?.();
+
+                if (typeof console !== 'undefined' && console.error) {
+                    // `[wirekit] <component>:` — the house prefix, and here it is load-
+                    // bearing rather than cosmetic. Written `[wirekit:optimistic]`, the
+                    // bracket-plus-colon is a valid Tailwind arbitrary-variant candidate,
+                    // so the scanner reads this console string out of the shipped bundle
+                    // and compiles `[wirekit:optimistic]` into the developer's stylesheet.
+                    // The drift audit then reports a selector no source emits — which is
+                    // exactly what it is.
+                    console.error(
+                        '[wirekit] optimistic: the server refused this action; the value was rolled back.',
+                        { status: response?.status, body }
+                    );
+                }
+
+                this._settle(failureExit);
+            });
 
             // Silent, and back to idle: an abort refused nothing. Only the last
             // one restores — an abort in the middle of a burst leaves the flips
@@ -574,6 +753,7 @@ export default function wirekitOptimistic(config = {}) {
             }
 
             this.state = next;
+            this._stampState();
 
             if (restores) {
                 this._resyncControl();
@@ -598,6 +778,27 @@ export default function wirekitOptimistic(config = {}) {
                     this._announce(this.messages.reverted);
                 }
             }
+        },
+
+        /**
+         * Put the state on the element, so styling can reach it.
+         *
+         * §8 of the contract asks for exactly this and it was never built: "the
+         * state becomes `rejected`, not `rolled-back` — a component's styling
+         * needs to tell 'put back' from 'still yours, not saved'". Nothing bound
+         * to `state` in any of the twenty-three templates, and the only visible
+         * treatment in the library keys off `aria-busy`, which covers the pending
+         * state alone. So a refusal on a `keep` component looked EXACTLY like a
+         * success: the value stayed, the outline cleared, and the announcement
+         * went into an `sr-only` region. The page promised "you are told it did
+         * not save" and told nobody who was looking.
+         *
+         * Stamped by the factory for the same reason the marker above is: it is
+         * the one place that knows, and twenty-three templates are twenty-three
+         * chances to forget.
+         */
+        _stampState() {
+            this.$el?.setAttribute('data-wk-optimistic-state', this.state);
         },
 
         /** Write into the live region. Arbitration is the caller's decision. */
@@ -629,8 +830,44 @@ export default function wirekitOptimistic(config = {}) {
         _resyncControl() {
             const el = this.$refs && this.$refs.control;
 
-            if (el && 'checked' in el && el.checked !== !! this._read()) {
-                el.checked = !! this._read();
+            if (! el) {
+                return;
+            }
+
+            // The type, NOT `'checked' in el` — that property exists on EVERY
+            // <input>, so a date, text or color field took the checkbox branch,
+            // had a meaningless boolean written to `checked`, and never got its
+            // value back. The layer rolled back, announced "Change undone", and
+            // left the user's value sitting in the field: the state said undone
+            // and the screen said otherwise, which is worse than not rolling back
+            // at all, because the sentence is a lie the reader can see through.
+            //
+            // The comment that used to sit here said the binding handles the
+            // rollback path. It does for a checkbox. A value control has no
+            // `x-model` back to the DOM, so nothing wrote it.
+            const type = (el.type || '').toLowerCase();
+
+            if (type === 'checkbox' || type === 'radio') {
+                if (el.checked !== !! this._read()) {
+                    el.checked = !! this._read();
+                }
+
+                return;
+            }
+
+            if ('value' in el) {
+                const restored = this._read();
+                const next = restored === null || restored === undefined ? '' : String(restored);
+
+                if (el.value !== next) {
+                    el.value = next;
+
+                    // A programmatic write does not fire either, and anything
+                    // listening downstream — a Livewire binding, a sibling
+                    // preview, a chart — is entitled to know the value moved.
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
             }
         },
 

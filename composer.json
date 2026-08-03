@@ -33,10 +33,11 @@
     "codeat3/blade-phosphor-icons": "^2.4",
     "larastan/larastan": "^3.10",
     "laravel/pint": "^1.0",
-    "mallardduck/blade-lucide-icons": "^1.26",
+    "mallardduck/blade-lucide-icons": "^2.0",
     "orchestra/testbench": "^10.0 || ^11.1",
-    "pestphp/pest": "^4.0",
-    "pestphp/pest-plugin-laravel": "^4.0"
+    "pestphp/pest": "^5.0",
+    "pestphp/pest-plugin-laravel": "^5.0",
+    "symfony/yaml": "^7.4 || ^8.0"
   },
   "suggest": {
     "blade-ui-kit/blade-icons": "Required for the icon system (~1.7). Install alongside your preferred icon set.",

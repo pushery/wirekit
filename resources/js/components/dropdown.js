@@ -14,6 +14,8 @@ import { position } from '../utils/floating.js';
 export default function wirekitDropdown(config = {}) {
     return {
         open: false,
+        // Read by the panel through the scope chain, which survives its teleport.
+        panelId: config.panelId || '',
         _placement: config.placement || 'bottom-start',
         _offset: config.offset || 8,
 

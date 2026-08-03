@@ -9,7 +9,7 @@
  * focus to the first action on open, walks the actions with the arrow keys, and
  * hands focus back to the trigger on Escape, which is where the reader was.
  */
-export default function wirekitFab(config = {}) {
+export default function wirekitFab() {
     return {
         open: false,
         _onDocumentClick: null,

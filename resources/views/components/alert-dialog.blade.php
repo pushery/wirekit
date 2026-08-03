@@ -22,8 +22,8 @@
     // Alert Dialog — specialized confirmation dialog for destructive actions.
     // Uses role="alertdialog" (not "dialog") to signal urgency to screen readers.
     // Non-dismissible by default — user must click Cancel or Confirm.
-    $titleId = 'wk-alert-dialog-title-' . ($name ?? uniqid());
-    $descId = 'wk-alert-dialog-desc-' . ($name ?? uniqid());
+    $titleId = 'wk-alert-dialog-title-' . ($name ?? \Illuminate\Support\Str::random(12));
+    $descId = 'wk-alert-dialog-desc-' . ($name ?? \Illuminate\Support\Str::random(12));
 
     $backdropClasses = WireKit::resolveClasses('alert-dialog', 'backdrop', implode(' ', [
         'fixed inset-0',

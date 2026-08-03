@@ -42,7 +42,7 @@ export function applyTriggerAria(el, watch, options = {}) {
 
     if (! interactive) {
         if (options.missingTriggerWarning) {
-            // eslint-disable-next-line no-console
+             
             console.warn(options.missingTriggerWarning);
         }
 

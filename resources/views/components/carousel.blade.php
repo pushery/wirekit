@@ -101,8 +101,8 @@
     // row BELOW the slide stage, so the dots sit UNDER the slides instead of
     // overlapping them. Vertical: the right-edge column, absolutely placed.
     $indicatorClasses = $isVertical
-        ? 'absolute right-[var(--padding-wk-x-sm)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5'
-        : 'mt-[var(--padding-wk-y-sm)] flex items-center justify-center gap-1.5';
+        ? 'absolute right-[var(--padding-wk-x-sm)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-4'
+        : 'mt-[var(--padding-wk-y-sm)] flex items-center justify-center gap-4';
 @endphp
 
 {{-- The APG carousel shape, without the tabs.
@@ -198,6 +198,13 @@
                 :aria-current="current === i ? 'true' : 'false'"
                 :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Go to slide :number')) }}.replace(':number', i + 1)"
                 data-wk-carousel-dot
+                {{-- SPACING, not an expander. The 44px `wk-touch-target` ::before was tried
+                     first and was worse than the problem: at a 14px pitch the expanders
+                     overlapped, so a tap in the middle of one dot landed on its neighbor.
+                     WCAG 2.5.8's own spacing exception is the exit here — `gap-4` puts the
+                     centers 24px apart, which is exactly the distance at which the
+                     standard's circles stop intersecting, and an 8px dot is then compliant
+                     without being any bigger. --}}
                 class="w-2 h-2 cursor-pointer rounded-full transition-colors duration-[var(--transition-wk-duration)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 :class="current === i ? 'bg-[var(--color-wk-accent)]' : 'bg-[var(--color-wk-border)]'"
             ></button>

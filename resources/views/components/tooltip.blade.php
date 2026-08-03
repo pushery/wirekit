@@ -30,7 +30,7 @@
     WireKit::warnUnknownProps('tooltip', $attributes->getAttributes());
 
     // Generate unique ID for ARIA association between trigger and tooltip
-    $tooltipId = 'wk-tooltip-' . uniqid();
+    $tooltipId = 'wk-tooltip-' . \Illuminate\Support\Str::random(12);
 
     // Tooltip panel classes — inverted colors, small rounded box
     // w-max ensures the tooltip sizes to its content (not the trigger width)

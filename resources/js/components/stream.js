@@ -299,7 +299,7 @@ export default function wirekitStream(config = {}) {
             const decoder = new TextDecoder();
             let pending = '';
 
-            // eslint-disable-next-line no-constant-condition
+             
             while (true) {
                 let result;
 

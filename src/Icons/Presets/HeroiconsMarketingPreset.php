@@ -60,7 +60,7 @@ final class HeroiconsMarketingPreset implements IconPreset
             // Audience
             // (`globe` moved to the base preset in v2.6.4; `live` stays here —
             // no clean universal-core equivalent across icon libraries.)
-            // `users` moved to the BASE preset in v2.23.0 and is removed here, so a
+            // `users` moved to the BASE preset in v2.24.0 and is removed here, so a
             // stacked setup does not define it twice. Same glyph either way
             // (`heroicon-m-users`), so nothing a caller renders changes — this is
             // the same promotion `copy`, `globe`, `book` and `lightbulb` went
