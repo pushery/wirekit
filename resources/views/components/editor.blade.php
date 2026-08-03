@@ -124,6 +124,17 @@
         'extensions' => $extensions ?? config('wirekit.components.editor.extensions', []),
         'placeholder' => $placeholder,
         'maxLength' => $maxLength,
+        // A VISIBLE label does not name this field, and assuming it did shipped an
+        // unnamed textbox to everyone with a real engine. `<x-wirekit::label for>`
+        // points at the wrapper, and the editable surface the engine builds inside
+        // it is a `div[contenteditable][role=textbox]` — not a labelable element,
+        // so `for` never reaches it. Invisible here for as long as the sample had
+        // no engine: without one the component renders its plain textarea, which
+        // carries its own aria-label and passes.
+        //
+        // So the label is wired by REFERENCE instead, and aria-label stays the
+        // fallback for the unlabeled case.
+        'ariaLabelledby' => $label ? $id.'-label' : null,
         'ariaLabel' => $label ? null : ($name ? Str::headline((string) $name) : 'Rich text editor'),
         'ariaDescribedby' => $describedBy !== '' ? $describedBy : null,
         'ariaInvalid' => (bool) $hasError,
@@ -163,7 +174,7 @@
 
 <div class="w-full space-y-1.5">
     @if($label)
-        <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$id" :id="$id.'-label'">{{ $label }}</x-wirekit::label>
     @endif
 
 @if($optimisticConfig)

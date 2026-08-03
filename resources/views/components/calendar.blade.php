@@ -13,6 +13,15 @@
     'value' => null,
     // Multi-month display — render N consecutive months side by side (1 = the
     // classic single grid). Clamped 1..4 in the Alpine component.
+    // Two-click range selection. `value` then reads and writes
+    // `YYYY-MM-DD/YYYY-MM-DD`, the spelling the date-picker's own range flag
+    // already uses — a value moved between the two keeps its meaning.
+    //
+    // Written WITHOUT the component tag on purpose: Blade compiles component tags
+    // across the whole file before a PHP comment means anything, so naming one
+    // here compiles it, and the failure arrives as `Undefined variable $component`
+    // from a line that is not code.
+    'range' => false,
     'months' => 1,
     // Replace the static month label with native month + year <select> jump
     // controls for fast navigation. Opt-in; default keeps the label byte-identical.
@@ -32,6 +41,12 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $selectableHeader = BooleanProp::from($selectableHeader, false);
+    $range = BooleanProp::from($range, false);
+
+    // Split for the pre-Alpine markup only. The component reads the same string
+    // again in JS — one parse per side rather than a value threaded through two
+    // formats, which is how the two would drift.
+    [$rangeStart, $rangeEnd] = array_pad(explode('/', (string) $value, 2), 2, '');
 
     // Calendar — standalone month grid for date selection.
     // Uses role="grid" with keyboard navigation: arrows, PageUp/Down, Home/End.
@@ -155,12 +170,20 @@
 @endphp
 
 <div
-    x-data="wirekitCalendar({ value: {{ $valueLiteral }}, name: {{ $nameLiteral }}, months: {{ (int) $months }}, weekStartsOn: {{ (int) $weekStartsOn }} })"
+    x-data="wirekitCalendar({ value: {{ $valueLiteral }}, name: {{ $nameLiteral }}, months: {{ (int) $months }}, weekStartsOn: {{ (int) $weekStartsOn }}, range: {{ $range ? 'true' : 'false' }} })"
     {{ $attributes->class([$classes]) }}
 >
     {{-- Hidden input for form submission --}}
     {{-- Static value as well as the bound one: the field is empty until Alpine boots, and a form submitted in that window sends nothing while the visible control already shows the value. Both come from the same PHP expression that feeds the factory, so they cannot drift. --}}
-    <input type="hidden" name="{{ $name }}" x-ref="hiddenInput" value="{{ $value }}" :value="selected" />
+    <input type="hidden" name="{{ $name }}" x-ref="hiddenInput" value="{{ $value }}" :value="rangeValue" />
+    @if($range)
+        {{-- The two ends as named fields as well, matching date-picker's
+             `name[start]` / `name[end]`. The combined field above stays, so a
+             handler written for a single date still receives something it
+             understands when a calendar is switched to range mode. --}}
+        <input type="hidden" name="{{ $name }}[start]" x-ref="hiddenStart" value="{{ $rangeStart }}" :value="rangeStartValue" />
+        <input type="hidden" name="{{ $name }}[end]" x-ref="hiddenEnd" value="{{ $rangeEnd }}" :value="rangeEndValue" />
+    @endif
 
     @if($optimisticConfig)
         {{-- `display: contents` so the grid and header keep their place in this
@@ -242,7 +265,7 @@
                             <template x-for="(week, weekIdx) in weeksOf(month.days)" :key="weekIdx">
                                 <tr role="row">
                                     <template x-for="day in week" :key="day.date">
-                                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="day.isSelected ? 'true' : 'false'">
+                                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange) ? 'true' : 'false'">
                                             <button
                                                 type="button"
                                                 x-on:click="day.isCurrentMonth && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
@@ -251,10 +274,12 @@
                                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay && month.offset === focusOffset ? '0' : '-1'"
                                                 :disabled="!day.isCurrentMonth"
                                                 class="{{ $dayBtnClasses }}"
+                                                x-on:mouseenter="hoverDay(day.date)"
+                                :data-wk-in-range="day.rangeMarker"
                                                 :class="{
                                                     'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]': day.isSelected,
-                                                    'font-[number:var(--font-wk-heading-weight)] ring-1 ring-[var(--color-wk-accent)]': day.isToday && !day.isSelected,
-                                                    'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected,
+                                                                    'font-[number:var(--font-wk-heading-weight)] ring-1 ring-[var(--color-wk-accent)]': day.isToday && !day.isSelected,
+                                                    'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected && !day.isInRange,
                                                     'text-[color:var(--color-wk-text-muted)] opacity-40 cursor-default': !day.isCurrentMonth,
                                                     'cursor-pointer': day.isCurrentMonth && day.isSelected,
                                                 }"
@@ -288,7 +313,7 @@
                              only allowed on gridcell/option/row/rowheader/tab/
                              treeitem roles — placing it on a <button> fails
                              axe-core's aria-allowed-attr (critical). --}}
-                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="day.isSelected ? 'true' : 'false'">
+                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange) ? 'true' : 'false'">
                             <button
                                 type="button"
                                 x-on:click="day.isCurrentMonth && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
@@ -297,10 +322,14 @@
                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay ? '0' : '-1'"
                                 :disabled="!day.isCurrentMonth"
                                 class="{{ $dayBtnClasses }}"
+                                {{-- The in-between days get a TINT, not the accent, so the two ends
+                                     stay what the eye lands on. --}}
+                                x-on:mouseenter="hoverDay(day.date)"
+                                :data-wk-in-range="day.rangeMarker"
                                 :class="{
                                     'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]': day.isSelected,
                                     'font-[number:var(--font-wk-heading-weight)] ring-1 ring-[var(--color-wk-accent)]': day.isToday && !day.isSelected,
-                                    'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected,
+                                    'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected && !day.isInRange,
                                     'text-[color:var(--color-wk-text-muted)] opacity-40 cursor-default': !day.isCurrentMonth,
                                     'cursor-pointer': day.isCurrentMonth && day.isSelected,
                                 }"

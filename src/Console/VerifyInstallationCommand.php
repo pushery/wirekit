@@ -991,10 +991,11 @@ class VerifyInstallationCommand extends Command
      * Three-step ApexCharts adapter check:
      *   1. Confirm the apexcharts npm package is installed (FAIL on absence —
      *      otherwise the chart renders blank with a console.error).
-     *   2. License-tier reminder — WARN when apex_license is unset / 'community';
-     *      PASS when 'commercial' / 'oem'. Never FAIL purely on tier choice
-     *      (license compliance is the developer's responsibility, not a config
-     *      error).
+     *   2. License-tier reminder — PASS on 'commercial' / 'oem'; WARN on
+     *      'community' (confirming the value, and saying why it still speaks),
+     *      on an unrecognized value (naming it back), and when unset. Never FAIL
+     *      purely on tier choice (license compliance is the developer's
+     *      responsibility, not a config error).
      *   3. Adapter-bundle presence — confirm dist/wirekit-apex.js was published
      *      to the public/vendor folder. WARN on absence with a republish hint.
      */
@@ -1024,16 +1025,52 @@ class VerifyInstallationCommand extends Command
         }
 
         // Step 2: license-tier reminder. WARN-only; never FAIL on this.
+        //
+        // Four outcomes, not two. The WARN condition is deliberate and stays:
+        // the $2M threshold is a CONTINUING condition, not an install step, so
+        // a project crosses it without any file changing and a reminder that
+        // went quiet would go quiet at exactly the wrong moment.
+        //
+        // What changed is the advice. The old single WARN offered three values
+        // and promised that recording one would silence the reminder — and two
+        // of the three did not. Someone on the community tier followed the
+        // instruction, saw the identical message with the identical advice, and
+        // the reasonable conclusion is that the doctor is imprecise. That is the
+        // erosion this command cannot afford: a warning nobody can act on
+        // teaches people to skim, and then the real findings go unread too.
+        //
+        // So a declared community tier gets its own line that confirms the value
+        // arrived AND says why it still speaks, and the unset case keeps the
+        // full explanation minus the promise it could not keep.
         $tier = config('wirekit.charts.apex_license');
+
         if ($tier === 'commercial' || $tier === 'oem') {
             $this->reportPass(sprintf('ApexCharts license tier declared: %s', $tier));
+        } elseif ($tier === 'community') {
+            $this->reportWarn(
+                'Declared tier: community. This reminder stays — the $2M USD revenue '
+                .'threshold for the ApexCharts Community License is a continuing '
+                .'condition, not an install step. Purchase a Commercial License at '
+                .'https://apexcharts.com/license/ once you pass it.'
+            );
+        } elseif (is_string($tier) && $tier !== '') {
+            // A typo is the same defect one level up: it falls into no branch,
+            // and telling someone who DID record a tier to go record one is the
+            // instruction that cannot be followed all over again. Name the value
+            // back so the difference is visible without opening the source.
+            $this->reportWarn(sprintf(
+                'Unrecognized ApexCharts license tier `%s` in `charts.apex_license`. '
+                .'Accepted values: community / commercial / oem. Until it matches one '
+                .'of those it is treated as undeclared.',
+                $tier
+            ));
         } else {
             $this->reportWarn(
                 'ApexCharts is non-MIT. Confirm your organization is below the '
                 .'$2M USD revenue threshold for the Community License, or purchase a '
                 .'Commercial License at https://apexcharts.com/license/. '
                 .'Record your tier via `charts.apex_license` in config/wirekit.php '
-                .'(values: community / commercial / oem) to silence this reminder.'
+                .'(values: community / commercial / oem).'
             );
         }
 

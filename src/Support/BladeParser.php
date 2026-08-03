@@ -437,6 +437,32 @@ final class BladeParser
                     break;
                 }
 
+                /*
+                 * An unquoted `<` means this tag never closed.
+                 *
+                 * In well-formed Blade a `<` inside a tag is always inside a quoted value —
+                 * an unquoted one starts a NEW element, which means the previous one was
+                 * never terminated. Without this bound the walker keeps consuming whatever
+                 * follows as attribute names, and the failure is the expensive kind: it does
+                 * not throw, it returns plausible-looking output.
+                 *
+                 * Reported from a downstream tree that pointed this at PHP fixtures, where a
+                 * tag split across string concatenation produced entries like
+                 * `<button $html>` and `<ticker \;>` — eight of nine findings were artifacts,
+                 * on a guard whose whole purpose was to report real ones. Silent plausible
+                 * output is worse than a throw, because everything built on top of it inherits
+                 * the confidence without the correctness.
+                 *
+                 * The input was out of contract — this reads Blade — and it is bounded anyway:
+                 * a helper that is cheap to make safe should not require its callers to have
+                 * read its docblock.
+                 */
+                if ($char === '<') {
+                    $name = '';
+
+                    break;
+                }
+
                 // An attribute name runs until whitespace, `=`, `/` or `>`. Anything
                 // collected while a quote was open never reaches here, which is what keeps
                 // values out of the result.
@@ -466,7 +492,13 @@ final class BladeParser
                 $attributes,
             )));
 
-            $usages[] = ['name' => $name, 'attributes' => $attributes];
+            // A tag the walker could not terminate is DISCARDED rather than reported with
+            // whatever it managed to collect. `$name` is cleared at the bound above; this is
+            // where that decision takes effect.
+            if ($name !== '') {
+                $usages[] = ['name' => $name, 'attributes' => $attributes];
+            }
+
             $offset = max($cursor, $start + 1);
         }
 

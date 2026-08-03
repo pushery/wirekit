@@ -109,6 +109,23 @@ final class LucidePreset implements IconPreset
             'legal' => 'lucide-scale',
             'badge' => 'lucide-badge-check',
             'layers' => 'lucide-layers',
+
+            // Notification, labeling, mail and media — concepts every
+            // administrative interface has, and none of them had a word here.
+            // A page that needed one reached for the icon package's own glyph
+            // name, which resolves only while that optional package happens to
+            // be installed: a dependency on the icon set rather than a contract
+            // with this library. `bell` and `bell-slash` move here from the
+            // app extension — same glyph, so nothing rendered changes.
+            'bell' => 'lucide-bell',
+            'bell-slash' => 'lucide-bell-off',
+            'tag' => 'lucide-tag',
+            'send' => 'lucide-send',
+            'archive' => 'lucide-archive',
+            'image' => 'lucide-image',
+            'message' => 'lucide-message-circle',
+            'reply' => 'lucide-reply',
+            'forward' => 'lucide-forward',
         ];
     }
 

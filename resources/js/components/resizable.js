@@ -139,7 +139,7 @@ export default function wirekitResizableHandle() {
             // for window-level listeners, no need for stopPropagation.
             try {
                 this.$el.setPointerCapture(event.pointerId);
-            } catch (e) {
+            } catch {
                 // Safari rarely throws NotFoundError if the pointerId has
                 // already been released; it's safe to continue — we just
                 // won't have capture, which only matters for out-of-bounds
@@ -190,7 +190,7 @@ export default function wirekitResizableHandle() {
             delete this.$el.dataset.dragging;
             try {
                 this.$el.releasePointerCapture(event.pointerId);
-            } catch (e) {
+            } catch {
                 // Same Safari caveat as setPointerCapture above — safe to swallow.
             }
             // Restore the prior body user-select value (see onPointerDown

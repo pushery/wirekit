@@ -14,7 +14,7 @@
     use Pushery\WireKit\WireKit;
 
     // Title ID for aria-labelledby — links dialog to its header
-    $titleId = 'wk-drawer-title-' . ($name ?? uniqid());
+    $titleId = 'wk-drawer-title-' . ($name ?? \Illuminate\Support\Str::random(12));
 
     // Backdrop classes — semi-transparent overlay behind the drawer
     $backdropClasses = WireKit::resolveClasses('drawer', 'backdrop', implode(' ', [

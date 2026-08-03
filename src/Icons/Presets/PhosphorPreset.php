@@ -122,6 +122,23 @@ final class PhosphorPreset implements IconPreset
             'legal' => 'phosphor-scales',
             'badge' => 'phosphor-identification-badge',
             'layers' => 'phosphor-stack',
+
+            // Notification, labeling, mail and media — concepts every
+            // administrative interface has, and none of them had a word here.
+            // A page that needed one reached for the icon package's own glyph
+            // name, which resolves only while that optional package happens to
+            // be installed: a dependency on the icon set rather than a contract
+            // with this library. `bell` and `bell-slash` move here from the
+            // app extension — same glyph, so nothing rendered changes.
+            'bell' => 'phosphor-bell',
+            'bell-slash' => 'phosphor-bell-slash',
+            'tag' => 'phosphor-tag',
+            'send' => 'phosphor-paper-plane-tilt',
+            'archive' => 'phosphor-archive',
+            'image' => 'phosphor-image',
+            'message' => 'phosphor-chat-circle',
+            'reply' => 'phosphor-arrow-bend-up-left',
+            'forward' => 'phosphor-arrow-bend-up-right',
         ];
     }
 

@@ -19,7 +19,7 @@
     use Pushery\WireKit\WireKit;
 
     // Title ID for aria-labelledby — links dialog to its header
-    $titleId = 'wk-modal-title-' . ($name ?? uniqid());
+    $titleId = 'wk-modal-title-' . ($name ?? \Illuminate\Support\Str::random(12));
 
     // HOW THE DIALOG GETS ITS NAME, and why this is not just `aria-labelledby`.
     //

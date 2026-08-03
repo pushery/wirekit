@@ -22,7 +22,7 @@ and a rough reproduction is more useful than a polished one:
 - The component or command involved, and the WireKit version
 - Steps or a snippet that shows it happening
 
-You will get an acknowledgement that a human has read it. If the report turns out not to be a
+You will get an acknowledgment that a human has read it. If the report turns out not to be a
 vulnerability, you will be told why rather than left waiting.
 
 ## Scope

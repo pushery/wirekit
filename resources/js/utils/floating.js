@@ -94,6 +94,27 @@ export async function position(reference, floating, {
     // first paint and the repositioned geometry never drift — important because the
     // `size`/`matchReferenceWidth` middleware mutate inline styles on every run.
     const run = async () => {
+        // A panel with no box yet is measured as 0x0, and every placement that
+        // subtracts the panel's own size then lands one panel-width off. This is
+        // not hypothetical: the data table's column menu opened at x 290..482 in
+        // a 375px viewport, because `bottom-end` computes
+        // `reference.left + reference.width - floating.width` and the width it
+        // subtracted was zero — 194 + 96 - 0 = 290, to the pixel.
+        //
+        // It reproduces in WebKit and not in Blink. Alpine's `$nextTick` fires
+        // after the DOM mutation, which is enough for Blink to have laid the
+        // panel out but not always for WebKit, so callers that anchor from
+        // `$nextTick` (the documented, correct thing to do) still measure
+        // nothing. Every engine can hit it; only one of them does so reliably,
+        // which is why it shipped.
+        //
+        // Waiting for a frame is the whole fix, and it costs nothing in the
+        // normal case: a panel that already has a box never enters the loop.
+        // The cap keeps a legitimately zero-width panel from waiting forever.
+        for (let frame = 0; frame < 3 && floating.getBoundingClientRect().width === 0; frame++) {
+            await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+
         const result = await computePosition(reference, floating, {
             strategy,
             placement,

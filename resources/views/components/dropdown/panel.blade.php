@@ -40,6 +40,12 @@
      This matches common UX patterns (GitHub, Linear, Stripe — dropdowns close instantly)
      and avoids a race where Alpine's ~150ms leave transition leaves the panel visible
      long enough to break synchronous browser test assertions like `assertDontSee`. --}}
+{{-- Teleported to <body>: `position: fixed` escapes a clipping ancestor but not a
+     STACKING context. A host with `contain: layout`, a transform or a filter scopes
+     this panel's z-index inside itself, and anything painted after it covers the
+     menu however high the z-index goes — reported from the documentation site,
+     where the open menu rendered under the code block below the preview. --}}
+<template x-teleport="body">
 <div
     {{-- Theme marker. A theme dresses surfaces by querying for these, and this
          panel had none — so a Cupertino-style glass map listing it reached
@@ -49,7 +55,7 @@
     data-wk-dropdown-panel
     x-ref="panel"
     x-show="open"
-    x-bind:id="$wkAncestorData('[data-wk-panel-id]', 'wkPanelId')"
+    x-bind:id="panelId"
     x-transition:enter="transition ease-out"
     x-transition:enter-start="opacity-0 scale-95"
     x-transition:enter-end="opacity-100 scale-100"
@@ -60,3 +66,4 @@
 >
     {{ $slot }}
 </div>
+</template>

@@ -118,6 +118,23 @@ final class HeroiconsPreset implements IconPreset
             'legal' => 'heroicon-m-scale',
             'badge' => 'heroicon-m-identification',
             'layers' => 'heroicon-m-square-3-stack-3d',
+
+            // Notification, labeling, mail and media — concepts every
+            // administrative interface has, and none of them had a word here.
+            // A page that needed one reached for the icon package's own glyph
+            // name, which resolves only while that optional package happens to
+            // be installed: a dependency on the icon set rather than a contract
+            // with this library. `bell` and `bell-slash` move here from the
+            // app extension — same glyph, so nothing rendered changes.
+            'bell' => 'heroicon-m-bell',
+            'bell-slash' => 'heroicon-m-bell-slash',
+            'tag' => 'heroicon-m-tag',
+            'send' => 'heroicon-m-paper-airplane',
+            'archive' => 'heroicon-m-archive-box',
+            'image' => 'heroicon-m-photo',
+            'message' => 'heroicon-m-chat-bubble-left-right',
+            'reply' => 'heroicon-m-arrow-uturn-left',
+            'forward' => 'heroicon-m-arrow-uturn-right',
         ];
     }
 

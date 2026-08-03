@@ -16,10 +16,12 @@ import { position } from '../utils/floating.js';
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_MOVE_TOLERANCE_PX = 10;
 
-/**
- * @param {Object} config - Context menu configuration from Blade
+/*
+ * Takes no configuration. It used to declare a `config` parameter documented as coming
+ * from Blade — but the template calls `wirekitContextMenu()` with no arguments and the
+ * body never read it, so the doc described a channel that did not exist.
  */
-export default function wirekitContextMenu(config = {}) {
+export default function wirekitContextMenu() {
     return {
         open: false,
         _focusIndex: -1,

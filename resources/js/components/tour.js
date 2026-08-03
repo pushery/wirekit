@@ -7,6 +7,7 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/
  */
 import { position } from '../utils/floating.js';
+import { prefersReducedMotion } from '../utils/motion.js';
 
 /**
  * @param {Object} config - Tour configuration from Blade
@@ -116,7 +117,12 @@ export default function wirekitTour(config = {}) {
                     offset: 12,
                 });
 
-                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Same reason as scroll-to-top: an explicit `behavior` argument wins
+                // over the CSS reduced-motion rule, so it has to ask itself.
+                targetEl.scrollIntoView({
+                    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+                    block: 'center',
+                });
             }
         },
 

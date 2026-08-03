@@ -115,7 +115,7 @@ function alreadyHasAlpine() {
 }
 
 if (alreadyHasAlpine()) {
-    // eslint-disable-next-line no-console
+     
     console.warn(
         '[wirekit-alpine] Alpine is already present on window — skipping '
         + 'self-contained bundle. Use dist/wirekit.js instead when BYO Alpine.',

@@ -70,7 +70,7 @@ function patchChartDrawOnce() {
     const originalDraw = Chart.prototype.draw;
     Chart.prototype.draw = function (...args) {
         if (!this.ctx || (this.canvas && !this.canvas.isConnected)) {
-            try { Chart.animator?.remove?.(this); } catch (e) { /* defensive */ }
+            try { Chart.animator?.remove?.(this); } catch { /* defensive */ }
             return;
         }
         return originalDraw.apply(this, args);
@@ -86,9 +86,9 @@ function sweepStaleCharts() {
         if (!c.canvas || !c.canvas.isConnected) stale.push(c);
     }
     for (const c of stale) {
-        try { Chart.animator?.remove?.(c); } catch (e) { /* defensive */ }
-        try { c.stop?.(); } catch (e) { /* defensive */ }
-        try { c.destroy?.(); } catch (e) { /* defensive */ }
+        try { Chart.animator?.remove?.(c); } catch { /* defensive */ }
+        try { c.stop?.(); } catch { /* defensive */ }
+        try { c.destroy?.(); } catch { /* defensive */ }
         registry.delete(c);
     }
 }
@@ -145,9 +145,9 @@ export default function wirekitChartJs(config) {
                 if (!canvas) return;
                 const existing = Chart.getChart?.(canvas);
                 if (existing) {
-                    try { Chart.animator?.remove?.(existing); } catch (e) { /* defensive */ }
-                    try { existing.stop?.(); } catch (e) { /* defensive */ }
-                    try { existing.destroy?.(); } catch (e) { /* defensive */ }
+                    try { Chart.animator?.remove?.(existing); } catch { /* defensive */ }
+                    try { existing.stop?.(); } catch { /* defensive */ }
+                    try { existing.destroy?.(); } catch { /* defensive */ }
                     getRegistry().delete(existing);
                 }
                 const ctx = canvas.getContext('2d');
@@ -203,8 +203,8 @@ export default function wirekitChartJs(config) {
                     id: 'wirekit-detach-guard',
                     beforeDraw(chart) {
                         if (!chart.canvas || !chart.canvas.isConnected) {
-                            try { chart.stop(); } catch (e) { /* idempotent */ }
-                            try { chart.destroy(); } catch (e) { /* idempotent */ }
+                            try { chart.stop(); } catch { /* idempotent */ }
+                            try { chart.destroy(); } catch { /* idempotent */ }
                             return false;
                         }
                     },
@@ -388,9 +388,9 @@ export default function wirekitChartJs(config) {
             }
             if (this.chart) {
                 getRegistry().delete(this.chart);
-                try { Chart.animator?.remove?.(this.chart); } catch (e) { /* defensive */ }
-                try { this.chart.stop?.(); } catch (e) { /* defensive */ }
-                try { this.chart.destroy(); } catch (e) { /* defensive */ }
+                try { Chart.animator?.remove?.(this.chart); } catch { /* defensive */ }
+                try { this.chart.stop?.(); } catch { /* defensive */ }
+                try { this.chart.destroy(); } catch { /* defensive */ }
                 this.chart = null;
             }
         },

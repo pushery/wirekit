@@ -45,8 +45,6 @@ final class HeroiconsAppPreset implements IconPreset
             'key' => 'heroicon-m-key',
 
             // Notifications
-            'bell' => 'heroicon-m-bell',
-            'bell-slash' => 'heroicon-m-bell-slash',
         ];
     }
 

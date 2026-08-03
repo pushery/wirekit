@@ -94,6 +94,7 @@ export default function wirekitEditor(config = {}) {
                         role: 'textbox',
                         'aria-multiline': 'true',
                         class: 'wk-editor-content',
+                        ...(config.ariaLabelledby ? { 'aria-labelledby': config.ariaLabelledby } : {}),
                         ...(config.ariaLabel ? { 'aria-label': config.ariaLabel } : {}),
                         ...(config.ariaDescribedby ? { 'aria-describedby': config.ariaDescribedby } : {}),
                         ...(config.ariaInvalid ? { 'aria-invalid': 'true' } : {}),
@@ -291,7 +292,7 @@ export default function wirekitEditor(config = {}) {
                     // Underline click. Surface a DX hint instead of letting an uncaught
                     // error break the editor (same "never silently broken" contract as
                     // the missing-factory fallback above).
-                    // eslint-disable-next-line no-console
+                     
                     console.error(
                         `[wirekit] editor: command "${name}" failed — is its editor `
                         + 'extension installed and registered in window.wirekitEditor? '
@@ -319,7 +320,7 @@ export default function wirekitEditor(config = {}) {
             // the first place. Denylist (not allowlist) so legitimate schemes —
             // mailto, tel, sms, app deep-links, relative, and anchors — keep working.
             if (this._isDangerousUrl(url)) {
-                // eslint-disable-next-line no-console
+                 
                 console.error(
                     `[wirekit] editor: refused a link with an unsafe URL scheme ("${url}"). `
                     + 'javascript:, data:, and vbscript: URLs are blocked to prevent XSS.'
@@ -395,7 +396,7 @@ export default function wirekitEditor(config = {}) {
                 window.__wirekit_editor_alias_warned__ ??= false;
                 if (!window.__wirekit_editor_alias_warned__) {
                     window.__wirekit_editor_alias_warned__ = true;
-                    // eslint-disable-next-line no-console
+                     
                     console.info(
                         '[wirekit] editor: window.tiptapEditor is a deprecated alias — rename your '
                         + 'factory to window.wirekitEditor. The old name keeps working through the '
@@ -423,7 +424,7 @@ export default function wirekitEditor(config = {}) {
                 window.__wirekit_editor_missing_warned__ ??= false;
                 if (!window.__wirekit_editor_missing_warned__) {
                     window.__wirekit_editor_missing_warned__ = true;
-                    // eslint-disable-next-line no-console
+                     
                     console.error(
                         '[wirekit] editor: no editor factory defined — falling back to a plain '
                         + 'textarea. Install a ProseMirror editor (e.g. @tiptap/core + @tiptap/starter-kit) '

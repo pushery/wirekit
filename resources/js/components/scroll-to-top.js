@@ -20,6 +20,8 @@
  * @param {number}  [config.threshold]  fraction of a viewport height to pass
  *        before the button appears
  */
+import { prefersReducedMotion } from '../utils/motion.js';
+
 export default function wirekitScrollToTop(config = {}) {
     return {
         visible: config.forceVisible === true,
@@ -62,7 +64,14 @@ export default function wirekitScrollToTop(config = {}) {
         },
 
         scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            /*
+             * `behavior` is an ARGUMENT, so the CSS reduced-motion rule cannot
+             * reach it. That rule sets `scroll-behavior`, which an explicit
+             * argument overrides — the browser does what the call asked for.
+             * Every animated scroll in this bundle therefore has to consult the
+             * preference itself, and this one was the last that did not.
+             */
+            window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
         },
     };
 }

@@ -59,6 +59,13 @@
     </div>
 
     {{-- Popover panel — positioned via Floating UI, focus-trapped --}}
+{{-- Teleported to <body>. `position: fixed` escapes a clipping ancestor but NOT a
+     stacking context: a host with `contain: layout`, a transform or a filter scopes
+     this panel's z-index inside itself, and anything painted after that ancestor
+     covers the panel however high the z-index goes. Reported from the documentation
+     site for the sibling components; fixed here at the same time rather than waiting
+     for the same screenshot a third time. --}}
+<template x-teleport="body">
     <div
         {{-- Theme marker — see docs/theming.md "Theme markers". --}}
         data-wk-popover
@@ -77,4 +84,5 @@
     >
         {{ $slot }}
     </div>
+</template>
 </div>

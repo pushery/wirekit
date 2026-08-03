@@ -172,12 +172,26 @@ class ExportBlocksCommand extends Command
                 'dependencies' => $frontmatter['dependencies'] ?? [],
                 'responsive' => $frontmatter['responsive'] ?? null,
                 'dark_compatible' => $frontmatter['dark_compatible'] ?? null,
-                // Surfaced so the docs site can filter the gallery by per-request
-                // session tier (guest sessions never see admin-only blocks).
+                // Surfaced so a gallery can filter by the visibility of the
+                // requesting session. This comment ships via Packagist, so it
+                // describes the mechanism without naming the tiers.
                 'visibility' => $frontmatter['visibility'] ?? 'guest',
                 'draft' => $frontmatter['draft'] ?? false,
                 'preview_url' => WireKit::DOCS_URL.'/'.$slug,
-                'source_url' => 'https://github.com/pushery/wirekit/blob/develop/docs/'.$slug.'.md',
+                // The docs site's raw-markdown route, NOT a repository URL.
+                //
+                // This pointed at `github.com/pushery/wirekit/blob/develop/docs/…`,
+                // which cannot resolve for two independent reasons: the public
+                // mirror has no `develop` branch — it carries releases, tagged
+                // from main — and `docs/` is export-ignored, so the directory is
+                // not in that repository at all. Both were measured, not assumed.
+                //
+                // The raw route is the right target rather than a corrected
+                // repository path: it is the exact sibling of `preview_url` above,
+                // and its visibility follows the manifest's own model, because the
+                // route 404s for a gated page. So every entry in the `--public`
+                // manifest resolves by construction, with no cross-repo work.
+                'source_url' => WireKit::DOCS_URL.'/'.$slug.'.md',
             ];
         }
 

@@ -40,7 +40,7 @@ export default function wirekitDismissible(config = {}) {
             // vanish.
             try {
                 this.shown = window.localStorage.getItem(this._persistKey) !== '1';
-            } catch (error) {
+            } catch {
                 this.shown = true;
             }
         },
@@ -53,7 +53,7 @@ export default function wirekitDismissible(config = {}) {
                 // that worked, and it will simply return next visit.
                 try {
                     window.localStorage.setItem(this._persistKey, '1');
-                } catch (error) {
+                } catch {
                     // Intentionally silent.
                 }
             }

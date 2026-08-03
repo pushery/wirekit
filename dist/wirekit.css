@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.24.0 — MIT License
+ * WireKit CSS v2.25.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -272,6 +272,11 @@
     /* ─── State Opacity ─── */
     --opacity-wk-hover: 0.8;
     --opacity-wk-disabled: 0.5;
+  /* Sticky-panel width CEILING, handed over per instance as an inline value and
+     applied only at/above the panel's breakpoint — below it the panel un-sticks
+     into normal flow and fills its column. Declared here so it has a default and
+     so a typo cannot collapse it silently, which is what the drift guard is for. */
+  --wk-sticky-panel-w: 20rem;
     --opacity-wk-loading: 0.7; /* Developer-facing token — not used in built-in components */
 
     /* ─── Focus Ring Dimensions ─── */
@@ -449,7 +454,20 @@
     --color-wk-text: oklch(98.5% 0 0);  /* ~18.4:1 on neutral-950 */
     --color-wk-code: var(--color-wk-text);
     --color-wk-code-bg: var(--color-wk-bg-muted);
-    --color-wk-text-muted: oklch(70.8% 0 0); /* ~7.82:1 */
+    /* Lifted off neutral-400 (oklch 70.8%), and the reason is a surface the old
+       number was never measured against. A callout tints its background with 15%
+       of the accent; in DARK the accent is near-white, so that tint makes the
+       surface LIGHTER — toward this text, not away from it. Muted landed at
+       4.45:1 there while measuring a comfortable 7.63:1 on the page background
+       the comment above cites. axe found it on four blueprint previews at once.
+       74% gives 5.00:1 on the worst tinted surface and improves every other
+       pairing. Guarded by TintedSurfaceTextContrastTest.
+
+       subtle and placeholder deliberately STAY at neutral-400: neither is
+       promised on a tinted surface (docs/theming.md scopes subtle to bg and
+       bg-input), and moving them would change every helper line in the library
+       for a combination nothing renders. */
+    --color-wk-text-muted: oklch(74% 0 0); /* 8.58:1 on bg · 5.00:1 on the worst tinted callout */
     --color-wk-text-subtle: oklch(70.8% 0 0);
     --color-wk-text-placeholder: oklch(70.8% 0 0);
     --color-wk-text-inverse: oklch(14.5% 0 0);
@@ -1099,6 +1117,121 @@
 
 @keyframes wk-shimmer {
     100% { transform: translateX(100%); }
+}
+
+/* ── The calendar's range tint ──────────────────────────────────────────────
+   REAL CSS, not an arbitrary Tailwind value, and the reason is a measurement: the
+   in-between days carried `bg-[color-mix(in_srgb,…)]` in their class attribute and
+   computed to `rgba(0, 0, 0, 0)`. The class was there and no rule existed for it —
+   the value only reaches a stylesheet if the developer's Tailwind scan happens to
+   pick that exact string out of an Alpine `:class` object, and a core behavior
+   cannot depend on happening to.
+
+   A TINT rather than the accent, so the two ends stay what the eye lands on. The
+   text color is untouched: this is a non-text indicator over a surface, so 1.4.11
+   applies and 1.4.3 is unaffected. */
+[data-wk-in-range] {
+    background-color: color-mix(in srgb, var(--color-wk-accent) 18%, transparent);
+    color: var(--color-wk-text);
+}
+
+/* ── The optimistic FAILURE states, made visible ────────────────────────────
+   §8 of the optimistic contract asks for this in as many words: "the state
+   becomes `rejected`, not `rolled-back` — a component's styling needs to tell
+   'put back' from 'still yours, not saved'". It was never built. The only
+   treatment in the library keys off `aria-busy`, which is the PENDING state
+   alone, so a refusal cleared the dashed outline and left the control looking
+   exactly like a success. The announcement went into an `sr-only` region, so the
+   page's promise — "you are told it did not save" — was kept for a screen reader
+   and broken for everyone looking at it.
+
+   Why no test caught it: the browser sweep asserted that the live region SPOKE,
+   reading its `textContent`. That reads out of a visually-hidden element exactly
+   as well as out of a visible one, so "spoken" was true while "told" was false
+   and the assertion could not tell the two apart. A check that confirms the
+   mechanism cannot notice that the mechanism produces nothing perceivable.
+
+   SOLID, and in the warning color. Dashed is taken by the pending state and must
+   stay distinguishable from it; the accent is taken by focus. Warning rather than
+   danger because `aria-invalid` is deliberately NOT set here — a save that failed
+   on the network says nothing about whether the content is valid, and the color
+   should not claim otherwise.
+
+   NOT a dim, for the same reason the pending rule is not one: text contrast is
+   untouched and only a non-text indicator is added, which is 1.4.11's 3:1 floor. */
+/* On the CONTROL, never on the element carrying the state. The factory stamps the
+   state on its own wrapper, and that wrapper is `display: contents` — it generates
+   no box, so an outline on it paints nothing at all. Measured before this line was
+   written: state `rejected`, message visible, `outlineStyle` reading `none` on
+   every one of the four controls checked. The pending rule's own comment warns
+   about exactly this ("computed style is not paint") and the warning was still
+   worth re-learning one selector later. */
+/* The element directly BEFORE the announcer, which the templates always render
+   last. Excluding `label` was the obvious rule and the wrong one: a toggle puts
+   its visible track INSIDE the label and hides the input, so the exclusion
+   dropped the only thing that paints — measured, five components marked and the
+   toggle marked nothing. Position is the property all twenty-three share; which
+   tag holds the surface is not. */
+[data-wk-optimistic-state="rejected"] > *:has(+ [data-wk-optimistic-announcer]),
+[data-wk-optimistic-state="rolled-back"] > *:has(+ [data-wk-optimistic-announcer]),
+/* …and the shape where the announcer is not the last child (combobox, multi-select,
+   range-slider, segmented-control render a panel or a hidden input after it). The
+   last child that is not the announcer is the surface there. */
+[data-wk-optimistic-state="rejected"] > *:not([data-wk-optimistic-announcer]):last-child,
+[data-wk-optimistic-state="rolled-back"] > *:not([data-wk-optimistic-announcer]):last-child,
+/* …and the control itself when the wrapper holds it directly. A combobox renders
+   the field, two buttons, a teleport target and a zero-height panel as siblings, so
+   both position-based selectors above land on something that paints nothing.
+   Naming the control by what it IS covers that without CSS having to measure. */
+[data-wk-optimistic-state="rejected"] > input:not([type="hidden"]),
+[data-wk-optimistic-state="rejected"] > select,
+[data-wk-optimistic-state="rejected"] > textarea,
+[data-wk-optimistic-state="rolled-back"] > input:not([type="hidden"]),
+[data-wk-optimistic-state="rolled-back"] > select,
+[data-wk-optimistic-state="rolled-back"] > textarea,
+/* …and the custom widgets, whose visible surface is a plain div sitting between a
+   hidden input and a teleport target — neither last, nor a form control. `:empty`
+   drops the hidden inputs and the zero-content panels; `label` is excluded because
+   the branches above already own the shapes where the label IS the surface, and
+   outlining it as well would double the mark on every labeled field. */
+[data-wk-optimistic-state="rejected"] > *:not([data-wk-optimistic-announcer]):not(:empty):not(label),
+[data-wk-optimistic-state="rolled-back"] > *:not([data-wk-optimistic-announcer]):not(:empty):not(label) {
+    outline: 2px solid var(--color-wk-warning-text);
+    outline-offset: 2px;
+}
+
+/* NOT keyed on `aria-busy`. The pending rule can be, because the attribute exists
+   exactly while pending — but Alpine REMOVES an attribute it binds to `false`, so
+   by the time a refusal settles no element carries it at all. Measured: zero
+   `aria-busy` holders in the subtree, and a selector that matched nothing while
+   reporting a perfectly correct `rejected` state one element up.
+
+   The wrapper's own children are the label, the field, and the announcer, so the
+   field is what is left once the other two are excluded — derived from the shape
+   every optimistic template already has rather than from a class name any one of
+   them happens to use. */
+
+/* And the message itself, which was only ever readable by assistive technology.
+   The announcer stays a live region — that part was right — but in a failure state
+   it also becomes something a person can read. Keyed on the ancestor's state so it
+   reaches all twenty-three components without any template knowing about it. */
+[data-wk-optimistic-state="rejected"] [data-wk-optimistic-announcer],
+[data-wk-optimistic-state="rolled-back"] [data-wk-optimistic-announcer] {
+    position: static;
+    width: auto;
+    height: auto;
+    padding: 0;
+    margin: var(--space-wk-xs, 0.25rem) 0 0;
+    overflow: visible;
+    clip: auto;
+    clip-path: none;
+    white-space: normal;
+    border-width: 0;
+    display: block;
+    font-family: var(--font-wk-sans);
+    font-size: var(--text-wk-xs);
+    line-height: 1.4;
+    color: var(--color-wk-warning-text);
 }
 
 /* ── The optimistic pending state, made VISIBLE ─────────────────────────────
@@ -3269,6 +3402,13 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /*   .wk-stack-below-md        — flex-direction:column + items:stretch    */
 /*                                below md (2-pane master/detail where    */
 /*                                the sidebar holds useful meta)          */
+/*   .wk-only-below-md          — the counterpart: shown ONLY below md.   */
+/*                                A dense desktop affordance often has a  */
+/*                                different phone shape rather than a     */
+/*                                smaller one — a month grid's event      */
+/*                                chips become dots plus an agenda list,  */
+/*                                the way every calendar app does it —    */
+/*                                and swapping the two needs both halves. */
 /*                                                                        */
 /* Both align with the reading-spine `hideBelow="md"` (48rem) breakpoint  */
 /* so the whole app-shell vocabulary stays in lockstep.                   */
@@ -3285,6 +3425,32 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         max-width: 100% !important;
         min-width: 0 !important;
         flex-basis: auto !important;
+    }
+}
+
+/* The counterpart, in its own query so the two read as a pair. */
+@media (min-width: 48rem) {
+    .wk-only-below-md {
+        display: none !important;
+    }
+}
+
+/* .wk-autosize — a textarea that grows with its content.
+ *
+ * ABOVE the browser baseline: `field-sizing: content` is Chrome 123 / Safari 17.4,
+ * against a floor of 111 / 16.4. It is here as a real rule rather than a utility
+ * class on the element for one reason — a Tailwind arbitrary variant cannot be
+ * wrapped in `@supports`, and the house rule requires an above-baseline feature to
+ * be feature-detected. In a class list the detection is unexpressible; here it is
+ * one line.
+ *
+ * The experience below it is complete and that is what makes this permissible: the
+ * numeric `rows` remains the minimum height, the control scrolls and stays
+ * resizable. What a reader on a baseline browser does not get is the growing.
+ */
+@supports (field-sizing: content) {
+    .wk-autosize {
+        field-sizing: content;
     }
 }
 

@@ -11,7 +11,11 @@
     use Pushery\WireKit\WireKit;
 
     // Generate unique ID for aria-controls link between trigger and panel
-    $panelId = 'wk-dropdown-panel-' . uniqid();
+    // NOT uniqid(): it has MICROSECOND resolution, so two dropdowns rendered in
+    // the same microsecond get the SAME id. Measured on the split-button preview —
+    // two dropdown roots, one DOM id between them, and a single click on one
+    // trigger left BOTH panels open. Str::random is what the combobox already uses.
+    $panelId = 'wk-dropdown-panel-' . \Illuminate\Support\Str::random(12);
 
     // Base wrapper classes — relative positioning context for floating panel
     $classes = WireKit::resolveClasses('dropdown', 'base', 'relative inline-block', $scope);
@@ -41,7 +45,12 @@
           <x-wirekit::dropdown.panel> children directly. Full control over
           sub-component props (width, scope, etc.). --}}
 <div
-    x-data="wirekitDropdown({ placement: '{{ $placement }}', offset: {{ (int) $offset }} })"
+    {{-- panelId travels through the Alpine SCOPE, not the DOM. The panel is
+         teleported to <body> to escape a host stacking context, and Alpine keeps
+         the scope across that move while `closest()` does not — the panel used to
+         read this id off `data-wk-panel-id` with an ancestor walk, which returns
+         null the moment the element leaves the component. --}}
+    x-data="wirekitDropdown({ placement: '{{ $placement }}', offset: {{ (int) $offset }}, panelId: '{{ $panelId }}' })"
     x-on:keydown="handleKeydown"
     x-on:keydown.escape.window="open && close()"
     x-on:click.outside="close()"

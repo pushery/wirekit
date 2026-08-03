@@ -55,7 +55,8 @@
     {{ $editor }}
 @elseif($control === 'textarea')
     {{-- `rows` defaults to `auto`, which is the textarea's own content-sizing mode
-         (CSS `field-sizing: content`, inside the supported baseline). Without it the
+         (`.wk-autosize`, which is `field-sizing: content` behind an `@supports` —
+         the property is NEWER than the supported baseline). Without it the
          editor opened at the config default of three rows regardless of how much text
          it was replacing: a value that read as four wrapped lines became a
          three-row box the reader had to scroll to see their own text in — measured

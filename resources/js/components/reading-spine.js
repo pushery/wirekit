@@ -175,7 +175,7 @@ export default (options = {}) => ({
             // almost always means the developer typo'd the id / class /
             // ancestor name; surface it so they know why the spine is empty.
             if (this.target !== 'main, article') {
-                // eslint-disable-next-line no-console
+                 
                 console.warn(
                     `[wirekit] reading-spine: target selector "${this.target}" matched no element. ` +
                     `Spine will render empty. Check the selector on <x-wirekit::reading-spine target="${this.target}" />.`
@@ -454,7 +454,7 @@ export default (options = {}) => ({
         this._programmaticScrollUntil = Date.now() + 600;
         try {
             history.replaceState(null, '', `#${id}`);
-        } catch (e) {
+        } catch {
             // Cross-origin iframe-srcdoc — URL hash mirror unavailable
         }
         // Force the visual activeIndex to match the clicked item. The

@@ -25,7 +25,7 @@ export function readPersistedFlag(key, fallback) {
         // A stored value wins over the seed; nothing stored leaves the seed
         // alone, so the attribute on the tag still decides the first visit.
         return stored === null ? fallback : stored === '1';
-    } catch (error) {
+    } catch {
         return fallback;
     }
 }
@@ -38,7 +38,7 @@ export function writePersistedFlag(key, value) {
 
     try {
         window.localStorage.setItem(key, value ? '1' : '0');
-    } catch (error) {
+    } catch {
         // Nothing to report: the state is still correct for this visit, it just
         // will not be remembered for the next one.
     }

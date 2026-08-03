@@ -10,6 +10,191 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.25.0] — 2026-08-03
+
+**Minor — a date range, a vocabulary the icon system was missing, and a long run of fixes for behavior that looked right and was not.** Nothing here changes what an unchanged call site renders. The additions are opt-in; the fixes are the larger half, and most of them share a shape worth naming — a component doing its job at the moment anyone would look, and stopping afterwards. Several were invisible by construction rather than by oversight: a refusal that rendered exactly like a success, a control that changed on screen and never reached the server, an editable surface with no name for a screen reader.
+
+### Added
+
+- **[`calendar`](https://docs.wirekit.app/components/calendar) takes a date range.**
+  Add `range` and it selects in two clicks — the first sets the start, the second
+  the end, and a second click before the start becomes the start instead, so there
+  is no rule about which end to pick first. While only the start is set, the day
+  under the pointer stands in for the end, so the shading shows what you are about
+  to choose rather than nothing until you have chosen it. `value` reads and writes
+  `YYYY-MM-DD/YYYY-MM-DD`, the same spelling
+  [`date-picker`](https://docs.wirekit.app/components/date-picker) uses, and the
+  form receives `name[start]` and `name[end]` beside the combined field — so a
+  handler written for a single date keeps working. Both ends and every day between
+  them are announced, in the single-month grid and side-by-side months alike.
+
+- **`.wk-only-below-md`** — shown only below the `md` breakpoint, and the counterpart to
+  `.wk-hide-below-md`. A dense desktop affordance often wants a different shape on a phone rather
+  than a smaller one, and swapping the two takes both halves.
+
+- **Nine semantic icon aliases, in every base preset:** `bell`, `bell-slash`, `tag`, `send`, `archive`, `reply`, `forward`, `image` and `message`. Notification, labeling, mail and media — concepts every administrative interface has, and none of them had a word.
+
+  The gap did not present as a gap, which is why it lasted. A page that needed one of these reached for the icon package's own glyph name — `envelope`, `paper-airplane`, `magnifying-glass` — and it worked. It worked because the optional icon package happened to be installed, which is a dependency on the icon set rather than a contract with this library. On an install without it, the same markup throws.
+
+  `bell` and `bell-slash` move out of the `heroicons-app` extension into the base set. Same glyph, so nothing rendered changes; what changes is that they now resolve without stacking an extension.
+
+- **The [sidebar](https://docs.wirekit.app/components/sidebar)'s scrolling list shows where it continues.** A long navigation column scrolls, and a scrollbar alone is easy to miss on a track that fades when idle. The list now carries the same edge shadows `sticky-panel` uses: at the top there is a shadow below the fold and none above it, and at the bottom the reverse. Sentinel-driven rather than masked, so the shadow appears exactly when there is somewhere left to scroll — a mask dims the edge whether or not anything follows, which leaves the last item greyed out once you have reached it.
+
+- **`charts.apex_license` is in the published config.** The doctor told you to record your ApexCharts tier "in config/wirekit.php" and the file shipped without that key, so the instruction pointed at nothing. The `charts` block also never listed `apexcharts` among its adapters, though the component and the script bundle both offer it.
+
+### Fixed
+
+- **`<x-wirekit::textarea rows="auto">` silently did nothing on a browser at the supported floor.**
+  Auto-growing uses CSS `field-sizing: content`, which is newer than WireKit's baseline
+  (Chrome 123 / Safari 17.4 against 111 / 16.4) — so on a baseline browser the prop named the
+  behavior and the behavior was absent, with nothing saying so. The component's own comment
+  described the property as being *inside* the baseline. It now applies `wk-autosize`, a real rule
+  inside `@supports (field-sizing: content)`, and the class is documented in
+  [the public CSS API](https://docs.wirekit.app/extending/public-css-api) as progressive
+  enhancement: where the property is unsupported the textarea keeps its `rows` minimum and stays
+  scrollable and resizable. No API change — `rows="auto"` is unchanged.
+
+- **An open [inline editor](https://docs.wirekit.app/components/inline-edit) could close itself
+  across a Livewire re-render, discarding the draft.** The component announces on `window` when it
+  opens so that other editors stand down, and it recognized the sender by comparing against its own
+  root element — captured once when the component initialized. A re-render that replaces that
+  element while keeping the component alive left the comparison pointing at a detached node, so the
+  editor treated its own announcement as another editor's and closed. Nothing was logged; the field
+  simply reverted to its previous value. The root is now resolved when the event arrives.
+
+- **The [editor](https://docs.wirekit.app/components/editor)'s editable surface had no accessible
+  name when it carried a visible label.** A `<label for>` names labelable elements; the surface a
+  ProseMirror engine builds is a `div` with `contenteditable` and `role="textbox"`, which is not one,
+  so the reference never reached it — and because the component suppresses its own `aria-label`
+  whenever a visible label is present, the field ended up with neither. A screen reader announced an
+  unnamed text box. The label is now wired by reference (`aria-labelledby`), and `aria-label` remains
+  the fallback for an editor without a visible label. No API change; nothing to update in your code.
+
+- **Muted text on a [callout](https://docs.wirekit.app/components/callout) or
+  [alert](https://docs.wirekit.app/components/alert) was below AA contrast in dark mode.** These
+  components tint their background with 15% of a state color, and in dark mode the default accent is
+  near-white — so the tint moves the surface *toward* light text rather than away from it. A
+  secondary line written as `<x-wirekit::text variant="muted">` inside one measured 4.45:1, just
+  under the 4.5:1 WCAG AA requirement for normal text, while the same token measured 7.63:1 on the
+  page background it was set against. `--color-wk-text-muted` in dark mode moves from
+  `oklch(70.8% 0 0)` to `oklch(74% 0 0)`: 5.00:1 on the worst tinted surface, and every other dark
+  pairing improves with it. Muted text on a tinted callout surface is now part of the guaranteed set
+  documented in [Theming](https://docs.wirekit.app/theming). `text-subtle` and `text-placeholder`
+  are unchanged — they are guaranteed on the page and input backgrounds, and the guide now says so
+  explicitly.
+
+  If you override `--color-wk-text-muted` for dark mode, check it against a callout as well as
+  against the page background; the two surfaces are further apart than they look.
+
+- **An optimistic control inside a panel that opens over the page never reached the server.** The
+  value changed on screen, no request was sent, no error was raised, and the control stayed in its
+  provisional state indefinitely — announcing that it was saving, forever. It affected any optimistic
+  control whose panel is rendered outside the component that owns it: a popover
+  [color picker](https://docs.wirekit.app/components/color-picker), a menu, a combobox list. Only the
+  keyboard path reached it, because a drag ends on a handler bound to the document while the layer's
+  own element is still in place — so a pointer never reproduced it and a keyboard hit it every time.
+- **[`select`](https://docs.wirekit.app/components/select) ignored its `value`.** A `<select>` has no
+  `value` content attribute, and the prop was not declared — so `value="pro"` landed on the element,
+  HTML ignored it, and the browser fell back to the first option. Every standalone select showed one
+  choice while everything reading the component believed another. The prop is declared now, the
+  matching option carries `selected`, and a placeholder pre-selects itself only when nothing else is
+  chosen.
+- **[`carousel`](https://docs.wirekit.app/components/carousel) slide dots were an 8px tap target
+  6px apart**, failing both WCAG 2.5.8 AA's size floor and its spacing exception. The dots are still
+  8px — an indicator the size of a button is not an indicator — and they now sit 24px center to
+  center, which is exactly the distance at which the criterion's notional circles stop intersecting.
+  The spacing exception therefore applies on its own merits. A 44px hit region was tried first and
+  was worse than the problem: at the old pitch the expanders overlapped, so a tap aimed at one dot
+  landed on its neighbor.
+
+- **`<x-wirekit::tooltip>` no longer runs off the edge of a phone.** It was the only overlay in the library without cross-axis shifting, so a `placement="right"` tooltip on a narrow screen went past the right edge and stayed there — measured at 184px off-screen in a 375px viewport. Floating UI's default shift only moves along the placement's main axis, which for left/right is vertical, and flipping gives up when both sides overflow. Six sibling overlays already passed this flag.
+
+- **An anchored panel no longer opens one panel-width away from what opened it.** Every overlay that positions itself against a trigger — menus, popovers, comboboxes, the data table's column manager — could be placed as though it had no size, because it was measured before the browser had laid it out. A placement that aligns a panel's far edge subtracts the panel's own width, and subtracting zero puts the panel's near edge exactly where its far edge belongs. On a 375px screen the column manager opened at 290px and ran to 482px, a hundred pixels past the edge, with a trigger that ended at 290.
+
+  Whether it happened at all depended on the browser: the same markup placed correctly in Chrome and Edge and incorrectly in Safari, on iOS and on the desktop, because the two differ in how much layout is guaranteed by the moment a panel becomes visible. The positioner now waits for the panel to have a box before it measures one, so the placement is the same everywhere.
+
+- **A refused optimistic action no longer shows the reader the server's error page.** The layer
+  already did the right thing — it took the value back and announced the refusal — and then Livewire
+  painted its own error page over the top, because nothing told it the failure had been handled. On a
+  phone that is a full-screen stack trace covering the very rollback the component just performed.
+
+  A component that opts into `optimistic` owns its failure path by definition, so it now says so:
+  Livewire's default display is suppressed for the request it handled, and the refusal goes to the
+  browser console instead, where a developer looks and a reader does not. Handling a failure and
+  hiding it are different acts; only the second would be a defect. Nothing changes for a component
+  that has not opted in.
+
+- **`<x-wirekit::hover-card>` can be dismissed with Escape.** The handler was bound to the panel, and the panel is teleported while the card is opened by pointing at or focusing the trigger — so the key went one way and the listener sat the other. WCAG 1.4.13 requires content shown on hover or focus to be dismissible without moving the pointer or the focus, and Escape is the mechanism it names.
+
+- **The mobile drawer in `<x-wirekit::app-shell>` fills the shell instead of floating on it.** Below the breakpoint the sidebar slides in over the page, but it kept the `card` treatment it wears in a padded column — as tall as its content, with rounded corners. Measured with the drawer open at 393px: the shell was 256px tall and the panel a reader actually sees was 85px of it, reading as a card dropped on the content rather than as a drawer. It now fills its column and meets the edge flush. Above the breakpoint the card is untouched.
+
+- **`<x-wirekit::app-shell>`'s mobile drawer is anchored to the shell rather than to the page.** The drawer and its backdrop were `position: fixed`, which measures against the viewport only while no ancestor is a containing block — `contain`, `transform`, `filter` and `perspective` all make one, and any of them can appear above an embedded shell. When one did, the opened drawer measured itself against that ancestor instead: it started 64px above the shell and took that ancestor's height. The shell now owns the positioning context, so the two coincide in a full-page app and in an embedded one alike.
+
+- **A closed off-canvas drawer is now gone rather than merely moved.** `<x-wirekit::app-shell>` parked its mobile sidebar at `-translate-x-full`, which puts it off-screen only while something clips it — and a `position: fixed` element is clipped by the viewport only while no ancestor is its containing block. `contain: layout` makes an ancestor exactly that, as do `transform`, `filter` and `perspective`, and then -100% means 256px to the left of *that* box: the whole menu paints beside the content. The drawer now also carries `visibility: hidden` when closed, so nothing depends on a host clipping it.
+
+  The same change fixes a defect that was never about painting: a translated drawer keeps its place in the tab order and in the accessibility tree, so keyboard and screen-reader users could reach a menu that nobody can see. `visibility` transitions alongside `transform`, so the closing animation still plays.
+
+- **`<x-wirekit::tooltip>` colors its panel before showing it, not after.** Setting `open` displays the panel immediately; the themeable variables were copied onto it only after the tick that followed. In between, the panel is displayed and still carries the default color. Whether a browser paints inside that window was never established — but an observer can read a shown panel without its color, which is enough to make the contract untestable without a race.
+
+- **Optimistic controls now settle instead of staying provisional.** A control marked `optimistic` painted its dashed pending outline when you left it and then waited forever: no confirmation, no rollback, and a refusal announced nothing. It reached the server through Alpine's `$wire`, which in some render contexts hands back a stand-in attached to no component — it answers every method name, every call returns nothing, and no request is made. The component that owns the control is resolved from the page now, so the answer comes back and the state resolves.
+
+  The check beside it went too: `typeof $wire[method] === 'function'` is true for a method that does not exist, because that object answers for any name. It could never fail, so it protected nothing. What is checked instead is whether a component was found at all.
+
+- **`<x-wirekit::sticky-panel>`'s `width` is a ceiling, and only where the panel is stuck.** It was applied as a fixed width capped at `max-width: 100%`, which caps the case that does not arise — the container being narrower. Below the breakpoint the panel un-sticks into ordinary flow, and there the container is wider: a `15rem` summary sat in a `335px` column with the space beside it doing nothing. The panel fills its column now and stops growing at `width`, which is what the prop always described. Above the breakpoint nothing changes.
+
+- **[Inline edit](https://docs.wirekit.app/components/inline-edit) no longer discards what you typed when something else on the page updates.** The editor closed and dropped its draft on every blur, without asking where the focus had gone. A Livewire update anywhere on the page patches the DOM around a focused input, and the browser fires a blur while it does — focus returns immediately, nobody went anywhere, and the text was gone. No message, no undo, on a round trip that had nothing to do with the field. It now waits a tick and checks: if focus came back to the same editor, the draft stays.
+
+- **[Tooltip](https://docs.wirekit.app/components/tooltip) color overrides work again.** Moving the panel to the end of the document so a masking ancestor could not clip it also ended its descent from the trigger — and the documented way to restyle one tooltip is an inline `--color-wk-tooltip-bg` / `--color-wk-tooltip-text` on the component, which the panel read by inheritance. The panel kept rendering, in theme defaults, and every override silently stopped applying. The values are now copied onto the panel each time it opens, read from the trigger, so an inline style, a class or a scoped theme all resolve the same way they used to.
+
+- **A [chart](https://docs.wirekit.app/components/chart) that updates keeps its keyboard fix.** ApexCharts re-stamps `tabindex` on every SVG it rebuilds. The correction ran at moments — after a render, after a theme swap — which is a list somebody has to remember to extend. A page streaming data rebuilds its SVG every tick, so the fix ran once, correctly, and the next update put the tab stops straight back: a focus stop inside a subtree assistive technology has been told to ignore. It is now driven by what the chart does rather than by a list of moments, and it covers the legend entries too, which have the same defect one level down.
+
+- **Two scroll animations ignored `prefers-reduced-motion`.** An explicit `behavior` argument overrides the CSS rule that covers everything else, so scroll-to-top and the tour stepper animated for a reader who had asked them not to. Both go through the shared helper now. The CSS half of reduced-motion is blanket and covers a component added tomorrow; the JavaScript half is a list, and these two were not on it.
+
+- **A [sidebar](https://docs.wirekit.app/components/sidebar) header or footer lines up with its own items.** The zones carried no inline padding while `sidebar.item` and `sidebar.group` apply their own, so a brand row rendered flush against the column's edge and everything below it looked inset. Applied on the zone rather than asked of the caller: the alignment is a property of the column, and supplying a brand row should not require knowing which token the items happen to use.
+
+- **`wirekit:doctor` no longer promises a silence it cannot deliver.** The ApexCharts license reminder offered three values to record — community, commercial, oem — and matched two of them. Anyone on the community tier followed the instruction, saw the identical message with the identical advice, and had every reason to conclude the command is imprecise. The reminder itself stays, deliberately: the revenue threshold is a continuing condition rather than an install step, so a project crosses it without any file changing. What changed is the advice. A declared community tier is now confirmed back to you with the reason it still speaks, an unrecognized value is named rather than treated as unset, and the unset case keeps its full explanation without the promise.
+
+- **`wirekit:export-blocks` emitted a `source_url` that could not resolve.** It pointed at a branch and a directory that the public repository does not have — neither the branch nor the directory exists there. Each block now links to its page's raw Markdown on the documentation site, which is the sibling of the `preview_url` beside it and follows the same visibility rules.
+
+### Documentation
+
+- **[`sidebar`](https://docs.wirekit.app/components/sidebar) shows its event addressing in a
+  live example.** The `wirekit:sidebar:toggle` / `:toggled` pair — how a trigger outside the
+  sidebar reaches it, and how `{ id }` picks one of several — was documented in a code block and
+  never rendered anywhere. The page now carries a running two-sidebar demo with one `id` each, so
+  you can see a toggle address one and leave the other alone.
+
+- **Three refusal demos now say what a refusal does.** The optimistic examples on
+  [`calendar`](https://docs.wirekit.app/components/calendar),
+  [`reaction`](https://docs.wirekit.app/components/reaction) and
+  [`toggle-button`](https://docs.wirekit.app/components/toggle-button) showed the behavior without
+  stating it, so a reader had to infer the contract from watching.
+- **Two of them stated the opposite of what the component does.**
+  [`number-input`](https://docs.wirekit.app/components/number-input) and
+  [`color-picker`](https://docs.wirekit.app/components/color-picker) promised that a refused value
+  comes back. Both are deliberately built to KEEP it — deleting what somebody typed because a save
+  failed is worse than the failed save — and the pages say so now. A reader trusting the old wording
+  would have filed a bug against correct behavior.
+- **The [`fab`](https://docs.wirekit.app/components/fab) example stacked two floating buttons in one
+  corner.** The component pins itself to a screen corner, so the wrapper each demo sat in did nothing
+  and both landed on the right, one under the other. The first now declares `position="start"`, which
+  also shows the prop.
+- **[`footer`](https://docs.wirekit.app/components/footer) link columns sit further apart.** Stacked
+  links at the tightest gap put their centers 23.4px apart, half a pixel under the threshold where a
+  column of small targets stops being comfortable to tap.
+
+- **Documentation previews used icon names that no preset registers.** Eight pages taught glyph names from the icon package rather than this library's own aliases, which meant the snippet worked on a machine with that package installed and threw on one without. Every one now uses the alias a developer is meant to learn — `search` rather than the magnifier's glyph name, `inbox` rather than `envelope`, `edit` rather than `pencil`.
+
+- **`CONTRIBUTING.md` named tooling that is not in the package.** Its setup and pre-commit blocks listed commands whose test suite, build scripts, linter configuration and `package.json` are all stripped from the distributed tree — so for every reader who has that file, the commands resolved to nothing. It points at the documentation site instead.
+
+- **The [icon](https://docs.wirekit.app/components/icon) page lists every semantic alias, and a test keeps it that way.** It documented 39 of them while the preview block directly above rendered all 71, and said so — the tables were described as a selection rather than the full list, on the reasoning that a hand-maintained table goes stale. The reasoning is sound and the page still contradicted itself on one screen: anyone counting it concluded the vocabulary was half its size.
+
+  All of them are listed now, in four added groups — content and chrome, people and records, notifications and mail, media controls. Stale counts elsewhere on the page are gone rather than corrected, and the shipped config no longer understates the vocabulary. `php artisan wirekit:icons` remains the answer to a different question: what *your* install resolves, extensions included, which no table can know.
+
+- **Three [optimistic UI](https://docs.wirekit.app/extending/optimistic-ui) pages were missing a demo the overview promised.** The overview says each page lets you accept, refuse and watch a slow answer; the color picker had no slow answer and the calendar and editor showed only the refusal. A sentence true of most pages reads as true of all of them, so somebody following it and finding no rollback concludes there is none.
+
+---
+
 ## [2.24.0] — 2026-07-31
 
 **Minor — the full-bleed sidebar column, two smaller additions, and five fixes.** Every addition defaults to what the library already did, so an unchanged call site renders exactly as before; opting in is what changes shape, and it changes it on purpose. The fixes are the quieter half — each one makes something that already looked fine actually be fine.
@@ -50,7 +235,7 @@ Browse it online — one page per version — at
 
 - **A collapsed [sidebar](https://docs.wirekit.app/components/sidebar) group can still say something is waiting.** `sidebar.collapsible` now takes a `trailing` slot on its trigger. A group is collapsed to keep the list short, and the counters on the items inside went with it — with `persist`, permanently: collapse once and the numbers are never seen again without going to look. Alpine's `open` is in scope, so `x-show="! open"` shows it only while the group is closed, which is usually what you want. A slot rather than a `badge` prop on purpose: a count is one answer and a silent dot is another, and a total across several queues asserts an urgency the number cannot know.
 
-- **Scroll shadows on the inline axis, for a bar that scrolls sideways.** `wk-scroll-shadow-start` and `wk-scroll-shadow-end` are the horizontal counterparts to the existing top/bottom pair — a tab strip, a chip row or a toolbar can now show the same "there is more this way" cue. They share the block-axis pair's two variables, so a theme tunes both axes in one place, and they are named for the writing direction rather than for left and right, so a right-to-left interface gets the cue on the side its content continues toward. `<x-wirekit::sticky-panel>` drives them from the same observer, which never cared which axis it was watching. This is not what `fade` does: that mask is static and dims the edge even where nothing follows, which leaves the last item of a strip looking disabled.
+- **Scroll shadows on the inline axis, for a bar that scrolls sideways.** `wk-scroll-shadow-start` and `wk-scroll-shadow-end` are the horizontal counterparts to the existing top/bottom pair — a tab strip, a chip row or a toolbar can now show the same "there is more this way" cue. They share the block-axis pair's two variables, so a theme tunes both axes in one place, and they are named for the writing direction rather than for left and right, so a right-to-left interface gets the cue on the side its content continues toward. The markup is yours and the driving is not: no component template renders them — `<x-wirekit::sticky-panel>` emits only the block-axis pair — but the Alpine factory behind it reads `startSentinel` / `endSentinel` refs alongside the block-axis ones and drives whichever are present, so adding the two sentinels to your own scroller is enough, and a container that scrolls both ways gets all four. This is not what `fade` does: that mask is static and dims the edge even where nothing follows, which leaves the last item of a strip looking disabled.
 
 ### Fixed
 
@@ -137,7 +322,7 @@ moves, and no prop changes meaning.
   unanswered save in silence.** When your handler never reports the outcome — a missing
   paired event, a dropped request — the editor stopped waiting and said nothing at all. It
   now reports the save as **not confirmed**, and deliberately not as *failed*: a missing
-  acknowledgement is not evidence the write did not happen, and calling it a failure invites
+  acknowledgment is not evidence the write did not happen, and calling it a failure invites
   a second edit over a value that is already stored. Your text stays in the field either way.
 
 - **[inline-edit](https://docs.wirekit.app/components/inline-edit) gives the editor the box
