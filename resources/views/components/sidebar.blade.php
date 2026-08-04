@@ -35,6 +35,16 @@
     // aria-labelledby directly on the component also wins over this default
     // (and suppresses it, so the <nav> never gets a duplicate/conflicting name).
     'label' => __('Sidebar'),
+    // The edge shadows on the scrolling middle. On by default, because a
+    // scrollbar alone is easy to miss on a track that fades when idle.
+    //
+    // It has to be separable from the zones, and that is the point of the prop:
+    // the zones and the shadows arrived as one thing, so a developer with their
+    // own edge treatment could only be rid of ours by dropping `header` and
+    // `footer` entirely — which also gives up the sticky head and foot, a
+    // completely unrelated capability. Two decisions were being made by one
+    // answer.
+    'scrollShadows' => true,
     'scope' => null,
 ])
 
@@ -129,6 +139,7 @@
     // put. The bug looks like the scroll region is missing when in fact it is the
     // whole column that scrolled.
     $hasZones = isset($header) || isset($footer);
+    $scrollShadows = BooleanProp::from($scrollShadows, true);
 @endphp
 
 @if($collapsible)

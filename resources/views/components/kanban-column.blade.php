@@ -88,7 +88,19 @@
         role="region"
         aria-label="{{ $label ?? 'Column items' }}"
         class="wk-scrollbar flex flex-col gap-[var(--space-wk-sm,0.5rem)] px-[var(--space-wk-sm,0.5rem)] pb-[var(--space-wk-sm,0.5rem)] overflow-y-auto min-h-[120px] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
-        @if($sortable) data-sortable-items @endif
+        @if($sortable)
+            data-sortable-items
+            {{-- The marker used to be the whole feature: three attributes and
+                 nothing in the package reading any of them, so `sortable="true"`
+                 produced valid markup, no warning, and a board where nothing
+                 moved. The behavior lives here now, keyboard path included —
+                 a drag-only list is not reorderable by everyone. --}}
+            x-data="wirekitSortable()"
+            x-on:dragstart="dragstart($event)"
+            x-on:dragover="dragover($event)"
+            x-on:dragend="dragend()"
+            x-on:keydown="keydown($event)"
+        @endif
     >
         {{ $slot }}
     </div>

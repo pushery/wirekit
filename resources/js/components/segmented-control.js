@@ -1,3 +1,5 @@
+import { observeServerValue } from '../utils/server-value.js';
+
 /**
  * Segmented control — a radiogroup that behaves like the native one it imitates.
  *
@@ -35,6 +37,29 @@ export default function wirekitSegmentedControl(config = {}) {
             // not make would cost a Livewire round trip on every page load, for
             // a value the server already had.
             this._writeHiddenInput();
+
+            // A value the server changed has to reach the segments. Alpine read
+            // `selected` once, here, and will not look at the seed again — so
+            // without this the control keeps showing whatever it was born with
+            // while the form submits something else entirely. Measured: the
+            // hidden input said `max`, the checked segment said Basic.
+            //
+            // Guarded on a real change so an unrelated round trip cannot undo a
+            // choice the reader just made: every morph rewrites the attribute,
+            // including the ones that carry the same value back.
+            this._stopServerSync = observeServerValue(this.$root, (value) => {
+                if (value === this.selected) {
+                    return;
+                }
+
+                this.selected = value;
+                this._writeHiddenInput();
+            });
+        },
+
+        destroy() {
+            // The observer outlives the scope otherwise, and fires into it.
+            this._stopServerSync?.();
         },
 
         /**

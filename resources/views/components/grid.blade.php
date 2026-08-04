@@ -4,6 +4,20 @@
      any file that renders one. --}}
 @props([
     'cols' => config('wirekit.components.grid.cols', 1), // @example "1 md:2 lg:4" @example "1 sm:2 md:3 lg:4 xl:6"
+    // A grid that counts columns by CONTENT rather than by viewport. `min` is the
+    // narrowest a column may be; as many fit as fit, and one on a narrow screen.
+    //
+    // This is not the same thing as `cols` with breakpoints, which is why it is
+    // its own prop rather than a spelling of that one: `cols` measures the
+    // VIEWPORT, so it looks identical until the container is narrower than the
+    // window — a sidebar opens, a split view, an embedded preview — and then it
+    // keeps counting columns that no longer fit.
+    'min' => null, // @example "14rem" @example "20ch"
+    // An explicit column track list, handed to CSS as written. This is the half
+    // `cols` cannot express at all: it only knows equal columns, and the two
+    // commonest application layouts there are — the three-pane workspace and the
+    // week grid — are neither equal nor expressible as a count.
+    'template' => null, // @example "14rem 1fr 18rem" @example "4.5rem repeat(7, minmax(0, 1fr))"
     'gap' => config('wirekit.components.grid.gap', 'md'),
     'align' => null,
     'as' => 'div',
@@ -42,9 +56,56 @@
         '2xl:10' => '2xl:grid-cols-10', '2xl:11' => '2xl:grid-cols-11', '2xl:12' => '2xl:grid-cols-12',
     ];
 
-    $colsClasses = collect(preg_split('/\s+/', trim(is_numeric($cols) ? (string) $cols : $cols)))
-        ->map(fn (string $token) => $colsMap[$token] ?? WireKit::validateProp('grid', 'cols', $token, array_keys($colsMap)))
-        ->implode(' ');
+    // `template` beats `min` beats `cols`. Only one column track can exist, so
+    // the order is a decision rather than a merge — and it runs from most
+    // explicit to least, which is the only order in which the more specific prop
+    // is not silently ignored.
+    $trackProp = $template !== null ? 'template' : ($min !== null ? 'min' : null);
+
+    // Both arbitrary-value props land in an inline style, because that is what an
+    // arbitrary value forces: Tailwind extracts class names from source text, so
+    // a track built at runtime has no literal for the scanner to find. `cols`
+    // stays a class map for exactly the same reason — its values are a closed
+    // set, so they CAN be literals, and a class survives a stricter CSP than an
+    // inline style does.
+    $trackStyle = null;
+
+    if ($trackProp === 'min') {
+        // A CSS length, and nothing else. This string is interpolated into a
+        // style attribute, so the allowed shape is stated positively rather than
+        // by listing what to strip — a denylist certifies every spelling it has
+        // not thought of.
+        if (! preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|%|vw|vmin|vmax)$/', trim((string) $min))) {
+            WireKit::validateProp('grid', 'min', (string) $min, ['a CSS length such as 14rem, 20ch, 280px']);
+            $trackProp = null;
+        } else {
+            // `min(100%, …)` is the part that is easy to leave out and painful to
+            // debug: without it a column narrower than its own minimum overflows
+            // the container instead of collapsing to one column, which is exactly
+            // the case a content-driven grid exists to handle.
+            $trackStyle = 'grid-template-columns: repeat(auto-fit, minmax(min(100%, '.trim((string) $min).'), 1fr));';
+        }
+    } elseif ($trackProp === 'template') {
+        // The CSS track vocabulary: lengths, fr, auto, min-content/max-content,
+        // minmax(), repeat(), fit-content(). A semicolon or a quote would end the
+        // declaration and start another one, so neither is in the set.
+        if (! preg_match('/^[a-zA-Z0-9\s.,%()\[\]_-]+$/', trim((string) $template))) {
+            WireKit::validateProp('grid', 'template', (string) $template, ['a CSS grid-template-columns value such as "14rem 1fr 18rem"']);
+            $trackProp = null;
+        } else {
+            $trackStyle = 'grid-template-columns: '.trim((string) $template).';';
+        }
+    }
+
+    // `cols` is skipped entirely when a track prop won, rather than emitted and
+    // overridden: a `grid-cols-3` class sitting under an inline template is a
+    // rule that never applies, and the next person to read the markup has to
+    // work out which of the two is live.
+    $colsClasses = $trackProp !== null
+        ? ''
+        : collect(preg_split('/\s+/', trim(is_numeric($cols) ? (string) $cols : $cols)))
+            ->map(fn (string $token) => $colsMap[$token] ?? WireKit::validateProp('grid', 'cols', $token, array_keys($colsMap)))
+            ->implode(' ');
 
     $gapClasses = match ($gap) {
         'none' => '',
@@ -74,6 +135,16 @@
     ])), $scope);
 @endphp
 
-<{{ $as }} {{ $attributes->class([$classes]) }}>
+@php
+    // Merged rather than printed, so a developer's own `style` on the call site
+    // survives instead of being replaced — the same contract `class` has here.
+    $attrs = $attributes->class([$classes]);
+
+    if ($trackStyle !== null) {
+        $attrs = $attrs->merge(['style' => $trackStyle]);
+    }
+@endphp
+
+<{{ $as }} {{ $attrs }}>
     {{ $slot }}
 </{{ $as }}>

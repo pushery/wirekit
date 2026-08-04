@@ -154,6 +154,7 @@ tools.
 | Full documentation | [docs.wirekit.app](https://docs.wirekit.app) |
 | Getting started | [docs.wirekit.app/getting-started](https://docs.wirekit.app/getting-started) |
 | Theming | [docs.wirekit.app/theming](https://docs.wirekit.app/theming) |
+| Localization | [docs.wirekit.app/localization](https://docs.wirekit.app/localization) |
 | CLI reference | [docs.wirekit.app/cli](https://docs.wirekit.app/cli) |
 | Contribution guide | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | Changelog | [docs.wirekit.app/changelog](https://docs.wirekit.app/changelog) · [CHANGELOG.md](CHANGELOG.md) |

@@ -128,6 +128,13 @@
 
              The factory's init() writes the initial value into the hidden input,
              which is what the old x-init here did. --}}
+        {{-- The server's own channel. Livewire rewrites this on every render and
+             nothing binds it, so a value the SERVER changed reaches the component
+             even though Alpine read `x-data` once and will never read it again.
+             A plain attribute rather than the hidden input on purpose: components
+             that bind that input with `:value` have Alpine writing its own stale
+             state back over the morph, so watching it would be racing a binding. --}}
+        data-wk-server-value="{{ $selected }}"
         x-data="wirekitSegmentedControl({ selected: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $selected) }} })"
         {{-- Without the optimistic layer the radiogroup IS this element, exactly
              as before. With it, the role moves one level in — because the layer

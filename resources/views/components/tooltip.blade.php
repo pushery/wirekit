@@ -13,6 +13,18 @@
     // already interactive (a button/link) to avoid a double tab-stop — the slot's own
     // focus then bubbles to the trigger and still shows the tooltip.
     'focusableTrigger' => true,
+    // Switch the tooltip off without removing it. A tooltip on a control that
+    // has become inert — a collapsed sidebar item, a disabled action — has to be
+    // able to go quiet, and `pointer-events-none` on the root is NOT a way to do
+    // that however much it looks like one: `mouseenter` is delivered to every
+    // ancestor of the element actually hit, whatever their own pointer-events
+    // value, so the handler fires and the panel appears over something that is
+    // supposed to be dead.
+    //
+    // Rendered as an attribute rather than passed into the factory, so a call
+    // site can bind it — `x-bind:data-wk-tooltip-disabled="collapsed"` — and get
+    // a tooltip that follows live state. The component reads it at trigger time.
+    'disabled' => false,
     'scope' => null,
 ])
 
@@ -24,6 +36,7 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $focusableTrigger = BooleanProp::from($focusableTrigger, true);
+    $disabled = BooleanProp::from($disabled, false);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
@@ -55,6 +68,7 @@
 
 {{-- Tooltip wrapper — handles hover, focus, touch, and keyboard events --}}
 <div
+    @if($disabled) data-wk-tooltip-disabled="true" @endif
     x-data="wirekitTooltip({
         placement: '{{ $placement }}',
         offset: {{ (int) $offset }},

@@ -137,8 +137,14 @@ class WireKitServiceProvider extends ServiceProvider
             // failure is silent, which is the expensive kind. docs/localization.md
             // has always described the working path correctly; only this comment,
             // the one a developer reads while looking at the publish call, did not.
+            // Every shipped catalog, not just the reference. A translated one is
+            // already ACTIVE without publishing — `loadJsonTranslationsFrom`
+            // below sees it — so this tag exists for the developer who wants to
+            // adjust a phrase to their own product's voice, and that is as true
+            // of German as of English.
             $this->publishes([
                 __DIR__.'/../lang/en.json' => lang_path('vendor/wirekit/en.json'),
+                __DIR__.'/../lang/de.json' => lang_path('vendor/wirekit/de.json'),
             ], 'wirekit-lang');
 
             // Font files — published to public/vendor/wirekit/fonts/
