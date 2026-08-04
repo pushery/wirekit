@@ -132,6 +132,9 @@
 
 <div
     {{ $attributes->except('aria-label')->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }}
+    {{-- The server's own channel — see segmented-control for why this is a
+         plain attribute rather than the hidden input this component binds. --}}
+    data-wk-server-value="{{ $clamped }}"
     x-data="wirekitRating({ value: {{ $clamped }}, max: {{ $max }} })"
 >
     @if($label)

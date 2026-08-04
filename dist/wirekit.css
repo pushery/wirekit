@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.25.0 — MIT License
+ * WireKit CSS v2.26.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -3448,6 +3448,40 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
  * numeric `rows` remains the minimum height, the control scrolls and stays
  * resizable. What a reader on a baseline browser does not get is the growing.
  */
+/* .wk-optimistic-surfaced — the refusal, said where it can be seen.
+ *
+ * An optimistic control inside a menu is legitimate, and clicking a menu item
+ * closes the menu — so the refusal renders into a subtree with no box. Measured on
+ * the dropdown demo: state correctly `rolled-back`, message present, CSS readable,
+ * and 0x0 on both the announcer and its wrapper. A screen reader heard it; nobody
+ * looking at the page did.
+ *
+ * Only shown while it carries `data-wk-optimistic-surfaced`, which the layer sets on
+ * a failure whose host has no surface and drops again after a few seconds. A control
+ * that IS visible says it in place and never reaches this rule.
+ */
+.wk-optimistic-surfaced {
+    display: none;
+}
+
+.wk-optimistic-surfaced[data-wk-optimistic-surfaced] {
+    display: block;
+    position: fixed;
+    inset-block-end: var(--gap-wk-lg, 1.5rem);
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-wk-tooltip);
+    max-width: min(28rem, calc(100vw - 2rem));
+    padding: var(--padding-wk-y-sm, 0.5rem) var(--padding-wk-x-lg, 1rem);
+    border: 1px solid color-mix(in srgb, var(--color-wk-warning) 40%, var(--color-wk-border));
+    border-radius: var(--radius-wk-lg);
+    background: var(--color-wk-bg-elevated);
+    color: var(--color-wk-text);
+    font-family: var(--font-wk-sans);
+    font-size: var(--text-wk-sm);
+    box-shadow: var(--shadow-wk-md);
+}
+
 @supports (field-sizing: content) {
     .wk-autosize {
         field-sizing: content;

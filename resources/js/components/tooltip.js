@@ -122,8 +122,34 @@ export default function wirekitTooltip(config = {}) {
         /**
          * Show tooltip and position via Floating UI.
          */
+        /**
+         * Is this tooltip switched off right now?
+         *
+         * Read off the ROOT ATTRIBUTE rather than held as state, and that is the
+         * whole design. A boolean passed into the factory would only ever answer
+         * for the render that created it — but the case this exists for is a
+         * tooltip that must go quiet when something else on the page changes,
+         * the sidebar collapsing being the one it was reported from. Reading the
+         * attribute at trigger time means `x-bind:data-wk-tooltip-disabled` from
+         * the call site works reactively with no further API at all.
+         *
+         * `pointer-events-none` on the root is NOT a way to do this, however
+         * much it looks like one: `mouseenter` is delivered to every ancestor of
+         * the element actually hit, whatever their own pointer-events value, so
+         * the handler fires and the tooltip appears over a control that is
+         * supposed to be inert.
+         */
+        _disabled() {
+            return this.$root?.getAttribute('data-wk-tooltip-disabled') === 'true';
+        },
+
         async show() {
             if (this.open) return;
+
+            // Checked HERE as well as in the handlers, because show() is public:
+            // it is reachable from a call site that dispatches it directly, and a
+            // switch that only guards the doors it knows about is not a switch.
+            if (this._disabled()) return;
 
             // Color the panel BEFORE it is shown, not after.
             //

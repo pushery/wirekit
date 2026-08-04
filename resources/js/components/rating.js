@@ -1,3 +1,5 @@
+import { observeServerValue } from '../utils/server-value.js';
+
 /**
  * Rating — an interactive star row implementing the WAI-ARIA radio-group
  * keyboard model.
@@ -23,6 +25,31 @@ export default function wirekitRating(config = {}) {
         rating: Number(config.value) || 0,
         hovered: 0,
         _max: Number(config.max) || 5,
+
+        init() {
+            // A value the server changed has to reach the stars. Alpine read the
+            // seed once and will not read it again, and this component binds its
+            // hidden input with `:value` — so Alpine writes its own stale number
+            // back over whatever Livewire's morph put there. Watching the input
+            // would be racing that binding; the server gets its own attribute,
+            // which nothing else writes.
+            this._stopServerSync = observeServerValue(this.$root, (value) => {
+                const next = Number(value);
+
+                // Guarded twice: a non-number would blank the row, and an
+                // unchanged value arrives on every morph, including the ones
+                // that must not disturb a choice just made.
+                if (Number.isNaN(next) || next === this.rating) {
+                    return;
+                }
+
+                this.rating = next;
+            });
+        },
+
+        destroy() {
+            this._stopServerSync?.();
+        },
 
         /**
          * Pick a value, and tell a plain HTML form about it.

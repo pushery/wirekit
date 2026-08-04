@@ -31,6 +31,7 @@ import wirekitCodeBlock from './components/code-block.js';
 import wirekitSlider from './components/slider.js';
 import wirekitPasswordInput from './components/password-input.js';
 import wirekitSegmentedControl from './components/segmented-control.js';
+import wirekitSortable from './components/sortable.js';
 import wirekitReadingProgress from './components/reading-progress.js';
 import wirekitFileUpload from './components/file-upload.js';
 import wirekitTabs from './components/tabs.js';
@@ -113,6 +114,7 @@ function registerComponents() {
     Alpine.data('wirekitSlider', wirekitSlider);
     Alpine.data('wirekitPasswordInput', wirekitPasswordInput);
     Alpine.data('wirekitSegmentedControl', wirekitSegmentedControl);
+    Alpine.data('wirekitSortable', wirekitSortable);
     Alpine.data('wirekitReadingProgress', wirekitReadingProgress);
     Alpine.data('wirekitFileUpload', wirekitFileUpload);
     Alpine.data('wirekitTabs', wirekitTabs);

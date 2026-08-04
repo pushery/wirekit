@@ -87,12 +87,37 @@
     // alphabet gets byte-identical markup to before this prop existed. Enumerating
     // it as [0123456789] would behave the same and still be a change to every
     // rendered page — additive means the default output does not move.
+    // When the alphabet folds case, the pattern has to say so — this is the half
+    // that was missing, and it was invisible for the reason such things usually
+    // are: the promise was kept by the layer that is easiest to test.
+    //
+    // `$alphabetCaseFold` reached Alpine and nothing else, so the browser's own
+    // constraint validation still held a single-case class. With the script
+    // running, folding happens on the way in and the value always matches. With
+    // it not running — a Content-Security-Policy without `unsafe-eval`, an error
+    // earlier on the page, scripting off — the reader types the code in the case
+    // the label shows, the pattern rejects it, and the browser refuses to submit
+    // with a message about a format nobody was told about. Lacking a `name` does
+    // not exempt these boxes: that keeps them out of the submitted data, not out
+    // of constraint validation.
+    //
+    // So the class carries both cases exactly when the component promises to
+    // accept both. A mixed-case alphabet is meaningful and folds nothing, and its
+    // pattern is unchanged.
+    $alphabetPatternChars = $alphabetCaseFold
+        ? array_values(array_unique(array_merge(
+            $alphabetChars,
+            array_map(static fn (string $c): string => mb_strtolower($c), $alphabetChars),
+            array_map(static fn (string $c): string => mb_strtoupper($c), $alphabetChars),
+        )))
+        : $alphabetChars;
+
     $alphabetPattern = count($alphabetChars) === 10 && $alphabetIsNumeric
         ? '[0-9]'
         : '['.str_replace(
             ['\\', ']', '^', '-'],
             ['\\\\', '\\]', '\\^', '\\-'],
-            implode('', $alphabetChars)
+            implode('', $alphabetPatternChars)
         ).']';
 @endphp
 

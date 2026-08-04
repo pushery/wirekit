@@ -15,6 +15,14 @@
     'label' => null,
     'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
     'hint' => null,
+    // Keep the message line's height whether or not there is a message.
+    //
+    // Wasted space in a stacked form, and the difference between a working
+    // toolbar and one that jumps in a horizontal row: an appearing error grows
+    // this element, and every sibling in the row re-anchors to the new bottom
+    // edge. Aligning the row does not fix it — `items-end` follows the growth,
+    // and `items-start` lines things up with the label rather than the control.
+    'reserveMessage' => false,
     'error' => null,
     // Success / valid state — string shows a green confirmation below, `true`
     // shows just the green border. `error` always wins when both are set.
@@ -40,6 +48,7 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $hideLabel = BooleanProp::from($hideLabel, false);
+    $reserveMessage = BooleanProp::from($reserveMessage, false);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -242,6 +251,11 @@
     @endif
 
     {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}
+    {{-- See the `reserve-message` prop: an appearing message grows this element
+         and pushes every sibling in a horizontal row. --}}
+    @if($reserveMessage && ! (($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
+        <p aria-hidden="true" class="text-[length:var(--text-wk-sm)]">&nbsp;</p>
+    @endif
     @if($hasError && $errorMessage)
         <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hasSuccess && $successMessage)

@@ -10,6 +10,92 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.26.0] — 2026-08-04
+
+**Minor — two column layouts the grid could not express, a switch the tooltip never had, a reorder that was announced and never built, and German.** Nothing here changes what an unchanged call site renders. The fixes share a shape worth naming: each was a component that was right in the render a test looks at and wrong a moment later — a control the server had changed, a code the browser rejected only with scripting off, a field that moved its neighbors the instant validation fired.
+
+### Added
+
+- **[`grid`](https://docs.wirekit.app/components/grid) can count columns by the container, and set them by hand.**
+  `min="14rem"` is the ordinary responsive card grid: as many columns as fit, at
+  least that wide, one on a narrow screen. It is not `cols` with breakpoints, and
+  the difference is the point — `cols` measures the viewport, so the two look
+  identical until the container is narrower than the window (a sidebar opens, a
+  split view, an embedded preview) and the breakpoint version keeps counting
+  columns that no longer fit.
+  `template="14rem 1fr 18rem"` takes an explicit track list, for the layouts
+  `cols` cannot express at all: it only knows equal columns, and the two
+  commonest application shells there are — the three-pane workspace and the week
+  grid — are neither equal nor a count. Both accept any CSS length or track
+  syntax; `template` wins over `min`, which wins over `cols`.
+
+- **German ships with the package.**
+  Set your application's locale to `de` and every string WireKit renders on your
+  behalf follows — no publishing step, no configuration. Until now the package
+  shipped the English key reference and nothing else, so each project translated
+  the same strings again without being able to see the others' work. Publish the
+  catalog if you want to adjust a phrase to your own voice; your copy wins per
+  key. See [Localization](https://docs.wirekit.app/localization).
+
+- **[`tooltip`](https://docs.wirekit.app/components/tooltip) can be switched off.**
+  `disabled` silences it without removing it, for a control that has become
+  inert. `pointer-events: none` on the wrapper is not a way to do this, however
+  much it looks like one: `mouseenter` reaches every ancestor of the element the
+  pointer actually hit, so the panel still opens over something that is supposed
+  to be dead. Bind `data-wk-tooltip-disabled` instead of passing the prop when
+  the answer changes while the page is open.
+
+- **[`kanban`](https://docs.wirekit.app/components/kanban) reorders, by pointer and by keyboard.**
+  `sortable` previously produced attributes for you to wire a library to. It now
+  moves cards on its own and dispatches one `wirekit:sortable:reordered` event
+  carrying the whole new sequence. The keyboard path is part of it rather than an
+  addition — Space lifts, the arrows move, Space drops, Escape puts the card back
+  — because a list that can only be reordered by dragging cannot be reordered at
+  all without a pointer.
+
+- **[`sidebar`](https://docs.wirekit.app/components/sidebar) lets you own the scrolling middle.**
+  `scroll-shadows="false"` removes the fading edge affordance and keeps
+  everything else. The two used to arrive together, so being rid of the shadows
+  meant dropping `header` and `footer` — and with them the pinned head and foot,
+  which is an unrelated capability.
+
+- **[`input`](https://docs.wirekit.app/components/input), [`select`](https://docs.wirekit.app/components/select) and [`textarea`](https://docs.wirekit.app/components/textarea) can hold their height.**
+  `reserve-message` keeps the message line's height whether or not there is a
+  message. In a row of fields, an appearing error otherwise grows the field and
+  every neighbor re-anchors — and no value of `align-items` fixes it, because
+  none of them anchors siblings to an element two levels down. Off by default: in
+  a stacked form the reserved line is an empty row under every field.
+
+### Fixed
+
+- **A value the server changed now reaches [`segmented-control`](https://docs.wirekit.app/components/segmented-control) and [`rating`](https://docs.wirekit.app/components/rating).**
+  Livewire patches the DOM in place, and the component read its starting value
+  once — so a selection changed on the server left the control showing the old
+  one while the form submitted the new one. Only visible on a round trip your
+  user did not initiate, which is why it survived: clicking the control yourself
+  hides it completely.
+
+- **[`otp-input`](https://docs.wirekit.app/components/otp-input) accepts the case it says it accepts.**
+  A single-case alphabet folds case, and the promise lived only in the script —
+  the browser's own validation still held an uppercase-only pattern. With
+  scripting unavailable, a code typed in the case the label shows was rejected on
+  submit, citing a format nobody had mentioned.
+
+- **A refused optimistic action inside a menu is now visible.**
+  Clicking a menu item closes the menu, and the refusal was rendered into the
+  closed panel: announced to a screen reader, and to nobody looking at the page.
+  It is now surfaced when — and only when — its own control has no visible box.
+
+### Changed
+
+- **An expected refusal no longer has to reach your error tracker.**
+  The optimistic guide asks for a thrown exception, correctly — a validation
+  rejection is a successful response and confirms the value instead of restoring
+  it. It now also says what throwing costs, and how to keep a refusal your
+  application makes on purpose out of your incident feed. Measured on our own
+  documentation site: one reader on one page produced 46 reports from a demo that
+  refuses by design.
+
 ## [2.25.0] — 2026-08-03
 
 **Minor — a date range, a vocabulary the icon system was missing, and a long run of fixes for behavior that looked right and was not.** Nothing here changes what an unchanged call site renders. The additions are opt-in; the fixes are the larger half, and most of them share a shape worth naming — a component doing its job at the moment anyone would look, and stopping afterwards. Several were invisible by construction rather than by oversight: a refusal that rendered exactly like a success, a control that changed on screen and never reached the server, an editable surface with no name for a screen reader.

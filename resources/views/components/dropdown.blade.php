@@ -61,9 +61,40 @@
     @isset($trigger)
         {{-- Quick form: <x-slot:trigger> provided. Auto-wrap trigger +
              default slot in the canonical sub-component shells so the
-             developer doesn't repeat the trigger/panel composition. --}}
+             developer doesn't repeat the trigger/panel composition.
+
+             MIXING THE TWO FORMS used to wrap a panel around a panel, silently.
+             A call site naming BOTH `<x-slot:trigger>` and an explicit
+             `<x-wirekit::dropdown.panel>` got two nested shells, two teleports
+             and — because the id travels through the Alpine scope — the SAME id
+             on both. The only signal was a duplicate-id accessibility violation
+             two layers from the cause, which is what made it expensive: three
+             hypotheses were tested and killed here before the documentation site
+             read the served HTML and found two templates already in it.
+
+             So the wrap is now conditional, and the mistake says so out loud in
+             development. Silence was the defect; the second shell was only how
+             it showed. --}}
+        @php
+            // The rendered slot, once, because touching a ComponentSlot twice
+            // re-renders it. `data-wk-dropdown-panel` is the panel's own marker.
+            $slotHtml = (string) $slot;
+            $slotCarriesPanel = str_contains($slotHtml, 'data-wk-dropdown-panel');
+        @endphp
+        @if($slotCarriesPanel && config('app.debug'))
+            @php
+                // Gated on debug per the house rule: a developer warning never
+                // reaches a production page.
+                logger()->warning('[wirekit] dropdown: this call site uses <x-slot:trigger> AND an explicit <x-wirekit::dropdown.panel>. Pick one — the quick form wraps the default slot in a panel for you, so naming both nests a panel inside a panel and gives the two the same id.');
+            @endphp
+        @endif
         <x-wirekit::dropdown.trigger>{{ $trigger }}</x-wirekit::dropdown.trigger>
-        <x-wirekit::dropdown.panel>{{ $slot }}</x-wirekit::dropdown.panel>
+        @if($slotCarriesPanel)
+            {{-- Already a panel. Wrapping it again is the defect. --}}
+            {!! $slotHtml !!}
+        @else
+            <x-wirekit::dropdown.panel>{!! $slotHtml !!}</x-wirekit::dropdown.panel>
+        @endif
     @else
         {{-- Explicit form: developer nests <x-wirekit::dropdown.trigger>
              and <x-wirekit::dropdown.panel> children directly. The default

@@ -132,6 +132,7 @@ export default function wirekitOptimistic(config = {}) {
         _unintercept: null,
         _unmorph: null,
         _marked: false,
+        _surfaceTimer: null,
         _markBaseline: null,
         // The owning component's id, read at init and never re-derived — a
         // teleported panel leaves the component and takes `$el` with it.
@@ -778,6 +779,71 @@ export default function wirekitOptimistic(config = {}) {
                     this._announce(this.messages.reverted);
                 }
             }
+
+            // A failure message inside a panel that has closed reaches nobody.
+            if (next === 'rejected' || next === 'rolled-back') {
+                this._surfaceIfHostIsGone(next === 'rejected' ? this.messages.kept : this.messages.reverted);
+            }
+        },
+
+        /**
+         * Say it somewhere visible when this control's own surface has none.
+         *
+         * A control inside a menu is a legitimate place for an optimistic action,
+         * and clicking a menu item closes the menu. The refusal then renders into
+         * a subtree with no box: measured on the dropdown demo, `state` correctly
+         * `rolled-back`, the announcement present, the CSS making it readable —
+         * and `getBoundingClientRect()` reporting 0x0 on both the announcer and
+         * the wrapper, with the panel's `aria-expanded` already `false`. A screen
+         * reader heard it. Nobody looking at the page did.
+         *
+         * The rule this restores is the promise the demo makes in as many words:
+         * "what you typed stays, and you are told it did not save". Told, not
+         * announced — those are the same sentence only while the element has a
+         * surface.
+         *
+         * Deliberately narrow: it fires ONLY when the host has no box, so a
+         * control that is visible keeps saying it in place, where the message
+         * belongs. Nothing is duplicated — the two paths are exclusive.
+         */
+        _surfaceIfHostIsGone(message) {
+            if (! message || typeof document === 'undefined') {
+                return;
+            }
+
+            const box = this.$el && this.$el.getBoundingClientRect
+                ? this.$el.getBoundingClientRect()
+                : null;
+
+            // A host with a box says it itself. This is the exception, not the path.
+            if (! box || box.height > 1 || box.width > 1) {
+                return;
+            }
+
+            let region = document.getElementById('wk-optimistic-surfaced');
+
+            if (! region) {
+                region = document.createElement('div');
+                region.id = 'wk-optimistic-surfaced';
+                // `status`, not `alert`: the value is already back and nothing is
+                // being interrupted. The live region on the control has already
+                // spoken, so this one is aria-hidden — otherwise the same refusal
+                // is announced twice, which §1 of the contract forbids.
+                region.setAttribute('role', 'status');
+                region.setAttribute('aria-hidden', 'true');
+                region.className = 'wk-optimistic-surfaced';
+                document.body.appendChild(region);
+            }
+
+            region.textContent = message;
+            region.setAttribute('data-wk-optimistic-surfaced', 'true');
+
+            clearTimeout(this._surfaceTimer);
+            this._surfaceTimer = setTimeout(() => {
+                if (region.textContent === message) {
+                    region.removeAttribute('data-wk-optimistic-surfaced');
+                }
+            }, 6000);
         },
 
         /**

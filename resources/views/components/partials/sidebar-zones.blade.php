@@ -57,9 +57,16 @@
          The wrapper is `relative` because the overlays are absolutely positioned
          siblings of the scroller — painted ABOVE the content, so a hovered row at
          the edge cannot cover the affordance. --}}
+    {{-- The shadow apparatus is separable from the zones, and it was not.
+         A developer with their own edge treatment could only be rid of ours by
+         dropping `header` and `footer` — which also gives up the sticky head and
+         foot, an unrelated capability. `scroll-shadows="false"` keeps the zones,
+         the scroller and its scrollbar, and leaves the edge alone. --}}
+    @if($scrollShadows)
     <div class="relative flex flex-col min-h-0 flex-1" x-data="wirekitStickyPanelShadows()">
         <div
             x-ref="scroller"
+            data-wk-sidebar-scroller
             class="min-h-0 flex-1 overflow-y-auto flex flex-col gap-[var(--space-wk-sm)] wk-scrollbar"
         >
             <div x-ref="topSentinel" aria-hidden="true" class="h-px shrink-0"></div>
@@ -69,6 +76,17 @@
         <div aria-hidden="true" x-cloak x-show="topShadow" x-transition.opacity class="wk-scroll-shadow-top"></div>
         <div aria-hidden="true" x-cloak x-show="bottomShadow" x-transition.opacity class="wk-scroll-shadow-bottom"></div>
     </div>
+    @else
+    {{-- Same scroller, same `min-h-0` — the sentinels and the two overlays are
+         what go, not the scroll region. Marked so a developer's own affordance
+         has something to attach to without reaching for a class name. --}}
+    <div
+        data-wk-sidebar-scroller
+        class="min-h-0 flex-1 overflow-y-auto flex flex-col gap-[var(--space-wk-sm)] wk-scrollbar"
+    >
+        {{ $slot }}
+    </div>
+    @endif
 
     @isset($footer)
         {{-- Same alignment as the head, for the same reason: an account row is
