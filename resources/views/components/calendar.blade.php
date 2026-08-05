@@ -265,7 +265,7 @@
                             <template x-for="(week, weekIdx) in weeksOf(month.days)" :key="weekIdx">
                                 <tr role="row">
                                     <template x-for="day in week" :key="day.date">
-                                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange) ? 'true' : 'false'">
+                                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange || day.isProvisionalEnd) ? 'true' : 'false'">
                                             <button
                                                 type="button"
                                                 x-on:click="day.isCurrentMonth && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
@@ -279,7 +279,7 @@
                                                 :class="{
                                                     'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]': day.isSelected,
                                                                     'font-[number:var(--font-wk-heading-weight)] ring-1 ring-[var(--color-wk-accent)]': day.isToday && !day.isSelected,
-                                                    'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected && !day.isInRange,
+                                                    'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected && !day.isInRange && !day.isProvisionalEnd,
                                                     'text-[color:var(--color-wk-text-muted)] opacity-40 cursor-default': !day.isCurrentMonth,
                                                     'cursor-pointer': day.isCurrentMonth && day.isSelected,
                                                 }"
@@ -313,7 +313,7 @@
                              only allowed on gridcell/option/row/rowheader/tab/
                              treeitem roles — placing it on a <button> fails
                              axe-core's aria-allowed-attr (critical). --}}
-                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange) ? 'true' : 'false'">
+                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange || day.isProvisionalEnd) ? 'true' : 'false'">
                             <button
                                 type="button"
                                 x-on:click="day.isCurrentMonth && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
@@ -329,7 +329,7 @@
                                 :class="{
                                     'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]': day.isSelected,
                                     'font-[number:var(--font-wk-heading-weight)] ring-1 ring-[var(--color-wk-accent)]': day.isToday && !day.isSelected,
-                                    'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected && !day.isInRange,
+                                    'cursor-pointer hover:bg-[var(--color-wk-bg-subtle)]': day.isCurrentMonth && !day.isSelected && !day.isInRange && !day.isProvisionalEnd,
                                     'text-[color:var(--color-wk-text-muted)] opacity-40 cursor-default': !day.isCurrentMonth,
                                     'cursor-pointer': day.isCurrentMonth && day.isSelected,
                                 }"
