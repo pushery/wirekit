@@ -10,6 +10,39 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.26.1] — 2026-08-04
+
+**Patch — the day under the pointer.**
+
+### Fixed
+
+- **[`calendar`](https://docs.wirekit.app/components/calendar) shades the day the pointer is
+  actually on.** While only the start of a `range` is set, the day under the pointer stands
+  in for the end — and it was the one day in the preview with no surface: the days on either
+  side of it shaded, and the one being chosen blank until it was clicked.
+  It is shaded rather than filled, because a filled day would claim a choice nobody has made
+  yet. A screen reader is told about it too; the two channels had failed apart.
+
+### Documentation
+
+- **[`inline-edit`](https://docs.wirekit.app/components/inline-edit) says what happens to the
+  draft when the reader clicks away.** The page described where focus lands and stopped there,
+  so the more consequential half was left to be discovered: leaving the control without
+  confirming also discards what was typed. That is the same outcome as `Escape`, reached a
+  different way, and it is the price of the `explicit` default — nothing is written until the
+  reader confirms, so a click into the next field cannot save half a thought either.
+  A round trip is not a departure, and the difference is now stated where it is relevant
+  rather than only in the morph section.
+
+- **[`grid`](https://docs.wirekit.app/components/grid) warns that `template` is not
+  responsive.** `min` promises a column never overflows its container, and the page said so;
+  `template` makes the opposite promise — an explicit track list is handed to CSS as written,
+  so a fixed track is that wide at every viewport — and the page said nothing. The example
+  beside it reserves `10rem + 8rem` before the content pane gets anything, which on a phone
+  leaves the middle column a few characters wide and pushes the grid past the screen edge.
+  It renders; it is simply unreadable, and nothing warns you. Now the page does, with the
+  pattern to use below the width such a layout needs.
+
 ## [2.26.0] — 2026-08-04
 
 **Minor — two column layouts the grid could not express, a switch the tooltip never had, a reorder that was announced and never built, and German.** Nothing here changes what an unchanged call site renders. The fixes share a shape worth naming: each was a component that was right in the render a test looks at and wrong a moment later — a control the server had changed, a code the browser rejected only with scripting off, a field that moved its neighbors the instant validation fired.

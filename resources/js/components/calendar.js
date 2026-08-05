@@ -240,16 +240,36 @@ export default function wirekitCalendar(config = {}) {
 
             const isInRange = !! end && dateStr > this.selected && dateStr < end;
 
+            // The day under the pointer, standing in for an end nobody has chosen
+            // yet. It needs its own name because the two things that PAINT a day
+            // both miss it: the endpoints are filled by `isSelected`, which is
+            // false while `selectedEnd` is null, and the middle is shaded by
+            // `isInRange`, which is exclusive precisely because the endpoints
+            // normally fill themselves.
+            //
+            // So the provisional end fell between them and stayed blank — the
+            // days on either side of the pointer shaded, and the one under it
+            // did not. Reported from the docs page, and the page's own prose is
+            // what makes it a defect rather than a preference: it promises the
+            // shading answers "what am I about to choose", and the day being
+            // chosen was the one day it did not answer for.
+            //
+            // It is shaded rather than filled: a dark fill would claim a choice
+            // that has not been made, and the difference between "selected" and
+            // "about to be selected" is the whole point of a preview.
+            const isProvisionalEnd = ! this.selectedEnd && !! end && dateStr === end;
+
             return {
                 isRangeStart: dateStr === this.selected && !! end,
                 isRangeEnd: !! end && dateStr === end,
                 isInRange,
+                isProvisionalEnd,
                 // The attribute VALUE, computed here rather than in the template.
                 // Alpine's CSP build holds one member access per directive — a
                 // ternary with `&&` and `!` in it does not parse there, and the
                 // failure is a directive that silently does nothing under a policy
                 // the library promises to support.
-                rangeMarker: isInRange && dateStr !== this.selected && dateStr !== this.selectedEnd ? '' : null,
+                rangeMarker: (isInRange || isProvisionalEnd) && dateStr !== this.selected && dateStr !== this.selectedEnd ? '' : null,
             };
         },
 
