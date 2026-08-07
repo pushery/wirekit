@@ -45,6 +45,12 @@
     // completely unrelated capability. Two decisions were being made by one
     // answer.
     'scrollShadows' => true,
+    // The head and foot zones inset their content to line up with the navigation
+    // below them. That is right for a brand row or a plain block, and wrong for a
+    // component that already insets itself: a `sidebar.item` placed in a zone
+    // carries its own padding and ends up indented twice, sitting visibly right of
+    // the items it belongs with. Set `false` when the zone's content brings its own.
+    'zoneInset' => true,
     'scope' => null,
 ])
 
@@ -56,6 +62,7 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $collapsible = BooleanProp::from($collapsible, false);
+    $zoneInset = BooleanProp::from($zoneInset, true);
     $collapsed = BooleanProp::from($collapsed, false);
 
     // Landmark accessible name. Only emit our default `aria-label` when the

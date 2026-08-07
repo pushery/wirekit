@@ -38,7 +38,11 @@
     {{ $attributes->class([$classes]) }}
 >
     @if(trim((string) $slot) === '')
-        <x-wirekit::button intent="neutral" surface="filled">Cancel</x-wirekit::button>
+        {{-- Translated, and the key already existed. `Cancel` sat here as a literal while
+             lang/en.json carried "Cancel" and lang/de.json carried "Abbrechen" — so a German
+             app rendered a fully translated dialog with an English cancel button, and the
+             catalog that could have fixed it was already installed. --}}
+        <x-wirekit::button intent="neutral" surface="filled">{{ __('Cancel') }}</x-wirekit::button>
     @elseif(str_contains((string) $slot, '<x-wirekit'))
         {{-- Caller supplied a full WireKit component (typically a
              button) — use it verbatim. The x-on:click on the parent

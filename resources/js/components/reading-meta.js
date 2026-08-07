@@ -39,8 +39,8 @@ export default function wirekitReadingMeta(config = {}) {
         wordCount: 0,
 
         _target: config.target || '',
-        _wpm: Number(config.wpm || 200),
-        _cjkCpm: Number(config.cjkCpm || 500),
+        _wpm: Number(config.wpm ?? 200),
+        _cjkCpm: Number(config.cjkCpm ?? 500),
         _showRemaining: Boolean(config.showRemaining),
         _perParagraph: Boolean(config.perParagraph),
         _paragraphMinWords: Number(config.paragraphMinWords || 0),

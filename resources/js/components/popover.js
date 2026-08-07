@@ -26,7 +26,7 @@ export default function wirekitPopover(config = {}) {
 
         open: false,
         _placement: config.placement || 'bottom',
-        _offset: config.offset || 8,
+        _offset: config.offset ?? 8,
         _trap: null,
         _navCleanup: null,
         // Floating UI autoUpdate teardown handle — set in show(), called in EVERY

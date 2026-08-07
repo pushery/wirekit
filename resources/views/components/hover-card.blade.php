@@ -72,7 +72,7 @@
 
     {{--
         Hover-card panel — positioned via Floating UI. Teleported to
-        <body> via `x-teleport="body"` so the panel renders OUTSIDE the
+        <body> via `x-teleport="#wk-overlay-root"` so the panel renders OUTSIDE the
         wrapper `<span>` hierarchy. Without the teleport, an inline
         usage like
 
@@ -95,7 +95,7 @@
         coordinates are viewport-relative so the wrapper position is
         irrelevant).
     --}}
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
         <div
             x-ref="panel"
             x-show="open"

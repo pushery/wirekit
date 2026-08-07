@@ -2,7 +2,7 @@
      Its state is open state and pointer position. That is not a value a server owns, so there is
      nothing to anticipate and nothing to roll back. --}}
 @props([
-    // When true (default) the panel teleports to <body> so it escapes every
+    // When true (default) the panel teleports out of the document flow so it escapes every
     // ancestor stacking context, overflow:hidden, and `contain: layout`
     // container. This is the right default for 99% of production use cases
     // and it mirrors what Modal, Drawer, Alert-Dialog, Tooltip, and
@@ -67,7 +67,7 @@
         {{ $trigger }}
     </div>
 
-    {{-- Context menu panel. Wrapped in `<template x-teleport="body">` by
+    {{-- Context menu panel. Wrapped in `<template x-teleport="#wk-overlay-root">` by
          default so the fixed-positioned panel escapes every ancestor
          `overflow: hidden` / `contain: layout` / `transform` container and
          opens at true viewport coordinates — same pattern as Modal, Drawer,
@@ -79,7 +79,7 @@
          anywhere that isn't the panel (including the trigger) closes the
          menu, which is the standard menu behavior. --}}
     @if($teleport)
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
     @endif
         <div
             x-ref="panel"

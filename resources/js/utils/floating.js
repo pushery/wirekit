@@ -138,7 +138,34 @@ export async function position(reference, floating, {
     // Follow the trigger on scroll / resize / ancestor-scroll. autoUpdate also
     // fires `run` once immediately (a harmless recompute of what we just placed);
     // the returned `stop` is the caller's teardown handle — call it on close.
-    const stop = autoUpdate(reference, floating, run);
+    //
+    // The recompute is deferred to the next frame, and that is not a micro-optimization.
+    // autoUpdate observes with a ResizeObserver, and `run` writes the panel's position —
+    // a write, inside the observer's own callback, that the browser can see as another
+    // resize. When something else resizes the page in the same frame, which a Livewire
+    // morph does, the browser reports `ResizeObserver loop completed with undelivered
+    // notifications`.
+    //
+    // Nothing renders wrong, and that is exactly why it matters: it is a console error,
+    // and the developers most likely to meet it are the ones gating their browser suite
+    // on a clean console — which is how two of the defects in this release were reported
+    // in the first place. They would get a red run from our component with nothing they
+    // could do about it.
+    //
+    // A frame's delay is invisible for a panel that is following its trigger, and it
+    // moves the write out of the observer's callback, which is the whole cause.
+    let queued = 0;
+
+    const stop = autoUpdate(reference, floating, () => {
+        if (queued) {
+            return;
+        }
+
+        queued = requestAnimationFrame(() => {
+            queued = 0;
+            run();
+        });
+    });
 
     return { ...result, stop };
 }

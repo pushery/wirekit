@@ -35,7 +35,7 @@
              Applied on the ZONE rather than asked of the caller: the alignment
              is a property of the column, and a developer supplying a brand row
              should not have to know which token the items happen to use. --}}
-        <div class="shrink-0 px-[var(--padding-wk-x-sm)]">
+        <div @class(['shrink-0', 'px-[var(--padding-wk-x-sm)]' => $zoneInset ?? true])>
             {{ $header }}
         </div>
     @endisset
@@ -92,7 +92,7 @@
         {{-- Same alignment as the head, for the same reason: an account row is
              the bottom of the same column and belongs on the same vertical line
              as the items above it. --}}
-        <div class="shrink-0 px-[var(--padding-wk-x-sm)]">
+        <div @class(['shrink-0', 'px-[var(--padding-wk-x-sm)]' => $zoneInset ?? true])>
             {{ $footer }}
         </div>
     @endisset

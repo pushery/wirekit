@@ -19,10 +19,10 @@ export default function wirekitToast(config = {}) {
         assertiveMessage: '',
 
         /** Max visible toasts (oldest removed when exceeded) */
-        _max: config.max || 5,
+        _max: config.max ?? 5,
 
         /** Default auto-dismiss duration in ms */
-        _duration: config.duration || 5000,
+        _duration: config.duration ?? 5000,
 
         /** Auto-incrementing toast ID */
         _nextId: 1,

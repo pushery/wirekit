@@ -113,113 +113,102 @@ final class PropsParser
     /**
      * Walk source from `$openBracketIndex` (must point at `[`) and return
      * the substring including the brackets `[…]` with matching depth.
+     *
+     * PHP'S OWN LEXER DECIDES WHAT IS CODE, and that is the whole point of this
+     * shape. The question "which `]` closes this `[`" is only hard because a
+     * bracket can appear inside a string, a comment, or a heredoc body and mean
+     * nothing — and each of those is a separate rule with its own edge cases.
+     *
+     * This walked the characters by hand for a long time, and the history is the
+     * argument: it was hardened three times, each time after a real defect.
+     *
+     *   - Strings first, because a `]` inside `'a]b'` is not a bracket.
+     *   - Then comments, after an ODD apostrophe in a trailing comment — the one
+     *     in `// each item's group` — flipped quote parity for the real code
+     *     below it. The closing `]` was swallowed by a string that did not
+     *     exist, the walk ran to EOF, and the component reported NO props at
+     *     all. Downstream, its prop variables surfaced as required slots.
+     *   - Then heredocs, whose bodies could leak every one of those states at
+     *     once: a `/*` chasing a phantom `*​/` past the array, a stray `]`
+     *     mis-counting depth, an odd quote flipping parity.
+     *
+     * Three hardenings for one question is the signal. `token_get_all()` already
+     * answers all of it — a comment is one token, a heredoc is one token, a
+     * string is one token — so the bracket depth is counted over things that are
+     * certainly brackets, and there is no fourth special case waiting.
+     *
+     * The offsets come from the token stream rather than from a second scan: a
+     * `<?php ` prefix is prepended so PHP lexes the source as code at all, and
+     * its width is subtracted back out.
      */
     private static function extractBalancedBracketBody(string $source, int $openBracketIndex): ?string
     {
         if (($source[$openBracketIndex] ?? null) !== '[') {
             return null;
         }
+
+        // Lexed from the OPENING BRACKET, not from the top of the file, and
+        // that is a correctness requirement rather than a saving.
+        //
+        // A Blade file is prose and markup before it is code. Handed the whole
+        // thing, the lexer reads an apostrophe in a comment above the component
+        // — `{{-- the trigger's label --}}` — as the start of a string literal,
+        // and the `[` of `@props([` disappears inside it. Depth then never
+        // opens, the first `]` drives it negative, and the component reports NO
+        // props at all. Measured: `dropdown/trigger` and `faq-item` did exactly
+        // that. Starting at the bracket means nothing before it can be
+        // misjudged, which is the one property the hand-rolled walk had for
+        // free.
+        //
+        // Lexed PERMISSIVELY, without `TOKEN_PARSE`: what follows the array is
+        // still Blade and will never parse, so demanding that it does rejects
+        // every real input — measured at 28 of 30 cases failing. The lexer
+        // groups strings, comments and heredocs correctly regardless, and that
+        // grouping is the only thing this needs.
+        $prefix = '<?php ';
+        $tail = substr($source, $openBracketIndex);
+        $offsets = self::bracketOffsets(token_get_all($prefix.$tail), strlen($prefix));
         $depth = 0;
-        $i = $openBracketIndex;
-        $len = strlen($source);
-        $inString = null;  // null | "'" | '"'
-        $escape = false;
 
-        while ($i < $len) {
-            $ch = $source[$i];
+        foreach ($offsets as [$char, $offset]) {
+            $depth += $char === '[' ? 1 : -1;
 
-            // String-aware: brackets inside string literals do not affect depth.
-            if ($inString !== null) {
-                if ($escape) {
-                    $escape = false;
-                } elseif ($ch === '\\') {
-                    $escape = true;
-                } elseif ($ch === $inString) {
-                    $inString = null;
-                }
-                $i++;
-
-                continue;
+            if ($depth === 0) {
+                return substr($tail, 0, $offset + 1);
             }
-
-            // Comment-aware (only when NOT inside a string): a quote or bracket
-            // inside a comment is NOT code. We skip the whole comment span so
-            // its characters never toggle string state or bracket depth. Before
-            // this, an ODD quote char inside a comment — e.g. the apostrophe in
-            // `// Blade's compiler` or a trailing `// each item's group` — flipped
-            // quote-parity for the real prop code below, swallowing the closing
-            // `]` inside a phantom string. The walker then ran off the end and
-            // returned null → parseSource returned [] → the component's props
-            // were reported as (none) and its prop variables leaked into the
-            // slot list downstream (the export-json props→slots misfire). The
-            // skipped text still lands in the returned substring, where
-            // token_get_all() tokenizes comments correctly.
-            $next = $source[$i + 1] ?? '';
-            if ($ch === '/' && $next === '/') {
-                // `//` line comment → skip to the end of the line (or EOF).
-                $nl = strpos($source, "\n", $i + 2);
-                $i = $nl === false ? $len : $nl + 1;
-
-                continue;
-            }
-            if ($ch === '#' && $next !== '[') {
-                // `#` line comment. `#[` would begin a PHP attribute, which
-                // cannot appear inside a @props array literal — excluded anyway
-                // to stay faithful to PHP's lexer.
-                $nl = strpos($source, "\n", $i + 1);
-                $i = $nl === false ? $len : $nl + 1;
-
-                continue;
-            }
-            if ($ch === '/' && $next === '*') {
-                // `/* … */` block comment → skip to the closing `*/` (or EOF).
-                $close = strpos($source, '*/', $i + 2);
-                $i = $close === false ? $len : $close + 2;
-
-                continue;
-            }
-
-            // Heredoc / nowdoc: the body is OPAQUE — `/*`, `//`, `#`, quotes, and
-            // brackets inside it are literal text, not code. The walker is
-            // otherwise only string-aware (it toggles on '/"), so a `<<<LABEL`
-            // body could leak state: a `/*` would chase a phantom `*/` past the
-            // array's `]`, a stray `]` would mis-count depth, an odd quote would
-            // flip parity. Recognize the opener, capture the label, and skip the
-            // whole body to its closing-label line — mirroring how token_get_all()
-            // treats a heredoc as ONE opaque token. (The skipped text still lands
-            // in the returned substring, where token_get_all() re-parses it.)
-            if ($ch === '<' && substr($source, $i, 3) === '<<<'
-                && preg_match('/<<<[ \t]*([\'"]?)([A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*)\1\r?\n/A', $source, $hm, 0, $i)) {
-                $label = $hm[2];
-                // PHP 7.3+ allows the closing label to be indented; it sits at a
-                // line start and is followed by a non-identifier boundary.
-                if (preg_match('/^[ \t]*'.preg_quote($label, '/').'(?![A-Za-z0-9_\x80-\xff])/m', $source, $cm, PREG_OFFSET_CAPTURE, $i + strlen($hm[0]))) {
-                    $i = $cm[0][1] + strlen($cm[0][0]);
-                } else {
-                    $i = $len; // malformed (no closing label) — skip to EOF
-                }
-
-                continue;
-            }
-
-            if ($ch === "'" || $ch === '"') {
-                $inString = $ch;
-                $i++;
-
-                continue;
-            }
-            if ($ch === '[') {
-                $depth++;
-            } elseif ($ch === ']') {
-                $depth--;
-                if ($depth === 0) {
-                    return substr($source, $openBracketIndex, $i - $openBracketIndex + 1);
-                }
-            }
-            $i++;
         }
 
         return null;
+    }
+
+    /**
+     * Source offsets of every `[` and `]` the lexer treated as a bracket.
+     *
+     * `token_get_all()` reports a line for array tokens and nothing at all for
+     * single-character ones, so the offset is accumulated by walking the stream
+     * and adding each token's own width. That works because the token texts
+     * concatenate back to the exact source — including whitespace, comments and
+     * heredoc bodies, which are tokens of their own.
+     *
+     * @param  list<array{0: int, 1: string, 2: int}|string>  $tokens
+     * @return list<array{0: string, 1: int}>
+     */
+    private static function bracketOffsets(array $tokens, int $prefixLength): array
+    {
+        $offsets = [];
+        $cursor = 0;
+
+        foreach ($tokens as $token) {
+            $text = is_array($token) ? $token[1] : $token;
+
+            if ($text === '[' || $text === ']') {
+                $offsets[] = [$text, $cursor - $prefixLength];
+            }
+
+            $cursor += strlen($text);
+        }
+
+        return $offsets;
     }
 
     /**

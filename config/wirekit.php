@@ -88,6 +88,14 @@ return [
 
     'doctor' => [
         'scan_logs' => env('WIREKIT_DOCTOR_SCAN_LOGS', true),
+
+        // How far back the log scan looks, in hours. Without a bound the check reads the
+        // whole history, so a typo fixed weeks ago keeps its line in laravel.log forever
+        // and the warning stays yellow for the life of the file — a developer who did
+        // exactly what they were told sees no change, and learns to stop reading it.
+        //
+        // 0 restores the old read-everything behavior.
+        'scan_logs_window_hours' => env('WIREKIT_DOCTOR_SCAN_LOGS_WINDOW_HOURS', 24),
     ],
 
     /*
@@ -172,10 +180,62 @@ return [
         // auto-advance, revealing a streamed buffer at once) — so they cannot
         // disagree on the same page.
         //
-        // Renaming it is a call you make once and then live with; every rule and
-        // every component reads this name, so it belongs here rather than in ten
-        // places. Changing it means shipping your own stylesheet too.
-        'motion_attribute' => env('WIREKIT_MOTION_ATTRIBUTE', 'data-reduce-motion'),
+        // THIS IS A RECORD, NOT A SWITCH. Changing it changes nothing.
+        //
+        // It used to say the opposite — "every rule and every component reads this
+        // name" — and that was never true. Nothing reads this key: not a component,
+        // not a class, not the JavaScript. Both halves carry the name literally, the
+        // stylesheet in 26 selectors and `resources/js/utils/motion.js` in its
+        // MOTION_ATTRIBUTE constant. It also had an `env()` seam, so setting
+        // WIREKIT_MOTION_ATTRIBUTE in .env produced no effect and no error — an
+        // interface that looks like an interface and is not, which is worse than
+        // having none.
+        //
+        // It stays because the value is worth knowing: writing your own
+        // reduced-motion rules means matching this attribute, and reading it here
+        // beats grepping a minified bundle. It is now GUARDED — the build fails if
+        // this string stops matching what the shipped CSS and every JS bundle
+        // actually carry — so it is a checked fact rather than a decorative one.
+        //
+        // Making it a real switch was considered and rejected on the merits, not on
+        // effort: `[data-reduce-motion]` is a structural selector, so no CSS variable
+        // can parameterize it. A configurable name would mean giving up the prebuilt
+        // stylesheet and having every developer compile their own — a change to the
+        // architecture in exchange for renaming an attribute nobody has needed to
+        // rename.
+        'motion_attribute' => 'data-reduce-motion',
+
+        // The attribute an increased-contrast preference is expressed with, and like the
+        // one above this is a RECORD of what the stylesheet carries rather than a switch:
+        // `dist/wirekit.css` names it literally in its selectors, so changing this string
+        // changes nothing. It is here to be read.
+        //
+        // Three states, because two of them cannot be written as a media query:
+        //   data-contrast="more"           an explicit request — wins over the OS setting
+        //   data-contrast="no-preference"  an explicit refusal — also wins over the OS
+        //   (absent)                       follow `prefers-contrast`
+        //
+        // What it affects is the muted end of the palette: helper text, placeholders and
+        // borders — the values a reader with low vision loses first. Set it on <html> from
+        // your own preference UI, the same way you set `.dark`.
+        'contrast_attribute' => 'data-contrast',
+
+        /*
+         * The third preference, and the one that is a custom property rather than an
+         * attribute — because it carries a NUMBER, not a state. Motion and contrast each
+         * have three named positions; type size is a factor, and an application setting
+         * `1.25` should not have to pick from a list somebody else guessed at.
+         *
+         * Set it on the root element and the whole ramp moves together:
+         *
+         *     <html style="--font-scale-wk: 1.25">
+         *
+         * Like its two siblings, this key is a RECORD of the name the shipped stylesheet
+         * carries, not a switch that renames it — the same correction the motion key
+         * received in this release, applied from the start rather than after the fact.
+         * `FontScaleGuardTest` holds the two together.
+         */
+        'font_scale_property' => '--font-scale-wk',
     ],
 
     'components' => [
@@ -202,6 +262,7 @@ return [
 
         // Display components
         'badge' => ['intent' => 'neutral', 'size' => 'md', 'surface' => 'soft'],
+        'step-marker' => ['intent' => 'neutral', 'size' => 'md'],
         'card' => ['variant' => 'outlined'],
         'card.header' => [],
         'card.body' => [],

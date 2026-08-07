@@ -4,18 +4,36 @@
 @props([
     'placement' => config('wirekit.components.dropdown.placement', 'bottom-start'),
     'offset' => config('wirekit.components.dropdown.offset', 8),
+    // Pin the panel id across renders. `alert-dialog`, `drawer` and `lightbox` all
+    // carry this escape hatch; the dropdown was the one overlay without it, which is
+    // why a Livewire round trip could not be made survivable from the call site.
+    'name' => null,
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\WireKit;
 
-    // Generate unique ID for aria-controls link between trigger and panel
-    // NOT uniqid(): it has MICROSECOND resolution, so two dropdowns rendered in
-    // the same microsecond get the SAME id. Measured on the split-button preview —
-    // two dropdown roots, one DOM id between them, and a single click on one
-    // trigger left BOTH panels open. Str::random is what the combobox already uses.
-    $panelId = 'wk-dropdown-panel-' . \Illuminate\Support\Str::random(12);
+    // STABLE across re-renders, which the old `Str::random(12)` was not — and the
+    // panel is the one place where that costs everything.
+    //
+    // The panel teleports out of the document flow, so it lives OUTSIDE the subtree Livewire
+    // morphs. A fresh id per render therefore updates the trigger's aria-controls
+    // and the x-data scope while the panel still in the document carries the id
+    // from the render before it. The two halves stop pointing at each other, and
+    // nothing in the markup looks wrong: both sides are well-formed, they simply
+    // name different things. `progress` had the identical defect for the identical
+    // reason and its comment says so — inside a wire:poll region every poll minted
+    // a new id.
+    //
+    // NOT uniqid(): microsecond resolution, so two dropdowns rendered in the same
+    // microsecond shared one id. Measured on the split-button preview — two roots,
+    // one DOM id, and a single click left BOTH panels open. `DomId::unique` keeps
+    // that property while deriving from the caller's `name` when there is one.
+    $panelId = \Pushery\WireKit\Support\DomId::unique(
+        $name ? $name.'-panel' : null,
+        'wk-dropdown-panel-'
+    );
 
     // Base wrapper classes — relative positioning context for floating panel
     $classes = WireKit::resolveClasses('dropdown', 'base', 'relative inline-block', $scope);
@@ -46,7 +64,7 @@
           sub-component props (width, scope, etc.). --}}
 <div
     {{-- panelId travels through the Alpine SCOPE, not the DOM. The panel is
-         teleported to <body> to escape a host stacking context, and Alpine keeps
+         teleported out of the document flow to escape a host stacking context, and Alpine keeps
          the scope across that move while `closest()` does not — the panel used to
          read this id off `data-wk-panel-id` with an ancestor walk, which returns
          null the moment the element leaves the component. --}}

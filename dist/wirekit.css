@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.26.1 — MIT License
+ * WireKit CSS v2.27.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -350,16 +350,44 @@
     --size-wk-container-2xl: 96rem;
 
     /* ─── Font Sizes per Size ─── */
-    --text-wk-2xs: 0.6875rem;
-    --text-wk-xs: 0.75rem;
-    --text-wk-sm: 0.8125rem;
-    --text-wk-md: 0.875rem;
-    --text-wk-lg: 1rem;
-    --text-wk-xl: 1.25rem;
-    --text-wk-2xl: 1.5rem;
-    --text-wk-3xl: 1.875rem;
-    --text-wk-4xl: 2.25rem;
-    --text-wk-5xl: 3rem;
+    /*
+     * The third of the three accessibility preferences, and the last to arrive.
+     *
+     * Motion has `data-reduce-motion` and contrast has `data-contrast`; type size had
+     * neither, so an application that lets a reader choose a larger interface — its own
+     * setting, not the browser zoom — had nothing to set. The reader who needs it most is
+     * the one for whom zooming the whole page reflows the layout into something worse.
+     *
+     * One factor, one place. Every size below multiplies by it, so an application writes
+     *
+     *     <html style="--font-scale-wk: 1.25">
+     *
+     * and the entire type ramp moves together — no per-component prop, no forked preset.
+     *
+     * The default is 1, and `calc(0.875rem * 1)` resolves to exactly `0.875rem`, so an
+     * application that sets nothing renders byte-identically. That is the property that
+     * makes this shippable in a patch: it cannot change an unchanged call site.
+     *
+     * It works because the ramp is `rem` throughout — measured, not assumed: the whole
+     * stylesheet carries exactly ONE absolute font-size, the 16px touch-floor on form
+     * controls, and that one is deliberately excluded (it exists to stop Safari zooming
+     * the page on focus, so scaling it away would restore the defect it prevents).
+     * `FontScaleGuardTest` fails the build if a second absolute size appears — the
+     * failure mode here is omission, so the guard watches for new omissions rather than
+     * re-checking the ones already known.
+     */
+    --font-scale-wk: 1;
+
+    --text-wk-2xs: calc(0.6875rem * var(--font-scale-wk));
+    --text-wk-xs: calc(0.75rem * var(--font-scale-wk));
+    --text-wk-sm: calc(0.8125rem * var(--font-scale-wk));
+    --text-wk-md: calc(0.875rem * var(--font-scale-wk));
+    --text-wk-lg: calc(1rem * var(--font-scale-wk));
+    --text-wk-xl: calc(1.25rem * var(--font-scale-wk));
+    --text-wk-2xl: calc(1.5rem * var(--font-scale-wk));
+    --text-wk-3xl: calc(1.875rem * var(--font-scale-wk));
+    --text-wk-4xl: calc(2.25rem * var(--font-scale-wk));
+    --text-wk-5xl: calc(3rem * var(--font-scale-wk));
 
     /* Readable line-length measure for long-form prose (<x-wirekit::prose>).
        ~65ch is the established comfortable reading width; `wide` relaxes it. */
@@ -1777,6 +1805,65 @@
 
 /* A logo that is a link must reveal itself on keyboard focus too, not only under
    a pointer — otherwise the reveal is a mouse-only affordance. */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   INCREASED CONTRAST — the third of the three a11y preferences, and the one
+   that had no answer here.
+
+   Motion has `data-reduce-motion` and color-scheme has `.dark`. Contrast had
+   neither, so an application that lets a reader ask for more contrast — its own
+   setting, or the OS one — could do nothing about the muted grays WireKit
+   renders. Those are exactly the values a reader with low vision loses first:
+   helper text, placeholders, borders.
+
+   Three states, same shape as the motion attribute, because two of them cannot
+   be written as a media query alone:
+     [data-contrast="more"]           an explicit request, wins over the OS
+     [data-contrast="no-preference"]  an explicit refusal, also wins over the OS
+     (absent)                         follow prefers-contrast
+
+   Values are computed rather than chosen by eye — the ratio is against
+   --color-wk-bg, and each line carries the number it achieves.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root[data-contrast="more"] {
+    --color-wk-text-muted: oklch(40% 0 0);        /* 9.21:1 — was 6.83:1 */
+    --color-wk-text-subtle: oklch(45% 0 0);       /* 7.44:1 — was 4.73:1 */
+    --color-wk-text-placeholder: oklch(45% 0 0);  /* 7.44:1 — a placeholder is text a reader must read */
+    --color-wk-border: oklch(62% 0 0);            /* a control edge, not decoration */
+    --color-wk-border-subtle: oklch(72% 0 0);
+}
+
+.dark:root[data-contrast="more"],
+:root[data-contrast="more"] .dark,
+.dark [data-contrast="more"] {
+    --color-wk-text-muted: oklch(88% 0 0);
+    --color-wk-text-subtle: oklch(84% 0 0);
+    --color-wk-text-placeholder: oklch(84% 0 0);
+    --color-wk-border: oklch(52% 0 0);
+    --color-wk-border-subtle: oklch(44% 0 0);
+}
+
+@media (prefers-contrast: more) {
+    /* The OS asked. An explicit `no-preference` on the root still wins — the
+       application knows something the OS does not, and the same arbitration is
+       what the motion pair does twenty lines down. */
+    :root:not([data-contrast="no-preference"]) {
+        --color-wk-text-muted: oklch(40% 0 0);
+        --color-wk-text-subtle: oklch(45% 0 0);
+        --color-wk-text-placeholder: oklch(45% 0 0);
+        --color-wk-border: oklch(62% 0 0);
+        --color-wk-border-subtle: oklch(72% 0 0);
+    }
+
+    .dark:root:not([data-contrast="no-preference"]),
+    .dark:not([data-contrast="no-preference"]) {
+        --color-wk-text-muted: oklch(88% 0 0);
+        --color-wk-text-subtle: oklch(84% 0 0);
+        --color-wk-text-placeholder: oklch(84% 0 0);
+        --color-wk-border: oklch(52% 0 0);
+        --color-wk-border-subtle: oklch(44% 0 0);
+    }
+}
 
 @media (prefers-reduced-motion: reduce) {
     .wk-logo-cloud-muted img,

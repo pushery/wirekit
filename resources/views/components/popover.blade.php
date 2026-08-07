@@ -65,7 +65,7 @@
      covers the panel however high the z-index goes. Reported from the documentation
      site for the sibling components; fixed here at the same time rather than waiting
      for the same screenshot a third time. --}}
-<template x-teleport="body">
+<template x-teleport="#wk-overlay-root">
     <div
         {{-- Theme marker — see docs/theming.md "Theme markers". --}}
         data-wk-popover

@@ -9,6 +9,13 @@
     // Livewire method to call optimistically. The choice appears immediately
     // and is put back if the call fails. Absent -> this component renders
     // exactly as it did before, down to the byte.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
@@ -222,6 +229,7 @@
         'bind' => 'selected',
         'after' => '_syncQuery',
         'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second pick while one is in flight would resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.
@@ -362,7 +370,7 @@
          because the positioner had not run at all.
          `_place()` resolves both panels by id now, handed in through the factory
          config. An id survives anything a teleport can do to a node. --}}
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
     <ul
         id="{{ $listId }}"
         x-ref="cbxList"
@@ -433,7 +441,7 @@
          reason as the list above — it is the same panel wearing different content,
          and leaving it behind would fix the case with results and keep the bug for
          the case without. --}}
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
     <div
         id="{{ $listId }}-empty"
         class="{{ $listClasses }}"
@@ -441,7 +449,7 @@
         x-show="open && filtered.length === 0 && query !== ''"
         x-cloak
     >
-        <p class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]">No results</p>
+        <p class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]">{{ __('No results') }}</p>
     </div>
     </template>
 

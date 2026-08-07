@@ -181,6 +181,7 @@ class ComponentRegistry
             'stage-card' => ['category' => 'Display', 'description' => 'Pipeline / kanban / roadmap stage card with intent left-stripe, count pill, and optional progress'],
             'stat' => ['category' => 'Display', 'description' => 'Single statistic display'],
             'stats' => ['category' => 'Display', 'description' => 'Statistics group container'],
+            'step-marker' => ['category' => 'Display', 'description' => 'Numbered step chip — a filled square-cornered marker for onboarding and how-to sequences'],
             'status-matrix' => ['category' => 'Display', 'description' => '2D grid of typed status cells (tristate / toggle / status / heat) with sticky headers'],
             'status-tiles' => ['category' => 'Display', 'description' => 'N entities as colored status tiles, one glance — a fleet light with optional legend and colorblind-safe status icons'],
             'stream' => ['category' => 'Display', 'description' => 'Streaming text output (SSE) with correct live-region a11y, reduced-motion buffering, and defined abort / error states'],

@@ -70,7 +70,7 @@
     @if($count > 0)
         {{-- The overlay — teleported to body, focus-trapped, arrow/Escape keyboard.
              createFocusTrap returns focus to the trigger on close. --}}
-        <template x-teleport="body">
+        <template x-teleport="#wk-overlay-root">
             <div
                 x-show="open"
                 x-cloak

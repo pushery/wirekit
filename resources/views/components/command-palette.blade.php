@@ -4,7 +4,7 @@
 @props([
     'hotkey' => 'cmd+k',
     'placeholder' => __('Search commands...'),
-    // When true (default) the overlay teleports to <body> so it sits above
+    // When true (default) the overlay teleports out of the document flow so it sits above
     // every other stacking context. Set to false to render the overlay inline
     // inside the parent element — useful for docs previews or when embedding
     // the palette inside a scoped stacking context (wrapper with
@@ -61,13 +61,37 @@
         'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'focus:outline-none',
     ]), $scope);
+
+    // The results list was the only region here without a seam: backdrop, panel
+    // and input all take a `scope` override, the top offset is even a documented
+    // variable, and the list carried a bare fixed max-height utility.
+    //
+    // Which is deliberately DESCRIBED rather than named. Tailwind scans this
+    // file as text and does not know a PHP comment from markup, so writing the
+    // old class here would re-emit it into the compiled stylesheet — and the
+    // reverse-diff would then report a selector no source produces, pointing at
+    // a component that no longer uses it. Measured: it did exactly that.
+    //
+    // 288px is a fine default and a poor ceiling. A palette showing ranked search
+    // results wants roughly half the viewport — on a 1080p screen that is ~540px,
+    // so the fixed height nearly halves what a reader can see without scrolling.
+    //
+    // Both doors are open, because they answer different questions. The variable
+    // is for "taller, please" and needs no build step; the resolveClasses key is
+    // for a scope that restyles the region wholesale, like its three siblings.
+    $listClasses = WireKit::resolveClasses('command-palette', 'list', implode(' ', [
+        'wk-scrollbar',
+        'max-h-[var(--wk-command-palette-list-max-height,18rem)]',
+        'overflow-y-auto',
+        'py-[var(--padding-wk-y-xs)]',
+    ]), $scope);
 @endphp
 
 <div
     x-data="wirekitCommandPalette({ hotkey: '{{ $hotkey }}', lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
     {{ $attributes }}
 >
-    {{-- Overlay markup. Wrapped in `<template x-teleport="body">` by default so
+    {{-- Overlay markup. Wrapped in `<template x-teleport="#wk-overlay-root">` by default so
          the overlay escapes to <body> and sits above every other stacking
          context. When `$teleport === false` (e.g. in docs previews) the
          template wrapper is skipped and the overlay renders inline inside the
@@ -82,7 +106,7 @@
          uses `x-on:click.stop` so clicks inside the palette do NOT propagate
          to the container and accidentally close the palette. --}}
     @if($teleport)
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
     @endif
         <div x-show="open" x-cloak>
             {{-- Backdrop --}}
@@ -167,7 +191,7 @@
                         x-ref="list"
                         id="wk-command-list"
                         role="listbox"
-                        class="wk-scrollbar max-h-72 overflow-y-auto py-[var(--padding-wk-y-xs)]"
+                        class="{{ $listClasses }}"
                     >
                         {{ $slot }}
                     </div>

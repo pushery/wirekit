@@ -398,12 +398,29 @@ final class BladeParser
 
             // Walk to the tag's real end, honoring quotes. A `>` inside a quoted value is
             // part of the value, not the end of the tag.
+            //
+            // Blade COMMENTS inside a tag are skipped whole, and the apostrophe is why this
+            // cannot be left to the quote handling below. `{{-- dev's note --}}` written
+            // between attributes was read as two attribute names (`{{--` and `dev`), and
+            // then the apostrophe opened a quoted value that ran to the next quote anywhere
+            // in the file — swallowing every component after it. One comment could remove a
+            // whole page from a static scan, and the scan reported success on what was left.
             $attributes = [];
             $quote = null;
             $token = '';
 
             while ($cursor < $length) {
                 $char = $contents[$cursor];
+
+                // A Blade comment: skip to its terminator, or to the end of the file when
+                // it is unterminated — a scan that walked past the opener would resume
+                // inside prose.
+                if ($quote === null && substr($contents, $cursor, 4) === '{{--') {
+                    $close = strpos($contents, '--}}', $cursor + 4);
+                    $cursor = $close === false ? $length : $close + 4;
+
+                    continue;
+                }
 
                 if ($quote !== null) {
                     // A backslash escapes the next character, so `\"` inside a

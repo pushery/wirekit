@@ -37,6 +37,19 @@
     'simulate' => null,
     // Milliseconds per token in simulate mode (default 55).
     'simulateSpeed' => null,
+    // What the screen reader is told at each turn of the state machine. Each
+    // defaults to the shipped catalog, so an application that publishes the lang
+    // files gets its own language with no prop at all — these exist for the copy
+    // that differs per surface ("Translating…" rather than "Generating response…").
+    //
+    // The failure ones were unreachable: the announcement and all five reasons
+    // were literals in the JavaScript, so every failure spoke English no matter
+    // what language the rest of the interface was in — in the one moment the
+    // reader most needs to understand what happened.
+    'startMessage' => null,
+    'readyMessage' => null,
+    'stoppedMessage' => null,
+    'failedMessage' => null,
     'scope' => null,
 ])
 
@@ -56,7 +69,15 @@
     // defined terminal state on abort / connection loss.
     $config = array_filter([
         'url' => $url,
-        'eventName' => $eventName,
+        // Handed over only when the developer CHOSE a name.
+        //
+        // Blade compiles an unset prop to its default, so passing this
+        // unconditionally would tell the plugin that every stream in existence had
+        // named its event — and the fetch reader keys its name-selection on exactly
+        // that distinction, because selecting by name is what a single-event stream
+        // must not suddenly start doing. Writing `event-name="message"` by hand is
+        // the same statement as the default and is treated as one.
+        'eventName' => $eventName !== 'message' ? $eventName : null,
         'doneSignal' => $doneSignal,
         'announce' => $announce === 'status' ? 'status' : 'result',
         'autoStart' => (bool) $autoStart,
@@ -72,9 +93,22 @@
         // inside the plugin as bare English literals — a string that never passes
         // through __() cannot be localized by any developer, and these are the
         // only thing a screen-reader user hears about the stream's state.
-        'startMessage' => __('Generating response…'),
-        'readyMessage' => __('Response ready'),
-        'stoppedMessage' => __('Response stopped'),
+        'startMessage' => $startMessage ?? __('Generating response…'),
+        'readyMessage' => $readyMessage ?? __('Response ready'),
+        'stoppedMessage' => $stoppedMessage ?? __('Response stopped'),
+        // The failure half, which had no route out of the plugin at all. `:message`
+        // is a placeholder rather than a concatenation because the clause order is
+        // not the same in every language.
+        'failedMessage' => $failedMessage ?? __('Response failed: :message'),
+        // The five reasons a stream can fail. Each is what the reader is told went
+        // wrong, so each has to be sayable in their language — they were literals.
+        'failMessages' => [
+            'open' => __('Stream failed to open'),
+            'lost' => __('Connection lost'),
+            'http' => __('Stream failed: HTTP :status'),
+            'unreadable' => __('Stream failed: response is not readable'),
+            'generic' => __('Stream failed'),
+        ],
     ], fn ($v) => $v !== null);
     // autoStart is a bool the filter would drop when false — re-assert it.
     $config['autoStart'] = (bool) $autoStart;

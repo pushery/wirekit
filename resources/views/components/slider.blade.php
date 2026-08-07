@@ -24,10 +24,22 @@
     // before the server has agreed to it. The value is sent when the gesture
     // ends — see the note above. Null leaves the component exactly as it has
     // always rendered.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     'name' => null,
     'id' => null,
     'label' => null,
+    // `error` was undeclared while `label` was not, so `:error` on this control
+    // landed in the attribute bag and rendered as a stray HTML attribute — a validation
+    // message the developer wrote, silently not shown, on a control that is part of forms.
+    'error' => null,
+    'hint' => null,
     'min' => config('wirekit.components.slider.min', 0),
     'max' => config('wirekit.components.slider.max', 100),
     'step' => config('wirekit.components.slider.step', 1),
@@ -266,6 +278,7 @@
         'bind' => 'current',
         'after' => 'syncToInput',
         'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second commit while one is in flight would resolve by whichever
         // answer arrives last — network timing, which is both wrong and
@@ -351,6 +364,9 @@
         <input
             type="range"
             @if($name) name="{{ $name }}" @endif
+            {{-- On the input itself: unlike the grouped controls, this IS the single
+                 element the message is about. --}}
+            @if($error) aria-invalid="true" aria-describedby="{{ $sliderId }}-error" @elseif($hint) aria-describedby="{{ $sliderId }}-hint" @endif
             id="{{ $sliderId }}"
             min="{{ $min }}"
             max="{{ $max }}"
@@ -445,4 +461,11 @@
         <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
     </div>
 @endif
+    {{-- Same shape as `input`: one region, error winning over hint, announced politely so
+         it does not interrupt what the reader is doing. --}}
+    @if($error)
+        <p id="{{ $sliderId }}-error" aria-live="polite" aria-atomic="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
+    @elseif($hint)
+        <p id="{{ $sliderId }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @endif
 </div>

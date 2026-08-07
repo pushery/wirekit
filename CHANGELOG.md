@@ -10,6 +10,139 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.27.0] — 2026-08-06
+
+**Minor — the whole triage, and what the tickets did not know.**
+
+Every addition here is opt-in: an unchanged call site renders exactly what it did in 2.26.1.
+
+### Added
+
+- **[`<x-wirekit::step-marker>`](https://docs.wirekit.app/components/step-marker)** — the numbered chip a sequence of steps was being hand-rolled for. No existing primitive fits, and each near-miss misses differently: a badge is a pill, and a pill reads as a label *about* something — a status, a count, a tag attached to its neighbor. A step marker is not about the step, it **is** the step, which is what the square corners carry and why the shape is not a prop. It is filled always, and each intent's fill is paired with that intent's own foreground token in one place, because that pairing is precisely the part a call site has no way to get right: a number on a colored square is legible or it is not.
+
+- **The three accessibility hooks can be renamed to match your application.** `data-reduce-motion`, `data-contrast` and `--font-scale-wk` are defaults, not fixed names — `motion_attribute`, `contrast_attribute` and `font_scale_property` in `config/wirekit.php` set what WireKit reads. An application that already has its own preference attributes keeps them instead of carrying a second set. [Theming](https://docs.wirekit.app/theming)
+
+- **`safeObserver`, for the observer that keeps firing after the component is gone.** An observer's callback runs once more after Livewire morphs the node away and Alpine tears the component down — into a `this` whose fields are already null. The page fills with `Cannot read properties of null` pointing at your plugin rather than at the teardown that happened, and your browser tests go red for a reason that is not yours. `safeObserver` gives you an observer whose callback simply does not run once you stop it, including for a batch the browser had already queued. It ships with the Composer package rather than from npm, so you import it by path — there is nothing to install. It does not replace `destroy()` — nothing can — it removes the guard you would otherwise write in every callback. [Authoring custom Alpine plugins](https://docs.wirekit.app/extending/authoring-custom-alpine-plugins)
+
+- **A type-size preference, which completes the accessibility trio.** Motion and contrast each got an override in this release; type size had none, so an application offering its own "larger text" setting had nothing to set. The browser zoom is not the same thing — it scales the whole page and reflows a dense interface into something harder to use. One custom property now moves the whole ramp: `<html style="--font-scale-wk: 1.25">`. The default is `1` and multiplying by one changes nothing, so an application that sets nothing renders exactly as before. [Integration](https://docs.wirekit.app/getting-started/integration)
+
+- **`<x-wirekit::field.spacer>`** — the other half of `reserve-message`. That one holds the space below a control so a field does not shove its neighbors down when validation fires; this one holds the space above, so a button beside a labeled field starts where the input starts instead of a label-height too high. Neither `items-end` nor `items-start` solves it — the first follows the field as it grows, the second lines up with the label. It renders the real label rather than a copy of its classes, so it stays exactly as tall when the typography changes. [Field](https://docs.wirekit.app/components/field)
+
+- **`php artisan wirekit:csp-audit`** — checks every Alpine expression in your own Blade views against Alpine's real CSP grammar. Under a policy without `'unsafe-eval'` an expression outside that grammar is never evaluated: nothing throws, nothing logs, and the page looks correct while the control is dead — so there is no symptom to notice and the check has to be mechanical. The verdict comes from Alpine's own parser rather than a pattern list, because the grammar is wider than it looks and judging by eye over-reports badly. It exits non-zero when it found nothing to scan, too: an audit that measured nothing must not report a pass. [CLI reference](https://docs.wirekit.app/cli-reference)
+
+- **`optimisticArgs` on every component that supports optimistic UI.** The optimistic layer always spread `args` into the action call and no component exposed it — so the commonest optimistic surface there is, a list of identical controls with one per row, had no way to say which row it meant, and the only path was to hand-mount the factory and give up the component. [Optimistic UI](https://docs.wirekit.app/extending/optimistic-ui)
+- **`start(payload)` and `setBody()` on `<x-wirekit::stream>`.** The `fetch` request body was read once at mount and could not be changed, so a stream could only ever send the payload it was born with — while the case this transport exists for rebuilds its body every run. `startMessage` / `readyMessage` / `stoppedMessage` / `failedMessage` are now props as well.
+
+- **Seven locales ship, not two.** Spanish, French, Italian, Dutch and Portuguese join English
+  and German. Set your app's locale to any of them and every string WireKit renders on your
+  behalf follows — no publishing step, no configuration. Authored rather than machine-translated,
+  and checked against the reference catalog key by key: nothing missing, no dropped `:placeholder`,
+  no broken plural form. See [Localization](https://docs.wirekit.app/localization).
+- **An application can ask for increased contrast, or decline it.** `data-contrast="more"` on
+  `<html>` lifts the muted end of the palette — helper text, placeholders, borders, the values a
+  reader with low vision loses first — and `"no-preference"` holds the default even when the OS
+  asks for more. Without the attribute the OS decides, as before. This completes the set: motion,
+  color scheme and contrast can now each be stated by the application rather than only by the
+  system.
+- **New icon aliases**, so a page can name what it means instead of a glyph:
+  `envelope`, `user-add`, `user-remove`, `building`, `webhook`, `arrow-left`, `clock`, `lock`,
+  and a commerce set — `store`, `cart`, `receipt`, `truck`, `package`, `barcode`. Every alias
+  resolves in all four icon sets. See [Icon](https://docs.wirekit.app/components/icon).
+- **`WireKit::isIconAlias()` and `WireKit::iconVocabulary()`** answer a question `WireKit::icon()`
+  cannot: whether a name is one WireKit *declares*, rather than one that merely renders. `icon()`
+  always returns something — an unknown name falls through to the icon set's own naming — so it
+  tells you what will appear, never whether the name was recognized. Useful for editor completion
+  and for checking a design system's names against the ones that exist.
+- **`error` (and `hint`) on `slider`, `range-slider`, `rating` and `segmented-control`.** All four
+  took a `label` and none took an `error`, so a validation message passed to them was silently
+  dropped into the attribute bag. They now render it, announce it politely, and wire
+  `aria-invalid` + `aria-describedby` to the element the message is about.
+- **`wirekit:doctor:props`** finds a misspelled prop before a page renders. An unknown prop is not
+  an error at render time — Blade passes it through and the component uses its default — so
+  `<x-wirekit::button intnet="danger">` renders a perfectly good button in the wrong intent. The
+  linter is static, so it covers templates nobody has opened yet.
+- **`variant="flush"` on `table.head`** drops the header fill and keeps the divider and the
+  sticky behavior. Previously the fill could only be removed by overriding the whole class
+  string, which discarded both.
+- **`zoneInset` on `sidebar`** stops the head and foot zones from insetting content that already
+  insets itself — a `sidebar.item` in a zone was indented twice.
+- **`name` on `dropdown`** pins the panel id, so it survives a Livewire round trip verbatim.
+
+### Fixed
+
+- **A [`segmented-control`](https://docs.wirekit.app/components/segmented-control) inside a form submitted nothing while the page showed a choice.** Its hidden input was filled from JavaScript, so between the server render and Alpine booting the field was empty with the selected segment highlighted right beside it — and a submit in that window sent no value at all. Under a Content-Security-Policy that blocks Alpine's evaluator, that window is the entire session: nothing 404s, nothing throws, and the form is silently empty every time. The field now carries its value from the server render, read from the same expression that seeds the client state so the two cannot disagree.
+
+- **The [`command-palette`](https://docs.wirekit.app/components/command-palette) reopened showing the previous search.** Closing and reopening cleared the visible input but told the host nothing, so a server-driven palette kept the last query alive: type "strategy", close, reopen, and the field is empty while the results still answer a word the reader can no longer see. The empty query is now announced at the moment the empty field appears. Its results list also takes a height override like every other part of the panel — the 288px it was fixed at is a reasonable default and a poor ceiling for ranked results on a large screen.
+
+- **Opening a WireKit asset URL directly no longer garbles its text.** The nine `dist` routes did not declare their character set, so a browser hitting `/wirekit/wirekit.css` on its own fell back to a legacy single-byte encoding and every em-dash rendered as mojibake. Loaded from a page the file inherits the document's encoding, which is why this was invisible in every application and visible only on the direct hit.
+
+- **`wirekit:verify` now checks the ApexCharts adapter wherever it is switched on.** The check only ran when `charts.library` was `apexcharts`, while `scripts.apex` emits the adapter independently — so the configuration that ships the adapter with the library set elsewhere went entirely unexamined, and every chart stayed blank while the installation was reported healthy. It also asks the harder question now: finding the package in `package.json` proves it can be resolved, not that it reaches the page. Registering it twice is reported too.
+
+- **Eleven CLI deep links in the public API map pointed at nothing, and one command in it was never part of WireKit.** The anchors were built from the command id rather than from the heading the page renders, so `wirekit:show` pointed at `#wirekitshow` while the page offers `#wirekitshow-name` — and a fragment that matches no heading does not fail: the page loads and simply does not scroll. Separately, the export kept every command whose name began with `wirekit:`, which is a naming choice rather than a proof of ownership, so a command belonging to the host application could appear in a manifest describing this package. Ownership is now decided by the class.
+
+- **The public API map listed every recipe twice, and its `blueprints` group held no blueprints.** The group scanned its directory recursively and swept up the pages belonging to two other groups, so a tool reading the manifest saw duplicate entries under two different names and a group whose contents did not match what it is called. Every page now appears under exactly one group.
+
+- **Picking a date range with the keyboard now shows the same preview a pointer gets.** Moving through the grid after choosing one end left the shading — and the `aria-selected` that says "commit here and this is your range" — untouched, because the preview was wired to hover alone. There is no second way to learn what a range will be before making it, so for anyone not using a pointer the feature was not harder to reach, it was absent. [Calendar](https://docs.wirekit.app/components/calendar)
+
+- **A dropdown inside a Livewire component no longer throws on every round trip.** The panel read its id out of the Alpine scope, which is right across the teleport and wrong across a morph — so every re-render raised `panelId is not defined`. That is worth more than console noise: a JavaScript error during a morph ends evaluation at that point, so whatever the same pass would have done next silently does not happen, and nothing turns red. The id is written from the component now instead of bound, leaving no scope-dependent expression on the teleported node. Reported against 2.25 and 2.26 alike, so it was not new — only unnamed. [Dropdown](https://docs.wirekit.app/components/dropdown)
+
+- **Streaming over `fetch` now works for an endpoint that sends more than one kind of frame.** The reader kept only `data:` lines and dropped the `event:` name, so a stream of named events — which is how Laravel's own SSE helper frames them — arrived as one run-on string with a refusal indistinguishable from a token, and not one error anywhere. Name the frame that carries text with `event-name`, and every other named frame is dispatched as a `wirekit-stream-event` on the element (with its JSON payload decoded) instead of being pasted into the output. A stream that names nothing is unaffected. See [Named events](https://docs.wirekit.app/components/stream).
+- **A failed stream no longer discards what had already arrived.** `stop()` and completion both revealed the buffered text under `prefers-reduced-motion`; the failure path did not — so a response that died at 90% showed the reader nothing at all. The one terminal state where a partial answer is worth most, and the reader affected was the one who had asked for less motion.
+- **Stream failures can be announced in the application's language.** The failure announcement and all five reasons behind it were English literals in the JavaScript with no way through `__()` — so an interface translated everywhere else announced its failures in English, in the moment the reader most needs to understand what happened. All six are now in the shipped catalogs (seven languages) and overridable via `failed-message`.
+
+- **A date range now previews backwards.** Dragging toward an earlier day showed nothing at all
+  until the click, while dragging forward shaded as expected. The gesture was always accepted —
+  only the preview refused to show it.
+- **[`calendar`](https://docs.wirekit.app/components/calendar)'s range caps follow the ordered
+  ends**, so the rounding no longer lands on the wrong day while the pointer sits before the start.
+- **Ten numeric props stopped discarding a deliberate `0`.** A toast asked not to auto-dismiss
+  vanished after five seconds; a dropdown or popover asked to sit flush against its trigger sat
+  eight pixels away. Also `carousel`'s interval, `hover-card`'s delays and offset, and
+  `reading-meta`'s two reading speeds.
+- **Nine labels the catalog already knew were rendered in English** regardless of locale — the
+  data table's screen-reader column header, the event calendar's view switcher, the status
+  matrix legend, two calendar labels, the combobox empty state, and the alert dialog's cancel.
+- **An upgrade's new assets are served instead of the old published copy.** Staleness was decided
+  by which file was written later, and a `vendor:publish` from the previous version can easily
+  carry the later timestamp — so the old bytes shipped, with a fresh-looking cache-buster.
+- **A `dropdown` inside a Livewire component survives a round trip.** Its panel teleports out of
+  the morphed subtree while the id was regenerated per render, so the trigger and the panel
+  stopped naming each other.
+- **`wirekit:verify` no longer calls a correct setting invalid.** `scripts.bundle = 'csp'` — the
+  one correct choice under a strict Content-Security-Policy — was reported as an invalid value
+  with advice to undo it.
+- **`wirekit:doctor`'s stale-views advice is no longer a loop.** Running the suggested
+  `view:clear` produced exactly the state the warning reported.
+- **`wirekit:doctor`'s typo scan can go green again.** It read the whole log history, so a typo
+  fixed weeks ago kept the warning yellow for the life of the file. It now looks at a
+  configurable window, 24h by default — `WIREKIT_DOCTOR_SCAN_LOGS_WINDOW_HOURS` sets it.
+- **Every teleported overlay panel now lives inside a landmark.** Dropdowns, tooltips,
+  popovers, comboboxes and menus lift their panel out of the document flow so an
+  `overflow: hidden` ancestor cannot clip it — which also placed them outside every region on
+  the page. An accessibility audit reported it on every one, and a developer could not fix it,
+  because the markup is WireKit's. They now teleport into a named region WireKit creates.
+- **A responsive [`table`](https://docs.wirekit.app/components/table) shows its horizontal
+  scroll.** On a phone there is no scrollbar until you are already dragging, so a cut-off column
+  looked like the end of the table.
+
+### Documentation
+
+- **A recipe for numbering a feature list.** Replacing the auto-generated icon chip with a numbered marker via `iconSlot` is the composition the new step marker exists for, and it is now written down rather than left as something to work out from two component pages. [Feature with numbered marker](https://docs.wirekit.app/blueprints/recipes/feature-numbered-marker)
+
+- **The one-time-code page no longer reads as a rule about one-time codes.** Every preview on it used a trimmed character set, and the section above them explained why a recovery code drops `I` and `O` — so the page looked like a statement that the component removes ambiguous characters. It does not: `alphabet` is the developer's declaration, and it accepts lowercase, symbols and non-ASCII alike. A second preview now shows a permissive set beside the conventional one. Two previews, two audiences: one shows the convention, the other shows the range. [OTP input](https://docs.wirekit.app/components/otp-input)
+
+- **A named Content-Security-Policy route for a Livewire app.** The page sent an app with a strict policy toward the self-contained CSP bundle and warned in the same breath that a Livewire app must not load it — leaving the one stack WireKit is built for with no route at all. The route is simpler than either warning suggests: the default bundle carries no evaluator of its own, so switching Livewire to its own CSP distribution is enough and WireKit needs no change. Also documents that a Livewire method named like a JavaScript keyword needs index access. [Integration](https://docs.wirekit.app/getting-started/integration)
+
+- **[`grid`](https://docs.wirekit.app/components/grid) explains that `template` is not responsive**
+  and that a strict `style-src` can drop it entirely — where other components lose a shade, the
+  grid loses its whole column definition. Pass `cols` alongside to declare the fallback.
+- **[`app-shell`](https://docs.wirekit.app/components/app-shell) names the coupling that silently
+  disables a sticky header**: `headerPlacement="content"` puts the header inside a column that
+  never scrolls, and nothing sticks to a container that does not move.
+- **[`inline-edit`](https://docs.wirekit.app/components/inline-edit)** already carried its
+  click-away note from 2.26.1; the reduced-motion attribute is now documented as fixed rather
+  than configurable, because setting it never had any effect.
+
 ## [2.26.1] — 2026-08-04
 
 **Patch — the day under the pointer.**
@@ -45,7 +178,10 @@ Browse it online — one page per version — at
 
 ## [2.26.0] — 2026-08-04
 
-**Minor — two column layouts the grid could not express, a switch the tooltip never had, a reorder that was announced and never built, and German.** Nothing here changes what an unchanged call site renders. The fixes share a shape worth naming: each was a component that was right in the render a test looks at and wrong a moment later — a control the server had changed, a code the browser rejected only with scripting off, a field that moved its neighbors the instant validation fired.
+**Minor — two column layouts the grid could not express, a switch the tooltip never had, a reorder that was announced and never built, and German.** Every addition is opt-in, with two exceptions worth stating plainly rather than leaving to be discovered:
+
+- **A `de` locale now renders WireKit's own strings in German.** If your application's locale is already `de`, text WireKit produces on your behalf — button labels, screen-reader announcements, empty states — changes language without you asking for it. That is the point of the feature, and it is still a change to an unchanged call site.
+- **[`otp-input`](https://docs.wirekit.app/components/otp-input) widens its HTML `pattern` when the alphabet is single-case.** An alphabet of `ABCDEF…` now accepts a typed lowercase `a` and stores `A`, so the rendered `pattern` attribute carries both cases where it previously carried one. The default numeric alphabet is unaffected. The fixes share a shape worth naming: each was a component that was right in the render a test looks at and wrong a moment later — a control the server had changed, a code the browser rejected only with scripting off, a field that moved its neighbors the instant validation fired.
 
 ### Added
 
@@ -186,7 +322,7 @@ Browse it online — one page per version — at
   ProseMirror engine builds is a `div` with `contenteditable` and `role="textbox"`, which is not one,
   so the reference never reached it — and because the component suppresses its own `aria-label`
   whenever a visible label is present, the field ended up with neither. A screen reader announced an
-  unnamed text box. The label is now wired by reference (`aria-labelledby`), and `aria-label` remains
+  unnamed text box. The label is now wired by reference (`aria-labeledby`), and `aria-label` remains
   the fallback for an editor without a visible label. No API change; nothing to update in your code.
 
 - **Muted text on a [callout](https://docs.wirekit.app/components/callout) or
@@ -983,7 +1119,7 @@ Read in one sentence each: a component can show the result of an action before t
 
 ### Added
 
-- **[`<x-wirekit::sidebar>`](https://docs.wirekit.app/components/sidebar) gains a `label` prop for the navigation landmark's accessible name.** It defaults to `"Sidebar"`; override it — or pass `aria-label` / `aria-labelledby` directly — when a page has more than one navigation landmark, so assistive technology can tell them apart. No duplicate or conflicting name is emitted.
+- **[`<x-wirekit::sidebar>`](https://docs.wirekit.app/components/sidebar) gains a `label` prop for the navigation landmark's accessible name.** It defaults to `"Sidebar"`; override it — or pass `aria-label` / `aria-labeledby` directly — when a page has more than one navigation landmark, so assistive technology can tell them apart. No duplicate or conflicting name is emitted.
 - **[`<x-wirekit::empty-state>`](https://docs.wirekit.app/components/empty-state) gains a `level` prop for the title's heading level.** Choose `1`–`6` (default `3`) to fit the surrounding document outline so screen-reader heading navigation stays correct. The default still renders an `<h3>`.
 - **[`<x-wirekit::field>`](https://docs.wirekit.app/components/field) and [`<x-wirekit::input>`](https://docs.wirekit.app/components/input) announce validation errors to screen readers.** The error message now renders as a polite ARIA live region by default, so an error that appears dynamically — for example after a Livewire round-trip — is announced without the focus having to return to the field. Opt out with `announceError="false"` when your page runs its own live region.
 
@@ -1327,7 +1463,7 @@ Read in one sentence each: a component can show the result of an action before t
 ### Changed
 
 - **`dist/wirekit.css` `:root` / `.dark` blocks now wrap in `:where(...)` for specificity 0.** Foundational cascade fix: any developer-side `:root { --color-wk-accent: ... }` override (specificity 0,1,0) now wins over WireKit's defaults regardless of source order — including the very common `@wirekitStyles` setup where this stylesheet is injected via a separate `<link>` tag AFTER the developer's compiled `app.css`. Pre-fix, developers had to either `@import` `wirekit.css` from inside `app.css` OR use a higher-specificity selector like `html:root` to win the cascade. Both workarounds are now unnecessary. Backward compatible — developers already using `html:root` continue to work (their higher specificity still wins).
-- **[`<x-wirekit::dropdown.trigger>`](https://docs.wirekit.app/components/dropdown) auto-injects a fallback `aria-label` when the inner button has no accessible name.** The component inspects its interactive child (button / link / `role="button"`); when that element has no `aria-label`, no `aria-labelledby`, and no non-empty text content (visible OR sr-only) — the icon-only-trigger and mobile-collapsed-label cases — it sets an `aria-label` from the new `ariaLabelFallback` prop (default `"Open menu"`). Any explicit `aria-label` / `aria-labelledby` / text on the trigger still wins. Closes the bug class where a responsive layout hid the label below the `sm` breakpoint and the icon-only trigger read as just "button" to screen readers.
+- **[`<x-wirekit::dropdown.trigger>`](https://docs.wirekit.app/components/dropdown) auto-injects a fallback `aria-label` when the inner button has no accessible name.** The component inspects its interactive child (button / link / `role="button"`); when that element has no `aria-label`, no `aria-labeledby`, and no non-empty text content (visible OR sr-only) — the icon-only-trigger and mobile-collapsed-label cases — it sets an `aria-label` from the new `ariaLabelFallback` prop (default `"Open menu"`). Any explicit `aria-label` / `aria-labeledby` / text on the trigger still wins. Closes the bug class where a responsive layout hid the label below the `sm` breakpoint and the icon-only trigger read as just "button" to screen readers.
 - **`dist/wirekit.esm.js` now registers every component plugin, matching the IIFE bundle.** The ES-module build previously omitted `stat-animate`, `animate`, and the `reading-spine` / `reading-minimap` / `reading-toc` plugins, so developers registering WireKit from the ESM entry point saw `<x-wirekit::stat animate>` and [`<x-wirekit::reveal>`](https://docs.wirekit.app/components/reveal) (plus the reading primitives) render their static value with no animation behavior. All 29 plugins are now registered (bundle: ~31 KB gzip / 109 KB raw, up from ~25 KB / 82 KB).
 - **Badge border + depth are now theme-tokens; the Aurora preset renders softer, flat tinted badges.** Two new tokens control the badge outline: `--border-wk-badge-width` (default: the global `--border-wk-width`) and `--shadow-wk-badge` (default: the inset-ring + faint drop that lifts the chip). The **Aurora** preset sets both to a flatter look — no outline, no inset ring — so badges read as soft tinted chips rather than bordered pills. Every other theme is unchanged, and you can restore the bordered look under Aurora (or harden it anywhere) by setting the two tokens back to their defaults in your `:root`.
 - **Dismissible [`<x-wirekit::badge>`](https://docs.wirekit.app/components/badge) and [`<x-wirekit::alert>`](https://docs.wirekit.app/components/alert) now emit the `data-replayable` contract.** A badge or alert with `dismissible` set renders `data-replayable="true"`, so a `<x-wirekit::replay-button>` placed in the same DOM tree can restore the element after it has been dismissed (the button re-mounts the closest `[data-replay-target]` from a saved snapshot). The attribute is inert on its own — it does nothing unless a replay button is wired up — and the dismissible behavior itself is unchanged.
@@ -1441,14 +1577,14 @@ Patch release.
 
 ### Added
 
-- **`ariaLabel` prop on `<x-wirekit::multi-select>`.** Optional explicit override for the screen-reader-announced label of the component's internal combobox `<input>`. When unset, the component auto-derives a sensible label from (in order) any passthrough `aria-label` attribute, then the `label` prop, then the `placeholder`, then finally the `name` — so the internal input is never unlabelled even if the consuming code does not supply one explicitly.
+- **`ariaLabel` prop on `<x-wirekit::multi-select>`.** Optional explicit override for the screen-reader-announced label of the component's internal combobox `<input>`. When unset, the component auto-derives a sensible label from (in order) any passthrough `aria-label` attribute, then the `label` prop, then the `placeholder`, then finally the `name` — so the internal input is never unlabeled even if the consuming code does not supply one explicitly.
 - **`forceLoading` prop on `<x-wirekit::button>`.** When `true`, renders the spinner unconditionally and disables the button regardless of any `wire:loading` gate. Useful for static documentation demos, non-Livewire contexts, or stories that want to preview the loading state without a backend request in flight. The existing `loading` semantics are unchanged — `loading=true` alone still auto-detects the wire-action context.
 - **`max` prop on `<x-wirekit::main>` with default `"2xl"`.** Caps the inner content width to the matching `--size-wk-container-*` token tier. Default `"2xl"` matches the existing `container` component default and prevents dashboards from stretching edge-to-edge on 1900 px+ monitors. Opt out with `max="none"` to preserve the pre-2.3.0 unbounded behavior, or pick another tier (`sm`/`md`/`lg`/`xl`/`full`). The config key `wirekit.components.main.max` overrides the default app-wide.
 - **8 new base icon aliases in every preset** — `home`, `moon`, `sun`, `book-open`, `sign-out`, `megaphone`, `map`, `file-text`. The four base presets (Heroicons, Lucide, Phosphor, Tabler) now ship 34 aliases each (was 26). Every common first-install icon (theme toggle, sidebar home, sign-out button, file row) resolves without an additional preset.
 - **Icon-alias fallthrough resolution.** When `<x-wirekit::icon name="briefcase">` references an alias that isn't in the active preset, the resolver now tries the underlying blade-icons identifier (`heroicon-m-briefcase`, then `-o-`, then `-s-`) before throwing `Unknown icon alias`. Logs an INFO line so the developer can add the alias to their preset. Catches the bug class where a developer reaches for a heroicons name that ships in `blade-ui-kit/blade-heroicons` but wasn't aliased by WireKit.
 - **`php artisan wirekit:show <parent>.<child>` resolves dotted sub-component names.** Pre-fix, `php artisan wirekit:show card` advertised `Sub-components: card.body` but `php artisan wirekit:show card.body` returned "Unknown component" because the component registry tracks only top-level components. The artisan command now resolves sub-components by reading the nested Blade file directly and extracting props via the same parser the top-level command uses. Honors `--as=json` so AI tooling can introspect sub-components the same way as top-level components.
 - **`wirekit:verify --fix` self-heals missing public assets.** When the doctor finds `public/vendor/wirekit/wirekit.css` or `wirekit.js` missing AND `--fix` is set, it proactively runs `vendor:publish --tag=wirekit-assets --force` and re-tests the asset paths so the verify report comes back clean. Closes the fresh-clone-fails-the-doctor gap where the `.gitignored` `public/vendor/wirekit/` directory is empty until the publish runs. Without `--fix`, the existing "Run: php artisan vendor:publish ..." hint is augmented with an "Or: php artisan wirekit:verify --fix" alternative.
-- **`wirekit:doctor:a11y` — new static-analysis a11y linter.** Scans every `.blade.php` under a given path for three high-value WCAG-AA bug classes: icon-only `<x-wirekit::button>` without `aria-label`, `role="dialog"`/`"alertdialog"` without `aria-label`/`aria-labelledby`, `role="img"` without `aria-label`. CLI: `php artisan wirekit:doctor:a11y [path] [--fail-on=error|warning|none]`. Exit 1 on any finding ≥ threshold. Pair with `wirekit:verify` in CI to gate both integration health AND a11y in one pass.
+- **`wirekit:doctor:a11y` — new static-analysis a11y linter.** Scans every `.blade.php` under a given path for three high-value WCAG-AA bug classes: icon-only `<x-wirekit::button>` without `aria-label`, `role="dialog"`/`"alertdialog"` without `aria-label`/`aria-labeledby`, `role="img"` without `aria-label`. CLI: `php artisan wirekit:doctor:a11y [path] [--fail-on=error|warning|none]`. Exit 1 on any finding ≥ threshold. Pair with `wirekit:verify` in CI to gate both integration health AND a11y in one pass.
 - **`tag_alias` field in `wirekit:export-json` for class-based components.** Class-based components whose canonical tag uses the single-hyphen form (`<x-wirekit-chart>`) now also emit a `tag_alias` field carrying the double-colon form (`<x-wirekit::chart>`). Lets downstream tool integrators that grep against the historical shape still match. Normal anonymous components have no alias — the field is omitted entirely so the schema stays minimal for the common case.
 - **`library` prop on `<x-wirekit-chart>` — per-instance chart-library override.** Accepts the same values as `config('wirekit.charts.library')` — the built-in keys `"chartjs"` / `"apexcharts"`, or a fully qualified class name implementing `ChartAdapter`. When `null` (default), the chart uses whatever the global config resolves to — matching pre-v2.3.0 behavior. When set, this chart instance binds to the named library regardless of the app default, so two charts on the same page can use different libraries. Useful when a specific chart type requires a specific library (`boxplot` / `candlestick` / `heatmap` / `treemap` / `column` are ApexCharts-only and throw `TypeNotSupportedException` against the Chart.js adapter) inside an app whose default is the other library. Backwards compatible — existing charts that don't set the prop continue to read from config exactly as before. The wrapper components `<x-wirekit::chart-mixed>` and `<x-wirekit::sparkline>` accept and forward `library` to the underlying chart, so mixed-library pages work via either tag shape. Example: `<x-wirekit-chart type="column" library="apexcharts" ... />` renders the ApexCharts column chart even when the app's default is `chartjs`.
 
@@ -1468,7 +1604,7 @@ Patch release.
 
 ### Fixed
 
-- **`<x-wirekit::multi-select>` internal combobox `<input>` now always carries an `aria-label`.** Previously, the parent `<x-wirekit::field label="…">`'s emitted `<label for="$id">` did not reach the internal combobox input (whose id is `$id-input`, not `$id`), so screen readers + axe's `label` rule reported an unlabelled form element. The component now synthesizes an `aria-label` via the fallback chain above and emits it on the internal input. WCAG 2.1 AA-compliant for any developer that has been wrapping multi-select in a `<x-wirekit::field>` with a `label` — no developer-side change required. Backward compatible.
+- **`<x-wirekit::multi-select>` internal combobox `<input>` now always carries an `aria-label`.** Previously, the parent `<x-wirekit::field label="…">`'s emitted `<label for="$id">` did not reach the internal combobox input (whose id is `$id-input`, not `$id`), so screen readers + axe's `label` rule reported an unlabeled form element. The component now synthesizes an `aria-label` via the fallback chain above and emits it on the internal input. WCAG 2.1 AA-compliant for any developer that has been wrapping multi-select in a `<x-wirekit::field>` with a `label` — no developer-side change required. Backward compatible.
 - **`<x-wirekit::range-slider>` thumb-circles now sit vertically centerd ON the track line.** Pre-fix, the two thumb `<div>`s were siblings of the track div, so their `top: 50%; transform: translateY(-50%);` resolved relative to the FULL component wrapper (track + edge labels + value display) and the thumbs visually dropped BELOW the track line. The thumbs now live INSIDE the track div, so their vertical centering resolves to the 8 px track height and the circles sit pixel-centerd on the line.
 - **`<x-wirekit::range-slider>` edge labels now show the slider BOUNDS, not the current values.** Pre-fix, the bottom-of-component value display rendered `minVal` / `maxVal` (the current handle positions) at the container edges via `justify-between`. The result was that the visible label "20" sat at position 0 % of the container, while the thumb representing value 20 sat at its proportional position (e.g. 6.7 % on a 0–300 range), and the two looked disconnected — and when the values matched the bounds exactly, the label and the thumb collided at the same pixel. Now: the edge labels render the constant slider min / max (`{{ $min }}` and `{{ $max }}`), and the current values surface as a tooltip-style badge ABOVE each thumb that tracks the handle horizontally as it moves. Screen-reader users still get a live announcement of the current range via an `aria-live="polite"` text node ("Range: 20 to 200") that updates on drag.
 - **Prop validation no longer crashes the whole page in dev HTTP requests.** Pre-fix, `<x-wirekit::heading size="4xl">` (or any other invalid prop value) threw `InvalidArgumentException` in `APP_DEBUG=true` and the whole blade view 500'd. Now: strict-mode is split into two paths. CLI / Pest / `wirekit.validation.throw_on_invalid=true` still throws (fail-fast — the signal a dev wants in a test or artisan command). HTTP dev requests log at ERROR level and render with the first-allowed fallback so a single prop typo doesn't take down the entire page. The dev still sees the typo loudly in the log; iteration continues without a request-response restart.
@@ -1829,7 +1965,7 @@ No breaking changes — fully backward-compatible with v1.3.0.
 
 - **Vertical `<x-wirekit::resizable>` no longer collapses to 0 height when the wrapper has no explicit size.** `[data-wk-resizable][data-wk-direction="vertical"]` carries `contain: size`, which requires an explicit container size — without one, the panels' percent heights resolve against a 0-height container and the whole component disappears. Added a default `min-height: 16rem` on the vertical wrapper so unstyled containers still render visibly. Authors with explicit inline `style="min-height: …"` keep their value (CSS specificity favors the inline rule).
 
-- **WCAG 4.1.2 (Name, Role, Value) sweep across 11 interactive components.** Alpine's reactive `:aria-*` bindings only emit the attribute after the JS boots — initial server-rendered HTML lacked the required `aria-expanded` (combobox, multi-select), `aria-valuenow` (image-compare, range-slider), or `aria-checked` (rating, segmented-control). Each affected component now ships a static `aria-foo="default-value"` immediately before the `:aria-foo="reactive-binding"` so server-rendered HTML is WCAG-complete from the first paint and Alpine overrides reactively after hydration. Plus: `<x-wirekit::brand>` in logo-only mode auto-injects `aria-label="Home"` (caller's `aria-label` still wins); `<x-wirekit::toast-region>` adds `role="region"` so its `aria-label="Notifications"` is permitted; `<x-wirekit::date-picker>`, `<x-wirekit::color-picker>`, `<x-wirekit::slider>` accept a new `label` prop and fall back to a sr-only label derived from `name` when no label / `aria-label` / `aria-labelledby` is provided; `<x-wirekit::navigation-menu.item>` link-mode now falls back to the default slot when no `trigger` prop is set so the canonical `<x-wirekit::navigation-menu.item href="/x">Label</x-wirekit::navigation-menu.item>` pattern produces a non-empty link.
+- **WCAG 4.1.2 (Name, Role, Value) sweep across 11 interactive components.** Alpine's reactive `:aria-*` bindings only emit the attribute after the JS boots — initial server-rendered HTML lacked the required `aria-expanded` (combobox, multi-select), `aria-valuenow` (image-compare, range-slider), or `aria-checked` (rating, segmented-control). Each affected component now ships a static `aria-foo="default-value"` immediately before the `:aria-foo="reactive-binding"` so server-rendered HTML is WCAG-complete from the first paint and Alpine overrides reactively after hydration. Plus: `<x-wirekit::brand>` in logo-only mode auto-injects `aria-label="Home"` (caller's `aria-label` still wins); `<x-wirekit::toast-region>` adds `role="region"` so its `aria-label="Notifications"` is permitted; `<x-wirekit::date-picker>`, `<x-wirekit::color-picker>`, `<x-wirekit::slider>` accept a new `label` prop and fall back to a sr-only label derived from `name` when no label / `aria-label` / `aria-labeledby` is provided; `<x-wirekit::navigation-menu.item>` link-mode now falls back to the default slot when no `trigger` prop is set so the canonical `<x-wirekit::navigation-menu.item href="/x">Label</x-wirekit::navigation-menu.item>` pattern produces a non-empty link.
 
 - **Card sandbox schema rendered as a bare rounded pill instead of a proper card.** The Card sandbox schema declared `padded` / `bordered` / `elevated` boolean props that the Card primitive never read in its `@props([...])` block — the renderer emitted them as raw HTML attributes (silently no-op), and the body slot was never wrapped in `<x-wirekit::card.body>`, so slot text pressed flush against the rounded card edges. Schema rewritten to use the real `variant` prop (`outlined` / `elevated` / `flat`); body slot now auto-wraps via the new `BODY_WRAPPERS` map.
 
@@ -1921,7 +2057,7 @@ No breaking changes — fully backward-compatible with v1.2.x.
 
 - **Dropdown trigger ARIA** — `aria-haspopup`, `aria-expanded`, and `aria-controls` were placed on a non-interactive `<div>` wrapper. Moved to the inner interactive element via `x-init`.
 
-- **Progress bar accessible name** — component only wired `aria-labelledby` when the `label` prop was set. Usages without labels now receive a sensible `"Progress"` default.
+- **Progress bar accessible name** — component only wired `aria-labeledby` when the `label` prop was set. Usages without labels now receive a sensible `"Progress"` default.
 
 - **App-shell sidebar backdrop** — the mobile sidebar dim overlay was traversable by screen readers, defeating the focus-trap intent. Added `aria-hidden="true"`.
 
