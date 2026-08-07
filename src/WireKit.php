@@ -259,6 +259,35 @@ class WireKit
         return app(IconResolver::class)->resolve($alias);
     }
 
+    /**
+     * Is this name a declared icon alias?
+     *
+     * Usage: WireKit::isIconAlias('webhook') -> true
+     *
+     * `icon()` cannot answer this. It always returns something — an unknown name falls
+     * through to the icon set's own naming — so it tells you what will render, never
+     * whether WireKit knew the name. This one says no.
+     */
+    public static function isIconAlias(string $name): bool
+    {
+        return app(IconResolver::class)->isAlias($name);
+    }
+
+    /**
+     * The whole declared icon vocabulary, alias => blade-icons identifier.
+     *
+     * Usage: WireKit::iconVocabulary() -> ['close' => 'heroicon-m-x-mark', …]
+     *
+     * What a tool needs to offer completion, or to check a design system's names
+     * against the ones that actually exist here.
+     *
+     * @return array<string, string>
+     */
+    public static function iconVocabulary(): array
+    {
+        return app(IconResolver::class)->vocabulary();
+    }
+
     /** Get the configured component prefix (default: 'wirekit'). */
     public static function prefix(): string
     {

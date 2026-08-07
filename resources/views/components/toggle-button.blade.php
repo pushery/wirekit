@@ -18,6 +18,13 @@
     // The Livewire method to call when the button should show its new pressed
     // state before the server has agreed to it. A refusal puts the old state
     // back — see the note above about the wrapper this adds.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     // The two-state truth. In the controlled default, bind it to your own state —
     // the pressed state of a formatting control lives in the document, not in the
@@ -70,6 +77,7 @@
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'value' => $isPressed,
         'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A twice-flipped toggle would otherwise resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.

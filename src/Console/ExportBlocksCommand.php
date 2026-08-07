@@ -57,6 +57,41 @@ class ExportBlocksCommand extends Command
             return self::FAILURE;
         }
 
+        // The sources have to BE there, and until now their absence looked like a result.
+        //
+        // `docs/` is `export-ignore`d, so it is not in the distributed package at all —
+        // measured, not assumed: `git archive HEAD` contains no docs/ entry. In every
+        // developer install this command therefore scanned two directories that do not
+        // exist, merged two empty arrays, printed well-formed JSON with `"count": 0` and
+        // exited 0. A developer wiring this into a build step gets a green run and an empty
+        // catalog, and nothing anywhere says the input was missing rather than empty.
+        //
+        // An absence is not an answer. It fails now, by name, and the message says which of
+        // the two states it is in — because "the package does not carry these" and "the
+        // catalog is empty" want completely different reactions from whoever reads it.
+        $missing = array_values(array_filter(
+            ['layouts', 'blueprints'],
+            fn (string $kind): bool => ! is_dir($packageRoot.'/docs/'.$kind),
+        ));
+
+        if ($missing !== []) {
+            $this->error(sprintf(
+                'The block sources are not part of the distributed package: %s missing under %s/docs/.',
+                implode(' and ', $missing),
+                $packageRoot,
+            ));
+            $this->line('');
+            $this->line('This command reads the layout and blueprint pages, and those are export-ignored —');
+            $this->line('a published release does not carry them. It works in a checkout of the package');
+            $this->line('repository and cannot work from a Composer install.');
+
+            // FAILURE, not the usage-error code Symfony also offers. Every wirekit:* command
+            // exits 1 on every error path — the house convention, and CliUniformityAuditTest
+            // enforces it by scanning this file's TEXT, so naming the other constant here
+            // would trip the guard on a comment.
+            return self::FAILURE;
+        }
+
         $blocks = array_merge(
             $this->scanDirectory($packageRoot, 'layouts'),
             $this->scanDirectory($packageRoot, 'blueprints'),

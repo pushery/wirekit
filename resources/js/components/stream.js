@@ -66,6 +66,11 @@ export default function wirekitStream(config = {}) {
         _onHostEvent: null,
         _name: config.name || '',
         _eventName: config.eventName || 'message',
+        // Whether the developer NAMED the event, as opposed to inheriting the
+        // default. The fetch reader keys on this rather than on `_eventName`
+        // itself, because the two states are not distinguishable afterwards and
+        // they have to mean different things — see _readFramedStream().
+        _eventNameSet: typeof config.eventName === 'string' && config.eventName !== '',
         _doneSignal: config.doneSignal ?? '[DONE]',
         _announceMode: config.announce === 'status' ? 'status' : 'result',
         _autoStart: config.autoStart !== false,
@@ -75,6 +80,23 @@ export default function wirekitStream(config = {}) {
         // translated app could not reach it — the other two at least had a config
         // key. All three are handed in from Blade, already translated.
         _stoppedMessage: config.stoppedMessage || 'Response stopped',
+        // Announced on terminal failure. The other three announcements had a
+        // config key and this one did not, so every failure spoke English —
+        // in an application whose whole interface was in another language, and
+        // in the one moment the reader most needs to understand what happened.
+        //
+        // `:message` is substituted rather than concatenated, because the
+        // clause order is not the same in every language.
+        _failedMessage: config.failedMessage || 'Response failed: :message',
+        // The failure reasons themselves, for the same reason. Each is what the
+        // reader is told went wrong, so each has to be sayable in their language.
+        _failMessages: Object.assign({
+            open: 'Stream failed to open',
+            lost: 'Connection lost',
+            http: 'Stream failed: HTTP :status',
+            unreadable: 'Stream failed: response is not readable',
+            generic: 'Stream failed',
+        }, config.failMessages || {}),
         // Simulate mode: stream this text token-by-token from a local timer, no SSE —
         // the docs demo (and any typewriter effect) without a live endpoint.
         _simulate: config.simulate || '',
@@ -110,12 +132,15 @@ export default function wirekitStream(config = {}) {
                         return;
                     }
 
+                    // `start` carries the run's payload, so a host that is not
+                    // Alpine can drive the same per-run body the component takes.
+                    if (event.type === 'wirekit-stream-start') this.start(detail.body ?? detail.payload);
                     if (event.type === 'wirekit-stream-push') this.push(detail.chunk ?? detail.text ?? '');
                     if (event.type === 'wirekit-stream-finish') this.finish();
                     if (event.type === 'wirekit-stream-fail') this.fail(detail.message);
                 };
 
-                for (const name of ['wirekit-stream-push', 'wirekit-stream-finish', 'wirekit-stream-fail']) {
+                for (const name of ['wirekit-stream-start', 'wirekit-stream-push', 'wirekit-stream-finish', 'wirekit-stream-fail']) {
                     window.addEventListener(name, this._onHostEvent);
                 }
             }
@@ -123,7 +148,7 @@ export default function wirekitStream(config = {}) {
 
         destroy() {
             if (this._onHostEvent && typeof window !== 'undefined') {
-                for (const name of ['wirekit-stream-push', 'wirekit-stream-finish', 'wirekit-stream-fail']) {
+                for (const name of ['wirekit-stream-start', 'wirekit-stream-push', 'wirekit-stream-finish', 'wirekit-stream-fail']) {
                     window.removeEventListener(name, this._onHostEvent);
                 }
                 this._onHostEvent = null;
@@ -138,8 +163,31 @@ export default function wirekitStream(config = {}) {
         get isFailed() { return this.status === 'failed'; },
         get isTerminal() { return this.isDone || this.isAborted || this.isFailed; },
 
-        /** Begin (or restart) streaming. No-op while already streaming. */
-        start() {
+        /**
+         * Replace the request body for the next run.
+         *
+         * The body used to be read once, at mount, and there was no way to change
+         * it afterwards — so a fetch stream could only ever send the payload it was
+         * born with. That is fine for a fixed endpoint and impossible for the case
+         * this transport exists for: a request whose body IS the input, rebuilt
+         * every run (the prompt, the language pair, the model, the options).
+         */
+        setBody(body) {
+            this._body = body ?? null;
+        },
+
+        /**
+         * Begin (or restart) streaming. No-op while already streaming.
+         *
+         * The optional payload sets the body for THIS run, so the common shape is
+         * one call: `$refs.stream.start({ text, target })`. Omit it and the body
+         * stays whatever it was, which is what every existing call site does.
+         */
+        start(payload) {
+            if (payload !== undefined) {
+                this.setBody(payload);
+            }
+
             // 'manual' has no transport to open, so it needs no url — the whole
             // point is that the developer feeds it. Every other mode still does.
             const needsUrl = this._source_kind !== 'manual' && !this._simulate;
@@ -205,7 +253,7 @@ export default function wirekitStream(config = {}) {
             try {
                 this._source = new EventSource(this._url);
             } catch (e) {
-                this._fail((e && e.message) || 'Stream failed to open');
+                this._fail((e && e.message) || this._failMessages.open);
                 return;
             }
             this._source.addEventListener(this._eventName, (e) => {
@@ -220,7 +268,7 @@ export default function wirekitStream(config = {}) {
             // into a duplicated half-response.
             this._source.addEventListener('error', () => {
                 if (this.status === 'streaming') {
-                    this._fail('Connection lost');
+                    this._fail(this._failMessages.lost);
                 }
             });
         },
@@ -268,12 +316,12 @@ export default function wirekitStream(config = {}) {
             })
                 .then((response) => {
                     if (!response.ok) {
-                        this._fail('Stream failed: HTTP ' + response.status);
+                        this._fail(this._failMessages.http.replace(':status', String(response.status)));
 
                         return null;
                     }
                     if (!response.body || typeof response.body.getReader !== 'function') {
-                        this._fail('Stream failed: response is not readable');
+                        this._fail(this._failMessages.unreadable);
 
                         return null;
                     }
@@ -286,7 +334,7 @@ export default function wirekitStream(config = {}) {
                     if (e && e.name === 'AbortError') {
                         return;
                     }
-                    this._fail((e && e.message) || 'Stream failed');
+                    this._fail((e && e.message) || this._failMessages.generic);
                 });
         },
 
@@ -307,7 +355,7 @@ export default function wirekitStream(config = {}) {
                     result = await reader.read();
                 } catch (e) {
                     if (e && e.name === 'AbortError') return;
-                    this._fail((e && e.message) || 'Stream failed');
+                    this._fail((e && e.message) || this._failMessages.generic);
 
                     return;
                 }
@@ -327,11 +375,32 @@ export default function wirekitStream(config = {}) {
                 pending = frames.pop() ?? '';
 
                 for (const frame of frames) {
-                    const data = frame
-                        .split(/\r?\n/)
+                    const lines = frame.split(/\r?\n/);
+
+                    // The `event:` line, which this reader used to drop on the floor.
+                    //
+                    // A server that names its events — and Laravel's own SSE helper
+                    // frames them as `event: <name>\ndata: <payload>` — was read here
+                    // as if every frame were the same nameless one. So a stream of
+                    // `meta` / `token` / `refused` / `done` arrived as one run-on
+                    // string, with a refusal indistinguishable from a token, and not
+                    // one error anywhere: the same `eventName` prop that the SSE path
+                    // honors was silently ignored by this one.
+                    const named = lines.find((line) => line.startsWith('event:'));
+                    const eventName = named ? named.slice(6).trim() : '';
+
+                    const data = lines
                         .filter((line) => line.startsWith('data:'))
                         .map((line) => line.slice(5).replace(/^ /, ''))
                         .join('\n');
+
+                    // A named frame is announced on the host whatever it is, so an
+                    // application can act on the ones that are not text — a refusal,
+                    // a token count, a model id. Emitted BEFORE the routing below, so
+                    // a listener sees the terminal frame too.
+                    if (eventName !== '') {
+                        this._emitFrame(eventName, data);
+                    }
 
                     if (data === '') continue;
 
@@ -339,6 +408,20 @@ export default function wirekitStream(config = {}) {
                         this._finish();
 
                         return;
+                    }
+
+                    // Which frames become text.
+                    //
+                    // Only when the developer NAMED the event does the name select —
+                    // and this asymmetry is deliberate. Filtering on the default
+                    // ('message') would mean any stream today that sends named frames
+                    // stops rendering entirely: it is currently getting all of them
+                    // concatenated, which is wrong for a multi-event protocol and is
+                    // what a single-event one has been relying on. So opting into
+                    // names is what turns on selection by name, and a stream that
+                    // never mentions them keeps behaving exactly as it did.
+                    if (this._eventNameSet && eventName !== '' && eventName !== this._eventName) {
+                        continue;
                     }
 
                     this._push(data);
@@ -403,11 +486,53 @@ export default function wirekitStream(config = {}) {
             this._close();
         },
 
+        /**
+         * Announce a named frame to the host.
+         *
+         * A CustomEvent on the element (it bubbles, so a listener may sit anywhere
+         * above it), carrying the raw payload and, when it parses, the decoded one —
+         * a server that frames JSON is the ordinary case, and making every listener
+         * write the same try/catch is the kind of tax a primitive exists to absorb.
+         */
+        _emitFrame(eventName, data) {
+            if (typeof CustomEvent === 'undefined' || !this.$el) {
+                return;
+            }
+
+            let json;
+            try {
+                json = JSON.parse(data);
+            } catch (_) {
+                // Not JSON. That is ordinary — a token frame is plain text — so the
+                // raw payload is handed over and `json` stays undefined.
+                json = undefined;
+            }
+
+            this.$el.dispatchEvent(new CustomEvent('wirekit-stream-event', {
+                bubbles: true,
+                detail: { name: this._name, event: eventName, data, json },
+            }));
+        },
+
         /** Terminal failure — record + announce once. */
         _fail(message) {
-            this.error = message || 'Stream failed';
+            // Reveal whatever arrived before the failure, exactly as stop() and
+            // _finish() do.
+            //
+            // This was the one terminal transition that did not flush, so under
+            // reduced motion a stream that died at 90% showed the reader NOTHING —
+            // the buffer held the whole partial answer and was dropped with it.
+            // Three terminal states, two of them flushing, and the missing one was
+            // the failure: the case where a partial answer is worth most, for the
+            // reader who asked for less motion and got less content instead.
+            if (this._reduce && this._buffer) {
+                this.text = this._buffer;
+                this._buffer = '';
+            }
+
+            this.error = message || this._failMessages.generic;
             this.status = 'failed';
-            this._announceText = 'Response failed: ' + this.error;
+            this._announceText = this._failedMessage.replace(':message', this.error);
             this._close();
         },
 

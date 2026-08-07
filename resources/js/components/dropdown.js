@@ -17,7 +17,7 @@ export default function wirekitDropdown(config = {}) {
         // Read by the panel through the scope chain, which survives its teleport.
         panelId: config.panelId || '',
         _placement: config.placement || 'bottom-start',
-        _offset: config.offset || 8,
+        _offset: config.offset ?? 8,
 
         // Stored cleanup handler for destroy()
         _navCleanup: null,
@@ -28,9 +28,42 @@ export default function wirekitDropdown(config = {}) {
         _stopAutoUpdate: null,
 
         init() {
+            // The panel's id is written here rather than bound in the template.
+            //
+            // It used to be `x-bind:id="panelId"` on the panel — reading the value out of
+            // this scope, which is correct across the TELEPORT (Alpine keeps the scope;
+            // `closest()` would not) and wrong across a Livewire MORPH. On every morph
+            // that binding was re-evaluated in a scope that no longer had `panelId`, and
+            // threw `panelId is not defined`.
+            //
+            // A JavaScript error during a morph ends evaluation at that point, so whatever
+            // the same pass would have done next does not happen — and nothing turns red,
+            // because a console error is not a failed assertion. It sat in a consuming
+            // application for weeks that way.
+            //
+            // Assigning it imperatively removes the last scope-dependent expression from
+            // the teleported node: it runs on init, re-runs when the morph re-initializes
+            // this component, and cannot be re-evaluated in a scope it does not belong to.
+            this._applyPanelId();
+
             // Cleanup on Livewire SPA navigation
             this._navCleanup = () => { this.open = false; };
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+        },
+
+        /**
+         * Put the panel id on the panel node.
+         *
+         * The value is preferred from the root's own attribute over this scope, because
+         * the attribute is a fact about the DOM and survives anything the scope does not.
+         */
+        _applyPanelId() {
+            const panel = this.$refs.panel;
+            const id = (this.$el && this.$el.dataset && this.$el.dataset.wkPanelId) || this.panelId;
+
+            if (panel && id) {
+                panel.id = id;
+            }
         },
 
         destroy() {

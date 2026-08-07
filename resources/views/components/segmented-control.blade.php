@@ -5,9 +5,21 @@
      this component and binds to `selected`. --}}
 @props([
     'label' => null,
+    // `error` was undeclared while `label` was not, so `:error` on this control
+    // landed in the attribute bag and rendered as a stray HTML attribute — a validation
+    // message the developer wrote, silently not shown, on a control that is part of forms.
+    'error' => null,
+    'hint' => null,
     // Livewire method to call optimistically. The segment moves immediately and
     // is put back if the call fails. Absent -> this component renders exactly as
     // it did before, down to the byte.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     'options' => [],
     'value' => null,
@@ -102,6 +114,7 @@
         'bind' => 'selected',
         'after' => '_notify',
         'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second pick while one is in flight would resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.
@@ -144,11 +157,27 @@
             role="radiogroup"
             @if($disabled) aria-disabled="true" @endif
             @if($label) aria-label="{{ $label }}" @endif
+            {{-- On the GROUP: the message is about the choice, and repeating it on every
+                 segment would have it read out once per option. --}}
+            @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
         @endunless
     >
         {{-- Hidden input inside x-data scope so $refs.hiddenInput resolves correctly.
-             Must be within the same Alpine component for x-ref to work. --}}
-        <input type="hidden" id="{{ $id }}" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" />
+             Must be within the same Alpine component for x-ref to work.
+
+             `value` is static because this field is what a form actually submits.
+             Alpine writes it in init(), so it USED to be empty until then — and a
+             submit inside that window sent nothing while the selected segment sat
+             visibly highlighted next to it. Under a policy that blocks Alpine's
+             evaluator the field never fills at all, so the window is the whole
+             session rather than a few milliseconds.
+
+             It reads `$selected`, the same expression that feeds the Alpine seed
+             on the wrapper and `data-wk-server-value`. Deriving it a second way
+             would be the worse bug: a static value that disagrees with what Alpine
+             writes a moment later trades an empty submission for a plausible
+             wrong one. --}}
+        <input type="hidden" id="{{ $id }}" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} x-ref="hiddenInput" value="{{ $selected }}" />
 
         @if($optimisticConfig)
             {{-- `display: contents` on both wrappers: the segments must keep
@@ -222,4 +251,11 @@
             </div>
         @endif
     </div>
+    {{-- Same shape as `input`: one region, error winning over hint, announced politely so
+         it does not interrupt what the reader is doing. --}}
+    @if($error)
+        <p id="{{ $id }}-error" aria-live="polite" aria-atomic="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
+    @elseif($hint)
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @endif
 </div>

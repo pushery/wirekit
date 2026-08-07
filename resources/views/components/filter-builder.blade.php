@@ -145,7 +145,7 @@
                  so the panel escapes any clipping/stacking ancestor and flips/shifts to
                  stay on-screen. click.outside lives HERE (on the panel), not the root,
                  because teleporting moves the panel out of the root's subtree. --}}
-            <template x-teleport="body">
+            <template x-teleport="#wk-overlay-root">
             <div
                 x-show="open"
                 x-cloak

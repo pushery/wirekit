@@ -16,8 +16,10 @@ use Pushery\WireKit\Components\Chart;
 use Pushery\WireKit\Console\BoostSkillsCommand;
 use Pushery\WireKit\Console\ClassByAreaCommand;
 use Pushery\WireKit\Console\ComponentMakeCommand;
+use Pushery\WireKit\Console\CspAuditCommand;
 use Pushery\WireKit\Console\CursorRulesCommand;
 use Pushery\WireKit\Console\DoctorA11yCommand;
+use Pushery\WireKit\Console\DoctorPropsCommand;
 use Pushery\WireKit\Console\EditorPresetCommand;
 use Pushery\WireKit\Console\ExportApiMapCommand;
 use Pushery\WireKit\Console\ExportBlocksCommand;
@@ -91,9 +93,11 @@ class WireKitServiceProvider extends ServiceProvider
                 ComponentMakeCommand::class,
                 CursorRulesCommand::class,
                 DoctorA11yCommand::class,
+                DoctorPropsCommand::class,
                 EditorPresetCommand::class,
                 ExportApiMapCommand::class,
                 ExportBlocksCommand::class,
+                CspAuditCommand::class,
                 ExportJsonCommand::class,
                 GlassInstallCommand::class,
                 InstallCommand::class,
@@ -271,20 +275,14 @@ class WireKitServiceProvider extends ServiceProvider
             $expression = trim($expression);
             $nonceExpr = $expression === '' ? "''" : $expression;
 
+            // The body used to inline the published-vs-dist decision, a copy of the one in
+            // scriptTag(). It now calls the shared helper, so the staleness rule cannot
+            // diverge between the stylesheet and the scripts again — which is exactly how
+            // the CSS half of a wrong rule went unreported.
             return '<?php
                 $__wk_nonce = '.$nonceExpr.';
                 $__wk_nonceAttr = $__wk_nonce ? \' nonce="\' . e($__wk_nonce) . \'"\' : "";
-                $__wk_published = public_path(\'vendor/wirekit/wirekit.css\');
-                $__wk_dist = \Pushery\WireKit\WireKitServiceProvider::distPath(\'wirekit.css\');
-                $__wk_useRoute = ! file_exists($__wk_published)
-                    || ($__wk_dist && filemtime($__wk_dist) > filemtime($__wk_published));
-                if ($__wk_useRoute) {
-                    $__wk_v = $__wk_dist ? filemtime($__wk_dist) : time();
-                    echo \'<link rel="stylesheet"\' . $__wk_nonceAttr . \' href="\' . url(\'/wirekit/wirekit.css\') . \'?v=\' . $__wk_v . \'">\' . "\n";
-                } else {
-                    $__wk_v = filemtime($__wk_published);
-                    echo \'<link rel="stylesheet"\' . $__wk_nonceAttr . \' href="\' . asset(\'vendor/wirekit/wirekit.css\') . \'?v=\' . $__wk_v . \'">\' . "\n";
-                }
+                echo \Pushery\WireKit\WireKitServiceProvider::styleTag(\'wirekit.css\', $__wk_nonceAttr);
             ?>';
         });
 
@@ -543,11 +541,7 @@ class WireKitServiceProvider extends ServiceProvider
     {
         $published = public_path('vendor/wirekit/'.$file);
         $dist = self::distPath($file);
-
-        // Prefer the package's own copy whenever the published one is missing OR older: an
-        // upgraded package with stale published assets is the case that fails silently.
-        $useRoute = ! file_exists($published)
-            || ($dist && filemtime($dist) > filemtime($published));
+        $useRoute = self::publishedIsStale($published, $dist);
 
         if ($useRoute) {
             $version = $dist ? filemtime($dist) : time();
@@ -560,6 +554,78 @@ class WireKitServiceProvider extends ServiceProvider
     }
 
     /**
+     * The stylesheet tag, decided by the same rule as `scriptTag()`.
+     *
+     * This exists because the rule used to live twice — once here, once inlined in the
+     * `@wirekitStyles` directive body — and the two were copy-paste twins. When the
+     * staleness comparison turned out to be wrong, the report named only the JS half,
+     * because that is the half anybody could see. One rule, one place.
+     *
+     * @param  string  $nonceAttr  pre-escaped ` nonce="…"` or an empty string
+     */
+    public static function styleTag(string $file, string $nonceAttr = ''): string
+    {
+        $published = public_path('vendor/wirekit/'.$file);
+        $dist = self::distPath($file);
+
+        if (self::publishedIsStale($published, $dist)) {
+            $version = $dist ? filemtime($dist) : time();
+            $src = url('/wirekit/'.$file).'?v='.$version;
+        } else {
+            $src = asset('vendor/wirekit/'.$file).'?v='.filemtime($published);
+        }
+
+        return '<link rel="stylesheet"'.$nonceAttr.' href="'.$src.'">'."\n";
+    }
+
+    /**
+     * Is the published copy something other than what this package ships?
+     *
+     * COMPARED BY CONTENT, and the previous rule — `filemtime($dist) > filemtime($published)`
+     * — is why. A modification time answers "which file was written later", and that is not
+     * the question. Composer writes an upgraded `dist/` with whatever timestamp the archive
+     * or the filesystem hands it, and a `vendor:publish` from the PREVIOUS version can easily
+     * carry a later one. The comparison then says "the published copy is newer, therefore
+     * current" and serves the old bytes — confidently, with a fresh-looking `?v=` stamp taken
+     * from that same wrong file. There is no error anywhere; the developer sees an upgrade
+     * that did not arrive, and nothing in the page disagrees with them.
+     *
+     * A missing published file is stale by definition. Beyond that: sizes first, because two
+     * files of different length cannot be equal and the check costs one stat; a hash only when
+     * the sizes agree, which is the one case where bytes still have to be read.
+     *
+     * Memoized per request, keyed by the published file's own mtime and size, so the answer
+     * self-invalidates the moment anything republishes — rather than by path alone, which
+     * would cache a verdict across a publish inside a long-lived worker.
+     */
+    protected static function publishedIsStale(string $published, ?string $dist): bool
+    {
+        if (! file_exists($published)) {
+            return true;
+        }
+
+        // Nothing to compare against. The published copy is all there is, so serve it —
+        // returning "stale" here would route to a file the package does not have.
+        if ($dist === null || ! is_file($dist)) {
+            return false;
+        }
+
+        static $memo = [];
+
+        $publishedSize = filesize($published);
+        $key = $published.'|'.filemtime($published).'|'.$publishedSize.'|'.$dist;
+
+        if (isset($memo[$key])) {
+            return $memo[$key];
+        }
+
+        $distSize = filesize($dist);
+
+        return $memo[$key] = $publishedSize !== $distSize
+            || hash_file('xxh128', $published) !== hash_file('xxh128', $dist);
+    }
+
+    /**
      * Register routes that serve WireKit assets directly from the package.
      *
      * This allows @wirekitStyles and @wirekitScripts to work immediately
@@ -568,17 +634,28 @@ class WireKitServiceProvider extends ServiceProvider
      */
     protected function registerAssetRoutes(): void
     {
-        // Map route paths to dist/ files with their MIME types
+        // Map route paths to dist/ files with their MIME types.
+        //
+        // `; charset=utf-8` is not decoration on a text type. Without it a
+        // browser opening the URL on its own falls back to a legacy single-byte
+        // encoding, and every em-dash in the file renders as mojibake — reported
+        // from the field against /wirekit/wirekit.css.
+        //
+        // Only the DIRECT hit is affected, which is why it survived so long: a
+        // stylesheet loaded from a page inherits the document's encoding, so
+        // every app looked fine and only someone pasting the asset URL into the
+        // address bar ever saw it. The font route below has always declared it;
+        // these nine were written first and never caught up.
         $assets = [
-            'wirekit/wirekit.css' => ['file' => 'wirekit.css', 'type' => 'text/css'],
-            'wirekit/wirekit.js' => ['file' => 'wirekit.js', 'type' => 'application/javascript'],
-            'wirekit/wirekit.core.js' => ['file' => 'wirekit.core.js', 'type' => 'application/javascript'],
-            'wirekit/wirekit.esm.js' => ['file' => 'wirekit.esm.js', 'type' => 'application/javascript'],
-            'wirekit/wirekit-apex.js' => ['file' => 'wirekit-apex.js', 'type' => 'application/javascript'],
-            'wirekit/wirekit-tiptap.js' => ['file' => 'wirekit-tiptap.js', 'type' => 'application/javascript'],
-            'wirekit/wirekit-optimistic.js' => ['file' => 'wirekit-optimistic.js', 'type' => 'application/javascript'],
-            'wirekit/wirekit-alpine.js' => ['file' => 'wirekit-alpine.js', 'type' => 'application/javascript'],
-            'wirekit/wirekit-alpine.csp.js' => ['file' => 'wirekit-alpine.csp.js', 'type' => 'application/javascript'],
+            'wirekit/wirekit.css' => ['file' => 'wirekit.css', 'type' => 'text/css; charset=utf-8'],
+            'wirekit/wirekit.js' => ['file' => 'wirekit.js', 'type' => 'application/javascript; charset=utf-8'],
+            'wirekit/wirekit.core.js' => ['file' => 'wirekit.core.js', 'type' => 'application/javascript; charset=utf-8'],
+            'wirekit/wirekit.esm.js' => ['file' => 'wirekit.esm.js', 'type' => 'application/javascript; charset=utf-8'],
+            'wirekit/wirekit-apex.js' => ['file' => 'wirekit-apex.js', 'type' => 'application/javascript; charset=utf-8'],
+            'wirekit/wirekit-tiptap.js' => ['file' => 'wirekit-tiptap.js', 'type' => 'application/javascript; charset=utf-8'],
+            'wirekit/wirekit-optimistic.js' => ['file' => 'wirekit-optimistic.js', 'type' => 'application/javascript; charset=utf-8'],
+            'wirekit/wirekit-alpine.js' => ['file' => 'wirekit-alpine.js', 'type' => 'application/javascript; charset=utf-8'],
+            'wirekit/wirekit-alpine.csp.js' => ['file' => 'wirekit-alpine.csp.js', 'type' => 'application/javascript; charset=utf-8'],
         ];
 
         // Bundled fonts, served straight from the package when they were never

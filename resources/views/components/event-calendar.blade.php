@@ -113,7 +113,7 @@
         <div class="flex items-center gap-[var(--space-wk-sm)]">
             <div class="inline-flex items-center gap-1">
                 <button type="button" @click="prev()" aria-label="{{ __('Previous') }}" class="{{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 12L6 8l4-4"/></svg></button>
-                <button type="button" @click="today()" class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">Today</button>
+                <button type="button" @click="today()" class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('Today') }}</button>
                 <button type="button" @click="next()" aria-label="{{ __('Next') }}" class="{{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
             </div>
             <h2 class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" aria-live="polite" x-text="title"></h2>
@@ -126,9 +126,9 @@
             @keydown.arrow-down.prevent="viewMove(1)"
             @keydown.arrow-left.prevent="viewMove(-1)"
             @keydown.arrow-up.prevent="viewMove(-1)">
-            <button type="button" role="radio" data-view="month" @click="setView('month')" :aria-checked="view === 'month'" :tabindex="view === 'month' ? 0 : -1" :class="view === 'month' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="{{ $viewTab }}">Month</button>
+            <button type="button" role="radio" data-view="month" @click="setView('month')" :aria-checked="view === 'month'" :tabindex="view === 'month' ? 0 : -1" :class="view === 'month' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="{{ $viewTab }}">{{ __('Month') }}</button>
             <button type="button" role="radio" data-view="week" @click="setView('week')" :aria-checked="view === 'week'" :tabindex="view === 'week' ? 0 : -1" :class="view === 'week' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="{{ $viewTab }}">Week</button>
-            <button type="button" role="radio" data-view="agenda" @click="setView('agenda')" :aria-checked="view === 'agenda'" :tabindex="view === 'agenda' ? 0 : -1" :class="view === 'agenda' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="{{ $viewTab }}">Agenda</button>
+            <button type="button" role="radio" data-view="agenda" @click="setView('agenda')" :aria-checked="view === 'agenda'" :tabindex="view === 'agenda' ? 0 : -1" :class="view === 'agenda' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="{{ $viewTab }}">{{ __('Agenda') }}</button>
         </div>
     </div>
 

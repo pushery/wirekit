@@ -126,12 +126,22 @@
      parent so the scroll engages instead of the table forcing document
      overflow. --}}
 @if($responsive)
+{{-- A table that scrolls sideways said so with nothing but the scrollbar, and on
+     a phone there is no scrollbar until you are already dragging. A reader sees a column
+     cut off at the edge and no reason to believe more exists.
+
+     The apparatus for this shipped in 2.24 and no component template used it — the CSS
+     (`wk-scroll-shadow-start` / `-end`) and the Alpine factory with its inline-axis
+     sentinels were all already there. This is the wiring, not new machinery. --}}
+<div class="relative" x-data="wirekitStickyPanelShadows()">
 <div
+    x-ref="scroller"
     class="w-full min-w-0 overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'max-h-96 overflow-y-auto' : '' }}"
     tabindex="0"
     role="region"
     aria-label="{{ $tableLabel ?? __('Scrollable table') }}"
 >
+<div x-ref="startSentinel" aria-hidden="true" class="w-px shrink-0"></div>
 @endif
     <table
         {{ $attributes->class([$classes]) }}
@@ -155,5 +165,11 @@
         {{ $slot }}
     </table>
 @if($responsive)
+<div x-ref="endSentinel" aria-hidden="true" class="w-px shrink-0"></div>
+</div>
+{{-- aria-hidden: the shadow is an affordance for the eye. A screen reader is told about
+     the scroll region by the role and label on the scroller itself. --}}
+<div aria-hidden="true" x-cloak x-show="startShadow" x-transition.opacity class="wk-scroll-shadow-start"></div>
+<div aria-hidden="true" x-cloak x-show="endShadow" x-transition.opacity class="wk-scroll-shadow-end"></div>
 </div>
 @endif

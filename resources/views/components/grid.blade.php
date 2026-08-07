@@ -97,11 +97,32 @@
         }
     }
 
-    // `cols` is skipped entirely when a track prop won, rather than emitted and
-    // overridden: a `grid-cols-3` class sitting under an inline template is a
-    // rule that never applies, and the next person to read the markup has to
-    // work out which of the two is live.
-    $colsClasses = $trackProp !== null
+    // `cols` is kept as a CSP FALLBACK when a track prop won — but only if you asked
+    // for one.
+    //
+    // `min` and `template` are arbitrary values, so they can only ride in an inline
+    // `style`: Tailwind extracts class names from source text, and a track built at
+    // runtime leaves the scanner nothing to find. Under a `style-src` policy without
+    // `'unsafe-inline'` (Level 3: `style-src-attr`) the browser drops that attribute —
+    // and this component used to suppress the cols classes as well, so the column
+    // definition disappeared ENTIRELY and the grid stacked into one column. Elsewhere a
+    // dropped inline style costs a shade or a width; here it costs the whole statement.
+    //
+    // The suppression was there for readability — "a class that never applies is one
+    // more thing for the next reader to disentangle". That reasoning holds only while
+    // the class really never applies, and its premise is exactly what a strict CSP
+    // removes. An inline style beats a class on specificity every time it is allowed,
+    // so emitting both changes nothing about what renders; it only decides what happens
+    // when the style does not arrive.
+    //
+    // Only when `cols` was actually set, and that is what makes it free: the default is
+    // 1, so a fallback nobody asked for would be `grid-cols-1` — which is precisely the
+    // single column the CSP failure already produces. Approximate rather than exact by
+    // construction (three equal columns are not `10rem 1fr 8rem`), and vastly better
+    // than one.
+    $colsRequested = (string) $cols !== (string) config('wirekit.components.grid.cols', 1);
+
+    $colsClasses = ($trackProp !== null && ! $colsRequested)
         ? ''
         : collect(preg_split('/\s+/', trim(is_numeric($cols) ? (string) $cols : $cols)))
             ->map(fn (string $token) => $colsMap[$token] ?? WireKit::validateProp('grid', 'cols', $token, array_keys($colsMap)))

@@ -35,7 +35,6 @@ final class HeroiconsMarketingPreset implements IconPreset
             'cursor-arrow-rays' => 'heroicon-m-cursor-arrow-rays',
 
             // Time & metrics
-            'clock' => 'heroicon-m-clock',
             'chart-bar' => 'heroicon-m-chart-bar-square',
             'chart-pie' => 'heroicon-m-chart-pie',
 
@@ -75,7 +74,6 @@ final class HeroiconsMarketingPreset implements IconPreset
 
             // Directional (marketing-oriented; base preset uses chevron-* for UI nav)
             'arrow-right' => 'heroicon-m-arrow-right',
-            'arrow-left' => 'heroicon-m-arrow-left',
             'arrow-up-right' => 'heroicon-m-arrow-top-right-on-square',
 
             // Marketing-copy semantic aliases. Names map to landing-page

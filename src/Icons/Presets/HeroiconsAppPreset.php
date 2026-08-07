@@ -40,7 +40,6 @@ final class HeroiconsAppPreset implements IconPreset
             'link' => 'heroicon-m-link',
 
             // Security states
-            'lock' => 'heroicon-m-lock-closed',
             'unlock' => 'heroicon-m-lock-open',
             'key' => 'heroicon-m-key',
 

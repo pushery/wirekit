@@ -11,8 +11,19 @@
     // Livewire method to call optimistically. It receives the full range as
     // [min, max]. Absent -> this component renders exactly as it did before,
     // down to the byte.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     'label' => null,
+    // `error` was undeclared while `label` was not, so `:error` on this control
+    // landed in the attribute bag and rendered as a stray HTML attribute — a validation
+    // message the developer wrote, silently not shown, on a control that is part of forms.
+    'error' => null,
     'hint' => null,
     'min' => 0,
     'max' => 100,
@@ -198,6 +209,7 @@
     $optimisticConfig = ($optimistic === null || $attributes->has('disabled')) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => ['minVal', 'maxVal'],
         'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second commit while one is in flight would resolve by whichever
         // answer arrives last — network timing, which is both wrong and
@@ -213,6 +225,9 @@
 <div
     role="group"
     @if($label) aria-labelledby="{{ $id }}-label" @endif
+    {{-- On the GROUP rather than on either thumb: the message is about the range, and a
+         thumb-level describedby would read it out on both ends of it. --}}
+    @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
     {{ $attributes->class([$wrapperClasses]) }}
 >
     @if($label)
@@ -457,6 +472,13 @@
     </div>
 
     @if($hint)
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @endif
+    {{-- Same shape as `input`: one region, error winning over hint, announced politely so
+         it does not interrupt what the reader is doing. --}}
+    @if($error)
+        <p id="{{ $id }}-error" aria-live="polite" aria-atomic="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
+    @elseif($hint)
         <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

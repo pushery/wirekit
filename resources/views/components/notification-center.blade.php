@@ -105,13 +105,13 @@
         ><span x-text="unreadCount > 99 ? '99+' : unreadCount">{{ $serverUnread }}</span></span>
     </button>
 
-    {{-- Panel — teleported to <body> + Floating-UI positioned (see
+    {{-- Panel — teleported out of the document flow + Floating-UI positioned (see
          wirekitNotificationCenter._anchor) so it escapes any clipping/stacking
          ancestor and opens toward the inline-end (rightward) into available space,
          shifting back on-screen when the edge would overflow. click.outside lives
          HERE (on the panel), not the root, because teleporting moves the panel out
          of the root's subtree. Near-full-width on small screens. --}}
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
     <div
         x-show="open"
         x-cloak

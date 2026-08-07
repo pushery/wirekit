@@ -13,6 +13,13 @@
     // The Livewire method to call when the code is COMPLETE — not per keystroke.
     // A refusal keeps what was entered; see the note above. Null leaves the
     // component exactly as it has always rendered.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
@@ -190,6 +197,7 @@
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'value' => '',
         'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
         'failure' => 'keep',
         'debug' => (bool) config('app.debug'),
         // A second commit while one is in flight would resolve by whichever

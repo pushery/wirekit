@@ -662,13 +662,21 @@ class VerifyInstallationCommand extends Command
     private function checkBundleConfig(): void
     {
         $bundle = config('wirekit.scripts.bundle', 'full');
-        $valid = ['full', 'core'];
+
+        // `csp` belongs here. It is a shipped bundle with its own dist file and its own
+        // documented reason to exist — an Alpine build that needs no 'unsafe-eval' — and
+        // this list did not know about it. So `wirekit:verify` reported the one correct
+        // choice a CSP-constrained app can make as an invalid value, and advised taking
+        // it back. A check that tells you to undo a correct setting is worse than no
+        // check: it is confidently wrong, in the one place a developer goes when they are
+        // already unsure.
+        $valid = ['full', 'core', 'csp'];
 
         if (in_array($bundle, $valid, true)) {
             $this->reportPass("JS bundle configured: {$bundle}");
         } else {
             $this->reportFail("Invalid wirekit.scripts.bundle value: '{$bundle}'");
-            $this->line('  Valid values: full, core');
+            $this->line('  Valid values: full, core, csp');
         }
     }
 
@@ -965,7 +973,15 @@ class VerifyInstallationCommand extends Command
 
         if ($chartConfig === 'chartjs') {
             $this->reportPass('Chart.js adapter configured');
-        } elseif ($chartConfig === 'apexcharts') {
+        } elseif ($chartConfig === 'apexcharts' || config('wirekit.scripts.apex', false)) {
+            // `scripts.apex` alone is enough to reach this check, and it was not.
+            //
+            // That switch emits the adapter bundle on every page independently of
+            // `charts.library`, so an app can ship the adapter while the chart library is
+            // set to something else — or to nothing. The check keyed on the library
+            // alone, so exactly that configuration went unexamined: the adapter loads,
+            // looks for `window.ApexCharts`, finds nothing, and every chart stays blank
+            // while verify reports the installation healthy.
             $this->checkApexChartsAdapter();
         } else {
             $this->line('  <fg=cyan>i</> Chart adapter not configured (optional — set charts.library to "chartjs" or "apexcharts" in config/wirekit.php to enable <x-wirekit-chart>)');
@@ -1022,6 +1038,48 @@ class VerifyInstallationCommand extends Command
             }
         } else {
             $this->line('  <fg=cyan>i</> package.json not found — skipping apexcharts npm presence check');
+        }
+
+        // Step 1b: is the global actually ASSIGNED anywhere?
+        //
+        // The manifest check above proves the package can be resolved, and that is a
+        // different question from whether it reaches the page. The adapter reads
+        // `window.ApexCharts` and nothing puts it there on its own — an app that installs
+        // the npm package and never writes the assignment ships a bundle that finds
+        // nothing, and every chart stays blank with no error.
+        //
+        // A heuristic over the app's own JS, so it WARNS rather than fails: a project may
+        // assign the global from a file this scan does not know about, and a check that
+        // failed on that would be wrong about a working installation.
+        $assignmentFound = false;
+        $jsRoot = base_path('resources/js');
+
+        if (is_dir($jsRoot)) {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($jsRoot, \RecursiveDirectoryIterator::SKIP_DOTS)
+            );
+
+            foreach ($iterator as $entry) {
+                if (! $entry->isFile() || ! str_ends_with($entry->getFilename(), '.js')) {
+                    continue;
+                }
+
+                if (preg_match('/window\.ApexCharts\s*=/', (string) file_get_contents($entry->getPathname())) === 1) {
+                    $assignmentFound = true;
+                    break;
+                }
+            }
+        }
+
+        if ($assignmentFound) {
+            $this->reportPass('window.ApexCharts is assigned in your JavaScript');
+        } else {
+            $this->reportWarn(
+                'no `window.ApexCharts = …` assignment found under resources/js. The adapter reads '
+                .'that global and nothing sets it for you, so every chart renders blank with no error. '
+                .'Add `import ApexCharts from "apexcharts"; window.ApexCharts = ApexCharts;` to your '
+                .'entry point — or ignore this if you assign it somewhere this scan cannot see.'
+            );
         }
 
         // Step 2: license-tier reminder. WARN-only; never FAIL on this.
@@ -1948,9 +2006,15 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
-        $newestCompiled = $this->newestMtimeUnder($compiledDir);
+        // Only *.php, which is what a compiled Blade template is. Without the filter the
+        // scan also saw the shipped `.gitignore`, so a freshly cleared cache never looked
+        // empty — and the advice became a loop: `view:clear` produces exactly the state
+        // the warning then reports, so following it re-triggers the warning that sent you
+        // there. A developer runs the suggested command, sees the same message, and
+        // reasonably concludes the tool is broken.
+        $newestCompiled = $this->newestMtimeUnder($compiledDir, ['php']);
         if ($newestCompiled === 0) {
-            // Compiled directory exists but is empty. Same fresh-state semantics.
+            // Compiled directory holds no templates — the fresh state after view:clear.
             return;
         }
 
@@ -2162,9 +2226,22 @@ class VerifyInstallationCommand extends Command
         // `local.WARNING: WireKit [...]` lines. We use a streaming
         // scanner — read line-by-line — so a huge log file doesn't
         // exhaust memory.
+        //
+        // BOUNDED BY AGE, and without that bound this check could never come back green.
+        // It reads the whole log history, so a typo fixed weeks ago keeps its line in
+        // laravel.log forever and the warning stays yellow for the life of the file. A
+        // developer who did exactly what they were told sees no change, which teaches
+        // them to stop reading this check — the one outcome a diagnostic cannot afford.
+        //
+        // The window is configurable, and 0 restores the old read-everything behavior for
+        // anyone who wants it.
         $matches = [];
         $matchCount = 0;
-        $matchPattern = '/^\[[^\]]+\] [a-z]+\.(ERROR|WARNING): WireKit \[/i';
+        $recentCount = 0;
+        $matchPattern = '/^\[(?<ts>[^\]]+)\] [a-z]+\.(ERROR|WARNING): WireKit \[/i';
+
+        $windowHours = (int) config('wirekit.doctor.scan_logs_window_hours', 24);
+        $cutoff = $windowHours > 0 ? time() - ($windowHours * 3600) : null;
 
         foreach ($logFiles as $path) {
             $fh = @fopen($path, 'r');
@@ -2172,21 +2249,47 @@ class VerifyInstallationCommand extends Command
                 continue;
             }
             while (($line = fgets($fh)) !== false) {
-                if (preg_match($matchPattern, $line)) {
-                    $matchCount++;
-                    if (count($matches) < 3) {
-                        $matches[] = trim($line);
-                    }
+                if (! preg_match($matchPattern, $line, $m)) {
+                    continue;
+                }
+
+                $matchCount++;
+
+                // A line whose timestamp will not parse counts as RECENT. The opposite
+                // default would silently drop real findings to keep the output tidy,
+                // which is the failure this whole check exists to catch, one level up.
+                $stamp = strtotime($m['ts']);
+                $isRecent = $cutoff === null || $stamp === false || $stamp >= $cutoff;
+
+                if (! $isRecent) {
+                    continue;
+                }
+
+                $recentCount++;
+
+                // Examples from the RECENT set: a sample drawn from the whole history
+                // would show lines the developer has already fixed.
+                if (count($matches) < 3) {
+                    $matches[] = trim($line);
                 }
             }
             fclose($fh);
         }
 
+        // Only recent lines decide the verdict. `$matchCount` stays for the message,
+        // because "clean in the last 24h, 47 older" is worth saying — it tells the
+        // reader the file is not empty without pretending the past is a finding.
+        $olderCount = $matchCount - $recentCount;
+        $matchCount = $recentCount;
+
         if ($matchCount === 0) {
             $this->reportPass(sprintf(
-                'silent-typo log scan clean — no `WireKit [...]` ERROR/WARNING lines in %d log file(s). '.
+                'silent-typo log scan clean — no `WireKit [...]` ERROR/WARNING lines in %d log file(s)%s. '.
                 '(If your env logs at level=critical/emergency only, fallback warnings get filtered out — that is expected.)',
-                count($logFiles)
+                count($logFiles),
+                $olderCount > 0
+                    ? sprintf(' within the last %dh (%d older line(s) ignored)', $windowHours, $olderCount)
+                    : ''
             ));
 
             return;

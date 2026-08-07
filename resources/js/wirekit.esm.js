@@ -11,6 +11,7 @@
  */
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
+import { installOverlayRoot } from './utils/overlay-root.js';
 import wirekitChartJs from './components/chart.js';
 import wirekitDropdown from './components/dropdown.js';
 import wirekitSubmenu from './components/submenu.js';
@@ -94,6 +95,10 @@ export default function (Alpine) {
     }
 
     // Magics before components: a component's own expressions may use them.
+
+    // The overlay root BEFORE anything else: every teleported panel targets it, and
+    // `x-teleport` treats a selector that matches nothing as fatal.
+    installOverlayRoot();
 
     registerAncestorDataMagic(Alpine);
 

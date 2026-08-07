@@ -21,7 +21,7 @@ export default function wirekitCarousel(config = {}) {
         total: 0,
         autoplay: config.autoplay || false,
         playing: false,
-        interval: config.interval || 5000,
+        interval: config.interval ?? 5000,
         loop: config.loop !== false,
         vertical: config.vertical || false,
         _timer: null,

@@ -261,8 +261,8 @@
                     <span>{{ $heatMax }}{{ $heatUnit }}</span>
                     @break
                 @case('toggle')
-                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span> On</span>
-                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></span> Off</span>
+                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span> {{ __('On') }}</span>
+                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></span> {{ __('Off') }}</span>
                     @break
             @endswitch
             @if($isEditable && $cellType === 'tristate')

@@ -87,6 +87,20 @@ export default function wirekitCommandPalette(config = {}) {
             this.query = '';
             this._activeIndex = -1;
 
+            // Clearing `query` is a plain assignment, and an assignment fires no
+            // `input` event — so the only dispatcher, the input's own handler,
+            // never ran. A server-driven host therefore kept the LAST search
+            // alive: type "strategy", close, reopen, and the field is empty while
+            // the list still shows the results for a word nobody can see. Every
+            // open began on a visibly wrong frame.
+            //
+            // Dispatched here rather than in close() on purpose. A host that
+            // keeps its results between opens is a legitimate design, and
+            // clearing on close would take that away; announcing the empty query
+            // at the moment the empty field appears is the one point where the
+            // two cannot disagree.
+            this.emitQuery();
+
             // Lock body scroll (standard modal behavior). Skipped when the palette
             // is embedded inside a scoped container where global body-scroll lock
             // would be disruptive — see `lockScroll` prop on the Blade component.
@@ -284,7 +298,7 @@ export default function wirekitCommandPalette(config = {}) {
          * Emit the query for a host driving server-side search.
          *
          * Dispatched from the component ROOT, not from the input. The input lives
-         * inside `<template x-teleport="body">`, so at runtime it is a child of
+         * inside a teleporting `<template>`, so at runtime it is a child of
          * <body>: an event fired there never passes the root element, and
          * `<x-wirekit::command-palette x-on:wirekit-command-palette-query="…">` —
          * the obvious way to wire this up — silently never fired. Alpine only

@@ -66,7 +66,7 @@
     @endisset
 
     {{-- Alert dialog overlay and panel — teleported to body --}}
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
         <div x-show="open" x-cloak>
             {{-- Backdrop --}}
             <div

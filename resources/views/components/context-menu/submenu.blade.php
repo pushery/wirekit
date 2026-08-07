@@ -62,7 +62,7 @@
 
      x-effect="open || closeSub()" resets the submenu when the OUTER context
      menu closes — the context-menu's `open` is still in scope after the panel
-     teleports to <body> (x-teleport preserves x-data scope). The parent's
+     teleports out of the document flow (x-teleport preserves x-data scope). The parent's
      click is stopPropagation'd; leaf child items keep their own close(). --}}
 <div
     x-data="wirekitSubmenu({ placement: '{{ $placement }}', offset: {{ (int) $offset }} })"

@@ -93,6 +93,7 @@ class ExportApiMapCommand extends Command
                 $this->iconsGroup(),
                 $this->layoutsGroup($packageRoot),
                 $this->blueprintsGroup($packageRoot),
+                $this->partialsGroup($packageRoot),
                 $this->recipesGroup($packageRoot),
                 $this->commandsGroup(),
                 $this->helpersGroup(),
@@ -235,15 +236,89 @@ class ExportApiMapCommand extends Command
      */
     private function blueprintsGroup(string $packageRoot): array
     {
-        return $this->scanDocsDir($packageRoot, 'blueprints');
+        // `partials/` and `recipes/` live UNDER `docs/blueprints/` and are not
+        // blueprints — they are composition fragments and short how-tos, and each
+        // already has a group of its own here.
+        //
+        // Without the exclusion this group described nothing it claimed to.
+        // Measured on the public export: `blueprints` held 19 items, all of them
+        // 8 partials and 11 recipes, and NOT ONE blueprint — every real blueprint
+        // page is admin-staged, so the filter removed exactly the entries the
+        // group is named after and left the ones that were only passing through.
+        // The eleven recipes then appeared TWICE, once under each name.
+        //
+        // A tool reading this manifest would have found no blueprints under
+        // "blueprints" and counted every recipe twice, and nothing said so: both
+        // numbers were plausible, and the group was never empty enough to look
+        // wrong. `blocks` had the same directory and drew the line correctly —
+        // this brings the two manifests to one definition of the word, which is
+        // the reconciliation the finding asked for.
+        $group = $this->scanDocsDir($packageRoot, 'blueprints');
+
+        $group['items'] = array_values(array_filter(
+            $group['items'],
+            static fn (array $item): bool => ! str_starts_with($item['id'], 'partials/')
+                && ! str_starts_with($item['id'], 'recipes/'),
+        ));
+        $group['count'] = count($group['items']);
+
+        return $group;
+    }
+
+    /**
+     * The composition fragments under `docs/blueprints/partials/`.
+     *
+     * Their own group rather than dropped: they are real pages a developer can
+     * read, and removing them from `blueprints` without a home would have made
+     * eight of them disappear from the manifest — trading a wrong entry for a
+     * missing one, which is the worse of the two.
+     *
+     * @return array{id: string, count: int, items: array<int, array<string, string>>}
+     */
+    private function partialsGroup(string $packageRoot): array
+    {
+        $group = $this->scanDocsDir($packageRoot, 'blueprints/partials');
+        $group['id'] = 'partials';
+
+        // Ids stay prefixed, because five of these pages are named after real
+        // components — `cta`, `faq`, `footer`, `hero`, `logo-cloud` all exist in
+        // the component group too. Scanned relative to their own directory they
+        // come back bare and collide with those; the disjointness guard caught
+        // exactly that on the first run of this method. `partials/cta` is a page
+        // about composing a call-to-action, `cta` is the component — a reader
+        // looking one up must not be handed the other.
+        $group['items'] = array_map(
+            static function (array $item): array {
+                $item['id'] = 'partials/'.$item['id'];
+
+                return $item;
+            },
+            $group['items'],
+        );
+
+        return $group;
     }
 
     /**
      * @return array{id: string, count: int, items: array<int, array<string, string>>}
      */
+    /**
+     * The recipes live under `blueprints/`, and scanning `recipes/` found nothing anywhere.
+     *
+     * This group was empty even in a checkout of the package repository, where the sources
+     * do exist — `docs/recipes` has never been a directory; the eleven recipe pages are at
+     * `docs/blueprints/recipes`. So the group had two independent reasons to come back
+     * empty, and the second one hid the first: in a Composer install the whole of `docs/` is
+     * absent anyway, which is the explanation anyone would reach for and stop at.
+     *
+     * The group id stays `recipes` — it is the name in the published manifest.
+     */
     private function recipesGroup(string $packageRoot): array
     {
-        return $this->scanDocsDir($packageRoot, 'recipes');
+        $group = $this->scanDocsDir($packageRoot, 'blueprints/recipes');
+        $group['id'] = 'recipes';
+
+        return $group;
     }
 
     /**
@@ -255,7 +330,24 @@ class ExportApiMapCommand extends Command
         $items = [];
 
         if (! is_dir($base)) {
-            return ['id' => $subdir, 'count' => 0, 'items' => []];
+            // Reported, not swallowed. `docs/` is export-ignored, so in every Composer
+            // install this directory is absent and every docs-derived group came back
+            // `count: 0` — indistinguishable from a genuinely empty catalog, and the whole
+            // export still exited 0. A developer reading the manifest has no way to tell
+            // "the package does not carry this" from "there is nothing to carry".
+            //
+            // A WARNING rather than a hard failure, and the difference is deliberate: this
+            // command's other groups are derived from shipped source and remain correct, so
+            // refusing to emit them would trade one wrong answer for a worse one. The group
+            // is marked instead, so the absence travels with the data.
+            $this->components->warn(sprintf(
+                'api-map: the "%s" group has no source in this installation — docs/%s is not part of '.
+                'the distributed package, so the group is reported as unavailable rather than empty.',
+                $subdir,
+                $subdir,
+            ));
+
+            return ['id' => $subdir, 'count' => 0, 'items' => [], 'unavailable' => true];
         }
 
         $iterator = new \RecursiveIteratorIterator(
@@ -320,6 +412,54 @@ class ExportApiMapCommand extends Command
     }
 
     /**
+     * Command id → the anchor its heading actually renders on `/cli-reference`.
+     *
+     * THE COMMAND ID IS NOT THE ANCHOR, and assuming it was cost eleven broken
+     * deep links in the published manifest. `## `wirekit:show {name}`` slugs to
+     * `wirekitshow-name`, not `wirekitshow`: the argument placeholder is part of
+     * the heading, and GitHub's rule DELETES disallowed characters rather than
+     * replacing them, so the braces vanish while the space before them becomes
+     * the hyphen. Two headings follow from no id at all — `wirekit:glass
+     * install` names a subcommand, and verify and doctor share one heading.
+     *
+     * A map rather than a lookup, because `docs/` is export-ignored: the page
+     * does not exist inside an installed package, so this cannot be read at
+     * runtime. `CliAnchorDriftTest` closes that gap from the other side — it
+     * derives the truth from the real headings and fails on any divergence, so
+     * the map cannot drift without the build saying so.
+     *
+     * A command absent here is deliberate rather than forgotten: it has no
+     * heading on the page, and it gets the page without a fragment.
+     *
+     * @var array<string, string>
+     */
+    private const CLI_ANCHORS = [
+        'wirekit:boost-skills' => '#wirekitboost-skills',
+        'wirekit:class-by-area' => '#wirekitclass-by-area',
+        'wirekit:component' => '#wirekitcomponent-name',
+        'wirekit:csp-audit' => '#wirekitcsp-audit',
+        'wirekit:cursor-rules' => '#wirekitcursor-rules',
+        'wirekit:doctor' => '#wirekitverify-and-wirekitdoctor',
+        'wirekit:doctor:a11y' => '#wirekitdoctora11y',
+        'wirekit:doctor:props' => '#wirekitdoctorprops',
+        'wirekit:editor-preset' => '#wirekiteditor-preset-preset',
+        'wirekit:export-api-map' => '#wirekitexport-api-map',
+        'wirekit:export-json' => '#wirekitexport-json',
+        'wirekit:fonts' => '#wirekitfonts',
+        'wirekit:glass' => '#wirekitglass-install',
+        'wirekit:icons' => '#wirekiticons',
+        'wirekit:install' => '#wirekitinstall',
+        'wirekit:list' => '#wirekitlist',
+        'wirekit:make' => '#wirekitmake-name',
+        'wirekit:mcp-serve' => '#wirekitmcp-serve',
+        'wirekit:publish-fonts' => '#wirekitpublish-fonts',
+        'wirekit:publish-icons' => '#wirekitpublish-icons-preset',
+        'wirekit:show' => '#wirekitshow-name',
+        'wirekit:theme' => '#wirekittheme-preset',
+        'wirekit:verify' => '#wirekitverify-and-wirekitdoctor',
+    ];
+
+    /**
      * @return array{id: string, count: int, items: array<int, array<string, string>>}
      */
     private function commandsGroup(): array
@@ -333,31 +473,37 @@ class ExportApiMapCommand extends Command
         $commands = [];
         if ($application !== null) {
             foreach ($application->all() as $name => $command) {
-                if (str_starts_with($name, 'wirekit:')) {
-                    $commands[] = $name;
+                // THE `wirekit:` PREFIX IS NOT PROOF OF OWNERSHIP. This runs
+                // inside whatever application invoked it, and a host is free to
+                // register its own `wirekit:`-prefixed command — the
+                // documentation site does exactly that with
+                // `wirekit:create-admin`, which is how a command this package
+                // has never contained reached the published manifest, carrying
+                // an anchor to a section that cannot exist.
+                //
+                // The class is the ownership test, and it is the only one a
+                // naming choice cannot spoof.
+                if (! str_starts_with($name, 'wirekit:')) {
+                    continue;
                 }
+
+                if (! str_starts_with($command::class, 'Pushery\\WireKit\\')) {
+                    continue;
+                }
+
+                $commands[] = $name;
             }
         }
         sort($commands);
 
-        // Symfony aliases share the canonical command's docs anchor —
-        // wirekit:doctor IS wirekit:verify, so its docs_url points at the
-        // verify anchor (not a separate doctor anchor that would 404).
-        // The alias map stays static here because Symfony's reflection
-        // surface for aliases is per-instance and noisier than worth.
-        $aliasOf = [
-            'wirekit:doctor' => 'wirekit:verify',
-        ];
-        $items = array_map(function (string $c) use ($aliasOf): array {
-            $canonical = $aliasOf[$c] ?? $c;
-
-            return [
-                'id' => $c,
-                // The page is cli-reference. The anchor scheme is unchanged — the 19
-                // `## `wirekit:x`` headings slugify with the colon dropped.
-                'docs_url' => WireKit::DOCS_URL.'/cli-reference#'.str_replace(':', '', $canonical),
-            ];
-        }, $commands);
+        $items = array_map(fn (string $c): array => [
+            'id' => $c,
+            // A fragment matching no heading is worse than no fragment: it looks
+            // like a deep link and behaves like a page load, and nothing reports
+            // it — the page answers 200 and simply does not scroll. So a command
+            // with no heading gets the page, never a guess at one.
+            'docs_url' => WireKit::DOCS_URL.'/cli-reference'.(self::CLI_ANCHORS[$c] ?? ''),
+        ], $commands);
 
         return ['id' => 'commands', 'count' => count($items), 'items' => $items];
     }

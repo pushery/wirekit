@@ -236,9 +236,26 @@ export default function wirekitCalendar(config = {}) {
             // the end. That makes the shading answer the question the reader is
             // actually asking — "what am I about to choose" — instead of showing
             // nothing until the choice is already made.
-            const end = this.selectedEnd || (this.hoverDate && this.hoverDate > this.selected ? this.hoverDate : null);
+            // IN EITHER DIRECTION. This used to require `hoverDate > selected`, so
+            // hovering backwards produced no provisional end at all and the preview
+            // simply did not exist: the reader dragged toward an earlier day, saw
+            // nothing shade, clicked anyway, and only then discovered the range had
+            // been right all along.
+            //
+            // The inconsistency was internal, which is what makes it a defect rather
+            // than a missing feature. `selectDate()` below goes out of its way to
+            // accept a backwards choice — "a second click before the start simply
+            // becomes the start, and the range stays ordered" — so the component
+            // supports the gesture and refused to preview it.
+            const provisional = ! this.selectedEnd && this.hoverDate ? this.hoverDate : null;
+            const end = this.selectedEnd || provisional;
 
-            const isInRange = !! end && dateStr > this.selected && dateStr < end;
+            // Ordered the same way selectDate() orders a second click, so the shading
+            // between the two days no longer depends on which one came first.
+            const lo = end !== null && end < this.selected ? end : this.selected;
+            const hi = end !== null && end < this.selected ? this.selected : end;
+
+            const isInRange = end !== null && dateStr > lo && dateStr < hi;
 
             // The day under the pointer, standing in for an end nobody has chosen
             // yet. It needs its own name because the two things that PAINT a day
@@ -257,11 +274,15 @@ export default function wirekitCalendar(config = {}) {
             // It is shaded rather than filled: a dark fill would claim a choice
             // that has not been made, and the difference between "selected" and
             // "about to be selected" is the whole point of a preview.
-            const isProvisionalEnd = ! this.selectedEnd && !! end && dateStr === end;
+            const isProvisionalEnd = provisional !== null && dateStr === provisional;
 
             return {
-                isRangeStart: dateStr === this.selected && !! end,
-                isRangeEnd: !! end && dateStr === end,
+                // The caps are the ORDERED ends, not "the one clicked first". While the
+                // pointer sits before the start, the day under it is the visual start —
+                // and keying these off `selected` gave the left cap's rounding to the
+                // day on the right.
+                isRangeStart: end !== null && dateStr === lo,
+                isRangeEnd: end !== null && dateStr === hi,
                 isInRange,
                 isProvisionalEnd,
                 // The attribute VALUE, computed here rather than in the template.
@@ -440,6 +461,38 @@ export default function wirekitCalendar(config = {}) {
         },
 
         _focusDay() {
+            // Moving focus IS hovering, for someone who is not using a pointer.
+            //
+            // The provisional end — the shading and the `aria-selected` that say
+            // "release here and this is your range" — was written for `hoverDay()`
+            // and reachable only from `mouseenter`. So a keyboard user picking a
+            // range got the first date, then no feedback at all until they committed
+            // the second one: the preview existed and they could not see it, and
+            // there is no second way to find out what a range will be before making
+            // it.
+            //
+            // Set here rather than in each arrow branch because every one of them
+            // ends in this call — six branches, and a seventh added later would have
+            // to remember. `hoverDay()` keeps its own guard, so this is a no-op
+            // unless a range is genuinely half-made.
+            //
+            // This does mean an arrow key now moves `aria-selected` onto cells nobody
+            // has chosen, and that objection was raised and is worth answering rather
+            // than leaving for someone to rediscover. It is deliberate: while a range
+            // is half-made the provisional span IS the pending selection — it is
+            // exactly what the pointer user is looking at — and the grid pattern's
+            // `aria-selected` is the closest true statement available. The suggested
+            // alternative, announcing it through the live region instead, would fire
+            // on every arrow key; a state on the focused cell is read when the cell is
+            // read, which is quieter, not louder. And it only happens between the two
+            // ends, which is the one moment the information is what the reader wants.
+            //
+            // The guard is what keeps this narrow: an ordinary calendar, or a range
+            // with both ends set, moves no selection anywhere.
+            this.hoverDay(this._formatDate(
+                new Date(this.viewYear, this.viewMonth + this.focusOffset, this.focusedDay)
+            ));
+
             this.$nextTick(() => {
                 // Scope to the focused grid in multi-month mode (day numbers repeat
                 // across grids); the single-month selector is unchanged.

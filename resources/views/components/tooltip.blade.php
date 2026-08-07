@@ -90,7 +90,7 @@
         {{ $slot }}
     </div>
 
-    {{-- Tooltip panel, teleported to <body>.
+    {{-- Tooltip panel, teleported out of the document flow.
 
          The comment above this block claimed the teleport for a long time while
          the markup had none, and the gap was expensive: a tooltip inside a
@@ -113,7 +113,7 @@
          `$refs` survive the teleport: Alpine registers the ref in the ORIGINAL
          scope, so the positioning code that reads `this.$refs.tooltip` is
          unaffected. --}}
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
     <div
         x-ref="tooltip"
         x-show="open"

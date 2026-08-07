@@ -28,6 +28,7 @@
 
 import Alpine from 'alpinejs';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
+import { installOverlayRoot } from './utils/overlay-root.js';
 
 import wirekitChartJs from './components/chart.js';
 import wirekitDropdown from './components/dropdown.js';
@@ -115,8 +116,22 @@ function alreadyHasAlpine() {
         && typeof window.Alpine.version === 'string';
 }
 
+// The overlay root goes in FIRST, and outside the branch below — it is plain DOM and
+// has nothing to do with which Alpine won.
+//
+// It sat inside the else-branch, and that was a fatal in the exact configuration this
+// bundle is most often reached for. A Livewire app already has Alpine, so this bundle
+// skips itself by design — but the markup still teleports to `#wk-overlay-root`, and
+// `x-teleport` on a selector that matches nothing does not warn, it throws inside
+// Alpine's init walk. So one skipped container took the whole page's Alpine down with
+// it, and the visible symptom was every OTHER component reporting "is not defined".
+//
+// Cheap when it is redundant (one div), and the difference between an inert bundle and
+// a broken page when it is not.
+installOverlayRoot();
+
 if (alreadyHasAlpine()) {
-     
+
     console.warn(
         '[wirekit-alpine] Alpine is already present on window — skipping '
         + 'self-contained bundle. Use dist/wirekit.js instead when BYO Alpine.',

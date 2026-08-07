@@ -13,6 +13,13 @@
     // new value before the server has agreed to it. A refusal keeps your value —
     // see the note above. Null leaves the component exactly as it has always
     // rendered.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     'label' => null,
     'hideLabel' => false, // render the label sr-only (kept for assistive tech) — for compact toolbar / header fields
@@ -254,6 +261,7 @@
     $optimisticConfig = ($optimistic === null || $disabled || $readonly) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'value' => (string) ($attributes->get('value') ?? ''),
         'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
         'failure' => 'keep',
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',

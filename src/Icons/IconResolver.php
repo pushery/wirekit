@@ -333,4 +333,48 @@ final class IconResolver
 
         throw new InvalidArgumentException($message);
     }
+
+    /**
+     * Every alias this installation declares, alias => blade-icons identifier.
+     *
+     * `resolve()` answers "what do I render for this name", and it always
+     * answers something: an unknown name falls through to the icon set's own naming, so
+     * it is a good renderer and a useless oracle. There was no way to ask the question
+     * a tool actually has — "is this a name WireKit KNOWS, or did it just happen to
+     * work?" — except by reading an info-level log line, which is not an API.
+     *
+     * DELIBERATELY WITHOUT THE FALLTHROUGH. That is the whole point: a name only in here
+     * if somebody declared it. Add the fallthrough and every valid glyph name becomes an
+     * "alias", which is the same as answering yes to everything.
+     *
+     * Merged LEFT to right so later presets overwrite earlier ones, which is the same
+     * precedence `lookup()` gets by walking right to left and taking the first hit.
+     * Developer aliases go on last, because they win there too.
+     *
+     * @return array<string, string>
+     */
+    public function vocabulary(): array
+    {
+        $vocabulary = [];
+
+        foreach ($this->getPresets() as $preset) {
+            $vocabulary = array_merge($vocabulary, $preset->icons());
+        }
+
+        /** @var array<string, string> $configured */
+        $configured = config('wirekit.icons.aliases', []);
+
+        return array_merge($vocabulary, $configured);
+    }
+
+    /**
+     * Is this a declared alias, rather than a name that merely resolves?
+     *
+     * Never calls `resolve()` — see `vocabulary()`. A predicate built on a function that
+     * cannot say no would answer yes to everything.
+     */
+    public function isAlias(string $name): bool
+    {
+        return isset($this->vocabulary()[$name]);
+    }
 }

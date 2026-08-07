@@ -8,6 +8,13 @@
     // Livewire method to call optimistically. It receives the FULL new
     // selection as an array. The pill appears immediately and is removed again
     // if the call fails. Absent -> this component renders exactly as before.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
@@ -133,6 +140,7 @@
         'bind' => 'selected',
         'after' => '_afterToggle',
         'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second pick while one is in flight would resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.
@@ -219,7 +227,7 @@
         {{-- Dropdown listbox --}}
         {{-- Teleported to <body>. `position: fixed` escapes a clipping ancestor but NOT
              a stacking context — the same trap the combobox and dropdown panels were in. --}}
-        <template x-teleport="body">
+        <template x-teleport="#wk-overlay-root">
         <div
             x-show="dropdownOpen && filteredOptions.length > 0"
             x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"

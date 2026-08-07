@@ -51,7 +51,7 @@
         {{ $label }}
     </button>
 
-    {{-- Dropdown panel. Wrapped in `<template x-teleport="body">` so the
+    {{-- Dropdown panel. Wrapped in `<template x-teleport="#wk-overlay-root">` so the
          `position: fixed` panel escapes every ancestor `transform` /
          `contain` / `overflow: hidden` container and anchors against the
          true viewport — same pattern as Context-Menu, Modal, Drawer, and
@@ -64,12 +64,12 @@
          position the panel and collect its items) keeps resolving and the
          per-instance ref namespace avoids the cross-menubar collision a
          global `data-wk-menubar-panel` selector would have. --}}
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
         <div
             x-ref="panel-{{ $name }}"
             x-show="activeMenu === '{{ $name }}'"
             {{-- Keydown is ALSO wired here, not only on the menubar root: once
-                 the panel teleports to <body> it is no longer a DOM descendant
+                 the panel teleports out of the document flow it is no longer a DOM descendant
                  of the root, so arrow-key / Escape keydowns fired while a panel
                  item has focus would never bubble to the root's
                  x-on:keydown="handleKeydown". With the handler on the panel too,

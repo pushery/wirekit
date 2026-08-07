@@ -29,6 +29,24 @@
     // layout, and previously reachable only by hiding the header slot at lg and
     // hand-placing a topbar in the default slot, which cost the header slot on
     // desktop entirely and cost every developer the same discovery.
+    //
+    // A `sticky` HEADER STOPS WORKING IN THIS MODE, and the reason is structural rather
+    // than a bug to fix here. `position: sticky` sticks to the nearest scrolling ancestor;
+    // in `content` mode the header's nearest one is the content column, which carries
+    // `overflow-hidden` (see the comment on that element below) and therefore never
+    // scrolls. Nothing sticks to a container that does not move. In `shell` mode the
+    // header is outside that column, so its scrolling ancestor is the page and sticky
+    // behaves as written.
+    //
+    // With `viewport` the question dissolves rather than being answered: the main region
+    // becomes the scroller and the header sits above it without moving at all, so it needs
+    // no sticky. Reaching for `sticky` there is harmless and does nothing.
+    //
+    // (The component tag for that region is deliberately NOT written here. Blade is a text
+    // preprocessor and does not know it is inside a PHP comment — an `x-wirekit::` tag in
+    // one gets COMPILED, and the compiled component construct lands in the middle of this
+    // array. The failure is "Undefined variable $component", which points at the render
+    // rather than at the sentence that caused it.)
     'headerPlacement' => 'shell',
 ])
 

@@ -45,6 +45,13 @@
     // swatch, an arrow-key nudge. A refusal KEEPS the color and says it was not
     // saved: the hex field is typed, and §8 does not allow a rollback to delete
     // what the reader wrote. See the note at the top of this file.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     'name' => null,
     'id' => null,
@@ -222,6 +229,7 @@
         $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
             'value' => $value,
             'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
             'failure' => 'keep',
             'debug' => (bool) config('app.debug'),
             // Two colors settled in quick succession would otherwise resolve by
@@ -247,7 +255,7 @@
         {{-- Resolves because the layer WRAPS this element: `isPending` lives on
              the parent, and a child reads its parent through the scope chain. --}}
         @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
-        {{-- escape is window-scoped: the panel teleports to <body>, so a keydown
+        {{-- escape is window-scoped: the panel teleports out of the document flow, so a keydown
              inside it bubbles to body (not this root) — a non-window escape here
              would never fire while focus is in the panel. --}}
         @keydown.escape.window="open && (open = false)"
@@ -323,12 +331,12 @@
         {{-- Hidden form field — mirrors the picked value in the active format. --}}
         <input type="hidden" x-ref="input" @if($name) name="{{ $name }}" @endif value="{{ $value }}" />
 
-        {{-- Picker panel — teleported to <body> + Floating-UI positioned (see
+        {{-- Picker panel — teleported out of the document flow + Floating-UI positioned (see
              wirekitColorPicker._anchor) so it escapes any clipping/stacking
              ancestor and sits a clear gap below the swatch (no longer flush
              against the trigger circle). click.outside lives HERE (on the panel),
              not the root, because teleporting moves the panel out of the subtree. --}}
-        <template x-teleport="body">
+        <template x-teleport="#wk-overlay-root">
         <div
             x-show="open"
             x-cloak

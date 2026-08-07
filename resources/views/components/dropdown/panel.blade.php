@@ -45,7 +45,7 @@
      this panel's z-index inside itself, and anything painted after it covers the
      menu however high the z-index goes — reported from the documentation site,
      where the open menu rendered under the code block below the preview. --}}
-<template x-teleport="body">
+<template x-teleport="#wk-overlay-root">
 <div
     {{-- Theme marker. A theme dresses surfaces by querying for these, and this
          panel had none — so a Cupertino-style glass map listing it reached
@@ -55,7 +55,12 @@
     data-wk-dropdown-panel
     x-ref="panel"
     x-show="open"
-    x-bind:id="panelId"
+    {{-- The id is set from the factory (`_applyPanelId`), not bound here.
+         `x-bind:id="panelId"` read the value out of the Alpine scope, which is right
+         across the TELEPORT and wrong across a Livewire MORPH: on every morph the
+         binding was re-evaluated in a scope that no longer had `panelId`, and threw.
+         And a JavaScript error during a morph ends the pass — so whatever came after it
+         silently did not run, with nothing turning red. --}}
     x-transition:enter="transition ease-out"
     x-transition:enter-start="opacity-0 scale-95"
     x-transition:enter-end="opacity-100 scale-100"

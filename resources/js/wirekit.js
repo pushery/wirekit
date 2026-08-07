@@ -6,6 +6,7 @@
  */
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
+import { installOverlayRoot } from './utils/overlay-root.js';
 import wirekitChartJs from './components/chart.js';
 import wirekitDropdown from './components/dropdown.js';
 import wirekitSubmenu from './components/submenu.js';
@@ -86,6 +87,11 @@ import wirekitStream from './components/stream.js';
  * (fallback for late-loading scripts or non-Livewire setups).
  */
 function registerComponents() {
+    // The overlay root BEFORE anything else: every teleported panel targets it, and
+    // `x-teleport` treats a selector that matches nothing as fatal — so it has to exist
+    // before Alpine walks the DOM, not merely before the first panel opens.
+    installOverlayRoot();
+
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(Alpine);
 

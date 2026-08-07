@@ -171,7 +171,7 @@
                         </th>
                     </template>
                     @isset($rowActions)
-                        <th scope="col" class="w-10 px-[var(--padding-wk-x-md)]"><span class="sr-only">Actions</span></th>
+                        <th scope="col" class="w-10 px-[var(--padding-wk-x-md)]"><span class="sr-only">{{ __('Actions') }}</span></th>
                     @endisset
                 </tr>
             </thead>

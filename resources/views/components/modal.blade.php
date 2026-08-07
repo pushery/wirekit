@@ -128,7 +128,7 @@
     @endisset
 
     {{-- Modal overlay and dialog — rendered when open --}}
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
         <div x-show="open" x-cloak>
             {{-- Backdrop.
                  Leave transition intentionally omitted: pest-plugin-browser's

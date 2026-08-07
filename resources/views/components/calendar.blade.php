@@ -9,6 +9,13 @@
     // Livewire method to call optimistically. The date appears selected
     // immediately and is put back if the call fails. Absent -> this component
     // renders exactly as it did before, down to the byte.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     'value' => null,
     // Multi-month display — render N consecutive months side by side (1 = the
@@ -158,6 +165,7 @@
         'bind' => 'selected',
         'after' => '_notify',
         'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second pick while one is in flight would resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.
@@ -205,7 +213,7 @@
                  bound straight to the view state so changing them re-renders the
                  grid(s). aria-live mirror keeps the change announced. --}}
             <div class="flex items-center gap-[var(--padding-wk-x-sm)]">
-                <label class="sr-only" for="{{ $name }}-month">Month</label>
+                <label class="sr-only" for="{{ $name }}-month">{{ __('Month') }}</label>
                 <div class="relative">
                     <select id="{{ $name }}-month" x-model.number="viewMonth" aria-label="{{ __('Month') }}" class="wk-field {{ $headerSelectClasses }}">
                         @foreach(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as $i => $monthName)
@@ -219,7 +227,7 @@
                         </svg>
                     </div>
                 </div>
-                <label class="sr-only" for="{{ $name }}-year">Year</label>
+                <label class="sr-only" for="{{ $name }}-year">{{ __('Year') }}</label>
                 <div class="relative">
                     <select id="{{ $name }}-year" x-model.number="viewYear" aria-label="{{ __('Year') }}" class="wk-field {{ $headerSelectClasses }}">
                         <template x-for="y in yearRange" :key="y">

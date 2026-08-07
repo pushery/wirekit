@@ -12,8 +12,20 @@
     // The Livewire method this rating should call, when it should show the new
     // score before the server has agreed to it. Null (the default) leaves this
     // component byte-identical to what it has always rendered.
+    // Extra arguments appended to the optimistic action call, after the new value.
+    // A list of identical controls — one per row — needs to tell the server WHICH row,
+    // and the optimistic layer has always been able to carry that: it spreads `args`
+    // into the call. No component exposed it, so the capability existed and was
+    // unreachable, and the only way to build the commonest optimistic surface there is
+    // was to hand-mount the factory and give up the component.
+    'optimisticArgs' => [],
     'optimistic' => null,
     'label' => null,
+    // `error` was undeclared while `label` was not, so `:error` on a rating
+    // landed in the attribute bag and rendered as a stray HTML attribute — a validation
+    // message the developer wrote, silently not shown, on a control that IS part of forms.
+    'error' => null,
+    'hint' => null,
     'value' => 0,
     'max' => 5,
     'icon' => 'star',
@@ -119,6 +131,7 @@
         'bind' => 'rating',
         'after' => '_notify',
         'action' => $optimistic,
+        'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
         // A second pick while one is in flight would resolve by whichever answer
         // arrives last — network timing, which is both wrong and untestable.
@@ -203,6 +216,9 @@
         @else
             role="radiogroup"
             aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('Rating') }}"
+            {{-- On the GROUP, not on each star: the message is about the rating, and
+                 repeating it on five buttons would read it out five times. --}}
+            @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
         @endif
         class="inline-flex gap-0.5"
     >
@@ -315,5 +331,14 @@
              nothing is announced at all. --}}
         <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
         </div>
+    @endif
+
+    {{-- Same shape as `input`: one region, error winning over hint, announced politely so
+         it does not interrupt what the reader is doing. `aria-describedby` on the control
+         points here — see the radiogroup below. --}}
+    @if($error)
+        <p id="{{ $id }}-error" aria-live="polite" aria-atomic="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
+    @elseif($hint)
+        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

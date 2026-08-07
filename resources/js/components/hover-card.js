@@ -27,9 +27,9 @@ export default function wirekitHoverCard(config = {}) {
 
         open: false,
         _placement: config.placement || 'bottom',
-        _offset: config.offset || 8,
-        _delayShow: config.delayShow || 300,
-        _delayHide: config.delayHide || 200,
+        _offset: config.offset ?? 8,
+        _delayShow: config.delayShow ?? 300,
+        _delayHide: config.delayHide ?? 200,
         _showTimer: null,
         _hideTimer: null,
 

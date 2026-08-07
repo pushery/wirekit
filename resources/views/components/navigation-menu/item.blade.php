@@ -101,7 +101,7 @@
             </svg>
         </button>
 
-        {{-- Flyout panel. Wrapped in `<template x-teleport="body">` so the
+        {{-- Flyout panel. Wrapped in `<template x-teleport="#wk-overlay-root">` so the
              `position: fixed` mega-menu escapes every ancestor `transform` /
              `contain` / `overflow: hidden` container and anchors against the
              true viewport — same pattern as Context-Menu, Modal, and Tooltip.
@@ -116,7 +116,7 @@
              The `before:` hover-bridge is positioned relative to the panel, so
              it still covers the trigger→panel offset gap at the panel's fixed
              location. --}}
-        <template x-teleport="body">
+        <template x-teleport="#wk-overlay-root">
             <div
                 x-ref="panel-{{ $name }}"
                 x-show="activeItem === '{{ $name }}'"

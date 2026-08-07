@@ -34,7 +34,7 @@
     {{-- Teleported to body — escapes any ancestor containing blocks
          (e.g. transform: translateZ(0) in docs PreviewRenderer) so
          fixed positioning resolves against the viewport. --}}
-    <template x-teleport="body">
+    <template x-teleport="#wk-overlay-root">
         <div x-show="active" x-cloak x-ref="overlay">
             {{-- Overlay backdrop --}}
             <div
