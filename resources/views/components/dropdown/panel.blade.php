@@ -53,6 +53,22 @@
          matches zero elements throws nothing and looks identical to one that
          works. See docs/theming.md "Theme markers". --}}
     data-wk-dropdown-panel
+    {{-- THE MORPH KEY, and it is what makes writing the id safe again.
+         Livewire resolves a node's morph identity as `wire:id`, then `wire:key`,
+         then `el.id`. With none of the first two present the id WAS the key — so
+         the moment JavaScript wrote one, the live node's key stopped matching the
+         incoming template's empty one, and a key mismatch does not patch, it
+         SWAPS: `swapElements` inserts a native `cloneNode(true)`, which copies
+         attributes and children and no Alpine expandos. The replacement arrived
+         with no `_x_dataStack`, so `x-show="open"` resolved `open` on the global
+         object — where it is `window.open`, a function, and therefore truthy.
+         The panel showed itself, and applying a native function with the scope
+         proxy as `this` raised `Illegal invocation`.
+         A STATIC value on purpose. The key only has to be the same on both sides
+         of one comparison — the morph patches a teleported node against its own
+         counterpart, one to one — so it must NOT carry the per-render id, which
+         is exactly the value that cannot agree across two renders. --}}
+    wire:key="wk-dropdown-panel"
     x-ref="panel"
     x-show="open"
     {{-- The id is set from the factory (`_applyPanelId`), not bound here.

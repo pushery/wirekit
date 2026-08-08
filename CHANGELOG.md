@@ -10,6 +10,22 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.28.0] — 2026-08-08
+
+**Minor — the dropdown defect 2.27.0 shipped with, and the tooling that could not see it.**
+
+Nothing about how you write a dropdown changes; the fix is entirely inside the component.
+
+### Fixed
+
+- **One more deep link in the public API map pointed at nothing.** The Alpine animation helper's entry aimed at  while the page renders a heading that slugs to . Same shape as the eleven corrected in 2.27.0, one group over — which is why the check now reads every fragment the manifest publishes rather than one group of them.
+
+- **A dropdown trigger announces a panel that is actually there — and writing that relationship no longer paints a menu nobody opened.** Both halves were broken at once, and neither could be fixed alone.
+
+  Since 2.27.0 the panel's `aria-controls` pointed at an element that is not in the document until the panel first opens, so a screen reader following the reference landed nowhere. The obvious repair — write the id — made a Livewire update replace the panel with a copy that had lost its Alpine scope, at which point the expression deciding whether the panel is visible resolved against the browser's global object instead. `open` is a real function there, a function is truthy, and a menu nobody had opened appeared on the page.
+
+  The panel now carries a stable key of its own, so a Livewire update patches it in place rather than replacing it, and the id can be written safely. Both halves are covered by tests that were watched failing before the fix and passing after. [Dropdown](https://docs.wirekit.app/components/dropdown)
+
 ## [2.27.0] — 2026-08-06
 
 **Minor — the whole triage, and what the tickets did not know.**

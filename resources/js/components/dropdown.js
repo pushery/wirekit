@@ -44,7 +44,21 @@ export default function wirekitDropdown(config = {}) {
             // Assigning it imperatively removes the last scope-dependent expression from
             // the teleported node: it runs on init, re-runs when the morph re-initializes
             // this component, and cannot be re-evaluated in a scope it does not belong to.
-            this._applyPanelId();
+            // AFTER the tick, not during init(). Alpine walks a component's
+            // children only once the parent's init() has returned, and the panel
+            // lives inside a child `<template x-teleport>` — so at init() time
+            // `$refs.panel` is not registered yet, the guard in _applyPanelId()
+            // takes its silent branch, and the id is never written. Every
+            // trigger's `aria-controls` then announces a relationship to an
+            // element that is not in the document.
+            //
+            // This was tried once before and reverted, because writing the id
+            // made the panel the morph's key and a mismatch swapped it for a
+            // scopeless clone. The panel's `wire:key` is what makes it safe now:
+            // the key no longer falls back to the id, both sides of the morph
+            // agree, and the node is patched rather than replaced. Removing
+            // either half brings the other's defect back.
+            this.$nextTick(() => this._applyPanelId());
 
             // Cleanup on Livewire SPA navigation
             this._navCleanup = () => { this.open = false; };
