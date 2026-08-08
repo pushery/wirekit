@@ -547,7 +547,13 @@ class ExportApiMapCommand extends Command
                 'trigger_enum' => ['viewport', 'click', 'manual'],
                 'duration_enum' => ['fast', 'normal', 'slow'],
                 'respects_reduced_motion' => true,
-                'docs_url' => WireKit::DOCS_URL.'/animations#wirekit-animate',
+                // The heading is `## The `wirekitAnimate` Alpine helper`, which
+                // slugs with its article and its trailing words — the helper's
+                // own name is not the anchor. Same mistake the CLI group made,
+                // one group over, and the reason the drift guard below now reads
+                // every fragment the manifest publishes rather than only that
+                // group's.
+                'docs_url' => WireKit::DOCS_URL.'/animations#the-wirekitanimate-alpine-helper',
                 'blade_wrapper' => '<x-wirekit::reveal preset="…">',
             ],
             [
