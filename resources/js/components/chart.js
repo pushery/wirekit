@@ -360,7 +360,11 @@ export default function wirekitChartJs(config) {
             // on different elements. Tailwind's dark variant matches either.
             const observerOpts = { attributes: true, attributeFilter: ['class'] };
             this._darkModeObserver.observe(document.documentElement, observerOpts);
-            this._darkModeObserver.observe(document.body, observerOpts);
+            // `observe(null)` throws, and the throw would leave the chart uninitialized
+            // rather than merely un-themed. <html> is always there; <body> may not be.
+            if (document.body) {
+                this._darkModeObserver.observe(document.body, observerOpts);
+            }
         },
 
         /**
@@ -526,7 +530,7 @@ export default function wirekitChartJs(config) {
         _applyThemeToChartOptions(chart, colors, fontFamily) {
             const options = chart.options;
             const isDark = document.documentElement.classList.contains('dark')
-                || document.body.classList.contains('dark');
+                || document.body?.classList.contains('dark') === true;
 
             // Global text color + font family
             options.color = colors.textMuted;
@@ -615,7 +619,7 @@ export default function wirekitChartJs(config) {
          */
         _applyGlobalDefaults(colors, fontFamily) {
             const isDark = document.documentElement.classList.contains('dark')
-                || document.body.classList.contains('dark');
+                || document.body?.classList.contains('dark') === true;
 
             // Global text color and font
             Chart.defaults.color = colors.textMuted;

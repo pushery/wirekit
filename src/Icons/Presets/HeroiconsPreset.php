@@ -53,6 +53,37 @@ final class HeroiconsPreset implements IconPreset
             'home' => 'heroicon-m-home',
             'moon' => 'heroicon-m-moon',
             'sun' => 'heroicon-m-sun',
+
+            // Six words the vocabulary was missing, added together because they were
+            // reported together — the eighth report of that shape, which is the finding
+            // behind the finding.
+            //
+            // `system` is the third theme state. `sun` and `moon` were both here and
+            // "follows the system" was not, so a theme control could name two of its
+            // three positions. No icon family spells the concept the same way
+            // (computer-desktop / monitor / device-desktop), so the WORD is ours and the
+            // glyph is each set's own — which is what these aliases are for.
+            //
+            // Every target below was verified against the real set: Heroicons from the
+            // installed package, the other three from each package's full recursive git
+            // tree. A directory listing was tried first and is useless here — GitHub caps
+            // it at 1000 entries, so "absent" would have meant nothing.
+            //
+            // `article` was proposed with these and deliberately left out: it needs two
+            // substitutions and "editorial unit" is the most arguable of the seven.
+            'system' => 'heroicon-m-computer-desktop',
+            'code' => 'heroicon-m-code-bracket',
+            'key' => 'heroicon-m-key',
+            'rocket-launch' => 'heroicon-m-rocket-launch',
+            'chart-line' => 'heroicon-m-presentation-chart-line',
+            'folders' => 'heroicon-m-folder',
+
+            // A seventh, and it came from the docs rather than from a report: five
+            // blueprint pages reached for `pulse` and two of them meant a telephone
+            // ("Voice call", "Call"). The vocabulary had no word for one, so the
+            // pages borrowed a name that does not resolve on the default config at
+            // all — which is how a missing word turns into a broken page.
+            'phone' => 'heroicon-m-phone',
             'book-open' => 'heroicon-m-book-open',
             'sign-out' => 'heroicon-m-arrow-right-on-rectangle',
             'megaphone' => 'heroicon-m-megaphone',
@@ -119,6 +150,17 @@ final class HeroiconsPreset implements IconPreset
             'badge' => 'heroicon-m-identification',
             'layers' => 'heroicon-m-square-3-stack-3d',
 
+            // `stack` is the concept `layers` already names, shipped as its own
+            // word because that is the word applications write — the navigation
+            // above reached for `stack` and got a synonym it does not use.
+            // Undeclared, the name did not fail cleanly either: Phosphor calls its
+            // own glyph `stack`, so the raw-name fallthrough answered it under that
+            // one family and threw under the rest, which reads as "the icon broke
+            // when we changed preset" rather than as a word nobody promised. Two
+            // spellings on one glyph is what this vocabulary already does for
+            // settings/gear, book/book-open and billing/credit-card.
+            'stack' => 'heroicon-m-square-3-stack-3d',
+
             // Notification, labeling, mail and media — concepts every
             // administrative interface has, and none of them had a word here.
             // A page that needed one reached for the icon package's own glyph
@@ -137,6 +179,14 @@ final class HeroiconsPreset implements IconPreset
             'truck' => 'heroicon-m-truck',
             'package' => 'heroicon-m-archive-box',
             'barcode' => 'heroicon-m-qr-code',
+            // Heroicons ships no register, till or drawer glyph in any style — measured
+            // against the installed set, which has `calculator` and nothing nearer. A cash
+            // register is a keypad-and-display device, so the substitution reads, and the
+            // alternative is worse than a near miss: a name off the contract resolves
+            // through whichever family happens to be active, so it survives until the day
+            // somebody switches preset — and then it is missing from the navigation of
+            // every signed-in page at once. Same trade already taken one line above.
+            'cash-register' => 'heroicon-m-calculator',
             'user-add' => 'heroicon-m-user-plus',
             'user-remove' => 'heroicon-m-user-minus',
             'building' => 'heroicon-m-building-office',

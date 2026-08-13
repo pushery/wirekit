@@ -62,7 +62,24 @@ class DoctorPropsCommand extends Command
         $findings = [];
         $scanned = 0;
 
-        foreach ($this->collectBladeFiles($path) as $file) {
+        // The walk is hoisted so its emptiness can be answered separately from the
+        // finding set. Reading zero files and reporting "no unknown props" is a
+        // pass about nothing — the same failure `wirekit:csp-audit` refuses one
+        // command over, and the reason it refuses applies here word for word: a
+        // linter that read nothing and said "clean" is worse than no linter,
+        // because you stop looking.
+        $bladeFiles = $this->collectBladeFiles($path);
+
+        if ($bladeFiles === []) {
+            $this->error(sprintf('Found no Blade templates in %s.', $path));
+            $this->line('');
+            $this->line('That is a failure rather than a pass: a linter that read nothing');
+            $this->line('and reported "clean" is worse than no linter. Check the path.');
+
+            return self::FAILURE;
+        }
+
+        foreach ($bladeFiles as $file) {
             $contents = (string) file_get_contents($file);
 
             if (! str_contains($contents, '<x-wirekit::')) {
@@ -104,6 +121,19 @@ class DoctorPropsCommand extends Command
         }
 
         if ($findings === []) {
+            // Two different clean results, and collapsing them is how the first one
+            // hides. Templates exist but none of them use a WireKit component: the
+            // run is honest, there was simply nothing in scope — so it succeeds and
+            // says the count out loud rather than implying it checked something.
+            if ($scanned === 0) {
+                $this->info(sprintf(
+                    'Scanned %d Blade template(s); none of them use a WireKit component, so there was nothing to check.',
+                    count($bladeFiles),
+                ));
+
+                return self::SUCCESS;
+            }
+
             $this->info(sprintf('No unknown props found across %d template(s) using WireKit components.', $scanned));
 
             return self::SUCCESS;

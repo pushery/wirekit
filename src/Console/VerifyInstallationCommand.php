@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Console;
 use BaconQrCode\Renderer\ImageRenderer;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Support\DirectoryHash;
 use Pushery\WireKit\Support\TailwindVersion;
@@ -752,6 +753,20 @@ class VerifyInstallationCommand extends Command
     private function checkFontAssets(): void
     {
         $fontConfig = config('wirekit.fonts', []);
+
+        // Reported before the publish state, and deliberately not gated on a
+        // font being configured: a typo here is corrected to `swap` while
+        // serving, so it produces no error anywhere and no visible difference
+        // from having asked for `swap` on purpose. The only way to learn the
+        // value never took is to be told.
+        $rawDisplay = $fontConfig['display'] ?? FontCss::DEFAULT;
+
+        if (! is_string($rawDisplay) || ! in_array(strtolower(trim($rawDisplay)), FontCss::VALID, true)) {
+            $shown = is_string($rawDisplay) ? $rawDisplay : gettype($rawDisplay);
+            $this->reportWarn("wirekit.fonts.display is '{$shown}', which is not a font-display value — falling back to '".FontCss::DEFAULT."'");
+            $this->line('  Valid: '.implode(', ', FontCss::VALID));
+        }
+
         $hasCustomFont = false;
 
         foreach (['sans', 'serif', 'mono'] as $category) {
@@ -781,12 +796,29 @@ class VerifyInstallationCommand extends Command
                 // state had no signal. Compare the published bytes against the
                 // bundled ones, the same md5 check checkAssetFreshness runs for
                 // wirekit.css / wirekit.js.
-                $stale = $this->staleFontFamilies();
+                // Named before the byte compare, because a display mismatch also
+                // shows up there — and "outdated" would send someone looking for
+                // an upgrade they never missed. Same fix, precise cause.
+                $mismatches = $this->fontDisplayMismatches();
+                $mismatchedKeys = array_column($mismatches, 'key');
+
+                if ($mismatches !== []) {
+                    $configured = FontCss::display();
+                    $named = implode(', ', array_map(
+                        static fn (array $m): string => "{$m['key']} declares {$m['declared']}",
+                        $mismatches,
+                    ));
+                    $this->reportWarn("Published fonts do not carry the configured font-display '{$configured}' ({$named})");
+                    $this->line('  Cause: `vendor:publish` copies the files verbatim, so they keep the shipped default.');
+                    $this->line('  Fix: php artisan wirekit:publish-fonts --force');
+                }
+
+                $stale = array_values(array_diff($this->staleFontFamilies(), $mismatchedKeys));
 
                 if ($stale !== []) {
                     $this->reportWarn('Font assets are outdated — the bundled release differs from the published copy ('.implode(', ', $stale).')');
                     $this->line('  Fix: php artisan wirekit:publish-fonts --force');
-                } else {
+                } elseif ($mismatches === []) {
                     $this->reportPass('Font assets published ('.count($cssFiles).' font CSS files)');
                 }
             } elseif ($this->isPackageDefaultFontConfig($fontConfig)) {
@@ -847,12 +879,66 @@ class VerifyInstallationCommand extends Command
             $source = __DIR__.'/../../resources/fonts/'.$relative;
             $target = public_path('vendor/wirekit/fonts/'.$relative);
 
-            if (is_dir($target) && ! DirectoryHash::matches($source, $target)) {
+            // The transform is what `wirekit:publish-fonts` writes, not what the
+            // package ships: a stylesheet gets `wirekit.fonts.display` substituted
+            // on the way out. Comparing against the raw source instead would call
+            // every non-default `font-display` permanently stale, and the fix it
+            // printed would not change the answer.
+            if (is_dir($target) && ! DirectoryHash::matches($source, $target, FontCss::publishTransform())) {
                 $stale[] = $preset->key;
             }
         }
 
         return $stale;
+    }
+
+    /**
+     * Configured families whose published stylesheet declares a different
+     * `font-display` than the config asks for.
+     *
+     * This is the one path `wirekit.fonts.display` cannot reach on its own: a
+     * plain `vendor:publish --tag=wirekit-fonts` is a framework-side file copy,
+     * so those files keep the `swap` the package ships no matter what the config
+     * says. Reporting it is what keeps the key a switch instead of a decoration
+     * — the failure is otherwise completely silent, because nothing breaks when
+     * a font loads with the wrong display, it just does not do what was asked.
+     *
+     * @return list<array{key: string, declared: string}>
+     */
+    private function fontDisplayMismatches(): array
+    {
+        $configured = FontCss::display();
+        $mismatched = [];
+
+        foreach (['sans', 'serif', 'mono'] as $category) {
+            $key = config("wirekit.fonts.{$category}");
+
+            if ($key === null || $key === '') {
+                continue;
+            }
+
+            $preset = FontRegistry::get((string) $key);
+
+            if ($preset === null) {
+                continue;
+            }
+
+            $published = public_path($preset->publishedCssPath());
+
+            if (! is_file($published)) {
+                continue;
+            }
+
+            $declared = FontCss::declaredDisplays((string) file_get_contents($published));
+
+            // A stylesheet declaring none is not a disagreement — there is no
+            // promise to break. Only a value that is present and different is.
+            if ($declared !== [] && $declared !== [$configured]) {
+                $mismatched[] = ['key' => $preset->key, 'declared' => implode('/', $declared)];
+            }
+        }
+
+        return $mismatched;
     }
 
     /**
@@ -1004,6 +1090,74 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
+     * Does the app's own JavaScript assign a browser global anywhere?
+     *
+     * Four things the previous one-line regex got wrong, all of them reported by
+     * a developer whose working installation was told it was broken:
+     *
+     *   * `window.X ??= …` did not match. `\s*=` wants an `=` directly after the
+     *     whitespace and finds `?`, so the idiomatic "assign unless something
+     *     already did" form — exactly what a shared entry point uses — read as no
+     *     assignment at all. `||=` and `&&=` have the same shape.
+     *   * `globalThis.X` and `window['X']` did not match, though both are the
+     *     same assignment written by someone following a different house style.
+     *   * Only `.js` was walked, so a TypeScript entry point was invisible.
+     *   * And in the other direction: `window.X == null` DID match, because the
+     *     first `=` of `==` satisfied the pattern. A comparison was read as an
+     *     assignment, which is the failure that produces a PASS over an app that
+     *     never assigns anything — the more expensive of the two mistakes.
+     *
+     * Comments are stripped first, for the reason `checkChartJsRegistration()`
+     * already gives: a line someone commented out while debugging is evidence of
+     * the opposite of what it says.
+     *
+     * Still a heuristic, so still a WARN at the call site. An app may assign the
+     * global from somewhere this scan cannot see, and a check that FAILED on that
+     * would be confidently wrong about a working installation.
+     */
+    private function assignsBrowserGlobal(string $globalName): bool
+    {
+        $jsRoot = base_path('resources/js');
+
+        if (! is_dir($jsRoot)) {
+            return false;
+        }
+
+        $quoted = preg_quote($globalName, '/');
+
+        // `(?!=)` after the `=` is what refuses `==` and `===`. The optional
+        // `??` / `||` / `&&` in front is what accepts the logical-assignment
+        // forms without also accepting a bare `?`.
+        $pattern = '/(?:window|globalThis|self)\s*(?:\.\s*'.$quoted.'|\[\s*[\'"]'.$quoted.'[\'"]\s*\])\s*(?:\?\?|\|\||&&)?=(?!=)/';
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($jsRoot, \RecursiveDirectoryIterator::SKIP_DOTS)
+        );
+
+        foreach ($iterator as $entry) {
+            if (! $entry->isFile()) {
+                continue;
+            }
+
+            $extension = strtolower($entry->getExtension());
+
+            if (! in_array($extension, ['js', 'mjs', 'cjs', 'ts', 'mts', 'cts'], true)) {
+                continue;
+            }
+
+            $source = (string) file_get_contents($entry->getPathname());
+            $source = (string) preg_replace('#//[^\n]*#', '', $source);
+            $source = (string) preg_replace('#/\*.*?\*/#s', '', $source);
+
+            if (preg_match($pattern, $source) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Three-step ApexCharts adapter check:
      *   1. Confirm the apexcharts npm package is installed (FAIL on absence —
      *      otherwise the chart renders blank with a console.error).
@@ -1030,8 +1184,12 @@ class VerifyInstallationCommand extends Command
             if (! isset($deps['apexcharts'])) {
                 $this->reportFail(
                     'apexcharts npm package not found in package.json. '
-                    .'Install with `npm install apexcharts` and import it in resources/js/app.js: '
-                    .'`import ApexCharts from "apexcharts"; window.ApexCharts = ApexCharts;`'
+                    .'Install it with `npm install apexcharts`, then assign the global: '
+                    .'`import ApexCharts from "apexcharts"; window.ApexCharts = ApexCharts;`. '
+                    .'In your global entry point that is the simple case, and it puts roughly '
+                    .'850 KB on every page including the ones without a chart — for an app '
+                    .'where charts are the exception, import it in the chart route\'s own '
+                    .'entry instead and assign the global there.'
                 );
             } else {
                 $this->reportPass('apexcharts npm package installed');
@@ -1051,25 +1209,7 @@ class VerifyInstallationCommand extends Command
         // A heuristic over the app's own JS, so it WARNS rather than fails: a project may
         // assign the global from a file this scan does not know about, and a check that
         // failed on that would be wrong about a working installation.
-        $assignmentFound = false;
-        $jsRoot = base_path('resources/js');
-
-        if (is_dir($jsRoot)) {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($jsRoot, \RecursiveDirectoryIterator::SKIP_DOTS)
-            );
-
-            foreach ($iterator as $entry) {
-                if (! $entry->isFile() || ! str_ends_with($entry->getFilename(), '.js')) {
-                    continue;
-                }
-
-                if (preg_match('/window\.ApexCharts\s*=/', (string) file_get_contents($entry->getPathname())) === 1) {
-                    $assignmentFound = true;
-                    break;
-                }
-            }
-        }
+        $assignmentFound = $this->assignsBrowserGlobal('ApexCharts');
 
         if ($assignmentFound) {
             $this->reportPass('window.ApexCharts is assigned in your JavaScript');
@@ -1078,7 +1218,9 @@ class VerifyInstallationCommand extends Command
                 'no `window.ApexCharts = …` assignment found under resources/js. The adapter reads '
                 .'that global and nothing sets it for you, so every chart renders blank with no error. '
                 .'Add `import ApexCharts from "apexcharts"; window.ApexCharts = ApexCharts;` to your '
-                .'entry point — or ignore this if you assign it somewhere this scan cannot see.'
+                .'entry point — or to the chart route\'s own entry, if you would rather not put '
+                .'850 KB on pages that have no chart. Ignore this if you assign it somewhere this '
+                .'scan cannot see.'
             );
         }
 
@@ -1712,12 +1854,28 @@ class VerifyInstallationCommand extends Command
      */
     private function checkRootDarkSymmetry(): void
     {
+        // Every path out of this check now SAYS something, and the four that used
+        // to return in silence are the reason. The doctor's contract is that every
+        // check emits at least one observable line — the note on the Alpine-hygiene
+        // check states it, and a silent return there once made a test flaky, which
+        // is the cheap version of the same problem.
+        //
+        // The expensive version is what a developer sees: a check that vanishes and
+        // one that passes look identical in the output, so an app whose stylesheet
+        // this check cannot read is told nothing at all — not that it is fine, not
+        // that it was skipped, not why. That shape is common rather than exotic: an
+        // application using the `@theme` block from the theming guide has no `:root`
+        // rule of its own and lands here every time.
         $appCss = resource_path('css/app.css');
         if (! file_exists($appCss)) {
+            $this->reportInfo('Token symmetry: skipped — no resources/css/app.css to read');
+
             return;
         }
         $content = file_get_contents($appCss);
         if ($content === false) {
+            $this->reportInfo('Token symmetry: skipped — resources/css/app.css could not be read');
+
             return;
         }
         // Strip CSS comments first so a `:root {` / `.dark {` written
@@ -1728,9 +1886,17 @@ class VerifyInstallationCommand extends Command
         $darkBlock = $this->extractCssBlock($content, '.dark');
 
         if ($rootBlock === '' || $darkBlock === '') {
-            // No :root or no .dark — no asymmetry to report. The user
+            // No :root or no .dark — no asymmetry to report. The developer
             // either has neither (clean default) or has only :root with
             // no dark intention (also fine — they're light-only).
+            //
+            // Named rather than merged into one line, because the two say different
+            // things: no `:root` means this check has nothing to compare, and no
+            // `.dark` means there is no dark theme for it to be asymmetric with.
+            $this->reportInfo($rootBlock === ''
+                ? 'Token symmetry: skipped — no `:root { … }` rule in resources/css/app.css'
+                : 'Token symmetry: skipped — no `.dark { … }` rule in resources/css/app.css (light-only theme)');
+
             return;
         }
 
@@ -1738,6 +1904,8 @@ class VerifyInstallationCommand extends Command
         $darkTokens = $this->parseColorTokens($darkBlock);
 
         if ($rootTokens === []) {
+            $this->reportInfo('Token symmetry: skipped — the `:root` rule overrides no `--color-wk-*` token');
+
             return;
         }
 
@@ -1921,34 +2089,149 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Extract the body of a CSS rule like `:root { ... }` or `.dark { ... }`.
-     * Returns the inner text (without the wrapping braces) or empty string.
-     * Naive — assumes no rule nesting; developer overrides almost never nest.
+     * Extract the bodies of every CSS rule whose selector list names
+     * `$selector` — `:root { … }`, `.dark { … }`, or a shared head like
+     * `:root, .dark { … }`, which counts for BOTH sides. Returns the inner
+     * text without the wrapping braces, or an empty string when no rule
+     * names the selector.
+     *
+     * Anchored at the rule head rather than found with strpos(), because a
+     * substring search matches those characters wherever they occur. `.dark`
+     * occurs inside `html.dark` and inside `.dark-mode` — and, the case that
+     * made this check worse than merely noisy, inside
+     * `@custom-variant dark (&:where(.dark, .dark *));`, the line the
+     * integration guide tells every developer to write. That at-rule carries
+     * no braces of its own, so the old search anchored inside it and then
+     * walked forward to the NEXT rule's opening brace: on the documented
+     * setup — the `@custom-variant` line, then `:root`, then `.dark` — it
+     * handed back the `:root` body as the dark block, the two token sets
+     * came out identical by construction, and the asymmetry check could
+     * never fire for anyone who had followed the guide. The same search
+     * invented asymmetry for anyone whose theme class sits on `<html>`.
+     * Both directions, one cause: the selector was never anchored.
+     *
+     * Every matching block is concatenated rather than only the first, so a
+     * `:root` split across two blocks is measured whole. The joining `;`
+     * stops the last declaration of one body from fusing with the first of
+     * the next, since parseColorTokens() splits on `;`.
+     *
+     * Non-matching blocks are descended into rather than stepped over,
+     * which is what keeps `@layer theme { .dark { … } }` — the shape every
+     * theme preset in the theming guide prints — reachable. A MATCHED block
+     * is consumed whole and not re-entered: a rule nested inside `:root` is
+     * a descendant rule (`:root .dark` styles elements inside the root, not
+     * the root), so reading its declarations as root-level overrides would
+     * answer a different question than the one the check asks.
      */
     private function extractCssBlock(string $css, string $selector): string
     {
-        $pos = strpos($css, $selector);
-        if ($pos === false) {
-            return '';
-        }
-        $brace = strpos($css, '{', $pos);
-        if ($brace === false) {
-            return '';
-        }
-        $depth = 1;
-        $i = $brace + 1;
-        $start = $i;
+        $out = '';
         $len = strlen($css);
-        while ($i < $len && $depth > 0) {
-            if ($css[$i] === '{') {
-                $depth++;
-            } elseif ($css[$i] === '}') {
-                $depth--;
+        $headStart = 0;
+        $i = 0;
+
+        while ($i < $len) {
+            $char = $css[$i];
+
+            // A `;` or `}` terminates whatever preceded it, so the next rule
+            // head begins on the far side. Without this the head would
+            // accumulate every declaration and brace-less at-rule since the
+            // last block boundary — which is precisely how the
+            // `@custom-variant` line used to end up attached to `:root`.
+            if ($char === ';' || $char === '}') {
+                $headStart = $i + 1;
+                $i++;
+
+                continue;
             }
-            $i++;
+
+            if ($char !== '{') {
+                $i++;
+
+                continue;
+            }
+
+            $head = trim(substr($css, $headStart, $i - $headStart));
+
+            // Walk to the brace that closes this block, counting nesting.
+            $depth = 1;
+            $bodyStart = $i + 1;
+            $j = $bodyStart;
+            while ($j < $len && $depth > 0) {
+                if ($css[$j] === '{') {
+                    $depth++;
+                } elseif ($css[$j] === '}') {
+                    $depth--;
+                }
+                $j++;
+            }
+            // A truncated stylesheet has no closing brace to land on; take
+            // the remainder rather than dropping its last character.
+            $bodyEnd = $depth === 0 ? $j - 1 : $len;
+
+            if ($this->selectorListMatches($head, $selector)) {
+                $out .= substr($css, $bodyStart, $bodyEnd - $bodyStart).';';
+                $i = $j;
+                $headStart = $i;
+
+                continue;
+            }
+
+            // Not ours — step INSIDE the block so a rule nested in a
+            // container at-rule stays reachable.
+            $i = $bodyStart;
+            $headStart = $i;
         }
 
-        return substr($css, $start, ($i - 1) - $start);
+        return $out;
+    }
+
+    /**
+     * True when a rule head names `$selector` as a whole entry of its
+     * selector list. At-rule heads (`@media`, `@layer`, `@supports`,
+     * `@custom-variant`) never match — they are containers, and
+     * extractCssBlock() reaches what is inside them by descending instead.
+     *
+     * A root-qualified compound counts as the same element: `html.dark`,
+     * `body.dark` and `:root.dark` are all the dark root written the long
+     * way, and a custom property declared on any of them inherits to the
+     * whole document exactly as one declared on `.dark` does. The
+     * DESCENDANT form (`.dark .prose`) deliberately does not count — those
+     * declarations apply to `.prose`, not to the root, so reading them as
+     * the dark theme's token set would answer a different question than the
+     * one the check asks.
+     *
+     * A comma inside a functional selector (`:root:not(.a, .b)`) splits an
+     * entry that should have stayed whole. That yields a non-match, which is
+     * the safe direction here: the check goes quiet rather than measuring
+     * the wrong block and naming tokens that are not missing.
+     */
+    private function selectorListMatches(string $head, string $selector): bool
+    {
+        if ($head === '' || str_starts_with($head, '@')) {
+            return false;
+        }
+
+        foreach (explode(',', $head) as $entry) {
+            // Collapse the whitespace a multi-line selector list carries, so
+            // an entry written on its own indented line still compares as
+            // the bare selector.
+            $entry = trim((string) preg_replace('/\s+/', ' ', $entry));
+
+            if ($entry === $selector) {
+                return true;
+            }
+
+            if ($selector === '.dark' && preg_match('/^(?:html|body|:root)\.dark$/', $entry) === 1) {
+                return true;
+            }
+
+            if ($selector === ':root' && $entry === 'html:root') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

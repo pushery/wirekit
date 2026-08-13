@@ -22,7 +22,9 @@
     // A standalone single disclosure: one trigger + one collapsible region. Unlike
     // <x-wirekit::accordion> there is no card chrome and no group coordination — it is
     // the bare WAI-ARIA Disclosure pattern (button[aria-expanded] controls a region).
-    // For smooth height animation we lean on Alpine's x-collapse plugin (already bundled).
+    // For smooth height animation we lean on Alpine's x-collapse plugin, which every
+    // full-catalog WireKit bundle registers. It says so because the sentence used to
+    // be a guess: nothing imported the plugin, and the claim is why nobody checked.
     $uid = 'wk-collapsible-'.Str::random(6);
     $openBool = (bool) $open;
 

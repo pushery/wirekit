@@ -3,6 +3,7 @@
      shown early. Measured rather than asserted: the guard refutes this reason for
      any file that renders one. --}}
 @php
+    use Pushery\WireKit\Fonts\FontCss;
     use Pushery\WireKit\Fonts\FontPreset;
     use Pushery\WireKit\Fonts\FontRegistry;
 
@@ -36,11 +37,37 @@
     $warnMissing = fn (?FontPreset $preset) => $preset
         && ! file_exists(public_path($preset->publishedCssPath()));
 
+    // The configured font-display, and whether the published copy actually
+    // carries it. A plain `vendor:publish` copies the stylesheet verbatim, so it
+    // keeps the `swap` the package ships however the config reads — and nothing
+    // about that fails: the font still loads, just not the way it was asked to.
+    // The comment is the only thing that would ever say so on this path, and it
+    // is the same shape the unpublished-font case already uses.
+    $fontDisplay = FontCss::display();
+
+    $displayMismatch = function (?FontPreset $preset) use ($fontDisplay): bool {
+        if (! $preset) {
+            return false;
+        }
+
+        $published = public_path($preset->publishedCssPath());
+
+        return file_exists($published)
+            && ! FontCss::matchesConfiguredDisplay((string) file_get_contents($published), $fontDisplay);
+    };
+
     // The URL to load a preset's CSS from: the published copy when it exists,
     // otherwise the package route. Cache-busted by the file's own mtime so a
     // `composer update` invalidates it rather than serving last month's CSS from
     // a one-year immutable cache.
-    $fontHref = function (FontPreset $preset): string {
+    //
+    // On the route the font-display joins that cache key, because the route
+    // substitutes it while serving: same file, same mtime, different bytes.
+    // Without it the immutable cache would keep answering with the previous
+    // choice for a year, and the config would look like it did nothing. The
+    // published path needs no such suffix — there the value is baked into the
+    // file, so a re-publish changes the mtime on its own.
+    $fontHref = function (FontPreset $preset) use ($fontDisplay): string {
         $published = public_path($preset->publishedCssPath());
 
         if (file_exists($published)) {
@@ -50,7 +77,7 @@
         $source = __DIR__.'/../../fonts/'.$preset->cssFile;
         $version = is_file($source) ? filemtime($source) : time();
 
-        return url('wirekit/fonts/'.$preset->cssFile).'?v='.$version;
+        return url('wirekit/fonts/'.$preset->cssFile).'?v='.$version.'-'.$fontDisplay;
     };
 @endphp
 
@@ -60,6 +87,9 @@
     @if($warnMissing($sansPreset))
     <!-- WireKit: Font '{{ $fontConfig['sans'] }}' is served through PHP because it was never published. It works, but a static file is faster. Run: php artisan wirekit:publish-fonts -->
     @endif
+    @if($displayMismatch($sansPreset))
+    <!-- WireKit: Font '{{ $fontConfig['sans'] }}' was published with a different font-display than wirekit.fonts.display ('{{ $fontDisplay }}') asks for. A plain vendor:publish copies the file verbatim. Run: php artisan wirekit:publish-fonts --force -->
+    @endif
 @endif
 
 @if($serifPreset)
@@ -67,12 +97,18 @@
     @if($warnMissing($serifPreset))
     <!-- WireKit: Font '{{ $fontConfig['serif'] }}' is served through PHP because it was never published. It works, but a static file is faster. Run: php artisan wirekit:publish-fonts -->
     @endif
+    @if($displayMismatch($serifPreset))
+    <!-- WireKit: Font '{{ $fontConfig['serif'] }}' was published with a different font-display than wirekit.fonts.display ('{{ $fontDisplay }}') asks for. A plain vendor:publish copies the file verbatim. Run: php artisan wirekit:publish-fonts --force -->
+    @endif
 @endif
 
 @if($monoPreset)
     <link rel="stylesheet" href="{{ $fontHref($monoPreset) }}">
     @if($warnMissing($monoPreset))
     <!-- WireKit: Font '{{ $fontConfig['mono'] }}' is served through PHP because it was never published. It works, but a static file is faster. Run: php artisan wirekit:publish-fonts -->
+    @endif
+    @if($displayMismatch($monoPreset))
+    <!-- WireKit: Font '{{ $fontConfig['mono'] }}' was published with a different font-display than wirekit.fonts.display ('{{ $fontDisplay }}') asks for. A plain vendor:publish copies the file verbatim. Run: php artisan wirekit:publish-fonts --force -->
     @endif
 @endif
 

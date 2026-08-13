@@ -34,6 +34,11 @@
         // the columns just compress (no horizontal scroll, sticky-column inert). Use
         // the natural content width (min 100%) so a wide table overflows + scrolls.
         $stickyColumn ? 'min-w-full w-max' : 'w-full',
+        // As a flex item the table would shrink to fit the scroller and never
+        // overflow, which removes the scrolling the sentinels are watching for.
+        // `flex-shrink` is inert outside a flex container, so the non-responsive
+        // branch renders exactly as before.
+        $responsive ? 'shrink-0' : '',
         'border-collapse',
         'text-left',
         'font-[family-name:var(--font-wk-sans)]',
@@ -133,15 +138,29 @@
      The apparatus for this shipped in 2.24 and no component template used it — the CSS
      (`wk-scroll-shadow-start` / `-end`) and the Alpine factory with its inline-axis
      sentinels were all already there. This is the wiring, not new machinery. --}}
-<div class="relative" x-data="wirekitStickyPanelShadows()">
+{{-- `w-full min-w-0`: making the scroller a flex row gives it a max-content
+     contribution its block ancestors then inherit, and a wrapper without an
+     explicit minimum resolves `min-width: auto` to that content width — so a
+     14-column table pushed this whole wrapper 449px past a phone-width docs
+     column. Measured, not reasoned: the frame-escape sweep named this element. --}}
+<div class="relative w-full min-w-0" x-data="wirekitStickyPanelShadows()">
 <div
     x-ref="scroller"
-    class="w-full min-w-0 overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'max-h-96 overflow-y-auto' : '' }}"
+    {{-- `flex` is load-bearing, not cosmetic. The sentinels are block elements, so in
+         the default block scroller they stacked ABOVE and BELOW the table instead of
+         sitting at its inline edges — an IntersectionObserver watching them therefore
+         answered a vertical question, and the trailing-edge hint only appeared once
+         something had already scrolled. Which is after the moment it exists for. --}}
+    class="flex w-full min-w-0 overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'max-h-96 overflow-y-auto' : '' }}"
     tabindex="0"
     role="region"
     aria-label="{{ $tableLabel ?? __('Scrollable table') }}"
 >
-<div x-ref="startSentinel" aria-hidden="true" class="w-px shrink-0"></div>
+{{-- Zero inline size: as flex items these now sit IN the row, so a `w-px` each
+     would widen every non-overflowing table by two pixels — a layout change paid by
+     everyone to detect a condition that is not present. `w-0` still has a box for
+     the observer to watch. --}}
+<div x-ref="startSentinel" aria-hidden="true" class="w-0 shrink-0 self-stretch"></div>
 @endif
     <table
         {{ $attributes->class([$classes]) }}
@@ -165,7 +184,7 @@
         {{ $slot }}
     </table>
 @if($responsive)
-<div x-ref="endSentinel" aria-hidden="true" class="w-px shrink-0"></div>
+<div x-ref="endSentinel" aria-hidden="true" class="w-0 shrink-0 self-stretch"></div>
 </div>
 {{-- aria-hidden: the shadow is an affordance for the eye. A screen reader is told about
      the scroll region by the role and label on the scroller itself. --}}

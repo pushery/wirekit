@@ -22,8 +22,17 @@ final class DirectoryHash
      * bytes — i.e. the published copy mirrors the bundled release. Extra files in
      * $target (a family the config no longer names) are ignored; that is `--prune`'s
      * concern, not freshness.
+     *
+     * $transform maps a source file's bytes to what the publisher would actually
+     * write, and exists because one file is no longer copied verbatim: a family's
+     * stylesheet has `wirekit.fonts.display` substituted into it on the way out.
+     * Without it, the question "is the published copy current?" would compare the
+     * published file against bytes nobody ever writes, and every non-default
+     * `font-display` would read as permanent drift in both callers at once.
+     *
+     * @param  null|callable(string $relativePath, string $contents): string  $transform
      */
-    public static function matches(string $source, string $target): bool
+    public static function matches(string $source, string $target, ?callable $transform = null): bool
     {
         if (! is_dir($source) || ! is_dir($target)) {
             return false;
@@ -42,7 +51,21 @@ final class DirectoryHash
             $relative = substr($item->getPathname(), strlen($source) + 1);
             $destination = $target.DIRECTORY_SEPARATOR.$relative;
 
-            if (! is_file($destination) || md5_file($item->getPathname()) !== md5_file($destination)) {
+            if (! is_file($destination)) {
+                return false;
+            }
+
+            if ($transform === null) {
+                if (md5_file($item->getPathname()) !== md5_file($destination)) {
+                    return false;
+                }
+
+                continue;
+            }
+
+            $intended = $transform($relative, (string) file_get_contents($item->getPathname()));
+
+            if (md5($intended) !== md5_file($destination)) {
                 return false;
             }
         }

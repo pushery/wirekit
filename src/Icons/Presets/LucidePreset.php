@@ -52,6 +52,37 @@ final class LucidePreset implements IconPreset
             'home' => 'lucide-home',
             'moon' => 'lucide-moon',
             'sun' => 'lucide-sun',
+
+            // Six words the vocabulary was missing, added together because they were
+            // reported together — the eighth report of that shape, which is the finding
+            // behind the finding.
+            //
+            // `system` is the third theme state. `sun` and `moon` were both here and
+            // "follows the system" was not, so a theme control could name two of its
+            // three positions. No icon family spells the concept the same way
+            // (computer-desktop / monitor / device-desktop), so the WORD is ours and the
+            // glyph is each set's own — which is what these aliases are for.
+            //
+            // Every target below was verified against the real set: Heroicons from the
+            // installed package, the other three from each package's full recursive git
+            // tree. A directory listing was tried first and is useless here — GitHub caps
+            // it at 1000 entries, so "absent" would have meant nothing.
+            //
+            // `article` was proposed with these and deliberately left out: it needs two
+            // substitutions and "editorial unit" is the most arguable of the seven.
+            'system' => 'lucide-monitor',
+            'code' => 'lucide-code',
+            'key' => 'lucide-key',
+            'rocket-launch' => 'lucide-rocket',
+            'chart-line' => 'lucide-chart-line',
+            'folders' => 'lucide-folders',
+
+            // A seventh, and it came from the docs rather than from a report: five
+            // blueprint pages reached for `pulse` and two of them meant a telephone
+            // ("Voice call", "Call"). The vocabulary had no word for one, so the
+            // pages borrowed a name that does not resolve on the default config at
+            // all — which is how a missing word turns into a broken page.
+            'phone' => 'lucide-phone',
             'book-open' => 'lucide-book-open',
             'sign-out' => 'lucide-log-out',
             'megaphone' => 'lucide-megaphone',
@@ -110,6 +141,17 @@ final class LucidePreset implements IconPreset
             'badge' => 'lucide-badge-check',
             'layers' => 'lucide-layers',
 
+            // `stack` is the concept `layers` already names, shipped as its own
+            // word because that is the word applications write — the navigation
+            // above reached for `stack` and got a synonym it does not use.
+            // Undeclared, the name did not fail cleanly either: Phosphor calls its
+            // own glyph `stack`, so the raw-name fallthrough answered it under that
+            // one family and threw under the rest, which reads as "the icon broke
+            // when we changed preset" rather than as a word nobody promised. Two
+            // spellings on one glyph is what this vocabulary already does for
+            // settings/gear, book/book-open and billing/credit-card.
+            'stack' => 'lucide-layers',
+
             // Notification, labeling, mail and media — concepts every
             // administrative interface has, and none of them had a word here.
             // A page that needed one reached for the icon package's own glyph
@@ -128,6 +170,10 @@ final class LucidePreset implements IconPreset
             'truck' => 'lucide-truck',
             'package' => 'lucide-package',
             'barcode' => 'lucide-barcode',
+            // Lucide ships no register or till glyph either — same measurement, same
+            // substitution, and the same reason it is better than leaving the name off
+            // the contract. See the note in the heroicons preset.
+            'cash-register' => 'lucide-calculator',
             'user-add' => 'lucide-user-plus',
             'user-remove' => 'lucide-user-minus',
             'building' => 'lucide-building',

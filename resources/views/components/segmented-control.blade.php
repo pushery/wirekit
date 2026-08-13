@@ -203,7 +203,7 @@
                 @disabled($disabled)
                 aria-disabled="{{ $disabled ? 'true' : 'false' }}"
                 aria-checked="{{ $selected === $optValue ? 'true' : 'false' }}"
-                {{-- Js::from, not a hand-quoted '{{ … }}': an option value
+                {{-- AlpinePayload::from, not a hand-quoted '{{ … }}': an option value
                      carrying an apostrophe ("Rock 'n' Roll") would otherwise
                      close the JS string mid-expression and break every binding
                      on this button. Same defect class already fixed on calendar. --}}

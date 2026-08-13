@@ -448,9 +448,14 @@
          jumps, because an appearing error grows this element and every sibling
          in the row re-anchors to the new bottom edge. Aligning the row does not
          help: `items-end` follows the growth and `items-start` lines things up
-         with the label rather than the control. --}}
+         with the label rather than the control.
+
+         `select-none` is the mouse half of the same decision `aria-hidden` makes for a
+         screen reader: the line holds space, not text, so there is nothing here to select
+         either. Without it a drag-select across a form carries one stray no-break space per
+         reserved field into whatever gets pasted. --}}
     @if($reserveMessage && ! (($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
-        <p aria-hidden="true" class="text-[length:var(--text-wk-sm)]">&nbsp;</p>
+        <p aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
     @endif
     @if($hasError && $errorMessage)
         <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>

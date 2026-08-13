@@ -6,6 +6,7 @@
  */
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
+import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 import wirekitChartJs from './components/chart.js';
 import wirekitDropdown from './components/dropdown.js';
@@ -32,6 +33,7 @@ import wirekitCodeBlock from './components/code-block.js';
 import wirekitSlider from './components/slider.js';
 import wirekitPasswordInput from './components/password-input.js';
 import wirekitSegmentedControl from './components/segmented-control.js';
+import wirekitPricingTable from './components/pricing-table.js';
 import wirekitSortable from './components/sortable.js';
 import wirekitReadingProgress from './components/reading-progress.js';
 import wirekitFileUpload from './components/file-upload.js';
@@ -92,6 +94,37 @@ function registerComponents() {
     // before Alpine walks the DOM, not merely before the first panel opens.
     installOverlayRoot();
 
+    // Alpine's collapse plugin, registered before any component.
+    //
+    // Four components ask for `x-collapse` — collapsible, sidebar/group,
+    // sidebar/collapsible and tree-view/node — and nothing registered it. Alpine
+    // warns once per element and the directive does nothing, so the region
+    // appeared and vanished instantly instead of animating, exactly as if the
+    // animation had been chosen against. One of those files even says
+    // "(already bundled)".
+    //
+    // Narrower than the report, and worth writing down: in a LIVEWIRE app this
+    // already worked, because Livewire bundles the same plugin and registers it
+    // (`Alpine.directive("collapse", …)` in its own dist). The four components
+    // were dead only where Livewire is absent — an Alpine-only app on
+    // `wirekit-alpine.js`, or `wirekit.js` beside a bare Alpine.
+    //
+    // Registering it here is still right, for a reason the report did not give:
+    // the components must not depend on a peer happening to provide a plugin
+    // they ask for. Measured cost is +1397 bytes raw, +585 gzip on the main
+    // bundle, paid by every developer including those who render no disclosure.
+    // That trade was the owner's to make.
+    //
+    // `collapse(Alpine)`, NOT `Alpine.plugin(collapse)`, and the difference is
+    // not style. Alpine's own `plugin(cb)` is `cb(alpine_default)` — it hands the
+    // callback its OWN module singleton, ignoring the receiver. In the ESM
+    // bundle, which is itself an installer a developer calls as
+    // `Alpine.plugin(WireKit)` with an Alpine imported from their build, that
+    // registers the directive on a DIFFERENT Alpine than the one running their
+    // page. Calling the installer directly registers it on whichever Alpine is
+    // actually in hand, which is the only one that can be right.
+    collapse(Alpine);
+
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(Alpine);
 
@@ -120,6 +153,7 @@ function registerComponents() {
     Alpine.data('wirekitSlider', wirekitSlider);
     Alpine.data('wirekitPasswordInput', wirekitPasswordInput);
     Alpine.data('wirekitSegmentedControl', wirekitSegmentedControl);
+    Alpine.data('wirekitPricingTable', wirekitPricingTable);
     Alpine.data('wirekitSortable', wirekitSortable);
     Alpine.data('wirekitReadingProgress', wirekitReadingProgress);
     Alpine.data('wirekitFileUpload', wirekitFileUpload);

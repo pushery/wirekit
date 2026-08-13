@@ -807,7 +807,12 @@ export default function wirekitOptimistic(config = {}) {
          * belongs. Nothing is duplicated — the two paths are exclusive.
          */
         _surfaceIfHostIsGone(message) {
-            if (! message || typeof document === 'undefined') {
+            // `document.body` as well as `document`: this is the last-resort announcer
+            // for a control whose host vanished, and it appends to the body. Throwing
+            // here would end the bundle's evaluation over a message that exists only
+            // because something already went wrong — the loudest possible failure for
+            // the quietest possible path.
+            if (! message || typeof document === 'undefined' || ! document.body) {
                 return;
             }
 

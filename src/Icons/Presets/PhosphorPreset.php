@@ -54,6 +54,37 @@ final class PhosphorPreset implements IconPreset
             'home' => 'phosphor-house',
             'moon' => 'phosphor-moon',
             'sun' => 'phosphor-sun',
+
+            // Six words the vocabulary was missing, added together because they were
+            // reported together — the eighth report of that shape, which is the finding
+            // behind the finding.
+            //
+            // `system` is the third theme state. `sun` and `moon` were both here and
+            // "follows the system" was not, so a theme control could name two of its
+            // three positions. No icon family spells the concept the same way
+            // (computer-desktop / monitor / device-desktop), so the WORD is ours and the
+            // glyph is each set's own — which is what these aliases are for.
+            //
+            // Every target below was verified against the real set: Heroicons from the
+            // installed package, the other three from each package's full recursive git
+            // tree. A directory listing was tried first and is useless here — GitHub caps
+            // it at 1000 entries, so "absent" would have meant nothing.
+            //
+            // `article` was proposed with these and deliberately left out: it needs two
+            // substitutions and "editorial unit" is the most arguable of the seven.
+            'system' => 'phosphor-monitor',
+            'code' => 'phosphor-code',
+            'key' => 'phosphor-key',
+            'rocket-launch' => 'phosphor-rocket-launch',
+            'chart-line' => 'phosphor-chart-line',
+            'folders' => 'phosphor-folders',
+
+            // A seventh, and it came from the docs rather than from a report: five
+            // blueprint pages reached for `pulse` and two of them meant a telephone
+            // ("Voice call", "Call"). The vocabulary had no word for one, so the
+            // pages borrowed a name that does not resolve on the default config at
+            // all — which is how a missing word turns into a broken page.
+            'phone' => 'phosphor-phone',
             'book-open' => 'phosphor-book-open',
             'sign-out' => 'phosphor-sign-out',
             'megaphone' => 'phosphor-megaphone',
@@ -123,6 +154,17 @@ final class PhosphorPreset implements IconPreset
             'badge' => 'phosphor-identification-badge',
             'layers' => 'phosphor-stack',
 
+            // `stack` is the concept `layers` already names, shipped as its own
+            // word because that is the word applications write — the navigation
+            // above reached for `stack` and got a synonym it does not use.
+            // Undeclared, the name did not fail cleanly either: Phosphor calls its
+            // own glyph `stack`, so the raw-name fallthrough answered it under that
+            // one family and threw under the rest, which reads as "the icon broke
+            // when we changed preset" rather than as a word nobody promised. Two
+            // spellings on one glyph is what this vocabulary already does for
+            // settings/gear, book/book-open and billing/credit-card.
+            'stack' => 'phosphor-stack',
+
             // Notification, labeling, mail and media — concepts every
             // administrative interface has, and none of them had a word here.
             // A page that needed one reached for the icon package's own glyph
@@ -141,6 +183,8 @@ final class PhosphorPreset implements IconPreset
             'truck' => 'phosphor-truck',
             'package' => 'phosphor-package',
             'barcode' => 'phosphor-barcode',
+            // Phosphor is the one family that draws the thing itself.
+            'cash-register' => 'phosphor-cash-register',
             'user-add' => 'phosphor-user-plus',
             'user-remove' => 'phosphor-user-minus',
             'building' => 'phosphor-building',

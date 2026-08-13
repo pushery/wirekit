@@ -28,6 +28,7 @@
  *   scope under the CSP build — see utils/dev-warning.js.
  */
 import { devWarn } from '../utils/dev-warning.js';
+import { observeServerValue } from '../utils/server-value.js';
 
 export default function wirekitTabs(config = {}) {
     return {
@@ -47,6 +48,28 @@ export default function wirekitTabs(config = {}) {
                 tab: value,
                 label: this.labels[value] ?? value,
             }));
+
+            // The other direction. The event above lets the server hear a switch;
+            // without this it could not answer. Alpine read the seed once, so a
+            // tab the server selects on a later round trip changed the attribute
+            // text and nothing else — the tablist kept showing what it was born
+            // with.
+            //
+            // Guarded on a real change so an unrelated round trip cannot undo a
+            // choice the reader just made: every morph rewrites the attribute,
+            // including the ones carrying the same value back.
+            this._stopServerSync = observeServerValue(this.$root, (value) => {
+                if (value === this.active) {
+                    return;
+                }
+
+                this.active = value;
+            });
+        },
+
+        destroy() {
+            // The observer outlives the scope otherwise, and fires into it.
+            this._stopServerSync?.();
         },
 
         /**

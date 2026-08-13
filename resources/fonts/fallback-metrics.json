@@ -1,0 +1,569 @@
+{
+  "mono/google-sans-code": {
+    "ascentOverride": "96.62%",
+    "descentOverride": "28.6%",
+    "fallbackFamily": "Google Sans Code Fallback",
+    "family": "Google Sans Code",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/mono/google-sans-code/GoogleSansCode-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Courier New",
+    "referenceFont": {
+      "ascent": 1705,
+      "avgCharWidth": 0.600098,
+      "descent": -615,
+      "lineGap": 0,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "99.98%",
+    "webFont": {
+      "ascent": 1932,
+      "avgCharWidth": 0.6,
+      "descent": -572,
+      "lineGap": 0,
+      "unitsPerEm": 2000,
+      "usedTypoMetrics": true
+    }
+  },
+  "mono/ibm-plex-mono": {
+    "ascentOverride": "102.52%",
+    "descentOverride": "27.5%",
+    "fallbackFamily": "IBM Plex Mono Fallback",
+    "family": "IBM Plex Mono",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/mono/ibm-plex-mono/IBMPlexMono-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Courier New",
+    "referenceFont": {
+      "ascent": 1705,
+      "avgCharWidth": 0.600098,
+      "descent": -615,
+      "lineGap": 0,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "99.98%",
+    "webFont": {
+      "ascent": 1025,
+      "avgCharWidth": 0.6,
+      "descent": -275,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "mono/jetbrains-mono": {
+    "ascentOverride": "102.02%",
+    "descentOverride": "30.0%",
+    "fallbackFamily": "JetBrains Mono Fallback",
+    "family": "JetBrains Mono",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/mono/jetbrains-mono/JetBrainsMono-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Courier New",
+    "referenceFont": {
+      "ascent": 1705,
+      "avgCharWidth": 0.600098,
+      "descent": -615,
+      "lineGap": 0,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "99.98%",
+    "webFont": {
+      "ascent": 1020,
+      "avgCharWidth": 0.6,
+      "descent": -300,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "mono/roboto-mono": {
+    "ascentOverride": "104.79%",
+    "descentOverride": "27.1%",
+    "fallbackFamily": "Roboto Mono Fallback",
+    "family": "Roboto Mono",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/mono/roboto-mono/RobotoMono-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Courier New",
+    "referenceFont": {
+      "ascent": 1705,
+      "avgCharWidth": 0.600098,
+      "descent": -615,
+      "lineGap": 0,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "100.0%",
+    "webFont": {
+      "ascent": 2146,
+      "avgCharWidth": 0.600098,
+      "descent": -555,
+      "lineGap": 0,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    }
+  },
+  "mono/source-code-pro": {
+    "ascentOverride": "98.42%",
+    "descentOverride": "27.3%",
+    "fallbackFamily": "Source Code Pro Fallback",
+    "family": "Source Code Pro",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/mono/source-code-pro/SourceCodePro-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Courier New",
+    "referenceFont": {
+      "ascent": 1705,
+      "avgCharWidth": 0.600098,
+      "descent": -615,
+      "lineGap": 0,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "99.98%",
+    "webFont": {
+      "ascent": 984,
+      "avgCharWidth": 0.6,
+      "descent": -273,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "mono/space-mono": {
+    "ascentOverride": "109.82%",
+    "descentOverride": "35.4%",
+    "fallbackFamily": "Space Mono Fallback",
+    "family": "Space Mono",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/mono/space-mono/SpaceMono-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Courier New",
+    "referenceFont": {
+      "ascent": 1705,
+      "avgCharWidth": 0.600098,
+      "descent": -615,
+      "lineGap": 0,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "101.98%",
+    "webFont": {
+      "ascent": 1120,
+      "avgCharWidth": 0.612,
+      "descent": -361,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "sans/dm-sans": {
+    "ascentOverride": "92.75%",
+    "descentOverride": "28.99%",
+    "fallbackFamily": "DM Sans Fallback",
+    "family": "DM Sans",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/sans/dm-sans/DMSans-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Arial",
+    "referenceFont": {
+      "ascent": 1854,
+      "avgCharWidth": 0.446716,
+      "descent": -434,
+      "lineGap": 67,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "106.95%",
+    "webFont": {
+      "ascent": 992,
+      "avgCharWidth": 0.477756,
+      "descent": -310,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "sans/ibm-plex-sans": {
+    "ascentOverride": "100.94%",
+    "descentOverride": "27.08%",
+    "fallbackFamily": "IBM Plex Sans Fallback",
+    "family": "IBM Plex Sans",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/sans/ibm-plex-sans/IBMPlexSans-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Arial",
+    "referenceFont": {
+      "ascent": 1854,
+      "avgCharWidth": 0.446716,
+      "descent": -434,
+      "lineGap": 67,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "101.55%",
+    "webFont": {
+      "ascent": 1025,
+      "avgCharWidth": 0.453641,
+      "descent": -275,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "sans/inter": {
+    "ascentOverride": "90.14%",
+    "descentOverride": "22.45%",
+    "fallbackFamily": "Inter Fallback",
+    "family": "Inter",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/sans/inter/Inter-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Arial",
+    "referenceFont": {
+      "ascent": 1854,
+      "avgCharWidth": 0.446716,
+      "descent": -434,
+      "lineGap": 67,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "107.47%",
+    "webFont": {
+      "ascent": 1984,
+      "avgCharWidth": 0.480072,
+      "descent": -494,
+      "lineGap": 0,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": true
+    }
+  },
+  "sans/lato": {
+    "ascentOverride": "99.12%",
+    "descentOverride": "21.39%",
+    "fallbackFamily": "Lato Fallback",
+    "family": "Lato",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/sans/lato/Lato-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Arial",
+    "referenceFont": {
+      "ascent": 1854,
+      "avgCharWidth": 0.446716,
+      "descent": -434,
+      "lineGap": 67,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "99.58%",
+    "webFont": {
+      "ascent": 1974,
+      "avgCharWidth": 0.444826,
+      "descent": -426,
+      "lineGap": 0,
+      "unitsPerEm": 2000,
+      "usedTypoMetrics": true
+    }
+  },
+  "sans/montserrat": {
+    "ascentOverride": "84.56%",
+    "descentOverride": "21.92%",
+    "fallbackFamily": "Montserrat Fallback",
+    "family": "Montserrat",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/sans/montserrat/Montserrat-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Arial",
+    "referenceFont": {
+      "ascent": 1854,
+      "avgCharWidth": 0.446716,
+      "descent": -434,
+      "lineGap": 67,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "114.48%",
+    "webFont": {
+      "ascent": 968,
+      "avgCharWidth": 0.511407,
+      "descent": -251,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "sans/noto-sans": {
+    "ascentOverride": "99.78%",
+    "descentOverride": "27.35%",
+    "fallbackFamily": "Noto Sans Fallback",
+    "family": "Noto Sans",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/sans/noto-sans/NotoSans-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Arial",
+    "referenceFont": {
+      "ascent": 1854,
+      "avgCharWidth": 0.446716,
+      "descent": -434,
+      "lineGap": 67,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "107.13%",
+    "webFont": {
+      "ascent": 1069,
+      "avgCharWidth": 0.478584,
+      "descent": -293,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "sans/nunito-sans": {
+    "ascentOverride": "99.25%",
+    "descentOverride": "34.65%",
+    "fallbackFamily": "Nunito Sans Fallback",
+    "family": "Nunito Sans",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/sans/nunito-sans/NunitoSans-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Arial",
+    "referenceFont": {
+      "ascent": 1854,
+      "avgCharWidth": 0.446716,
+      "descent": -434,
+      "lineGap": 67,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "101.87%",
+    "webFont": {
+      "ascent": 1011,
+      "avgCharWidth": 0.455051,
+      "descent": -353,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "sans/open-sans": {
+    "ascentOverride": "100.83%",
+    "descentOverride": "27.64%",
+    "fallbackFamily": "Open Sans Fallback",
+    "family": "Open Sans",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/sans/open-sans/OpenSans-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Arial",
+    "referenceFont": {
+      "ascent": 1854,
+      "avgCharWidth": 0.446716,
+      "descent": -434,
+      "lineGap": 67,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "106.01%",
+    "webFont": {
+      "ascent": 2189,
+      "avgCharWidth": 0.473549,
+      "descent": -600,
+      "lineGap": 0,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": true
+    }
+  },
+  "sans/roboto": {
+    "ascentOverride": "92.29%",
+    "descentOverride": "24.29%",
+    "fallbackFamily": "Roboto Fallback",
+    "family": "Roboto",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/sans/roboto/Roboto-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Arial",
+    "referenceFont": {
+      "ascent": 1854,
+      "avgCharWidth": 0.446716,
+      "descent": -434,
+      "lineGap": 67,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "100.52%",
+    "webFont": {
+      "ascent": 1900,
+      "avgCharWidth": 0.449061,
+      "descent": -500,
+      "lineGap": 0,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    }
+  },
+  "sans/vt323": {
+    "ascentOverride": "89.34%",
+    "descentOverride": "22.34%",
+    "fallbackFamily": "VT323 Fallback",
+    "family": "VT323",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/sans/vt323/VT323-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Arial",
+    "referenceFont": {
+      "ascent": 1854,
+      "avgCharWidth": 0.446716,
+      "descent": -434,
+      "lineGap": 67,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "89.54%",
+    "webFont": {
+      "ascent": 800,
+      "avgCharWidth": 0.4,
+      "descent": -200,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "serif/ibm-plex-serif": {
+    "ascentOverride": "87.24%",
+    "descentOverride": "23.41%",
+    "fallbackFamily": "IBM Plex Serif Fallback",
+    "family": "IBM Plex Serif",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/serif/ibm-plex-serif/IBMPlexSerif-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Times New Roman",
+    "referenceFont": {
+      "ascent": 1825,
+      "avgCharWidth": 0.404853,
+      "descent": -443,
+      "lineGap": 87,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "117.49%",
+    "webFont": {
+      "ascent": 1025,
+      "avgCharWidth": 0.475671,
+      "descent": -275,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": false
+    }
+  },
+  "serif/lora": {
+    "ascentOverride": "86.17%",
+    "descentOverride": "23.47%",
+    "fallbackFamily": "Lora Fallback",
+    "family": "Lora",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/serif/lora/Lora-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Times New Roman",
+    "referenceFont": {
+      "ascent": 1825,
+      "avgCharWidth": 0.404853,
+      "descent": -443,
+      "lineGap": 87,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "116.75%",
+    "webFont": {
+      "ascent": 1006,
+      "avgCharWidth": 0.472668,
+      "descent": -274,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "serif/merriweather": {
+    "ascentOverride": "81.61%",
+    "descentOverride": "22.64%",
+    "fallbackFamily": "Merriweather Fallback",
+    "family": "Merriweather",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/serif/merriweather/Merriweather-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Times New Roman",
+    "referenceFont": {
+      "ascent": 1825,
+      "avgCharWidth": 0.404853,
+      "descent": -443,
+      "lineGap": 87,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "120.58%",
+    "webFont": {
+      "ascent": 1968,
+      "avgCharWidth": 0.488157,
+      "descent": -546,
+      "lineGap": 0,
+      "unitsPerEm": 2000,
+      "usedTypoMetrics": true
+    }
+  },
+  "serif/noto-serif": {
+    "ascentOverride": "89.07%",
+    "descentOverride": "24.41%",
+    "fallbackFamily": "Noto Serif Fallback",
+    "family": "Noto Serif",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/serif/noto-serif/NotoSerif-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Times New Roman",
+    "referenceFont": {
+      "ascent": 1825,
+      "avgCharWidth": 0.404853,
+      "descent": -443,
+      "lineGap": 87,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "120.02%",
+    "webFont": {
+      "ascent": 1069,
+      "avgCharWidth": 0.485891,
+      "descent": -293,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  },
+  "serif/playfair-display": {
+    "ascentOverride": "96.07%",
+    "descentOverride": "22.29%",
+    "fallbackFamily": "Playfair Display Fallback",
+    "family": "Playfair Display",
+    "lineGapOverride": "0.0%",
+    "measuredFrom": "resources/fonts/serif/playfair-display/PlayfairDisplay-Regular.woff2",
+    "measuredWeight": 400,
+    "reference": "Times New Roman",
+    "referenceFont": {
+      "ascent": 1825,
+      "avgCharWidth": 0.404853,
+      "descent": -443,
+      "lineGap": 87,
+      "unitsPerEm": 2048,
+      "usedTypoMetrics": false
+    },
+    "sizeAdjust": "112.63%",
+    "webFont": {
+      "ascent": 1082,
+      "avgCharWidth": 0.455985,
+      "descent": -251,
+      "lineGap": 0,
+      "unitsPerEm": 1000,
+      "usedTypoMetrics": true
+    }
+  }
+}

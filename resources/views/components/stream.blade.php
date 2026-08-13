@@ -129,10 +129,31 @@
          live region, so a screen reader is not re-read on every token. --}}
     <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" x-text="_announceText"></span>
 
-    {{-- The streamed output. In the a11y tree for on-demand reading, but not
-         auto-announced. Wraps + preserves newlines. The caret is an INLINE element
-         right after the text span (no whitespace between them) so it trails the last
-         character as the text grows — a real typing cursor, not a block on its own line. --}}
+    {{-- The streamed output.
+
+         `output` REPLACES this block, so a caller can keep the state machine and
+         the announcement contract while rendering their own markup — a chat
+         bubble, a diff view, a syntax-highlighted pane. Without it the component
+         was not adoptable as a pure transport: it always drew its own output, so
+         a caller who wanted their own got BOTH, and `x-text="text"` appeared
+         twice on the page.
+
+         A NAMED slot rather than the default one, deliberately. The default slot
+         here is documented and test-pinned as ADDITIVE — it is where Stop and
+         Retry controls go — so flipping its meaning would break every existing
+         call site. Named, a caller can use both at once.
+
+         The live regions above stay in both paths. They are the announcement
+         contract, not decoration, and a headless output that dropped them would
+         be a silent accessibility regression in the one component whose whole
+         job is text arriving over time. --}}
+    @isset($output)
+        {{ $output }}
+    @else
+    {{-- In the a11y tree for on-demand reading, but not auto-announced. Wraps +
+         preserves newlines. The caret is an INLINE element right after the text
+         span (no whitespace between them) so it trails the last character as the
+         text grows — a real typing cursor, not a block on its own line. --}}
     <div
         class="wk-stream-output whitespace-pre-wrap break-words text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]"
         :data-status="status"
@@ -142,6 +163,7 @@
             aria-hidden="true"
             class="wk-stream-caret ml-px inline-block h-[1em] w-[0.5ch] translate-y-[0.1em] motion-safe:animate-pulse bg-[var(--color-wk-text-muted)]"
         ></span></div>
+    @endisset
 
     {{-- Terminal failure — a defined state, overridable via the `error` slot.
 

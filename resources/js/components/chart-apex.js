@@ -981,7 +981,11 @@ window.ApexCharts = ApexCharts;</pre>
 
             const observerOpts = { attributes: true, attributeFilter: ['class'] };
             this._darkModeObserver.observe(document.documentElement, observerOpts);
-            this._darkModeObserver.observe(document.body, observerOpts);
+            // `observe(null)` throws, and the throw would leave the chart uninitialized
+            // rather than merely un-themed. <html> is always there; <body> may not be.
+            if (document.body) {
+                this._darkModeObserver.observe(document.body, observerOpts);
+            }
         },
 
         /**
@@ -1276,7 +1280,7 @@ window.ApexCharts = ApexCharts;</pre>
          */
         _themeApexConfig(rawConfig, colors, fontFamily) {
             const isDark = document.documentElement.classList.contains('dark')
-                || document.body.classList.contains('dark');
+                || document.body?.classList.contains('dark') === true;
 
             // Auto-fill series-level colors when not user-set. _manualColorIndices
             // captures developer choices at init time so dark-mode re-theme skips them.

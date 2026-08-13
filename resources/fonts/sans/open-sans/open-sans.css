@@ -35,3 +35,20 @@
     font-display: swap;
     src: url('OpenSans-Bold.woff2') format('woff2');
 }
+
+/* --- WireKit fallback face — generated, do not edit by hand --- */
+/*
+ * Registers the local system font under its own name with Open Sans's
+ * metrics, so the text painted before the swap occupies the same box as
+ * the text painted after it. Measured against Arial; regenerate with
+ * `python3 scripts/generate-font-fallbacks.py`.
+ */
+@font-face {
+    font-family: 'Open Sans Fallback';
+    src: local('Arial'), local('Helvetica Neue'), local('Helvetica'), local('Liberation Sans');
+    size-adjust: 106.01%;
+    ascent-override: 100.83%;
+    descent-override: 27.64%;
+    line-gap-override: 0.0%;
+}
+/* --- end WireKit fallback face --- */

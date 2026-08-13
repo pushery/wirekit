@@ -14,6 +14,13 @@
     // historical 1 / 2 / 3 ladder; a 2-plan table would otherwise render a gappy
     // three-column grid.
     'columns' => 3,
+    // Name of the hidden input the interval is written to, so the choice reaches
+    // a surrounding <form>. Only rendered when intervals are given.
+    'name' => 'interval',
+    // The interval as the SERVER sees it. Distinct from the first key of
+    // `intervals`, which is only the opening position: this one keeps arriving,
+    // so a checkout decided on the server can both read the choice and correct it.
+    'interval' => null,
     'scope' => null,
 ])
 
@@ -42,6 +49,11 @@
     // Normalize the intervals map and pick the one selected on first paint.
     $intervalMap = is_array($intervals) && $intervals !== [] ? $intervals : null;
     $defaultInterval = $intervalMap !== null ? (string) array_key_first($intervalMap) : null;
+
+    // What the table is priced at right now. `interval` is the server's answer and
+    // wins; the first key is only the opening position. Getting the precedence
+    // backwards would make the prop inert exactly where it is used most.
+    $serverInterval = $interval !== null ? (string) $interval : $defaultInterval;
 
     // Both toggle branches resolve through resolveClasses and are interpolated
     // into the Alpine ternary, rather than sitting in it as literals: a runtime
@@ -75,7 +87,24 @@
      because a list may only contain list items, and the tiers read the value
      through the Alpine scope rather than a prop — Blade cannot pass anything
      into slot content that was already rendered in the caller's scope. --}}
-<div x-data="{ interval: {{ \Pushery\WireKit\Support\AlpinePayload::from($defaultInterval) }} }" data-wk-pricing-intervals>
+{{-- `wire:model` is taken off the <ul> and put on the hidden input below. A
+     directive on the list would bind the wrong element — a <ul> has no value —
+     and Livewire would quietly observe nothing. This is the same passthrough
+     nine other components already do; see segmented-control. --}}
+<div
+    x-data="wirekitPricingTable({ interval: {{ \Pushery\WireKit\Support\AlpinePayload::from($serverInterval) }} })"
+    @if($interval !== null) data-wk-server-value="{{ $serverInterval }}" @endif
+    data-wk-pricing-intervals
+>
+    {{-- Inside the wrapper and BEFORE the <ul>, because a list may only hold list
+         items — the same reason the toggle sits here. --}}
+    <input
+        type="hidden"
+        x-ref="hiddenInput"
+        name="{{ $name }}"
+        value="{{ $serverInterval }}"
+        {{ $attributes->whereStartsWith('wire:model') }}
+    >
     <div
         role="group"
         aria-label="{{ $intervalLabel }}"
@@ -102,7 +131,7 @@
         aria-label="{{ $label }}"
         data-wk-pricing-table
         style="list-style: none; margin: 0; padding: 0;"
-        {{ $attributes->class([$classes]) }}
+        {{ $attributes->whereDoesntStartWith('wire:model')->class([$classes]) }}
     >
         {{ $slot }}
     </ul>

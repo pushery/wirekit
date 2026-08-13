@@ -10,6 +10,256 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.29.0] — 2026-08-13
+
+**Minor — the navigation that took the page with it, and four checks that could not fail.**
+
+Nothing here changes what an unchanged call site renders. The additions are things the
+browser and the screen reader were told nothing about until now.
+
+### Added
+
+- **Native widgets follow your dark theme.** The `<select>` popup, scrollbars, number
+  spinners, date and color pickers, autofill and the spellcheck menu are painted by the
+  browser rather than by any stylesheet, and the browser had no way to know the page was
+  dark — so it painted them light, on a page that was not. WireKit now declares
+  `color-scheme`, so they follow. The native `<select>` is the one this matters most for,
+  because using it is a deliberate choice here: it costs no JavaScript and gives a real
+  picker on a real phone, and its popup was the one surface a screenshot of our own
+  components would never show. [Theming](https://docs.wirekit.app/theming)
+
+- **A regional locale reaches its language.** `pt-PT`, `pt-BR`, `de-AT`, `es-MX`, `fr-CA` —
+  every regional variant previously saw none of the shipped translations, because the JSON
+  loader matches a locale's filename exactly and there is no step from `pt-PT` to `pt`. An
+  application running regional locales got English chrome inside a fully translated page,
+  with nothing to indicate why. They now resolve through the base language, and your own
+  catalog still wins per key, so you can reword one regional phrase without re-translating
+  everything around it. [Localization](https://docs.wirekit.app/localization)
+
+- **The overlay landmark is announced in the reader's language.** Every teleported panel
+  lives inside one labeled region, and that label was the English word `Overlays` in every
+  locale — invisible on screen, and therefore visible only to the readers the landmark was
+  built for. It now follows the page's locale. A language WireKit does not yet ship keeps
+  the English name rather than losing it: a region announced as "region" and nothing else
+  helps nobody.
+
+- **Two words the commerce vocabulary was missing.** `stack`, and `cash-register` — the
+  till the receipts come from, next to `receipt`, `barcode` and `truck` which were all
+  already there. A name outside the vocabulary resolves through whichever icon set happens
+  to be installed, so it works until the day you change one; `stack` did not even do that,
+  because two of the four sets ship no glyph of that name and the icon package throws on a
+  name it does not know. [Icon](https://docs.wirekit.app/components/icon)
+
+- **Self-hosted fonts no longer move the page when they arrive.** Every bundled family now
+  ships a metric-matched fallback face: a local system font registered under its own name
+  with the web font's own measurements, named in the stack ahead of the generic families.
+  Measured on a 400px column of prose, the unadjusted fallback rendered the block a full
+  line shorter than the web font — that shift is now zero. The four override percentages
+  are read out of the shipped font files rather than estimated, on both sides of every
+  ratio. [Fonts](https://docs.wirekit.app/components/fonts)
+
+- **`font-display` is yours to choose.** `wirekit.fonts.display` sets what every bundled
+  `@font-face` is served with; the default stays `swap`, which now costs no layout shift.
+  Pick `optional` if you would rather some readers never see the web font than see it
+  arrive late — that is a real trade, and it is your application's to make. It reaches the
+  package route and `wirekit:publish-fonts`; a plain `vendor:publish` copies files
+  verbatim, so when that leaves a published copy disagreeing with your config, the fonts
+  component says so in the page source and `wirekit:verify` reports it.
+
+- **`<x-wirekit::tabs>` can be driven from the server.** The new `active` prop is the
+  active tab as the server sees it, and unlike `default` it keeps arriving: a tab restored
+  from a URL, a validation error whose field lives in another panel, or a permission that
+  just changed can all move the tablist. Previously the only route was to hand-build the
+  widget, which meant re-implementing its keyboard and ARIA behavior.
+  [Tabs](https://docs.wirekit.app/components/tabs)
+
+- **`<x-wirekit::pricing-table>` tells your application which interval was chosen.** A
+  hidden input carries the choice into a surrounding form, `wire:model` binds it, and the
+  new `interval` prop lets the server set it — so a checkout decided server-side can both
+  read the choice and correct it. [Pricing table](https://docs.wirekit.app/components/pricing-table)
+
+- **`<x-wirekit::stream>` can render your markup instead of its own.** The new `output`
+  slot replaces the component's output block while keeping the state machine and the
+  announcement contract, so a chat bubble or a syntax-highlighted pane can use it as a
+  pure transport. The default slot is unchanged and still additive.
+  [Stream](https://docs.wirekit.app/components/stream)
+
+- **`<x-wirekit::status-tiles>` can let a caption wrap.** `wrapMeta` turns the one-line
+  clamp on the `meta` line into wrapping text, for the case where the caption is the
+  message rather than a two-word count. Off by default, because a wrapping caption grows
+  the whole grid row. [Status tiles](https://docs.wirekit.app/components/status-tiles)
+
+- **Seven words the icon vocabulary was missing.** `system` names the third theme state
+  beside `sun` and `moon`; `code`, `key`, `rocket-launch`, `chart-line`, `folders` and
+  `phone` fill gaps that showed up as a name with no answer. `key` and `rocket-launch`
+  were previously reachable only by stacking an extension preset, so they are now
+  available on every icon set. [Icon](https://docs.wirekit.app/components/icon)
+
+- **Disclosure animations work outside Livewire.** Four components ask for Alpine's
+  collapse directive and nothing registered it, so in an Alpine-only application the
+  region snapped open instead of animating and each element logged a warning. It is now
+  registered by every full-catalog bundle, at a cost of roughly 600 gzipped bytes.
+
+### Changed
+
+- **`wirekit:csp-audit` now checks more, and will fail builds it used to pass.** Read this
+  one before upgrading: nothing about your templates has changed, but the command was
+  reporting a pass over two things it never looked at.
+
+  It checked whether an expression parses under Alpine's grammar, and stopped there. Under
+  a strict policy an identifier is resolved against the Alpine scope alone — there is no
+  `window` fallback — so an expression can be flawless grammar and still throw on the
+  first name it reads. `JSON.parse('…')`, which is what Laravel's `Js::from()` emits for
+  anything but a scalar, is exactly that shape: it passed the audit and threw in the
+  browser, leaving the element with an empty scope and every directive on it silently
+  dead. It also scanned no `wire:` attributes at all, though Livewire hands most of their
+  values to the same evaluator.
+
+  Both are now covered. A pipeline that is green today can go red on upgrade — it was
+  green about something that does not run.
+
+- **`wirekit:doctor:props` and `wirekit:doctor:a11y` refuse to pass over nothing.** A
+  mistyped path produced "no issues found across 0 templates" and exit `0`. Reading zero
+  files is now a failure, because a linter that read nothing and reported clean is worse
+  than no linter — you stop looking. Templates that exist but use no WireKit component are
+  a different, honest result and still succeed, saying the count out loud.
+
+### Fixed
+
+- **A `wire:navigate` no longer takes the whole page with it.** Since 2.27.0 every overlay
+  panel teleports into a landmark container built by the bundle. A navigation replaces the
+  document body, the container left with it, and the framework treats a teleport whose
+  target is missing as fatal — so initialization stopped at the first overlay on the
+  arriving page and everything after it was never wired up. The result is the expensive
+  kind of broken: the page renders completely, every control is visible, and not one of
+  them does anything. There is no error a reader would see and nothing that looks wrong in
+  a screenshot.
+
+  The obvious repair does not work, and finding that out was most of the fix. The event
+  that announces a completed navigation fires *after* the framework has already walked the
+  new document, so rebuilding the container there restores it for the next overlay and
+  leaves the failure exactly where it was. The container is now rebuilt in the window
+  between the body swap and that walk. Covered by a case that navigates twice and asserts
+  the arriving page is still interactive, not merely quiet.
+
+- **A page-wide script failure could no longer start with a color.** Several places
+  assumed a document body was present before touching it — the overlay container, the
+  chart adapters' theme probe, its color-variable resolver, the optimistic announcer, and
+  two class-attribute observers. An uncaught error there does not cost the thing that
+  failed; it ends the evaluation of the bundle, and everything registered after it stops
+  existing. Each of these now yields a sensible default and stays quiet, and a check holds
+  the whole class rather than the sites that were reported.
+
+- **A menu that stayed dead after an update, in three more components.** 2.28.0 fixed this
+  for the dropdown. The same shape survived on the tooltip, the combobox and the
+  multi-select: a teleported panel identified by an id that changes on every render is
+  replaced rather than patched by a Livewire update, the replacement has lost its
+  component scope, and the expression deciding whether it is open resolves against the
+  browser's global object — where `open` is a real function. Calling it raises
+  `Illegal invocation` from a stack that names nothing. All four panels now carry a stable
+  key, and a check fails the build on a teleported panel that has an id and no key.
+
+- **`wirekit:doctor` no longer reports a token asymmetry that is not there — and can now
+  report one that is.** The symmetry check located `:root` and `.dark` by searching for
+  the text, so `.dark` also matched inside `html.dark` and `.dark-mode`. An application
+  that writes its theme class on `<html>` — the usual arrangement for setting it before
+  the first paint — was told all of its color tokens were missing from dark mode, and
+  advised to duplicate declarations it already had. Worse in the other direction: the
+  `@custom-variant dark` line the integration guide asks every application to write also
+  matched, and made the two sides look identical, so a real gap could never be reported at
+  all. The selector is now matched as a selector, a shared `:root, .dark { … }` head counts
+  for both sides, and a rule nested in a layer or a media query is still found. The check
+  also says when it skipped, instead of falling silent in a way that reads like a pass.
+
+- **`wirekit:csp-audit` no longer crashes on an ordinary comment — and no longer misses
+  expressions because of one.** An apostrophe inside a Blade comment placed among a tag's
+  attributes was read as the start of a quoted value. With an odd number the scan ran past
+  the end of the file and the command failed with an internal error, before it could even
+  tell you the CSP build was not installed. With an even number there was no error at all:
+  the span between them was swallowed and every Alpine expression inside it went
+  unreported — silence from a command whose entire purpose is finding failures that are
+  silent. Both halves came from one hand-written scanner that a sister scanner had already
+  been fixed for; there is now one, and all three places that read Blade tags use it.
+  `wirekit:show --validate-against` was the third, and it was quietly wrong in its own way:
+  it read words out of expression text as if they were attributes.
+
+- **`vendor:publish --tag=wirekit-lang` hands over every catalog.** It named English and
+  German because those were the two that existed when it was written; five more shipped and
+  it kept handing over two, while the documentation promised seven. Nothing failed — a
+  publish list cannot notice a file it was never told about. It is now derived from what
+  ships, so the next language needs no edit.
+
+- **A blank reserved for a validation message is no longer selectable.** The spacer that
+  keeps a field from shoving its neighbors around, and the reserved message row on input,
+  select and textarea, each render a non-breaking space that exists only to hold height.
+  Dragging a selection across a form collected one of them per reserved field and carried
+  them into the clipboard. They are marked unselectable now, which is the pointer half of
+  the decision that already hid them from screen readers.
+
+- **`wirekit:csp-audit` reads what the browser reads, not what Blade left behind.** Server-side
+  constructs are removed before the expression is parsed — a comment outright, an escaped or raw
+  echo and `@js(…)` as a placeholder, with the parentheses of `@js(…)` balanced across strings so
+  a payload containing `)` does not truncate the rest. Before this, `@js(…)` — the pattern this
+  very command recommends in its own advice — was reported as blocked with a syntax error at the
+  `@`, and a raw echo carrying JSON was reported as a broken object literal. Neither is anything a
+  reader could act on: by the time Alpine sees the attribute, the server text is gone.
+
+  Two more corrections in the same area. `x-teleport` is no longer scanned at all: its value goes
+  straight to `document.querySelector()`, so it is a CSS selector, and a selector beginning with
+  `#` was being reported as an expression beginning with an operator. And a rejection now counts
+  as a finding only when the parser saw what the browser sees — an expression the audit could not
+  read is listed separately and does not fail the run, because "the tool could not check this" and
+  "Alpine will refuse this" are different facts and only one of them is yours to fix.
+  [CLI reference](https://docs.wirekit.app/cli-reference)
+
+- **The setup guide listed five CSS features as safe to rely on that are not.** `@starting-style`,
+  `field-sizing: content`, `text-wrap: balance`, native CSS nesting and `round()` all require
+  browsers newer than the supported floor, so an application taking the sentence at face value
+  would ship something a reader on a supported browser does not get. They are now named for what
+  they are — worth using behind a feature test — and where WireKit uses one itself, it already
+  sits behind one. Every version in the correction was read from browser-compatibility data rather
+  than recalled. [Integration](https://docs.wirekit.app/getting-started/integration)
+
+- **Two field-composition recipes in the documentation did not do what they said.** The
+  pattern for putting a button beside a labeled field described a wrapper that produces a
+  different vertical rhythm than the one the field itself uses, so following it left the
+  control a hair off. Corrected, and pinned by a check so the page and the component cannot
+  drift apart again. [Field](https://docs.wirekit.app/components/field)
+
+- **A table that scrolls sideways shows its edge hint before you scroll.** The hint is the
+  only sign that more columns exist, and it was appearing only after the first scroll —
+  after the moment it is for. Its two markers sat on the wrong axis.
+  [Table](https://docs.wirekit.app/components/table)
+
+- **`wirekit:doctor:props` no longer invents props that are not there.** A Blade echo
+  inside a quoted attribute value — the shape any translated attribute built from a
+  variable takes — was read as more attributes, so a translation key surfaced as a prop
+  the component never declared.
+
+- **`wirekit:verify` recognizes every real form of the ApexCharts global assignment.**
+  `window.ApexCharts ??= …`, `globalThis.ApexCharts = …` and the bracket form were
+  reported as missing, TypeScript entry points were not read at all, and a commented-out
+  line counted. In the other direction, `window.ApexCharts == null` was read as an
+  assignment — a feature detect passing as a completed setup.
+
+- **`wirekit:verify` no longer recommends putting a chart library on every page.** Its
+  ApexCharts advice named only the global entry point, which is roughly 850 KB on pages
+  without a chart. It now names the route-scoped alternative too, with the weight attached.
+
+- **Six documentation pages named icons that do not exist on a default installation.** They
+  rendered a hole for anyone following them without an extension preset. Two of them wanted
+  a telephone, which is why `phone` is now a word.
+
+- **The design-token reference credited the wrong spacing ladder.** The `gap` prop of the
+  layout primitives resolves to the `--space-wk-*` scale, not `--gap-wk-*` — so overriding
+  the latter to widen a grid changed nothing, and the page said to look there.
+  [Design tokens](https://docs.wirekit.app/theming/design-tokens)
+
+- **A 2.27.0 note credited `wirekit:verify` with a check that lives elsewhere.** Duplicate
+  adapter registration is reported — by the adapter, as a browser console warning — so
+  running the command and seeing nothing meant nothing. The entry now says where the report
+  comes from.
+
 ## [2.28.0] — 2026-08-08
 
 **Minor — the dropdown defect 2.27.0 shipped with, and the tooling that could not see it.**
@@ -18,7 +268,7 @@ Nothing about how you write a dropdown changes; the fix is entirely inside the c
 
 ### Fixed
 
-- **One more deep link in the public API map pointed at nothing.** The Alpine animation helper's entry aimed at  while the page renders a heading that slugs to . Same shape as the eleven corrected in 2.27.0, one group over — which is why the check now reads every fragment the manifest publishes rather than one group of them.
+- **One more deep link in the public API map pointed at nothing.** The Alpine animation helper's entry aimed at `#wirekit-animate` while the page renders a heading that slugs to `#the-wirekitanimate-alpine-helper`. Same shape as the eleven corrected in 2.27.0, one group over — which is why the check now reads every fragment the manifest publishes rather than one group of them.
 
 - **A dropdown trigger announces a panel that is actually there — and writing that relationship no longer paints a menu nobody opened.** Both halves were broken at once, and neither could be fixed alone.
 
@@ -36,7 +286,7 @@ Every addition here is opt-in: an unchanged call site renders exactly what it di
 
 - **[`<x-wirekit::step-marker>`](https://docs.wirekit.app/components/step-marker)** — the numbered chip a sequence of steps was being hand-rolled for. No existing primitive fits, and each near-miss misses differently: a badge is a pill, and a pill reads as a label *about* something — a status, a count, a tag attached to its neighbor. A step marker is not about the step, it **is** the step, which is what the square corners carry and why the shape is not a prop. It is filled always, and each intent's fill is paired with that intent's own foreground token in one place, because that pairing is precisely the part a call site has no way to get right: a number on a colored square is legible or it is not.
 
-- **The three accessibility hooks can be renamed to match your application.** `data-reduce-motion`, `data-contrast` and `--font-scale-wk` are defaults, not fixed names — `motion_attribute`, `contrast_attribute` and `font_scale_property` in `config/wirekit.php` set what WireKit reads. An application that already has its own preference attributes keeps them instead of carrying a second set. [Theming](https://docs.wirekit.app/theming)
+- **The three accessibility hooks have documented, guaranteed names.** `data-reduce-motion`, `data-contrast` and `--font-scale-wk` are what the stylesheet and the bundle carry literally, and `motion_attribute`, `contrast_attribute` and `font_scale_property` in `config/wirekit.php` record them so you can read them without grepping a bundle. A build check breaks if a recorded name stops matching what ships, so an application writing its own preference rules has a fixed contract to match. [Integration](https://docs.wirekit.app/getting-started/integration)
 
 - **`safeObserver`, for the observer that keeps firing after the component is gone.** An observer's callback runs once more after Livewire morphs the node away and Alpine tears the component down — into a `this` whose fields are already null. The page fills with `Cannot read properties of null` pointing at your plugin rather than at the teardown that happened, and your browser tests go red for a reason that is not yours. `safeObserver` gives you an observer whose callback simply does not run once you stop it, including for a batch the browser had already queued. It ships with the Composer package rather than from npm, so you import it by path — there is nothing to install. It does not replace `destroy()` — nothing can — it removes the guard you would otherwise write in every callback. [Authoring custom Alpine plugins](https://docs.wirekit.app/extending/authoring-custom-alpine-plugins)
 
@@ -92,7 +342,7 @@ Every addition here is opt-in: an unchanged call site renders exactly what it di
 
 - **Opening a WireKit asset URL directly no longer garbles its text.** The nine `dist` routes did not declare their character set, so a browser hitting `/wirekit/wirekit.css` on its own fell back to a legacy single-byte encoding and every em-dash rendered as mojibake. Loaded from a page the file inherits the document's encoding, which is why this was invisible in every application and visible only on the direct hit.
 
-- **`wirekit:verify` now checks the ApexCharts adapter wherever it is switched on.** The check only ran when `charts.library` was `apexcharts`, while `scripts.apex` emits the adapter independently — so the configuration that ships the adapter with the library set elsewhere went entirely unexamined, and every chart stayed blank while the installation was reported healthy. It also asks the harder question now: finding the package in `package.json` proves it can be resolved, not that it reaches the page. Registering it twice is reported too.
+- **`wirekit:verify` now checks the ApexCharts adapter wherever it is switched on.** The check only ran when `charts.library` was `apexcharts`, while `scripts.apex` emits the adapter independently — so the configuration that ships the adapter with the library set elsewhere went entirely unexamined, and every chart stayed blank while the installation was reported healthy. It also asks the harder question now: finding the package in `package.json` proves it can be resolved, not that it reaches the page. Registering the adapter twice is reported as well — by the adapter itself, as a console warning in the browser, not by this command.
 
 - **Eleven CLI deep links in the public API map pointed at nothing, and one command in it was never part of WireKit.** The anchors were built from the command id rather than from the heading the page renders, so `wirekit:show` pointed at `#wirekitshow` while the page offers `#wirekitshow-name` — and a fragment that matches no heading does not fail: the page loads and simply does not scroll. Separately, the export kept every command whose name began with `wirekit:`, which is a naming choice rather than a proof of ownership, so a command belonging to the host application could appear in a manifest describing this package. Ownership is now decided by the class.
 

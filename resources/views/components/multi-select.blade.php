@@ -229,6 +229,22 @@
              a stacking context — the same trap the combobox and dropdown panels were in. --}}
         <template x-teleport="#wk-overlay-root">
         <div
+            {{-- THE MORPH KEY. Livewire identifies a node across an update as
+                 `wire:id`, then `wire:key`, then `el.id` — so without this line the
+                 id below is the identity, and an id that disagrees between the live
+                 node and the incoming template makes the morph SWAP rather than
+                 patch: the live node is replaced by a native `cloneNode(true)` with
+                 no Alpine expandos, landing in the overlay root, which hangs off
+                 <body> in no `x-data`. Alpine's parent walk then finds no scope and
+                 `dropdownOpen` resolves against the global object, which does not
+                 have it — a `ReferenceError` on every update, from a panel nobody
+                 opened, with a stack that names nothing on the page.
+                 `$id` falls back to a random value only when the call site supplies
+                 neither an id nor a name, so this reaches some callers and not
+                 others. STATIC on purpose: the morph patches a teleported node
+                 against its own counterpart, one to one, never against a keyed
+                 sibling, so several multi-selects on a page do not compete. --}}
+            wire:key="wk-multi-select-listbox"
             x-show="dropdownOpen && filteredOptions.length > 0"
             x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"
             x-transition:enter-start="opacity-0 -translate-y-1"
