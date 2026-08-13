@@ -372,6 +372,26 @@
          config. An id survives anything a teleport can do to a node. --}}
     <template x-teleport="#wk-overlay-root">
     <ul
+        {{-- THE MORPH KEY. Without it the id below is what Livewire uses to
+             identify this node across an update — it resolves `wire:id`, then
+             `wire:key`, then `el.id` — and a key that disagrees between the live
+             node and the incoming template does not patch, it SWAPS the live node
+             for a native `cloneNode(true)` that carries no Alpine expandos. The
+             replacement lands in the overlay root, which hangs off <body> in no
+             `x-data`, so Alpine's parent walk finds no scope and every expression
+             on the list resolves against the global object instead. `filtered` is
+             not a word the global object answers to, so this one raises a
+             `ReferenceError` rather than the `Illegal invocation` a panel bound on
+             `open` produces — the same defect, reported under a different name.
+             The exposure is conditional on the call site: `$listId` is derived from
+             an explicit id or name when one is given and randomized when neither
+             is, so the bug reaches only the callers who left both off. That is a
+             worse shape than an unconditional one, not a milder one — it makes the
+             failure look like something about the page rather than the component.
+             STATIC on purpose: a teleported node is patched against its own
+             counterpart, one to one, never against a keyed sibling, so several
+             comboboxes on a page do not compete for this value. --}}
+        wire:key="wk-combobox-list"
         id="{{ $listId }}"
         x-ref="cbxList"
         role="listbox"
@@ -443,6 +463,14 @@
          the case without. --}}
     <template x-teleport="#wk-overlay-root">
     <div
+        {{-- Keyed for the same reason as the list above — it is the same panel
+             wearing different content, and leaving it unkeyed would fix the case
+             with results and keep the defect for the case without.
+             Its own value rather than the list's: a key names a node, and these
+             are two nodes. Naming them alike would be a claim that the morph may
+             treat either as the other, which is not something this component has
+             any reason to promise. --}}
+        wire:key="wk-combobox-empty"
         id="{{ $listId }}-empty"
         class="{{ $listClasses }}"
         x-ref="cbxEmpty"

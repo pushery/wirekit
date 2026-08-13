@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit;
 
 use Illuminate\Contracts\Foundation\CachesConfiguration;
+use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Foundation\Http\Events\RequestHandled;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
@@ -36,8 +37,10 @@ use Pushery\WireKit\Console\PublishIconsCommand;
 use Pushery\WireKit\Console\ShowComponentCommand;
 use Pushery\WireKit\Console\ThemeCommand;
 use Pushery\WireKit\Console\VerifyInstallationCommand;
+use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\BaseLocaleJsonLoader;
 use Pushery\WireKit\Support\DomId;
 
 class WireKitServiceProvider extends ServiceProvider
@@ -71,6 +74,37 @@ class WireKitServiceProvider extends ServiceProvider
 
         // ChartManager as singleton — caches the adapter instance per request
         $this->app->singleton(ChartManager::class);
+
+        // ── Regional locales reach the shipped catalogs ──
+        // Laravel's JSON translation channel matches the locale filename
+        // exactly, and `fallback_locale` never reaches it — the fallback loop
+        // in `Translator::get()` runs after the JSON lookup has already missed
+        // and walks the PHP-group path only. So an app whose locale is `pt-PT`
+        // looks for a `pt-PT.json` nobody ships and renders English inside a
+        // Portuguese page, with a complete `pt.json` sitting unread in the
+        // directory `loadJsonTranslationsFrom()` registers below. Every
+        // regional variant of every language shipped lands the same way, and
+        // nothing looks broken, because English is also what a genuinely
+        // untranslated key renders as.
+        //
+        // The decorator closes it for THIS package's lang directory alone (the
+        // reasoning for that narrowness is in the class docblock).
+        //
+        // It belongs in register(), never in boot(): the Translator receives
+        // its loader by constructor injection, so once `translator` has been
+        // resolved, replacing the `translation.loader` binding leaves the live
+        // Translator holding the loader it already has — the container would
+        // then report a decorator that nothing actually reads through. Hence
+        // the guard rather than an unconditional extend: if something resolved
+        // the translator before this provider ran, stay out of the way
+        // completely. A no-op is honest; a decorator that is installed and
+        // unreachable is not.
+        if (! $this->app->resolved('translator')) {
+            $this->app->extend(
+                'translation.loader',
+                static fn (Loader $loader): BaseLocaleJsonLoader => new BaseLocaleJsonLoader($loader, __DIR__.'/../lang'),
+            );
+        }
     }
 
     public function boot(): void
@@ -146,10 +180,22 @@ class WireKitServiceProvider extends ServiceProvider
             // below sees it — so this tag exists for the developer who wants to
             // adjust a phrase to their own product's voice, and that is as true
             // of German as of English.
-            $this->publishes([
-                __DIR__.'/../lang/en.json' => lang_path('vendor/wirekit/en.json'),
-                __DIR__.'/../lang/de.json' => lang_path('vendor/wirekit/de.json'),
-            ], 'wirekit-lang');
+            //
+            // DERIVED rather than listed, and the list is why. It named English and
+            // German at the moment those were the two catalogs; five more shipped and
+            // the tag kept publishing two, so the documentation promised seven
+            // languages and the command handed over a quarter of them. Nothing failed
+            // — a publish tag cannot notice a file it was never told about. Now a
+            // catalog is published by existing, and the next language needs no edit
+            // here at all. The glob runs only under `runningInConsole()`, so it costs
+            // the request path nothing.
+            $catalogs = [];
+
+            foreach (glob(__DIR__.'/../lang/*.json') ?: [] as $catalog) {
+                $catalogs[$catalog] = lang_path('vendor/wirekit/'.basename($catalog));
+            }
+
+            $this->publishes($catalogs, 'wirekit-lang');
 
             // Font files — published to public/vendor/wirekit/fonts/
             //
@@ -370,7 +416,14 @@ class WireKitServiceProvider extends ServiceProvider
                     "csp" => "wirekit-alpine.csp.js",
                     default => "wirekit.js",
                 };
-                echo \Pushery\WireKit\WireKitServiceProvider::scriptTag($__wk_file, $__wk_nonceAttr);
+                // The overlay landmark\'s accessible name rides this tag. See
+                // WireKitServiceProvider::overlayLabelAttribute() for why it travels here
+                // rather than in an inline script or in markup of its own.
+                echo \Pushery\WireKit\WireKitServiceProvider::scriptTag(
+                    $__wk_file,
+                    $__wk_nonceAttr,
+                    \Pushery\WireKit\WireKitServiceProvider::overlayLabelAttribute(),
+                );
 
                 // The ApexCharts adapter, opt-in via config.
                 //
@@ -536,8 +589,9 @@ class WireKitServiceProvider extends ServiceProvider
      *
      * @param  string  $file  bundle filename, e.g. `wirekit.js`
      * @param  string  $nonceAttr  pre-escaped ` nonce="…"` or an empty string
+     * @param  string  $extraAttrs  pre-escaped extra attributes, each with its own leading space
      */
-    public static function scriptTag(string $file, string $nonceAttr = ''): string
+    public static function scriptTag(string $file, string $nonceAttr = '', string $extraAttrs = ''): string
     {
         $published = public_path('vendor/wirekit/'.$file);
         $dist = self::distPath($file);
@@ -550,7 +604,33 @@ class WireKitServiceProvider extends ServiceProvider
             $src = asset('vendor/wirekit/'.$file).'?v='.filemtime($published);
         }
 
-        return '<script'.$nonceAttr.' src="'.$src.'" defer></script>'."\n";
+        return '<script'.$nonceAttr.$extraAttrs.' src="'.$src.'" defer></script>'."\n";
+    }
+
+    /**
+     * The translated accessible name for the overlay landmark, as an HTML attribute.
+     *
+     * Every teleported panel lives inside one landmark, and a landmark exists to be
+     * announced — so its name is read by exactly the people who cannot see that the
+     * region is empty of meaning otherwise. It was a literal in the bundle, which meant
+     * an application shipping eight languages announced one English word in eight
+     * otherwise translated region lists.
+     *
+     * The name rides the bundle's own `<script>` tag rather than an inline script or a
+     * `<div>` of its own, and both alternatives were rejected for reasons worth keeping:
+     * an inline script is a second thing a strict Content-Security-Policy must nonce and
+     * a second thing that can be blocked, and emitted markup lands wherever the developer
+     * put `@wirekitScripts` — inside an `overflow: hidden` wrapper it would be clipped,
+     * which is the exact problem teleporting out of the tree exists to solve. The tag is
+     * already present, already nonced, and already re-rendered by the server on every
+     * page a `wire:navigate` arrives at.
+     *
+     * Falls back to the English literal in the bundle when the catalog has no entry: a
+     * landmark with no accessible name is worse than one named in the wrong language.
+     */
+    public static function overlayLabelAttribute(): string
+    {
+        return ' data-wk-overlay-label="'.e(__('Overlays')).'"';
     }
 
     /**
@@ -686,7 +766,19 @@ class WireKitServiceProvider extends ServiceProvider
                     default => abort(404),
                 };
 
-                return response(file_get_contents($file), 200, [
+                $body = file_get_contents($file);
+
+                // The static file ships `swap`; `wirekit.fonts.display` is what
+                // this application asked for. Substituting here is what makes the
+                // config a switch rather than a record on this path — and the
+                // component puts the value in the cache-busting query string, so
+                // changing the config produces a new URL instead of a year-long
+                // immutable cache of the previous answer.
+                if ($type === 'text/css; charset=utf-8') {
+                    $body = FontCss::applyDisplay($body);
+                }
+
+                return response($body, 200, [
                     'Content-Type' => $type,
                     // Same one-year immutable policy as the other assets. The URL
                     // carries a ?v={filemtime} from the component, so new content

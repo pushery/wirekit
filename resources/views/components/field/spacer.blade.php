@@ -27,7 +27,16 @@
     // So this renders the REAL label with a non-breaking space. Whatever the label is —
     // font, line-height, margin, the token behind any of them — this is exactly as tall,
     // because it IS one.
-    $classes = WireKit::resolveClasses('field.spacer', 'base', '', $scope);
+    //
+    // `select-none` is the only class of its own, and it is the mouse half of the same
+    // decision `aria-hidden` makes for a screen reader: there is nothing here to read, so
+    // there is nothing here to select either. Without it a double-click in the gap beside
+    // the field lands on the no-break space and paints a highlighted empty box, and a
+    // drag-select across the form carries a U+00A0 into whatever gets pasted. It is the
+    // house treatment for decorative text — the breadcrumb separator, the input's
+    // prefix/suffix and the avatar initials all carry it — and it cannot move the spacer's
+    // height, which is what the rest of this component exists to hold.
+    $classes = WireKit::resolveClasses('field.spacer', 'base', 'select-none', $scope);
 @endphp
 
 {{-- aria-hidden: there is nothing here to read. A screen reader that announced an empty

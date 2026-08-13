@@ -11,6 +11,7 @@
  */
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
+import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 import wirekitChartJs from './components/chart.js';
 import wirekitDropdown from './components/dropdown.js';
@@ -37,6 +38,7 @@ import wirekitCodeBlock from './components/code-block.js';
 import wirekitSlider from './components/slider.js';
 import wirekitPasswordInput from './components/password-input.js';
 import wirekitSegmentedControl from './components/segmented-control.js';
+import wirekitPricingTable from './components/pricing-table.js';
 import wirekitSortable from './components/sortable.js';
 import wirekitReadingProgress from './components/reading-progress.js';
 import wirekitFileUpload from './components/file-upload.js';
@@ -100,6 +102,29 @@ export default function (Alpine) {
     // `x-teleport` treats a selector that matches nothing as fatal.
     installOverlayRoot();
 
+    // Alpine's collapse plugin, registered before any component.
+    //
+    // Four components ask for `x-collapse` — collapsible, sidebar/group,
+    // sidebar/collapsible and tree-view/node — and nothing registered it. Alpine
+    // warns once per element and the directive does nothing, so the region
+    // appeared and vanished instantly instead of animating, exactly as if the
+    // animation had been chosen against. One of those files even says
+    // "(already bundled)".
+    //
+    // Registering it costs 646 gzipped bytes on every bundle, including for
+    // developers who render no disclosure at all. That is the trade, and it was
+    // the owner's to make: the docs already promise the animation, so not paying
+    // it means shipping a promise that is not true.
+    // `collapse(Alpine)`, NOT `Alpine.plugin(collapse)`, and the difference is not
+    // style. Alpine's own `plugin(cb)` is `cb(alpine_default)` — it hands the
+    // callback its OWN module singleton and ignores the receiver. This bundle is
+    // itself an installer, called as `Alpine.plugin(WireKit)` with an Alpine the
+    // developer imported from their own build, so going through `plugin` would
+    // register the directive on a DIFFERENT Alpine than the one running their
+    // page. Calling the installer directly registers it on whichever Alpine is
+    // actually in hand.
+    collapse(Alpine);
+
     registerAncestorDataMagic(Alpine);
 
 
@@ -128,6 +153,7 @@ export default function (Alpine) {
     Alpine.data('wirekitSlider', wirekitSlider);
     Alpine.data('wirekitPasswordInput', wirekitPasswordInput);
     Alpine.data('wirekitSegmentedControl', wirekitSegmentedControl);
+    Alpine.data('wirekitPricingTable', wirekitPricingTable);
     Alpine.data('wirekitSortable', wirekitSortable);
     Alpine.data('wirekitReadingProgress', wirekitReadingProgress);
     Alpine.data('wirekitFileUpload', wirekitFileUpload);

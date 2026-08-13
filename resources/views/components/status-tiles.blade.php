@@ -16,6 +16,12 @@
     // intent-tinted caption on every tile. Off by default so existing tiles are
     // unchanged.
     'showStatus' => false,
+    // Let the caption wrap instead of clamping it to one line. Off by default, and
+    // that default is load-bearing rather than caution: a wrapping caption grows the
+    // whole grid row, so flipping it for everyone would move every dashboard that
+    // uses this. On for the case the clamp destroys — when the caption IS the
+    // message ("Used disk space: 87% on /var") rather than a two-word count.
+    'wrapMeta' => false,
     'scope' => null,
 ])
 
@@ -28,6 +34,12 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $legend = BooleanProp::from($legend, false);
     $showStatus = BooleanProp::from($showStatus, false);
+    $wrapMeta = BooleanProp::from($wrapMeta, false);
+
+    // One variable rather than the same ternary twice: the two render branches
+    // below are copies of each other, and a fix applied to one of them is the
+    // shape of bug this component would hide well.
+    $metaClamp = $wrapMeta ? 'break-words' : 'truncate';
 
     // Status-Tiles — N entities as colored status tiles, one glance (a fleet light).
     // Each tile is colored by its intent AND carries a distinct icon SHAPE plus a
@@ -156,7 +168,7 @@
                                 <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
                             </span>
                             @if($tile['meta'] !== null)
-                                <span class="truncate text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
+                                <span class="{{ $metaClamp }} text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
                             @endif
                             @if($showStatus)
                                 <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('Status:') }}</span>{{ $tile['statusWord'] }}</span>
@@ -173,7 +185,7 @@
                                 <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
                             </span>
                             @if($tile['meta'] !== null)
-                                <span class="truncate text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
+                                <span class="{{ $metaClamp }} text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
                             @endif
                             @if($showStatus)
                                 <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('Status:') }}</span>{{ $tile['statusWord'] }}</span>

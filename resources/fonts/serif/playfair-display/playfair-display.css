@@ -35,3 +35,20 @@
     font-display: swap;
     src: url('PlayfairDisplay-Bold.woff2') format('woff2');
 }
+
+/* --- WireKit fallback face — generated, do not edit by hand --- */
+/*
+ * Registers the local system font under its own name with Playfair Display's
+ * metrics, so the text painted before the swap occupies the same box as
+ * the text painted after it. Measured against Times New Roman; regenerate with
+ * `python3 scripts/generate-font-fallbacks.py`.
+ */
+@font-face {
+    font-family: 'Playfair Display Fallback';
+    src: local('Times New Roman'), local('Times'), local('Liberation Serif');
+    size-adjust: 112.63%;
+    ascent-override: 96.07%;
+    descent-override: 22.29%;
+    line-gap-override: 0.0%;
+}
+/* --- end WireKit fallback face --- */

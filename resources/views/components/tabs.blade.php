@@ -3,7 +3,15 @@
      nothing to anticipate and nothing to roll back. --}}
 @props([
     'items' => [],
+    // Which tab opens on first paint. Initial only — Alpine reads a seed once, so
+    // a later value here never reaches a rendered tablist.
     'default' => null,
+    // Which tab is active, as the SERVER sees it. Distinct from `default` on
+    // purpose: this one keeps arriving. Set it and the tablist follows the server
+    // on every round trip — a tab restored from a URL, a validation error whose
+    // field lives in another panel, a permission that just changed. Leave it unset
+    // and nothing about the rendered output moves.
+    'active' => null,
     'variant' => config('wirekit.components.tabs.variant', 'underline'),
     'orientation' => 'horizontal', // horizontal (default) | vertical
     'label' => __('Tabs'),
@@ -47,7 +55,7 @@
     }
 
     // Resolve the initial active tab: explicit default, otherwise first key
-    $activeTab = $default ?? (array_key_first($tabs) ?? '');
+    $activeTab = $active ?? $default ?? (array_key_first($tabs) ?? '');
 
     // Key→label map exposed to Alpine so the `wirekit:tab-changed` event payload
     // can carry the human label alongside the key (detail = { tab, label }).
@@ -166,7 +174,7 @@
         // PHP and survives whole, which also keeps it a single literal that the
         // drift scanner recognizes as a warning rather than a class list.
         $wireModelWarning = $warnWireModelInDebug
-            ? '[wirekit] tabs: wire:model dropped — tabs are client-only Alpine state, not a Livewire input. Use named slots for content (<x-slot:keyname>...</x-slot:keyname>) per items[key]. See https://docs.wirekit.app/components/tabs for the contract.'
+            ? '[wirekit] tabs: wire:model dropped — tabs are client-only Alpine state, not a Livewire input. Use the `active` prop to drive the tablist from the server, and named slots for content (<x-slot:keyname>...</x-slot:keyname>) per items[key]. See https://docs.wirekit.app/components/tabs for the contract.'
             : null;
     @endphp
     x-data="wirekitTabs({
@@ -174,6 +182,15 @@
         labels: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $tabLabels) }},
         warning: {{ \Pushery\WireKit\Support\AlpinePayload::from($wireModelWarning) }},
     })"
+    @if($active !== null)
+        {{-- The channel, and only when it is used: an unchanged call site renders
+             byte for byte what it did before. The attribute is written by the
+             server on every render and bound by nobody, which is what makes "the
+             server changed it" a fact the DOM can state rather than something to
+             infer. See utils/server-value.js for why a dedicated attribute rather
+             than the component's own state. --}}
+        data-wk-server-value="{{ $activeTab }}"
+    @endif
     {{ $attributes->class([$rootClasses]) }}
 >
     {{-- Tablist — the row (or column, when vertical) of tab buttons.

@@ -52,14 +52,24 @@
  */
 export function resolveThemeColors(style) {
     const isDark = document.documentElement.classList.contains('dark')
-        || document.body.classList.contains('dark');
+        || document.body?.classList.contains('dark') === true;
 
     // Probe element: hidden div appended to <body> so var() resolves
     // through the correct cascade. Appending to <html> would fail when
     // .dark is on <body> only (probe would be a sibling outside the cascade).
-    const probe = document.createElement('div');
-    probe.style.display = 'none';
-    document.body.appendChild(probe);
+    //
+    // A missing <body> costs the probe, not the page. Every call site here runs
+    // inside the Alpine lifecycle, so a null body is not reachable today — but an
+    // uncaught throw ends the evaluation of the entire bundle, and a page whose
+    // script died renders completely while nothing on it is bound. That is a
+    // disproportionate price for reading a color, and it is invisible: no error a
+    // reader sees, no failing control, just a page that quietly does nothing.
+    const probe = document.body ? document.createElement('div') : null;
+
+    if (probe) {
+        probe.style.display = 'none';
+        document.body.appendChild(probe);
+    }
 
     // Canvas 2D parser + paint-and-read pixel trick — forces every color
     // input into a definitive `rgb()` / `rgba()` representation regardless
@@ -100,7 +110,9 @@ export function resolveThemeColors(style) {
 
     const resolve = (varName, fallbackLight, fallbackDark) => {
         const raw = style.getPropertyValue(varName).trim();
-        if (!raw) {
+        // Without a probe there is no cascade to read the variable through, so the
+        // mode-aware fallback answers — the same answer an undeclared variable gets.
+        if (!raw || !probe) {
             return isDark ? fallbackDark : fallbackLight;
         }
         probe.style.color = `var(${varName})`;
@@ -178,7 +190,7 @@ export function resolveThemeColors(style) {
         border:      resolve('--color-wk-border', '#e4e4e7', '#52525b'),
     };
 
-    probe.remove();
+    probe?.remove();
     return colors;
 }
 
@@ -269,6 +281,11 @@ export function resolveCssVarsDeep(node, style) {
         // closure) so we can resolve multiple var()s in one string —
         // e.g. ApexCharts gradient stops carrying two var() colors.
         return node.replace(/var\((--[a-zA-Z0-9-]+)\)/g, (_match, varName) => {
+            // Same reasoning as the probe in `resolveThemeColors()` above: no <body>
+            // means no cascade to read through, and the honest answer is to hand the
+            // caller its own `var(…)` back rather than to take the page down over it.
+            if (!document.body) return _match;
+
             const probe = document.createElement('div');
             probe.style.display = 'none';
             document.body.appendChild(probe);

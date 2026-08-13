@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.28.0 — MIT License
+ * WireKit CSS v2.29.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -52,6 +52,30 @@
 /* full cascade rationale.                                      */
 
 :where(:root) {
+    /* ─── Native control chrome ─── */
+    /* Every token below repaints what WireKit draws. None of them can reach
+       what the USER AGENT draws: the native <select> popup, the document
+       scrollbar, number spinners, the date / time / color pickers, autofill
+       highlighting, the spellcheck underline. Those follow `color-scheme`
+       alone, and its initial value `normal` resolves light — so without this
+       pair of declarations a fully dark page still drops a white popup over
+       itself. That hits here harder than elsewhere because the native
+       <select> is a deliberate choice (zero-JS, correct native picker on real
+       devices), which makes its popup the widest surface the browser paints
+       for us.
+
+       `light` here rather than `light dark`: in an application that wired the
+       @wirekitThemeScript directive, the reader's OS preference already
+       arrives as the `.dark` class before first paint, so the dark declaration
+       below is what carries the native chrome. `light dark` would bolt a
+       second, independent OS-following path onto that one — and in an
+       application that never opted into dark mode at all, it would flip the
+       native controls dark on a page that stays light.
+
+       Chrome 81 / Edge 81 / Safari 13 / Firefox 96 — below the supported
+       baseline, so no feature detection is owed. */
+    color-scheme: light;
+
     /* ─── Accent Colors ─── */
     --color-wk-accent: oklch(20.5% 0 0);
     --color-wk-accent-hover: oklch(26.9% 0 0);
@@ -432,6 +456,12 @@
 /* `:where(.dark)` — specificity 0; see top-of-file rationale.  */
 
 :where(.dark) {
+    /* Native control chrome — the half that actually turns the browser-painted
+       widgets over. Same specificity 0 as the light declaration above, and
+       later in the file, so `<html class="dark">` resolves to this one. See the
+       light block for why the default is `light` and not `light dark`. */
+    color-scheme: dark;
+
     /* Accent — inverted */
     --color-wk-accent: oklch(98.5% 0 0);
     --color-wk-accent-hover: oklch(92.2% 0 0);

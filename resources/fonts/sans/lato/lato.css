@@ -22,3 +22,20 @@
     font-display: swap;
     src: url('Lato-Bold.woff2') format('woff2');
 }
+
+/* --- WireKit fallback face — generated, do not edit by hand --- */
+/*
+ * Registers the local system font under its own name with Lato's
+ * metrics, so the text painted before the swap occupies the same box as
+ * the text painted after it. Measured against Arial; regenerate with
+ * `python3 scripts/generate-font-fallbacks.py`.
+ */
+@font-face {
+    font-family: 'Lato Fallback';
+    src: local('Arial'), local('Helvetica Neue'), local('Helvetica'), local('Liberation Sans');
+    size-adjust: 99.58%;
+    ascent-override: 99.12%;
+    descent-override: 21.39%;
+    line-gap-override: 0.0%;
+}
+/* --- end WireKit fallback face --- */

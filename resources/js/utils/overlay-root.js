@@ -23,10 +23,63 @@
 export const OVERLAY_ROOT_ID = 'wk-overlay-root';
 
 /**
+ * The name the landmark carries when the server did not supply one.
+ *
+ * English on purpose. A landmark with no accessible name is worse than one named in
+ * the wrong language: a screen reader announces "region" and the listener learns
+ * nothing, whereas an English word in a translated region list is merely wrong. So
+ * this is the floor, not the target — `overlayRootLabel()` below prefers the
+ * translated name whenever the page carries one.
+ */
+export const DEFAULT_OVERLAY_ROOT_LABEL = 'Overlays';
+
+/**
+ * The attribute the `@wirekitScripts` directive writes the translated name into.
+ *
+ * It rides the bundle's own `<script>` tag rather than an extra inline script,
+ * because an inline script is a second thing a strict Content-Security-Policy has
+ * to nonce and a second thing that can be blocked. The tag is already there and
+ * already carries the nonce.
+ */
+export const OVERLAY_ROOT_LABEL_ATTRIBUTE = 'data-wk-overlay-label';
+
+/**
+ * The accessible name for the landmark, translated when the server said so.
+ *
+ * Read from the document on every call rather than cached: `wire:navigate` swaps
+ * the body, and the arriving page carries its own script tag with its own label.
+ * A value captured once at boot would pin the first page's language onto every
+ * page after it, which is the same defect one level down.
+ */
+export function overlayRootLabel() {
+    // A document that cannot be queried has no carrier to find, which is a reason to
+    // use the default name rather than to throw. That sounds like belt-and-braces and
+    // is not: this function runs on the way to building the landmark, so an exception
+    // here costs the container — and a missing container is what `x-teleport` treats
+    // as fatal. A translation is worth exactly a translation.
+    if (typeof document.querySelector !== 'function') {
+        return DEFAULT_OVERLAY_ROOT_LABEL;
+    }
+
+    const carrier = document.querySelector(`script[${OVERLAY_ROOT_LABEL_ATTRIBUTE}]`);
+    const label = carrier?.getAttribute(OVERLAY_ROOT_LABEL_ATTRIBUTE)?.trim();
+
+    return label || DEFAULT_OVERLAY_ROOT_LABEL;
+}
+
+/**
  * Return the overlay root, creating it on first use.
  *
  * Idempotent: repeated calls return the same element, and an element the developer put
  * there themselves is adopted rather than duplicated.
+ *
+ * Returns `null` when there is no `<body>` to append to. That case is not reachable
+ * through `installOverlayRoot()`, which checks first — but the check belongs here as
+ * well, because the caller is not the only way in and the cost of being wrong is not
+ * a missing overlay. An uncaught throw ends the evaluation of the whole bundle, and a
+ * page whose script died is fully rendered and completely dead: every control visible,
+ * nothing bound, no error a reader would ever see. A container that could not be built
+ * should cost one overlay, not the page.
  */
 export function overlayRoot() {
     let root = document.getElementById(OVERLAY_ROOT_ID);
@@ -35,17 +88,72 @@ export function overlayRoot() {
         return root;
     }
 
+    if (! document.body) {
+        return null;
+    }
+
     root = document.createElement('div');
     root.id = OVERLAY_ROOT_ID;
     root.setAttribute('role', 'region');
 
     // Named, because an unlabelled region is its own axe finding — and a landmark a screen
     // reader announces without saying what it is helps nobody.
-    root.setAttribute('aria-label', 'Overlays');
+    root.setAttribute('aria-label', overlayRootLabel());
 
     document.body.appendChild(root);
 
     return root;
+}
+
+/** Set once the navigation listeners are bound, so a second install does not double them. */
+let navigationListenersBound = false;
+
+/**
+ * Rebuild the container across a `wire:navigate`, in the one window that is early enough.
+ *
+ * A navigation replaces the whole `<body>`. The container was appended to the old one and
+ * leaves with it, so Alpine then walks a document in which every `x-teleport="#wk-overlay-root"`
+ * points at nothing — and `x-teleport` treats that as fatal. The walk ends at the first
+ * overlay it meets and nothing after it is ever initialized. Measured on a two-page fixture:
+ * one uncaught `TypeError: Cannot read properties of null (reading 'appendChild')`, the
+ * arriving page rendered in full, and an Alpine counter that no longer counts.
+ *
+ * THE OBVIOUS HOOK IS THE WRONG ONE, and this is the whole reason the comment is long.
+ * `livewire:navigated` forwards Alpine's `alpine:navigated`, and in the navigate source the
+ * order is:
+ *
+ *     swapCallbacks.forEach((callback) => callback());   // <- onSwap, after the body is in
+ *     ...
+ *     nowInitializeAlpineOnTheNewPage(Alpine);           // <- the walk that throws
+ *     fireEventForOtherLibrariesToHookInto('alpine:navigated');
+ *
+ * Rebuilding on `alpine:navigated` restores the container for the NEXT overlay and leaves
+ * the error that already happened exactly where it was. That is not a theory about what
+ * would happen — it is what the reporting application saw: the container was back afterwards
+ * and the page was dead anyway.
+ *
+ * So the container is rebuilt from `alpine:navigating`'s `onSwap`, which runs after the new
+ * body is in place and before the walk. `alpine:navigated` is kept as a second net for a
+ * navigate implementation that does not offer `onSwap` — it cannot repair a walk that
+ * already ended, but it does restore the container for everything that comes after, and a
+ * partially covered page beats an uncovered one.
+ */
+function bindNavigationListeners() {
+    if (navigationListenersBound) {
+        return;
+    }
+
+    navigationListenersBound = true;
+
+    document.addEventListener('alpine:navigating', (event) => {
+        const onSwap = event?.detail?.onSwap;
+
+        if (typeof onSwap === 'function') {
+            onSwap(() => overlayRoot());
+        }
+    });
+
+    document.addEventListener('alpine:navigated', () => overlayRoot());
 }
 
 /**
@@ -59,6 +167,11 @@ export function installOverlayRoot() {
     if (typeof document === 'undefined') {
         return;
     }
+
+    // Bound before the early return below, so a bundle that loads before `<body>` exists
+    // still survives a later navigation. The two concerns are independent: one is about
+    // this page's first paint, the other about every page after it.
+    bindNavigationListeners();
 
     if (document.body) {
         overlayRoot();

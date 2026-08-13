@@ -30,7 +30,6 @@ final class HeroiconsMarketingPreset implements IconPreset
             // `bolt` promoted to the base presets in v2.12.0 — removed here to
             // keep the marketing extension non-overlapping with the base set.
             'sparkles' => 'heroicon-m-sparkles',
-            'rocket-launch' => 'heroicon-m-rocket-launch',
             'fire' => 'heroicon-m-fire',
             'cursor-arrow-rays' => 'heroicon-m-cursor-arrow-rays',
 

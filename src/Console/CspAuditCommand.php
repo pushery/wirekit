@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
+use Pushery\WireKit\Support\BladeParser;
 use Symfony\Component\Process\Process;
 
 /**
@@ -45,10 +46,60 @@ class CspAuditCommand extends Command
      *
      * `x-for` is absent for the same reason — its value is `item in items`,
      * which is Alpine's own iteration syntax, not an expression.
+     *
+     * `x-teleport` was on this list and is the same mistake one attribute over.
+     * Alpine hands its value straight to `document.querySelector()` — its
+     * `getTarget()` is that call and a warning when it finds nothing — so the
+     * value is a CSS selector. A selector that starts with `#` is not an
+     * expression that starts with an operator, and reporting it as one is a
+     * finding a reader cannot act on: there is nothing to rewrite.
+     *
+     * It cost more than a wrong line. Measured over this repository's own views,
+     * eleven of twenty-seven rejections were `x-teleport="#wk-overlay-root"` —
+     * so nearly half of what the audit reported was the audit misreading its own
+     * input, in a command whose only value is that its output can be trusted.
      */
     private const EXPRESSION_ATTRIBUTES = [
         'x-data', 'x-show', 'x-if', 'x-text', 'x-html', 'x-model', 'x-modelable',
-        'x-init', 'x-effect', 'x-bind', 'x-on', 'x-teleport', 'x-intersect', 'x-id',
+        'x-init', 'x-effect', 'x-bind', 'x-on', 'x-intersect', 'x-id',
+    ];
+
+    /**
+     * The `wire:` names whose value is NOT handed to Alpine's evaluator.
+     *
+     * Kept as a deny-list because Livewire's own wildcard is one, and copying
+     * the shape is the same discipline that makes the verdict come from Alpine's
+     * parser rather than from a pattern catalog: the set of EVENTS is open, so
+     * only the exceptions can be enumerated. Measured from the installed
+     * `livewire.esm.js`, `js/directives/wire-wildcard.js`:
+     *
+     *     on("directive.init", ({ el, directive, ... }) => {
+     *       if (["snapshot","effects","model","init","loading","poll","ignore",
+     *            "id","data","key","target","dirty","sort"].includes(directive.value)) return;
+     *       if (customDirectiveHasBeenRegistered(directive.value)) return;
+     *       let attribute = directive.rawName.replace("wire:", "x-on:");
+     *
+     * Everything not listed there becomes an `x-on:` binding, which means its
+     * value goes through the same evaluator as every Alpine expression — and is
+     * therefore subject to the same CSP restriction, which is the whole reason
+     * this scan exists.
+     *
+     * The second list is the custom directives Livewire registers, which return
+     * early for the same reason. They are named separately because they come
+     * from a different mechanism and will drift on a different release.
+     *
+     * `wire:model="form.items.0.name"` is the case that makes the deny-list
+     * mandatory rather than tidy: it is a property path, and scanning it would
+     * report every bound field in the application as a broken expression — the
+     * same false-positive class that the component-tag carve-out above removes.
+     */
+    private const WIRE_NON_EXPRESSION = [
+        // The wildcard's own early return.
+        'snapshot', 'effects', 'model', 'init', 'loading', 'poll', 'ignore',
+        'id', 'data', 'key', 'target', 'dirty', 'sort',
+        // Registered custom directives, which never reach the wildcard.
+        'anchor', 'collapse', 'confirm', 'intersect', 'mask', 'navigate',
+        'offline', 'replace', 'resize', 'trap', 'stream', 'current', 'transition',
     ];
 
     public function handle(): int
@@ -90,11 +141,29 @@ class CspAuditCommand extends Command
         }
 
         $offenders = [];
+        $unchecked = [];
 
         foreach ($found as $i => $entry) {
-            if (($verdicts[$i]['ok'] ?? false) !== true) {
-                $offenders[] = $entry + ['error' => $verdicts[$i]['error'] ?? 'unknown'];
+            if (($verdicts[$i]['ok'] ?? false) === true) {
+                continue;
             }
+
+            $entry += ['error' => $verdicts[$i]['error'] ?? 'unknown'];
+
+            // A rejection is only a finding when the parser was shown what the browser sees.
+            // Where Blade is left over, it was not — and the verdict is then about Blade
+            // rather than about the expression, which is a fact concerning this command and
+            // not the developer's template.
+            //
+            // Counted apart rather than dropped, because unmeasured and clean are different
+            // states and this command's whole worth is that it does not confuse them.
+            if (BladeParser::hasServerSideConstruct($entry['expression'])) {
+                $unchecked[] = $entry;
+
+                continue;
+            }
+
+            $offenders[] = $entry;
         }
 
         if ($this->option('json')) {
@@ -102,12 +171,14 @@ class CspAuditCommand extends Command
                 'scanned' => count($found),
                 'failed' => count($offenders),
                 'offenders' => $offenders,
+                'unchecked' => count($unchecked),
+                'unparsable' => $unchecked,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG));
 
             return $offenders === [] ? self::SUCCESS : self::FAILURE;
         }
 
-        return $this->report($found, $offenders);
+        return $this->report($found, $offenders, $unchecked);
     }
 
     /**
@@ -166,73 +237,45 @@ class CspAuditCommand extends Command
     /**
      * Every Alpine expression in this file, with the tag it sits on.
      *
-     * A tag WALKER rather than one regex over the whole file, and the reason is a
-     * `>` inside a quoted attribute value. Blade array props are full of them —
-     * `:series="[[\'x\' => \'Spec\']]"` carries two — so anything that decides where a
-     * tag ends by searching backwards for the nearest `>` loses the beat at the
-     * first one and mis-attributes every attribute after it. That is not a bug to
-     * patch; a backwards search cannot answer the question at all, because the
-     * character it keys on is not rare inside values. Quotes are tracked instead.
+     * Where a tag begins and ends is Blade's question, not Alpine's, so it is answered
+     * once — in `BladeParser::tagsFromSource()` — and this command reads the boundaries
+     * it returns. That walk had been written a second time here, at a shallower depth,
+     * and the difference was not academic: a `{{-- don't --}}` between attributes ran the
+     * cursor off the end of the file and threw a raw `ValueError` out of this method,
+     * before the command could report anything at all. Where the apostrophes happened to
+     * balance there was no crash and no signal either — the swallowed span was attributed
+     * to the tag it started on, and if that tag was a component, the bare-colon exemption
+     * below then discarded every Alpine binding inside it.
+     *
+     * What stays here is the part that is about Alpine: which attributes carry an
+     * expression, and which stand-in a Blade hole leaves behind in one. Removing the holes
+     * is Blade's question and lives next to the walk; choosing what replaces them is a
+     * statement about Alpine's grammar and belongs to this command.
      *
      * @return array<int, array{line: int, attribute: string, expression: string}>
      */
     private function expressionsIn(string $contents): array
     {
         $hits = [];
-        $length = strlen($contents);
-        $cursor = 0;
 
-        while (($open = strpos($contents, '<', $cursor)) !== false) {
-            $cursor = $open + 1;
-
-            if (! preg_match('/\G([a-zA-Z][\w:.-]*)/', $contents, $nameMatch, 0, $cursor)) {
+        foreach (BladeParser::tagsFromSource($contents) as $tag) {
+            // A tag another element interrupted never closed, so what follows it is not
+            // its attribute region. Auditing it anyway produces findings that cannot be
+            // found at the line they name — and a report nobody can act on is how a
+            // developer learns to stop reading this one.
+            if ($tag['terminator'] === '<') {
                 continue;
             }
 
-            $tag = $nameMatch[1];
-            $cursor += strlen($tag);
-            // `<x-…` is a Blade component; the distinction decides how a bare `:` reads.
-            $isComponent = (bool) preg_match('/^x[-:]/i', $tag);
+            $region = substr($contents, $tag['attrStart'], $tag['attrEnd'] - $tag['attrStart']);
 
-            $attrStart = $cursor;
-            $quote = null;
-
-            // Walk to the tag's real end, which is the first `>` OUTSIDE a quoted value.
-            while ($cursor < $length) {
-                $char = $contents[$cursor];
-
-                if ($quote !== null) {
-                    if ($char === $quote) {
-                        $quote = null;
-                    }
-                    $cursor++;
-
-                    continue;
-                }
-
-                if ($char === '"' || $char === "'") {
-                    $quote = $char;
-                    $cursor++;
-
-                    continue;
-                }
-
-                if ($char === '>') {
-                    break;
-                }
-
-                $cursor++;
-            }
-
-            foreach ($this->attributesIn(substr($contents, $attrStart, $cursor - $attrStart), $isComponent) as $attribute) {
+            foreach ($this->attributesIn($region, $tag['isComponent']) as $attribute) {
                 $hits[] = [
-                    'line' => substr_count(substr($contents, 0, $attrStart + $attribute['offset']), "\n") + 1,
+                    'line' => substr_count(substr($contents, 0, $tag['attrStart'] + $attribute['offset']), "\n") + 1,
                     'attribute' => $attribute['name'],
                     'expression' => $attribute['expression'],
                 ];
             }
-
-            $cursor++;
         }
 
         return $hits;
@@ -252,7 +295,7 @@ class CspAuditCommand extends Command
         // The lookbehind keeps `wire:model` out: without it the `:model` half matches
         // the bare-colon alternative and every Livewire binding is scanned as Alpine.
         $names = implode('|', array_map('preg_quote', self::EXPRESSION_ATTRIBUTES));
-        $pattern = '/(?<![\w:@.-])(?<attr>(?:'.$names.')(?::[\w.-]+)?|@[\w.-]+|:[\w.-]+)\s*=\s*(?<q>["\'])(?<expr>.*?)(?<!\\\\)\g{q}/s';
+        $pattern = '/(?<![\w:@.-])(?<attr>(?:'.$names.')(?::[\w.-]+)?|wire:[\w.-]+|@[\w.-]+|:[\w.-]+)\s*=\s*(?<q>["\'])(?<expr>.*?)(?<!\\\\)\g{q}/s';
 
         if (! preg_match_all($pattern, $region, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
             return [];
@@ -276,19 +319,42 @@ class CspAuditCommand extends Command
                 continue;
             }
 
-            $expression = trim($match['expr'][0]);
+            // A `wire:` name is scanned only when Livewire would hand its value to
+            // Alpine — see WIRE_NON_EXPRESSION for how that set is derived. The
+            // base name is what decides: `wire:model.live.debounce.500ms` is still
+            // `model`, and comparing the whole raw name would scan it.
+            if (str_starts_with($name, 'wire:')) {
+                $base = strtok(substr($name, strlen('wire:')), '.');
+
+                if ($base === false || in_array($base, self::WIRE_NON_EXPRESSION, true)) {
+                    continue;
+                }
+            }
+
+            // Blade in a value is a server-side hole in a client-side expression: a comment,
+            // an echo, an `@js(…)` payload. All of it is gone by the time Alpine reads the
+            // attribute, so what reaches the parser has to be what is LEFT. Which construct
+            // is which, and in what order they have to go, is Blade's question — it is
+            // answered once in BladeParser and read here.
+            //
+            // The substitute is an identifier and not a literal, which is the one part of
+            // this that is Alpine's question rather than Blade's. A hole does not only sit at
+            // a value position: `@click="{{ $model }} = ! {{ $model }}"` puts one at an
+            // assignment target, and an object literal can put one at a key. Measured against
+            // the parser, `0` is rejected at both ("Invalid assignment target", "Expected
+            // property key") and `"BLADE"` at the first; the identifier is accepted at every
+            // position a hole was found in. Permissive is the right direction here — a false
+            // violation costs a developer a hunt through a template that is fine, and after
+            // one of those they stop reading the report that was their only warning.
+            $expression = trim(BladeParser::substituteServerSideConstructs($match['expr'][0], 'BLADE'));
 
             if ($expression === '') {
                 continue;
             }
 
-            // Blade interpolation is a server-side hole in a client-side expression.
-            // Substituted with an identifier rather than a literal because a payload can
-            // legitimately be an object or a string, and the substitute has to be the
-            // most permissive shape or the audit passes what the browser refuses.
             $found[] = [
                 'name' => $name,
-                'expression' => (string) preg_replace('/\{\{.*?\}\}/su', 'BLADE', $expression),
+                'expression' => $expression,
                 'offset' => (int) $match[0][1],
             ];
         }
@@ -357,13 +423,40 @@ class CspAuditCommand extends Command
     /**
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string}>  $found
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, error: string}>  $offenders
+     * @param  array<int, array{file: string, line: int, attribute: string, expression: string, error: string}>  $unchecked
      */
-    private function report(array $found, array $offenders): int
+    private function report(array $found, array $offenders, array $unchecked): int
     {
         $this->line(sprintf('Scanned %d Alpine expression(s).', count($found)));
 
+        // Listed before the verdict, so the verdict is the last thing on screen and cannot be
+        // read without this qualifying it.
+        if ($unchecked !== []) {
+            $this->line('');
+            $this->warn(sprintf('%d expression(s) could not be checked.', count($unchecked)));
+            $this->line('');
+            $this->line('Blade left something in them this audit cannot substitute — a directive that');
+            $this->line('opens a block has no stand-in, because what remains is a fragment rather than an');
+            $this->line('expression. Parsing it anyway would produce a verdict about Blade, so these are');
+            $this->line('listed rather than counted:');
+            $this->line('');
+
+            foreach (array_slice($unchecked, 0, 10) as $entry) {
+                $this->line(sprintf('  %s:%d', $entry['file'], $entry['line']));
+                $this->line(sprintf('    %s="%s"', $entry['attribute'], $entry['expression']));
+                $this->line('');
+            }
+
+            if (count($unchecked) > 10) {
+                $this->line(sprintf('  …and %d more.', count($unchecked) - 10));
+                $this->line('');
+            }
+        }
+
         if ($offenders === []) {
-            $this->info('PASS — every expression parses under Alpine\'s CSP grammar.');
+            $this->info($unchecked === []
+                ? 'PASS — every expression parses under Alpine\'s CSP grammar.'
+                : 'PASS — every expression this audit could check parses under Alpine\'s CSP grammar.');
 
             return self::SUCCESS;
         }

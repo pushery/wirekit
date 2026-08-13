@@ -470,10 +470,45 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Fonts
+    |--------------------------------------------------------------------------
+    |
+    | Pick a bundled family per category, or null to keep the system stack.
+    | Run `php artisan wirekit:publish-fonts` after changing one.
+    |
+    | 'display' is the `font-display` every bundled @font-face is served with.
+    |
+    |   'swap'     (default) — text is readable immediately in a fallback face
+    |                          and swaps to the web font when it arrives. Every
+    |                          bundled family ships a metric-matched fallback,
+    |                          so that swap does not move the layout.
+    |   'optional'           — the browser may skip the web font entirely on a
+    |                          slow connection. It removes the swap by removing
+    |                          the font: some readers never see your brand face.
+    |                          That is a real trade and it is yours to make, not
+    |                          the library's.
+    |   'block' / 'fallback' / 'auto' — the remaining CSS values, unchanged.
+    |
+    | THIS ONE IS A SWITCH, and it reaches every path WireKit writes: the
+    | package route substitutes it while serving, and `wirekit:publish-fonts`
+    | writes it into the published copy. The one path it cannot reach is a raw
+    | `vendor:publish --tag=wirekit-fonts`, which is a plain file copy the
+    | framework performs — those files keep whatever the package shipped. That
+    | gap is REPORTED rather than left silent: the <x-wirekit::fonts> component
+    | emits an inert HTML comment naming the file, and `wirekit:verify` fails
+    | its font check. An interface that looks like an interface and is not is
+    | worse than having none, so this one says when it did not reach.
+    |
+    */
+
     'fonts' => [
         'sans' => 'inter',
         'serif' => null,
         'mono' => null,
+
+        'display' => 'swap',
     ],
 
     /*

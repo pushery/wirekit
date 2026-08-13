@@ -41,7 +41,6 @@ final class HeroiconsAppPreset implements IconPreset
 
             // Security states
             'unlock' => 'heroicon-m-lock-open',
-            'key' => 'heroicon-m-key',
 
             // Notifications
         ];

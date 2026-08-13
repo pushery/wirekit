@@ -211,6 +211,14 @@ class ShowComponentCommand extends Command
      * `x-*`, `@*`, `data-*`, `aria-*`) trigger a warning with the
      * closest matching prop name (Levenshtein-ranked).
      *
+     * Where each tag ends comes from `BladeParser::tagsFromSource()`, and both reasons are
+     * failures this validation used to have. It ran to the first `>`, which is ordinary
+     * inside a value — `x-show="count > 3"` has one — so every attribute after it went
+     * unchecked; and it read names across the whole tag body, so `count`, a word out of the
+     * middle of that same value, was reported as a passed attribute. A developer wiring this
+     * into a pre-commit hook got a warning about something they never wrote and none about
+     * the typo they did.
+     *
      * Exit code: 0 on clean validation, 1 on any unknown-attribute
      * warning. Lets developers wire `wirekit:show foo --validate-against=resources/views/page.blade.php`
      * into pre-commit hooks.
@@ -227,55 +235,52 @@ class ShowComponentCommand extends Command
         $props = ComponentRegistry::extractProps($name);
         $knownProps = array_map(fn ($p) => $p['name'], $props);
 
-        // Match every <x-wirekit::name ...> opening tag in the developer
-        // file. The closing /> or > and the attribute list inside.
-        $tagPattern = '/<x-wirekit::'.preg_quote($name, '/').'(\s+[^>]*?)?\s*\/?>/s';
-        if (! preg_match_all($tagPattern, $content, $tagMatches, PREG_OFFSET_CAPTURE)) {
+        $totalUsages = 0;
+        $issues = [];
+
+        foreach (BladeParser::tagsFromSource($content) as $tag) {
+            // The exact component, not a prefix of one: `card` must not collect
+            // `<x-wirekit::card.body>`, whose props are a different set entirely.
+            if ($tag['name'] !== 'x-wirekit::'.$name) {
+                continue;
+            }
+
+            // A tag another element interrupted never closed, so its attribute names are
+            // whatever followed it in the file rather than anything the developer passed.
+            if ($tag['terminator'] === '<') {
+                continue;
+            }
+
+            $totalUsages++;
+            $line = substr_count(substr($content, 0, $tag['start']), "\n") + 1;
+
+            foreach ($tag['attributes'] as $attr) {
+                // Strip Alpine-binding / wire / Livewire prefixes for
+                // the prop-name comparison.
+                $candidate = ltrim($attr, ':@');
+
+                if (in_array($candidate, $knownProps, true)) {
+                    continue;
+                }
+
+                // Allowlist common Blade / Alpine / Livewire attributes
+                // that aren't WireKit props but are valid usage.
+                if (preg_match('/^(class|style|id|slot|wire(:|$)|x-|data-|aria-|@|role|tabindex)/', $attr)) {
+                    continue;
+                }
+
+                $issues[] = [
+                    'line' => $line,
+                    'attr' => $candidate,
+                    'closest' => $this->closestProp($candidate, $knownProps),
+                ];
+            }
+        }
+
+        if ($totalUsages === 0) {
             $this->info("No <x-wirekit::{$name}> usages found in {$developerBladePath}");
 
             return self::SUCCESS;
-        }
-
-        $totalUsages = 0;
-        $issues = [];
-        foreach ($tagMatches[1] as $i => $attrMatch) {
-            $totalUsages++;
-            $attrBlock = $attrMatch[0];
-            // `$attrBlock` is a non-empty-string by this point; the null arm was dead.
-            if ($attrBlock === '') {
-                continue;
-            }
-            $offset = $tagMatches[0][$i][1];
-            $line = substr_count(substr($content, 0, $offset), "\n") + 1;
-
-            // Crude attribute extraction — captures `name`, `name="value"`,
-            // `:name="expr"`, `@name="expr"`. Sufficient for the
-            // unknown-attribute heuristic; doesn't need full HTML
-            // parsing.
-            if (preg_match_all('/(?<![:.@\w])([:@]?[a-zA-Z][a-zA-Z0-9_:-]*)(?:=["\'][^"\']*["\'])?/', $attrBlock, $attrs)) {
-                foreach ($attrs[1] as $attr) {
-                    // Strip Alpine-binding / wire / Livewire prefixes for
-                    // the prop-name comparison.
-                    $candidate = ltrim($attr, ':@');
-
-                    if (in_array($candidate, $knownProps, true)) {
-                        continue;
-                    }
-
-                    // Allowlist common Blade / Alpine / Livewire attributes
-                    // that aren't WireKit props but are valid usage.
-                    if (preg_match('/^(class|style|id|slot|wire(:|$)|x-|data-|aria-|@|role|tabindex)/', $attr)) {
-                        continue;
-                    }
-
-                    $closest = $this->closestProp($candidate, $knownProps);
-                    $issues[] = [
-                        'line' => $line,
-                        'attr' => $candidate,
-                        'closest' => $closest,
-                    ];
-                }
-            }
         }
 
         $this->info("Scanned {$totalUsages} <x-wirekit::{$name}> usage(s) in {$developerBladePath}");

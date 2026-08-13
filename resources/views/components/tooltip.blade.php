@@ -115,6 +115,32 @@
          unaffected. --}}
     <template x-teleport="#wk-overlay-root">
     <div
+        {{-- THE MORPH KEY, and it is what makes writing the id below safe.
+             Livewire resolves a node's morph identity as `wire:id`, then
+             `wire:key`, then `el.id`. With neither of the first two present the id
+             WAS the key — and this panel mints a fresh one on every render, so two
+             renders could never agree by construction. A key mismatch does not
+             patch, it SWAPS: `swapElements` inserts a native `cloneNode(true)`,
+             which copies attributes and children and no Alpine expandos.
+             The replacement therefore arrives with no `_x_dataStack`, and Alpine's
+             scope walk climbs `parentNode` only — from inside the overlay root,
+             which hangs off <body> in no `x-data`, that walk finds nothing. So
+             `x-show="open"` resolved `open` on the GLOBAL object, where it is
+             `window.open`, a real function; Alpine auto-invokes a function-valued
+             expression and applies it with the scope proxy as the receiver, which
+             the brand check on a global operation refuses. The `Illegal
+             invocation` that raises is re-thrown from a timer, so it surfaces one
+             tick later as an uncaught page error whose stack names nothing on the
+             page — which is why this was reported as unlocatable rather than as a
+             tooltip bug. No interaction is needed to trigger it: `x-show` is
+             evaluated the moment the clone is initialized.
+             A STATIC value on purpose, and it must never become the id. The morph
+             patches a teleported node against its own counterpart, one to one, and
+             never looks a key up among siblings — so many tooltips on one page do
+             not compete — while the per-instance value is exactly the one that
+             cannot agree across two renders. The id stays random for the opposite
+             reason: `aria-describedby` on the trigger has to name THIS panel. --}}
+        wire:key="wk-tooltip-panel"
         x-ref="tooltip"
         x-show="open"
         x-transition:enter="transition ease-out duration-100"

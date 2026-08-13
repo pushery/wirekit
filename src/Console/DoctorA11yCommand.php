@@ -75,6 +75,32 @@ class DoctorA11yCommand extends Command
         $this->line('');
 
         $bladeFiles = $this->collectBladeFiles($path);
+
+        // Zero files is not a clean app, it is an unanswered question. Reporting
+        // "no a11y issues found across 0 Blade files" reads as a pass and is what
+        // a wrong `--path` produces — the same refusal `wirekit:csp-audit` makes
+        // one command over, for the same reason.
+        //
+        // Unlike the props linter there is no second empty state here: these rules
+        // scan any Blade file, not only ones using a WireKit component, so a
+        // non-empty walk always had something in scope.
+        //
+        // The refusal is conditioned on the theme-contrast stage, and that is the
+        // substance rather than a special case: this command has TWO stages, and
+        // the rule is "a run that measured nothing must not report a pass", not
+        // "a stage that measured nothing". A `--theme-contrast` run reads the
+        // token table and answers a real question with no Blade file involved.
+        // Failing it for an empty template walk would refuse a run that did in
+        // fact measure something.
+        if ($bladeFiles === [] && ! $this->themeContrastRequested()) {
+            $this->error(sprintf('Found no Blade templates in %s.', $path));
+            $this->line('');
+            $this->line('That is a failure rather than a pass: an audit that read nothing');
+            $this->line('and reported "clean" is worse than none. Check the path.');
+
+            return self::FAILURE;
+        }
+
         $findings = [];
 
         foreach ($bladeFiles as $file) {
@@ -141,11 +167,24 @@ class DoctorA11yCommand extends Command
      * static findings always surface first; if either stage fails,
      * the overall command exits non-zero.
      */
+    /**
+     * Whether the opt-in theme-contrast stage will run.
+     *
+     * Read in two places now — once to decide whether an empty template walk is
+     * a refusal, and once to run the stage — so it lives in one method. Two
+     * copies of this condition would drift, and the drift would be silent in the
+     * direction that matters: the run would refuse a `--theme-contrast` audit
+     * that was about to measure something.
+     */
+    private function themeContrastRequested(): bool
+    {
+        return (bool) $this->option('theme-contrast')
+            || (string) getenv('WIREKIT_DOCTOR_THEME_CONTRAST') === '1';
+    }
+
     private function maybeRunThemeContrast(int $bladeExit, string $failOn): int
     {
-        $flag = (bool) $this->option('theme-contrast')
-            || (string) getenv('WIREKIT_DOCTOR_THEME_CONTRAST') === '1';
-        if (! $flag) {
+        if (! $this->themeContrastRequested()) {
             return $bladeExit;
         }
 

@@ -35,3 +35,20 @@
     font-display: swap;
     src: url('IBMPlexSans-Bold.woff2') format('woff2');
 }
+
+/* --- WireKit fallback face — generated, do not edit by hand --- */
+/*
+ * Registers the local system font under its own name with IBM Plex Sans's
+ * metrics, so the text painted before the swap occupies the same box as
+ * the text painted after it. Measured against Arial; regenerate with
+ * `python3 scripts/generate-font-fallbacks.py`.
+ */
+@font-face {
+    font-family: 'IBM Plex Sans Fallback';
+    src: local('Arial'), local('Helvetica Neue'), local('Helvetica'), local('Liberation Sans');
+    size-adjust: 101.55%;
+    ascent-override: 100.94%;
+    descent-override: 27.08%;
+    line-gap-override: 0.0%;
+}
+/* --- end WireKit fallback face --- */

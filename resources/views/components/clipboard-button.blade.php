@@ -69,7 +69,7 @@
     {{-- The copy lives in resources/js/components/clipboard-button.js. It cannot
          live here: three statements and an arrow function, none of which Alpine's
          CSP build parses — under a strict policy the button took focus and copied
-         nothing. The value goes through Js::from rather than addslashes, which
+         nothing. The value goes through AlpinePayload::from rather than addslashes, which
          escapes an apostrophe but leaves a newline or a backslash to end the
          string it sits in. --}}
     x-data="wirekitClipboardButton({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, duration: {{ (int) $duration }} })"

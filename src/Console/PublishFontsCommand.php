@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
+use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontPreset;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Support\DirectoryHash;
@@ -79,14 +80,14 @@ class PublishFontsCommand extends Command
             // fonts, and both this command and `wirekit:verify` reported success.
             // Now a byte drift overwrites (an upgrade heals itself); `--force`
             // still overwrites unconditionally.
-            if ($alreadyPublished && ! $this->option('force') && DirectoryHash::matches($source, $target)) {
+            if ($alreadyPublished && ! $this->option('force') && DirectoryHash::matches($source, $target, FontCss::publishTransform())) {
                 $this->line("  Skipped {$preset->key} — already up to date");
                 $published[] = $relative;
 
                 continue;
             }
 
-            $this->copyDirectory($source, $target);
+            $this->copyDirectory($source, $target, FontCss::publishTransform());
 
             // Name what happened so an overwrite is visible — an upgrade refresh, or
             // the rare case where it replaces a hand-edited published font file
@@ -178,7 +179,10 @@ class PublishFontsCommand extends Command
         }
     }
 
-    private function copyDirectory(string $source, string $target): void
+    /**
+     * @param  callable(string, string): string  $transform
+     */
+    private function copyDirectory(string $source, string $target, callable $transform): void
     {
         if (! is_dir($target)) {
             mkdir($target, 0755, true);
@@ -201,7 +205,12 @@ class PublishFontsCommand extends Command
                 continue;
             }
 
-            copy($item->getPathname(), $destination);
+            // A stylesheet is rewritten on the way out rather than copied, so the
+            // published file carries `wirekit.fonts.display` instead of the `swap`
+            // the package ships. Everything else — the woff2 payloads — is copied
+            // byte for byte.
+            $contents = (string) file_get_contents($item->getPathname());
+            file_put_contents($destination, $transform($relative, $contents));
         }
     }
 

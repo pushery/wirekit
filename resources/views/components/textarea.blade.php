@@ -109,7 +109,7 @@
 
     // Auto-size: `rows="auto"` grows the textarea with its content via CSS
     // `field-sizing: content`, which is ABOVE the WireKit browser baseline —
-    // Chrome 123 and Safari 17.4, against a floor of 111 and 16.4. This comment
+    // Chrome 123 and Safari 26.2, against a floor of 111 and 16.4. This comment
     // claimed the opposite for thirteen releases.
     //
     // The field is complete without it: the numeric `rows` is the minimum height,
@@ -233,9 +233,11 @@
 
     {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}
     {{-- See the `reserve-message` prop: an appearing message grows this element
-         and pushes every sibling in a horizontal row. --}}
+         and pushes every sibling in a horizontal row. It is `select-none` for the same
+         reason it is `aria-hidden` — it holds space, not text, and a drag-select across the
+         form should not carry its no-break space into the clipboard. --}}
     @if($reserveMessage && ! (($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
-        <p aria-hidden="true" class="text-[length:var(--text-wk-sm)]">&nbsp;</p>
+        <p aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
     @endif
     @if($hasError && $errorMessage)
         <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>

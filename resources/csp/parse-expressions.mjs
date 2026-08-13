@@ -33,6 +33,26 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
+import { forbiddenGlobalsIn } from './unresolvable-globals.mjs';
+
+/**
+ * An expression that is outside the grammar in a way the grammar cannot express.
+ *
+ * The verdict this script produces comes entirely from an instrument it lifts
+ * out of somebody else's bundle. If that instrument ever stops discriminating —
+ * a version whose slice boundaries still match but whose parser accepts
+ * everything, a stub, a bad splice — every expression comes back `ok` and the
+ * run is a PASS over the whole catalog. That failure has no symptom: it looks
+ * exactly like a clean codebase.
+ *
+ * So the oracle is asked a question it must get wrong before it is trusted with
+ * questions whose answers are unknown. An arrow function is the right canary:
+ * Alpine's CSP grammar has no function expressions at all, and it cannot grow
+ * them without ceasing to be a CSP grammar — the whole point is that no code is
+ * constructed at runtime.
+ */
+const CANARY = '() => 1';
+
 /**
  * Lift Alpine's Tokenizer + Parser out of the CSP bundle.
  *
@@ -92,17 +112,56 @@ function readStdin() {
 
 try {
     const { Tokenizer, Parser } = loadCspParser();
+
+    // Prove the instrument still IS an instrument before reading anything off
+    // it. Everything below this line is a verdict from it.
+    let canaryRejected = false;
+    try {
+        new Parser(new Tokenizer(CANARY).tokenize()).parse();
+    } catch {
+        canaryRejected = true;
+    }
+
+    if (! canaryRejected) {
+        throw new Error(
+            `Alpine's CSP parser accepted \`${CANARY}\`, which it must reject.\n`
+            + 'The grammar exists precisely so that no function is constructed at runtime, so a '
+            + 'build that parses an arrow function is not the CSP build — or the slice taken from '
+            + 'it is not the parser. Either way the audit has no working oracle, and a verdict '
+            + 'from a broken oracle is a PASS over everything. It refuses to report one.'
+        );
+    }
+
     const payload = JSON.parse(await readStdin());
     const expressions = Array.isArray(payload.expressions) ? payload.expressions : [];
 
     const results = expressions.map((expression) => {
-        try {
-            new Parser(new Tokenizer(expression).tokenize()).parse();
+        let ast;
 
-            return { ok: true, error: null };
+        try {
+            ast = new Parser(new Tokenizer(expression).tokenize()).parse();
         } catch (error) {
-            return { ok: false, error: String(error?.message ?? error) };
+            return { ok: false, error: String(error?.message ?? error), globals: [] };
         }
+
+        // Parsing is only half the restriction. The evaluator resolves an
+        // identifier against the Alpine scope alone — there is no window
+        // fallback — so an expression can be flawless grammar and still throw
+        // on the first name it reads.
+        const globals = forbiddenGlobalsIn(ast);
+
+        if (globals.length > 0) {
+            const names = globals.join(', ');
+
+            return {
+                ok: false,
+                globals,
+                error: `names ${names}, which Alpine's CSP evaluator cannot resolve `
+                    + '(it resolves identifiers against the Alpine scope only, with no window fallback)',
+            };
+        }
+
+        return { ok: true, error: null, globals: [] };
     });
 
     process.stdout.write(JSON.stringify({ ok: true, results }));
