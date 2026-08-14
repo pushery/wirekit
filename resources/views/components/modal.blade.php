@@ -18,6 +18,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('modal', $attributes->getAttributes());
+
     // Title ID for aria-labelledby — links dialog to its header
     $titleId = 'wk-modal-title-' . ($name ?? \Illuminate\Support\Str::random(12));
 

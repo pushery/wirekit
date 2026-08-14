@@ -458,6 +458,33 @@ class ComponentRegistry
     }
 
     /**
+     * The names a component accepts through `@aware` rather than `@props`.
+     *
+     * Kept separate from `extractProps()` on purpose. Every other reader of
+     * that method — the JSON manifest, the API map, the docs pipeline — means
+     * "the props this component declares", and an `@aware` key is not one: it
+     * is a value the PARENT owns, which the child reads if it is there. Folding
+     * the two together would quietly widen every published surface.
+     *
+     * The one question where they belong together is "is this attribute a name
+     * the component knows?", because Blade accepts either spelling on the tag —
+     * so the unknown-prop warning unions them and nothing else does.
+     *
+     * A class-based component has no `@aware`; the empty list is the honest
+     * answer rather than a special case.
+     *
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     */
+    public static function extractAwareProps(string $name): array
+    {
+        if (isset(self::CLASS_COMPONENTS[$name])) {
+            return [];
+        }
+
+        return PropsParser::parseAwareBlade(self::bladeFilePath($name));
+    }
+
+    /**
      * Return the backing class FQCN for class-based components, or null for
      * anonymous Blade components. Used by the JSON-manifest exporter to
      * skip false-positive slot detection on class-side public properties.

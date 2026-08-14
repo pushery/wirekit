@@ -26,6 +26,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('reveal', $attributes->getAttributes());
+
     $preset ??= config('wirekit.components.reveal.preset', 'fade-in');
     $trigger ??= config('wirekit.components.reveal.trigger', 'viewport');
     $duration ??= config('wirekit.components.reveal.duration', 'normal');

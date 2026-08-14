@@ -200,9 +200,24 @@ final class StrictnessGate
             static $declaredCache = [];
             if (! array_key_exists($context, $declaredCache)) {
                 try {
+                    // `@props` AND `@aware`, because Blade accepts either name on
+                    // the tag and the question here is only "does this component
+                    // know it?". `@aware` does not strip its key from the
+                    // attribute bag, so a key written directly on the tag arrives
+                    // here looking exactly like an unknown prop — and every form
+                    // control in the catalog reads `announceErrors` that way.
+                    // Deriving from `@props` alone reported the documented call
+                    // `<x-wirekit::input announce-errors="false">` as a typo.
+                    //
+                    // The union lives here and nowhere else: every other reader of
+                    // extractProps() means "the props this component declares",
+                    // which an `@aware` key is not.
                     $declaredCache[$context] = array_map(
                         static fn (array $p): string => $p['name'],
-                        ComponentRegistry::extractProps($context),
+                        [
+                            ...ComponentRegistry::extractProps($context),
+                            ...ComponentRegistry::extractAwareProps($context),
+                        ],
                     );
                 } catch (\Throwable) {
                     $declaredCache[$context] = null;

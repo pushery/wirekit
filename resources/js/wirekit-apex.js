@@ -16,6 +16,7 @@
  * WireKit ships only this Alpine glue (MIT).
  */
 import wirekitApexChart from './components/chart-apex.js';
+import { reportLateRegistration } from './utils/late-registration.js';
 
 function registerApexChartComponent() {
     // Detect a second registration instead of asserting it is fine.
@@ -44,10 +45,19 @@ function registerApexChartComponent() {
 }
 
 // Primary path: register before Alpine.start() processes the DOM.
-document.addEventListener('alpine:init', registerApexChartComponent);
+let reachedByInitEvent = false;
+document.addEventListener('alpine:init', () => {
+    reachedByInitEvent = true;
+    registerApexChartComponent();
+});
 
-// Fallback: if Alpine was already started before this script loaded, register now —
-// otherwise the component never registers at all and every chart stays inert.
+// Fallback: if Alpine was already started before this script loaded, register now, so
+// charts in DOM Alpine has not walked yet still work. It does NOT rescue the charts
+// already on the page — measured: an element whose x-data named a component that did
+// not exist at walk time stays dead, and a re-walk does not revive it. The sentence
+// this comment used to carry ("otherwise the component never registers at all") was
+// true about the registration and wrong about the charts.
 if (window.Alpine?.version) {
     registerApexChartComponent();
+    reportLateRegistration('wirekit-apex.js', () => reachedByInitEvent);
 }

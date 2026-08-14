@@ -27,6 +27,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('pricing-table', $attributes->getAttributes());
+
     // Column ladder. Full literal class strings (never interpolated) so the
     // Tailwind scanner sees every one of them. One plan per row on a phone in
     // every case — plan cards do not survive being halved on a 390px screen.

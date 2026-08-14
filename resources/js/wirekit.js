@@ -81,6 +81,7 @@ import wirekitDataTable from './components/data-table.js';
 import wirekitEventCalendar from './components/event-calendar.js';
 import wirekitMap from './components/map.js';
 import wirekitStickyPanelShadows from './components/sticky-panel.js';
+import { reportLateRegistration } from './utils/late-registration.js';
 import wirekitStream from './components/stream.js';
 
 /**
@@ -205,13 +206,21 @@ function registerComponents() {
 }
 
 // Primary path: register before Alpine.start() processes the DOM.
-document.addEventListener('alpine:init', registerComponents);
+let reachedByInitEvent = false;
+document.addEventListener('alpine:init', () => {
+    reachedByInitEvent = true;
+    registerComponents();
+});
 
-// Fallback: if Alpine was already started before this script loaded
-// (e.g. non-Livewire setups, late script loading), register immediately.
-// Alpine.data() is idempotent — double-registration is safe.
+// Fallback: Alpine may already be on the page (non-Livewire setups, late script
+// loading). Registering now still reaches DOM Alpine has not walked YET — a Livewire
+// morph, anything appended later — and Alpine.data() is idempotent, so this stays.
+// What it cannot do is repair markup Alpine already walked: those elements are dead
+// and a re-walk does not revive them. reportLateRegistration says so once, and only
+// when such markup is actually on the page.
 if (window.Alpine?.version) {
     registerComponents();
+    reportLateRegistration('wirekit.js', () => reachedByInitEvent);
 }
 
 // Positioning helper, exposed globally for components whose Alpine logic lives

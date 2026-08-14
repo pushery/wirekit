@@ -27,6 +27,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('theme-controller', $attributes->getAttributes());
+
     $variant = WireKit::validateProp('theme-controller', 'variant', $variant, ['button', 'switch', 'select']);
     $size = WireKit::validateProp('theme-controller', 'size', $size, ['sm', 'md']);
     $surface = WireKit::validateProp('theme-controller', 'surface', $surface, ['filled', 'ghost']);

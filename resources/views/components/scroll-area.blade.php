@@ -15,6 +15,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('scroll-area', $attributes->getAttributes());
+
     // Scroll Area — themed scrollbar container wrapping the existing .wk-scrollbar utility.
     // Provides a component API around the CSS scrollbar utility with configurable orientation.
     $overflowClass = match ($orientation) {

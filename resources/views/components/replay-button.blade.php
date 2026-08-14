@@ -12,6 +12,13 @@
     'target' => null,
 ])
 
+@php
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('replay-button', $attributes->getAttributes());
+@endphp
+
 {{--
     Replay button — re-mounts the closest [data-replay-target] ancestor
     by replacing its innerHTML with the snapshot stored in

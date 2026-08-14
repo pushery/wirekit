@@ -607,4 +607,36 @@ return [
         'apex' => false,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Assets
+    |--------------------------------------------------------------------------
+    |
+    | Middleware for the routes that serve WireKit's own CSS, JS and fonts
+    | straight from the package (`/wirekit/wirekit.css` and its siblings).
+    |
+    | The default is NONE, and that is deliberate. Those handlers read a file
+    | from the package directory — no session, no CSRF token, no auth, no model
+    | binding. Putting them in `web` used to add `StartSession`, which meant a
+    | session read and write for every stylesheet hit and, worse, a `Set-Cookie`
+    | on a response that declares `public, max-age=31536000, immutable`. A shared
+    | cache may keep that response for a year and hand it to the next visitor
+    | with the cookie still attached. Most shared caches refuse a response
+    | carrying `Set-Cookie` — but that is their default, configurable and
+    | different per vendor, not a property of the response.
+    |
+    | Without the cookie the one-year directive is honest and a CDN can actually
+    | serve these files, which is what it was written for.
+    |
+    | Set this ONLY if your application needs its own middleware on them — a
+    | security-header or HTTPS-enforcement layer you apply everywhere is the
+    | realistic case. Both a string and a list are accepted. Anything that starts
+    | a session brings the cookie back with it.
+    |
+    */
+
+    'assets' => [
+        'middleware' => [],
+    ],
+
 ];

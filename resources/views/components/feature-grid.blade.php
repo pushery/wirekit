@@ -17,6 +17,11 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('feature-grid', $attributes->getAttributes());
+
     // Tailwind cannot extract runtime-concatenated class names — use literal lookup map.
     $colsMap = [
         '1' => 'grid-cols-1', '2' => 'grid-cols-2', '3' => 'grid-cols-3',

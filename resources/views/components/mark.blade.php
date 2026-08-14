@@ -9,6 +9,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('mark', $attributes->getAttributes());
+
     $classes = WireKit::resolveClasses('mark', 'base', implode(' ', [
         'bg-[var(--color-wk-warning-bg,oklch(0.905 0.093 102.1))]',
         'text-[color:var(--color-wk-text)]',

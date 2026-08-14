@@ -14,6 +14,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('dropdown', $attributes->getAttributes());
+
     // STABLE across re-renders, which the old `Str::random(12)` was not — and the
     // panel is the one place where that costs everything.
     //

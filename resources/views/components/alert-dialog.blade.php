@@ -19,6 +19,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('alert-dialog', $attributes->getAttributes());
+
     // Alert Dialog — specialized confirmation dialog for destructive actions.
     // Uses role="alertdialog" (not "dialog") to signal urgency to screen readers.
     // Non-dismissible by default — user must click Cancel or Confirm.

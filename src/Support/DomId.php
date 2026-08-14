@@ -25,16 +25,38 @@ use Pushery\WireKit\WireKit;
  * Opt out with `config('wirekit.a11y.dedupe_ids', false)` — then the preferred
  * value is returned verbatim (the pre-2.20 behavior).
  *
- * CAVEAT (documented): across INDEPENDENTLY-updating Livewire islands the registry
- * resets per request, so an id that was `email-2` on the full render can come back
- * `email` after a partial island update. Within one component template it is stable
- * (label + describedby are recomputed together). Repeat the same `name` across
- * independent islands → pass an explicit `id`.
+ * A control with NEITHER `id` nor `name` gets a derived id too, and that one is
+ * COUNTED rather than random. The difference is the whole point: a random id is
+ * new on every render, so a Livewire morph replaces the node instead of patching
+ * it — the reader loses focus mid-keystroke — and every `aria-controls` /
+ * `label[for]` / `aria-describedby` that names it is left pointing at the id from
+ * the render before. Nothing looks wrong in the markup: both halves are
+ * well-formed, they simply name different things.
+ *
+ * The counter is per request and per prefix, so the same element gets the same
+ * number on a re-render as long as the markup order is stable — which is exactly
+ * the case a morph is.
+ *
+ * CAVEAT (documented, and it applies to BOTH paths): across INDEPENDENTLY-updating
+ * Livewire islands the registry resets per request, so an id that was `email-2` on
+ * the full render can come back `email` after a partial island update, and a
+ * counted id can restart at 1 in an island that re-renders alone. Within one
+ * component template it is stable (label + describedby are recomputed together).
+ * Repeat the same `name` across independent islands → pass an explicit `id`.
+ *
+ * That caveat is the price of the trade and it is the right way round: a random id
+ * breaks the pairing on EVERY render, a counted one only in a case that needs two
+ * independently-morphing islands rendering the same nameless control. The first is
+ * a defect every user meets; the second is a configuration a caller can fix by
+ * passing an `id`.
  */
 final class DomId
 {
     /** @var array<string, int> base id → times seen this request */
     private static array $seen = [];
+
+    /** @var array<string, int> fallback prefix → ids handed out this request */
+    private static array $counters = [];
 
     /**
      * Return a page-unique id for a control.
@@ -44,9 +66,14 @@ final class DomId
      */
     public static function unique(?string $preferred, string $fallbackPrefix): string
     {
-        // No id and no name → a random id is unique by construction; don't register it.
+        // No id and no name → count instead of randomize. Unique by construction
+        // either way; only the counted one survives a re-render, which is what a
+        // `label[for]` and a Livewire morph both need.
         if ($preferred === null || $preferred === '') {
-            return $fallbackPrefix.Str::random(6);
+            $seen = self::$counters[$fallbackPrefix] ?? 0;
+            self::$counters[$fallbackPrefix] = $seen + 1;
+
+            return $fallbackPrefix.($seen + 1);
         }
 
         // Opt-out restores the exact pre-2.20 behavior (verbatim, may collide).
@@ -69,5 +96,6 @@ final class DomId
     public static function reset(): void
     {
         self::$seen = [];
+        self::$counters = [];
     }
 }

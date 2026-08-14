@@ -100,6 +100,11 @@
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('color-picker', $attributes->getAttributes());
+
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.

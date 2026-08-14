@@ -15,6 +15,11 @@
     use Pushery\WireKit\WireKit;
     use Carbon\Carbon;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('date-separator', $attributes->getAttributes());
+
     $variantValue = match ($variant) {
         'inline', 'sticky' => $variant,
         default => WireKit::validateProp('date-separator', 'variant', $variant, ['inline', 'sticky']),

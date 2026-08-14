@@ -8,6 +8,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('tree-view', $attributes->getAttributes());
+
     // Tree view container — WAI-ARIA tree pattern.
     // Uses role="tree" with keyboard navigation handled by Alpine.
     // Padding prevents node hover backgrounds from overlapping container borders.

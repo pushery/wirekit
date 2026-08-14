@@ -16,6 +16,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('team-member', $attributes->getAttributes());
+
     // First + last initial, mb_* throughout: names are exactly where non-ASCII
     // lives, and substr() would slice a codepoint in half and emit broken UTF-8.
     $derivedInitials = $initials;

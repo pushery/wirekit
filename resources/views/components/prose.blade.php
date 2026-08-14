@@ -43,6 +43,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('prose', $attributes->getAttributes());
+
     // Prose — typography wrapper that styles raw HTML (h1–h6, p, ul, ol,
     // blockquote, code, table, a) with WireKit design tokens. Similar
     // to @tailwindcss/typography but token-driven.

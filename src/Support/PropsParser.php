@@ -84,12 +84,60 @@ final class PropsParser
      */
     public static function parseSource(string $source): array
     {
-        // Step 1 — locate the @props block with a narrow regex that ONLY
+        return self::parseDirectiveSource($source, 'props');
+    }
+
+    /**
+     * Parse Blade-source text and extract its `@aware([…])` block.
+     *
+     * `@aware` is Laravel's parent-to-child prop bridge, and for the question
+     * "is this attribute a name the component knows?" its keys count exactly as
+     * much as `@props` does: Blade accepts either on the tag. A component that
+     * reads `announceErrors` through `@aware` is handed it legitimately, and
+     * treating only `@props` as declared reports that legitimate call as a typo.
+     *
+     * Same shape, same tokenizer, same guarantees — only the directive name
+     * differs, which is why this delegates rather than growing a second parser.
+     * The house rule against a regex `@props` reader applies to `@aware` for the
+     * same reason it applies to `@props`: a nested `config(...)` default carries
+     * commas, and an inline comment carries anything at all.
+     *
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     */
+    public static function parseAwareSource(string $source): array
+    {
+        return self::parseDirectiveSource($source, 'aware');
+    }
+
+    /**
+     * Parse the `@aware([…])` block of a Blade file.
+     *
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     */
+    public static function parseAwareBlade(string $bladePath): array
+    {
+        if (! is_file($bladePath)) {
+            return [];
+        }
+
+        $contents = file_get_contents($bladePath);
+
+        return $contents === false ? [] : self::parseAwareSource($contents);
+    }
+
+    /**
+     * The shared reader behind `@props` and `@aware`.
+     *
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     */
+    private static function parseDirectiveSource(string $source, string $directive): array
+    {
+        // Step 1 — locate the directive block with a narrow regex that ONLY
         // captures the outer wrapper. Multi-line + nested-bracket-aware
         // matching is left to the tokenizer, where it works correctly.
         // The regex requires balanced brackets at the OUTER level only;
         // anything inside is opaque to the regex.
-        if (! preg_match('/@props\s*\(\s*\[/s', $source, $startMatch, PREG_OFFSET_CAPTURE)) {
+        if (! preg_match('/@'.preg_quote($directive, '/').'\s*\(\s*\[/s', $source, $startMatch, PREG_OFFSET_CAPTURE)) {
             return [];
         }
         $arrayBodyStart = $startMatch[0][1] + strlen($startMatch[0][0]) - 1;

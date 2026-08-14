@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.29.0 — MIT License
+ * WireKit CSS v2.30.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -622,8 +622,19 @@
 /* focused child near an edge can never be faded out from under the user    */
 /* (WCAG 2.4.7 Focus Visible). Static — no animation, so nothing to gate    */
 /* behind prefers-reduced-motion.                                            */
-/* RTL: the x-axis start/end map to physical left/right today; logical      */
-/* mapping lands with the RTL/direction work.                                */
+/* RTL: `start` and `end` are LOGICAL names, and the horizontal rules below  */
+/* emit physical `to right` / `to left`. In a right-to-left document those   */
+/* are inverted — the fade sits on the edge the reader has already passed    */
+/* and the edge that actually scrolls stays hard. Nothing fails and nothing  */
+/* logs; the hint simply points the wrong way for those locales. `both` is   */
+/* symmetric and was never affected, which is why the preview people look at */
+/* most is the one that cannot show it.                                      */
+/*                                                                          */
+/* The override below is the PERMANENT form, not a stopgap ahead of the      */
+/* logical-property migration: CSS has no logical gradient keyword — there   */
+/* is no `to inline-end` — so a gradient can only follow the writing         */
+/* direction through a `[dir="rtl"]` rule. Same pattern the indicator badge  */
+/* already uses.                                                             */
 .wk-scroll-fade[data-fade-axis="y"][data-fade="both"] {
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-wk-size), #000 calc(100% - var(--fade-wk-size)), transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-wk-size), #000 calc(100% - var(--fade-wk-size)), transparent 100%);
@@ -647,6 +658,20 @@
 .wk-scroll-fade[data-fade-axis="x"][data-fade="end"] {
     -webkit-mask-image: linear-gradient(to left, transparent 0, #000 var(--fade-wk-size));
     mask-image: linear-gradient(to left, transparent 0, #000 var(--fade-wk-size));
+}
+/* Right-to-left: the two horizontal edges swap. `start` becomes the RIGHT
+   edge, so it fades `to left`, and `end` becomes the LEFT. Both are listed
+   even though each is the other's value, because a reader checking one edge
+   should not have to infer the other. (0,4,0) — one class, two attributes and
+   the dir attribute — so it out-specifies the (0,3,0) rules above, and stays
+   below the (0,4,0)-plus-pseudo-class focus reveal that must win over both. */
+[dir="rtl"] .wk-scroll-fade[data-fade-axis="x"][data-fade="start"] {
+    -webkit-mask-image: linear-gradient(to left, transparent 0, #000 var(--fade-wk-size));
+    mask-image: linear-gradient(to left, transparent 0, #000 var(--fade-wk-size));
+}
+[dir="rtl"] .wk-scroll-fade[data-fade-axis="x"][data-fade="end"] {
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-wk-size));
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-wk-size));
 }
 /* Specificity note: the edge rules above are (0,3,0) — one class + two
    attribute selectors. This reveal MUST out-specify them or it silently never

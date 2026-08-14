@@ -18,6 +18,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('spinner', $attributes->getAttributes());
+
     // Validate up front so an invalid value resolves to a real allowed value
     // (then mapped below) — NOT the raw fallback string. Glyph dimensions are
     // structural SVG sizes (not themeable tokens) — the same convention every

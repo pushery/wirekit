@@ -8,6 +8,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('menubar', $attributes->getAttributes());
+
     // Menubar — horizontal menu bar with dropdown menus (File, Edit, View pattern).
     // Follows WAI-ARIA menubar pattern with arrow key navigation between menus.
     $classes = WireKit::resolveClasses('menubar', 'base', implode(' ', [

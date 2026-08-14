@@ -12,6 +12,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('stepper', $attributes->getAttributes());
+
     // A stepper shows progress through a multi-step flow. Each step is either
     // completed (index < current), current (index == current), or upcoming
     // (index > current). The visual treatment and ARIA semantics differ per state.

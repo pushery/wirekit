@@ -706,6 +706,43 @@ class WireKitServiceProvider extends ServiceProvider
     }
 
     /**
+     * Middleware for the asset routes — none by default, and that IS the point.
+     *
+     * These routes used to sit in the `web` group, which bought them
+     * `StartSession` and `AddQueuedCookiesToResponse`. The handlers below read a
+     * file off disk: no session, no CSRF token, no auth, no model binding. The
+     * group gave them nothing and cost them two things.
+     *
+     * The expensive one is a header combination. Every asset answer declares
+     * `public, max-age=31536000, immutable`, and `web` added `Set-Cookie` beside
+     * it — a response a shared cache may store for a year and hand, cookie
+     * included, to the next visitor. Most shared caches refuse a response
+     * carrying `Set-Cookie`, but that is a per-vendor DEFAULT, not a property of
+     * what we send, and a package cannot ship a header whose safety depends on a
+     * stranger's configuration. The cheap one is a session read and write per
+     * asset hit, for a file no logged-in state can change.
+     *
+     * The irony is worth stating once: the year-long directive exists so a CDN
+     * can serve these files, and the cookie is exactly what makes a CDN decline
+     * them. The header promised what the cookie prevented.
+     *
+     * It is CONFIGURABLE rather than simply removed, because removing it would
+     * be a change with no way back. An application that hangs its own security
+     * headers or HTTPS enforcement in `web` would have no way to restore them
+     * for these nine routes short of forking. `wirekit.assets.middleware` is
+     * that way back — and the default is what makes the response honest.
+     *
+     * @return array<int, string>
+     */
+    protected function assetRouteMiddleware(): array
+    {
+        // A bare string is the shape a developer reaches for first. Casting it
+        // rather than ignoring it keeps `'middleware' => 'web'` from silently
+        // producing a route with no middleware at all.
+        return array_values((array) config('wirekit.assets.middleware', []));
+    }
+
+    /**
      * Register routes that serve WireKit assets directly from the package.
      *
      * This allows @wirekitStyles and @wirekitScripts to work immediately
@@ -747,7 +784,7 @@ class WireKitServiceProvider extends ServiceProvider
         //
         // The route serves the family's whole directory: the CSS and the woff2
         // files it @font-face-references, which are siblings of it.
-        Route::group(['middleware' => 'web'], function (): void {
+        Route::group(['middleware' => $this->assetRouteMiddleware()], function (): void {
             Route::get('wirekit/fonts/{path}', function (string $path) {
                 $root = realpath(__DIR__.'/../resources/fonts');
                 $file = realpath(__DIR__.'/../resources/fonts/'.$path);
@@ -788,7 +825,7 @@ class WireKitServiceProvider extends ServiceProvider
             })->where('path', '.*');
         });
 
-        Route::group(['middleware' => 'web'], function () use ($assets): void {
+        Route::group(['middleware' => $this->assetRouteMiddleware()], function () use ($assets): void {
             foreach ($assets as $uri => $meta) {
                 Route::get($uri, function () use ($meta) {
                     $path = realpath(__DIR__.'/../dist/'.$meta['file']);
