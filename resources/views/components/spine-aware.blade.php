@@ -16,6 +16,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('spine-aware', $attributes->getAttributes());
+
     // Resolve the spine-padding utility via the canonical helper so
     // developer-authored opt-in components stay in lockstep with the
     // first-party spine participants (brand-bar / main / container /

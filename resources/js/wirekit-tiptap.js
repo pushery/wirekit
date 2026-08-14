@@ -20,16 +20,24 @@
  * is purely additive for the core-bundle-plus-editor case.
  */
 import wirekitEditor from './components/editor.js';
+import { reportLateRegistration } from './utils/late-registration.js';
 
 function registerEditorComponent() {
     Alpine.data('wirekitEditor', wirekitEditor);
 }
 
 // Primary path: register before Alpine.start() processes the DOM.
-document.addEventListener('alpine:init', registerEditorComponent);
+let reachedByInitEvent = false;
+document.addEventListener('alpine:init', () => {
+    reachedByInitEvent = true;
+    registerEditorComponent();
+});
 
 // Fallback: if Alpine was already started before this script loaded, register
-// immediately. Alpine.data() is idempotent — double-registration is safe.
+// immediately. Alpine.data() is idempotent — double-registration is safe, and it
+// reaches DOM Alpine has not walked yet. An editor already rendered before this
+// bundle arrived is beyond rescue, though, so say that rather than imply otherwise.
 if (window.Alpine?.version) {
     registerEditorComponent();
+    reportLateRegistration('wirekit-tiptap.js', () => reachedByInitEvent);
 }

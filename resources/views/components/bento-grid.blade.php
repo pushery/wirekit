@@ -14,6 +14,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('bento-grid', $attributes->getAttributes());
+
     // Match on the RESULT, not the raw prop: validateProp throws in strict mode
     // and otherwise returns the fallback, so an invalid value can never reach the
     // class map. 'md' leads the list because validateProp falls back to the first

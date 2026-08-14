@@ -20,16 +20,25 @@
  * CSP build, measured rather than assumed.
  */
 import wirekitOptimistic from './components/optimistic.js';
+import { reportLateRegistration } from './utils/late-registration.js';
 
 function registerOptimisticComponent() {
     Alpine.data('wirekitOptimistic', wirekitOptimistic);
 }
 
 // Primary path: register before Alpine.start() processes the DOM.
-document.addEventListener('alpine:init', registerOptimisticComponent);
+let reachedByInitEvent = false;
+document.addEventListener('alpine:init', () => {
+    reachedByInitEvent = true;
+    registerOptimisticComponent();
+});
 
 // Fallback: if Alpine was already started before this script loaded, register
-// immediately. Alpine.data() is idempotent — double-registration is safe.
+// immediately. Alpine.data() is idempotent — double-registration is safe, and it
+// reaches DOM Alpine has not walked yet. It does not revive an optimistic control
+// that was already walked without its component, which is worth saying out loud:
+// that control silently stops being optimistic rather than visibly breaking.
 if (window.Alpine?.version) {
     registerOptimisticComponent();
+    reportLateRegistration('wirekit-optimistic.js', () => reachedByInitEvent);
 }

@@ -18,6 +18,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('stage-card', $attributes->getAttributes());
+
     // Validate the intent first (throws in debug / falls back in prod), then
     // map to its color token. Mirrors stat / badge: info+primary share
     // accent, neutral uses the muted text token.

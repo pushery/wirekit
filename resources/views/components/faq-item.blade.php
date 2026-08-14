@@ -53,6 +53,11 @@
 
     use Pushery\WireKit\Support\FaqCollector;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('faq-item', $attributes->getAttributes());
+
     // Resolve the slot to a string once: it is both the visible answer and the
     // schema's answer text, and rendering it twice could produce two different
     // strings (anything with a random id, a counter, or a date in it).

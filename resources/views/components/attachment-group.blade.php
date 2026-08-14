@@ -12,6 +12,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('attachment-group', $attributes->getAttributes());
+
     $orientationValue = in_array($orientation, ['row', 'stack'], true)
         ? $orientation
         : WireKit::validateProp('attachment-group', 'orientation', $orientation, ['row', 'stack']);

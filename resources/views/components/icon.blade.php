@@ -11,6 +11,11 @@
     use Pushery\WireKit\Icons\IconResolver;
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('icon', $attributes->getAttributes());
+
     // Resolve the semantic alias to the actual Blade Icon identifier
     $resolved = app(IconResolver::class)->resolve($name);
 

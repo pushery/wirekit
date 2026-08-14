@@ -79,6 +79,11 @@
     use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('inline-edit', $attributes->getAttributes());
+
     $openOnValueClick = BooleanProp::from($openOnValueClick, true);
     $exclusive = BooleanProp::from($exclusive, true);
     $actions = BooleanProp::from($actions, true);

@@ -20,6 +20,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('accordion', $attributes->getAttributes());
+
     // Accordion container — visually a vertically stacked list with dividers.
     // `mode` controls whether multiple panels can be open at once:
     //   - 'single'   → opening one closes the others (like radio buttons)

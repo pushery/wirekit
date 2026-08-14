@@ -12,6 +12,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('hover-card', $attributes->getAttributes());
+
     // Hover Card — rich tooltip-like overlay that shows on hover/focus.
     // Unlike tooltip, hover cards display structured content (avatar, bio, actions).
     // Uses Floating UI for positioning and role="dialog" for a11y.

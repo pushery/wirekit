@@ -10,6 +10,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('resizable', $attributes->getAttributes());
+
     // Resizable — pure-CSS split panel layout.
     //
     // The interactive resize is delegated to the browser's native CSS `resize`

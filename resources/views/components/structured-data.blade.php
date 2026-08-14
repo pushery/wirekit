@@ -7,6 +7,11 @@
 ])
 
 @php
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('structured-data', $attributes->getAttributes());
+
     // The `Schema` builders return bare `@type` fragments, so nesting an Offer
     // inside a Product needs no repeated context to strip. The context belongs
     // exactly once, at the top — so add it here when it is missing. This applies

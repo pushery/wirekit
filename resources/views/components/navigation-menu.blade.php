@@ -8,6 +8,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('navigation-menu', $attributes->getAttributes());
+
     // Navigation Menu — top-level nav with rich flyout panels (mega menu).
     // Uses disclosure pattern: hover or click to reveal content panels.
     $classes = WireKit::resolveClasses('navigation-menu', 'base', implode(' ', [

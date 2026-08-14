@@ -10,6 +10,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('popover', $attributes->getAttributes());
+
     // Popover — click-triggered floating panel with focus trap.
     // Unlike Tooltip (hover) or HoverCard (hover + rich), Popover opens on click
     // and traps focus inside the panel. Uses role="dialog" for a11y.

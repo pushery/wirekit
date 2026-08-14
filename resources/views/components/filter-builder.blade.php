@@ -14,6 +14,11 @@
     use Pushery\WireKit\WireKit;
     use Illuminate\Support\Str;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('filter-builder', $attributes->getAttributes());
+
     $id = $attributes->get('id', 'filter-builder-'.Str::random(6));
     $name = $name ?? $attributes->get('name');
 

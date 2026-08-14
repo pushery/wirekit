@@ -20,6 +20,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('form', $attributes->getAttributes());
+
     // The wrapper carries no chrome of its own by default — it is a real <form>
     // plus an inherited error-announcement policy. resolveClasses still runs so a
     // config/scoped override can add layout classes (e.g. a vertical gap stack).

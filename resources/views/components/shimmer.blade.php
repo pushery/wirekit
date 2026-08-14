@@ -21,6 +21,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('shimmer', $attributes->getAttributes());
+
     // A shimmer wraps text, so only a small allowlist of text tags is sensible.
     // Validate up front so an invalid value resolves to a real allowed tag
     // rather than emitting a broken element.

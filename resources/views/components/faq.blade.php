@@ -42,6 +42,11 @@
     use Pushery\WireKit\Support\FaqCollector;
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('faq', $attributes->getAttributes());
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `schema="false"` used to switch the JSON-LD ON. That is the exact spelling a
     // developer reaches for when a page carries a second FAQ and must not emit two

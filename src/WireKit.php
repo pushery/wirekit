@@ -170,13 +170,13 @@ class WireKit
         // 1. Deep personalization has highest priority
         $deep = static::personalizationFor($component);
         if (isset($deep[$block])) {
-            return $deep[$block];
+            return self::applyBlock($deep[$block], $defaultClasses);
         }
 
         // 2. Scoped personalization (e.g. scope="pill")
         $scoped = static::scopedFor($component, $scope);
         if (isset($scoped['classes'][$block])) {
-            return $scoped['classes'][$block];
+            return self::applyBlock($scoped['classes'][$block], $defaultClasses);
         }
 
         // 3. Config-based class overrides (wirekit.components.{name}.classes.{block}).
@@ -198,6 +198,54 @@ class WireKit
 
         // 4. Component default classes (hardcoded in Blade template)
         return $defaultClasses;
+    }
+
+    /**
+     * Resolve one personalized block value against the vendor default.
+     *
+     * A block value is normally the finished class string, and that REPLACES the
+     * shipped block outright. Replacement is a reasonable default and a poor only
+     * option: changing one color or one measurement means restating the whole
+     * block, and from that moment the application owns it — every later
+     * improvement to that block silently stops arriving. Nothing reports it,
+     * because nothing is wrong; the personalization simply looks like a decision
+     * somebody made, for as long as it stands.
+     *
+     * So a block value may instead be a closure, and it RECEIVES the vendor
+     * default:
+     *
+     *     WireKit::personalize('sidebar.item', [
+     *         'base' => fn (string $vendor): string => $vendor.' rounded-none',
+     *     ]);
+     *
+     * That is additive without being a second API: the same key, the same call,
+     * one different value shape. The application states only its own delta and
+     * keeps inheriting the rest.
+     *
+     * Strings stay exactly as they were — a closure was previously a TypeError
+     * against this method's `string` return, so nothing that worked can change
+     * meaning here.
+     *
+     * Deliberately NOT extended to the config layer (#3 in the chain): a closure
+     * in a config file cannot survive `config:cache`, so offering it there would
+     * hand developers a personalization that works until the first cached deploy.
+     */
+    // `self::`, not `static::`. Late static binding on a PRIVATE method is unsafe —
+    // `static::` resolves to the called class, where a private member of THIS one is
+    // not visible. PHPStan calls it out (staticClassAccess.privateMethod) and it is
+    // right: the surrounding calls use `static::` because those methods are public.
+    private static function applyBlock(mixed $value, string $vendorClasses): string
+    {
+        if ($value instanceof Closure) {
+            return (string) $value($vendorClasses);
+        }
+
+        // Returned as-is, NOT cast. The file is strict_types, so this method's
+        // `string` return already rejects a block value of the wrong type — a
+        // number or an array raises the same TypeError it always did. Casting here
+        // would have quietly turned those into "5" and "Array", relaxing an
+        // existing contract as a side effect of adding an unrelated feature.
+        return $value;
     }
 
     /**

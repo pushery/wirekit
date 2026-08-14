@@ -10,6 +10,111 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.30.0] — 2026-08-14
+
+**Minor — a personalization that keeps inheriting, an error message that finally names its own cause, and asset replies that are safe to cache where they claim to be.**
+
+Nothing here changes what an unchanged call site renders. The asset routes change which
+middleware they run; see the entry below if your application relies on `web` applying to
+them.
+
+### Added
+
+- **A mistyped prop now tells you, on nearly every component instead of a handful.** Blade
+  folds a name a component does not declare into the attribute bag, where it renders as a
+  literal HTML attribute nothing reads — the page looks finished and nothing fails. WireKit
+  has warned about that in development since v2.6, with a did-you-mean hint, but only a
+  handful of components asked for the check. It now covers essentially the whole catalog. The
+  warning is development-only and silent in production, and the list of accepted names is
+  read from the component itself, so it cannot fall behind the component it describes.
+
+  Two things it deliberately does not flag: any valid HTML attribute, and framework wiring
+  (`aria-*`, `data-*`, `wire:`, `x-`/`@`/`:`, `v-`, and the `on*` event family). A name a
+  component reads through `@aware` — `announce-errors` on any form control, for instance —
+  counts as known too. That last part is also a fix: those calls were reported as typos
+  before, on the components that already had the check.
+
+  `ComponentRegistry::extractAwareProps()` exposes the `@aware` half for tooling that needs
+  it. It stays separate from `extractProps()`, which continues to mean "the props this
+  component declares".
+  [Customization](https://docs.wirekit.app/customization)
+
+- **A class block can state its delta instead of taking the block over.** Personalizing a
+  block has always meant restating it in full, and from that moment your application owns
+  it — every later improvement WireKit makes to that block stops arriving, silently,
+  because nothing is broken. A block value may now be a closure, and it receives the class
+  string WireKit ships:
+
+  ```php
+  WireKit::personalize('sidebar.item', [
+      'base' => fn (string $vendor): string => $vendor.' rounded-none',
+  ]);
+  ```
+
+  You are not limited to appending — the point is that you can see what you are overriding,
+  so you can swap or drop one utility and keep the rest. Works on `personalize()` and
+  `scope()`. A plain string still replaces the block outright, unchanged, and is still the
+  right choice when you do mean to own the slot. Not available for class overrides written
+  in `config/wirekit.php`: a closure there cannot survive `config:cache`, so it would work
+  in development and vanish on the first cached deploy.
+  [Customization](https://docs.wirekit.app/customization)
+
+### Fixed
+
+- **The scroll-area edge fade pointed the wrong way in right-to-left layouts.** `fade="start"`
+  and `fade="end"` name the reading start and end, but the horizontal mask was emitted with
+  physical directions, so in an Arabic or Hebrew document the two were inverted: the fade sat
+  on the edge the reader had already passed while the edge that actually scrolls stayed hard.
+  Nothing failed and nothing logged — the hint simply pointed backwards. `fade="both"` is
+  symmetric and was never affected, which is why the most-viewed example could not show it.
+  [Scroll Area](https://docs.wirekit.app/components/scroll-area)
+
+- **The asset routes no longer set a cookie on a response they ask a cache to keep for a
+  year.** The routes serving WireKit's own CSS, JS and fonts were registered inside the
+  `web` middleware group. Their handlers read a file from the package directory — no
+  session, no CSRF token, no authentication, no route-model binding — so the group gave
+  them nothing, while `StartSession` added the session cookie to every reply. Those replies
+  declare `public, max-age=31536000, immutable`: a shared cache is invited to keep them for
+  a year and may hand one to the next visitor with the cookie still attached. That most
+  shared caches refuse a response carrying `Set-Cookie` is a per-vendor default you do not
+  control, not a property of what is sent. The practical cost was the reverse of what the
+  header was written for — a CDN could not cache the files the year-long directive exists
+  to let it cache, and every stylesheet hit paid for a session read and write.
+
+  The group is now taken from `wirekit.assets.middleware`, which defaults to none. If your
+  application applies its own middleware everywhere — a security-header layer, HTTPS
+  enforcement — name it there; anything that starts a session brings the cookie back with
+  it. Published assets served from `public/vendor/wirekit/` never used these routes and are
+  unaffected.
+  [Integration](https://docs.wirekit.app/getting-started/integration)
+
+- **A bundle that loads too late now says so, instead of leaving you with someone else's
+  error.** If the WireKit bundle is loaded after Alpine has already started, every
+  component already on the page never receives its Alpine data. Those elements cannot be
+  revived by registering afterwards, and what reached you instead was the browser
+  complaining about the *bindings inside them* — `startShadow is not defined`, a property
+  of a component you never wrote, from a file you did not author. Because tables are
+  responsive by default, one ordinary `<x-wirekit::table>` was enough to produce it on a
+  page whose author had never heard of a sticky panel. Every bundle now reports the real
+  cause once, with the remedy, and only when there is actually affected markup on the page.
+  [Integration](https://docs.wirekit.app/getting-started/integration)
+
+### Documentation
+
+- **[Design Tokens](https://docs.wirekit.app/theming/design-tokens) is now actually complete.**
+  The page opens by calling itself the complete CSS-variable surface, and 69 of the 237
+  declared tokens were not on it — among them `--space-wk-md`, the whole
+  `--size-wk-container-*` ladder, both halves of the inverse color pair, every
+  `--shimmer-wk-*`, and 26 tokens of the reading family. Looking one up returned nothing,
+  with no way to tell "not a token" from "not written down". All of them now have a row,
+  and a check keeps the claim honest as tokens are added.
+
+- [Customization](https://docs.wirekit.app/customization) explains when to adjust a block
+  rather than replace it, and why the choice affects whether you keep receiving upstream
+  changes to that block.
+
+---
+
 ## [2.29.0] — 2026-08-13
 
 **Minor — the navigation that took the page with it, and four checks that could not fail.**

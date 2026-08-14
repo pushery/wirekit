@@ -10,6 +10,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('data-list', $attributes->getAttributes());
+
     // Data list wraps native <dl> for semantic key-value pairs.
     // Layouts: horizontal (label left, value right), stacked, grid.
     // Inline styles guarantee layout in environments where the developer's

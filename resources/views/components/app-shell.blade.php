@@ -54,6 +54,11 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('app-shell', $attributes->getAttributes());
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `viewport="false"` would otherwise flip the mode on. Normalize against the
     // prop's own default so a cast never engages a mode that was meant off.

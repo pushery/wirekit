@@ -10,6 +10,11 @@
 @php
     use Pushery\WireKit\WireKit;
 
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('kbd', $attributes->getAttributes());
+
     $sizeClasses = match ($size) {
         'sm' => 'text-[length:var(--text-wk-xs,0.75rem)] px-1 py-0.5 min-w-5',
         'md' => 'text-[length:var(--text-wk-sm)] px-1.5 py-0.5 min-w-6',
