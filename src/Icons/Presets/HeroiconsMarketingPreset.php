@@ -23,6 +23,11 @@ use Pushery\WireKit\Contracts\IconPreset;
  */
 final class HeroiconsMarketingPreset implements IconPreset
 {
+    // `chart-bar` was here and moved to the BASE vocabulary, where it belongs: an
+    // extension ADDS words, it does not redefine them. While this preset owned the name it
+    // meant `chart-bar-square` on Heroicons and nothing at all on the other three families
+    // — so the one property a shared alias has to keep, that it means the same thing
+    // whichever preset you install, was the property it did not have.
     public function icons(): array
     {
         return [
@@ -34,7 +39,6 @@ final class HeroiconsMarketingPreset implements IconPreset
             'cursor-arrow-rays' => 'heroicon-m-cursor-arrow-rays',
 
             // Time & metrics
-            'chart-bar' => 'heroicon-m-chart-bar-square',
             'chart-pie' => 'heroicon-m-chart-pie',
 
             // Building blocks

@@ -74,6 +74,60 @@ final class StrictnessGate
     ];
 
     /**
+     * Ecosystem tooling attributes that are written on a component ON PURPOSE so
+     * that they reach the rendered HTML.
+     *
+     * A third set rather than an entry in either list above, because neither is
+     * the right home: these are not HTML-spec attributes, and those two stay
+     * auditable against their spec sections.
+     *
+     * The line is sharp and needs no heuristic. An unknown prop is an
+     * instruction that DISAPPEARS -- `variant` on a button lands in the
+     * attribute bag, renders as a dead HTML attribute, and the styling the
+     * developer meant never happens. A test selector is an instruction that
+     * ARRIVES: a browser suite selects on it, which is the entire reason it was
+     * written.
+     *
+     * The prefix list below already covers framework wiring of the same kind --
+     * Livewire's `wire:`, Alpine's `x-`, Vue's `v-`. This is the same class of
+     * thing for the same ecosystem; it happens to be a closed name rather than a
+     * prefix, so it could not ride along there.
+     *
+     * @var list<string>
+     */
+    public const TOOLING_ATTRIBUTES = [
+        // Laravel Dusk's selector: `<x-wirekit::button dusk="submit-order">`.
+        'dusk',
+    ];
+
+    /**
+     * Attribute-name prefixes that are framework wiring and never a prop.
+     *
+     * ARIA, data-, Livewire `wire:`, Alpine `x-` / `@` / `:`, Vue `v-`.
+     *
+     * `on` covers the HTML event-handler family -- onclick, onsubmit, oninput
+     * and the rest. They were missing, so a developer writing the perfectly
+     * ordinary `<x-wirekit::button onclick="history.back()">` was told their
+     * prop was unknown. Measured against a real render before the fix.
+     *
+     * A prefix rather than an enumeration: the handler list is long, it grows
+     * with the platform, and every name in it starts this way. Nothing in the
+     * component vocabulary begins with `on`, so it costs no coverage -- the
+     * match is prefix-based, so a hypothetical prop named `onset` would slip
+     * through, which is a false negative and the safe direction.
+     *
+     * A CONSTANT, and that is a fix rather than tidying. This list existed
+     * twice: once in `unknownPropNames()`, where it decides, and once inside
+     * `warnUnknownProps()` under all of the rationale above -- where it had been
+     * dead since the verdict was split into its own method. Both copies read as
+     * load-bearing. Adding an entry to the wrong one changes nothing at all, and
+     * the well-commented copy was the wrong one.
+     *
+     * @var list<string>
+     */
+    public const PASSTHROUGH_PREFIXES = ['aria-', 'data-', 'wire:', 'x-', '@', ':', 'v-', 'on'];
+
+    /**
      * Whether an invalid value should THROW rather than degrade to a fallback.
      *
      * Defaults to console / artisan / test (fail-fast — a typo should break the
@@ -232,28 +286,11 @@ final class StrictnessGate
             }
         }
 
-        // Allowed passthrough: any valid HTML attribute (global or element-
-        // specific) is never a WireKit prop typo, so it passes unflagged. The
-        // two closed sets are declared as class constants above so each stays
-        // auditable against its spec section — a valid attribute is passthrough
-        // by definition, not by whether it was remembered in an ad-hoc list.
-        $reserved = [...self::HTML_GLOBAL_ATTRIBUTES, ...self::HTML_ELEMENT_ATTRIBUTES];
-        // Prefix-matched passthrough: ARIA, data-, Livewire wire:, Alpine
-        // x-/@/:, Vue v-. Any attribute starting with one of these is framework
-        // wiring, never a prop.
-        //
-        // `on` covers the HTML event-handler family — onclick, onsubmit, oninput
-        // and the rest. They were missing, so a developer writing the perfectly
-        // ordinary `<x-wirekit::button onclick="history.back()">` was told their
-        // prop was unknown. Measured against a real render before the fix.
-        //
-        // A prefix rather than an enumeration: the handler list is long, it grows
-        // with the platform, and every name in it starts this way. Nothing in the
-        // component vocabulary begins with `on`, so it costs no coverage — the
-        // check below is prefix-based, so a hypothetical prop named `onset` would
-        // slip through, which is a false negative and the safe direction.
-        $prefixes = ['aria-', 'data-', 'wire:', 'x-', '@', ':', 'v-', 'on'];
-
+        // The passthrough rule itself lives on `unknownPropNames()` and on the
+        // constants it reads. This method used to restate it here in full, and
+        // that copy stopped deciding anything the moment the verdict was split
+        // out -- see PASSTHROUGH_PREFIXES for why leaving it there was worse
+        // than having no comment at all.
         foreach (self::unknownPropNames($actual, $declared) as $key) {
             // Levenshtein-rank against declared props for a Did-you-mean.
             $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein($key, $declared));
@@ -304,8 +341,15 @@ final class StrictnessGate
             return [];
         }
 
-        $reserved = [...self::HTML_GLOBAL_ATTRIBUTES, ...self::HTML_ELEMENT_ATTRIBUTES];
-        $prefixes = ['aria-', 'data-', 'wire:', 'x-', '@', ':', 'v-', 'on'];
+        // A valid HTML attribute is passthrough by definition, not by whether it
+        // was remembered in an ad-hoc list -- hence the spec-derived sets. The
+        // tooling set carries the attributes whose purpose IS to reach the HTML.
+        $reserved = [
+            ...self::HTML_GLOBAL_ATTRIBUTES,
+            ...self::HTML_ELEMENT_ATTRIBUTES,
+            ...self::TOOLING_ATTRIBUTES,
+        ];
+        $prefixes = self::PASSTHROUGH_PREFIXES;
 
         $unknown = [];
 

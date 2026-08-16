@@ -439,7 +439,7 @@ return [
     |                           (bolt, sparkles, rocket-launch, shield, …)
     |   'lucide'              — mallardduck/blade-lucide-icons (~1,500 icons)
     |   'phosphor'            — codeat3/blade-phosphor-icons (~9,000 icons)
-    |   'tabler'              — ryangjchandler/blade-tabler-icons (~5,700 icons)
+    |   'tabler'              — secondnetwork/blade-tabler-icons (~7,200 icons)
     |
     | You can also provide a fully qualified class name implementing
     | \Pushery\WireKit\Contracts\IconPreset for custom icon sets.

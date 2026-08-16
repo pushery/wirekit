@@ -74,6 +74,17 @@ final class TablerPreset implements IconPreset
             'code' => 'tabler-code',
             'key' => 'tabler-key',
             'rocket-launch' => 'tabler-rocket',
+            'broadcast' => 'tabler-broadcast',
+            'chart-bar' => 'tabler-chart-bar',
+            'coins' => 'tabler-coins',
+            'gift' => 'tabler-gift',
+            'list-bullets' => 'tabler-list',
+            'list-checks' => 'tabler-list-check',
+            'lock-key' => 'tabler-lock',
+            'map-pin' => 'tabler-map-pin',
+            'percent' => 'tabler-percentage',
+            'sliders' => 'tabler-adjustments',
+            'trend-up' => 'tabler-trending-up',
             'chart-line' => 'tabler-chart-line',
             'folders' => 'tabler-folders',
 
@@ -85,7 +96,7 @@ final class TablerPreset implements IconPreset
             'phone' => 'tabler-phone',
             'book-open' => 'tabler-book',
             'sign-out' => 'tabler-logout',
-            'megaphone' => 'tabler-megaphone',
+            'megaphone' => 'tabler-speakerphone',
             'map' => 'tabler-map',
             'file-text' => 'tabler-file-text',
 
@@ -201,6 +212,6 @@ final class TablerPreset implements IconPreset
 
     public function requires(): string
     {
-        return 'ryangjchandler/blade-tabler-icons';
+        return 'secondnetwork/blade-tabler-icons';
     }
 }
