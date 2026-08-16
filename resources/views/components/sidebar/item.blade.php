@@ -13,6 +13,11 @@
 ])
 
 @php
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.item', $attributes->getAttributes());
+
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
@@ -78,6 +83,19 @@
 
     // Active state gets different styling — emphasized foreground and a
     // subtle background tint. Merged via $attributes->class conditional.
+    // The icon's own size, as a named block rather than a literal in the render call.
+    //
+    // It was written straight into the `svg()` helper, which put it out of reach of
+    // every personalization route at once — there was no block name to address. The
+    // cost shows up only once delta personalization exists: an application that wants
+    // a 16px icon has to take over the SURROUNDING block and reach the icon through a
+    // descendant selector, and a taken-over block stops inheriting improvements
+    // silently. It still renders; it renders the version from the day it was copied.
+    //
+    // So the literal was not merely untidy — it forced the one outcome the delta form
+    // was built to avoid.
+    $iconClasses = WireKit::resolveClasses('sidebar.item', 'icon', 'w-5 h-5', $scope);
+
     $activeClasses = WireKit::resolveClasses('sidebar.item', 'active', implode(' ', [
         'bg-[var(--color-wk-bg-muted)]',
         'text-[color:var(--color-wk-text)]',
@@ -114,7 +132,7 @@
              contract — so both `icon="cube"` and `<x-slot:icon>` now work. --}}
         <span class="shrink-0" aria-hidden="true">
             @if(is_string($icon) && ! str_contains($icon, '<') && function_exists('svg'))
-                {{ svg(WireKit::icon($icon), ['class' => 'w-5 h-5']) }}
+                {{ svg(WireKit::icon($icon), ['class' => $iconClasses]) }}
             @else
                 {{ $icon }}
             @endif

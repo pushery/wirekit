@@ -7,6 +7,11 @@
 ])
 
 @php
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('carousel.slide', $attributes->getAttributes());
+
     use Pushery\WireKit\WireKit;
 
     // A slide is a snap target that never shrinks. `basis` (not `w-`) because the

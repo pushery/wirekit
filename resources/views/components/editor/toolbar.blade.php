@@ -8,6 +8,11 @@
 ])
 
 @php
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('editor.toolbar', $attributes->getAttributes());
+
     use Pushery\WireKit\WireKit;
 
     // command => [accessible label, glyph, glyph-style, isActive() expr | null (action, not toggle)].

@@ -37,6 +37,7 @@ import wirekitPricingTable from './components/pricing-table.js';
 import wirekitSortable from './components/sortable.js';
 import wirekitReadingProgress from './components/reading-progress.js';
 import wirekitFileUpload from './components/file-upload.js';
+import wirekitTablist from './components/tablist.js';
 import wirekitTabs from './components/tabs.js';
 import wirekitCountdown from './components/countdown.js';
 import wirekitReadingMeta from './components/reading-meta.js';
@@ -158,6 +159,7 @@ function registerComponents() {
     Alpine.data('wirekitSortable', wirekitSortable);
     Alpine.data('wirekitReadingProgress', wirekitReadingProgress);
     Alpine.data('wirekitFileUpload', wirekitFileUpload);
+    Alpine.data('wirekitTablist', wirekitTablist);
     Alpine.data('wirekitTabs', wirekitTabs);
     Alpine.data('wirekitCountdown', wirekitCountdown);
     Alpine.data('wirekitReadingMeta', wirekitReadingMeta);

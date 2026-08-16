@@ -502,9 +502,16 @@ final class BladeParser
 
             $tags[] = [
                 'name' => $name,
-                // `<x-…>` is a Blade component. The distinction is what tells a bare `:`
-                // apart from an Alpine shorthand, so it belongs to the tag, not the caller.
-                'isComponent' => preg_match('/^x[-:]/i', $name) === 1,
+                // `<x-…>` and `<livewire:…>` are both component tags. The distinction is
+                // what tells a bare `:` apart from an Alpine shorthand, so it belongs to
+                // the tag, not the caller.
+                //
+                // The `livewire:` half was missing, and the omission was invisible because
+                // the rule's own test used an `<x-…>` fixture — the rule looked covered
+                // while its sibling spelling went unexamined. What that cost is measurable:
+                // in a real application, 12 of 13 false findings were a bare `:` on a
+                // `<livewire:…>` tag, typically a key assembled in PHP.
+                'isComponent' => preg_match('/^(?:x[-:]|livewire:)/i', $name) === 1,
                 'attributes' => $attributes,
                 'start' => $start,
                 'attrStart' => $attrStart,

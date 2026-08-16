@@ -28,6 +28,7 @@
  *   scope under the CSP build — see utils/dev-warning.js.
  */
 import { devWarn } from '../utils/dev-warning.js';
+import { moveRovingFocus } from '../utils/roving-focus.js';
 import { observeServerValue } from '../utils/server-value.js';
 
 export default function wirekitTabs(config = {}) {
@@ -83,32 +84,12 @@ export default function wirekitTabs(config = {}) {
          * @param {'next'|'prev'|'first'|'last'} direction
          */
         focusTab(direction) {
-            const buttons = Array.from(this.$root.querySelectorAll('[role=tab]:not([disabled])'));
-
-            if (buttons.length === 0) {
-                return;
-            }
-
-            const current = buttons.indexOf(document.activeElement);
-
-            if (current === -1) {
-                return;
-            }
-
-            const index = {
-                next: current + 1,
-                prev: current - 1,
-                first: 0,
-                last: buttons.length - 1,
-            }[direction];
-
-            if (index === undefined) {
-                return;
-            }
-
-            // Modulo twice: JS keeps the sign of the dividend, so -1 % 3 is -1
-            // rather than 2 and the backwards wrap would land nowhere.
-            buttons[((index % buttons.length) + buttons.length) % buttons.length].focus();
+            // Shared with the server-driven tablist, which needs the identical
+            // behavior for a reason this component also has: the item list is read
+            // from the DOM on every keypress rather than held, so a Livewire morph
+            // between one arrow key and the next cannot leave focus pointing into a
+            // list that no longer exists.
+            moveRovingFocus(this.$root, direction);
         },
     };
 }

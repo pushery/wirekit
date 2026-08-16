@@ -73,7 +73,10 @@ export function reportLateRegistration(bundle, wasEarly) {
         console.error(
             `[wirekit] ${bundle} loaded after Alpine started — components already rendered `
             + 'never got their data and now report "<name> is not defined" (a table alone '
-            + 'gives "startShadow is not defined"). Load @wirekitScripts before Alpine/Livewire.'
+            + 'gives "startShadow is not defined"). Add @wirekitScripts if it is missing. If it '
+            + 'is there, the tag order is not the lever — it emits `defer`, which already runs '
+            + 'before Alpine.start() — so look for what ran the bundle late: an `async` attribute, '
+            + 'a runtime injection, a bundler that dropped the defer.'
         );
     };
 

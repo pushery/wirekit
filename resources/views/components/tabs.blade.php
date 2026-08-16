@@ -90,48 +90,14 @@
     // own keyboard model — scroll-region rule shape #1). Each tab also
     // carries a no-shrink + no-wrap rule (see $tabBase below) so the
     // rounded track doesn't squish its children below their label width.
-    $tablistBase = match (true) {
-        // Vertical orientation — stack the tabs; the active indicator becomes the
-        // inline-end (right) border for underline, full-width pill/segment otherwise.
-        $isVertical && $variant === 'pills' => 'flex flex-col gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)]',
-        $isVertical && $variant === 'bordered' => 'flex flex-col border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden',
-        $isVertical => 'flex flex-col items-stretch border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
-        // Horizontal orientation (default) — unchanged.
-        $variant === 'pills' => 'inline-flex items-center gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)] max-w-full overflow-x-auto overflow-y-hidden',
-        $variant === 'bordered' => 'inline-flex items-center border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden max-w-full overflow-x-auto',
-        default => 'inline-flex items-center gap-2 border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] max-w-full overflow-x-auto overflow-y-hidden',
-    };
-
-    $tablistClasses = WireKit::resolveClasses('tabs', 'tablist', $tablistBase, $scope);
-
-    // Per-tab button classes. active/inactive state toggled via :class="..."
-    // Bound to Alpine's `active === key` expression in the loop below.
-    // `shrink-0 whitespace-nowrap` keep each tab at its natural label width
-    // inside the scrollable tablist — without them, a narrow viewport would
-    // squish tabs and wrap/clip labels instead of letting the bar scroll.
-    $tabBase = 'inline-flex items-center gap-2 shrink-0 whitespace-nowrap font-[number:var(--font-wk-body-weight)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed cursor-pointer';
-
-    $tabVariantClasses = match (true) {
-        // Vertical — left-align content; the underline indicator moves to the right edge.
-        $isVertical && $variant === 'pills' => 'justify-start p-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-md)]',
-        $isVertical && $variant === 'bordered' => 'justify-start p-[var(--padding-wk-x-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] last:border-b-0',
-        $isVertical => 'justify-start p-[var(--padding-wk-x-sm)] -mr-[length:var(--border-wk-width)] border-r-[3px] border-transparent',
-        // Horizontal (default) — unchanged.
-        $variant === 'pills' => 'p-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-md)]',
-        $variant === 'bordered' => 'p-[var(--padding-wk-x-sm)] border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)] last:border-r-0',
-        default => 'p-[var(--padding-wk-x-sm)] -mb-[length:var(--border-wk-width)] border-b-[3px] border-transparent',
-    };
-
-    $tabClasses = WireKit::resolveClasses('tabs', 'tab', $tabBase . ' ' . $tabVariantClasses, $scope);
-
-    // Active-state classes applied conditionally via Alpine :class binding.
-    $tabActiveClasses = match ($variant) {
-        'pills' => 'bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-sm)]',
-        'bordered' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
-        default => 'border-[var(--color-wk-accent)] text-[color:var(--color-wk-text)]',
-    };
-
-    $tabInactiveClasses = 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]';
+    // The bar's appearance lives in Support\TablistStyles, shared with the panel-less
+    // `tabs.list` / `tabs.tab` pair. Two bars with the same surface and different
+    // behavior must not carry two class ladders — they drift a border-radius apart over
+    // a few releases and nothing goes red while they do.
+    $tablistClasses = WireKit::resolveClasses('tabs', 'tablist', \Pushery\WireKit\Support\TablistStyles::list($variant, $isVertical), $scope);
+    $tabClasses = WireKit::resolveClasses('tabs', 'tab', \Pushery\WireKit\Support\TablistStyles::tab($variant, $isVertical), $scope);
+    $tabActiveClasses = \Pushery\WireKit\Support\TablistStyles::tabActive($variant);
+    $tabInactiveClasses = \Pushery\WireKit\Support\TablistStyles::tabInactive();
 
     // Root layout — vertical places the tablist beside the panels (flex row);
     // horizontal stacks them (the panel sits below the tablist).

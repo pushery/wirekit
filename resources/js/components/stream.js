@@ -445,6 +445,33 @@ export default function wirekitStream(config = {}) {
             this._push(String(chunk ?? ''));
         },
 
+        /**
+         * Replace everything streamed so far, instead of adding to it.
+         *
+         * `push()` cannot express a rendering that is DERIVED from the whole stream
+         * rather than accumulated from its parts, and several are: masked text, where
+         * a sentinel can break across a chunk boundary and only the full string can be
+         * unmasked; incremental Markdown, where a closing fence changes what came
+         * before it; anything that diffs.
+         *
+         * Setting `text` directly is not the workaround it looks like. It bypasses the
+         * reduced-motion buffer, which is the one thing this component does that such a
+         * caller most wants — so the caller who most needs to replace is the caller who
+         * would silently lose it. This routes through the same `_reduce` path as a
+         * push, so the two are indistinguishable to a reader who asked for less motion.
+         *
+         * Deliberately NOT a setter on `text`: a caller reading `text` mid-stream under
+         * reduced motion sees the last flushed value, not the pending one, and a
+         * property that reads back differently from what was assigned is a worse trap
+         * than a named method.
+         */
+        replace(text) {
+            if (this.isTerminal || this.status === 'idle') {
+                this.start();
+            }
+            this._replace(String(text ?? ''));
+        },
+
         /** Settle the stream successfully — announces the result once. */
         finish() {
             if (this.status === 'streaming') {
@@ -467,6 +494,17 @@ export default function wirekitStream(config = {}) {
                 this._buffer += chunk;
             } else {
                 this.text += chunk;
+            }
+        },
+
+        _replace(text) {
+            if (this.status !== 'streaming') {
+                return;
+            }
+            if (this._reduce) {
+                this._buffer = text;
+            } else {
+                this.text = text;
             }
         },
 

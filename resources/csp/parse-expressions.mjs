@@ -33,7 +33,7 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
-import { forbiddenGlobalsIn } from './unresolvable-globals.mjs';
+import { forbiddenGlobalsIn, globalReachingMembersIn } from './unresolvable-globals.mjs';
 
 /**
  * An expression that is outside the grammar in a way the grammar cannot express.
@@ -156,12 +156,34 @@ try {
             return {
                 ok: false,
                 globals,
+                warnings: [],
                 error: `names ${names}, which Alpine's CSP evaluator cannot resolve `
                     + '(it resolves identifiers against the Alpine scope only, with no window fallback)',
             };
         }
 
-        return { ok: true, error: null, globals: [] };
+        // Resolvable is not the same as evaluable, and the gap between them is where
+        // a control dies quietly. The evaluator refuses a VALUE, not a name: it
+        // throws on any property access that lands in the set built from
+        // `globalThis`, so a chain can resolve completely, run, and be rejected at
+        // the moment it touches something that happens to be global.
+        //
+        // Reported as a warning rather than a violation. The rule is an
+        // over-approximation of a runtime question, and this command's worth is that
+        // its findings can be acted on without being checked first — a warning that
+        // turns out to be nothing costs a glance, a violation that turns out to be
+        // nothing costs the next hundred their credibility.
+        const reaching = globalReachingMembersIn(ast);
+
+        return {
+            ok: true,
+            error: null,
+            globals: [],
+            warnings: reaching.length > 0
+                ? [`reads ${reaching.join(', ')}, which resolves to a browser global — `
+                    + 'the CSP evaluator refuses the VALUE, so this parses, runs, and is rejected']
+                : [],
+        };
     });
 
     process.stdout.write(JSON.stringify({ ok: true, results }));

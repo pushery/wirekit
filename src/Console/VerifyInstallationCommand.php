@@ -209,17 +209,39 @@ class VerifyInstallationCommand extends Command
      */
     private function checkAssetFreshness(): void
     {
-        $this->checkFileFreshness(
-            'wirekit.css',
-            __DIR__.'/../../dist/wirekit.css',
-            public_path('vendor/wirekit/wirekit.css')
-        );
+        // The ground set is DERIVED from what the package ships, not listed here.
+        //
+        // It was a list — `wirekit.css` and `wirekit.js` — written when those were
+        // the only two bundles. Every bundle added since inherited no check, because
+        // nothing required the list to grow with them, and a list that nothing
+        // requires to grow is a list that stops being true quietly.
+        //
+        // What that cost is not theoretical. Measured in an application straight
+        // after `composer update`: six published bundles differed from the package
+        // (`wirekit-alpine.js`, `wirekit-alpine.csp.js`, `wirekit-apex.js`,
+        // `wirekit-optimistic.js`, `wirekit-tiptap.js`, `wirekit.core.js`) and this
+        // command reported 22 passed, 0 failed. New markup from the new PHP, animated
+        // by the old JavaScript — which is precisely the state this command exists to
+        // name.
+        //
+        // And it is the state an upgrade GUARANTEES rather than risks: `composer
+        // update` does not touch `public/vendor/wirekit/`, that directory is normally
+        // gitignored, and nothing refreshes it until a person remembers. CI publishes
+        // fresh on every run, so CI is green over a condition it never has — the two
+        // drift apart and the green confirms the developer in the wrong one.
+        //
+        // A file present in the package but never published stays the presence
+        // check's business: checkFileFreshness() returns early when the published
+        // copy is absent, so nothing is reported twice.
+        $distDir = __DIR__.'/../../dist';
+        $sources = glob($distDir.'/*.{css,js}', GLOB_BRACE) ?: [];
+        sort($sources);
 
-        $this->checkFileFreshness(
-            'wirekit.js',
-            __DIR__.'/../../dist/wirekit.js',
-            public_path('vendor/wirekit/wirekit.js')
-        );
+        foreach ($sources as $source) {
+            $name = basename($source);
+
+            $this->checkFileFreshness($name, $source, public_path('vendor/wirekit/'.$name));
+        }
 
         // The Liquid Glass extension, but ONLY where it has been installed —
         // checkFileFreshness stays silent when the published file is absent, so
@@ -403,13 +425,40 @@ class VerifyInstallationCommand extends Command
             array_keys(self::flattenConfig($published))
         );
 
-        if ($missingSections === [] && $missingComponents === [] && $missingLeaves === []) {
+        // The other direction: a key the published file still carries and the package
+        // no longer offers. Nothing breaks — the merge simply keeps it — so it is
+        // silent forever, and it is the residue a major upgrade leaves behind: a knob
+        // the developer believes is doing something, still sitting in their file.
+        //
+        // A differing VALUE is deliberately NOT drift. The published file is where an
+        // application records its own decisions, and a check that objected to those
+        // would be wrong about its own purpose. Only the presence of a name is
+        // compared, in both directions.
+        //
+        // List contents are skipped, because a numeric index is not the name of a
+        // knob: a developer whose list is shorter than the package's would otherwise
+        // be told that `foo.3` has gone missing.
+        $orphanedLeaves = array_values(array_filter(
+            array_diff(
+                array_keys(self::flattenConfig($published)),
+                array_keys(self::flattenConfig($package))
+            ),
+            static fn (string $path): bool => preg_match('/(^|\.)\d+(\.|$)/', $path) !== 1
+        ));
+
+        if ($missingSections === [] && $missingComponents === [] && $missingLeaves === []
+            && $orphanedLeaves === []) {
             $this->reportPass('published config covers every option this version offers');
 
             return;
         }
 
-        $this->reportWarn('published config predates options this version offers');
+        // Two different facts, so two different sentences. "Predates" tells the reader
+        // to republish; an orphan tells them to delete a line, and reporting both under
+        // one heading would send them to the wrong remedy for half of it.
+        if ($missingSections !== [] || $missingComponents !== [] || $missingLeaves !== []) {
+            $this->reportWarn('published config predates options this version offers');
+        }
 
         if ($missingSections !== []) {
             $this->line('  Missing sections: '.implode(', ', $missingSections));
@@ -421,10 +470,40 @@ class VerifyInstallationCommand extends Command
                 .(count($missingComponents) > 5 ? ', …' : '').')');
         }
 
-        // Grouped by the section that owns them. An ungrouped list of 184 paths is
-        // the outcome the old top-level-only scope was avoiding, and it would be
-        // just as useless as measuring nothing.
-        if ($missingLeaves !== []) {
+        // Named while the list is short, grouped once it is long — because the two
+        // situations are different situations.
+        //
+        // The realistic one is an upgrade across a minor: one to five new options, and
+        // there the NAME is the whole message. "Missing options: 2 across 2 key(s)"
+        // hides which two, and the two can need very different attention — one may be a
+        // real decision (`assets.middleware`, where the asset routes left the `web`
+        // group and unnamed middleware is lost silently) and the other purely
+        // informational. A reader in a hurry files the summary under "config is old"
+        // and walks past the decision.
+        //
+        // The other situation is a config published long ago, or never: this package
+        // has 195 leaves, 168 of them under `components`, so naming each would bury
+        // the reader instead of informing them. That is why the grouping exists and it
+        // stays for that case.
+        //
+        // The default is printed alongside, because the command is holding it already —
+        // it read the package's own config to compute the difference. Without it the
+        // reader's next step is to open a file and look up what they were just told
+        // about.
+        $packageLeaves = self::flattenConfig($package);
+        $nameThreshold = 12;
+
+        if ($missingLeaves !== [] && count($missingLeaves) <= $nameThreshold) {
+            $this->line('  Missing options: '.count($missingLeaves));
+
+            foreach ($missingLeaves as $path) {
+                $this->line(sprintf(
+                    '    %-34s (default: %s)',
+                    $path,
+                    self::describeConfigValue($packageLeaves[$path] ?? null)
+                ));
+            }
+        } elseif ($missingLeaves !== []) {
             $byOwner = [];
 
             foreach ($missingLeaves as $path) {
@@ -445,10 +524,62 @@ class VerifyInstallationCommand extends Command
             }
         }
 
-        $this->line('  They still resolve — WireKit merges recursively — but your file');
-        $this->line('  does not show them. Re-publish to see the full surface (this');
-        $this->line('  OVERWRITES your edits, so diff first):');
-        $this->line('  php artisan vendor:publish --tag=wirekit-config --force');
+        if ($missingSections !== [] || $missingComponents !== [] || $missingLeaves !== []) {
+            $this->line('  They still resolve — WireKit merges recursively — but your file');
+            $this->line('  does not show them. Re-publish to see the full surface (this');
+            $this->line('  OVERWRITES your edits, so diff first):');
+            $this->line('  php artisan vendor:publish --tag=wirekit-config --force');
+        }
+
+        if ($orphanedLeaves !== []) {
+            $this->reportWarn('published config carries '.count($orphanedLeaves)
+                .' option(s) this version no longer offers');
+
+            foreach (array_slice($orphanedLeaves, 0, 8) as $path) {
+                $this->line('    '.$path);
+            }
+
+            if (count($orphanedLeaves) > 8) {
+                $this->line('    … and '.(count($orphanedLeaves) - 8).' more');
+            }
+
+            $this->line('  Nothing reads these — they are left over from an earlier version and');
+            $this->line('  will keep looking like settings that do something. Delete them.');
+        }
+    }
+
+    /**
+     * A config default, short enough to sit at the end of a report line.
+     *
+     * The point is that the reader does not have to open a file to find out what they
+     * were just told about — so it has to be readable rather than complete. A long
+     * array is summarized by its size: knowing an option defaults to eleven entries is
+     * the useful part, and printing all eleven would push the NEXT missing option off
+     * the screen.
+     */
+    private static function describeConfigValue(mixed $value): string
+    {
+        if ($value === null) {
+            return 'null';
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        if (is_string($value)) {
+            return $value === '' ? "''" : "'".$value."'";
+        }
+
+        if (is_array($value)) {
+            return $value === [] ? '[]' : '['.count($value).' entries]';
+        }
+
+        return gettype($value);
     }
 
     /**
