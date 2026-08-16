@@ -37,6 +37,7 @@
     "orchestra/testbench": "^10.0 || ^11.1",
     "pestphp/pest": "^5.0",
     "pestphp/pest-plugin-laravel": "^5.0",
+    "secondnetwork/blade-tabler-icons": "^3.46",
     "symfony/yaml": "^7.4 || ^8.0"
   },
   "suggest": {
@@ -44,7 +45,7 @@
     "blade-ui-kit/blade-heroicons": "Heroicons preset — ~316 icons, Mini/Outline/Solid styles",
     "mallardduck/blade-lucide-icons": "Lucide preset — ~1,500 outline icons",
     "codeat3/blade-phosphor-icons": "Phosphor preset — ~1,500 icons in 6 weight styles",
-    "ryangjchandler/blade-tabler-icons": "Tabler preset — ~5,700 outline/filled icons",
+    "secondnetwork/blade-tabler-icons": "Tabler preset — ~7,200 outline/filled icons",
     "bacon/bacon-qr-code": "Required for the qr-code component — server-side QR code SVG generation"
   },
   "autoload": {

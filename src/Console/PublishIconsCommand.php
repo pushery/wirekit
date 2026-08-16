@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Icons\IconSourceLocator;
 use Pushery\WireKit\Support\SuggestSimilar;
 
 /**
@@ -29,35 +30,24 @@ class PublishIconsCommand extends Command
     protected $description = 'Publish a specific icon preset SVG directory under public/vendor/wirekit/icons/{preset}/';
 
     /**
-     * Map preset keys to their composer-package SVG source roots.
+     * Map preset keys to their composer package.
      *
-     * @var array<string, array{package: string, source: string}>
+     * The package is written down; the SVG DIRECTORY is not, and that asymmetry is the
+     * point. A path here was wrong twice over: it named `ryangjchandler/blade-tabler-icons`
+     * (abandoned, and uninstallable against the Laravel versions this package supports),
+     * and it named `resources/svg` for Lucide, which v2 emptied when it moved its icons one
+     * level down. The second is the worse one — the directory still exists, so the guard
+     * answered yes and the command reported a successful publish of nothing.
+     *
+     * @var array<string, string>
      */
     private const PRESET_PACKAGES = [
-        'heroicons' => [
-            'package' => 'blade-ui-kit/blade-heroicons',
-            'source' => 'vendor/blade-ui-kit/blade-heroicons/resources/svg',
-        ],
-        'heroicons-app' => [
-            'package' => 'blade-ui-kit/blade-heroicons',
-            'source' => 'vendor/blade-ui-kit/blade-heroicons/resources/svg',
-        ],
-        'heroicons-marketing' => [
-            'package' => 'blade-ui-kit/blade-heroicons',
-            'source' => 'vendor/blade-ui-kit/blade-heroicons/resources/svg',
-        ],
-        'lucide' => [
-            'package' => 'mallardduck/blade-lucide-icons',
-            'source' => 'vendor/mallardduck/blade-lucide-icons/resources/svg',
-        ],
-        'phosphor' => [
-            'package' => 'codeat3/blade-phosphor-icons',
-            'source' => 'vendor/codeat3/blade-phosphor-icons/resources/svg',
-        ],
-        'tabler' => [
-            'package' => 'ryangjchandler/blade-tabler-icons',
-            'source' => 'vendor/ryangjchandler/blade-tabler-icons/resources/svg',
-        ],
+        'heroicons' => 'blade-ui-kit/blade-heroicons',
+        'heroicons-app' => 'blade-ui-kit/blade-heroicons',
+        'heroicons-marketing' => 'blade-ui-kit/blade-heroicons',
+        'lucide' => 'mallardduck/blade-lucide-icons',
+        'phosphor' => 'codeat3/blade-phosphor-icons',
+        'tabler' => 'secondnetwork/blade-tabler-icons',
     ];
 
     public function handle(): int
@@ -78,17 +68,21 @@ class PublishIconsCommand extends Command
             return self::FAILURE;
         }
 
-        $config = self::PRESET_PACKAGES[$preset] ?? null;
-        if ($config === null) {
+        $package = self::PRESET_PACKAGES[$preset] ?? null;
+        if ($package === null) {
             $this->error("No publishable source registered for preset '{$preset}'.");
 
             return self::FAILURE;
         }
 
-        $sourcePath = base_path($config['source']);
-        if (! is_dir($sourcePath)) {
-            $this->error("Composer package '{$config['package']}' is not installed.");
-            $this->line('  Fix: composer require '.$config['package']);
+        // Located rather than assumed. An installed package whose SVGs moved is
+        // indistinguishable from a healthy one to `is_dir`, and that is exactly how a
+        // publish of an empty directory came to report success.
+        $sourcePath = IconSourceLocator::locate(base_path('vendor/'.$package));
+
+        if ($sourcePath === null) {
+            $this->error("Composer package '{$package}' is not installed, or ships no SVGs.");
+            $this->line('  Fix: composer require '.$package);
 
             return self::FAILURE;
         }

@@ -10,6 +10,105 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.32.0] — 2026-08-16
+
+**Minor — a shared icon vocabulary that resolves the same way on every preset, an icon package you can actually install, a prop-naming reference that was wrong about six things, and a prop linter that no longer fails a build over a test selector.**
+
+Nothing here changes what an unchanged call site renders. One command reports less than it used to, and it is the reporting that was wrong rather than the rule.
+
+### Added
+
+- **Eleven words the shared icon vocabulary was missing.** `chart-bar`, `trend-up`,
+  `percent`, `coins`, `gift`, `map-pin`, `sliders`, `list-checks`, `list-bullets`,
+  `lock-key` and `broadcast` — reporting, money, settings and location, the vocabulary a
+  back-office reaches for. Each resolves on all four base presets, and each target was
+  checked against the installed icon set rather than assumed. Two more were asked for and
+  are deliberately absent: Heroicons has no gauge and no handshake, and an alias that
+  changes the drawing when you switch presets is worth less than no alias at all — for
+  those two, name the glyph directly.
+  See [Icon](https://docs.wirekit.app/components/icon).
+
+### Changed
+
+- **`chart-bar` moved from the marketing extension into the shared vocabulary.** While the
+  extension owned the name it meant `chart-bar-square` on Heroicons and nothing at all on
+  Lucide, Phosphor or Tabler — so the one property a shared alias has to keep, that it
+  means the same thing whichever preset you install, was the property it did not have. On
+  `heroicons-marketing` the glyph is now the plain bar chart the other three presets draw.
+  If you want the framed variant, name `heroicon-m-chart-bar-square` directly.
+
+- **`wirekit:doctor:props` no longer reports a browser-test selector as an unknown prop.**
+  `dusk` is written on a component precisely so that it reaches the rendered HTML, where a
+  browser suite selects on it. The linter counted it as a mistake, and in a project whose
+  quality gate runs the linter under `set -euo pipefail` that exit code ended the stage
+  before the tests ran — seventy of one project's findings were this one attribute. The
+  line is what the attribute does: an unknown prop is an instruction that disappears, a
+  test selector is one that arrives where it was aimed. The same change covers the runtime
+  warning, since both read one verdict. Valid HTML attributes and the `aria-` / `data-` /
+  `wire:` / `x-` / `on` prefixes were already passthrough and are unchanged.
+  [CLI Reference](https://docs.wirekit.app/cli-reference) lists what is never reported.
+
+### Fixed
+
+- **The `tabler` icon preset named a package you cannot install.**
+  `ryangjchandler/blade-tabler-icons` is marked abandoned and its newest release requires
+  Laravel 10 or 11, while WireKit requires 12 or 13 — so `composer require` refused, for
+  every supported installation. The preset was documented, listed in the preset table, and
+  unreachable. It now names `secondnetwork/blade-tabler-icons`, the maintained successor:
+  same `tabler-` prefix, same alias vocabulary, ~7,200 icons, and it tracks Tabler's own
+  version line. Nothing changes in your templates —
+  `<x-wirekit::icon name="user">` on the `tabler` preset resolves exactly as before.
+  [Icon](https://docs.wirekit.app/components/icon) names the new package.
+
+- **`megaphone` was broken on the `tabler` preset.** It mapped to `tabler-megaphone`, which
+  does not exist — Tabler calls that glyph `speakerphone`. Blade Icons throws on an unknown
+  name, so the page broke rather than degraded. It survived because the preset's package
+  could not be installed, which meant nothing could check its 94 targets; all four presets
+  are verified now, and every other alias across them was already correct.
+
+- **`wirekit:publish-icons lucide` reported success while publishing the wrong thing.** The
+  command looked for SVGs in a directory the package emptied when it reorganized — the
+  folder still exists, so the check answered yes and the copy produced
+  `icons/lucide/icons/…` where every other preset gives you `icons/lucide/…`. The source
+  directory is now located by looking for the files rather than by a written-down path, so
+  an upstream reorganization cannot silently change what you get.
+
+### Documentation
+
+- **The CLI reference documented an exit code no command returns.** It described a
+  three-value convention and gave exit `2` its own row and its own meaning, plus two more
+  mentions under individual commands. Every `wirekit:*` command exits `0` or `1` — including
+  on rejected input — and has done since that was standardized. A CI step written as
+  `if [ $? -eq 2 ]` could never fire, and `1` read as narrower than it is. The reference now
+  states the two-value contract and says outright that there is no exit `2`.
+  [CLI Reference](https://docs.wirekit.app/cli-reference).
+
+- **A recipe's dark band did not follow the theme.** The marketing landing-page recipe
+  painted its hero with raw hex — a near-black gradient with white text, plus three sparkline
+  strokes in literal red, green and gray. Copied into an application, that band stayed
+  exactly as light in dark mode as it had been in light mode while everything around it
+  moved. It is tokens now, so the band belongs to whichever theme is active.
+
+- **The prop-naming reference was wrong about six things, on the page that exists to
+  settle them.** It named a component this package does not have, filed two components
+  under a prop they do not declare, classified `alert` and `callout` as surface-treatment
+  while both resolve `variant` into the color axis, promised a stable seven-value intent
+  enum that `button` does not accept, and described a v3 plan whose canonical surface axis
+  was the wrong name. It also named one component as keeping a back-compat alias while
+  seven do — which is how a reader plans a one-component migration for a seven-component
+  change. The page now carries the full alias matrix, the accepted values per component,
+  and the v3 mapping split into the rows that are a plain prop rename and the rows that
+  also rename a value. The release date stays open.
+  [Prop Naming Conventions](https://docs.wirekit.app/extending/prop-naming-conventions).
+
+- **The integration guide says that `x-cloak` is covered.** Alpine hides nothing for that
+  attribute — it removes it once initialized, and the hiding has to come from CSS. WireKit
+  ships the rule and `@wirekitStyles` delivers it, which was true and written down nowhere.
+  The guide now also says why looking for it comes up empty: the stylesheet arrives as its
+  own `<link>`, so the rule is never in your Vite bundle and grepping `app-*.css` finds
+  nothing whether your setup is right or not.
+  [Integration](https://docs.wirekit.app/getting-started/integration).
+
 ## [2.31.0] — 2026-08-16
 
 **Minor — a Brazilian Portuguese catalog, a font of your own that no longer moves the page, a CSP audit you can act on without checking it first, and six pages that were teaching the version before this one.**
