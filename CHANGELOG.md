@@ -10,6 +10,172 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.31.0] — 2026-08-16
+
+**Minor — a Brazilian Portuguese catalog, a font of your own that no longer moves the page, a CSP audit you can act on without checking it first, and six pages that were teaching the version before this one.**
+
+Nothing here changes what an unchanged call site renders. Two commands report more than
+they used to: `wirekit:csp-audit` gained a warning class that leaves your exit code alone,
+and `wirekit:verify` compares every published bundle instead of four.
+
+### Added
+
+- **A tab bar the server drives, with no panels — `<x-wirekit::tabs.list>` and
+  `<x-wirekit::tabs.tab>`.** `tabs` assumes the browser already holds each panel's
+  content, which is the wrong shape for the arrangement a Livewire application reaches
+  for first: a row of tabs above content the *server* renders, where choosing one is a
+  round trip. Two of the things the full component does are actively wrong there — it
+  holds the selection your server has already decided, and it emits `aria-controls`
+  pointing at panels that do not exist, sending a screen-reader user somewhere there is
+  nothing. The bar on its own holds nothing at all: `selected` is a plain server-side
+  boolean that drives both `aria-selected` and the roving `tabindex`, and the keyboard
+  handlers resolve the tabs from the DOM on every keypress, so Livewire replacing the
+  markup cannot leave focus pointing at an element that no longer exists. Activation is
+  manual — arrows move focus, `Enter` or `Space` commits — because selection following
+  focus would fire one request per arrow key and render four pages nobody asked to see.
+  Both bars are styled from one source, so `variant` and `orientation` mean the same
+  thing in either. See [Tabs](https://docs.wirekit.app/components/tabs).
+
+- **Brazilian Portuguese.** `pt` is European Portuguese, and regional locales resolve
+  through their base language — so `pt-BR` was rendering fluent Portuguese of the wrong
+  variety. A Brazilian reader saw `(abre num novo separador)` where they expect
+  `(abre em uma nova aba)`, and `A carregar` where they expect `Carregando`. Nothing failed:
+  the page rendered, the screen reader read it out, and only a native speaker looking at the
+  right string would ever have caught it. `pt-BR` now ships as a delta over `pt` — it holds
+  only the strings the two varieties spell differently, so the shared wording stays in one
+  place and cannot drift apart. [Localization](https://docs.wirekit.app/localization) names
+  the variety of every catalog, so you can decide deliberately rather than inherit one.
+
+- **A font you host yourself can get a metric-matched fallback.** Every bundled family ships
+  one — a local system font registered under the family's own name with the web font's
+  measured metrics, so text painted before the swap occupies the same box as text painted
+  after it. Your own family got none of that, which is the setup `null` is for. Declare the
+  four measured values in `wirekit.fonts.fallbacks` and WireKit emits the face. Empty by
+  default and nothing is invented: a guessed `size-adjust` moves the layout in the *other*
+  direction and looks deliberate while doing it. The method, including the two parts that are
+  easy to get wrong, is on the [Fonts](https://docs.wirekit.app/components/fonts) page.
+
+- **The font component's inline `<style>` can carry a CSP nonce.** It is the only inline style
+  WireKit emits, and it has to stay inline — the three custom properties come from your font
+  configuration, not from our build. Without a nonce you cannot drop `'unsafe-inline'` from
+  `style-src`, and CSP Level 2 makes that a cliff rather than a slope: a nonce anywhere in a
+  directive makes the browser ignore `'unsafe-inline'` in that same directive, so this block
+  loses its permission the moment you add a nonce for anything else. Silently — the page
+  renders and your typography falls back to the system font. The value resolves itself from a
+  `csp-nonce` container binding or `Vite::cspNonce()`, so an application that already has one
+  needs no configuration; an explicit `:nonce` still wins.
+
+- **`status-tiles` items can state the word they report.** The visible status word was derived
+  from `intent`, which has five values — so a domain with more states folds two onto one word,
+  and the pair it folds is usually the one carrying the information. A health check that ran
+  and found a problem and one that crashed are both `danger`, and both read "Critical": the
+  first points at your application, the second at your monitoring. Pass `status` per item and
+  the tile says your word, in the caption and in the screen-reader text alike.
+
+- **`stream` gained `replace(text)`.** `push()` cannot express a rendering derived from the
+  whole stream rather than accumulated from its parts — masked text where a placeholder breaks
+  across a chunk boundary, incremental Markdown where a closing fence changes what came before
+  it, anything that diffs. Setting `text` directly looks like the workaround and quietly skips
+  the reduced-motion buffer; `replace()` takes the same path a push takes.
+
+- **The sidebar item's icon size can be personalized.** It was a literal in the render call,
+  so the only way to resize it was to take over the surrounding block — and a taken-over block
+  stops inheriting improvements silently, which is the one outcome the closure form exists to
+  avoid.
+
+### Changed
+
+- **`wirekit:csp-audit` no longer reports a bare PASS for an expression it did not fully
+  measure.** Blade renders before Alpine reads, so an attribute carrying `{{ … }}` is checked
+  with an identifier standing in for the part the audit cannot see. That substitution was
+  invisible, and it hid the case that matters: `Js::from()` — Laravel's attribute-safe encoder,
+  and the documented way to hand data to Alpine — renders to `JSON.parse('…')`, and `JSON` is
+  precisely the name the CSP evaluator cannot resolve. The audit rejected that call written out
+  by hand and passed it written the way everybody writes it, in the same file on the same line.
+  A run now counts the expressions resting on a substitution, names the ones that call
+  `Js::from()` or `@js()` so you can look at those first, and qualifies its verdict instead of
+  claiming everything resolves in scope. Your exit code does not change — the same encoder emits
+  a plain literal for a number, a boolean, `[]` or `{}`, and a violation that turns out to be
+  nothing costs the next hundred their credibility.
+  See [CLI reference](https://docs.wirekit.app/cli-reference).
+
+- **`wirekit:csp-audit` warns when an expression resolves but may not evaluate.** Alpine's CSP
+  evaluator refuses a *value*, not a name: it throws on any property access whose result is one
+  of `globalThis`'s own. So a chain can parse, resolve every identifier, run, and be rejected
+  the moment it touches something global — `$el.ownerDocument.location` reaches
+  `window.location` by another route. Reported as a warning that leaves your exit code alone,
+  because the rule approximates a question about runtime values. The output also names what it
+  measured, so a pass is not read as more than it is, and the
+  [CLI reference](https://docs.wirekit.app/cli-reference) documents the supported shape.
+
+- **`wirekit:verify` compares every published bundle, and reports a config option by name.**
+  The freshness check compared four; every bundle added since inherited nothing, so an upgrade
+  could leave six stale files behind a clean report. It is derived from the package now. The
+  config check also names the missing options and prints each default instead of counting
+  them, and reports an option your file still carries that this version no longer offers.
+
+### Fixed
+
+- **`wirekit:csp-audit` read a bare `:` on a `<livewire:…>` tag as an Alpine expression.** On a
+  component tag that is Blade's prop binding and its value is PHP, finished on the server. The
+  scanner knew that for `<x-…>` only. Measured in a real application: 13 of 18 reported
+  violations were false, and 12 of those were this one construct.
+
+- **`wirekit:csp-audit` judged a Livewire action as written, not as Livewire presents it.**
+  `wire:click="confirm"` is rewritten to a call on the component proxy before Alpine sees it,
+  so a method whose name collides with a browser global was reported as a dead handler while
+  working perfectly.
+
+- **`countdown`'s `locale` prop did nothing.** The `x-data` object declared the key twice, and
+  a JavaScript object literal keeps the last one — so the line that read the prop was dead and
+  `locale="fr-FR"` on a German page counted in German.
+
+- **The unknown-prop check now reaches sub-components.** It covered the top level and none of
+  the 76 sub-component views — `accordion.item`, `table.th`, `list.item`, `field.*`,
+  `dropdown.panel` and the rest, which are exactly the tags you write in a loop.
+
+- **An overlay container you write yourself is finished, not just adopted.** WireKit creates
+  `#wk-overlay-root` and names it in the page's language; one already in your markup was
+  handed straight back without a role or a label. Writing it yourself is the sturdier route —
+  it sits in the markup Livewire morphs — so the localization was reaching everyone except the
+  readers who had built the better setup. A label you wrote is left alone.
+
+- **`wirekit:csp-audit` said "bridge" when it meant "node".** A missing executable does not
+  throw, so the branch written for it never ran and the message never contained the word
+  `node`. It now says so before the process starts, and the dependency is named in the
+  command's own description.
+
+### Documentation
+
+- **Six pages were teaching the version before the one that linked them.** All six had the same
+  shape: the reference table was maintained and the prose around it was not.
+
+- **[Fonts](https://docs.wirekit.app/components/fonts)** recommended writing your own
+  `font-display` rules — the exact hand workaround `wirekit.fonts.display` had replaced, and
+  rules that land on the same faces as the metric-matched fallbacks that are the actual fix.
+
+- **The [CLI reference](https://docs.wirekit.app/cli-reference)** framed the CSP audit as a
+  grammar check alone, which is precisely the half that does not explain why a passing build
+  had started failing. It now says what the command looks at, and what it deliberately does
+  not.
+
+- **The script-order rule named the wrong invariant.** `@wirekitScripts` must RUN before Alpine
+  starts — which its own `defer` guarantees in a Livewire layout, so the order of the two
+  directives is not the lever. The troubleshooting table sent you to check a tag order that was
+  already correct, ruling out the wrong hypothesis and keeping the right one.
+
+- **[Scroll area](https://docs.wirekit.app/components/scroll-area)** documents that `start` and
+  `end` are the reading edges, so a horizontal fade follows the document direction.
+
+- **[Table](https://docs.wirekit.app/components/table)** documents the edge hint that tells a
+  reader the row continues before they touch it.
+
+- **[Integration](https://docs.wirekit.app/getting-started/integration)** documents the overlay
+  container, the `data-wk-overlay-label` attribute, and `wirekit.assets.middleware` — the last
+  of which the previous release's own entry had linked to a page that never named it.
+
+---
+
 ## [2.30.0] — 2026-08-14
 
 **Minor — a personalization that keeps inheriting, an error message that finally names its own cause, and asset replies that are safe to cache where they claim to be.**

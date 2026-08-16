@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit;
 
 use Closure;
+use Illuminate\Support\Facades\Vite;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\AvatarPalette;
 use Pushery\WireKit\Support\StrictnessGate;
@@ -302,6 +303,48 @@ class WireKit
      *
      * Usage: WireKit::icon('close') -> 'heroicon-m-x-mark'
      */
+    /**
+     * The CSP nonce this request runs under, or null when it runs under none.
+     *
+     * WireKit emits exactly one inline `<style>` — the three font custom
+     * properties, which cannot be baked into the shipped stylesheet because they
+     * are derived from the application's own font configuration rather than from
+     * the build. Under a policy without `'unsafe-inline'` that block needs a nonce
+     * or it is discarded.
+     *
+     * And it is discarded ABRUPTLY, which is why this resolves itself rather than
+     * waiting to be handed a value. From CSP Level 2 on, a nonce anywhere in a
+     * directive makes the browser IGNORE `'unsafe-inline'` in that same directive —
+     * so the moment an application adds a nonce to `style-src` for any reason at
+     * all, this block loses the permission it had. Nothing is logged, no console
+     * error appears at load: the page renders and the typography silently falls
+     * back to the system font. That failure passes every HTML comparison and every
+     * header assertion, so requiring the developer to remember one more parameter
+     * would be requiring them to remember the thing they cannot see going wrong.
+     *
+     * Two sources, in order. The container binding is what the rest of the fleet
+     * publishes; `Vite::cspNonce()` is what Livewire itself reads, so honoring it
+     * means a Laravel application that already has a nonce needs no configuration
+     * here at all.
+     *
+     * An explicit `nonce` prop still wins over both — an application that mints a
+     * value per response and does not publish it anywhere can pass it directly.
+     */
+    public static function cspNonce(): ?string
+    {
+        if (app()->bound('csp-nonce')) {
+            $bound = app('csp-nonce');
+
+            if (is_string($bound) && $bound !== '') {
+                return $bound;
+            }
+        }
+
+        $vite = Vite::cspNonce();
+
+        return is_string($vite) && $vite !== '' ? $vite : null;
+    }
+
     public static function icon(string $alias): string
     {
         return app(IconResolver::class)->resolve($alias);

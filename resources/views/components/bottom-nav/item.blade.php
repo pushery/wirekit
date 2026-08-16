@@ -3,6 +3,11 @@
 @aware(['interactive' => false])
 
 @php
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('bottom-nav.item', $attributes->getAttributes());
+
     use Pushery\WireKit\Support\BooleanProp;
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also

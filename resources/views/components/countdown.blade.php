@@ -71,7 +71,6 @@
 
     $expiredLabel = $expiredText ?? __('Overdue');
     $warnSeconds = $warnThreshold !== null ? (int) $warnThreshold : null;
-    $resolvedLocale = $locale ?? app()->getLocale();
 
     // Resolve the active units, in largest-to-smallest order. 'auto' shows the
     // full ladder (seconds optional) and drops leading zero-units client-side;
@@ -135,7 +134,21 @@
         'minutes' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count minute|[2,*] :count minutes'),
         'seconds' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count second|[2,*] :count seconds'),
     ];
-    $countdownLocale = str_replace('_', '-', app()->getLocale());
+    // ONE key, carrying both intentions: the prop is honored, and whatever it
+    // resolves to is normalized to a language tag.
+    //
+    // These were two assignments feeding two `locale:` entries in the same x-data
+    // object. A JavaScript object literal keeps the LAST of a duplicated key, so the
+    // one that read the prop was dead — `locale="fr-FR"` on a German page counted in
+    // German, with no error anywhere, and right by coincidence wherever the prop and
+    // the app locale agreed.
+    //
+    // The normalization is not cosmetic and belonged to the surviving line only:
+    // Laravel spells it `de_DE`, and an underscore is not a BCP-47 separator, so
+    // `Intl.NumberFormat` and `Intl.PluralRules` do not read it as German-Germany.
+    // Keeping the prop-reading line as-is would have fixed the visible half and
+    // introduced the other.
+    $countdownLocale = str_replace('_', '-', $locale ?? app()->getLocale());
 
     // Resolve the change-animation style. `animate` accepts a bool or one of the
     // strings 'box' / 'text' / 'none'. 'box' (the default when true) pulses the
@@ -186,7 +199,6 @@
         activeUnits: {{ \Pushery\WireKit\Support\AlpinePayload::from($activeUnits) }},
         autoMode: {{ \Pushery\WireKit\Support\AlpinePayload::from($autoMode) }},
         separators: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $separators) }},
-        locale: {{ \Pushery\WireKit\Support\AlpinePayload::from($resolvedLocale) }},
         animate: {{ \Pushery\WireKit\Support\AlpinePayload::from($animateOn) }},
         expiredText: {{ \Pushery\WireKit\Support\AlpinePayload::from($expiredLabel) }},
         unitPhrases: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $unitPhrases) }},

@@ -119,6 +119,24 @@
     foreach ($items as $item) {
         $intent = in_array($item['intent'] ?? 'neutral', $intents, true) ? $item['intent'] : 'neutral';
         $href = ($item['href'] ?? null) ?: null;
+
+        // The word the tile SAYS, which is not the same question as how severe it is.
+        //
+        // Derived from the intent unless the caller states it. There are five words on
+        // the intent axis and domains have more states than that, so deriving forces
+        // two of them onto one word — and the pair it collapses is usually the one that
+        // matters. A health check that RAN and reports a problem and a check that
+        // CRASHED are both `danger`: the first points at the application, the second at
+        // the monitoring. Shown as one word, an operator is sent to the wrong place, and
+        // the color cannot rescue it because the color is the same by construction.
+        //
+        // Absent, nothing changes for any existing call site. Present, only the word
+        // moves: the `sr-only` "Status:" prefix, the intent tint and the shaped icon are
+        // all untouched, so a custom word cannot cost the tile its accessible name or
+        // its non-color channel.
+        $statusWord = isset($item['status']) && (string) $item['status'] !== ''
+            ? (string) $item['status']
+            : $intentWord($intent);
         $tiles[] = [
             'key' => (string) ($item['key'] ?? ''),
             'label' => (string) ($item['label'] ?? ''),
@@ -126,12 +144,12 @@
             'meta' => isset($item['meta']) ? (string) $item['meta'] : null,
             'color' => $intentColor($intent),
             'icon' => $intentIcon($intent),
-            'statusText' => __('Status: :status', ['status' => $intentWord($intent)]),
-            // The blank status word (no "Status:" prefix) for the visible caption.
-            'statusWord' => $intentWord($intent),
             // NB the space before $intentSurface: without it the last $tileBase class
             // (py-1) glued onto the first surface class (bg-…), silently killing the
             // tile's vertical padding — the real cause of the "no padding" bug.
+            'statusText' => __('Status: :status', ['status' => $statusWord]),
+            // The blank status word (no "Status:" prefix) for the visible caption.
+            'statusWord' => $statusWord,
             'class' => $tileBase.' '.$intentSurface($intent).($href !== null ? $tileLink : ''),
         ];
         $counts[$intent]++;

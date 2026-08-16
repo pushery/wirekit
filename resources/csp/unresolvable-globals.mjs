@@ -117,4 +117,85 @@ function forbiddenGlobalsIn(ast) {
     return [...readIdentifiers(ast)].filter((name) => FORBIDDEN_GLOBALS.has(name)).sort();
 }
 
-export { FORBIDDEN_GLOBALS, readIdentifiers, forbiddenGlobalsIn };
+/**
+ * Property names that reach a `globalThis` VALUE no matter what you start from.
+ *
+ * The CSP evaluator does not refuse a name — it refuses a VALUE. It builds a set
+ * from `Object.getOwnPropertyNames(globalThis)` and throws on any property access
+ * whose result lands in it. So a chain can be perfectly resolvable, run, and still
+ * be rejected at the moment it touches something that happens to be a global.
+ *
+ * `$el.ownerDocument.location.reload()` is the case that produced this list. Every
+ * identifier resolves, the function exists, and the call is refused: an element's
+ * `ownerDocument` IS `document`, and `document.location` IS `window.location`. The
+ * route through a name that is not "window" reaches the same forbidden object.
+ *
+ * This is the statically decidable part of that rule, and it is deliberately SHORT.
+ * The general question is about values at runtime, which source cannot answer, and
+ * a wrong answer here is expensive: a false finding in a tool whose only worth is
+ * that its output can be believed. So only names whose value is the global object
+ * REGARDLESS of the receiver are listed.
+ *
+ * Names that look like they belong and do not:
+ *
+ *   - `top`, `self`, `parent`, `frames`, `length`, `name`, `status`, `origin` are
+ *     all `globalThis` properties, and all of them are ordinary properties of other
+ *     things too. `getBoundingClientRect().top` is a number, not `window.top`.
+ *   - `dataset`, `style`, `classList` never reach a global at all.
+ */
+const GLOBAL_REACHING_MEMBERS = new Set([
+    'location',       // document.location === window.location
+    'ownerDocument',  // an in-page element's is `document`
+    'defaultView',    // document.defaultView === window
+    'document',
+    'navigator',
+    'history',
+    'localStorage',
+    'sessionStorage',
+    'screen',
+    'window',
+    'globalThis',
+]);
+
+/**
+ * Member names in this expression that reach a value the CSP evaluator refuses.
+ *
+ * Reported as a WARNING rather than a violation, on purpose. The rule is an
+ * over-approximation — a name in the list on a receiver nobody anticipated could
+ * be an ordinary property — and this audit's whole value is that a developer can
+ * act on its output without checking it first. A warning that turns out to be
+ * nothing costs a glance; a violation that turns out to be nothing costs the next
+ * hundred violations their credibility.
+ *
+ * @param {object} node - the parsed AST
+ * @returns {string[]} sorted member names, empty when there are none
+ */
+function globalReachingMembersIn(node, found = new Set()) {
+    if (! node || typeof node !== 'object') {
+        return [...found].sort();
+    }
+
+    if (Array.isArray(node)) {
+        for (const child of node) {
+            globalReachingMembersIn(child, found);
+        }
+
+        return [...found].sort();
+    }
+
+    if (node.type === 'MemberExpression' && ! node.computed
+        && node.property && node.property.type === 'Identifier'
+        && GLOBAL_REACHING_MEMBERS.has(node.property.name)) {
+        found.add(node.property.name);
+    }
+
+    for (const value of Object.values(node)) {
+        if (value && typeof value === 'object') {
+            globalReachingMembersIn(value, found);
+        }
+    }
+
+    return [...found].sort();
+}
+
+export { FORBIDDEN_GLOBALS, GLOBAL_REACHING_MEMBERS, readIdentifiers, forbiddenGlobalsIn, globalReachingMembersIn };

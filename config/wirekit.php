@@ -509,6 +509,43 @@ return [
         'mono' => null,
 
         'display' => 'swap',
+
+        /*
+        |----------------------------------------------------------------------
+        | Metric-matched fallbacks for YOUR fonts
+        |----------------------------------------------------------------------
+        |
+        | Every bundled family ships with a second `@font-face` that registers a
+        | local system font under its own name and overrides its metrics to match.
+        | Text painted before the swap then occupies the same box as text painted
+        | after it, and there is nothing left to shift.
+        |
+        | That stops at the bundle. A self-hosted font of your own gets nothing —
+        | which is exactly the setup the `null` values above are for. Declare it
+        | here and WireKit emits the same kind of face for it:
+        |
+        |     'fallbacks' => [
+        |         'Instrument Sans' => [
+        |             'local' => ['Arial', 'Helvetica Neue', 'Liberation Sans'],
+        |             'sizeAdjust' => '107.4%',
+        |             'ascentOverride' => '90.2%',
+        |             'descentOverride' => '22.4%',
+        |             'lineGapOverride' => '0%',
+        |         ],
+        |     ],
+        |
+        | Then reference `'Instrument Sans Fallback'` after your family in the
+        | font stack — that name is what this creates.
+        |
+        | MEASURE THE FOUR VALUES. Do not estimate them. A guessed `size-adjust`
+        | moves the layout in the OTHER direction and looks deliberate while doing
+        | it, which is worse than leaving the whole thing alone. The method, and
+        | the two things that are easy to get wrong about it, are on the Fonts
+        | component page under "Matching a font you host yourself".
+        |
+        | Empty by default: a font nobody declared is a font nobody measured.
+        */
+        'fallbacks' => [],
     ],
 
     /*

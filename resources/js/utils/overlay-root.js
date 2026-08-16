@@ -85,6 +85,29 @@ export function overlayRoot() {
     let root = document.getElementById(OVERLAY_ROOT_ID);
 
     if (root) {
+        // An adopted container is finished the same way a created one is, and this
+        // is not symmetry for its own sake. Writing the container yourself is the
+        // MORE robust route, not a workaround: it sits in the markup Livewire
+        // morphs, so it is never briefly absent and no navigation timing has to be
+        // right. The reader who takes that route was getting a region a screen
+        // reader announces as "region" and nothing else — precisely the state the
+        // localization work was done to remove, reaching precisely the readers it
+        // was meant to reach.
+        //
+        // Only what is MISSING is filled in. A developer who wrote their own label
+        // has translated it in their own catalog, and overwriting it would take
+        // their translation away in the name of localization. `aria-labelledby`
+        // counts as a label too — a container pointed at a heading is named, and
+        // adding `aria-label` next to it would win over the reference and quietly
+        // replace the name they chose.
+        if (! root.getAttribute('role')) {
+            root.setAttribute('role', 'region');
+        }
+
+        if (! root.getAttribute('aria-label') && ! root.getAttribute('aria-labelledby')) {
+            root.setAttribute('aria-label', overlayRootLabel());
+        }
+
         return root;
     }
 

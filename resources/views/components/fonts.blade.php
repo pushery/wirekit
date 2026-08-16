@@ -2,7 +2,21 @@
      Renders no interactive element, so there is no action whose result could be
      shown early. Measured rather than asserted: the guard refutes this reason for
      any file that renders one. --}}
+@props([
+    // A CSP nonce for the inline <style> below. Left out, it resolves itself from
+    // the container binding or Vite — see WireKit::cspNonce(). Pass one explicitly
+    // when the application mints a value per response and publishes it nowhere.
+    'nonce' => null,
+])
+
 @php
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('fonts', $attributes->getAttributes());
+
+    $wkNonce = $nonce ?? \Pushery\WireKit\WireKit::cspNonce();
+
     use Pushery\WireKit\Fonts\FontCss;
     use Pushery\WireKit\Fonts\FontPreset;
     use Pushery\WireKit\Fonts\FontRegistry;
@@ -112,8 +126,80 @@
     @endif
 @endif
 
-{{-- CSS Custom Properties — always rendered so components can reference them --}}
-<style>
+@php
+    // Metric-matched fallbacks for the developer's OWN fonts.
+    //
+    // Every bundled family ships one of these, generated from measurements. A
+    // self-hosted font of the developer's own got nothing — which is exactly the
+    // setup the null font values are for, so the capability stopped precisely
+    // where the documented path leads.
+    //
+    // Only the four overrides are emitted, and nothing is invented: a family with
+    // no measured numbers has no entry here, because a guessed `size-adjust`
+    // moves the layout in the OTHER direction and looks deliberate doing it.
+    $customFallbacks = [];
+
+    foreach ((array) ($fontConfig['fallbacks'] ?? []) as $family => $spec) {
+        if (! is_array($spec)) {
+            continue;
+        }
+
+        // Narrowed to what a CSS font-family name may contain, rather than escaped.
+        //
+        // This string reaches a `<style>` block, so the sink is CSS rather than HTML and
+        // Blade's own escaping is the wrong tool — it would turn a quote into `&#039;`
+        // and produce a rule the browser drops. Escaping would also leave the question
+        // open; narrowing answers it: after this, a name cannot carry a quote, a brace
+        // or a semicolon at all, so there is nothing left to break out of.
+        //
+        // The value comes from the application's own config and is not user input. That
+        // is the argument for trusting it, and it is exactly the argument that stops
+        // being true the day someone builds this array from a database.
+        $locals = array_values(array_filter(array_map(
+            static fn ($name): string => trim((string) preg_replace('/[^A-Za-z0-9 _-]/', '', (string) $name)),
+            (array) ($spec['local'] ?? [])
+        )));
+
+        if ($locals === []) {
+            continue;
+        }
+
+        $customFallbacks[] = [
+            'family' => (string) $family,
+            'src' => implode(', ', array_map(static fn (string $n): string => "local('".$n."')", $locals)),
+            'overrides' => array_filter([
+                'size-adjust' => $spec['sizeAdjust'] ?? null,
+                'ascent-override' => $spec['ascentOverride'] ?? null,
+                'descent-override' => $spec['descentOverride'] ?? null,
+                'line-gap-override' => $spec['lineGapOverride'] ?? null,
+            ], static fn ($v): bool => $v !== null && $v !== ''),
+        ];
+    }
+@endphp
+
+@foreach($customFallbacks as $fallback)
+    {{-- Registers a local system font under "<family> Fallback" with the measured
+         metrics of the developer's own face, so the text painted before the swap
+         occupies the same box as the text painted after it. --}}
+    <style @if($wkNonce) nonce="{{ $wkNonce }}" @endif>
+        @font-face {
+            font-family: '{{ $fallback['family'] }} Fallback';
+            src: {!! $fallback['src'] !!};
+            @foreach($fallback['overrides'] as $property => $value)
+            {{ $property }}: {{ $value }};
+            @endforeach
+        }
+    </style>
+@endforeach
+
+{{-- CSS Custom Properties — always rendered so components can reference them.
+     The nonce is what keeps this block alive once an application drops
+     'unsafe-inline' from style-src: from CSP Level 2 on, a nonce anywhere in a
+     directive makes the browser ignore 'unsafe-inline' in that same directive, so
+     there is no gradual transition — the block is either nonced or discarded. The
+     discard is silent: the page renders and the typography falls back to the
+     system font, which passes every HTML comparison and every header assertion. --}}
+<style @if($wkNonce) nonce="{{ $wkNonce }}" @endif>
     :root {
         --font-wk-sans: {!! $sansPreset ? $sansPreset->fontFamily() : 'ui-sans-serif, system-ui, sans-serif' !!};
         --font-wk-serif: {!! $serifPreset ? $serifPreset->fontFamily() : 'ui-serif, Georgia, serif' !!};

@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Pushery\WireKit\Support\BladeParser;
+use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
 /**
@@ -28,6 +29,17 @@ use Symfony\Component\Process\Process;
  * object literals, chains, ternaries and index access all parse, so reading an
  * expression and judging it by eye over-reports badly. This command finds the
  * expressions (it knows the view paths) and hands the verdict to the parser.
+ *
+ * The verdict shape is declared ONCE, here, because it was previously written out
+ * three times and all three drifted together the moment the bridge gained a key:
+ * a docblock, a `@var` on the decoded payload, and a `@var` on the extracted list
+ * all said the warning path did not exist, while the bridge emitted it and the
+ * command consumed it. PHP does not read any of them, so nothing failed — static
+ * analysis proved the reading loop unreachable, which was the only visible symptom.
+ * `warnings` is optional because the branch reporting a SYNTAX error returns before
+ * a warning could exist.
+ *
+ * @phpstan-type CspVerdict array{ok: bool, error: string|null, globals: array<int, string>, warnings?: array<int, string>}
  */
 class CspAuditCommand extends Command
 {
@@ -35,7 +47,7 @@ class CspAuditCommand extends Command
         {--path=* : Directory to scan. Repeatable. Defaults to the application view paths.}
         {--json : Emit machine-readable JSON instead of a report.}';
 
-    protected $description = 'Check every Alpine expression in your Blade views against Alpine\'s CSP grammar';
+    protected $description = 'Check every Alpine expression in your Blade views against Alpine\'s CSP grammar (needs node)';
 
     /**
      * The attributes whose VALUE Alpine evaluates as an expression.
@@ -142,9 +154,26 @@ class CspAuditCommand extends Command
 
         $offenders = [];
         $unchecked = [];
+        $warnings = [];
+        $unresolved = [];
 
         foreach ($found as $i => $entry) {
             if (($verdicts[$i]['ok'] ?? false) === true) {
+                // Parsing and resolving are not the same as EVALUATING, and the gap
+                // between them is where a control dies quietly. Collected apart and
+                // never counted as a failure: the rule behind it over-approximates a
+                // runtime question, and a finding that turns out to be nothing costs
+                // this command the credibility of the findings that are not.
+                foreach ($verdicts[$i]['warnings'] ?? [] as $warning) {
+                    $warnings[] = $entry + ['warning' => $warning];
+                }
+
+                // A PASS earned by a placeholder is recorded as such. This is the half of
+                // the audit that used to be silent, and silence here reads as measurement.
+                if ($entry['unresolved'] !== null) {
+                    $unresolved[] = $entry;
+                }
+
                 continue;
             }
 
@@ -173,12 +202,16 @@ class CspAuditCommand extends Command
                 'offenders' => $offenders,
                 'unchecked' => count($unchecked),
                 'unparsable' => $unchecked,
+                'warned' => count($warnings),
+                'warnings' => $warnings,
+                'unresolved' => count($unresolved),
+                'unresolved_expressions' => $unresolved,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG));
 
             return $offenders === [] ? self::SUCCESS : self::FAILURE;
         }
 
-        return $this->report($found, $offenders, $unchecked);
+        return $this->report($found, $offenders, $unchecked, $warnings, $unresolved);
     }
 
     /**
@@ -201,7 +234,7 @@ class CspAuditCommand extends Command
 
     /**
      * @param  array<int, string>  $paths
-     * @return array<int, array{file: string, line: int, attribute: string, expression: string}>
+     * @return array<int, array{file: string, line: int, attribute: string, expression: string, unresolved: string|null}>
      */
     private function collectExpressions(array $paths): array
     {
@@ -226,6 +259,7 @@ class CspAuditCommand extends Command
                         'line' => $hit['line'],
                         'attribute' => $hit['attribute'],
                         'expression' => $hit['expression'],
+                        'unresolved' => $hit['unresolved'],
                     ];
                 }
             }
@@ -252,7 +286,7 @@ class CspAuditCommand extends Command
      * is Blade's question and lives next to the walk; choosing what replaces them is a
      * statement about Alpine's grammar and belongs to this command.
      *
-     * @return array<int, array{line: int, attribute: string, expression: string}>
+     * @return array<int, array{line: int, attribute: string, expression: string, unresolved: string|null}>
      */
     private function expressionsIn(string $contents): array
     {
@@ -274,6 +308,7 @@ class CspAuditCommand extends Command
                     'line' => substr_count(substr($contents, 0, $tag['attrStart'] + $attribute['offset']), "\n") + 1,
                     'attribute' => $attribute['name'],
                     'expression' => $attribute['expression'],
+                    'unresolved' => $attribute['unresolved'],
                 ];
             }
         }
@@ -282,9 +317,80 @@ class CspAuditCommand extends Command
     }
 
     /**
+     * A Livewire action expression as Livewire hands it to Alpine's evaluator.
+     *
+     * Mirrors `contextualizeExpression()` in the installed `livewire.esm.js`, which
+     * every `wire:<event>` value passes through before evaluation. It prefixes each
+     * bare identifier with the component proxy, so the author's `alert` is evaluated
+     * as `$wire.alert` — a method on their component, not a window global.
+     *
+     * Auditing the raw source instead is wrong in the expensive direction: it calls a
+     * working handler dead. Measured over the browser globals that are plausible
+     * method names, six of them (`location`, `self`, `confirm`, `top`, `alert`,
+     * `history`) were reported as unresolvable while `print`, `close` and `focus` were
+     * not — a split that makes any small sample look clean.
+     *
+     * The skip list is upstream's, verbatim. Upstream ALSO skips the Alpine scope keys
+     * of the element, which cannot be known from source; the consequence of prefixing
+     * one of those anyway is `$wire.x` where `x` was meant, and both are member
+     * expressions that parse and resolve — so the unknowable half can only ever cost a
+     * finding we would not have made, never add a false one.
+     */
+    private static function asLivewireEvaluatesIt(string $expression): string
+    {
+        // Upstream: SKIP = ["JSON","true","false","null","undefined","this","$wire","$event"].
+        $skip = ['JSON', 'true', 'false', 'null', 'undefined', 'this', '$wire', '$event'];
+
+        // String literals are masked first so an identifier spelled inside one is left
+        // alone — upstream does the same, and for the same reason.
+        $literals = [];
+        $masked = (string) preg_replace_callback(
+            '/([\'"`])(?:(?!\1)[^\\\\]|\\\\.)*\1/',
+            function (array $m) use (&$literals): string {
+                $literals[] = $m[0];
+
+                return '___'.(count($literals) - 1).'___';
+            },
+            $expression
+        );
+
+        $result = (string) preg_replace_callback(
+            '/(^|[^.\w$])(\$?[a-zA-Z_]\w*)/',
+            function (array $m) use ($skip, $masked): string {
+                [$whole, $wholeOffset] = $m[0];
+                $lead = $m[1][0];
+                $identifier = $m[2][0];
+
+                if (in_array($identifier, $skip, true) || preg_match('/^___\d+___$/', $identifier) === 1) {
+                    return $whole;
+                }
+
+                // An identifier followed by `:` is an object-literal key, not a name to
+                // resolve. Read off the ORIGINAL subject, which is what upstream does —
+                // the replacement is not built up as it goes.
+                if (($masked[$wholeOffset + strlen($whole)] ?? '') === ':') {
+                    return $whole;
+                }
+
+                return $lead.'$wire.'.$identifier;
+            },
+            $masked,
+            -1,
+            $count,
+            PREG_OFFSET_CAPTURE
+        );
+
+        return (string) preg_replace_callback(
+            '/___(\d+)___/',
+            fn (array $m): string => $literals[(int) $m[1]] ?? $m[0],
+            $result
+        );
+    }
+
+    /**
      * The Alpine-evaluated attributes inside one tag's attribute region.
      *
-     * @return array<int, array{name: string, expression: string, offset: int}>
+     * @return array<int, array{name: string, expression: string, unresolved: string|null, offset: int}>
      */
     private function attributesIn(string $region, bool $isComponent): array
     {
@@ -346,15 +452,43 @@ class CspAuditCommand extends Command
             // position a hole was found in. Permissive is the right direction here — a false
             // violation costs a developer a hunt through a template that is fine, and after
             // one of those they stop reading the report that was their only warning.
-            $expression = trim(BladeParser::substituteServerSideConstructs($match['expr'][0], 'BLADE'));
+            $raw = $match['expr'][0];
+            $expression = trim(BladeParser::substituteServerSideConstructs($raw, 'BLADE'));
 
             if ($expression === '') {
                 continue;
             }
 
+            // What the substitution COST is recorded, because the placeholder is the point
+            // at which this audit stops measuring and starts assuming.
+            //
+            // `BLADE` parses anywhere an identifier parses, which is what makes the check
+            // usable at all — but it also means the expression passes on the strength of a
+            // token that stands in for text nobody here has seen. The rendered form can be
+            // anything, and one of the things it commonly is happens to be the exact
+            // failure this command exists to find.
+            //
+            // The version that reported `JSON.parse(…)` as unresolvable therefore caught
+            // the form nobody writes by hand and passed the form everyone writes, in the
+            // same file on the same line — and a reader checking whether the fix had landed
+            // planted a literal probe, watched it fire, and concluded the opposite of the
+            // truth. That is the worst direction for an audit to be wrong in: it does not
+            // merely miss, it actively certifies.
+            $unresolved = self::unresolvedReason($raw);
+
+            // A Livewire action is judged as Livewire PRESENTS it. `wire:click="alert"`
+            // never reaches Alpine as the bare identifier `alert` — it is rewritten to a
+            // member of the component proxy first — so reading the raw source declares a
+            // working handler dead whenever a method name happens to collide with a
+            // browser global.
+            if (str_starts_with($name, 'wire:')) {
+                $expression = self::asLivewireEvaluatesIt($expression);
+            }
+
             $found[] = [
                 'name' => $name,
                 'expression' => $expression,
+                'unresolved' => $unresolved,
                 'offset' => (int) $match[0][1],
             ];
         }
@@ -363,10 +497,51 @@ class CspAuditCommand extends Command
     }
 
     /**
+     * Why this expression's verdict rests on a substitution — or null when it does not.
+     *
+     * A Blade COMMENT is deliberately not a reason. It is removed outright rather than
+     * replaced, because a comment renders to nothing: taking it out reproduces exactly what
+     * the browser sees. Every other construct leaves a placeholder, and a placeholder is a
+     * promise this command cannot keep.
+     *
+     * `encoder` is separated from `echo` because its rendered shape is known up to the data.
+     * Laravel's `Js::from()` — which `@js()` calls — wraps its payload in `JSON.parse('…')`
+     * for any non-empty string, array or object, and `JSON` is precisely what Alpine's CSP
+     * evaluator cannot resolve. It is still not reported as a violation, because the same
+     * encoder returns a bare literal for a number, a boolean, `[]` and `{}`, and this command
+     * cannot see which it will be. Naming it as a probable cause is honest; calling it a
+     * finding would be a guess wearing a verdict's clothes, and one wrong violation costs
+     * the next hundred their credibility.
+     */
+    private static function unresolvedReason(string $raw): ?string
+    {
+        $withoutComments = (string) preg_replace('/\{\{--.*?--\}\}/su', '', $raw);
+
+        if (preg_match('/@js\s*\(|\bJs::from\s*\(/u', $withoutComments) === 1) {
+            return 'encoder';
+        }
+
+        if (preg_match('/\{\{|\{!!|@[a-zA-Z][a-zA-Z0-9_]*\s*\(/u', $withoutComments) === 1) {
+            return 'echo';
+        }
+
+        return null;
+    }
+
+    /**
      * Hand the expressions to Alpine's own parser.
      *
+     * The shape is the bridge's, and it is written out rather than loosened: `warnings`
+     * is optional because the branch that reports a SYNTAX error never reaches the point
+     * where a warning could exist. That optionality is the whole reason this docblock is
+     * worth keeping accurate — while it omitted the key entirely, static analysis could
+     * prove the loop reading it unreachable, and it was right: the type said the warning
+     * path did not exist. The command ran it anyway, because PHP does not read docblocks.
+     * A type that disagrees with the code is not documentation, it is a second
+     * implementation that nothing runs.
+     *
      * @param  array<int, string>  $expressions
-     * @return array<int, array{ok: bool, error: string|null}>|null null when the audit could not run
+     * @return array<int, CspVerdict>|null null when the audit could not run
      */
     private function parse(array $expressions): ?array
     {
@@ -374,6 +549,28 @@ class CspAuditCommand extends Command
 
         if ($script === false) {
             $this->error('The CSP parser bridge is missing from the package.');
+
+            return null;
+        }
+
+        // Asked BEFORE the process starts, because afterwards the answer is a guess.
+        //
+        // A missing `node` does not throw: the shell runs, reports 127, and `run()`
+        // returns normally. The catch below therefore never fires for the one case it
+        // was written for, and what a reader saw instead was "The CSP parser bridge
+        // produced no verdict" — a sentence that does not contain the word `node` and
+        // sends them looking for a broken script inside this package.
+        //
+        // That lands at the worst moment: the first time somebody wires this into a
+        // CI image, which is when they know least about it. The step fails as ordinary
+        // red, and the exit code is 1 rather than 127, so nothing points at the
+        // environment either.
+        //
+        // A finder answers it outright instead of pattern-matching a shell's wording,
+        // which differs between shells and locales.
+        if ((new ExecutableFinder)->find('node') === null) {
+            $this->error('Could not run node: it is not on PATH.');
+            $this->line('This audit needs node, because the verdict has to come from Alpine\'s own parser.');
 
             return null;
         }
@@ -391,7 +588,7 @@ class CspAuditCommand extends Command
             return null;
         }
 
-        /** @var array{ok?: bool, error?: string, results?: array<int, array{ok: bool, error: string|null}>}|null $payload */
+        /** @var array{ok?: bool, error?: string, results?: array<int, CspVerdict>}|null $payload */
         $payload = json_decode($process->getOutput(), true);
 
         if (! is_array($payload) || ($payload['ok'] ?? false) !== true) {
@@ -404,7 +601,7 @@ class CspAuditCommand extends Command
             return null;
         }
 
-        /** @var array<int, array{ok: bool, error: string|null}> $results */
+        /** @var array<int, CspVerdict> $results */
         $results = $payload['results'] ?? [];
 
         if (count($results) !== count($expressions)) {
@@ -424,10 +621,18 @@ class CspAuditCommand extends Command
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string}>  $found
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, error: string}>  $offenders
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, error: string}>  $unchecked
+     * @param  array<int, array{file: string, line: int, attribute: string, expression: string, warning: string}>  $warnings
+     * @param  array<int, array{file: string, line: int, attribute: string, expression: string, unresolved: string|null}>  $unresolved
      */
-    private function report(array $found, array $offenders, array $unchecked): int
+    private function report(array $found, array $offenders, array $unchecked, array $warnings = [], array $unresolved = []): int
     {
-        $this->line(sprintf('Scanned %d Alpine expression(s).', count($found)));
+        // Named rather than implied. "Scanned" reads as "checked, and it works", and
+        // the difference between what this measures and what a reader hears is the
+        // exact gap a developer fell into: three dead listeners were found here, the
+        // FIX for them passed here, and it was just as dead. The audit had produced
+        // well-founded confidence, and on the second round that confidence did not
+        // hold.
+        $this->line(sprintf('Scanned %d Alpine expression(s) for GRAMMAR and resolvability.', count($found)));
 
         // Listed before the verdict, so the verdict is the last thing on screen and cannot be
         // read without this qualifying it.
@@ -453,10 +658,99 @@ class CspAuditCommand extends Command
             }
         }
 
+        // The half that used to be silent.
+        //
+        // These expressions PASSED, and the pass is real as far as it goes — the grammar
+        // accepted what was left after Blade came out. What it does not cover is the text
+        // that was taken out, and the reader has no way to know that from a PASS alone.
+        if ($unresolved !== []) {
+            $encoders = array_values(array_filter($unresolved, static fn (array $e): bool => $e['unresolved'] === 'encoder'));
+
+            $this->line('');
+            $this->warn(sprintf('%d expression(s) passed on a substitution rather than a measurement.', count($unresolved)));
+            $this->line('');
+            $this->line('Blade renders these before Alpine reads them, so this audit stood an identifier');
+            $this->line('in for the part it cannot see. The grammar accepted what was left; nothing here');
+            $this->line('says the rendered form is accepted, and this is NOT counted as a failure.');
+
+            if ($encoders !== []) {
+                $this->line('');
+                $this->line(sprintf('%d of them call Js::from() or @js(), which is worth checking first:', count($encoders)));
+                $this->line('');
+                $this->line("  That encoder renders JSON.parse('…') for any non-empty string, array or");
+                $this->line('  object — and JSON is the one name Alpine\'s CSP evaluator cannot resolve, so');
+                $this->line('  the expression parses, runs, and dies silently. Pass a bare object literal');
+                $this->line('  instead. (For a number, a boolean, [] or {} the encoder emits a literal and');
+                $this->line('  there is nothing to fix, which is why this is a pointer and not a verdict.)');
+            }
+
+            // ONLY the encoders are listed. Measured over this library's own views, 226
+            // expressions rest on a substitution — an interpolated prop in an `x-data`
+            // object is the ordinary way to write Alpine in Blade, and printing ten
+            // arbitrary `BLADE = BLADE` lines out of that teaches nothing while making the
+            // encoder block, which is the actionable part, scroll off the top.
+            //
+            // The count carries the honest half (a PASS here does not cover the rendered
+            // form); the list carries the part someone can act on. A report that buries the
+            // second in the first is read once.
+            $this->line('');
+
+            foreach (array_slice($encoders, 0, 10) as $entry) {
+                $this->line(sprintf('  %s:%d', $entry['file'], $entry['line']));
+                $this->line(sprintf('    %s="%s"', $entry['attribute'], $entry['expression']));
+                $this->line('');
+            }
+
+            if (count($encoders) > 10) {
+                $this->line(sprintf('  …and %d more encoder call(s).', count($encoders) - 10));
+                $this->line('');
+            }
+        }
+
+        // Before the verdict, for the same reason `unchecked` is: a PASS read without
+        // this next to it says more than the audit measured.
+        if ($warnings !== []) {
+            $this->line('');
+            $this->warn(sprintf('%d expression(s) parse but may not EVALUATE.', count($warnings)));
+            $this->line('');
+            $this->line('The CSP evaluator refuses a VALUE, not a name: it throws on any property access');
+            $this->line('that lands in the set built from `globalThis`. So a chain can resolve completely,');
+            $this->line('run, and be rejected at the moment it touches something that happens to be a');
+            $this->line('global — `$el.ownerDocument.location` reaches `window.location` by another route.');
+            $this->line('');
+            $this->line('Warnings, not violations: this rule over-approximates a question about runtime');
+            $this->line('values, so check each one rather than trusting it.');
+            $this->line('');
+
+            foreach (array_slice($warnings, 0, 20) as $entry) {
+                $this->line(sprintf('  %s:%d', $entry['file'], $entry['line']));
+                $this->line(sprintf('    %s="%s"', $entry['attribute'], $entry['expression']));
+                $this->line(sprintf('    %s', $entry['warning']));
+                $this->line('');
+            }
+
+            if (count($warnings) > 20) {
+                $this->line(sprintf('  …and %d more.', count($warnings) - 20));
+                $this->line('');
+            }
+
+            $this->line('The supported shape is a registered component:');
+            $this->line('');
+            $this->line("  Alpine.data('reload', () => ({ reload() { window.location.reload() } }))");
+            $this->line('  <div x-data="reload" x-on:locale-changed.window="reload">');
+            $this->line('');
+        }
+
         if ($offenders === []) {
-            $this->info($unchecked === []
-                ? 'PASS — every expression parses under Alpine\'s CSP grammar.'
-                : 'PASS — every expression this audit could check parses under Alpine\'s CSP grammar.');
+            // The unqualified sentence is reserved for the run that earned it. It used to be
+            // printed whenever nothing failed, which is how a developer read "resolves in
+            // scope" off a run where the deciding text had been substituted away before the
+            // parser ever saw it.
+            $this->info(match (true) {
+                $unchecked === [] && $unresolved === [] => 'PASS — every expression parses under Alpine\'s CSP grammar and resolves in scope.',
+                $unchecked === [] => 'PASS — with '.count($unresolved).' expression(s) resting on a substitution (listed above).',
+                default => 'PASS — every expression this audit could check parses under Alpine\'s CSP grammar.',
+            });
 
             return self::SUCCESS;
         }
