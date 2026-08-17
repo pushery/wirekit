@@ -121,8 +121,7 @@
 @endif
 
 <div
-    {{ $attributes->class([$classes]) }}
-    @if($intentTileStyle) style="{{ $intentTileStyle }}" @endif
+    {{ $attributes->merge($intentTileStyle ? ['style' => $intentTileStyle] : [])->class([$classes]) }}
     @if($intent !== null && $label) role="group" aria-label="{{ $label }}" @endif
     @if($animate)
         {{-- Counter scope on root. Description spans inside read $root.animating

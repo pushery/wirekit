@@ -46,8 +46,7 @@
     data-wk-default-size="{{ $defaultPct }}"
     data-wk-min-size="{{ $minPct }}"
     data-wk-max-size="{{ $maxPct }}"
-    style="{{ $style }}"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->merge(['style' => $style])->class([$classes]) }}
 >
     {{ $slot }}
 </div>

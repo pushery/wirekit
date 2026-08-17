@@ -37,8 +37,7 @@
 {{-- Native <dl> element — screen readers announce as definition list --}}
 <dl
     data-layout="{{ $layout }}"
-    style="{{ $layoutStyle }}"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->merge($layoutStyle ? ['style' => $layoutStyle] : [])->class([$classes]) }}
 >
     {{ $slot }}
 </dl>

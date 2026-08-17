@@ -157,8 +157,7 @@
      With name prop: $dispatch('wirekit-toast-{name}', { ... }) for scoped regions. --}}
 <div
     x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, scope: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventScope) }} })"
-    {{ $attributes->class([$containerClasses, $positionClasses]) }}
-    style="{{ $offsetStyle }}"
+    {{ $attributes->merge(['style' => $offsetStyle])->class([$containerClasses, $positionClasses]) }}
     role="region"
     aria-label="{{ __('Notifications') }}"
 >

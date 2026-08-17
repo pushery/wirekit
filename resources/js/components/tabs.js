@@ -29,7 +29,7 @@
  */
 import { devWarn } from '../utils/dev-warning.js';
 import { moveRovingFocus } from '../utils/roving-focus.js';
-import { observeServerValue } from '../utils/server-value.js';
+import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 
 export default function wirekitTabs(config = {}) {
     return {
@@ -37,6 +37,27 @@ export default function wirekitTabs(config = {}) {
         labels: config.labels || {},
 
         init() {
+            // Seed from the server attribute when the template left `active` out,
+            // which it does exactly when the server drives the tab. See the note
+            // on the `x-data` attribute in tabs.blade.php: interpolating a value
+            // that changes per render makes every morph re-initialize this scope.
+            // `$root` is capability-checked, not assumed. Alpine hands a real element
+            // here, but the ESM harness constructs each factory with a deliberately
+            // barren stub — `test-tabs.mjs` passes `{ querySelectorAll }` and nothing
+            // else, on purpose — and a factory that requires more than it uses turns
+            // that into a TypeError at init. Measured: one of 63 ESM scripts, red in
+            // CI and invisible to the PHP suite, which does not run them.
+            // The server's tab, when there is one, beats the prop-derived seed.
+            // It arrives as an attribute rather than in `x-data` for the reason
+            // spelled out on that attribute in tabs.blade.php.
+            const seed = typeof this.$root?.getAttribute === 'function'
+                ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE)
+                : null;
+
+            if (seed != null && seed !== '') {
+                this.active = String(seed);
+            }
+
             devWarn(config.warning);
 
             // A namespaced, bubbling browser event on every change, so a Livewire

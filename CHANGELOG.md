@@ -10,6 +10,68 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.32.1] — 2026-08-17
+
+**Patch — a component and your own `style` no longer overwrite each other, a seeded value survives a
+Livewire morph, today is announced in the calendar, and two catalog strings say what they mean.**
+
+Fixes only. Nothing here adds or removes API, and every change is backward compatible — though two
+of them change what a page renders, which is the point: in both cases it was rendering the wrong
+thing quietly.
+
+### Fixed
+
+- **A component and a passed-in `style` attribute no longer cancel each other out.** Several
+  components wrote their own inline `style` beside the attribute bag. As soon as a `style` was
+  passed in, the element carried two of them — and a browser keeps the first and drops the rest,
+  with no error and no invalid-markup complaint. Which half disappeared depended only on the order
+  they were written in. [`aspect-ratio`](https://docs.wirekit.app/components/aspect-ratio) lost its ratio to anyone who also set a
+  background; [`data-list`](https://docs.wirekit.app/components/data-list) and its items discarded the passed-in style instead.
+  Both halves now survive as one declaration list, with your declaration last so a deliberate
+  override still wins. The same shape is fixed in [`scroll-area`](https://docs.wirekit.app/components/scroll-area),
+  [`stepper`](https://docs.wirekit.app/components/stepper), [`header`](https://docs.wirekit.app/components/header), [`badge`](https://docs.wirekit.app/components/badge) and every other component
+  that had it.
+
+- **A value seeded into `x-data` now survives a Livewire morph.**
+  [`segmented-control`](https://docs.wirekit.app/components/segmented-control), [`rating`](https://docs.wirekit.app/components/rating),
+  [`pricing-table`](https://docs.wirekit.app/components/pricing-table) and [`tabs`](https://docs.wirekit.app/components/tabs) interpolated a server-driven value into
+  their `x-data` seed while also observing it through a data attribute. A morph rewrites `x-data`,
+  so Alpine re-initializes on a DOM node that survived, and an effect queued against the pre-morph
+  scope writes the old value last — the control reverted to its initial state after a server
+  round-trip. The seed is now read from the attribute at init instead.
+
+- **[`event-calendar`](https://docs.wirekit.app/components/event-calendar) announces today.** The current day was distinguished by an
+  accent pill and a heavier weight and nothing else, so "this is today" reached a screen reader only
+  as a color. It now carries `aria-current="date"` in the month, week and agenda views.
+
+- **Spanish: a status tile read as an instruction.** On the success tile of
+  [`status-tiles`](https://docs.wirekit.app/components/status-tiles), `OK` was translated as `Aceptar` — the verb on a confirm
+  button — where the key is a status *word*. Beside a green check it asked the operator to confirm
+  something. It is now `Correcto`, matching `Advertencia` and `Crítico` in the same catalog.
+
+- **`Popover` shipped untranslated in every catalog.** The key was present with the English term as
+  its value, so a completeness comparison found nothing missing while a reader saw English in an
+  otherwise translated interface. It is now translated in Spanish, French, Italian and Portuguese;
+  German and Dutch keep the established loanword deliberately.
+
+- **`wirekit:csp-audit` pointed at the shape it does not hit.** Its hint about `Js::from()` said the
+  encoder wraps its payload for "any non-empty string, array or object". It wraps a non-empty
+  **array or object**; a string of any length — apostrophes and non-ASCII included — comes back a
+  quoted literal, as do numbers, booleans, `null`, `[]` and `{}`. Acting on the old advice for a
+  string meant replacing a correct encoder with hand-written interpolation that the next apostrophe
+  breaks. The report now names the real trigger and exempts the safe shapes explicitly.
+
+### Documentation
+
+- [CLI reference](https://docs.wirekit.app/cli-reference): the `wirekit:csp-audit` section states
+  the real trigger, says outright that a string is not the case to fix, and recommends
+  `AlpinePayload::from()` for handing a composed payload to an Alpine directive — a helper the
+  documentation had never mentioned.
+- [`event-calendar`](https://docs.wirekit.app/components/event-calendar): the accessibility section documents the
+  `aria-current="date"` contract across all three views.
+
+---
+
 ## [2.32.0] — 2026-08-16
 
 **Minor — a shared icon vocabulary that resolves the same way on every preset, an icon package you can actually install, a prop-naming reference that was wrong about six things, and a prop linter that no longer fails a build over a test selector.**

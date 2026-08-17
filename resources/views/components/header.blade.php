@@ -71,7 +71,7 @@
     $innerStyle = 'display: flex; flex-wrap: wrap; align-items: center; width: 100%; max-width: var(--size-wk-container-2xl, 96rem); margin-left: auto; margin-right: auto; gap: var(--gap-wk-md);';
 @endphp
 
-<header {{ $attributes->class([$classes, $stickyClasses]) }} style="{{ $headerStyle }}">
+<header {{ $attributes->merge($headerStyle ? ['style' => $headerStyle] : [])->class([$classes, $stickyClasses]) }}>
     @if($container)
         <div class="flex flex-wrap items-center w-full max-w-[var(--size-wk-container-2xl,96rem)] mx-auto gap-[var(--gap-wk-md)]" style="{{ $innerStyle }}">
             {{ $slot }}

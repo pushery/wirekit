@@ -130,8 +130,7 @@
     @if($animate) data-replayable="true" @endif
     data-wk-radial-progress
     data-intent="{{ $effectiveIntent }}"
-    style="--wk-radial-value: {{ round($percent, 2) }}; --wk-radial-fill: {{ $fillToken }};"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->merge(['style' => '--wk-radial-value: '.(round($percent, 2)).'; --wk-radial-fill: '.($fillToken).';'])->class([$classes]) }}
 >
     {{-- The center. Empty by default: a bare percentage repeated inside every ring
          is noise the aria-valuetext already carries. --}}

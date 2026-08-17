@@ -122,10 +122,15 @@
 
     $trackClasses = 'absolute inset-0 z-10 bg-transparent '.
         ($isVertical ? 'cursor-row-resize' : 'cursor-col-resize');
+
+    // Built here rather than written as a second style= on the <figure>. Two style
+    // attributes on one element means the browser keeps the first and drops the
+    // rest, so a caller styling this figure used to take the aspect ratio with it.
+    $figureStyle = 'touch-action: none;'.($ratio ? ' aspect-ratio: '.$ratio.';' : '');
 @endphp
 
 <figure
-    {{ $attributes->class([$wrapperClasses]) }}
+    {{ $attributes->merge(['style' => $figureStyle])->class([$wrapperClasses]) }}
     @if($decorative) role="presentation" @endif
     x-data="wirekitImageCompare({
         value: {{ $clampedValue }},
@@ -135,7 +140,6 @@
         @endif
     })"
     x-on:slide="$dispatch('wirekit:image-compare-slide', $event.detail)"
-    style="touch-action: none;@if($ratio) aspect-ratio: {{ $ratio }};@endif"
 >
     {{-- Hidden input so plain-HTML form submission works without Livewire.
          The Alpine factory dispatches `input` events on this element so

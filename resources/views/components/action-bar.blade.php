@@ -56,10 +56,9 @@
 @endphp
 
 <div
-    @if(!$visible) style="display: none;" @endif
     role="toolbar"
     aria-label="{{ __('Bulk actions') }}"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->merge(!$visible ? ['style' => 'display: none;'] : [])->class([$classes]) }}
 >
     {{-- Live region announces bar appearance --}}
     <div aria-live="polite" class="sr-only">

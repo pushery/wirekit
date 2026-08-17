@@ -66,8 +66,7 @@
     <ul
         role="list"
         @if($listLabel) aria-label="{{ $listLabel }}" @endif
-        style="list-style: none; margin: 0; padding: 0;"
-        {{ $attributes->except('class')->class([$classes]) }}
+        {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->except('class')->class([$classes]) }}
     >
         {{ $slot }}
     </ul>

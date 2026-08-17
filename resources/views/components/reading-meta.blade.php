@@ -78,8 +78,7 @@
     })"
     role="status"
     aria-live="polite"
-    {{ $attributes->class([$rootClass]) }}
-    style="font-size: var(--reading-meta-text-size); color: var(--reading-meta-color);"
+    {{ $attributes->merge(['style' => 'font-size: var(--reading-meta-text-size); color: var(--reading-meta-color);'])->class([$rootClass]) }}
 >
     <span class="wk-reading-meta__total">
         ~<span x-text="totalMinutes"></span> {{ $totalLabel }}

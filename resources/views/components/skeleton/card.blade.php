@@ -41,8 +41,7 @@
     aria-live="polite"
     aria-label="{{ __('Loading') }}"
     aria-busy="true"
-    style="width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: auto 200px;"
-    {{ $attributes->class([$wrapperClasses]) }}
+    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: auto 200px;'])->class([$wrapperClasses]) }}
 >
     <div class="space-y-3">
         <div class="{{ $baseShimmer }} h-32 w-full" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>

@@ -30,7 +30,7 @@
     ]), $scope);
 @endphp
 
-<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;" {{ $attributes->class([$itemClasses]) }}>
+<div {{ $attributes->merge(['style' => 'display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;'])->class([$itemClasses]) }}>
     {{-- Label: the "key" in the key-value pair. min-width: 0 +
          overflow-wrap: anywhere let long single-word labels (e.g.
          "Berufsunfähigkeitsversicherung", "Mietpreisbremse" — German

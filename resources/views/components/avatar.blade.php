@@ -138,8 +138,7 @@
     // color pair into one style attribute.
     $avatarStyle = trim(implode(' ', array_filter([$fromInitialsStyle, $statusRingStyle ? $statusRingStyle.';' : ''])));
 @endphp
-<span {{ $attributes->class([$baseClasses, $sizeClasses, $shapeClasses]) }}
-    @if($avatarStyle) style="{{ $avatarStyle }}" @endif
+<span {{ $attributes->merge($avatarStyle ? ['style' => $avatarStyle] : [])->class([$baseClasses, $sizeClasses, $shapeClasses]) }}
 >
     @if($src)
         <img src="{{ $src }}" alt="{{ $alt ?? '' }}" class="w-full h-full object-cover" />
