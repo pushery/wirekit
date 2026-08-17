@@ -31,8 +31,7 @@
 <ul
     role="tree"
     x-data="wirekitTreeView()"
-    {{ $attributes->class([$classes]) }}
-    style="list-style: none; margin: 0; padding: 0;"
+    {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }}
     @keydown.arrow-down.prevent="focusNext()"
     @keydown.arrow-up.prevent="focusPrev()"
     @keydown.arrow-right.prevent="expandOrChild()"

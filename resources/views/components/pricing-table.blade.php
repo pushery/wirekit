@@ -97,7 +97,16 @@
      and Livewire would quietly observe nothing. This is the same passthrough
      nine other components already do; see segmented-control. --}}
 <div
-    x-data="wirekitPricingTable({ interval: {{ \Pushery\WireKit\Support\AlpinePayload::from($serverInterval) }} })"
+        {{-- The observed value is NOT interpolated into the seed, and that is
+             deliberate: a Livewire morph rewrites `x-data`, Alpine re-initializes
+             on the change, and an effect queued against the pre-morph scope then
+             writes the pre-morph value last. Keeping this attribute
+             byte-identical across renders leaves the scope alone, so
+             `data-wk-server-value` + observeServerValue is the one update path.
+             The factory reads that same attribute at init. --}}
+    {{-- `default` is a PROP, so it renders identically on every morph and the
+         attribute stays byte-stable. Only the observed value had to leave. --}}
+    x-data="wirekitPricingTable({ default: {{ \Pushery\WireKit\Support\AlpinePayload::from($defaultInterval) }} })"
     @if($interval !== null) data-wk-server-value="{{ $serverInterval }}" @endif
     data-wk-pricing-intervals
 >
@@ -135,8 +144,7 @@
         role="list"
         aria-label="{{ $label }}"
         data-wk-pricing-table
-        style="list-style: none; margin: 0; padding: 0;"
-        {{ $attributes->whereDoesntStartWith('wire:model')->class([$classes]) }}
+        {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->whereDoesntStartWith('wire:model')->class([$classes]) }}
     >
         {{ $slot }}
     </ul>
@@ -146,8 +154,7 @@
     role="list"
     aria-label="{{ $label }}"
     data-wk-pricing-table
-    style="list-style: none; margin: 0; padding: 0;"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }}
 >
     {{ $slot }}
 </ul>

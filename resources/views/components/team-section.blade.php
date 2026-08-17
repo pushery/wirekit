@@ -33,8 +33,7 @@ resolve). --}}
     role="list"
     aria-label="{{ $label }}"
     data-wk-team-section
-    style="list-style: none; margin: 0; padding: 0;"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }}
 >
     {{ $slot }}
 </ul>

@@ -62,6 +62,16 @@
     // Resolve the initial active tab: explicit default, otherwise first key
     $activeTab = $active ?? $default ?? (array_key_first($tabs) ?? '');
 
+    // The Alpine seed, deliberately WITHOUT the `$active` term. `$activeTab`
+    // changes whenever the server changes the tab, and a changing value in
+    // `x-data` is rewritten by every Livewire morph — which re-initializes the
+    // scope, after which an effect queued against the old one writes the old
+    // value last. This one is derived from props alone, so the attribute renders
+    // byte-identical every time and the scope survives. When the server drives
+    // the tab it arrives through `data-wk-server-value`, which the factory reads
+    // at init and the observer watches afterwards.
+    $seedTab = $default ?? (array_key_first($tabs) ?? '');
+
     // Key→label map exposed to Alpine so the `wirekit:tab-changed` event payload
     // can carry the human label alongside the key (detail = { tab, label }).
     $tabLabels = array_map(fn ($t) => $t['label'], $tabs);
@@ -149,7 +159,7 @@
             : null;
     @endphp
     x-data="wirekitTabs({
-        active: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $activeTab) }},
+        active: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $seedTab) }},
         labels: {{ \Pushery\WireKit\Support\AlpinePayload::from((object) $tabLabels) }},
         warning: {{ \Pushery\WireKit\Support\AlpinePayload::from($wireModelWarning) }},
     })"

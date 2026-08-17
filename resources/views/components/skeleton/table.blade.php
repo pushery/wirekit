@@ -50,8 +50,7 @@
     aria-live="polite"
     aria-label="{{ __('Loading') }}"
     aria-busy="true"
-    style="width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: auto {{ $intrinsicHeight }};"
-    {{ $attributes->class([$wrapperClasses]) }}
+    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: auto '.($intrinsicHeight).';'])->class([$wrapperClasses]) }}
 >
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         {{-- Header row — slightly taller, full-width --}}

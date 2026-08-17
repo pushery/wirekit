@@ -198,7 +198,7 @@
         aria-valuemax="100"
         x-bind:aria-valuenow="roundedProgress()"
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
-        {{ $attributes->class([$rootClass, 'wk-reading-progress--dot'])->merge(['aria-label' => 'Reading progress']) }}
+        {{ $attributes->merge(['style' => 'position: '.($positionMode).'; right: var(--padding-wk-x-lg); bottom: var(--padding-wk-x-lg); z-index: var(--z-wk-sticky); pointer-events: none; width: var(--reading-progress-dot-size); height: var(--reading-progress-dot-size);'])->class([$rootClass, 'wk-reading-progress--dot'])->merge(['aria-label' => 'Reading progress']) }}
         {{-- Inline-style the positioning + sizing so the dot pins to the
              viewport corner even in environments where the developer's
              Tailwind compile doesn't generate the arbitrary-value
@@ -209,7 +209,6 @@
              contexts, lands in document flow, and changes the body
              height calculation (which can also break scroll detection
              on iframe-srcdoc previews). Tokens stay theme-aware. --}}
-        style="position: {{ $positionMode }}; right: var(--padding-wk-x-lg); bottom: var(--padding-wk-x-lg); z-index: var(--z-wk-sticky); pointer-events: none; width: var(--reading-progress-dot-size); height: var(--reading-progress-dot-size);"
     >
         <svg viewBox="0 0 36 36" class="block h-full w-full -rotate-90" aria-hidden="true">
             {{-- background ring --}}
@@ -249,7 +248,7 @@
         aria-valuemax="100"
         x-bind:aria-valuenow="roundedProgress()"
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
-        {{ $attributes->class([$rootClass])->merge(['aria-label' => 'Reading progress']) }}
+        {{ $attributes->merge(['style' => 'position: '.($positionMode).'; '.($position === 'bottom' ? 'bottom: 0' : 'top: 0').'; left: 0; right: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: '.($heightToken).';'.($segmentsStyle ? ' '.$segmentsStyle : '')])->class([$rootClass])->merge(['aria-label' => 'Reading progress']) }}
         {{-- `max-width: none` defeats developer-side typography CSS that
              applies a max-width to direct children of a prose wrapper
              (the `@tailwindcss/typography` plugin's `.prose > * {
@@ -261,7 +260,6 @@
              of the right edge. Inline `!important` is not needed
              because inline style already beats class-level rules
              on specificity. --}}
-        style="position: {{ $positionMode }}; {{ $position === 'bottom' ? 'bottom: 0' : 'top: 0' }}; left: 0; right: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: {{ $heightToken }};{{ $segmentsStyle ? ' '.$segmentsStyle : '' }}"
     >
         {{-- x-bind:style uses the OBJECT form, not a string template.
              Alpine's `bind:style` with a string template REPLACES the

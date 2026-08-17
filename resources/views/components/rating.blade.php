@@ -153,7 +153,14 @@
     {{-- The server's own channel — see segmented-control for why this is a
          plain attribute rather than the hidden input this component binds. --}}
     data-wk-server-value="{{ $clamped }}"
-    x-data="wirekitRating({ value: {{ $clamped }}, max: {{ $max }} })"
+        {{-- The observed value is NOT interpolated into the seed, and that is
+             deliberate: a Livewire morph rewrites `x-data`, Alpine re-initializes
+             on the change, and an effect queued against the pre-morph scope then
+             writes the pre-morph value last. Keeping this attribute
+             byte-identical across renders leaves the scope alone, so
+             `data-wk-server-value` + observeServerValue is the one update path.
+             The factory reads that same attribute at init. --}}
+    x-data="wirekitRating({ max: {{ $max }} })"
 >
     @if($label)
         @if($readonly)

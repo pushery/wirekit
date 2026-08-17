@@ -1,4 +1,4 @@
-import { observeServerValue } from '../utils/server-value.js';
+import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 
 /**
  * Segmented control — a radiogroup that behaves like the native one it imitates.
@@ -29,6 +29,37 @@ export default function wirekitSegmentedControl(config = {}) {
         selected: config.selected != null ? String(config.selected) : '',
 
         init() {
+            // Seed from the server attribute when the caller passed nothing.
+            //
+            // The seed used to be interpolated into `x-data`, which looked
+            // harmless because Alpine reads that attribute once. A Livewire morph
+            // REWRITES it, though, and Alpine re-initializes on the change — so
+            // every round trip replaced the scope, and an effect queued against
+            // the old one flushed afterwards and wrote the old value last. That
+            // is invisible on an outward click (old and new agree) and shows up
+            // only when a reader returns to a value they already had.
+            //
+            // Reading it here instead keeps the attribute byte-identical across
+            // renders, so the scope survives and observeServerValue is the single
+            // path a server-side change travels — which is what its own docblock
+            // already claimed. The config argument still wins when given, so a
+            // caller constructing this factory by hand is unaffected.
+            // `$root` is capability-checked, not assumed. Alpine hands a real element
+            // here, but the ESM harness constructs each factory with a deliberately
+            // barren stub — `test-tabs.mjs` passes `{ querySelectorAll }` and nothing
+            // else, on purpose — and a factory that requires more than it uses turns
+            // that into a TypeError at init. Measured: one of 63 ESM scripts, red in
+            // CI and invisible to the PHP suite, which does not run them.
+            if (config.selected == null) {
+                const seed = typeof this.$root?.getAttribute === 'function'
+                    ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE)
+                    : null;
+
+                if (seed != null) {
+                    this.selected = String(seed);
+                }
+            }
+
             // The hidden input is what a form (or wire:model) actually submits.
             // It starts empty in the markup, so the initial selection has to be
             // written into it before anything reads it.

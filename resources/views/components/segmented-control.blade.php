@@ -153,7 +153,18 @@
              that bind that input with `:value` have Alpine writing its own stale
              state back over the morph, so watching it would be racing a binding. --}}
         data-wk-server-value="{{ $selected }}"
-        x-data="wirekitSegmentedControl({ selected: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $selected) }} })"
+        {{-- The seed is NOT interpolated here, and that is the whole fix for the
+             return-trip defect. The comment above assumed Alpine reads `x-data`
+             once; a Livewire morph rewrites the attribute, and Alpine then
+             re-initializes the component. Measured: the scope object is replaced
+             on every round trip, and a reactive effect from the pre-morph scope
+             flushes AFTERWARDS and writes the pre-morph value last — so a reader
+             who returns to a value they already had sees the previous segment.
+             Keeping the attribute byte-identical across renders leaves the scope
+             alone, which makes `data-wk-server-value` + observeServerValue the one
+             update path it was always meant to be. The seed now comes from that
+             same attribute at init. --}}
+        x-data="wirekitSegmentedControl()"
         {{-- Without the optimistic layer the radiogroup IS this element, exactly
              as before. With it, the role moves one level in — because the layer
              carries a live region, and a live region is not a radio. A

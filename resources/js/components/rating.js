@@ -1,4 +1,4 @@
-import { observeServerValue } from '../utils/server-value.js';
+import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
 
 /**
  * Rating — an interactive star row implementing the WAI-ARIA radio-group
@@ -27,6 +27,36 @@ export default function wirekitRating(config = {}) {
         _max: Number(config.max) || 5,
 
         init() {
+            // Seed from the server attribute when the caller passed none.
+            //
+            // The seed used to be interpolated into `x-data`. That looked free —
+            // Alpine reads the attribute once — but a Livewire morph REWRITES it,
+            // and Alpine re-initializes on the change. Measured on the sibling
+            // component by object identity: the scope is replaced on every round
+            // trip, and an effect queued against the pre-morph scope flushes
+            // afterwards and writes the pre-morph value LAST. It is invisible on
+            // an outward change (old and new agree) and shows only when the value
+            // returns to one it already held.
+            //
+            // Reading it here keeps the attribute byte-identical across renders,
+            // so the scope survives and the observer below is the single path a
+            // server-side change travels — which is what its own comment claims.
+            // `$root` is capability-checked, not assumed. Alpine hands a real element
+            // here, but the ESM harness constructs each factory with a deliberately
+            // barren stub — `test-tabs.mjs` passes `{ querySelectorAll }` and nothing
+            // else, on purpose — and a factory that requires more than it uses turns
+            // that into a TypeError at init. Measured: one of 63 ESM scripts, red in
+            // CI and invisible to the PHP suite, which does not run them.
+            if (config.value == null) {
+                const seed = typeof this.$root?.getAttribute === 'function'
+                    ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE)
+                    : null;
+
+                if (seed != null && seed !== '') {
+                    this.rating = Number(seed) || 0;
+                }
+            }
+
             // A value the server changed has to reach the stars. Alpine read the
             // seed once and will not read it again, and this component binds its
             // hidden input with `:value` — so Alpine writes its own stale number

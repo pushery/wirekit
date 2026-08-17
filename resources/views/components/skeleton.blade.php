@@ -76,8 +76,7 @@
     aria-live="polite"
     aria-label="{{ __('Loading') }}"
     aria-busy="true"
-    style="width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: {{ $intrinsicSize }};"
-    {{ $attributes->class([$wrapperClasses]) }}
+    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: '.($intrinsicSize).';'])->class([$wrapperClasses]) }}
 >
     @if($type === 'text')
         {{-- Text: N lines of decreasing/varied width for realistic placeholder.

@@ -255,8 +255,7 @@
     <x-wirekit::tooltip :text="$tooltip" :scope="$scope">
         <span
             @if($dismissible) x-data="wirekitDismissible({ event: 'wirekit:badge-dismissed' })" x-show="shown" data-replayable="true" @endif
-            {{ $attributes->class([$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses]) }}
-            style="{{ $depthStyle }}"
+            {{ $attributes->merge($depthStyle ? ['style' => $depthStyle] : [])->class([$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses]) }}
         >
             @if($dot)
                 <span aria-hidden="true" class="inline-block h-1.5 w-1.5 rounded-full {{ $dotColorClass }}"></span>
@@ -278,8 +277,7 @@
 @else
     <span
         @if($dismissible) x-data="wirekitDismissible({ event: 'wirekit:badge-dismissed' })" x-show="shown" data-replayable="true" @endif
-        {{ $attributes->class([$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses]) }}
-        style="{{ $depthStyle }}"
+        {{ $attributes->merge($depthStyle ? ['style' => $depthStyle] : [])->class([$baseClasses, $borderWidthClass, $intentClasses, $sizeClasses]) }}
     >
         @if($dot)
             <span aria-hidden="true" class="inline-block h-1.5 w-1.5 rounded-full {{ $dotColorClass }}"></span>

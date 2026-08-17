@@ -87,8 +87,7 @@
     x-transition:enter-end="opacity-100 scale-100"
     x-cloak
     role="menu"
-    @if($widthStyle) style="{{ $widthStyle }}" @endif
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->merge($widthStyle ? ['style' => $widthStyle] : [])->class([$classes]) }}
 >
     {{ $slot }}
 </div>

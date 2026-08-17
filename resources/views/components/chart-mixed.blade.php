@@ -81,7 +81,7 @@
     );
 @endphp
 
-<div {{ $attributes->class([$rootClass]) }} style="width: 100%; min-width: 0; display: block;">
+<div {{ $attributes->merge(['style' => 'width: 100%; min-width: 0; display: block;'])->class([$rootClass]) }} >
     {{--
         Explicit `width: 100%; min-width: 0; display: block;` so the
         wrapper reliably resolves its width inside ANY parent context.

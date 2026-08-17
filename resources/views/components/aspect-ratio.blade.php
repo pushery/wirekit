@@ -23,9 +23,13 @@
     ]), $scope);
 @endphp
 
-<div
-    {{ $attributes->class([$classes]) }}
-    style="aspect-ratio: {{ $aspectValue }}"
->
+{{-- The ratio goes THROUGH the attribute bag, never beside it. Written as a
+     second literal style= it produced two style attributes on one element, and
+     a browser keeps the first — so any caller who styled the box (a background,
+     a radius) silently took the ratio away, which is the one thing this
+     component is for. merge() folds them into one declaration list with the
+     caller last, so a caller who really means to override the ratio still can.
+     Pinned by tests/Feature/StyleAttributeMergeTest.php. --}}
+<div {{ $attributes->merge(['style' => 'aspect-ratio: '.$aspectValue])->class([$classes]) }}>
     {{ $slot }}
 </div>

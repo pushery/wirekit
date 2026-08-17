@@ -111,8 +111,7 @@
 @endphp
 
 <aside
-    {{ $attributes->class([$asideClasses]) }}
-    style="top: {{ $offset }}; width: 100%; --wk-sticky-panel-w: {{ $width }};"
+    {{ $attributes->merge(['style' => 'top: '.($offset).'; width: 100%; --wk-sticky-panel-w: '.($width).';'])->class([$asideClasses]) }}
     @if($label) aria-label="{{ $label }}" @endif
 >
     <div class="{{ $componentClasses }}" style="max-height: {{ $resolvedMaxHeight }};">

@@ -37,7 +37,7 @@
     ]), $scope);
 @endphp
 
-<ol {{ $attributes->class([$classes]) }} data-wk-timeline="{{ $variant }}" style="list-style: none; margin: 0; padding: 0;">
+<ol {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }} data-wk-timeline="{{ $variant }}" >
     {{-- Optional "before" continuation line — indicates earlier events exist --}}
     @if($before)
         <li aria-hidden="true" style="display: flex; justify-content: center; width: var(--size-wk-xs, 1.5rem);">

@@ -165,8 +165,7 @@
          it and trigger this listener. trackTooltip() short-circuits
          when no tooltipText is set, so the global capture is cheap. --}}
     @mousemove="trackTooltip($event)"
-    {{ $attributes->class([$rootClass]) }}
-    style="width: {{ $width }};"
+    {{ $attributes->merge(['style' => 'width: '.($width).';'])->class([$rootClass]) }}
 >
     {{-- Rendered-mode iframe — only mounted after the IntersectionObserver
          fires the first intersection callback. `aria-hidden` + `tabindex=-1`

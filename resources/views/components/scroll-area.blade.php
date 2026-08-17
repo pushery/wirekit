@@ -56,8 +56,7 @@
     role="region"
     aria-label="{{ __('Scrollable content') }}"
     @if($fadeValue) data-fade-axis="{{ $fadeAxis }}" data-fade="{{ $fadeValue }}" @endif
-    {{ $attributes->class([$classes]) }}
-    @if($inlineStyle) style="{{ $inlineStyle }}" @endif
+    {{ $attributes->merge($inlineStyle ? ['style' => $inlineStyle] : [])->class([$classes]) }}
 >
     {{ $slot }}
 </div>

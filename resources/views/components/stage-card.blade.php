@@ -62,8 +62,7 @@
      title as the purpose of the grouped items (kanban column / pipeline
      stage / roadmap quarter). --}}
 <div
-    {{ $attributes->class([$classes]) }}
-    style="{{ $intentBorderStyle }}"
+    {{ $attributes->merge(['style' => $intentBorderStyle])->class([$classes]) }}
     @if($label) role="group" aria-label="{{ $label }}" @endif
 >
     @if($label || $count !== null)

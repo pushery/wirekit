@@ -114,8 +114,7 @@
     <div
         role="img"
         aria-label="{{ $resolvedLabel }}"
-        {{ $attributes->class([$classes]) }}
-        style="width: {{ (int) $size }}px; height: {{ (int) $size }}px;"
+        {{ $attributes->merge(['style' => 'width: '.((int) $size).'px; height: '.((int) $size).'px;'])->class([$classes]) }}
     >
         <div aria-hidden="true" class="flex items-center justify-center w-full h-full bg-[var(--color-wk-bg-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             <span>QR Code</span>

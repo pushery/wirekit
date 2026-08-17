@@ -506,12 +506,21 @@ class CspAuditCommand extends Command
      *
      * `encoder` is separated from `echo` because its rendered shape is known up to the data.
      * Laravel's `Js::from()` — which `@js()` calls — wraps its payload in `JSON.parse('…')`
-     * for any non-empty string, array or object, and `JSON` is precisely what Alpine's CSP
-     * evaluator cannot resolve. It is still not reported as a violation, because the same
-     * encoder returns a bare literal for a number, a boolean, `[]` and `{}`, and this command
-     * cannot see which it will be. Naming it as a probable cause is honest; calling it a
-     * finding would be a guess wearing a verdict's clothes, and one wrong violation costs
-     * the next hundred their credibility.
+     * for a non-empty ARRAY or OBJECT, and `JSON` is precisely what Alpine's CSP evaluator
+     * cannot resolve. Every other shape comes back a bare literal, INCLUDING a string of any
+     * length with quotes and non-ASCII in it, alongside numbers, booleans, null, `[]` and
+     * `{}`. It is still not reported as a violation, because this command cannot see which
+     * shape the data will take. Naming it as a probable cause is honest; calling it a finding
+     * would be a guess wearing a verdict's clothes, and one wrong violation costs the next
+     * hundred their credibility.
+     *
+     * This paragraph said "any non-empty string, array or object" until 2026-08-17, and a
+     * developer followed it to the wrong repair: their one flagged expression passed a
+     * string, was already fully resolvable, and the advice below told them to replace the
+     * encoder with hand-written interpolation — trading a safe encoding for one the next
+     * apostrophe breaks. A hint that leads from correct code to unsafe code is worse than
+     * no hint. `tests/Feature/CspAuditEncoderClaimTest.php` now derives the claim from
+     * `Js::from()` itself rather than restating it here.
      */
     private static function unresolvedReason(string $raw): ?string
     {
@@ -677,11 +686,16 @@ class CspAuditCommand extends Command
                 $this->line('');
                 $this->line(sprintf('%d of them call Js::from() or @js(), which is worth checking first:', count($encoders)));
                 $this->line('');
-                $this->line("  That encoder renders JSON.parse('…') for any non-empty string, array or");
-                $this->line('  object — and JSON is the one name Alpine\'s CSP evaluator cannot resolve, so');
-                $this->line('  the expression parses, runs, and dies silently. Pass a bare object literal');
-                $this->line('  instead. (For a number, a boolean, [] or {} the encoder emits a literal and');
-                $this->line('  there is nothing to fix, which is why this is a pointer and not a verdict.)');
+                $this->line("  That encoder renders JSON.parse('…') for a non-empty ARRAY or OBJECT — and");
+                $this->line('  JSON is the one name Alpine\'s CSP evaluator cannot resolve, so such an');
+                $this->line('  expression parses, runs, and dies silently. If this value is an array or an');
+                $this->line('  object, pass a bare literal instead.');
+                $this->line('');
+                $this->line('  A STRING is not affected, and neither are numbers, booleans, null, [] or {}:');
+                $this->line('  the encoder renders those as literals, quotes and non-ASCII included. Do not');
+                $this->line('  replace one with hand-written interpolation — that trades a safe encoding for');
+                $this->line('  one the next apostrophe breaks. This is a pointer, not a verdict, because this');
+                $this->line('  command cannot see which shape the data will take.');
             }
 
             // ONLY the encoders are listed. Measured over this library's own views, 226
