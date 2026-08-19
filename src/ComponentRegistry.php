@@ -6,6 +6,7 @@ namespace Pushery\WireKit;
 
 use Illuminate\Support\Facades\File;
 use Pushery\WireKit\Components\Chart;
+use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\ClassPropsExtractor;
 use Pushery\WireKit\Support\PropsParser;
 
@@ -215,7 +216,7 @@ class ComponentRegistry
             // ── System ──
             'chart' => ['category' => 'System', 'description' => 'Chart.js wrapper component'],
             'fonts' => ['category' => 'System', 'description' => 'GDPR-compliant font loader'],
-            'glass' => ['category' => 'System', 'description' => 'Liquid Glass glassmorphism extension'],
+            'glass' => ['category' => 'System', 'description' => 'Liquid Glass extension — include once in the layout head; takes no props and renders no slot'],
             'icon' => ['category' => 'System', 'description' => 'SVG icon with preset support'],
             'map' => ['category' => 'System', 'description' => 'Map adapter (MapLibre/Leaflet peer dependency) with markers and an accessible location list'],
             'structured-data' => ['category' => 'System', 'description' => 'JSON-LD script block emitter (XSS-safe via JSON_HEX_TAG)'],
@@ -550,5 +551,86 @@ class ComponentRegistry
         // Neither exists — return the top-level path so downstream behavior
         // (PropsParser → []) is unchanged for a genuinely missing component.
         return $topLevel;
+    }
+
+    /**
+     * The component's Blade file, or null when it has none.
+     *
+     * The nullable companion to `bladeFilePath()`, which answers with a path
+     * whether or not the file exists — deliberate, because prop extraction wants
+     * a path to hand to a parser that returns nothing for a missing file. A
+     * caller that must DECIDE (does this component have a template at all?)
+     * needs the other answer, and building it by re-walking the directory is how
+     * this repo ends up with two resolvers that disagree.
+     *
+     * It already did. `ExportJsonCommand` carried its own walk that knew the flat
+     * and dotted forms but not `components/<name>/index.blade.php`, so `list` —
+     * the one component in that form — resolved to nothing and shipped with an
+     * EMPTY slots array in every manifest, while its template renders `{{ $slot }}`
+     * on the last line. Nothing went red: an empty list is what a genuinely
+     * slot-less component reports, and thirty-seven of those are correct.
+     */
+    public static function existingBladeFilePath(string $name): ?string
+    {
+        $path = self::bladeFilePath($name);
+
+        return is_file($path) ? $path : null;
+    }
+
+    /**
+     * The slots a component's template declares, default and named, each with
+     * whether it is required.
+     *
+     * Lives here for the same reason prop extraction does: it is one question
+     * with one answer, and every surface that asks it — the JSON manifest, the
+     * MCP catalog, anything later — must get the same one. The class-side
+     * exclusion is part of that answer, not a caller's responsibility: a
+     * class-based component's public properties are referenced in its template
+     * as `{{ $name }}`, which a slot scanner reads as a required named slot
+     * unless it is told otherwise. A caller that forgets the exclusion does not
+     * fail, it reports `chart` as requiring an `<x-slot:chartConfig>`.
+     *
+     * @return list<array{name: string, required: bool}>
+     */
+    public static function slotsOf(string $name): array
+    {
+        $path = self::existingBladeFilePath($name);
+
+        if ($path === null) {
+            return [];
+        }
+
+        $class = self::componentClass($name);
+
+        return BladeParser::extractSlotsWithMetadataFromSource(
+            (string) file_get_contents($path),
+            $path,
+            $class !== null ? ClassPropsExtractor::publicPropertyNames($class) : [],
+        );
+    }
+
+    /**
+     * A parent's sub-components, each with the props it actually declares.
+     *
+     * The bare-name form (`subComponentsOf()`) tells a tool that `table.th`
+     * exists and nothing else, so its `headerScope` prop — shipped and
+     * documented — was unreachable through every surface fed by it. A name
+     * without its props is a pointer to documentation the tool cannot read.
+     *
+     * @return list<array{name: string, tag: string, props: list<array<string, mixed>>}>
+     */
+    public static function describeSubComponentsOf(string $parent): array
+    {
+        $out = [];
+
+        foreach (self::subComponentsOf($parent) as $sub) {
+            $out[] = [
+                'name' => $sub,
+                'tag' => self::tag($sub),
+                'props' => self::extractProps($sub),
+            ];
+        }
+
+        return $out;
     }
 }

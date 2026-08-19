@@ -1,10 +1,22 @@
 {{-- Debug-mode placeholder rendered by <x-wirekit-chart> when no chart
      adapter is configured (`config('wirekit.charts.library') === null`).
      In production the Chart constructor throws hard; this view is only
-     reached when APP_DEBUG=true so end users never see it. The wrapper
-     mimics the real chart's `wk-chart` carve-out marker plus the
-     developer-supplied `height` so layout stays stable when the
-     developer fixes the config. --}}
+     reached when APP_DEBUG=true so end users never see it. The wrapper keeps
+     the developer-supplied `height` so layout stays stable once the config
+     is fixed.
+
+     ⚠️ The two classes below are this placeholder's OWN. `wk-chart` in
+     particular marks nothing else: the chart component emits no `wk-*` class
+     at all, `chart-mixed` emits `wk-chart-mixed`, and `dist/wirekit.css`
+     styles neither. A selector built on `wk-chart` expecting to find a
+     rendered chart will match this placeholder and nothing else.
+
+     This sentence used to claim the opposite, and a lazy-loading selector in
+     a developer's app believed it: it looked for `.wk-chart` while excluding
+     this placeholder by name, so it could match nothing in any state and
+     never fired once. Nothing failed — a loader that never runs looks exactly
+     like one with nothing to do. `PublicCssApiDriftTest` now fails the build
+     on a comment here that names a class no component emits. --}}
 @php
     $tag = $inline ?? false ? 'span' : 'div';
 @endphp

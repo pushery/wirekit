@@ -1,3 +1,4 @@
+import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { applyTriggerAria } from '../utils/trigger-aria.js';
 
 /**
@@ -35,13 +36,25 @@ export default function wirekitHoverCard(config = {}) {
 
         // SPA cleanup handler
         _navCleanup: null,
+        // Cross-close channel — see utils/overlay-coordination.js. Two open
+        // sibling hover cards overlap, which a reader sees and no test does.
+        _coordination: null,
 
         init() {
             this._navCleanup = () => this._forceClose();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+
+            // Opening this one closes every other hover card on the page.
+            this._coordination = coordinateOverlay({
+                channel: 'wirekit:hover-card-open',
+                onOther: () => this._forceClose(),
+            });
         },
 
         destroy() {
+            this._coordination?.stop();
+            this._coordination = null;
+
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
@@ -94,6 +107,7 @@ export default function wirekitHoverCard(config = {}) {
         async show() {
             if (this.open) return;
             this.open = true;
+            this._coordination?.announce();
 
             await this.$nextTick();
 

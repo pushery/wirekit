@@ -796,8 +796,12 @@ class CspAuditCommand extends Command
         $this->line('member and index access, ++/--, unary, and the usual binary/logical operators.');
         $this->line('It rejects: arrow functions, template literals, optional chaining, nullish');
         $this->line('coalescing, spread, `new`, function expressions, and several statements in one');
-        $this->line('attribute. A method whose name is a JavaScript keyword needs index access:');
-        $this->line('`$wire.delete(…)` does not parse, `$wire[\'delete\'](…)` does.');
+        $this->line('attribute. A method named after an operator or a literal needs index access:');
+        $this->line('`$wire.delete(…)` does not parse, `$wire[\'delete\'](…)` does. That is the whole');
+        // Naming the set rather than the category, because the category is much wider than
+        // the set: every other reserved word is read as an ordinary identifier here, so a
+        // developer told "a JavaScript keyword" renames methods that were never affected.
+        $this->line('set: delete false in instanceof new null true typeof undefined void.');
 
         return self::FAILURE;
     }

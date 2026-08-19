@@ -3,11 +3,18 @@
 @props([
     'orientation' => 'vertical', // vertical | horizontal | both
     'maxHeight' => null,
-    // Edge fade: false (none) | 'both' | 'start' | 'end'. Masks the overflow
-    // edge(s) along the scroll axis so the content itself dissolves into the
-    // background — a background-agnostic "there's more to scroll" hint (static
-    // mask-image, not a colored overlay). Removed on :focus-within so a
+    // Edge fade: false (none) | 'both' | 'start' | 'end' | 'auto'. Masks the
+    // overflow edge(s) along the scroll axis so the content itself dissolves
+    // into the background — a background-agnostic "there's more to scroll" hint
+    // (mask-image, not a colored overlay). Removed on :focus-within so a
     // keyboard-focused child near an edge is never clipped by the mask.
+    //
+    // The named edges are pure CSS and unconditional, which is also their limit:
+    // they fade an edge the content does not continue past — at the very top,
+    // at the very bottom, and on an area whose content fits and cannot scroll
+    // at all. 'auto' opts into an Alpine plugin that measures instead and fades
+    // only where there really is more. Without JavaScript it renders no mask,
+    // which is the right way round: a missing hint beats dissolved text.
     'fade' => config('wirekit.components.scroll-area.fade', false),
     'scope' => null,
 ])
@@ -32,12 +39,17 @@
     // the allowed edge set so an invalid value resolves to a real one.
     $fadeValue = ($fade === false || $fade === null || $fade === '' || $fade === 'none')
         ? null
-        : (in_array($fade, ['both', 'start', 'end'], true)
+        : (in_array($fade, ['both', 'start', 'end', 'auto'], true)
             ? $fade
-            : WireKit::validateProp('scroll-area', 'fade', $fade, ['both', 'start', 'end']));
+            : WireKit::validateProp('scroll-area', 'fade', $fade, ['both', 'start', 'end', 'auto']));
 
     // The fade masks the SCROLL axis: x for horizontal, y for vertical / both.
     $fadeAxis = $orientation === 'horizontal' ? 'x' : 'y';
+
+    // 'auto' emits no data-fade at all — the plugin writes it once it has
+    // measured. Rendering a value here first would paint the very mask the
+    // measurement exists to avoid, for one frame or forever if scripts fail.
+    $fadeIsAuto = $fadeValue === 'auto';
 
     $classes = WireKit::resolveClasses('scroll-area', 'base', implode(' ', array_filter([
         'wk-scrollbar',
@@ -55,7 +67,8 @@
     tabindex="0"
     role="region"
     aria-label="{{ __('Scrollable content') }}"
-    @if($fadeValue) data-fade-axis="{{ $fadeAxis }}" data-fade="{{ $fadeValue }}" @endif
+    @if($fadeValue) data-fade-axis="{{ $fadeAxis }}" @endif
+    @if($fadeIsAuto) x-data="wirekitScrollFade" @elseif($fadeValue) data-fade="{{ $fadeValue }}" @endif
     {{ $attributes->merge($inlineStyle ? ['style' => $inlineStyle] : [])->class([$classes]) }}
 >
     {{ $slot }}

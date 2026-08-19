@@ -96,6 +96,32 @@ final class ClassInventory
      *                                         same commit + add a regression
      *                                         test that fails without it.
      */
+    /**
+     * Files scanned for classes even though a prefix above skips their directory.
+     *
+     * The skip list is coarse on purpose — it names whole directories because
+     * the strict filter cannot tell a component slug from a utility class by
+     * shape. That coarseness has one cost: the day a single file inside a
+     * skipped directory starts emitting real classes, the choice is between
+     * opening the directory wholesale and losing the file.
+     *
+     * `Support\TablistStyles` is that file. It became "the one place a tab bar's
+     * appearance is decided" and moved twelve class literals out of three Blade
+     * views into PHP. Six of them exist nowhere else, so with `src/Support/`
+     * skipped AND the safelist skipped, the compiled CSS carried five selectors
+     * the reverse-diff could trace to nothing — a build-diff failure whose cause
+     * was the scanner's blind spot, not drift.
+     *
+     * The skip docblock above already prescribes the remedy ("REMOVE its prefix
+     * here in the same commit"). This is that, made file-granular so the other
+     * nineteen files in `src/Support/` keep their exemption.
+     *
+     * @var list<string>
+     */
+    public const ALWAYS_SCAN_PATHS_FOR_CLASS_EXTRACTION = [
+        'src/Support/TablistStyles.php',
+    ];
+
     public const DEFAULT_SKIP_PATH_PREFIXES_FOR_CLASS_EXTRACTION = [
         'resources/views/_safelist.blade.php',
         'resources/js/',
@@ -414,6 +440,15 @@ final class ClassInventory
 
             $relativePath = $this->relativePath($file->getPathname());
 
+            // Checked BEFORE the skip, because the skip list holds directory
+            // prefixes while the exceptions are single files inside them.
+            // Without the override, teaching the scanner about one class-emitting
+            // file would mean opening its entire directory — and the skip
+            // docblock is explicit that a blanket open is what the strict filter
+            // cannot survive: it reads a component slug and a utility class the
+            // same way.
+            $forced = in_array($relativePath, self::ALWAYS_SCAN_PATHS_FOR_CLASS_EXTRACTION, true);
+
             $skip = false;
             foreach ($skipPaths as $prefix) {
                 if (str_starts_with($relativePath, $prefix)) {
@@ -421,7 +456,7 @@ final class ClassInventory
                     break;
                 }
             }
-            if ($skip) {
+            if ($skip && ! $forced) {
                 continue;
             }
 

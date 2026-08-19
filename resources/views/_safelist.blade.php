@@ -189,4 +189,76 @@
       shadow-[var(--shadow-wk-sm)]
       text-[color:var(--color-wk-text-muted)]
 
+
+    ────────────────────────────────────────────────────────────────────────
+    TablistStyles — the tab bar, added because six of its classes vanished
+    ────────────────────────────────────────────────────────────────────────
+
+    Same mechanism as above, found the same way it was predicted to be found.
+    `Support\TablistStyles` became the one place a tab bar's appearance is
+    decided in 2.31.0 — a good refactor that moved twelve class literals out of
+    three Blade views and into PHP, where the `@source` glob never looks.
+
+    A consuming project measured its compiled app.css shrinking by 533 bytes
+    across the upgrade and attributed it: 1114 selectors before, 1108 after,
+    six removed and none added. Exactly six of these classes appear in NO Blade
+    view, and they are not decoration — `border-b-[3px]` / `border-r-[3px]` ARE
+    the active-tab indicator, and the negative margins pull it onto the
+    container edge. The bar renders, the tabs work, ARIA is correct, and the
+    selected tab is simply not marked. Nothing throws.
+
+    All of what TablistStyles can emit is listed, not only the six that were
+    missing. The other classes survive today because some other view happens to
+    use `flex` or `gap-1` as well — a coincidence, not a guarantee, and one that
+    a future view deletion would quietly end.
+
+    -mb-[length:var(--border-wk-width)]
+    -mr-[length:var(--border-wk-width)]
+    bg-[var(--color-wk-accent)]
+    bg-[var(--color-wk-bg-elevated)]
+    bg-[var(--color-wk-bg-muted)]
+    border-[length:var(--border-wk-width)]
+    border-[var(--color-wk-accent)]
+    border-[var(--color-wk-border)]
+    border-b-[3px]
+    border-b-[length:var(--border-wk-width)]
+    border-r-[3px]
+    border-r-[length:var(--border-wk-width)]
+    border-transparent
+    cursor-pointer
+    disabled:cursor-not-allowed
+    disabled:opacity-[var(--opacity-wk-disabled)]
+    duration-[var(--transition-wk-duration)]
+    flex
+    flex-col
+    focus-visible:outline-none
+    focus-visible:ring-[length:var(--ring-wk-width)]
+    focus-visible:ring-[var(--color-wk-ring)]
+    font-[number:var(--font-wk-body-weight)]
+    gap-1
+    gap-2
+    hover:text-[color:var(--color-wk-text)]
+    inline-flex
+    items-center
+    items-stretch
+    justify-start
+    last:border-b-0
+    last:border-r-0
+    max-w-full
+    overflow-hidden
+    overflow-x-auto
+    overflow-y-hidden
+    p-1
+    p-[var(--padding-wk-x-sm)]
+    rounded-[var(--radius-wk-lg)]
+    rounded-[var(--radius-wk-md)]
+    shadow-[var(--shadow-wk-sm)]
+    shrink-0
+    text-[color:var(--color-wk-accent-fg)]
+    text-[color:var(--color-wk-text)]
+    text-[color:var(--color-wk-text-muted)]
+    text-[length:var(--text-wk-sm)]
+    transition-colors
+    whitespace-nowrap
+
 --}}

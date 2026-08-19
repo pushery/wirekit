@@ -42,7 +42,8 @@ use Illuminate\Contracts\Translation\Loader;
 final class BaseLocaleJsonLoader implements Loader
 {
     /**
-     * Decoded base-language catalogs, keyed by language subtag.
+     * Decoded catalogs, keyed by the filename stem they were read from — a
+     * language subtag (`pt`) or a full regional tag (`pt-BR`).
      *
      * `Translator::load()` already caches per locale, so a single request
      * normally decodes at most one file. The memo covers the case where
@@ -95,7 +96,19 @@ final class BaseLocaleJsonLoader implements Loader
 
         $catalog = $this->catalog($base);
 
-        if ($catalog === []) {
+        // This package's REGIONAL catalog under its canonical dash spelling,
+        // and only when the locale arrived spelled some other way. `pt_BR` and
+        // `pt-BR` are one locale, but the real loader interpolates the locale
+        // into a filename verbatim, so the underscore form never reaches the
+        // `pt-BR.json` shipped here: it misses, the base merge below supplies
+        // `pt.json`, and the reader gets fluent, complete, EUROPEAN Portuguese.
+        // No key is missing and nothing throws — it is simply the wrong
+        // variety, which is the outcome shipping a regional catalog was meant
+        // to end. The underscore spelling is not exotic: PHP's own locale
+        // primitives emit it, and it is a common `config/app.php` value.
+        $regional = $this->regionalCatalog((string) $locale);
+
+        if ($catalog === [] && $regional === []) {
             return $lines;
         }
 
@@ -106,7 +119,11 @@ final class BaseLocaleJsonLoader implements Loader
         // The same function Laravel's own `loadJsonPaths()` uses to stack its
         // paths, so the key semantics here are the framework's rather than a
         // second set that could disagree with it.
-        return array_merge($catalog, $lines);
+        //
+        // Three layers, and the middle one is ordered rather than guessed: a
+        // regional catalog is a DELTA over its base, so it has to win over the
+        // base and lose to the application.
+        return array_merge($catalog, $regional, $lines);
     }
 
     /**
@@ -153,6 +170,37 @@ final class BaseLocaleJsonLoader implements Loader
     }
 
     /**
+     * This package's catalog for the locale under its canonical dash spelling,
+     * or an empty array when that is not a different lookup from the one the
+     * real loader already performed.
+     *
+     * @return array<string, string>
+     */
+    private function regionalCatalog(string $locale): array
+    {
+        $normalized = str_replace('_', '-', $locale);
+
+        // Identical means the real loader already asked for exactly this file,
+        // so whatever this package ships under the name is in `$lines`. Reading
+        // it again would change nothing and only re-state a lookup the
+        // framework owns.
+        if ($normalized === $locale) {
+            return [];
+        }
+
+        // The whole tag is checked, not only its first subtag: this string is
+        // about to be interpolated into a filename, and the locale it came from
+        // is settable at runtime. `baseLanguage()` below validates the base for
+        // the same reason and is not sufficient here, because the part after
+        // the dash is the part that would carry a traversal.
+        if (preg_match('/^[A-Za-z]{2,8}(-[A-Za-z0-9]{2,8})+$/', $normalized) !== 1) {
+            return [];
+        }
+
+        return $this->catalog($normalized);
+    }
+
+    /**
      * The base language subtag of a regional locale, or null when there is
      * nothing to fall back to.
      */
@@ -188,21 +236,26 @@ final class BaseLocaleJsonLoader implements Loader
     }
 
     /**
-     * The decoded catalog for a base language, or an empty array when this
-     * package ships none for it.
+     * The decoded catalog for a filename stem — a base language (`pt`) or a
+     * full regional tag (`pt-BR`) — or an empty array when this package ships
+     * none for it.
+     *
+     * Both callers validate the stem's shape before it gets here, and neither
+     * may stop: the value originates in a runtime-settable locale, and this is
+     * the line that turns it into a path.
      *
      * @return array<string, string>
      */
-    private function catalog(string $language): array
+    private function catalog(string $stem): array
     {
-        if (array_key_exists($language, $this->catalogs)) {
-            return $this->catalogs[$language];
+        if (array_key_exists($stem, $this->catalogs)) {
+            return $this->catalogs[$stem];
         }
 
-        $file = $this->path.'/'.$language.'.json';
+        $file = $this->path.'/'.$stem.'.json';
 
         if (! is_file($file)) {
-            return $this->catalogs[$language] = [];
+            return $this->catalogs[$stem] = [];
         }
 
         $decoded = json_decode((string) file_get_contents($file), true);
@@ -215,6 +268,6 @@ final class BaseLocaleJsonLoader implements Loader
         // must not invent a failure the undecorated request did not have. The
         // shipped catalogs are pinned as valid JSON by the suite, so this is
         // the shape of the guarantee rather than a tolerance for a broken file.
-        return $this->catalogs[$language] = is_array($decoded) ? $decoded : [];
+        return $this->catalogs[$stem] = is_array($decoded) ? $decoded : [];
     }
 }

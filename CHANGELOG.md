@@ -10,6 +10,237 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.33.0] — 2026-08-19
+
+**Minor — this release is about being told what you actually have.** `wirekit:doctor` names every
+personalized class block your application owns, `wirekit:icons --audit` separates the icon names
+under contract from the ones that merely work today, the MCP server hands an assistant real worked
+examples and the full component signature instead of a name and a category, and a scroll area fades
+only the edges its content really continues past.
+
+### Added
+
+- **[`wirekit:icons --audit`](https://docs.wirekit.app/cli-reference) tells you which of YOUR icon
+  names are under contract.** `<x-wirekit::icon>` renders any name your icon set knows, so a glyph
+  name works — and looks exactly like a declared alias right up until somebody switches preset, at
+  which point every one of them breaks at once. The audit reads your views and separates the two,
+  with the file and line of each fall-through. It never calls a glyph name an error (some glyphs
+  have no alias and never will) and never suggests a replacement (checked across ten such pairs,
+  ten pointed at a different character). Names bound at runtime are counted separately rather than
+  quietly dropped, and a run that finds no icon usage at all exits non-zero — "nothing was measured"
+  and "nothing is wrong" are different answers.
+- **The MCP server gained `get_component_examples` — worked examples instead of assembled markup.**
+  [`php artisan wirekit:mcp-serve`](https://docs.wirekit.app/cli-reference) could tell an editor what
+  props a component accepts; it could not show one being used. A prop list says what is allowed, and
+  an assistant filling one in guesses at the composition — which sub-component wraps which, which
+  props are set together, what the canonical shape actually is. The new tool answers that from real,
+  reviewed usage: 439 examples covering every documented component, and a sub-component (`card.body`)
+  resolves to the page where it is shown inside its parent. Ask for it before writing markup.
+  Documented in the [AI tooling guide](https://docs.wirekit.app/ai-tooling).
+- **`get_component` now answers with the whole component, not a summary of it.** The MCP server
+  described a component as a name, a category, a description and three fields per prop. An assistant
+  reading that could not tell an enum from free text, saw `config('wirekit.components.button.intent',
+  'primary')` as the default and had to guess what may be passed, and — worse — was never told that
+  `card.body` exists, which is the one composition rule the shipped guidance spends a paragraph on.
+  It now returns the same picture the JSON manifest carries: the documentation URL, whether the
+  component is anonymous or class-based, every declared slot with whether it is required, every
+  sub-component with its own props, and the full prop signature including type hints, the resolved
+  default behind a `config(...)` call, and the example values the docblock names. A test compares
+  the two surfaces field by field, in both directions, so one can no longer learn something the
+  other does not. Documented in the [AI tooling guide](https://docs.wirekit.app/ai-tooling).
+- **Three registry helpers became public API**, because the manifest and the MCP server were each
+  deriving the same answers privately and had begun to disagree: `ComponentRegistry::slotsOf(…)`
+  returns a component's declared slots with their required flag, `ComponentRegistry::describeSubComponentsOf(…)`
+  returns its sub-components with their props, and `ComponentRegistry::existingBladeFilePath(…)`
+  resolves a component's template — or null when it has none, which is the answer the
+  path-returning companion cannot give.
+
+  The examples are extracted when the package is built rather than read at runtime, because the
+  documentation is not part of what gets installed — a server that read it would answer correctly in
+  WireKit's own repository and "no examples" in yours.
+
+- **[`scroll-area`](https://docs.wirekit.app/components/scroll-area) gained `fade="auto"` — an edge
+  fade that measures before it masks.** The named edges (`both`, `start`, `end`) are unconditional
+  CSS, which is what makes them free and also what limits them: they fade the top edge while the
+  reader is already at the top, the bottom edge at the bottom, and both edges on an area whose
+  content fits and cannot scroll at all — taking ink off text that is entirely visible, to signal
+  something that is not true. `auto` masks only an edge the content continues past, and follows
+  content that arrives later, which is the case worth having it for: a transcript appending a
+  message, a list a search filters down, a panel that opens. Nothing to call, nothing to refresh.
+  It is the one value that needs JavaScript, and it fails toward **no mask at all** rather than the
+  wrong one — a missing hint instead of dissolved text. The named edges are untouched and stay pure
+  CSS, so nothing that exists today changes, and the depth is still the `--fade-wk-size` token.
+
+- **[`wirekit:doctor`](https://docs.wirekit.app/cli-reference) names every personalized block that
+  replaces the shipped one.**
+  [`WireKit::personalize()`](https://docs.wirekit.app/customization) takes two value shapes per
+  block, and they differ in a consequence nothing reported: a finished class string REPLACES the
+  block, while a closure receiving the vendor default extends it. A replacement is a valid choice —
+  it also ends the flow of later WireKit changes to that block, permanently and without a word, so
+  the personalization keeps looking like a decision somebody made long after it has stopped
+  inheriting improvements. The check reports replacements as a warning with the block names and
+  offers the closure form for the case where only a delta was wanted. It stays silent when every
+  block extends. A new `WireKit::personalizedComponents()` returns the names of the personalized
+  components; the map could be read per component but never enumerated, and a diagnostic cannot
+  guess names it has no way to list.
+
+- **[`wirekit:doctor:props`](https://docs.wirekit.app/cli-reference) gained `--require-in-scope`.**
+  A run that scans real templates and finds none of them using a WireKit component has two honest
+  readings, and which one is right depends on the application rather than on the linter. If you do
+  not use WireKit in that tree, nothing in scope is correct and the default still succeeds. If you
+  use it everywhere, the same result means the walk found the wrong tree — a second view path, a
+  renamed directory, an argument pointing somewhere empty — and a green run is the last thing you
+  want. The flag is how you say which application you are. Reported by a developer whose only handle
+  on that state was matching the success sentence in a shell script, which a reword would have
+  deleted silently.
+
+### Fixed
+
+- **The tab bar's active indicator was missing from the compiled CSS.** A tab bar's appearance
+  moved into PHP in 2.31.0 — a good refactor, and one Tailwind's `@source` glob never looks at, so
+  six classes stopped compiling. They were not decoration: they *are* the active-tab indicator and
+  the margins that pull it onto the container edge. The bar rendered, the tabs worked, the ARIA was
+  correct, and the selected tab was simply not marked. Reported from a project that attributes its
+  built stylesheet byte for byte — 123702 → 123169 bytes, six selectors gone and none added. Fixed
+  through the safelist mechanism that already exists for this class of bug, listing all 48 emitted
+  classes rather than only the six that went missing: the other 42 survive today because some
+  unrelated view happens to use `flex` or `gap-1`, which is a coincidence and not a guarantee.
+- **[`<x-wirekit::fonts>`](https://docs.wirekit.app/components/fonts) overwrote the shipped font
+  tokens with weaker ones.** The component wrote all three `--font-wk-*` variables unconditionally,
+  standing in a hardcoded stack for a category nobody had configured — and those stand-ins are
+  shorter than what the package ships. Both declarations sit unlayered at equal specificity, so
+  document order decided it, and placed after `@wirekitStyles` the monospace stack silently lost two
+  families. Nothing threw and the markup was identical either way; it showed only to a reader who
+  had those fonts installed. An unconfigured `sans` or `mono` is now simply not declared, so the
+  stylesheet's value stands from any position. Serif is deliberately still written, because the
+  stylesheet does not declare it and omitting it would drop every serif surface to the browser
+  default.
+- **The `fonts.fallbacks` example gave a real family another font's numbers.** The configuration
+  stub and the [fonts page](https://docs.wirekit.app/components/fonts) both showed a named family
+  with measurements that belong to a different one — directly below a line reading "measure the four
+  values, do not estimate them". A developer whose font really was that family read the block as
+  already measured and pasted it. Both examples now use a placeholder family with blank
+  placeholders: a blank cannot be copied, a plausible number can.
+- **`wirekit:doctor` told developers to delete configuration that was working.** The config-drift
+  check compared key names against the shipped stub and reported anything the stub does not carry as
+  an option "this version no longer offers". Reported from a project where ten keys were named and
+  all ten were wrong, in three shapes — keys whose names belong to the developer rather than to the
+  stub, a feature whose stub value is an empty array so no correct use could ever match, and leaves
+  sitting under a branch the stub does carry. Developer-keyed nodes are now exempt, a path that is a
+  prefix of a stub key is not an orphan, and the wording no longer asserts that nothing reads them:
+  a diff is evidence, not a verdict. The list also prints in full, because the truncation hid half
+  of a finding whose whole point was which keys were named.
+- **An underscore-spelled regional locale resolved to the wrong variety.** `pt_BR` and `pt-BR` are
+  one locale wearing two separators, but only the base-language half of that was handled. The
+  underscore spelling never reached the regional catalog this package ships: it missed, the base
+  fallback answered, and a Brazilian-Portuguese application quietly rendered European Portuguese.
+  Nothing threw — the strings were all present, just from the wrong catalog.
+- **The component manifest said nothing about `glass`.** Of the whole catalog, exactly one component
+  carries no props, no slots and no sub-components, and its emptiness is real. In a manifest that is
+  indistinguishable from a component whose props could not be parsed — and the wrong reading is the
+  expensive one, because a tool that assumes a parse failure will invent an API. Its description now
+  says so, and a guard requires any component with nothing to declare to declare that.
+
+- **`list` reported that it accepts no content.** Every machine-readable surface — the JSON
+  manifest, the project-root schema file, and every tool fed by them — listed the component with an
+  empty slot array while its template renders `{{ $slot }}` on its last line. A developer asking
+  the manifest how to use it was told to write an empty tag. The cause was a second Blade-path
+  resolver that knew the flat and dotted filenames but not the directory-index form `list` is
+  written in, so the file was never found and "no template" read as "no slots" — indistinguishable
+  from the components that genuinely have none. Both surfaces resolve through one path now, and a
+  test fails whenever a component that renders a default slot fails to report one.
+
+- **Two siblings of the same overlay no longer stand open at once.** Opening a second
+  [`popover`](https://docs.wirekit.app/components/popover),
+  [`dropdown`](https://docs.wirekit.app/components/dropdown),
+  [`hover-card`](https://docs.wirekit.app/components/hover-card),
+  [`menubar`](https://docs.wirekit.app/components/menubar) or
+  [`navigation-menu`](https://docs.wirekit.app/components/navigation-menu) menu on the same page left
+  the first one open behind it, and the two panels overlapped. Nothing reported it — no console
+  error, no changed markup — because the only symptom is what a reader sees. `context-menu` and
+  `combobox` had each solved it separately; all seven now share one mechanism, so the next overlay
+  inherits it instead of copying it. Opening a dropdown still does not close a popover: the
+  coordination is per component family, which is the behavior that existed before and is not a
+  question a patch release should answer differently.
+
+- **The CSP advice about method names was far wider than the rule it described, and the extra
+  width cost real renames.** Two pages and
+  [`wirekit:csp-audit`](https://docs.wirekit.app/cli-reference) itself said that a Livewire method
+  "whose name is a JavaScript keyword" needs index access — `$wire['delete'](...)` instead of
+  `$wire.delete(...)`. Measured against the parser that decides it, that is true of ten names and
+  false of the forty-two other reserved and future-reserved words, because a reserved word after a
+  dot has been an ordinary property name since ES5. A developer auditing their own component
+  against the old sentence renames public action names — `for`, `class`, `return` — that were never
+  affected, and every one of those renames is reachable from templates and tests. All three places
+  now print the set itself: `delete`, `false`, `in`, `instanceof`, `new`, `null`, `true`, `typeof`,
+  `undefined` and `void`, with a named counter-example so the list reads as complete rather than as
+  a sample. The set is no longer written by hand anywhere — it is checked against the tokenizer's
+  own table on every test run, so a future change to that table fails the build instead of leaving
+  three pages quietly wrong.
+
+### Documentation
+
+- **Two PHP entry points that were only findable in the source are now on a page.**
+  `WireKit::avatarPaletteFor(...)` returns the same background/foreground pair
+  `<x-wirekit::avatar from-initials>` derives, so a custom chip can match an avatar without rendering
+  one. `WireKit::defaultsFor(...)` reads back what `WireKit::defaults([...])` registered — with the
+  distinction stated on the page, because it reports the runtime record rather than the value in
+  effect.
+
+- **Four tables across three pages rendered as raw text and now render as tables.** A blank line, a
+  callout and a paragraph had each been placed inside a table, and one font-size table carried no
+  header row at all. Markdown ends a table at the first interruption rather than resuming it
+  afterwards, so every row below the break was published as pipe-separated body text. Affected the
+  bundles table on the dependencies page, the App Shell prop table, and the motion and font-size
+  token tables.
+- **`wirekit:verify --tier` examples corrected.** The commented check ranges beside the two `--tier`
+  examples still described the numbering from before a check was added, and the environment-tier
+  comment pointed at a package-tier check.
+
+- **The gap scale is now reachable from the components that use it.** `--gap-wk-*` and
+  `--space-wk-*` do not run on the same ladder, and the
+  [design-token page](https://docs.wirekit.app/theming/design-tokens) has said so since 2.28 with
+  three guards keeping the table honest. It was still reported twice from two applications eight
+  days apart, and the second report was measured against a version that already carried the table.
+  That is a placement problem rather than a documentation one: measured, the words `gap-wk`,
+  `design-tokens`, `ladder` and `rung` appeared zero times on the row, stack and grid pages, so a
+  developer typing `gap="lg"` had no path to the paragraph that prevents the mistake — which also
+  had no heading, so it was neither linkable nor in the page's contents. It has one now, and the
+  five components that let a developer name a rung link to it:
+  [row](https://docs.wirekit.app/components/row),
+  [stack](https://docs.wirekit.app/components/stack),
+  [grid](https://docs.wirekit.app/components/grid),
+  [bento-grid](https://docs.wirekit.app/components/bento-grid) and
+  [feature-grid](https://docs.wirekit.app/components/feature-grid).
+- **The [customization page](https://docs.wirekit.app/customization) no longer says nothing warns
+  you.** Its section on adjusting a block rather than replacing it explained that taking ownership
+  silently stops later improvements from reaching it, and closed with "nothing warns you, because
+  nothing is broken". The doctor check in this release *is* that warning, so the sentence became
+  false in the same release that made it obsolete. It now names the check.
+- **The PHP discovery surface is documented where it claims to be.** The
+  [ComponentRegistry page](https://docs.wirekit.app/extending/component-registry) opens by calling
+  itself the canonical surface for discovering every component, and documented five of its thirteen
+  entry points — `subComponentsOf`, `tag`, `tagAlias`, `resolve`, `componentClass`,
+  `isSubComponent`, `subComponents` and `extractAwareProps` were all shipped and described nowhere.
+  All of them are there now, with the three this release adds. Two claims on the page were also
+  wrong: `type_hint` was said to be always null where fifteen props carry one, and the prop-record
+  table listed five fields where the record has six.
+- **The theme-preset registry had only its write side on a page.**
+  [`ThemePresetRegistry::register()`](https://docs.wirekit.app/cli-reference) was documented; the
+  four reads that make it useful were not — which is exactly the set a theme picker needs.
+  `all()`, `keys()`, `get()` and `isValid()` are documented together now, with `isDefault()` called
+  out separately because it is the one a picker gets wrong: `default` is not a preset with variables,
+  it is the instruction to remove the block, and treating it as a normal preset writes an empty one.
+- **`WireKit::cspNonce()` and `WireKit::prefix()` are documented** — the first in the
+  [integration guide's nonce section](https://docs.wirekit.app/getting-started/integration), with
+  its resolution order and the fact that `null` means "no policy" rather than a failed lookup; the
+  second in [Getting Started](https://docs.wirekit.app/getting-started), where code that builds a
+  tag name should ask rather than assume, because the prefix is a setting and `wirekit` is only its
+  default.
+- **[Localization](https://docs.wirekit.app/localization) no longer reads as base-language only.**
+  The page described the shipped catalogs without saying that a regional variety is a catalog of
+  its own, which is the half a developer needs before choosing a locale string.
+
 ## [2.32.1] — 2026-08-17
 
 **Patch — a component and your own `style` no longer overwrite each other, a seeded value survives a

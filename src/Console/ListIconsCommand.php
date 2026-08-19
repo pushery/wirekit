@@ -12,14 +12,18 @@ use Pushery\WireKit\Icons\Presets\HeroiconsPreset;
 use Pushery\WireKit\Icons\Presets\LucidePreset;
 use Pushery\WireKit\Icons\Presets\PhosphorPreset;
 use Pushery\WireKit\Icons\Presets\TablerPreset;
+use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\SuggestSimilar;
+use Pushery\WireKit\WireKit;
 
 class ListIconsCommand extends Command
 {
     protected $signature = 'wirekit:icons
         {--preset= : Filter to a single preset. Values: heroicons, heroicons-app, heroicons-marketing, lucide, phosphor, tabler.}
         {--as= : Output format: count|json|aliases|presets. Default: human-readable per-preset table.}
-        {--format= : Alias for --as. Symfony-Console-style spelling for developers accustomed to the `--format=json` idiom common in other Laravel commands.}';
+        {--format= : Alias for --as. Symfony-Console-style spelling for developers accustomed to the `--format=json` idiom common in other Laravel commands.}
+        {--audit : Read your views and report which icon names resolve through a declared alias and which name a glyph directly.}
+        {--path=* : Directory to scan under --audit. Repeatable. Defaults to the application view paths.}';
 
     protected $description = 'List every icon alias shipped with WireKit, grouped by preset';
 
@@ -29,6 +33,245 @@ class ListIconsCommand extends Command
      * API so developers don't have to learn a third convention.
      */
     private const FORMATS = ['count', 'json', 'aliases', 'presets'];
+
+    /**
+     * Report which icon names in the caller's views resolve through a declared
+     * alias, and which fall through to a glyph name.
+     *
+     * ## Why this is worth a command
+     *
+     * The two states look IDENTICAL in a browser. A glyph name renders
+     * perfectly as long as the preset stays put; it breaks on a preset switch,
+     * and then all of them break at once. There is no signal until the moment it
+     * is expensive — which is exactly the shape an audit is for.
+     *
+     * ## Why it never fails on a fall-through
+     *
+     * Naming a glyph directly is a legitimate choice, not a violation. Some
+     * glyphs have no alias and never will (`gavel`, `armchair`), and an audit
+     * that reported those as errors would be switched off inside a week. The
+     * exit code is 0 whenever the audit could measure at all.
+     *
+     * ## Why it does not suggest replacements
+     *
+     * "`sliders` is not an alias" is useful. "Use `settings` instead" would be
+     * wrong unless the two point at the same glyph — checked once across ten
+     * such pairs, and ten of ten pointed at a different character. A suggestion
+     * without that check is a redesign wearing an adoption's clothes.
+     */
+    private function auditIconNames(): int
+    {
+        $paths = $this->resolveScanPaths();
+
+        if ($paths === []) {
+            $this->error('No directory to scan.');
+            $this->line('  Pass --path=<dir>, or run this from an application where view.paths resolves.');
+
+            // A configuration problem, not a clean result. Reporting success
+            // here would mean answering "everything is an alias" about nothing.
+            return self::FAILURE;
+        }
+
+        $findings = [];
+        $filesScanned = 0;
+
+        foreach ($paths as $path) {
+            /** @var \RecursiveIteratorIterator<\RecursiveDirectoryIterator> $files */
+            $files = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS)
+            );
+
+            foreach ($files as $file) {
+                if (! $file->isFile() || ! str_ends_with($file->getFilename(), '.blade.php')) {
+                    continue;
+                }
+
+                $filesScanned++;
+
+                foreach ($this->iconNamesIn((string) file_get_contents($file->getPathname())) as $hit) {
+                    $findings[] = $hit + ['file' => $file->getPathname()];
+                }
+            }
+        }
+
+        if ($findings === []) {
+            $this->error(sprintf(
+                'Found no <x-wirekit::icon> usage in %d file(s) across %d path(s).',
+                $filesScanned,
+                count($paths)
+            ));
+            $this->line('  Scanned: '.implode(', ', $paths));
+            $this->line('');
+            $this->line('  That is NOT the same answer as "every name is an alias" — it is the answer');
+            $this->line('  "nothing was measured". Check the path before reading anything into it.');
+
+            return self::FAILURE;
+        }
+
+        $literals = array_values(array_filter($findings, fn (array $f): bool => $f['name'] !== null));
+        $dynamic = count($findings) - count($literals);
+
+        /*
+         * Tags were found, but not one of them names anything the source can
+         * judge. Reporting that as three zeros reads like a clean sweep — the
+         * exact shape this command refuses everywhere else, and it slipped
+         * through here because the earlier guard asks whether ANY tag was seen,
+         * not whether any could be DECIDED.
+         *
+         * Found by running the command's own documented default form against a
+         * real application rather than the fixture it was built against.
+         */
+        if ($literals === []) {
+            $this->error(sprintf(
+                'Found %d <x-wirekit::icon> tag(s) in %d file(s), and not one names an icon literally.',
+                count($findings),
+                $filesScanned
+            ));
+
+            if ($dynamic > 0) {
+                $this->line(sprintf('  All %d are bound at runtime (:name="…"), which the source cannot resolve.', $dynamic));
+            }
+
+            $this->line('');
+            $this->line('  Nothing was judged, which is NOT the same answer as "every name is an alias".');
+
+            return self::FAILURE;
+        }
+
+        $aliases = [];
+        $fallThrough = [];
+
+        foreach ($literals as $finding) {
+            /** @var string $name */
+            $name = $finding['name'];
+
+            if (WireKit::isIconAlias($name)) {
+                $aliases[] = $finding;
+            } else {
+                $fallThrough[] = $finding;
+            }
+        }
+
+        $this->line('');
+        $this->line(sprintf('  %d icon name(s) in %d file(s)', count($literals), $filesScanned));
+        $this->line(sprintf('  %d resolve through a declared alias', count($aliases)));
+        $this->line(sprintf('  %d resolve through the fall-through — they name a glyph directly', count($fallThrough)));
+
+        if ($dynamic > 0) {
+            // Counted rather than dropped. A scanner that silently ignores
+            // `:name="$icon"` under-reports, and the reader has no way to tell
+            // an audit that found nothing there from one that looked away.
+            $this->line(sprintf('  %d bound at runtime (:name="…") — not decidable from the source', $dynamic));
+        }
+
+        if ($fallThrough !== []) {
+            $this->line('');
+            $this->line('  Not aliases (they break on a preset switch):');
+
+            $seen = [];
+
+            foreach ($fallThrough as $finding) {
+                $key = $finding['name'].'@'.$finding['file'].':'.$finding['line'];
+
+                if (isset($seen[$key])) {
+                    continue;
+                }
+
+                $seen[$key] = true;
+
+                $this->line(sprintf(
+                    '    %-24s %s:%d',
+                    $finding['name'],
+                    $finding['file'],
+                    $finding['line']
+                ));
+            }
+        }
+
+        $this->line('');
+
+        // Always success from here: the fall-through is a route, not a fault.
+        return self::SUCCESS;
+    }
+
+    /**
+     * Directories to walk, from --path or the application's view paths.
+     *
+     * @return array<int, string>
+     */
+    private function resolveScanPaths(): array
+    {
+        /** @var array<int, string> $given */
+        $given = (array) $this->option('path');
+
+        if ($given !== []) {
+            return array_values(array_filter($given, 'is_dir'));
+        }
+
+        /** @var array<int, string> $viewPaths */
+        $viewPaths = (array) config('view.paths', []);
+
+        return array_values(array_filter($viewPaths, 'is_dir'));
+    }
+
+    /**
+     * Every `<x-wirekit::icon>` in one file, with the name it was given.
+     *
+     * `name` is null for a bound value (`:name="$icon"`), which is a real state
+     * and not an omission — the source cannot say what it resolves to, and the
+     * caller reports it as its own number rather than folding it into either
+     * side.
+     *
+     * The walk is `BladeParser`'s, not this file's. A hand-written one was tried
+     * first and the drift guard rejected it, correctly: three scanners in this
+     * package each hand-wrote a tag walk, each learned Blade to a different
+     * depth, and the same defect was found and fixed three times. Routing
+     * through the one parser inherits what it knows — a `{{-- don't --}}`
+     * comment inside a tag, a tag another element interrupted, a file that ends
+     * mid-tag — none of which this command would have handled.
+     *
+     * The attribute VALUE is read here rather than there on purpose:
+     * `tagsFromSource()` returns boundaries and names, deliberately, so that it
+     * does not become the second and weaker parser for every caller's different
+     * question. Reading the value out of the boundaries it hands back is the
+     * shape that guard describes as the correct one.
+     *
+     * @return list<array{name: string|null, line: int}>
+     */
+    private function iconNamesIn(string $contents): array
+    {
+        $hits = [];
+
+        foreach (BladeParser::tagsFromSource($contents) as $tag) {
+            if ($tag['name'] !== 'x-wirekit::icon') {
+                continue;
+            }
+
+            // A tag another element interrupted never closed, so whatever was
+            // collected inside it is an artifact rather than a usage.
+            if ($tag['terminator'] !== '>') {
+                continue;
+            }
+
+            $line = substr_count(substr($contents, 0, $tag['start']), "\n") + 1;
+
+            if (in_array('name', $tag['attributes'], true)) {
+                $attributes = substr($contents, $tag['attrStart'], $tag['attrEnd'] - $tag['attrStart']);
+
+                if (preg_match('/(?<![:\w-])name\s*=\s*"([^"]*)"/', $attributes, $m) === 1) {
+                    $hits[] = ['name' => $m[1], 'line' => $line];
+
+                    continue;
+                }
+            }
+
+            if (in_array(':name', $tag['attributes'], true)) {
+                $hits[] = ['name' => null, 'line' => $line];
+            }
+        }
+
+        return $hits;
+    }
 
     /**
      * Preset key → instance map. Built once, consumed by every output
@@ -50,6 +293,15 @@ class ListIconsCommand extends Command
 
     public function handle(): int
     {
+        // Dispatched before the listing options are read, because the audit
+        // answers a different question about a different input: the listing
+        // describes WireKit's vocabulary, the audit describes the caller's use
+        // of it. Sharing a command keeps them one thing to discover; sharing a
+        // code path would make each one's flags noise in the other's help.
+        if ($this->option('audit') === true) {
+            return $this->auditIconNames();
+        }
+
         $presetFilter = $this->option('preset');
         $asValue = $this->option('as');
         $formatValue = $this->option('format');

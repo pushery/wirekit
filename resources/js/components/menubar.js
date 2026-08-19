@@ -7,6 +7,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menubar/
  */
+import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { position } from '../utils/floating.js';
 
 export default function wirekitMenubar() {
@@ -20,6 +21,10 @@ export default function wirekitMenubar() {
         // activeMenu returns to null. Prevents leaked scroll/resize listeners when
         // switching or closing menus (every teardown path must call stop()).
         _stopAutoUpdate: null,
+
+        // Cross-close channel — see utils/overlay-coordination.js. Two menubars
+        // on one page could each hold a menu open, and the two panels overlap.
+        _coordination: null,
 
         init() {
             this._navCleanup = () => { this.activeMenu = null; };
@@ -43,9 +48,18 @@ export default function wirekitMenubar() {
                 this.closeAll();
             };
             document.addEventListener('pointerdown', this._onPointerDown, { capture: true });
+
+            // Another menubar opening a menu closes this one's.
+            this._coordination = coordinateOverlay({
+                channel: 'wirekit:menubar-open',
+                onOther: () => this.closeAll(),
+            });
         },
 
         destroy() {
+            this._coordination?.stop();
+            this._coordination = null;
+
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
@@ -68,6 +82,7 @@ export default function wirekitMenubar() {
             } else {
                 this.activeMenu = name;
                 this._focusIndex = -1;
+                this._coordination?.announce();
                 await this._positionActiveMenu(name);
             }
         },
@@ -79,6 +94,7 @@ export default function wirekitMenubar() {
             if (this.activeMenu && this.activeMenu !== name) {
                 this.activeMenu = name;
                 this._focusIndex = -1;
+                this._coordination?.announce();
                 await this._positionActiveMenu(name);
             }
         },
