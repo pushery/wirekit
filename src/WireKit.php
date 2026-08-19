@@ -121,7 +121,15 @@ class WireKit
         static::$scoped[$name] = $personalizations;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @internal Reads back one component's scoped personalization.
+     *
+     * Public without an external caller: the only call site is `resolveClasses()`
+     * in this class. It is not a promise — a developer registers a scope with
+     * `WireKit::scope()` and reads the result through the rendered component.
+     *
+     * @return array<string, mixed>
+     */
     public static function scopedFor(string $component, ?string $scope): array
     {
         if ($scope === null) {
@@ -144,7 +152,30 @@ class WireKit
         static::$personalizations[$component] = $blocks;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Every component that carries a personalization, by name.
+     *
+     * `personalizationFor()` answers for a component you already suspect. Nothing
+     * could answer "which components has this application personalized at all",
+     * which is the question a diagnostic has to start from — it cannot guess the
+     * names. Reading only; the map itself stays protected.
+     *
+     * @return list<string>
+     */
+    public static function personalizedComponents(): array
+    {
+        return array_keys(static::$personalizations);
+    }
+
+    /**
+     * @internal Reads back one component's deep personalization.
+     *
+     * Public because `VerifyInstallationCommand` calls it from another class to
+     * report which blocks an application replaced. Not a promise to a developer;
+     * the supported way in is `WireKit::personalize()`.
+     *
+     * @return array<string, mixed>
+     */
     public static function personalizationFor(string $component): array
     {
         $personalization = static::$personalizations[$component] ?? [];
@@ -467,6 +498,10 @@ class WireKit
      * `FadePresetAliasConsistencyTest`. Unknown values throw via
      * validateProp in debug mode, fall back to the first allowed in
      * production.
+     *
+     * @internal Public because nine Blade templates call it while rendering —
+     * alert, callout, card, cta, empty-state, feature, footer, hero and stat.
+     * A developer sets `animate-in` on the component and never calls this.
      */
     public static function resolveAnimateIn(?string $value, string $component): ?string
     {

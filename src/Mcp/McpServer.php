@@ -12,11 +12,20 @@ namespace Pushery\WireKit\Mcp;
  * for a notification, which has no reply). `McpServeCommand` wraps this in the
  * stdio loop AI editors (Claude Code / Cursor / Cline) spawn locally.
  *
- * Exposes four read-only tools sourced from the shipped catalog
- * (`search_components`, `list_components`, `get_component`, `get_tokens`). No
- * write tools, no network, no `docs/` dependency — everything it serves ships
- * in the Packagist tarball, so a developer-hosted local server is always
- * version-matched to their installed WireKit.
+ * Exposes read-only tools sourced from the shipped catalog:
+ * `search_components`, `list_components`, `get_component`,
+ * `get_component_examples`, `get_tokens`. No write tools and no network —
+ * everything it serves ships in the Packagist tarball, so a developer-hosted
+ * local server is always version-matched to their installed WireKit.
+ *
+ * Nothing is read from `docs/` at runtime, which is not a detail: `docs/` is
+ * export-ignored, so it is absent in a real install. The worked examples are
+ * extracted from it at BUILD time into a file that ships, and a test fails when
+ * the two drift apart.
+ *
+ * This list is not decoration — `McpServerTest` fails when it stops matching the
+ * tools actually registered. It said "four read-only tools" for exactly as long
+ * as there were four, and the fifth was added without it noticing.
  */
 final class McpServer
 {
@@ -104,6 +113,17 @@ final class McpServer
                 ],
             ],
             [
+                'name' => 'get_component_examples',
+                'description' => 'Get worked examples for one WireKit component — real, reviewed usage taken from its documentation page, not markup assembled from a prop list. Ask for this BEFORE writing custom markup; a sub-component resolves to its parent page.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string', 'description' => 'The component name, e.g. "button" or "card.body".'],
+                    ],
+                    'required' => ['name'],
+                ],
+            ],
+            [
                 'name' => 'get_tokens',
                 'description' => 'List every WireKit design token (the --*-wk-* CSS variables) as name → value pairs.',
                 'inputSchema' => ['type' => 'object', 'properties' => (object) []],
@@ -127,6 +147,7 @@ final class McpServer
             )),
             'list_components' => $this->toolResult($id, $this->catalog->components()),
             'get_component' => $this->getComponentResult($id, is_string($args['name'] ?? null) ? $args['name'] : ''),
+            'get_component_examples' => $this->getComponentExamplesResult($id, is_string($args['name'] ?? null) ? $args['name'] : ''),
             'get_tokens' => $this->toolResult($id, $this->catalog->tokens()),
             default => $this->error($id, -32602, "Unknown tool: {$name}"),
         };
@@ -144,6 +165,22 @@ final class McpServer
         }
 
         return $this->toolResult($id, $component);
+    }
+
+    private function getComponentExamplesResult(int|string|null $id, string $name): array
+    {
+        $examples = $this->catalog->examples($name);
+
+        // The same shape `get_component` uses for an unknown name, on purpose: an
+        // agent that learned one error shape should not have to learn a second.
+        if ($examples === null) {
+            return $this->ok($id, [
+                'content' => [['type' => 'text', 'text' => "Unknown component: {$name}"]],
+                'isError' => true,
+            ]);
+        }
+
+        return $this->toolResult($id, $examples);
     }
 
     /**

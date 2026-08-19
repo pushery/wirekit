@@ -33,7 +33,8 @@ class DoctorPropsCommand extends Command
 {
     protected $signature = 'wirekit:doctor:props
         {path? : Path to scan (defaults to resources/views in the host app)}
-        {--fail-on= : Treat findings as a non-zero exit. One of `error` (default) or `none`.}';
+        {--fail-on= : Treat findings as a non-zero exit. One of `error` (default) or `none`.}
+        {--require-in-scope : Fail when no scanned template uses a WireKit component. For an application that uses WireKit everywhere, an empty scope means the linter went blind.}';
 
     protected $description = 'Static-analysis prop linter — finds unknown or misspelled props on WireKit components';
 
@@ -126,6 +127,37 @@ class DoctorPropsCommand extends Command
             // run is honest, there was simply nothing in scope — so it succeeds and
             // says the count out loud rather than implying it checked something.
             if ($scanned === 0) {
+                // Two readings of one state, and which is right depends on the
+                // caller rather than on us. For a library, "nothing in scope" is
+                // not a fault: an application may simply not use the components,
+                // and a linter that failed there would be switched off. For an
+                // application that uses them EVERYWHERE, the same state means the
+                // linter went blind — a second view path, a renamed directory, a
+                // `path` argument pointing somewhere empty.
+                //
+                // So the default stays permissive and the caller gets a flag. The
+                // alternative a developer is left with otherwise is matching this
+                // sentence in a shell script, which is a text interface nobody
+                // agreed to: rewording it silently deletes their check. That is
+                // the same dependency the empty-directory and no-templates cases
+                // were given exits for; this is the third layer.
+                //
+                // Deliberately NOT a scraped count. "Scanned N template(s)"
+                // answers the neighboring question — how many files ran, not how
+                // many were in scope — and a tree with thirty templates and no
+                // WireKit component reads as thirty and looks healthy.
+                if ($this->option('require-in-scope')) {
+                    $this->error(sprintf(
+                        'Scanned %d Blade template(s); none of them use a WireKit component.',
+                        count($bladeFiles),
+                    ));
+                    $this->line('');
+                    $this->line('--require-in-scope was given, so this is a failure rather than a pass:');
+                    $this->line('the linter had nothing to measure. Check the path and the view tree.');
+
+                    return self::FAILURE;
+                }
+
                 $this->info(sprintf(
                     'Scanned %d Blade template(s); none of them use a WireKit component, so there was nothing to check.',
                     count($bladeFiles),

@@ -1,3 +1,4 @@
+import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { applyTriggerAria } from '../utils/trigger-aria.js';
 
 /**
@@ -29,6 +30,9 @@ export default function wirekitPopover(config = {}) {
         _offset: config.offset ?? 8,
         _trap: null,
         _navCleanup: null,
+        // Cross-close channel — see utils/overlay-coordination.js. Two open
+        // sibling popovers overlap, which a reader sees and no test does.
+        _coordination: null,
         // Floating UI autoUpdate teardown handle — set in show(), called in EVERY
         // close path (close / _closeFromTrap / _forceClose) so the scroll+resize
         // listeners never outlive the panel (every teardown path must call stop()).
@@ -38,9 +42,18 @@ export default function wirekitPopover(config = {}) {
             // Cleanup on Livewire SPA navigation
             this._navCleanup = () => this._forceClose();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+
+            // Opening this one closes every other popover on the page.
+            this._coordination = coordinateOverlay({
+                channel: 'wirekit:popover-open',
+                onOther: () => this._forceClose(),
+            });
         },
 
         destroy() {
+            this._coordination?.stop();
+            this._coordination = null;
+
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
@@ -60,6 +73,7 @@ export default function wirekitPopover(config = {}) {
         async show() {
             if (this.open) return;
             this.open = true;
+            this._coordination?.announce();
 
             await this.$nextTick();
 

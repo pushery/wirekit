@@ -6,6 +6,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
  */
+import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { position } from '../utils/floating.js';
 
 export default function wirekitNavigationMenu() {
@@ -16,6 +17,10 @@ export default function wirekitNavigationMenu() {
         _onScroll: null,
         _onResize: null,
         _onPointerDown: null,
+
+        // Cross-close channel — see utils/overlay-coordination.js. Two navigation
+        // menus on one page could each hold a panel open, and they overlap.
+        _coordination: null,
 
         init() {
             this._navCleanup = () => { this.activeItem = null; };
@@ -61,9 +66,18 @@ export default function wirekitNavigationMenu() {
                 this.closeAll();
             };
             document.addEventListener('pointerdown', this._onPointerDown, { capture: true });
+
+            // Another navigation menu opening a panel closes this one's.
+            this._coordination = coordinateOverlay({
+                channel: 'wirekit:navigation-menu-open',
+                onOther: () => this.closeAll(),
+            });
         },
 
         destroy() {
+            this._coordination?.stop();
+            this._coordination = null;
+
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
@@ -84,6 +98,7 @@ export default function wirekitNavigationMenu() {
         async open(name) {
             clearTimeout(this._hideTimer);
             this.activeItem = name;
+            this._coordination?.announce();
 
             await this.$nextTick();
 

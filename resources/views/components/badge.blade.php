@@ -269,7 +269,7 @@
             @endif
             @if($dismissible)
                 <button type="button" x-on:click="dismiss()" aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
-                    <x-wirekit::icon name="x-mark" size="xs" aria-hidden="true" class="shrink-0" />
+                    <x-wirekit::icon name="close" size="xs" aria-hidden="true" class="shrink-0" />
                 </button>
             @endif
         </span>
@@ -291,7 +291,7 @@
         @endif
         @if($dismissible)
             <button type="button" x-on:click="dismiss()" aria-label="{{ $dismissLabel }}" class="{{ $dismissBtnClasses }}">
-                <x-wirekit::icon name="x-mark" size="xs" aria-hidden="true" class="shrink-0" />
+                <x-wirekit::icon name="close" size="xs" aria-hidden="true" class="shrink-0" />
             </button>
         @endif
     </span>

@@ -89,6 +89,7 @@ class VerifyInstallationCommand extends Command
             $this->checkAlpineJs();
             $this->checkBundleConfig();
             $this->checkPublishedViewsStaleness();
+            $this->checkReplacingPersonalizations();
             $this->checkAiManifestStaleness();
             $this->checkFontAssets();
             $this->checkCssImportAntiPattern();
@@ -386,6 +387,26 @@ class VerifyInstallationCommand extends Command
      * instead of a wall. Burying the signal was the right fear; the answer is to
      * summarize it, not to stop measuring.
      */
+    /**
+     * Config nodes whose KEYS belong to the developer, not to this package.
+     *
+     * An icon alias they invent, a font family they host. The stub can document
+     * that such a map exists; it can never list what will be in it. So a diff of
+     * key names against the stub is structurally incapable of saying anything
+     * true about these nodes — every correct use looks like an option that was
+     * removed.
+     *
+     * Add a node here when its keys are chosen by the reader. The test that
+     * covers this asserts both directions, so an entry that stops being opaque
+     * shows up rather than lingering.
+     *
+     * @var list<string>
+     */
+    private const OPAQUE_CONFIG_MAPS = [
+        'icons.aliases',
+        'fonts.fallbacks',
+    ];
+
     private function checkConfigDrift(): void
     {
         $publishedPath = config_path('wirekit.php');
@@ -438,12 +459,54 @@ class VerifyInstallationCommand extends Command
         // List contents are skipped, because a numeric index is not the name of a
         // knob: a developer whose list is shorter than the package's would otherwise
         // be told that `foo.3` has gone missing.
+        $packageKeys = array_keys(self::flattenConfig($package));
+
         $orphanedLeaves = array_values(array_filter(
-            array_diff(
-                array_keys(self::flattenConfig($published)),
-                array_keys(self::flattenConfig($package))
-            ),
-            static fn (string $path): bool => preg_match('/(^|\.)\d+(\.|$)/', $path) !== 1
+            array_diff(array_keys(self::flattenConfig($published)), $packageKeys),
+            static function (string $path) use ($packageKeys): bool {
+                // A numeric index is not the name of a knob.
+                if (preg_match('/(^|\.)\d+(\.|$)/', $path) === 1) {
+                    return false;
+                }
+
+                // OPAQUE MAPS. Some nodes are keyed by the DEVELOPER, not by this
+                // package: an icon alias they invent, a font family they host. The
+                // stub cannot list those keys, so a diff against it reports every
+                // correct use of the feature as a dead option — and then tells them
+                // to delete it.
+                //
+                // Measured from a consuming project: ten reported orphans, ten of
+                // them wrong. Two were `icons.aliases.sun` / `.moon`, which drive the
+                // glyphs of the theme toggle that page renders; following the advice
+                // silently swaps the outline icon for the mini one — nothing throws,
+                // nothing is missing, the drawing is just different. Four more were
+                // `fonts.fallbacks.*`, a feature that SHIPPED IN THE SAME RELEASE as
+                // this check, whose stub value is `[]` so that no correct use can
+                // ever match.
+                foreach (self::OPAQUE_CONFIG_MAPS as $prefix) {
+                    if ($path === $prefix || str_starts_with($path, $prefix.'.')) {
+                        return false;
+                    }
+                }
+
+                // LEAF HERE, BRANCH THERE. `components.checkbox => []` in the
+                // developer's file is a leaf; the stub carries
+                // `components.checkbox => ['size' => 'md', …]`, a branch. Flattening
+                // puts `components.checkbox` on one side and `components.checkbox.size`
+                // on the other, and a plain diff calls the first an orphan.
+                //
+                // It is not: the key IS offered, at a different depth. An empty
+                // override of a current component is a no-op, not residue from an
+                // earlier version — and the difference matters, because the remedy
+                // printed below is deletion.
+                foreach ($packageKeys as $packageKey) {
+                    if (str_starts_with($packageKey, $path.'.')) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
         ));
 
         if ($missingSections === [] && $missingComponents === [] && $missingLeaves === []
@@ -535,16 +598,22 @@ class VerifyInstallationCommand extends Command
             $this->reportWarn('published config carries '.count($orphanedLeaves)
                 .' option(s) this version no longer offers');
 
-            foreach (array_slice($orphanedLeaves, 0, 8) as $path) {
+            // Printed in full. The truncated form hid half of a finding whose
+            // whole point was which keys were named: a reader shown "… and 2 more"
+            // cannot tell whether the hidden two are the same false alarm as the
+            // eight above or something real.
+            foreach ($orphanedLeaves as $path) {
                 $this->line('    '.$path);
             }
 
-            if (count($orphanedLeaves) > 8) {
-                $this->line('    … and '.(count($orphanedLeaves) - 8).' more');
-            }
-
-            $this->line('  Nothing reads these — they are left over from an earlier version and');
-            $this->line('  will keep looking like settings that do something. Delete them.');
+            // Deliberately weaker than it was. This is a diff against the stub, and
+            // a diff is evidence, not a verdict — it cannot see a key read by code
+            // that never appears in the stub. The previous wording ("Nothing reads
+            // these … Delete them") sent a reader to delete configuration that was
+            // driving what their page rendered.
+            $this->line('  These names are not in this version\'s config stub. That usually means');
+            $this->line('  they are left over from an earlier version — check whether anything');
+            $this->line('  still needs them before removing.');
         }
     }
 
@@ -855,6 +924,57 @@ class VerifyInstallationCommand extends Command
                 $this->line("  Fix: {$refreshCmd}");
             }
         }
+    }
+
+    /**
+     * Name the personalized blocks the application now owns.
+     *
+     * `WireKit::personalize()` takes two value shapes for a block, and they differ
+     * in one consequence nobody is told about:
+     *
+     *   'base' => 'inline-flex …'                        REPLACES the shipped block
+     *   'base' => fn (string $vendor) => $vendor.' …'    EXTENDS it
+     *
+     * A replacement is a legitimate choice and often the right one. What it also
+     * does is end the flow of later improvements to that block — permanently, and
+     * without a word. The personalization keeps looking like a decision somebody
+     * made, which it is; that it has since swallowed three upstream changes is
+     * visible nowhere. A consuming application found this by reading the installed
+     * package, not by being told.
+     *
+     * So this reports, and does not judge: a WARN that names the blocks, because
+     * the same output on a deliberate replacement is the point — the developer
+     * sees what they own and can decide again. It is not a FAIL, and it never
+     * suggests removing the personalization; the fix line offers the closure form
+     * for the case where the delta was all that was wanted.
+     */
+    private function checkReplacingPersonalizations(): void
+    {
+        $owned = [];
+
+        foreach (WireKit::personalizedComponents() as $component) {
+            foreach (WireKit::personalizationFor($component) as $block => $value) {
+                // A closure receives the vendor default and returns its own delta,
+                // so it keeps inheriting. Only a finished string severs the link.
+                if (is_string($value)) {
+                    $owned[] = $component.'.'.$block;
+                }
+            }
+        }
+
+        if ($owned === []) {
+            return; // nothing personalized, or every block extends — the quiet case
+        }
+
+        $count = count($owned);
+
+        $this->reportWarn(
+            "{$count} personalized class ".($count === 1 ? 'block replaces' : 'blocks replace').
+            ' the shipped one'
+        );
+        $this->line('  '.implode(', ', $owned));
+        $this->line('  A replaced block stops receiving later WireKit changes to it — silently, and for good');
+        $this->line("  Fix (only if you wanted a delta): 'block' => fn (string \$vendor) => \$vendor.' your-classes'");
     }
 
     private function checkPublishedViewsStaleness(): void

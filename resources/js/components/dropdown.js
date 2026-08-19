@@ -4,6 +4,7 @@
  * Handles positioning via Floating UI, keyboard navigation (arrow keys),
  * click-outside closing, and ARIA menu pattern.
  */
+import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { position } from '../utils/floating.js';
 
 /**
@@ -21,6 +22,9 @@ export default function wirekitDropdown(config = {}) {
 
         // Stored cleanup handler for destroy()
         _navCleanup: null,
+        // Cross-close channel — see utils/overlay-coordination.js. Two sibling
+        // dropdowns standing open at once overlap; opening one closes the rest.
+        _coordination: null,
         // Floating UI autoUpdate teardown handle (set in show(), called in close()
         // + destroy()). Keeping the panel pinned to its trigger on scroll/resize
         // attaches ancestor-scroll + resize listeners; so every teardown path must call stop() or they leak
@@ -63,6 +67,14 @@ export default function wirekitDropdown(config = {}) {
             // Cleanup on Livewire SPA navigation
             this._navCleanup = () => { this.open = false; };
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+
+            // Sibling dropdowns close when this one opens. Two panels standing
+            // open at once overlap, which is what a reader sees rather than a
+            // console error — so nothing reports it.
+            this._coordination = coordinateOverlay({
+                channel: 'wirekit:dropdown-open',
+                onOther: () => this.close(),
+            });
         },
 
         /**
@@ -81,6 +93,9 @@ export default function wirekitDropdown(config = {}) {
         },
 
         destroy() {
+            this._coordination?.stop();
+            this._coordination = null;
+
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
@@ -104,6 +119,7 @@ export default function wirekitDropdown(config = {}) {
          */
         async show() {
             this.open = true;
+            this._coordination?.announce();
 
             // Wait for Alpine to render the panel, then position it
             await this.$nextTick();

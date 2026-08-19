@@ -525,17 +525,26 @@ return [
         | here and WireKit emits the same kind of face for it:
         |
         |     'fallbacks' => [
-        |         'Instrument Sans' => [
+        |         'Your Family' => [
         |             'local' => ['Arial', 'Helvetica Neue', 'Liberation Sans'],
-        |             'sizeAdjust' => '107.4%',
-        |             'ascentOverride' => '90.2%',
-        |             'descentOverride' => '22.4%',
-        |             'lineGapOverride' => '0%',
+        |             'sizeAdjust' => '___%',      // measure these four
+        |             'ascentOverride' => '___%',  // they are specific to YOUR
+        |             'descentOverride' => '___%', // font file, and no other
+        |             'lineGapOverride' => '___%', // family's numbers will do
         |         ],
         |     ],
         |
-        | Then reference `'Instrument Sans Fallback'` after your family in the
-        | font stack — that name is what this creates.
+        | Then reference `'Your Family Fallback'` after your family in the font
+        | stack — that name is what this creates.
+        |
+        | The placeholders are deliberate. This example previously named a real,
+        | widely used family and gave it ANOTHER family's numbers: it read
+        | 'Instrument Sans' and carried Inter's measurements, rounded — 107.4 /
+        | 90.2 / 22.4 against the 107.47 / 90.14 / 22.45 this package stores for
+        | Inter. A developer whose font actually was Instrument Sans read that as
+        | "already measured for me" and copied it, and it closed about a quarter
+        | of the gap it appeared to close. Values that look measured and are not
+        | are worse than a blank, because a blank cannot be pasted.
         |
         | MEASURE THE FOUR VALUES. Do not estimate them. A guessed `size-adjust`
         | moves the layout in the OTHER direction and looks deliberate while doing

@@ -8,6 +8,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menu/
  */
+import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { position } from '../utils/floating.js';
 
 // Long-press tuning. 500ms is the platform-conventional touch-hold threshold
@@ -26,7 +27,8 @@ export default function wirekitContextMenu() {
         open: false,
         _focusIndex: -1,
         _navCleanup: null,
-        _otherOpenCleanup: null,
+        // Cross-close channel — see utils/overlay-coordination.js.
+        _coordination: null,
         // Stable identity for the "close every other instance" coordination.
         // We previously used `this` for the source check, but Alpine wraps
         // each component in a reactive Proxy and the identity of `this` is
@@ -35,14 +37,12 @@ export default function wirekitContextMenu() {
         // call site). A plain Symbol() created once in init() is bulletproof
         // — it's a primitive value, never proxied, and `===` comparison is
         // identity-based, so each instance gets its own unforgeable token.
-        _uid: null,
         // Long-press (touch) state.
         _pressTimer: null,
         _pressStartX: 0,
         _pressStartY: 0,
 
         init() {
-            this._uid = Symbol('wirekitContextMenu');
             this._navCleanup = () => this._forceClose();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
 
@@ -52,12 +52,10 @@ export default function wirekitContextMenu() {
             // siblings live in the same page (e.g. one per table row). The event
             // carries the opening instance's Symbol as `detail.source` so each
             // instance can skip closing itself.
-            this._otherOpenCleanup = (event) => {
-                if (event.detail?.source !== this._uid) {
-                    this._forceClose();
-                }
-            };
-            window.addEventListener('wirekit:context-menu-open', this._otherOpenCleanup);
+            this._coordination = coordinateOverlay({
+                channel: 'wirekit:context-menu-open',
+                onOther: () => this._forceClose(),
+            });
 
             // Close on page scroll — the panel is fixed at the pointer position, so
             // a scroll strands it detached from the row it belongs to (same class
@@ -77,9 +75,8 @@ export default function wirekitContextMenu() {
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
-            if (this._otherOpenCleanup) {
-                window.removeEventListener('wirekit:context-menu-open', this._otherOpenCleanup);
-            }
+            this._coordination?.stop();
+            this._coordination = null;
             if (this._onScroll) {
                 window.removeEventListener('scroll', this._onScroll, { capture: true });
                 this._onScroll = null;
@@ -104,13 +101,10 @@ export default function wirekitContextMenu() {
          * @param {number} clientY
          */
         async _openAtCoords(clientX, clientY) {
-            // Broadcast BEFORE flipping `open` so other instances close first.
-            // The `source: this._uid` payload (a stable Symbol per instance)
-            // lets sibling instances skip self-closing without relying on
-            // Alpine's Proxy-wrapped `this` identity.
-            window.dispatchEvent(new CustomEvent('wirekit:context-menu-open', {
-                detail: { source: this._uid },
-            }));
+            // Announced BEFORE flipping `open`, so a sibling is already closing
+            // while this one renders. The helper carries the identity that keeps
+            // this instance from closing itself on its own announcement.
+            this._coordination?.announce();
 
             this.open = true;
             this._focusIndex = -1;

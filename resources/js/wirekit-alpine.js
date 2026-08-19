@@ -50,6 +50,7 @@ import wirekitClipboardButton from './components/clipboard-button.js';
 import wirekitReplayButton from './components/replay-button.js';
 import wirekitAccordion from './components/accordion.js';
 import wirekitTreeViewNode from './components/tree-view-node.js';
+import wirekitScrollFade from './components/scroll-fade.js';
 import wirekitScrollToTop from './components/scroll-to-top.js';
 import wirekitDropdownTrigger from './components/dropdown-trigger.js';
 import wirekitCodeBlock from './components/code-block.js';
@@ -185,6 +186,7 @@ if (alreadyHasAlpine()) {
     Alpine.data('wirekitReplayButton', wirekitReplayButton);
     Alpine.data('wirekitAccordion', wirekitAccordion);
     Alpine.data('wirekitTreeViewNode', wirekitTreeViewNode);
+    Alpine.data('wirekitScrollFade', wirekitScrollFade);
     Alpine.data('wirekitScrollToTop', wirekitScrollToTop);
     Alpine.data('wirekitDropdownTrigger', wirekitDropdownTrigger);
     Alpine.data('wirekitCodeBlock', wirekitCodeBlock);

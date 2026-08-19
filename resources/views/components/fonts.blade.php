@@ -192,7 +192,24 @@
     </style>
 @endforeach
 
-{{-- CSS Custom Properties — always rendered so components can reference them.
+{{-- CSS Custom Properties — one declaration per CONFIGURED category, and nothing
+     for the others.
+
+     It used to write all three unconditionally, with a hardcoded stack standing in
+     for an unconfigured category. Those stand-ins were SHORTER than what
+     `dist/wirekit.css` ships for the same token — `ui-monospace, monospace` against
+     the stylesheet's `ui-monospace, 'Fira Code', 'Cascadia Code', monospace`, and
+     the sans stack lost Inter and -apple-system. Both are unlayered `:root` at the
+     same specificity, so whichever came second won: place this component after
+     `@wirekitStyles` — which is what the integration page's own ordering leads to —
+     and the monospace stack silently loses two families. Nothing throws, the HTML is
+     identical either way, and it shows only to a reader who has those fonts
+     installed. A consuming project found it by reading the computed cascade.
+
+     A declaration whose only job is to restate the shipped default has no job. Now
+     an unconfigured category emits nothing and the stylesheet's own value stands,
+     from any position.
+
      The nonce is what keeps this block alive once an application drops
      'unsafe-inline' from style-src: from CSP Level 2 on, a nonce anywhere in a
      directive makes the browser ignore 'unsafe-inline' in that same directive, so
@@ -201,8 +218,15 @@
      system font, which passes every HTML comparison and every header assertion. --}}
 <style @if($wkNonce) nonce="{{ $wkNonce }}" @endif>
     :root {
-        --font-wk-sans: {!! $sansPreset ? $sansPreset->fontFamily() : 'ui-sans-serif, system-ui, sans-serif' !!};
+        @if($sansPreset)--font-wk-sans: {!! $sansPreset->fontFamily() !!};@endif
+        {{-- Serif is the exception, and it is a fact about the stylesheet rather
+             than a choice: `dist/wirekit.css` declares `--font-wk-sans` and
+             `--font-wk-mono` and NOT `--font-wk-serif`. Omitting the other two
+             lets a better value stand; omitting this one would leave the token
+             undefined and drop every serif surface to the browser default.
+             `FontSystemTest` pins exactly that split, so if the stylesheet ever
+             gains a serif declaration the test says to delete this line. --}}
         --font-wk-serif: {!! $serifPreset ? $serifPreset->fontFamily() : 'ui-serif, Georgia, serif' !!};
-        --font-wk-mono: {!! $monoPreset ? $monoPreset->fontFamily() : 'ui-monospace, monospace' !!};
+        @if($monoPreset)--font-wk-mono: {!! $monoPreset->fontFamily() !!};@endif
     }
 </style>

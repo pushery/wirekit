@@ -6,8 +6,6 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
-use Pushery\WireKit\Support\BladeParser;
-use Pushery\WireKit\Support\ClassPropsExtractor;
 use Pushery\WireKit\Support\DocsVisibility;
 use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\VersionResolver;
@@ -66,7 +64,6 @@ class ExportJsonCommand extends Command
                 continue;
             }
 
-            $bladePath = $this->resolveBladePath($name);
             // ComponentRegistry::extractProps() is THE single source of
             // truth for prop extraction. It routes anonymous components
             // through PropsParser (reads @props([...])) and class-based
@@ -82,11 +79,13 @@ class ExportJsonCommand extends Command
             // as additional excludes so the emitted slots array reflects only
             // genuine template slots.
             $componentClass = ComponentRegistry::componentClass($name);
-            $classPublicProps = $componentClass !== null
-                ? ClassPropsExtractor::publicPropertyNames($componentClass)
-                : [];
-            $slots = $bladePath !== null ? $this->extractSlots($bladePath, $classPublicProps) : [];
-            $subComponents = $this->describeSubComponents($name);
+            // Slots and sub-component descriptions both live on the registry now.
+            // They were private here, which is why the MCP catalog simply had no
+            // answer for either — a second implementation was the only way to get
+            // one, and a second implementation is how the Blade-path resolvers
+            // came to disagree in the first place.
+            $slots = ComponentRegistry::slotsOf($name);
+            $subComponents = ComponentRegistry::describeSubComponentsOf($name);
 
             // docs_url resolves to a publicly visitable page on
             // docs.wirekit.app. When the component's dedicated docs page
@@ -178,30 +177,6 @@ class ExportJsonCommand extends Command
     }
 
     /**
-     * Locate the Blade file for a component by name.
-     * Handles flat names (button.blade.php) AND dotted sub-component names
-     * (card.header → card/header.blade.php).
-     */
-    private function resolveBladePath(string $name): ?string
-    {
-        $base = __DIR__.'/../../resources/views/components/';
-
-        // Flat name first
-        $flat = $base.$name.'.blade.php';
-        if (file_exists($flat)) {
-            return $flat;
-        }
-
-        // Dotted sub-component → directory + file
-        $dotted = $base.str_replace('.', '/', $name).'.blade.php';
-        if (file_exists($dotted)) {
-            return $dotted;
-        }
-
-        return null;
-    }
-
-    /**
      * Parse named-slot references from a Blade file. Returns the
      * metadata-rich shape (`list<array{name, required}>`) per slot so
      * the schema can flag required slots — popover / hover-card /
@@ -212,18 +187,6 @@ class ExportJsonCommand extends Command
      *
      * @return list<array{name: string, required: bool}>
      */
-    /**
-     * @param  list<string>  $additionalExcludes  Class-side public-property
-     *                                            names for class-based
-     *                                            components. Empty for
-     *                                            anonymous Blade components.
-     */
-    private function extractSlots(string $bladePath, array $additionalExcludes = []): array
-    {
-        $contents = (string) file_get_contents($bladePath);
-
-        return BladeParser::extractSlotsWithMetadataFromSource($contents, $bladePath, $additionalExcludes);
-    }
 
     /**
      * Discover sub-components by scanning the sibling directory
@@ -237,35 +200,6 @@ class ExportJsonCommand extends Command
      *
      * @return list<string>
      */
-    /**
-     * The parent's sub-components, each with the props it actually declares.
-     *
-     * Before: a list of bare name strings. That told a tool the name existed and
-     * nothing else — so `table.th`'s `headerScope`, shipped and documented in
-     * 2.16.0, was unreachable through the manifest, `.wirekit-schema.json`, and
-     * every tool fed by them. A name without its props is not discovery; it is a
-     * pointer to documentation the tool cannot read.
-     *
-     * Discovery itself lives in ComponentRegistry. It used to live here AND in
-     * the show command AND nowhere in the MCP catalog — three answers to one
-     * question, which is how the MCP surface ended up simply not having one.
-     *
-     * @return list<array{name: string, tag: string, props: list<array<string, mixed>>}>
-     */
-    private function describeSubComponents(string $name): array
-    {
-        $out = [];
-
-        foreach (ComponentRegistry::subComponentsOf($name) as $sub) {
-            $out[] = [
-                'name' => $sub,
-                'tag' => "<x-wirekit::{$sub}>",
-                'props' => ComponentRegistry::extractProps($sub),
-            ];
-        }
-
-        return $out;
-    }
 
     /**
      * Resolve the running WireKit version. Delegates to VersionResolver so

@@ -13,17 +13,19 @@
  * End all walk past them. A keyboard user who lands on an option they cannot
  * choose has no way to tell why, so the navigation never stops there.
  *
- * **Only one combobox on a page may be open.** Opening one broadcasts on
+ * **Only one combobox on a page may be open.** Opening one announces on
  * `window`, and every other instance closes. Without it a long option list
  * spills over the next combobox — visible on any page that stacks two. The
- * identity carried in that event is a Symbol created per instance, because it
- * has to survive Alpine's proxy wrapping and must not be forgeable by a value
- * that happens to be equal.
+ * mechanism is shared with every other dropdown-like overlay now; see
+ * `utils/overlay-coordination.js` for why the announcement carries an
+ * identity and why the channel is per-component rather than global.
  *
  * @param {Object} config
  * @param {*}      config.value    the initially selected option's value
  * @param {Array}  config.options  normalized `{ value, label, group?, disabled? }`
  */
+import { coordinateOverlay } from '../utils/overlay-coordination.js';
+
 export default function wirekitCombobox(config = {}) {
     return {
         open: false,
@@ -32,8 +34,8 @@ export default function wirekitCombobox(config = {}) {
         highlight: 0,
         allOptions: Array.isArray(config.options) ? config.options : [],
 
-        _uid: null,
-        _otherOpenCleanup: null,
+        // Cross-close channel — see utils/overlay-coordination.js.
+        _coordination: null,
 
         get filtered() {
             if (this.query === '') {
@@ -91,23 +93,18 @@ export default function wirekitCombobox(config = {}) {
                 this.query = match.label;
             }
 
-            this._uid = Symbol('wirekitCombobox');
-            this._otherOpenCleanup = (event) => {
-                if (event.detail && event.detail.source !== this._uid && this.open) {
-                    this.open = false;
-                }
-            };
-            window.addEventListener('wirekit:combobox-open', this._otherOpenCleanup);
+            this._coordination = coordinateOverlay({
+                channel: 'wirekit:combobox-open',
+                onOther: () => { this.open = false; },
+            });
 
-            // Broadcast on every transition into the open state so siblings close.
+            // Announce on every transition into the open state so siblings close.
             this.$watch('open', (val) => {
                 if (! val) {
                     return;
                 }
 
-                window.dispatchEvent(new CustomEvent('wirekit:combobox-open', {
-                    detail: { source: this._uid },
-                }));
+                this._coordination.announce();
 
                 // Anchor the panel once it is shown. `fixed` lets it escape a
                 // clipping card; wirekitPosition carries the field width over
@@ -183,10 +180,8 @@ export default function wirekitCombobox(config = {}) {
         },
 
         destroy() {
-            if (this._otherOpenCleanup) {
-                window.removeEventListener('wirekit:combobox-open', this._otherOpenCleanup);
-                this._otherOpenCleanup = null;
-            }
+            this._coordination?.stop();
+            this._coordination = null;
         },
 
         // ── Opening ─────────────────────────────────────────────────────────
