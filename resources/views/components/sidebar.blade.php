@@ -19,6 +19,16 @@
     // a full-bleed column with a radius shows a sliver of the page at each corner.
     // Default stays `card` so no existing sidebar changes.
     'variant' => 'card',
+    // The surface tone, on the same `--color-wk-rail-*` roles the module rail reads —
+    // minus `accent`, for the reason spelled out where the value is validated. `default` is every sidebar that
+    // exists today and is byte-identical to it; the other tones let the second
+    // navigation column carry its own color, which is what a console shell needs when
+    // its rail is dark chrome and the content is a light sheet.
+    //
+    // Shared roles rather than a private `--color-wk-sidebar-*` set on purpose: a rail
+    // and the column beside it must agree about a color, and two components that must
+    // agree should not each own a copy of it.
+    'tone' => 'default',
     // Where the auto-rendered collapse toggle sits, or `none` to omit it and
     // supply your own. `none` keeps the state machinery here — a developer who
     // wanted the trigger elsewhere previously had to switch `collapsible` off and
@@ -80,6 +90,22 @@
         ? []
         : ['aria-label' => $label];
 
+    // MERGED into the bag rather than written as a conditional attribute on the tag.
+    // `<nav @if(…) data-wk-tone=… @endif {{ $attributes }}>` leaves the spaces around the
+    // conditional behind when it is false, so an untoned sidebar rendered `<nav  aria-label=`
+    // with two spaces — byte-different from what it always emitted, which a case asserting
+    // the classic sidebar is unchanged caught immediately. Merging keeps the untoned output
+    // identical and costs nothing.
+    // ONE merge, not two chained ones: a second `->merge()` call re-orders the rendered
+    // attributes (class moved ahead of aria-label), which is byte-different output for a
+    // sidebar nobody toned. The union keeps the label first, exactly where it always was.
+    $navLabelAttrs += $tone === 'default' ? [] : ['data-wk-tone' => $tone];
+
+    // Published so the token remap in dist/wirekit.css can tell a FLUSH column — which
+    // paints nothing and therefore sits on whatever chrome is behind it — from a CARD, which
+    // brings its own surface and must keep its own tokens with it.
+    $navLabelAttrs += ['data-variant' => $variant];
+
     // Sidebar root: a semantic <nav> landmark that holds grouped navigation
     // items. Uniform `p-[var(--padding-wk-y-sm)]` (= 0.375rem all four
     // sides) so the OUTER gap between the sidebar border and each item's
@@ -89,6 +115,34 @@
     // than the inner — visually unbalanced.
     $variant = in_array($variant, ['card', 'flush'], true) ? $variant : 'card';
 
+    // NO `accent` here, and the omission is deliberate rather than an oversight.
+    //
+    // A sidebar's contents are ordinary components — items, groups, disclosures, a profile
+    // row — and they read the generic tokens, which a toned column remaps for its subtree.
+    // That works for a tone whose hover and active surfaces are a small tint: the foreground
+    // stays legible on them. It does NOT work for the accent tone, whose hover and active
+    // states INVERT, because a generic component paints its foreground from one token and its
+    // hover surface from another and cannot switch them together. The result would be a label
+    // in exactly the color of the fill behind it.
+    //
+    // The rail is safe there because its items switch both at once, through roles built for
+    // it (`--color-wk-rail-hover-fg` / `-active-fg`). Rather than ship a combination that is
+    // unreadable on five of the bundled themes, the scale here stops at the tones a generic
+    // subtree can carry. A colored second column is expressible by toning the RAIL and
+    // leaving this one neutral, which is what every reference console does anyway.
+    $tone = WireKit::validateProp('sidebar', 'tone', $tone, ['default', 'muted', 'inverse']);
+
+    // A toned column paints from the roles; an untoned one keeps the literals it always
+    // had rather than routing through a variable with the same value. The two resolve
+    // identically today, and that is exactly the reason: a sidebar nobody toned must not
+    // start depending on a token a developer might repoint for their rail.
+    $toneSurface = $tone === 'default'
+        ? 'bg-[var(--color-wk-bg-elevated)]'
+        : 'bg-[var(--color-wk-rail-bg)]';
+    $toneBorder = $tone === 'default'
+        ? 'border-[var(--color-wk-border)]'
+        : 'border-[var(--color-wk-rail-border)]';
+
     // The surface half, split out so the two shapes read as alternatives rather
     // than as a base with exceptions bolted on. `border-e` is the LOGICAL
     // inline-end edge, so a right-to-left document gets the separator on the side
@@ -96,7 +150,7 @@
     $surface = $variant === 'flush'
         ? [
             'border-e-[length:var(--border-wk-width)]',
-            'border-[var(--color-wk-border)]',
+            $toneBorder,
             // Fills its column. Only the browser showed why this is needed: the edge
             // is drawn on THIS element, so a nav sized to its content ends the
             // separator wherever the last item happens to fall — measured 200px of
@@ -104,17 +158,33 @@
             // as a short list. The card variant must NOT have it, because a card is
             // supposed to be as tall as its content.
             'h-full',
+            // A flush column deliberately paints NOTHING by default — flush means the
+            // host's background IS the column's. A toned one has to paint, or the tone it
+            // was given is simply not there. Emitted only when toned, so the default
+            // flush column is unchanged.
+            ...($tone === 'default' ? [] : [$toneSurface]),
         ]
         : [
-            'bg-[var(--color-wk-bg-elevated)]',
+            $toneSurface,
             'border-[length:var(--border-wk-width)]',
-            'border-[var(--color-wk-border)]',
+            $toneBorder,
             'rounded-[var(--radius-wk-lg)]',
         ];
 
     $classes = WireKit::resolveClasses('sidebar', 'base', implode(' ', [
+        // Marker class. The tone remap in dist/wirekit.css addresses the column through
+        // it, and the browser tests address it too — a `group/wk-sidebar` name is a
+        // Tailwind grouping handle, not something a stylesheet or a probe can select.
+        'wk-sidebar',
+        // Publishes what this column pads its children by, so a chrome band placed in a zone
+        // can cancel it without hardcoding the token. See shell-bar's `bleed`.
+        '[--wk-nav-pad:var(--padding-wk-y-sm)]',
         'flex flex-col',
-        'gap-[var(--space-wk-sm)]',
+        // No gap between the zones, and that is the fix rather than an omission. This
+        // gap spaced head-from-scroller and scroller-from-foot, so the first row sat a
+        // full 8px lower than the rail's first module before its own spacing even began.
+        // The scroller pads itself now — exactly as the rail's does — which puts the two
+        // columns on one rhythm instead of two that happen to look close.
         'p-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-sm)]',
         ...$surface,

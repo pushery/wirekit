@@ -1,7 +1,12 @@
-{{-- optimistic-ui: n/a — presentational
-     Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+{{-- optimistic-ui: n/a — client-only
+     Its own state is which row currently holds focus, and that is not a value a server
+     owns — there is nothing to anticipate and nothing to roll back. The rows themselves
+     may each carry an optimistic action; that belongs to the row, not to the container.
+
+     It said "presentational" until the panel took over the menu's keyboard model, and the
+     guard refused it: an element carrying a keydown handler is interactive, so "renders no
+     interactive element" stopped being true the moment the binding landed. The claim is
+     measured against the file rather than trusted, which is the point of that arm. --}}
 @props([
     'width' => config('wirekit.components.dropdown.panel.width', 'auto'),
     'scope' => null,
@@ -75,6 +80,22 @@
          is exactly the value that cannot agree across two renders. --}}
     wire:key="wk-dropdown-panel"
     x-ref="panel"
+    {{-- The menu keyboard model is bound HERE, on the panel, and not only on the wrapper.
+
+         `x-teleport` MOVES this element to `#wk-overlay-root`; it does not re-route the
+         events it fires. So once focus is on a menu item, a keydown bubbles from here to
+         the overlay root and on to the document, and never passes through the dropdown
+         wrapper at all — where `x-on:keydown="handleKeydown"` was the only binding. Arrow
+         keys, Home and End did nothing, in EVERY dropdown, for as long as the panel has
+         teleported. The wrapper binding is kept because it is what serves a keypress made
+         while focus is still on the trigger.
+
+         The Escape handler two files over already documents this exact mechanism from a
+         different angle — it is bound `.window` and works. This is the same fix applied to
+         the keys that stayed broken.
+
+         It cannot double-fire: a node outside the wrapper cannot bubble through it. --}}
+    x-on:keydown="handleKeydown"
     x-show="open"
     {{-- The id is set from the factory (`_applyPanelId`), not bound here.
          `x-bind:id="panelId"` read the value out of the Alpine scope, which is right

@@ -109,9 +109,29 @@
 @endphp
 
 {{-- Callout: persistent inline notice for documentation-style content.
-     Uses <aside> for semantic landmark (complementary content).
-     Visually denser than Alert; opt-in one-sided accent stripe via `stripe`. --}}
-<aside {{ $attributes->class([$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden']) }} @if($animateAttr) {!! $animateAttr !!} @endif>
+     Visually denser than Alert; opt-in one-sided accent stripe via `stripe`.
+
+     A PLAIN <div>, and the two roles it deliberately does NOT take:
+
+     It used to be an <aside>, for "semantic landmark (complementary content)". An <aside>
+     IS a landmark — role="complementary" — and a page already has one: the shell's own
+     sidebar. Showing a callout therefore put two same-role landmarks on the page with no
+     distinguishing name, and axe fails that. Worse, the violation it reports points at the
+     SIDEBAR, so the first place anyone looks is the wrong one. `complementary` is reserved
+     for a self-contained section significant to the page; a note in the flow of the text is
+     neither.
+
+     It is also NOT role="status" or role="alert", which is what the report proposed. Both
+     are live regions. This component is persistent content that is already present when the
+     page loads, so a live region announces nothing at load — and then announces the ENTIRE
+     callout every time Livewire re-renders the element, though nothing about it changed.
+     That trades a landmark warning for spurious speech, which is the worse defect.
+     Something that genuinely arrives and demands attention is what <x-wirekit::alert> is.
+
+     So: no landmark, no live region. The heading and the text are read in document order,
+     the icon is aria-hidden, and the intent is carried by the words rather than by a role
+     a screen reader would have to interrupt for. --}}
+<div {{ $attributes->class([$baseClasses, $variantColors['border'], $variantColors['bg'], 'overflow-hidden']) }} @if($animateAttr) {!! $animateAttr !!} @endif>
     @if($stripe)
         {{-- Opt-in accent stripe: a one-sided colored bar, OFF by default. The
              plain callout is the alert-style 4-sided tinted border; the bar is
@@ -144,4 +164,4 @@
             <div class="mt-3 flex flex-wrap items-center gap-2">{{ $actions }}</div>
         @endisset
     </div>
-</aside>
+</div>

@@ -168,17 +168,17 @@
 
     $baseClasses = WireKit::resolveClasses('countdown', 'base', implode(' ', [
         $variantValue === 'segments'
-            // flex-wrap, weil die Segmente eine harte Mindestbreite tragen
-            // (min-w-[3.5rem] je Box). Ohne Umbruch braucht die Zeile mit fünf
-            // Einheiten 398px und ragt auf einem 393px-Gerät 29px über ihren
-            // Elternteil hinaus — gemessen, nicht geschätzt. Umbrechen ist die
-            // einzige Anpassung, die die Boxgröße erhält; Schrumpfen würde die
-            // Ziffern unlesbar machen.
-            // Das px-… hält Platz fuer die eigene Animation vor: der Box-Puls
-            // laeuft ueber transform: scale(1.08), eine 90px-Box waechst dadurch
-            // um gut 7px, also ~3.6px je Seite — genau der 3px-Ueberlauf, den der
-            // Mobile-Sweep an der aeussersten Box gemeldet hat. Den Puls kleiner
-            // zu machen waere eine Designaenderung; Raum vorzuhalten ist keine.
+            // flex-wrap, because a segment carries a hard minimum width
+            // (min-w-[3.5rem] per box). Without wrapping, a row of five units
+            // needs 398px and overruns its parent by 29px on a 393px device —
+            // measured, not estimated. Wrapping is the only adjustment that
+            // keeps the box size; shrinking would make the digits unreadable.
+            // The horizontal padding holds room for the component's own
+            // animation: the box pulse runs through transform: scale(1.08), so
+            // a 90px box grows by a little over 7px — about 3.6px per side,
+            // which is exactly the 3px overflow the mobile sweep reported at
+            // the outermost box. Making the pulse smaller would be a design
+            // change; reserving the room is not.
             ? 'inline-flex flex-wrap items-stretch justify-center gap-[var(--space-wk-sm)] px-[var(--space-wk-xs)]'
             : 'inline-flex items-baseline gap-[var(--space-wk-xs)]',
         'font-[family-name:var(--font-wk-sans)]',

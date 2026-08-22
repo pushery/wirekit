@@ -3,10 +3,33 @@
 @props([
     'items' => [],
     'separator' => config('wirekit.components.breadcrumb.separator', 'chevron'),
+    // Emit BreadcrumbList JSON-LD for this trail.
+    //
+    // Turn it OFF when the page already carries a breadcrumb elsewhere — a shell's top bar and
+    // the content body is the common case. A page must carry exactly ONE BreadcrumbList, and
+    // two of them compete rather than combine: a crawler shown two trails for one URL picks
+    // one, or neither.
+    //
+    // Defaults ON so nothing about an existing single breadcrumb changes. Same shape and same
+    // reasoning as the FAQ component's own `schema` prop, which is the house pattern for a
+    // component that emits structured data without being asked.
+    //
+    // (Its tag is deliberately NOT written here. Blade is a text preprocessor and does not
+    // know it is inside a PHP comment: an `x-wirekit::` tag in one gets COMPILED, and the
+    // compiled construct lands in the middle of this array. The failure reads "Undefined
+    // variable $component" and points at the render rather than at the sentence.)
+    'schema' => true,
     'scope' => null,
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `schema="false"` would otherwise KEEP emitting. Normalized against the prop's own
+    // default so a cast never leaves a second BreadcrumbList competing with the first.
+    $schema = BooleanProp::from($schema, true);
+
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -100,7 +123,7 @@
      omitted JSON_HEX_TAG — a user-controlled item label containing
      </script> could break out of the JSON-LD block (real XSS). The
      structured-data component bakes JSON_HEX_TAG in. --}}
-@if(count($items) > 0)
+@if($schema && count($items) > 0)
     @php
         $breadcrumbLdData = [
             '@context' => 'https://schema.org',
@@ -115,6 +138,9 @@
                 'position' => $i + 1,
                 'name' => $itemLabel,
             ];
+            // The LAST crumb is the current page, and it deliberately carries no `item`.
+            // Google's guidance: the page one is already on is named but not linked, so a
+            // trail whose final entry has a URL reads as pointing somewhere else.
             if ($itemHref) {
                 $entry['item'] = $itemHref;
             }

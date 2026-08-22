@@ -1,0 +1,278 @@
+{{-- optimistic-ui: n/a — client-only
+     Its state is whether the rail shows its labels. That is not a value a server owns,
+     so there is nothing to anticipate and nothing to roll back. --}}
+@props([
+    // How an item names itself.
+    //   tooltip — icon only; the label is the link's accessible name and appears on
+    //             hover/focus in a tooltip. The narrowest form, and the default.
+    //   below   — a caption under the icon. Wider, and it removes the hover
+    //             dependency, which matters on touch where hover does not exist.
+    //   inline  — the label beside the icon, in a wide rail. This is the shape a
+    //             single-column application wants when the rail IS the navigation.
+    'labels' => 'tooltip',
+    // Adds a toggle that widens the rail to `inline` labels and back, persisting the
+    // choice. Orthogonal to `labels`: the toggle switches between the width `labels`
+    // selects and the expanded width, so `labels="below"` plus `expandable` gives
+    // captions that become full labels.
+    'expandable' => false,
+    // Initial state on a first visit, before storage answers.
+    'expanded' => false,
+    // localStorage key. Null keeps the choice for the session only.
+    'persist' => null,
+    // The surface. Each tone re-points the `--color-wk-rail-*` roles in
+    // dist/wirekit.css; every class below reads only those, so a tone is a change of
+    // variables rather than a parallel set of utilities. Override the roles in your
+    // own CSS to reskin one tone, or the `:root` defaults to reskin them all.
+    'tone' => 'default',
+    // Shape. `flush` is the edge-to-edge chrome column with a single inline-end
+    // edge. `panel` is the floating rounded strip that sits ON the page with a gap
+    // around it — the shape that pairs with the app-shell's own `panel` prop.
+    // (The component tag is deliberately NOT written here. Blade is a text preprocessor
+    // and does not know it is inside a PHP comment: an `x-wirekit::` tag in one gets
+    // COMPILED, and the compiled component construct lands in the middle of this array.
+    // The failure reads "unexpected token" at a line that has nothing to do with it.)
+    'variant' => 'flush',
+    // How the current module is marked. `pill` fills the item's own box. `edge` draws
+    // a bar on the inline-end edge of the rail, pointing at the column it selects —
+    // which reads better when the rail is very narrow and a filled box would dominate.
+    'indicator' => 'pill',
+    // Accessible name for the navigation landmark. A console shell has TWO <nav>
+    // landmarks side by side, and a screen-reader user moving between landmarks
+    // cannot tell them apart unless each says what it is. Passing aria-label or
+    // aria-labelledby directly wins over this default and suppresses it, so the
+    // element never carries two conflicting names.
+    'label' => __('Modules'),
+    'scope' => null,
+])
+
+@php
+    use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\WireKit;
+
+    // Dev-only — flags unknown props in debug (silent in prod). Declared list
+    // auto-derived from this component's @props. Fully qualified: this view's
+    // imports may live in a later @php block, which does not reach this one.
+    \Pushery\WireKit\WireKit::warnUnknownProps('app-rail', $attributes->getAttributes());
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `expandable="false"` would otherwise turn the toggle ON. Normalize against each
+    // prop's own default so a cast never engages a mode that was meant off.
+    $expandable = BooleanProp::from($expandable, false);
+    $expanded = BooleanProp::from($expanded, false);
+
+    $labels = WireKit::validateProp('app-rail', 'labels', $labels, ['tooltip', 'below', 'inline']);
+    $tone = WireKit::validateProp('app-rail', 'tone', $tone, ['default', 'muted', 'inverse', 'accent']);
+    $variant = WireKit::validateProp('app-rail', 'variant', $variant, ['flush', 'panel']);
+    $indicator = WireKit::validateProp('app-rail', 'indicator', $indicator, ['pill', 'edge']);
+
+    // The resting width, one per labeling mode. Set on the nav itself rather than on
+    // the shell's column: the column is `w-auto`, so this measurement is the single
+    // place a rail width is decided and the column follows it — including while the
+    // expand transition is mid-flight.
+    //
+    // Every one of them carries `--wk-rail-gutter`, which is 0 everywhere except beside an
+    // inset content panel. There the shell's gap belongs to this column rather than sitting
+    // between the two: the column's horizontal rules have to REACH the panel, or the shell's
+    // one line arrives at the seam and stops eight pixels short of it. Adding the gap to the
+    // width is what carries the rule across; the matching trailing inset below puts the
+    // modules back exactly where they were, so nothing moves and only the line grows.
+    $restingWidth = match ($labels) {
+        'below' => 'w-[calc(var(--size-wk-rail-labeled,4.75rem)_+_var(--wk-rail-gutter,0px))]',
+        'inline' => 'w-[calc(var(--size-wk-rail-expanded,15rem)_+_var(--wk-rail-gutter,0px))]',
+        default => 'w-[calc(var(--size-wk-rail,3.5rem)_+_var(--wk-rail-gutter,0px))]',
+    };
+
+    // The expanded width, as one string, so the `:class` below and the static branch cannot
+    // drift apart — they did once, and the winner was Tailwind's emission order.
+    $expandedWidth = 'w-[calc(var(--size-wk-rail-expanded,15rem)_+_var(--wk-rail-gutter,0px))]';
+
+    $navLabelAttrs = ($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
+        ? []
+        : ['aria-label' => $label];
+
+    // `h-full` is not cosmetic. The inline-end edge is drawn on THIS element, so a nav
+    // sized to its content ends the separator wherever the last module happens to
+    // fall — the sidebar learned this in the browser, where 200px of line in a 340px
+    // column read as a rendering fault rather than as a short list.
+    $surface = $variant === 'panel'
+        ? [
+            'rounded-[var(--radius-wk-shell-panel)]',
+            'border-[length:var(--border-wk-width)]',
+            'border-[var(--color-wk-rail-border)]',
+            // The gap that makes it float. A calc height rather than `h-full`, so the panel
+            // keeps the same gap top and bottom instead of running off the shell.
+            //
+            // The utility is deliberately NOT quoted in this sentence. Tailwind scans this
+            // file as text and does not know it is inside a comment, so a bracketed token
+            // written in prose is COMPILED into a real rule — which then shows up as a
+            // compiled selector no source emits, i.e. as drift caused by the note
+            // explaining the code. The drift suite's own docblock records this happening
+            // once already.
+            'm-[var(--space-wk-sm,0.5rem)]',
+            'h-[calc(100%-2*var(--space-wk-sm,0.5rem))]',
+        ]
+        : [
+            'border-e-[length:var(--border-wk-width)]',
+            'border-[var(--color-wk-rail-border)]',
+            'h-full',
+        ];
+
+    $classes = WireKit::resolveClasses('app-rail', 'base', implode(' ', [
+        'wk-rail',
+        // Publishes what this column pads its children by, so the concentric-radius rule and
+        // a bleeding chrome band can both read it instead of hardcoding the token.
+        '[--wk-nav-pad:var(--padding-wk-y-sm)]',
+        'flex shrink-0 flex-col',
+        'bg-[var(--color-wk-rail-bg)]',
+        'text-[color:var(--color-wk-rail-text)]',
+        'font-[family-name:var(--font-wk-sans)]',
+        ...$surface,
+    ]), $scope);
+
+    // The expand toggle. Resolvable rather than a local, for the reason the sidebar's
+    // own toggle records: as a local it could not be themed, moved or replaced, and
+    // the only way to restyle the one chrome control in the component was a selector
+    // against the vendor's child order.
+    $toggleClasses = WireKit::resolveClasses('app-rail', 'toggle', implode(' ', [
+        'inline-flex shrink-0 items-center justify-center',
+        'h-[var(--size-wk-sm,2rem)] w-[var(--size-wk-sm,2rem)]',
+        'rounded-[var(--radius-wk-md)]',
+        'text-[color:var(--color-wk-rail-muted)]',
+        'hover:bg-[var(--color-wk-rail-hover-bg)]',
+        // The foreground ON the fill, not the one on the column. On a tone whose hover
+        // inverts, these are different colors, and reading the column's would paint the
+        // glyph in the same color as the surface behind it.
+        'hover:text-[color:var(--color-wk-rail-hover-fg)]',
+        'focus-visible:outline-none',
+        'focus-visible:ring-[length:var(--ring-wk-width)]',
+        'focus-visible:ring-[var(--color-wk-rail-ring)]',
+        'transition-colors duration-[var(--transition-wk-duration)]',
+        'cursor-pointer',
+    ]), $scope);
+@endphp
+
+<nav
+    data-wk-rail
+    data-labels="{{ $labels }}"
+    data-variant="{{ $variant }}"
+    data-indicator="{{ $indicator }}"
+    @if($tone !== 'default') data-wk-tone="{{ $tone }}" @endif
+    @if($expandable)
+        {{-- The state lives in resources/js/components/app-rail.js. It cannot live in
+             an inline object literal here: Alpine's CSP build cannot declare methods
+             that way, so under a strict policy the toggle would render and do nothing.
+             `persist` goes through AlpinePayload; the boolean is written as a literal
+             because a non-empty payload renders as JSON.parse(…) and JSON is a global
+             the CSP evaluator cannot resolve. --}}
+        x-data="wirekitAppRail({ expanded: {{ $expanded ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
+        :data-expanded="expanded ? '' : null"
+        {{-- ONE attribute drives every per-mode style below, and that is deliberate.
+             Items react through `group-data-[labels=…]/wk-rail:` variants; if the live
+             expanded state were a SECOND attribute those variants also had to answer
+             to, an expanded `labels="below"` rail would carry two utilities of equal
+             specificity for the same property — flex-direction, label visibility, main-
+             axis alignment — and the winner would be decided by Tailwind's emission
+             order rather than by state. Rewriting the mode instead means the expanded
+             rail simply IS an inline-label rail, and there is nothing to arbitrate.
+             The static attribute below stays for the paint before Alpine initializes. --}}
+        :data-labels="expanded ? 'inline' : '{{ $labels }}'"
+        :class="expanded ? '{{ $expandedWidth }}' : '{{ $restingWidth }}'"
+    @endif
+    {{ $attributes->class([
+        $classes,
+        'group/wk-rail',
+        // The width belongs to the static branch only. With `expandable` the same
+        // property is driven by the `:class` above, and emitting both would leave two
+        // width utilities of equal specificity on one element — the winner decided by
+        // Tailwind's emission order rather than by state, which is the exact failure
+        // sidebar.item documents for its active foreground.
+        $restingWidth => ! $expandable,
+        'transition-[width] duration-[var(--transition-wk-duration)]' => $expandable,
+    ])->merge($navLabelAttrs) }}
+>
+    @isset($brand)
+        {{-- The rail's segment of the shell's top rule. `shrink-0` so a long module
+             list can never steal height from it. --}}
+        <div class="shrink-0">
+            {{ $brand }}
+        </div>
+    @endisset
+
+    {{-- The module list. `min-h-0` is the whole trick and leaving it out is the
+         mistake this zone exists to prevent: a flex item's automatic minimum size is
+         its content, so without it the middle refuses to shrink, the column grows past
+         the rail, and the brand and footer scroll away with the list. The symptom
+         reads as "the scroll region is missing" when in fact everything scrolled.
+
+         No tabindex/role/label of its own: it is a direct child of the <nav> landmark,
+         which carries its own accessible name, and every module inside it is a
+         focusable <a>. Landmark navigation reaches the region and Tab reaches its
+         contents, so an extra stop would announce nothing new — the same shape the
+         sidebar's own scroller is exempt under. --}}
+    <div
+        data-wk-rail-scroller
+        class="wk-scrollbar flex min-h-0 flex-1 flex-col gap-[var(--space-wk-nav-gap)] overflow-y-auto py-[var(--padding-wk-y-sm)] ps-[var(--wk-rail-inset-start,var(--padding-wk-y-sm))] pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))]"
+    >
+        {{ $slot }}
+    </div>
+
+    @if(isset($footer) || $expandable)
+        {{-- The bottom block: account, help, search — the cluster every one of these rails
+             puts there — and, last of all, the expand toggle.
+
+             THE TOGGLE IS AT THE BOTTOM, and that is a correction rather than a preference.
+             It used to sit directly under the brand mark, which is the most valuable row in
+             the whole column: the eye lands there first, and the first thing it found was a
+             chevron rather than the workspace. Expanded it was worse — it took the row where
+             the workspace name belongs. A control that changes the column's WIDTH is chrome,
+             and chrome goes where chrome goes.
+
+             It shares this block with the footer rather than getting its own, so the rail
+             keeps ONE separator line at the bottom instead of two. The block is emitted when
+             either exists, so an expandable rail with no footer still has somewhere to put
+             it, and a rail with neither has no empty band. --}}
+        <div class="shrink-0 relative border-t-[length:var(--border-wk-width)] border-[var(--color-wk-rail-border)] py-[var(--padding-wk-y-sm)] ps-[var(--wk-rail-inset-start,var(--padding-wk-y-sm))] pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))] flex flex-col gap-[var(--space-wk-nav-gap)]">
+            @isset($footer)
+                {{-- The trailing inset only exists while the rail is wide AND the toggle has
+                     moved onto this row — it is the room the toggle occupies, so the two
+                     belong to the same condition. --}}
+                <div @class([
+                    'flex flex-col gap-[var(--space-wk-nav-gap)]',
+                    'group-data-[expanded]/wk-rail:pe-[2.25rem]' => $expandable,
+                ])>
+                    {{ $footer }}
+                </div>
+            @endisset
+
+            @if($expandable)
+                <div @class([
+                    'flex',
+                    // Centered while the rail is narrow, pushed to the trailing edge once it
+                    // is wide — where a collapse control is expected, and clear of the names.
+                    'justify-center group-data-[expanded]/wk-rail:justify-end',
+                    // Expanded, it stops being a ROW of its own and sits at the end of the
+                    // last footer row instead. A control that changes the column's width was
+                    // spending a full navigation row on itself — the most expensive way to
+                    // present the least important thing in the column.
+                    //
+                    // Only when a footer exists: with nothing else in this block, taking the
+                    // toggle out of flow leaves the block with no content to give it height,
+                    // and the button hangs outside a collapsed band.
+                    'group-data-[expanded]/wk-rail:absolute group-data-[expanded]/wk-rail:bottom-[var(--padding-wk-y-sm)] group-data-[expanded]/wk-rail:end-[var(--padding-wk-y-sm)]' => isset($footer),
+                ])>
+                    <button
+                        type="button"
+                        x-on:click="toggle()"
+                        :aria-expanded="expanded ? 'true' : 'false'"
+                        :aria-label="expanded ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Collapse rail')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Expand rail')) }}"
+                        class="{{ $toggleClasses }}"
+                    >
+                        <svg class="h-4 w-4 transition-transform duration-[var(--transition-wk-duration)]" :class="expanded ? '' : 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 4.5 11.25 12l7.5 7.5m-7.5-15L3.75 12l7.5 7.5" />
+                        </svg>
+                    </button>
+                </div>
+            @endif
+        </div>
+    @endif
+</nav>

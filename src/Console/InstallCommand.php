@@ -11,6 +11,8 @@ use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\ClassPropsExtractor;
+use Pushery\WireKit\Support\DocsVisibility;
+use Pushery\WireKit\Support\InstallLog;
 use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\Support\TailwindVersion;
@@ -475,9 +477,10 @@ class InstallCommand extends Command
     /**
      * Finalize the install log. Successful installs flush the pending
      * entries to base_path('.wirekit-install.log') as a JSON-Lines file
-     * (one entry per line, append-only). Failed installs discard the
-     * pending entries — they reflect partial state that rollback
-     * wouldn't know how to reason about.
+     * (one entry per line, append-only within the retained window — see
+     * InstallLog::SESSIONS_KEPT). Failed installs discard the pending
+     * entries — they reflect partial state that rollback wouldn't know
+     * how to reason about.
      */
     private function closeInstallLog(bool $failed): void
     {
@@ -495,7 +498,9 @@ class InstallCommand extends Command
         $lines[] = json_encode($sessionHeader, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         try {
-            File::append($logPath, implode("\n", $lines)."\n");
+            // Through InstallLog rather than File::append, because the write and the window
+            // belong together: an append that does not trim is the unbounded form this had.
+            InstallLog::append($logPath, implode("\n", $lines));
             $this->line('  <fg=gray>i</> Install actions recorded in .wirekit-install.log (use `wirekit:install --rollback` to reverse).</>');
         } catch (\Throwable $e) {
             // Log-write is non-fatal — installs still succeed.
@@ -1370,7 +1375,16 @@ CSS;
                     'tag' => ComponentRegistry::tag($name),
                     'category' => $meta['category'],
                     'description' => $meta['description'],
-                    'docs_url' => WireKit::DOCS_URL."/components/{$name}",
+                    // Nulled for a component with no published page of its own, the
+                    // same way `wirekit:export-json` does it. Sixteen registry
+                    // entries are documented on a parent page rather than their
+                    // own — the reading-* parts, `glass`, `toast-region`,
+                    // `kanban-column` and their kind — and this file lands in the
+                    // developer's project root as an editor/AI feed. A URL that
+                    // 404s there is worse than no URL: the tool follows it.
+                    'docs_url' => DocsVisibility::componentPageStatus($name) === DocsVisibility::STATUS_PUBLIC
+                        ? WireKit::DOCS_URL."/components/{$name}"
+                        : null,
                     'props' => $props,
                     'slots' => $slots,
                     'sub_components' => $subComponents,

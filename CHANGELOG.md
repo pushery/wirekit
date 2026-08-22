@@ -10,6 +10,143 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.34.0] — 2026-08-22
+
+Minor release. It adds the pieces an application shell was missing — a module rail, a column
+head, and the switcher that says what the page is about — and fixes a set of defects across
+charts, overlays, pagination and the CLI.
+
+### Added
+
+- **[`app-rail`](https://docs.wirekit.app/components/app-rail) — the full-height module rail,
+  with `app-rail.item`, `app-rail.group` and `app-rail.brand`.** The narrow column of icons an
+  application puts its top-level areas in. It has three label modes — a tooltip beside the icon,
+  a caption under it, or the name inline once the rail is wide — and it never truncates: a rail
+  wide enough for captions wraps them instead, because a navigation whose labels are cut off is
+  a navigation you have to guess at. The brand row centers while the rail is an icon strip and
+  aligns to the column's spine once it is wide, and the workspace name is uncovered as the rail
+  widens rather than appearing in the first frame of the animation. A current-module marker
+  (`edge`) sits inside the row it marks, and a counter badge reads rail-specific colors so it
+  stays visible on a toned column. The collapse toggle sits at the bottom, in the footer block,
+  and takes no navigation row of its own when the rail is expanded.
+- **[`shell-bar`](https://docs.wirekit.app/components/shell-bar) — the aligned column head that
+  draws an app shell's top rule.** Every column in a shell draws that rule at the same height,
+  from the same component, off the same token, which is what makes one line across all the
+  columns. It carries three clusters: a pinned `start`, a scrolling middle, and an end. The
+  `start` slot exists because the middle one scrolls — a hamburger or a back arrow placed there
+  scrolls away with the tabs the moment the bar overflows, which on a phone is immediately. The
+  scrolling cluster draws no scrollbar of its own, since the bar's bottom edge is the shell's
+  rule and a track drawn there is a second, shorter line a few pixels under the real one; it
+  still scrolls by touch, wheel and Tab.
+- **[`app-shell`](https://docs.wirekit.app/components/app-shell) takes `panel` and `tone`.**
+  `panel` insets the content into a rounded sheet that stands on the chrome — inset by the same
+  amount on all four sides, with the shell's rule reaching it rather than stopping short at the
+  seam. `tone` colors the chrome around it. A chrome column standing beside an inset panel draws
+  no edge of its own, so the two do not sit a hairline apart.
+- **[`scope-switcher`](https://docs.wirekit.app/components/scope-switcher) — the control that
+  changes what the page is about.** Workspace, project, tenant, environment: the thing every
+  application has and everyone builds again, usually as a dropdown, which makes it a menu of
+  commands rather than a list with a current member. It is a listbox with search, groups, status
+  and an optional create action, it sits where the answer already is — the first crumb of a
+  breadcrumb — and it tells a screen reader which entry is the current one, which a menu
+  structurally cannot. The search tolerates a typo: each word is tried as a substring, then
+  as a subsequence, then within one edit of a part of the entry — with a swapped pair of
+  letters counted as one edit rather than two, because that is how a name typed from memory
+  usually comes out wrong.
+- **[`popover`](https://docs.wirekit.app/components/popover) takes `label` and `padded`.** The
+  panel is a `role="dialog"`, so `label` is what a screen reader announces on entry — the default
+  was the word "Popover", identical for every popover on a page. `padded="false"` hands the whole
+  surface to the caller, which is what a panel with its own header, scroll region and footer
+  needs: those have to reach the panel's edges.
+- **Type-ahead in [`dropdown`](https://docs.wirekit.app/components/dropdown) menus.** Typing a
+  letter jumps to the next item starting with it; keep typing to narrow, or press the same key
+  again to cycle through everything sharing that letter. The buffer clears after half a second.
+  This was documented for a long time and never implemented — the line was eventually removed
+  from the docs rather than the behavior added.
+- **A [`data-table`](https://docs.wirekit.app/components/data-table) column may name its own
+  status words.** `intents` maps a cell value to `success` / `warning` / `danger` / `neutral`, so
+  a status the built-in English list never had — a domain term, another language — is no longer
+  stuck on neutral. The built-in list is now documented in full rather than as an excerpt.
+- **[`wirekit:verify`](https://docs.wirekit.app/cli-reference) `--fail-on=error|warning|none`.**
+  The command exited 0 however many warnings it printed, so it could not gate a pipeline on the
+  question it answers best. `warning` makes them a failure; the default is unchanged.
+- **Seven icon aliases** — `more`, `more-vertical`, `arrows-left-right`, `hash`,
+  `shield-warning`, `prohibit`, `scan` — including the first word for the overflow menu.
+  Each has a genuine matching glyph in every preset WireKit ships, which is the standing
+  admission test for the vocabulary.
+- `--space-wk-nav-gap` — the gap between rows in a navigation column, read by both the rail and
+  the sidebar.
+- `--color-wk-rail-badge` and `--color-wk-rail-badge-fg` — the counter dot and the digits on it,
+  as rail roles, so they invert with a toned column.
+- `--wk-rail-item-aspect` — hold a rail's icon-only rows to a square.
+- `data-wk-rail-brand-label` — mark anything in the rail's `brand` slot that is a label, and it
+  appears only while the rail is wide enough to hold it.
+
+### Fixed
+
+- **The ApexCharts adapter stopped warning about itself.** It has two entry paths — register
+  eagerly when Alpine is already present, register again on `alpine:init` — and in a Livewire
+  application both always run, because Livewire assigns `window.Alpine` long before it starts
+  it. The guard counted registrations, so every page of every Livewire app printed "the adapter
+  is on the page more than once" and sent the developer looking for a second copy that did not
+  exist, including on pages with no chart. It counts script evaluations now, which is what that
+  sentence actually means.
+- **The self-contained Alpine bundle no longer leaves the page inert when another Alpine is
+  present.** It detected the other one and skipped **every** component registration, so the
+  Alpine that was actually walking the page had never heard of any of them: 31 console errors,
+  `wirekitDropdown is not defined` among them, and a page that renders perfectly and does
+  nothing. It registers on the Alpine that is running now and starts one only when there is
+  none — and says so, because the CSP guarantee belongs to whichever Alpine evaluates the
+  expressions. The same branch registered the collapse plugin on the wrong instance, so four
+  components lost their animation silently.
+- **[`app-shell`](https://docs.wirekit.app/components/app-shell) tells you when it builds a
+  drawer nothing can open.** Below the `lg` breakpoint the shell moves a `sidebar` or `rail`
+  into an off-canvas panel — a decision the shell makes, not one you ask for — and the only
+  thing that brings it back is a `<x-wirekit::sidebar.toggle>`. A composition without one has
+  no navigation on a phone, and nothing said so. It now writes that to your log when
+  `APP_DEBUG` is on.
+- **`.wirekit-install.log` stops growing without bound.** It records the prior content of
+  every file an install touched so `wirekit:install --rollback` can put it back — and a
+  reinstall touches the published asset bundles, so the second install and every one after it
+  wrote roughly ten megabytes into your project root, forever. Nothing warned, because an
+  append is not an error. The five newest sessions are kept; `--rollback` only ever replays
+  the newest, and it read the whole file to find it — so on a log that had been allowed to
+  grow, the command that undoes a bad install was the one that ran out of memory.
+- **[`popover`](https://docs.wirekit.app/components/popover) returns focus to its trigger when it
+  closes.** Escape left focus on `<body>`, which drops a keyboard user out of the page they were
+  in — WCAG 2.4.3.
+- **The [sidebar](https://docs.wirekit.app/components/sidebar) reads one vertical rhythm.** Its
+  first row sat 17px below the rule and its rows 8px apart, and the 17px was not a spacing
+  anybody chose — it was the column's inter-zone gap, plus a 1px scroll-shadow sentinel, plus
+  one more gap that the sentinel took part in. It reads `--space-wk-nav-gap` now, the same token
+  the rail does, so two navigation columns side by side agree.
+- **[`callout`](https://docs.wirekit.app/components/callout) renders a `<div>` rather than an `<aside>`.** An `<aside>` is a `complementary`
+  landmark, and a shell already has one in its sidebar, so any screen showing a callout carried
+  two same-role landmarks with no distinguishing name — an accessibility failure that gets
+  reported against the sidebar. A callout is a note in the flow of the text, not a
+  self-contained section. If you styled callouts by element selector, target the class instead.
+- **[`pagination`](https://docs.wirekit.app/components/pagination) renders a `CursorPaginator` instead of throwing.** Its only guard asked "is
+  there more than one page", which both paginator kinds answer — so a cursor paginator passed
+  it and then reached methods it does not have. Since `full` is the default, the ordinary case
+  failed. It now renders `mini` (previous/next), which is the whole of what cursor pagination
+  can drive, and says so in the log when `APP_DEBUG` is on.
+- **[`wirekit:icons`](https://docs.wirekit.app/cli-reference) `--audit` reads icon names passed as props**, not only
+  `<x-wirekit::icon>` tags. Both resolve the same way, so both carry the same risk on a preset
+  switch; a project that names its icons in props was getting a clean result over a fraction of
+  its surface. The set of components that take an icon name is derived from the components
+  themselves.
+- **An optimistic control inside a menu never sent its request.** The layer looked for its
+  Livewire component among the direct children of `<body>`, which stopped being where
+  teleported panels land. With no component it silently fell back to a stub, installed no
+  interceptor, and sat showing an unconfirmed value forever. Only one component could reach
+  that path, so it looked like a single broken control rather than a broken mechanism.
+
+### Changed
+
+- The [sidebar](https://docs.wirekit.app/components/sidebar) draws no edge of its own while it
+  stands on an app shell's chrome beside an inset content panel — the panel's own margin already
+  separates the two, and both drawing an edge put a doubled hairline there.
+
 ## [2.33.0] — 2026-08-19
 
 **Minor — this release is about being told what you actually have.** `wirekit:doctor` names every
@@ -2534,7 +2671,7 @@ Patch release.
 ### Fixed
 
 - **`<x-wirekit::multi-select>` internal combobox `<input>` now always carries an `aria-label`.** Previously, the parent `<x-wirekit::field label="…">`'s emitted `<label for="$id">` did not reach the internal combobox input (whose id is `$id-input`, not `$id`), so screen readers + axe's `label` rule reported an unlabeled form element. The component now synthesizes an `aria-label` via the fallback chain above and emits it on the internal input. WCAG 2.1 AA-compliant for any developer that has been wrapping multi-select in a `<x-wirekit::field>` with a `label` — no developer-side change required. Backward compatible.
-- **`<x-wirekit::range-slider>` thumb-circles now sit vertically centerd ON the track line.** Pre-fix, the two thumb `<div>`s were siblings of the track div, so their `top: 50%; transform: translateY(-50%);` resolved relative to the FULL component wrapper (track + edge labels + value display) and the thumbs visually dropped BELOW the track line. The thumbs now live INSIDE the track div, so their vertical centering resolves to the 8 px track height and the circles sit pixel-centerd on the line.
+- **`<x-wirekit::range-slider>` thumb-circles now sit vertically centered ON the track line.** Pre-fix, the two thumb `<div>`s were siblings of the track div, so their `top: 50%; transform: translateY(-50%);` resolved relative to the FULL component wrapper (track + edge labels + value display) and the thumbs visually dropped BELOW the track line. The thumbs now live INSIDE the track div, so their vertical centering resolves to the 8 px track height and the circles sit pixel-centered on the line.
 - **`<x-wirekit::range-slider>` edge labels now show the slider BOUNDS, not the current values.** Pre-fix, the bottom-of-component value display rendered `minVal` / `maxVal` (the current handle positions) at the container edges via `justify-between`. The result was that the visible label "20" sat at position 0 % of the container, while the thumb representing value 20 sat at its proportional position (e.g. 6.7 % on a 0–300 range), and the two looked disconnected — and when the values matched the bounds exactly, the label and the thumb collided at the same pixel. Now: the edge labels render the constant slider min / max (`{{ $min }}` and `{{ $max }}`), and the current values surface as a tooltip-style badge ABOVE each thumb that tracks the handle horizontally as it moves. Screen-reader users still get a live announcement of the current range via an `aria-live="polite"` text node ("Range: 20 to 200") that updates on drag.
 - **Prop validation no longer crashes the whole page in dev HTTP requests.** Pre-fix, `<x-wirekit::heading size="4xl">` (or any other invalid prop value) threw `InvalidArgumentException` in `APP_DEBUG=true` and the whole blade view 500'd. Now: strict-mode is split into two paths. CLI / Pest / `wirekit.validation.throw_on_invalid=true` still throws (fail-fast — the signal a dev wants in a test or artisan command). HTTP dev requests log at ERROR level and render with the first-allowed fallback so a single prop typo doesn't take down the entire page. The dev still sees the typo loudly in the log; iteration continues without a request-response restart.
 - **`<x-wirekit::button>` warns at log level on unknown prop keys.** Pre-fix, `<x-wirekit::button variant="ghost">` (the prop is `surface`, not `variant`) was silently swallowed — the button rendered with default `surface="filled"` and the developer got no signal that their intended `ghost` treatment didn't apply. The new `WireKit::warnUnknownProps()` helper logs a Levenshtein-ranked Did-you-mean warning for any unknown key not in the canonical Blade-passthrough allowlist (`aria-*`, `data-*`, `wire:*`, `x-*`, `@*`, `:*`, plus reserved HTML attrs). Public helper — opt-in for every component that wants the warning; `button` and `main` already adopt it.

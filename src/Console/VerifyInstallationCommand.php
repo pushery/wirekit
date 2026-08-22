@@ -30,7 +30,8 @@ class VerifyInstallationCommand extends Command
 {
     protected $signature = 'wirekit:verify
         {--tier= : Filter to a single check tier — "package" (asset / config / directive checks for the WireKit install itself) or "environment" (Laravel-level state checks like compiled-view freshness). Default = run every check.}
-        {--fix : proactively self-heal missing public/vendor/wirekit/* assets by triggering `vendor:publish --tag=wirekit-assets --force`. Useful right after a fresh clone (where the assets are .gitignored) to avoid a red doctor on first run.}';
+        {--fix : proactively self-heal missing public/vendor/wirekit/* assets by triggering `vendor:publish --tag=wirekit-assets --force`. Useful right after a fresh clone (where the assets are .gitignored) to avoid a red doctor on first run.}
+        {--fail-on= : Severity that makes this command exit non-zero — "error" (default: only FAIL findings), "warning" (WARN findings too, which is what makes it usable as a CI gate), or "none" (report only, always exit 0).}';
 
     protected $description = 'Verify WireKit integration (assets, directives, Tailwind @source, optional deps)';
 
@@ -70,6 +71,18 @@ class VerifyInstallationCommand extends Command
         if ($tier !== null && ! in_array($tier, ['package', 'environment'], true)) {
             $this->error("Unknown tier '{$tier}'. Available: package, environment.");
 
+            return self::FAILURE;
+        }
+
+        // Validated here rather than read at the end, so a typo costs a sentence instead of
+        // a whole check run that then exits on the wrong rule.
+        $failOn = (string) ($this->option('fail-on') ?: 'error');
+
+        if (! in_array($failOn, ['error', 'warning', 'none'], true)) {
+            $this->error("Unknown --fail-on value '{$failOn}'. Expected one of: error, warning, none.");
+
+            // FAILURE, never INVALID: every wirekit:* command exits 1 on every error path,
+            // including a usage error.
             return self::FAILURE;
         }
 
@@ -126,12 +139,28 @@ class VerifyInstallationCommand extends Command
             $this->error('Integration incomplete — see failures above.');
             $this->line('  Reference: https://docs.wirekit.app/getting-started/integration');
 
-            return self::FAILURE;
+            return $failOn === 'none' ? self::SUCCESS : self::FAILURE;
         }
 
         if ($this->warned > 0) {
             $this->line('');
             $this->components->warn('Integration OK with warnings — consider fixing them.');
+
+            // THE WARN TIER COULD NOT GATE ANYTHING, and config drift is only the case that
+            // made it obvious. A published config predating this version's options is
+            // reported here — the question a deploy most wants answered — and the process
+            // still exited 0, so a pipeline asking "is this install sound?" was told yes.
+            //
+            // Raised by threshold rather than by promoting drift to a failure: the WARN tier
+            // has 27 call sites, and turning any of them red by default would fail hosts that
+            // are working fine today over a finding they have consciously accepted. The
+            // caller says which severity matters to them, exactly as `wirekit:doctor:a11y`
+            // and `wirekit:doctor:props` already let them.
+            if ($failOn === 'warning') {
+                $this->line('  --fail-on=warning was given, so the warnings above are a failure rather than a note.');
+
+                return self::FAILURE;
+            }
 
             return self::SUCCESS;
         }

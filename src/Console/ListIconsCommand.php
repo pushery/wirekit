@@ -13,6 +13,7 @@ use Pushery\WireKit\Icons\Presets\LucidePreset;
 use Pushery\WireKit\Icons\Presets\PhosphorPreset;
 use Pushery\WireKit\Icons\Presets\TablerPreset;
 use Pushery\WireKit\Support\BladeParser;
+use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\WireKit;
 
@@ -242,8 +243,20 @@ class ListIconsCommand extends Command
     {
         $hits = [];
 
+        $iconPropTags = self::componentsTakingAnIconName();
+
         foreach (BladeParser::tagsFromSource($contents) as $tag) {
-            if ($tag['name'] !== 'x-wirekit::icon') {
+            // The <x-wirekit::icon> tag names its icon in `name`; every other component
+            // that takes one names it in `icon`. Both go through WireKit::icon(), so both
+            // are the same contract and the audit has to see both — see the block comment
+            // on componentsTakingAnIconName() for what missing the second half cost.
+            $attribute = match (true) {
+                $tag['name'] === 'x-wirekit::icon' => 'name',
+                in_array($tag['name'], $iconPropTags, true) => 'icon',
+                default => null,
+            };
+
+            if ($attribute === null) {
                 continue;
             }
 
@@ -255,22 +268,88 @@ class ListIconsCommand extends Command
 
             $line = substr_count(substr($contents, 0, $tag['start']), "\n") + 1;
 
-            if (in_array('name', $tag['attributes'], true)) {
+            if (in_array($attribute, $tag['attributes'], true)) {
                 $attributes = substr($contents, $tag['attrStart'], $tag['attrEnd'] - $tag['attrStart']);
 
-                if (preg_match('/(?<![:\w-])name\s*=\s*"([^"]*)"/', $attributes, $m) === 1) {
+                if (preg_match('/(?<![:\w-])'.$attribute.'\s*=\s*"([^"]*)"/', $attributes, $m) === 1) {
+                    // `icon` is also the boolean that switches a component's automatic
+                    // glyph off — alert and callout both use it that way. Those are not
+                    // icon names and must not be audited as if a preset had to supply them.
+                    if ($attribute === 'icon' && in_array(strtolower($m[1]), ['true', 'false', '1', '0', ''], true)) {
+                        continue;
+                    }
+
                     $hits[] = ['name' => $m[1], 'line' => $line];
 
                     continue;
                 }
             }
 
-            if (in_array(':name', $tag['attributes'], true)) {
+            if (in_array(':'.$attribute, $tag['attributes'], true)) {
                 $hits[] = ['name' => null, 'line' => $line];
             }
         }
 
         return $hits;
+    }
+
+    /**
+     * Every WireKit component that accepts an ICON NAME as a prop, derived rather than
+     * listed.
+     *
+     * WHY THIS EXISTS. The audit separates names under contract (a declared alias) from
+     * names that merely happen to work today (a glyph name through the fall-through) —
+     * and it read only <x-wirekit::icon> tags. But a navigation column names its icons in
+     * props, because that is what the components ask for, and a prop-passed name goes
+     * through exactly the same WireKit::icon() resolution. Measured in a consuming
+     * project: 12 of 13 icon names were invisible to the audit, which then reported a
+     * clean result over 8% of the surface in a summary that reads as a statement about
+     * all of it. That is not a counting inaccuracy; it inverts the answer.
+     *
+     * DERIVED FROM THE VIEWS, never a hand-kept list. A list here would be a second
+     * source of truth for a fact the templates already state, and the component that got
+     * an icon prop after the list was written is exactly the one nobody would remember to
+     * add — which is the same shape of blindness this method exists to remove.
+     *
+     * @return list<string> tag names, e.g. `x-wirekit::sidebar.item`
+     */
+    private static function componentsTakingAnIconName(): array
+    {
+        static $tags = null;
+
+        if ($tags !== null) {
+            return $tags;
+        }
+
+        $root = dirname(__DIR__, 2).'/resources/views/components';
+        $tags = [];
+
+        if (! is_dir($root)) {
+            return $tags;
+        }
+
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($files as $file) {
+            if (! $file->isFile() || ! str_ends_with($file->getFilename(), '.blade.php')) {
+                continue;
+            }
+
+            $names = array_column(PropsParser::parseBlade($file->getPathname()), 'name');
+
+            if (! in_array('icon', $names, true)) {
+                continue;
+            }
+
+            $relative = substr($file->getPathname(), strlen($root) + 1, -strlen('.blade.php'));
+            $tags[] = 'x-wirekit::'.str_replace('/', '.', $relative);
+        }
+
+        sort($tags);
+
+        return $tags;
     }
 
     /**

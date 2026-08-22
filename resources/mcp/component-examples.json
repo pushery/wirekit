@@ -67,10 +67,24 @@
             "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::announcement-banner intent=\"promo\">Promo — 20% off every plan.</x-wirekit::announcement-banner>\n    <x-wirekit::announcement-banner intent=\"info\">Info — a new region is available.</x-wirekit::announcement-banner>\n    <x-wirekit::announcement-banner intent=\"warning\">Warning — maintenance on Sunday, 02:00–04:00 UTC.</x-wirekit::announcement-banner>\n    <x-wirekit::announcement-banner intent=\"danger\">Danger — the API v1 shutdown is in 7 days.</x-wirekit::announcement-banner>\n</x-wirekit::stack>"
         }
     ],
+    "app-rail": [
+        {
+            "title": "Icon-only, with tooltips",
+            "code": "<x-wirekit::app-rail style=\"height: 18rem;\">\n    <x-slot:brand>\n        <x-wirekit::shell-bar padding=\"none\" align=\"center\">\n            <x-wirekit::avatar initials=\"SW\" size=\"sm\" />\n        </x-wirekit::shell-bar>\n    </x-slot:brand>\n    <x-wirekit::app-rail.item href=\"#\" icon=\"home\" label=\"Overview\" :active=\"true\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"chart-bar\" label=\"Insights\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"credit-card\" label=\"Payments\" badge=\"3\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"settings\" label=\"Settings\" />\n    <x-slot:footer>\n        <x-wirekit::app-rail.item href=\"#\" icon=\"user\" label=\"Account\" />\n    </x-slot:footer>\n</x-wirekit::app-rail>"
+        },
+        {
+            "title": "Captions under the icons",
+            "code": "<x-wirekit::app-rail labels=\"below\" style=\"height: 16rem;\">\n    <x-wirekit::app-rail.item href=\"#\" icon=\"chart-bar\" label=\"Insights\" :active=\"true\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"database\" label=\"Schema\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"shield\" label=\"Security\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"settings\" label=\"Config\" />\n</x-wirekit::app-rail>"
+        },
+        {
+            "title": "Names beside the icons",
+            "code": "<x-wirekit::app-rail labels=\"inline\" style=\"height: 16rem;\">\n    <x-wirekit::app-rail.group label=\"Workspace\">\n        <x-wirekit::app-rail.item href=\"#\" icon=\"home\" label=\"Home\" :active=\"true\" />\n        <x-wirekit::app-rail.item href=\"#\" icon=\"folders\" label=\"Projects\" />\n        <x-wirekit::app-rail.item href=\"#\" icon=\"users\" label=\"Team\" badge=\"12\" />\n    </x-wirekit::app-rail.group>\n    <x-wirekit::app-rail.group label=\"Account\" :separated=\"true\">\n        <x-wirekit::app-rail.item href=\"#\" icon=\"settings\" label=\"Settings\" />\n    </x-wirekit::app-rail.group>\n</x-wirekit::app-rail>"
+        }
+    ],
     "app-shell": [
         {
             "title": "App shell with header and main",
-            "code": "<x-wirekit::app-shell style=\"min-height: auto; height: 280px;\">\n    <x-slot:header>\n        <x-wirekit::header>\n            <x-wirekit::brand name=\"Dashboard\" />\n            <x-wirekit::spacer />\n            <x-wirekit::profile name=\"John\" />\n        </x-wirekit::header>\n    </x-slot:header>\n    <x-wirekit::main>\n        <x-wirekit::heading level=\"1\">Welcome</x-wirekit::heading>\n        <x-wirekit::text variant=\"muted\">Your dashboard content goes here.</x-wirekit::text>\n    </x-wirekit::main>\n</x-wirekit::app-shell>"
+            "code": "<x-wirekit::app-shell style=\"min-height: auto; height: 280px;\">\n    <x-slot:header>\n        <x-wirekit::header>\n            <x-wirekit::brand name=\"Dashboard\" />\n            <x-wirekit::spacer />\n            <x-wirekit::profile name=\"John\" />\n        </x-wirekit::header>\n    </x-slot:header>\n    <x-wirekit::main>\n        <x-wirekit::stack gap=\"md\">\n            <x-wirekit::heading level=\"1\">Welcome</x-wirekit::heading>\n            <x-wirekit::text variant=\"muted\">Your dashboard content goes here.</x-wirekit::text>\n        </x-wirekit::stack>\n    </x-wirekit::main>\n</x-wirekit::app-shell>"
         },
         {
             "title": "App shell with sidebar",
@@ -212,15 +226,15 @@
     "breadcrumb": [
         {
             "title": "Basic Breadcrumb",
-            "code": "<x-wirekit::breadcrumb :items=\"[\n    ['label' => 'Home', 'href' => '/'],\n    ['label' => 'Products', 'href' => '/products'],\n    ['label' => 'Widget']\n]\" />"
+            "code": "<x-wirekit::breadcrumb schema=\"false\" :items=\"[\n    ['label' => 'Home', 'href' => '/'],\n    ['label' => 'Products', 'href' => '/products'],\n    ['label' => 'Widget']\n]\" />"
         },
         {
             "title": "Breadcrumb with icons",
-            "code": "<x-wirekit::breadcrumb :items=\"[\n    ['label' => 'Home', 'href' => '/', 'icon' => 'home'],\n    ['label' => 'Products', 'href' => '/products', 'icon' => 'layers'],\n    ['label' => 'Laptop', 'icon' => 'server']\n]\" />"
+            "code": "<x-wirekit::breadcrumb schema=\"false\" :items=\"[\n    ['label' => 'Home', 'href' => '/', 'icon' => 'home'],\n    ['label' => 'Products', 'href' => '/products', 'icon' => 'layers'],\n    ['label' => 'Laptop', 'icon' => 'server']\n]\" />"
         },
         {
             "title": "Separator Variants",
-            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::breadcrumb :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"chevron\" />\n    <x-wirekit::breadcrumb :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"slash\" />\n    <x-wirekit::breadcrumb :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"arrow\" />\n    <x-wirekit::breadcrumb :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"dot\" />\n</x-wirekit::stack>"
+            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::breadcrumb schema=\"false\" :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"chevron\" />\n    <x-wirekit::breadcrumb schema=\"false\" :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"slash\" />\n    <x-wirekit::breadcrumb schema=\"false\" :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"arrow\" />\n    <x-wirekit::breadcrumb schema=\"false\" :items=\"[['label' => 'A', 'href' => '/a'], ['label' => 'B', 'href' => '/b'], ['label' => 'C']]\" separator=\"dot\" />\n</x-wirekit::stack>"
         }
     ],
     "button-group": [
@@ -1072,11 +1086,11 @@
     "main": [
         {
             "title": "Main with default padding",
-            "code": "<x-wirekit::main>\n    <x-wirekit::heading level=\"1\">Dashboard</x-wirekit::heading>\n    <x-wirekit::text variant=\"muted\">Your content goes here.</x-wirekit::text>\n</x-wirekit::main>"
+            "code": "<x-wirekit::main>\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::heading level=\"1\">Dashboard</x-wirekit::heading>\n        <x-wirekit::text variant=\"muted\">Your content goes here.</x-wirekit::text>\n    </x-wirekit::stack>\n</x-wirekit::main>"
         },
         {
             "title": "Main with extra-large padding",
-            "code": "<x-wirekit::main padding=\"xl\">\n    <x-wirekit::heading level=\"1\">Spacious layout</x-wirekit::heading>\n    <x-wirekit::text>padding=\"xl\" uses --space-wk-xl (2.5rem) on all sides.</x-wirekit::text>\n</x-wirekit::main>"
+            "code": "<x-wirekit::main padding=\"xl\">\n    <x-wirekit::stack gap=\"md\">\n        <x-wirekit::heading level=\"1\">Spacious layout</x-wirekit::heading>\n        <x-wirekit::text>padding=\"xl\" uses --space-wk-xl (2.5rem) on all sides.</x-wirekit::text>\n    </x-wirekit::stack>\n</x-wirekit::main>"
         },
         {
             "title": "Main with no padding",
@@ -1499,6 +1513,20 @@
             "code": "<x-wirekit::row gap=\"lg\">\n    <x-wirekit::card><x-wirekit::card.body>First</x-wirekit::card.body></x-wirekit::card>\n    <x-wirekit::card><x-wirekit::card.body>Second</x-wirekit::card.body></x-wirekit::card>\n</x-wirekit::row>"
         }
     ],
+    "scope-switcher": [
+        {
+            "title": "A server switcher",
+            "code": "<x-wirekit::scope-switcher\n    name=\"servers\"\n    label=\"Server\"\n    current=\"web-02\"\n    :items=\"[\n        ['key' => 'web-01', 'label' => 'web-01.example.com', 'url' => '#', 'icon' => 'server'],\n        ['key' => 'web-02', 'label' => 'web-02.example.com', 'url' => '#', 'icon' => 'server'],\n        ['key' => 'web-03', 'label' => 'web-03.example.com', 'url' => '#', 'icon' => 'server'],\n        ['key' => 'api-01', 'label' => 'api-01.example.com', 'url' => '#', 'icon' => 'server'],\n        ['key' => 'api-02', 'label' => 'api-02.example.com', 'url' => '#', 'icon' => 'server'],\n        ['key' => 'worker-01', 'label' => 'worker-01.example.com', 'url' => '#', 'icon' => 'server'],\n        ['key' => 'worker-02', 'label' => 'worker-02.example.com', 'url' => '#', 'icon' => 'server'],\n        ['key' => 'cache-01', 'label' => 'cache-01.example.com', 'url' => '#', 'icon' => 'server'],\n        ['key' => 'db-01', 'label' => 'db-01.example.com', 'url' => '#', 'icon' => 'server'],\n        ['key' => 'db-02', 'label' => 'db-02.example.com', 'url' => '#', 'icon' => 'server'],\n        ['key' => 'staging', 'label' => 'staging.example.com', 'url' => '#', 'icon' => 'server'],\n    ]\"\n    :create=\"['label' => 'New server', 'url' => '#', 'icon' => 'plus']\"\n/>"
+        },
+        {
+            "title": "Grouped, with status and metadata",
+            "code": "<x-wirekit::scope-switcher\n    name=\"sites\"\n    label=\"Site\"\n    current=\"www\"\n    :items=\"[\n        ['key' => 'www', 'label' => 'www.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'success', 'meta' => 'PHP 8.4', 'group' => 'Production'],\n        ['key' => 'shop', 'label' => 'shop.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'warning', 'meta' => 'PHP 8.3', 'group' => 'Production'],\n        ['key' => 'staging', 'label' => 'staging.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'neutral', 'meta' => 'PHP 8.4', 'group' => 'Staging'],\n        ['key' => 'preview', 'label' => 'preview.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'neutral', 'meta' => 'PHP 8.4', 'group' => 'Staging'],\n    ]\"\n    :create=\"['label' => 'New site', 'url' => '#']\"\n/>"
+        },
+        {
+            "title": "Two levels, each switchable",
+            "code": "<x-wirekit::row gap=\"xs\" style=\"align-items: center;\">\n    <x-wirekit::scope-switcher\n        name=\"teams\"\n        label=\"Team\"\n        current=\"dev\"\n        :items=\"[\n            ['key' => 'dev', 'label' => 'dev', 'url' => '#', 'icon' => 'users'],\n            ['key' => 'ops', 'label' => 'ops', 'url' => '#', 'icon' => 'users'],\n        ]\"\n    />\n    <x-wirekit::text variant=\"muted\" aria-hidden=\"true\">/</x-wirekit::text>\n    <x-wirekit::scope-switcher\n        name=\"breadcrumb-sites\"\n        label=\"Site\"\n        current=\"www\"\n        :items=\"[\n            ['key' => 'www', 'label' => 'www.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'danger'],\n            ['key' => 'shop', 'label' => 'shop.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'success'],\n            ['key' => 'staging', 'label' => 'staging.example.com', 'url' => '#', 'icon' => 'globe', 'status' => 'success'],\n        ]\"\n        :create=\"['label' => 'New site', 'url' => '#']\"\n    />\n</x-wirekit::row>"
+        }
+    ],
     "scroll-area": [
         {
             "title": "Vertical scroll area",
@@ -1569,6 +1597,20 @@
         {
             "title": "Error state",
             "code": "<x-wirekit::select\n    label=\"Role\"\n    name=\"role\"\n    :options=\"['admin' => 'Admin', 'editor' => 'Editor']\"\n    error=\"Please select a role.\"\n/>"
+        }
+    ],
+    "shell-bar": [
+        {
+            "title": "A title and its actions",
+            "code": "<x-wirekit::shell-bar>\n    <x-wirekit::heading level=\"2\" size=\"md\">Transactions</x-wirekit::heading>\n    <x-slot:end>\n        <x-wirekit::button size=\"sm\" intent=\"neutral\" surface=\"outline\">Export</x-wirekit::button>\n        <x-wirekit::button size=\"sm\">New payment</x-wirekit::button>\n    </x-slot:end>\n</x-wirekit::shell-bar>"
+        },
+        {
+            "title": "One rule across three columns",
+            "code": "<x-wirekit::app-shell viewport header-placement=\"content\" style=\"height: 15rem; overflow: hidden;\">\n    <x-slot:rail>\n        <x-wirekit::app-rail>\n            <x-slot:brand>\n                <x-wirekit::shell-bar padding=\"none\" align=\"center\">\n                    <x-wirekit::avatar initials=\"SW\" size=\"sm\" />\n                </x-wirekit::shell-bar>\n            </x-slot:brand>\n            <x-wirekit::app-rail.item href=\"#\" icon=\"home\" label=\"Overview\" />\n            <x-wirekit::app-rail.item href=\"#\" icon=\"chart-bar\" label=\"Insights\" :active=\"true\" />\n        </x-wirekit::app-rail>\n    </x-slot:rail>\n    <x-slot:sidebar>\n        <x-wirekit::sidebar variant=\"flush\" label=\"Payments navigation\">\n            <x-slot:header>\n                <x-wirekit::shell-bar padding=\"sm\" bleed>\n                    <x-wirekit::text weight=\"medium\" size=\"sm\">Payments</x-wirekit::text>\n                </x-wirekit::shell-bar>\n            </x-slot:header>\n            <x-wirekit::sidebar.item href=\"#\" :active=\"true\">Terminals</x-wirekit::sidebar.item>\n            <x-wirekit::sidebar.item href=\"#\">Payouts</x-wirekit::sidebar.item>\n        </x-wirekit::sidebar>\n    </x-slot:sidebar>\n    <x-slot:header>\n        <x-wirekit::shell-bar label=\"Terminal sections\">\n            <x-slot:start>\n                <x-wirekit::sidebar.toggle class=\"lg:hidden\" aria-label=\"Open navigation\" />\n            </x-slot:start>\n            <x-wirekit::text size=\"sm\" variant=\"muted\">Terminal A920 Pro</x-wirekit::text>\n            <x-slot:end>\n                <x-wirekit::button size=\"sm\">Create</x-wirekit::button>\n            </x-slot:end>\n        </x-wirekit::shell-bar>\n    </x-slot:header>\n    <x-wirekit::main max=\"none\">\n        <x-wirekit::text size=\"sm\" variant=\"muted\">The content column fills whatever width is left.</x-wirekit::text>\n    </x-wirekit::main>\n</x-wirekit::app-shell>"
+        },
+        {
+            "title": "A title bar over a tab strip",
+            "code": "<x-wirekit::stack gap=\"none\" style=\"width: 100%;\">\n    <x-wirekit::shell-bar :rule=\"false\">\n        <x-wirekit::heading level=\"2\" size=\"md\">Invoicing</x-wirekit::heading>\n        <x-slot:end>\n            <x-wirekit::button size=\"sm\">Upload</x-wirekit::button>\n        </x-slot:end>\n    </x-wirekit::shell-bar>\n    <x-wirekit::shell-bar>\n        <x-wirekit::navbar.item href=\"#\" :active=\"true\">All</x-wirekit::navbar.item>\n        <x-wirekit::navbar.item href=\"#\">Review</x-wirekit::navbar.item>\n        <x-wirekit::navbar.item href=\"#\">Approved</x-wirekit::navbar.item>\n    </x-wirekit::shell-bar>\n</x-wirekit::stack>"
         }
     ],
     "shimmer": [

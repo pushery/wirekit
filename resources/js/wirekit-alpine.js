@@ -45,6 +45,7 @@ import wirekitTagsInput from './components/tags-input.js';
 import wirekitInput from './components/input.js';
 import wirekitNumberInput from './components/number-input.js';
 import wirekitSidebarDisclosure from './components/sidebar-disclosure.js';
+import wirekitAppRail from './components/app-rail.js';
 import wirekitSidebarRail from './components/sidebar-rail.js';
 import wirekitClipboardButton from './components/clipboard-button.js';
 import wirekitReplayButton from './components/replay-button.js';
@@ -76,6 +77,7 @@ import wirekitRating from './components/rating.js';
 import wirekitReaction from './components/reaction.js';
 import wirekitRangeSlider from './components/range-slider.js';
 import wirekitPopover from './components/popover.js';
+import wirekitScopeSwitcher from './components/scope-switcher.js';
 import wirekitCommandPalette from './components/command-palette.js';
 import wirekitContextMenu from './components/context-menu.js';
 import wirekitMenubar from './components/menubar.js';
@@ -120,6 +122,31 @@ function alreadyHasAlpine() {
         && typeof window.Alpine.version === 'string';
 }
 
+/**
+ * The Alpine that will actually walk this page — the host's if it brought one, ours if not.
+ *
+ * THIS IS THE WHOLE FIX, AND THE BUG IT REPLACES WAS THE OPPOSITE READING. When an Alpine was
+ * already present, this bundle logged a warning and skipped EVERY `Alpine.data(...)` call. Its
+ * intent was right — two Alpines must not both start — but skipping the registrations threw
+ * out the half that still had to happen. The page then had one running Alpine walking markup
+ * full of `x-data="wirekitDropdown()"` that nothing anywhere had registered.
+ *
+ * The symptom was a page that renders perfectly and does nothing, which is the failure mode
+ * this repository hunts. Measured on the sample's teleport-seam page under `?bundle=csp`:
+ * 31 console errors, the readable ones being `wirekitDropdown is not defined`,
+ * `wirekitAlertDialog is not defined`, `selected is not defined`, `dropdownOpen is not
+ * defined` — one Alpine expression failure per component, each killing that component's init.
+ * The thirteen `Illegal invocation` errors ahead of them came from inside `livewire.js`'s own
+ * effect machinery, which is downstream damage and named a file with nothing to do with it.
+ *
+ * Registering on the host instead is what a self-contained bundle owes a page that already has
+ * an Alpine: cooperate with the one that is running rather than compete with it and lose.
+ */
+const hostAlpine = alreadyHasAlpine() ? window.Alpine : null;
+
+/** Where every registration below goes. */
+const target = hostAlpine ?? Alpine;
+
 // The overlay root goes in FIRST, and outside the branch below — it is plain DOM and
 // has nothing to do with which Alpine won.
 //
@@ -155,98 +182,119 @@ installOverlayRoot();
     // register the directive on a DIFFERENT Alpine than the one running their
     // page. Calling the installer directly registers it on whichever Alpine is
     // actually in hand.
-    collapse(Alpine);
+    // On the RUNNING Alpine — `target`, not the imported one. Registering the directive on a
+    // module singleton the page never starts is exactly the defect the paragraph above warns
+    // about for `Alpine.plugin`, and this line had it: with a host Alpine present, `x-collapse`
+    // went to the bundled Alpine and four components lost their animation silently.
+    collapse(target);
 
-if (alreadyHasAlpine()) {
-
+if (hostAlpine) {
+    // Not an error, and not silent either. The page works after this — but the reason a
+    // developer reaches for THIS bundle is usually the CSP guarantee, and that guarantee is
+    // about which Alpine build evaluates expressions. The one now running is the host's, so
+    // the guarantee is the host's to keep, not this bundle's to promise.
     console.warn(
-        '[wirekit-alpine] Alpine is already present on window — skipping '
-        + 'self-contained bundle. Use dist/wirekit.js instead when BYO Alpine.',
+        '[wirekit-alpine] An Alpine is already on this page (Livewire ships one), so WireKit '
+        + 'registered its components on THAT Alpine instead of starting a second one. Two '
+        + 'Alpines cannot share a DOM.\n'
+        + 'Everything works — but if you chose this bundle for its CSP build, note that the '
+        + 'Alpine now evaluating your expressions is the page\'s own, not this one. Load '
+        + 'dist/wirekit.js against your existing Alpine to make that explicit.',
     );
-} else {
-    // Magics before components: a component's own expressions may use them.
-    registerAncestorDataMagic(Alpine);
+}
 
-    Alpine.data('wirekitChartJs', wirekitChartJs);
-    Alpine.data('wirekitDropdown', wirekitDropdown);
-    Alpine.data('wirekitSubmenu', wirekitSubmenu);
-    Alpine.data('wirekitTooltip', wirekitTooltip);
-    Alpine.data('wirekitModal', wirekitModal);
-    Alpine.data('wirekitDrawer', wirekitDrawer);
-    Alpine.data('wirekitToast', wirekitToast);
-    Alpine.data('wirekitTreeView', wirekitTreeView);
-    Alpine.data('wirekitHoverCard', wirekitHoverCard);
-    Alpine.data('wirekitOtpInput', wirekitOtpInput);
-    Alpine.data('wirekitTagsInput', wirekitTagsInput);
-    Alpine.data('wirekitInput', wirekitInput);
-    Alpine.data('wirekitNumberInput', wirekitNumberInput);
-    Alpine.data('wirekitSidebarDisclosure', wirekitSidebarDisclosure);
-    Alpine.data('wirekitSidebarRail', wirekitSidebarRail);
-    Alpine.data('wirekitClipboardButton', wirekitClipboardButton);
-    Alpine.data('wirekitReplayButton', wirekitReplayButton);
-    Alpine.data('wirekitAccordion', wirekitAccordion);
-    Alpine.data('wirekitTreeViewNode', wirekitTreeViewNode);
-    Alpine.data('wirekitScrollFade', wirekitScrollFade);
-    Alpine.data('wirekitScrollToTop', wirekitScrollToTop);
-    Alpine.data('wirekitDropdownTrigger', wirekitDropdownTrigger);
-    Alpine.data('wirekitCodeBlock', wirekitCodeBlock);
-    Alpine.data('wirekitSlider', wirekitSlider);
-    Alpine.data('wirekitPasswordInput', wirekitPasswordInput);
-    Alpine.data('wirekitSegmentedControl', wirekitSegmentedControl);
-    Alpine.data('wirekitPricingTable', wirekitPricingTable);
-    Alpine.data('wirekitSortable', wirekitSortable);
-    Alpine.data('wirekitReadingProgress', wirekitReadingProgress);
-    Alpine.data('wirekitFileUpload', wirekitFileUpload);
-    Alpine.data('wirekitTablist', wirekitTablist);
-    Alpine.data('wirekitTabs', wirekitTabs);
-    Alpine.data('wirekitCountdown', wirekitCountdown);
-    Alpine.data('wirekitReadingMeta', wirekitReadingMeta);
-    Alpine.data('wirekitReadingBookmark', wirekitReadingBookmark);
-    Alpine.data('wirekitDevWarning', wirekitDevWarning);
-    Alpine.data('wirekitDataTableColumnMenu', wirekitDataTableColumnMenu);
-    Alpine.data('wirekitInlineEdit', wirekitInlineEdit);
-    Alpine.data('wirekitMultiSelect', wirekitMultiSelect);
-    Alpine.data('wirekitRating', wirekitRating);
-    Alpine.data('wirekitReaction', wirekitReaction);
-    Alpine.data('wirekitCombobox', wirekitCombobox);
-    Alpine.data('wirekitDismissible', wirekitDismissible);
-    Alpine.data('wirekitRangeSlider', wirekitRangeSlider);
-    Alpine.data('wirekitPopover', wirekitPopover);
-    Alpine.data('wirekitCommandPalette', wirekitCommandPalette);
-    Alpine.data('wirekitContextMenu', wirekitContextMenu);
-    Alpine.data('wirekitMenubar', wirekitMenubar);
-    Alpine.data('wirekitNavigationMenu', wirekitNavigationMenu);
-    Alpine.data('wirekitAlertDialog', wirekitAlertDialog);
-    Alpine.data('wirekitCarousel', wirekitCarousel);
-    Alpine.data('wirekitThemeController', wirekitThemeController);
-    Alpine.data('wirekitFab', wirekitFab);
-    Alpine.data('wirekitCalendar', wirekitCalendar);
-    Alpine.data('wirekitTableSort', wirekitTableSort);
-    Alpine.data('wirekitTour', wirekitTour);
-    Alpine.data('wirekitResizableHandle', wirekitResizableHandle);
-    Alpine.data('wirekitImageCompare', wirekitImageCompare);
-    Alpine.data('wirekitLightbox', wirekitLightbox);
-    Alpine.data('wirekitConversation', wirekitConversation);
-    Alpine.data('wirekitAssistantMessage', wirekitAssistantMessage);
-    Alpine.data('wirekitStatAnimate', wirekitStatAnimate);
-    Alpine.data('wirekitAnimate', wirekitAnimate);
-    Alpine.data('wirekitReadingSpine', wirekitReadingSpine);
-    Alpine.data('wirekitReadingMinimap', wirekitReadingMinimap);
-    Alpine.data('wirekitReadingToc', wirekitReadingToc);
-    Alpine.data('wirekitEditor', wirekitEditor);
-    Alpine.data('wirekitColorPicker', wirekitColorPicker);
-    Alpine.data('wirekitFilterBuilder', wirekitFilterBuilder);
-    Alpine.data('wirekitStatusMatrix', wirekitStatusMatrix);
-    Alpine.data('wirekitNotificationCenter', wirekitNotificationCenter);
-    Alpine.data('wirekitDataTable', wirekitDataTable);
-    Alpine.data('wirekitEventCalendar', wirekitEventCalendar);
-    Alpine.data('wirekitMap', wirekitMap);
-    Alpine.data('wirekitStickyPanelShadows', wirekitStickyPanelShadows);
-    Alpine.data('wirekitStream', wirekitStream);
+{
+    // Magics before components: a component's own expressions may use them.
+    registerAncestorDataMagic(target);
+
+    target.data('wirekitChartJs', wirekitChartJs);
+    target.data('wirekitDropdown', wirekitDropdown);
+    target.data('wirekitSubmenu', wirekitSubmenu);
+    target.data('wirekitTooltip', wirekitTooltip);
+    target.data('wirekitModal', wirekitModal);
+    target.data('wirekitDrawer', wirekitDrawer);
+    target.data('wirekitToast', wirekitToast);
+    target.data('wirekitTreeView', wirekitTreeView);
+    target.data('wirekitHoverCard', wirekitHoverCard);
+    target.data('wirekitOtpInput', wirekitOtpInput);
+    target.data('wirekitTagsInput', wirekitTagsInput);
+    target.data('wirekitInput', wirekitInput);
+    target.data('wirekitNumberInput', wirekitNumberInput);
+    target.data('wirekitSidebarDisclosure', wirekitSidebarDisclosure);
+    target.data('wirekitAppRail', wirekitAppRail);
+    target.data('wirekitSidebarRail', wirekitSidebarRail);
+    target.data('wirekitClipboardButton', wirekitClipboardButton);
+    target.data('wirekitReplayButton', wirekitReplayButton);
+    target.data('wirekitAccordion', wirekitAccordion);
+    target.data('wirekitTreeViewNode', wirekitTreeViewNode);
+    target.data('wirekitScrollFade', wirekitScrollFade);
+    target.data('wirekitScrollToTop', wirekitScrollToTop);
+    target.data('wirekitDropdownTrigger', wirekitDropdownTrigger);
+    target.data('wirekitCodeBlock', wirekitCodeBlock);
+    target.data('wirekitSlider', wirekitSlider);
+    target.data('wirekitPasswordInput', wirekitPasswordInput);
+    target.data('wirekitSegmentedControl', wirekitSegmentedControl);
+    target.data('wirekitPricingTable', wirekitPricingTable);
+    target.data('wirekitSortable', wirekitSortable);
+    target.data('wirekitReadingProgress', wirekitReadingProgress);
+    target.data('wirekitFileUpload', wirekitFileUpload);
+    target.data('wirekitTablist', wirekitTablist);
+    target.data('wirekitTabs', wirekitTabs);
+    target.data('wirekitCountdown', wirekitCountdown);
+    target.data('wirekitReadingMeta', wirekitReadingMeta);
+    target.data('wirekitReadingBookmark', wirekitReadingBookmark);
+    target.data('wirekitDevWarning', wirekitDevWarning);
+    target.data('wirekitDataTableColumnMenu', wirekitDataTableColumnMenu);
+    target.data('wirekitInlineEdit', wirekitInlineEdit);
+    target.data('wirekitMultiSelect', wirekitMultiSelect);
+    target.data('wirekitRating', wirekitRating);
+    target.data('wirekitReaction', wirekitReaction);
+    target.data('wirekitCombobox', wirekitCombobox);
+    target.data('wirekitDismissible', wirekitDismissible);
+    target.data('wirekitRangeSlider', wirekitRangeSlider);
+    target.data('wirekitPopover', wirekitPopover);
+    target.data('wirekitScopeSwitcher', wirekitScopeSwitcher);
+    target.data('wirekitCommandPalette', wirekitCommandPalette);
+    target.data('wirekitContextMenu', wirekitContextMenu);
+    target.data('wirekitMenubar', wirekitMenubar);
+    target.data('wirekitNavigationMenu', wirekitNavigationMenu);
+    target.data('wirekitAlertDialog', wirekitAlertDialog);
+    target.data('wirekitCarousel', wirekitCarousel);
+    target.data('wirekitThemeController', wirekitThemeController);
+    target.data('wirekitFab', wirekitFab);
+    target.data('wirekitCalendar', wirekitCalendar);
+    target.data('wirekitTableSort', wirekitTableSort);
+    target.data('wirekitTour', wirekitTour);
+    target.data('wirekitResizableHandle', wirekitResizableHandle);
+    target.data('wirekitImageCompare', wirekitImageCompare);
+    target.data('wirekitLightbox', wirekitLightbox);
+    target.data('wirekitConversation', wirekitConversation);
+    target.data('wirekitAssistantMessage', wirekitAssistantMessage);
+    target.data('wirekitStatAnimate', wirekitStatAnimate);
+    target.data('wirekitAnimate', wirekitAnimate);
+    target.data('wirekitReadingSpine', wirekitReadingSpine);
+    target.data('wirekitReadingMinimap', wirekitReadingMinimap);
+    target.data('wirekitReadingToc', wirekitReadingToc);
+    target.data('wirekitEditor', wirekitEditor);
+    target.data('wirekitColorPicker', wirekitColorPicker);
+    target.data('wirekitFilterBuilder', wirekitFilterBuilder);
+    target.data('wirekitStatusMatrix', wirekitStatusMatrix);
+    target.data('wirekitNotificationCenter', wirekitNotificationCenter);
+    target.data('wirekitDataTable', wirekitDataTable);
+    target.data('wirekitEventCalendar', wirekitEventCalendar);
+    target.data('wirekitMap', wirekitMap);
+    target.data('wirekitStickyPanelShadows', wirekitStickyPanelShadows);
+    target.data('wirekitStream', wirekitStream);
 
     // Expose Alpine on window so developers (and the docs site's replay
     // button) can call Alpine.initTree(element) for re-mounting.
-    window.Alpine = Alpine;
+    //
+    // Only when this bundle's Alpine is the one running. With a host Alpine present it is
+    // already on `window` and already started, and overwriting it would hand the page a
+    // second, unstarted instance under the name everything else reads.
+    if (! hostAlpine) {
+        window.Alpine = Alpine;
 
-    Alpine.start();
+        Alpine.start();
+    }
 }

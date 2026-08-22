@@ -2,7 +2,7 @@
      Sorting, filtering and paging are query round trips. Nobody can show rows nobody has fetched; only the intent could be acknowledged, and that is a different state machine. --}}
 @props([
     'rows' => [],                   // row objects (client mode)
-    'columns' => [],                // [{key,label,sortable?,align?,cellType?}] — cellType: text|number|badge
+    'columns' => [],                // [{key,label,sortable?,align?,cellType?,intents?}] — cellType: text|number|badge; intents maps a value to success|warning|danger|neutral
     'rowKey' => 'id',               // unique id field for selection + morph keying
     'selectable' => config('wirekit.components.data-table.selectable', false), // per-row + header selection checkboxes
     'searchable' => config('wirekit.components.data-table.searchable', false), // toolbar search box (client-side filter)
@@ -197,7 +197,7 @@
                                 class="px-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text)] whitespace-nowrap"
                             >
                                 <template x-if="col.cellType === 'badge'">
-                                    <span class="inline-flex items-center px-[var(--padding-wk-x-sm)] py-0.5 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] capitalize" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($badgeClasses) }}[badgeIntent(cellText(row, col))]" x-text="cellText(row, col)"></span>
+                                    <span class="inline-flex items-center px-[var(--padding-wk-x-sm)] py-0.5 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] capitalize" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($badgeClasses) }}[badgeIntent(cellText(row, col), col)]" x-text="cellText(row, col)"></span>
                                 </template>
                                 <template x-if="col.cellType === 'number'">
                                     <span class="tabular-nums" x-text="cellText(row, col)"></span>

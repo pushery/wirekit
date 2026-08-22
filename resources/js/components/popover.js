@@ -101,6 +101,19 @@ export default function wirekitPopover(config = {}) {
                     onDeactivate: () => this._closeFromTrap(),
                     // Allow clicking trigger to close without trap interference
                     allowOutsideClick: true,
+                    // WHERE FOCUS GOES WHEN THE TRAP LETS GO, named explicitly.
+                    //
+                    // The trap returns focus to whatever held it at activation, and that is
+                    // not reliable here: the panel is teleported out of the wrapper, so the
+                    // element it remembers is in a different subtree by the time it looks.
+                    // Measured — Escape left focus on <body>, which drops a keyboard reader
+                    // back to the top of the page (WCAG 2.4.3).
+                    //
+                    // The interactive descendant, not the wrapper: the wrapper is a plain
+                    // div, and focusing it would be a stop that announces nothing.
+                    setReturnFocus: () => this.$refs.trigger?.querySelector(
+                        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                    ) ?? false,
                 });
                 this._trap.activate();
             }
@@ -118,10 +131,23 @@ export default function wirekitPopover(config = {}) {
         },
 
         /**
-         * Close popover and deactivate focus trap.
+         * Close popover, deactivate the focus trap, and hand focus back.
          */
         close() {
             if (!this.open) return;
+
+            // WAS THE READER INSIDE THE PANEL? The answer has to be taken BEFORE anything
+            // hides, and it decides whether focus is ours to move.
+            //
+            // Escape and activating something inside close with focus in the panel, and
+            // there the popover owes focus back to its trigger (WCAG 2.4.3) — otherwise it
+            // lands on <body> and a keyboard reader resumes from the top of the page.
+            // Measured: that is exactly where it went. A click on some other control also
+            // closes this, and there focus belongs where the reader just put it; stealing
+            // it back would be worse than doing nothing.
+            const panel = this.$refs.panel;
+            const hadFocus = panel && panel.contains(document.activeElement);
+
             this.open = false;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
@@ -130,6 +156,18 @@ export default function wirekitPopover(config = {}) {
                 this._trap.deactivate();
                 this._trap = null;
             }
+
+            if (! hadFocus) {
+                return;
+            }
+
+            // The interactive descendant, not the wrapper: the wrapper is a plain div and
+            // focusing it would be a stop that announces nothing.
+            const trigger = this.$refs.trigger?.querySelector(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+
+            trigger?.focus({ preventScroll: true });
         },
 
         /**

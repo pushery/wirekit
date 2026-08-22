@@ -370,6 +370,20 @@ return [
         'data-list' => ['layout' => 'horizontal'],
         'segmented-control' => ['size' => 'md'],
         'popover' => ['placement' => 'bottom', 'offset' => 8],
+
+        // Scope switcher — the breadcrumb control that changes which team / server / site
+        // the page is about. `client_filter_max` is a warning threshold, not a limit: the
+        // filter is client-side, so past a few hundred rows the whole list is being shipped
+        // to filter a handful of them, and the component says so in debug rather than
+        // quietly getting slower.
+        'scope-switcher' => [
+            'placement' => 'bottom-start',
+            'offset' => 8,
+            'width' => '20rem',
+            'list_max_height' => '22rem',
+            'prefetch_on_hover' => true,
+            'client_filter_max' => 300,
+        ],
         'scroll-to-top' => ['size' => 'md'],
         'alert-dialog' => ['dismissible' => false],
         'toast-region' => ['position' => 'top-right', 'duration' => 5000, 'max' => 5],
@@ -605,7 +619,7 @@ return [
     |
     | Choose which JavaScript bundle @wirekitScripts loads.
     |
-    | 'full' — All Alpine components including overlays (~59 KB gzip)
+    | 'full' — All Alpine components including overlays (~65 KB gzip)
     |          Includes Floating UI + focus-trap, bundled.
     |          Current measured sizes: docs.wirekit.app/dependencies.
     |

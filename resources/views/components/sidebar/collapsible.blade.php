@@ -38,7 +38,7 @@
         'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
         'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
-        'rounded-[var(--radius-wk-md)]',
+        'rounded-[var(--radius-wk-nav-item)]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-muted)]',
         'hover:text-[color:var(--color-wk-text)]',
@@ -74,10 +74,23 @@
 
     $triggerClasses = $variant === 'heading' ? $headingTriggerClasses : $triggerClasses;
 
-    // Child container — indented to show hierarchy.
+    // Child container — indented to show hierarchy, with a guide line down the indent.
+    //
+    // The line is what makes a nested list read as nested at a glance. Indentation alone
+    // is ambiguous once a label wraps: a second line of text starts at the same x as a
+    // child item, and the eye cannot tell a wrapped parent from a child. Every reference
+    // console draws this line for exactly that reason.
+    //
+    // It uses the LOGICAL inline-start edge (`border-s`, `ms-`, `ps-`) so a right-to-left
+    // document gets the guide on the side its hierarchy actually grows from. Purely
+    // decorative: the structure is already carried by aria-expanded on the trigger and by
+    // the items being inside the disclosed region, so nothing is lost when it is not seen.
     $childClasses = WireKit::resolveClasses('sidebar.collapsible', 'children', implode(' ', [
         'flex flex-col gap-[2px]',
-        'pl-[var(--padding-wk-x-md)]',
+        'ms-[var(--padding-wk-x-sm)]',
+        'ps-[var(--padding-wk-x-md)]',
+        'border-s-[length:var(--border-wk-width)]',
+        'border-[var(--color-wk-border)]',
     ]), $scope);
 @endphp
 
@@ -110,7 +123,8 @@
                 @endif
             </span>
         @endif
-        <span class="flex-1 truncate text-left group-data-[collapsed]/wk-sidebar:sr-only">{{ $label }}</span>
+        {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
+        <span class="flex-1 break-words text-left group-data-[collapsed]/wk-sidebar:sr-only">{{ $label }}</span>
         @isset($trailing)
             {{-- Anything the caller wants at the end of the trigger.
                  A group is collapsed to keep the list short — and if it contains items with
@@ -148,7 +162,7 @@
          guard is mandatory — a sidebar.collapsible used inside a NON-collapsible
          <x-wirekit::sidebar> has no `collapsed` in Alpine scope, so a bare
          `open || collapsed` would throw a ReferenceError there. --}}
-    <div x-show="childrenVisible()" x-collapse x-cloak class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:pl-0">
+    <div x-show="childrenVisible()" x-collapse x-cloak class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:ms-0 group-data-[collapsed]/wk-sidebar:ps-0 group-data-[collapsed]/wk-sidebar:border-s-0">
         {{ $slot }}
     </div>
 </div>

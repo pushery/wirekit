@@ -174,17 +174,59 @@ export default function wirekitOptimistic(config = {}) {
                 return direct.getAttribute('wire:id');
             }
 
-            if (typeof document === 'undefined' || ! document.body) {
+            // A TELEPORTED NODE IS FOUND BY ITS MARKER, NEVER BY ITS POSITION.
+            //
+            // This walked `document.body.children`, which was true while Alpine dropped
+            // teleported panels straight into <body>. Every overlay panel now lands inside
+            // `#wk-overlay-root` — one level deeper — so the loop matched nothing, `_hostId`
+            // stayed null, and `_wire()` fell through to Alpine's componentless `$wire` stub.
+            // That stub's `$id` is a truthy no-op function, so it passes the guard in `run()`
+            // and `$intercept` is never installed: the value flips optimistically, no request
+            // is ever made, and nothing settles. The layer sits at "optimistic" forever.
+            //
+            // It read as a refusal that never arrived. It was a control that never asked.
+            //
+            // Only one component could see it — `dropdown.checkbox-item` is the single
+            // optimistic component whose layer wrapper is born INSIDE the panel. Everywhere
+            // else the wrapper sits outside, `closest()` finds the host directly, and this
+            // branch is never reached. So twenty-two neighbors stayed green over a broken
+            // shared mechanism.
+            //
+            // The guard tests `querySelectorAll` rather than `document.body`: the ESM cases
+            // hand this factory a deliberately barren document with neither.
+            if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') {
                 return null;
             }
 
-            for (const node of document.body.children) {
-                if (! node._x_teleportBack || ! node.contains(el)) {
-                    continue;
+            // A LOOP, not a single hop, and the extra lines buy the class rather than the
+            // case: a popover inside a modal teleports twice, and one hop would lose it
+            // exactly as this lost the first one. Bounded, because a node whose back-link
+            // points into itself would otherwise spin forever.
+            let node = el;
+
+            for (let hops = 0; node && hops < 10; hops += 1) {
+                let moved = null;
+
+                for (const candidate of document.querySelectorAll('[data-teleport-target]')) {
+                    if (typeof candidate.contains !== 'function' || ! candidate.contains(node)) {
+                        continue;
+                    }
+
+                    // Innermost wins, so a nested chain is walked link by link instead of
+                    // skipping a step and landing on the wrong origin.
+                    if (! moved || (typeof moved.contains === 'function' && moved.contains(candidate))) {
+                        moved = candidate;
+                    }
                 }
 
-                const origin = node._x_teleportBack.closest
-                    ? node._x_teleportBack.closest('[wire\\:id]')
+                if (! moved || ! moved._x_teleportBack) {
+                    return null;
+                }
+
+                node = moved._x_teleportBack;
+
+                const origin = typeof node.closest === 'function'
+                    ? node.closest('[wire\\:id]')
                     : null;
 
                 if (origin) {

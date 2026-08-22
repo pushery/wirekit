@@ -6,6 +6,7 @@
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { position } from '../utils/floating.js';
+import { typeAheadIndex } from '../utils/roving-focus.js';
 
 /**
  * @param {Object} config - Dropdown configuration from Blade
@@ -30,6 +31,13 @@ export default function wirekitDropdown(config = {}) {
         // attaches ancestor-scroll + resize listeners; so every teardown path must call stop() or they leak
         // they MUST be torn down on every close path or they leak.
         _stopAutoUpdate: null,
+
+        // Type-ahead state. The buffer is what the reader has typed so far; the timer is
+        // what forgets it. Both are torn down in close() and destroy() — a pending timeout
+        // that fires into a closed menu is the null-callback class this codebase has been
+        // bitten by before.
+        _typeAheadBuffer: '',
+        _typeAheadTimer: null,
 
         init() {
             // The panel's id is written here rather than bound in the template.
@@ -93,6 +101,7 @@ export default function wirekitDropdown(config = {}) {
         },
 
         destroy() {
+            this._resetTypeAhead();
             this._coordination?.stop();
             this._coordination = null;
 
@@ -164,16 +173,60 @@ export default function wirekitDropdown(config = {}) {
          */
         close() {
             if (!this.open) return;
-            this.open = false;
-            this._stopAutoUpdate?.();
-            this._stopAutoUpdate = null;
+
+            // Forget what was typed. A buffer that survives a close would make the next
+            // opening search for a word the reader typed into a menu that is gone, and a
+            // pending timeout firing into a closed menu is the null-callback class this
+            // codebase already has a rule about.
+            this._resetTypeAhead();
+
+            // Was the user's focus inside the menu when it closed? The answer decides
+            // whether focus is OURS to move, and it has to be read BEFORE anything hides.
+            //
+            // Escape, Tab and activating an item all close with focus inside — there the
+            // menu owes focus back to its trigger (WCAG 2.4.3), or a keyboard user
+            // restarts from the top of the page. A click on some other control also
+            // closes the menu, and there focus belongs where the user just put it;
+            // pulling it to the trigger would take it out of the input they clicked.
+            // The docblock above describes that theft from the other direction — and
+            // moving the focus call earlier, as this fix does, would have made it fire
+            // more reliably rather than less.
+            const focusWasInside = this.$refs.panel?.contains(document.activeElement) ?? false;
+
             // Return focus to the trigger button. Use preventScroll so the page
             // does not jump to the trigger when the dropdown closes — the trigger
             // is already in view (the user just clicked it) and browser scroll
             // alignment would otherwise cause a visible jump on long pages.
-            const target = this.$refs.trigger?.querySelector('button, [role="button"], a')
-                ?? this.$refs.trigger;
-            target?.focus({ preventScroll: true });
+            // `$refs.trigger` FIRST, then the DOM marker — and the fallback is the one that
+            // actually fires. The trigger element declares its own `x-data`, which makes it a
+            // scope root, and an `x-ref` registers into the closest scope; so that ref has
+            // always belonged to the trigger rather than to this component.
+            //
+            // `$root`, NOT `$el`. `close()` is reached from handlers on more than one element:
+            // `click.outside` sits on the wrapper, where the two are the same — but `Tab`
+            // arrives through `handleKeydown`, which is bound on the PANEL, and there Alpine
+            // binds `$el` to the panel. The panel does not contain the trigger, so the lookup
+            // would return null and Tab would silently stop returning focus. `$root` is the
+            // x-data element whichever child dispatched the event. Written as `$el` first and
+            // caught by the guard that exists because this class has shipped twice before.
+            const triggerRoot = this.$refs.trigger
+                ?? this.$root?.querySelector('[data-wk-dropdown-trigger]');
+            const target = triggerRoot?.querySelector('button, [role="button"], a')
+                ?? triggerRoot;
+
+            // BEFORE the hide, not after. `this.open = false` makes `x-show` write
+            // `display: none`, and hiding the subtree that holds focus makes the browser
+            // drop focus on `<body>` — after our focus() call, which therefore accomplished
+            // nothing. Measured: Escape on an open menu left `document.activeElement ===
+            // document.body` in both engines. Moving focus first means there is never a
+            // moment where the focused element is inside a hidden subtree.
+            if (focusWasInside) {
+                target?.focus({ preventScroll: true });
+            }
+
+            this.open = false;
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
         },
 
         /**
@@ -225,7 +278,68 @@ export default function wirekitDropdown(config = {}) {
                     // Let tab leave the dropdown naturally, but close it
                     this.close();
                     break;
+
+                default:
+                    // TYPE-AHEAD. Documented for a long time and never implemented — the
+                    // line was eventually removed from the docs rather than the behavior
+                    // added, which left the menu the one composite widget here that a
+                    // keyboard reader cannot jump around in.
+                    //
+                    // Single printable characters only. A modifier means the reader is
+                    // reaching for a browser or OS shortcut, and swallowing those is how a
+                    // widget stops being a good citizen of the page.
+                    if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) {
+                        break;
+                    }
+
+                    e.preventDefault();
+                    this._typeAhead(e.key, items, currentIndex);
+                    break;
             }
+        },
+
+        /**
+         * Move focus to the next item matching what has been typed.
+         *
+         * The arithmetic lives in `typeAheadIndex` — pure, shared, and unit-tested — so this
+         * is only the buffer and its timer.
+         *
+         * Half a second to forget. The menu pattern does not name a figure, so this is the
+         * ticket's number rather than a specification's: long enough to finish a short word,
+         * short enough that a pause reads as the start of a fresh search rather than as a
+         * continuation of the last one.
+         *
+         * Disabled rows need no handling here — `_getItems()` already excludes
+         * `aria-disabled`, so they are not in the list this searches.
+         */
+        _typeAhead(char, items, currentIndex) {
+            this._typeAheadBuffer += char;
+
+            if (this._typeAheadTimer) {
+                clearTimeout(this._typeAheadTimer);
+            }
+
+            this._typeAheadTimer = setTimeout(() => {
+                this._typeAheadBuffer = '';
+                this._typeAheadTimer = null;
+            }, 500);
+
+            const labels = items.map((el) => el.textContent || '');
+            const index = typeAheadIndex(labels, this._typeAheadBuffer, currentIndex);
+
+            if (index >= 0) {
+                items[index]?.focus({ preventScroll: true });
+            }
+        },
+
+        /** Forget what was typed. Called wherever the menu stops being open. */
+        _resetTypeAhead() {
+            if (this._typeAheadTimer) {
+                clearTimeout(this._typeAheadTimer);
+                this._typeAheadTimer = null;
+            }
+
+            this._typeAheadBuffer = '';
         },
 
         /**
@@ -260,8 +374,18 @@ export default function wirekitDropdown(config = {}) {
             const panel = this.$refs.panel;
             if (!panel) return [];
 
+            // All THREE menu roles, and the two extra ones are not decoration: an
+            // attribute-VALUE selector is an exact match, so `[role="menuitem"]` does not
+            // match `menuitemradio` or `menuitemcheckbox` — the roles this component's own
+            // `dropdown.radio-item` and `dropdown.checkbox-item` render. A menu built from
+            // them returned an EMPTY list, so `_focusFirstItem()` focused nothing and the
+            // arrow keys had nothing to walk even once they were delivered.
             return Array.from(
-                panel.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')
+                panel.querySelectorAll(
+                    '[role="menuitem"]:not([aria-disabled="true"]),'
+                    +'[role="menuitemradio"]:not([aria-disabled="true"]),'
+                    +'[role="menuitemcheckbox"]:not([aria-disabled="true"])'
+                )
             ).filter((el) => !el.closest('[data-wk-submenu-panel]'));
         },
     };

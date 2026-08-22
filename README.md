@@ -5,7 +5,7 @@
 # WireKit
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/pushery/wirekit.svg)](https://packagist.org/packages/pushery/wirekit)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/packagist/l/pushery/wirekit)](LICENSE)
 [![Components](https://img.shields.io/badge/components-browse-5046e5)](https://docs.wirekit.app)
 
 [![PHP ≥ 8.4](https://img.shields.io/packagist/dependency-v/pushery/wirekit/php?logo=php&logoColor=white&color=777BB4&label=PHP)](https://www.php.net)
@@ -96,8 +96,8 @@ A wide catalog of components organized by category. Browse, search, and try ever
 | **Display** | badge, card, avatar, alert, callout, countdown, image, image-gallery, image-compare, kanban, stage-card, activity-row, reveal, stream, … |
 | **Data Display** | table, data-table, status-matrix, status-tiles, notification-center, pagination, stat, stats, progress, radial-progress, usage-meter, skeleton, spinner, timeline, tree-view, ticker, price, … |
 | **Overlays** | dropdown, tooltip, modal, drawer, popover, hover-card, lightbox, command-palette, alert-dialog, … |
-| **Navigation** | tabs, breadcrumb, accordion, collapsible, sidebar, navbar, brand-bar, menubar, navigation-menu, stepper, … |
-| **Layout** | app-shell, header, main, footer, container, stack, grid, section, divider, sticky-panel, skip-link, spine-aware, … |
+| **Navigation** | tabs, breadcrumb, scope-switcher, accordion, collapsible, sidebar, app-rail, navbar, brand-bar, menubar, navigation-menu, stepper, … |
+| **Layout** | app-shell, shell-bar, header, main, footer, container, stack, grid, section, divider, sticky-panel, skip-link, spine-aware, … |
 | **Typography** | heading, text, link, code, code-block, kbd, list, blockquote, mark, … |
 | **Marketing** | hero, feature-grid, feature, cta |
 | **Utilities** | fonts, icon, chart, chart-mixed, map, sparkline, scroll-area, scroll-to-top, structured-data |

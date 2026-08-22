@@ -147,12 +147,46 @@ export default function wirekitDataTable(config = {}) {
             const v = row[col.key];
             return v === null || v === undefined ? '' : String(v);
         },
-        // Status-word → intent token suffix for a `cellType: 'badge'` column.
-        badgeIntent(value) {
+        /**
+         * Status word -> intent for a `cellType: 'badge'` column.
+         *
+         * The column is consulted FIRST, and that is the whole change. The built-in
+         * vocabulary below is a closed list of English status words, and every application
+         * whose statuses are not on it — another language, a domain word, `vip`, `lapsed`,
+         * `storniert` — got `neutral` with no way to say otherwise. The list was also
+         * documented as "common status words (paid, pending, failed, ...)", where the
+         * ellipsis stood in for a set that existed nowhere but this function.
+         *
+         * `intents` on the column is a plain map of value -> intent, matched
+         * case-insensitively for the same reason the built-in scan lowercases: a status
+         * arriving as `Paid` from a database is the same word as `paid`.
+         *
+         * An unknown intent NAME falls back to neutral rather than returning a key the
+         * class table has no entry for — indexing that table with a miss yields undefined,
+         * and the pill would render with no classes at all. That would be this same defect
+         * one level up: a silent closed list, reached from the escape hatch built to
+         * escape one.
+         */
+        badgeIntent(value, col = null) {
             const v = String(value).toLowerCase();
+            const known = ['success', 'warning', 'danger', 'neutral'];
+
+            if (col && col.intents) {
+                for (const key of Object.keys(col.intents)) {
+                    if (String(key).toLowerCase() !== v) {
+                        continue;
+                    }
+
+                    const intent = String(col.intents[key]).toLowerCase();
+
+                    return known.includes(intent) ? intent : 'neutral';
+                }
+            }
+
             if (['met', 'pass', 'paid', 'active', 'done', 'success', 'completed', 'approved'].includes(v)) return 'success';
             if (['pending', 'at-risk', 'warning', 'review', 'processing'].includes(v)) return 'warning';
             if (['failed', 'error', 'inactive', 'overdue', 'rejected', 'canceled'].includes(v)) return 'danger';
+
             return 'neutral';
         },
 
