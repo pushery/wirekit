@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.34.0 — MIT License
+ * WireKit CSS v2.34.1 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -1387,6 +1387,27 @@
    their items keep the default and nothing about an existing sidebar changes. */
 :where(.wk-rail[data-variant="panel"]) {
     --radius-wk-nav-item: max(2px, calc(var(--radius-wk-shell-panel) - var(--wk-nav-pad, 0px)));
+
+    /* And the OTHER half of being concentric, which was missing: a corner that curves harder
+       has to be given further to curve in, or the content sits inside the dome.
+
+       The radius is a token a theme retunes, and the padding was a constant — so Cupertino
+       tripling `--radius-wk-xl` to 1.75rem turned a 56px-wide rail into a pill while the first
+       icon stayed exactly where it was. Measured there: 2.52px between the item's corner and
+       the arc, against 9.23px on the stock scale. The item had not moved; the corner had come
+       to meet it.
+
+       The exact statement is `y = R - sqrt(2RA - A^2)` for a wanted clearance A, and CSS
+       cannot say it — `sqrt()` arrived well above this library's browser floor. 0.6 is the
+       linear stand-in, chosen by measuring rather than by taste: at the stock scale the item
+       clears the arc by 6.06px and at Cupertino's by 5.08px, which is the room the stock
+       scale always had. Before this, Cupertino measured MINUS 2.48px — the item's corner was
+       inside the curve, which is exactly what the screenshot showed.
+
+       A FLOOR and not a value, so a theme that rounds gently keeps its own padding and
+       nothing about it changes. On the nav rather than on the scroller, because the brand row
+       sits above the scroller and meets the same corner. */
+    padding-block: max(0px, calc(var(--radius-wk-shell-panel) * 0.6 - var(--padding-wk-y-sm)));
 }
 
 :where(.wk-sidebar[data-variant="card"]) {

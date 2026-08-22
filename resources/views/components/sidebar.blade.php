@@ -239,6 +239,10 @@
              JSON.parse(…) and JSON is a global the CSP evaluator cannot resolve. --}}
         x-data="wirekitSidebarRail({ collapsed: {{ $collapsed ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
         :data-collapsed="collapsed ? '' : null"
+        {{-- Read by exactly the rules that hide TEXT, and by nothing else. While the column
+             is widening back the names stay out of the layout, so they are never set at a
+             width they will not keep — which is what made the rows jump and settle. --}}
+        :data-settling="settling ? '' : null"
         :class="collapsed ? 'w-[3.5rem]' : 'w-[var(--wk-sidebar-w,16rem)]'"
         {{ $attributes->class([$classes, 'group/wk-sidebar transition-[width] duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
     >

@@ -28,11 +28,44 @@ import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.j
 export default function wirekitSidebarRail(config = {}) {
     return {
         collapsed: config.collapsed === true,
+
+        /**
+         * True while the column is on its way back to full width and the names have not been
+         * let in yet. It exists because a label LEAVING is invisible and a label ARRIVING is
+         * not.
+         *
+         * Measured on the collapsible-sidebar example, with an entry named long enough to
+         * wrap: at rest the first row is 51px tall and the second starts at 90px. Sixty
+         * milliseconds into the expand, at a column 174px of its final 256px, the first row
+         * was 70.5px — three lines — and the second sat at 109.5px. It then settled back.
+         * That 19.5px round trip is the shift; with short names it is the one or two pixels
+         * somebody notices without being able to say what moved.
+         *
+         * A SEPARATE marker rather than delaying `data-collapsed`, and that is not caution:
+         * twenty-five rules key off that attribute — centering, badge shape, headings, the
+         * column width itself — and holding it back would hold all of them back. This one is
+         * read by exactly the rules that hide TEXT, so the geometry moves on time and only
+         * the words wait.
+         */
+        settling: false,
+
         _persistKey: config.persist || null,
         _onExternalToggle: null,
+        _onWidthSettled: null,
+        _settleFallback: null,
 
         init() {
             this.collapsed = readPersistedFlag(this._persistKey, this.collapsed);
+
+            // `width` only: this element transitions colors too, and any of those would
+            // otherwise let the names in early.
+            this._onWidthSettled = (event) => {
+                if (event.propertyName === 'width' && event.target === this.$el) {
+                    this.settling = false;
+                }
+            };
+
+            this.$el?.addEventListener?.('transitionend', this._onWidthSettled);
 
             this._onExternalToggle = (event) => {
                 // An event with no id addresses every sidebar on the page, which is
@@ -79,10 +112,50 @@ export default function wirekitSidebarRail(config = {}) {
                 window.removeEventListener('wirekit:sidebar:toggle', this._onExternalToggle);
                 this._onExternalToggle = null;
             }
+
+            // Both outlive the component otherwise: a listener holds the node it watches, and
+            // a pending timeout fires into a torn-down scope.
+            if (this._onWidthSettled) {
+                this.$el?.removeEventListener?.('transitionend', this._onWidthSettled);
+                this._onWidthSettled = null;
+            }
+
+            if (this._settleFallback) {
+                clearTimeout(this._settleFallback);
+                this._settleFallback = null;
+            }
         },
 
         toggle() {
             this.collapsed = ! this.collapsed;
+
+            if (this.collapsed) {
+                // Narrowing: the names go at once, which is the half that always looked right.
+                clearTimeout(this._settleFallback);
+                this.settling = false;
+            } else {
+                this.settling = true;
+
+                // A belt for the case where `transitionend` never arrives — a zero duration,
+                // `prefers-reduced-motion`, a column that is display:none while it changes.
+                // Without it the names would never come back, which is worse than the shift
+                // this exists to remove. Read off the element, because the duration is a
+                // token a project can retune.
+                clearTimeout(this._settleFallback);
+
+                const declared = typeof getComputedStyle === 'function' && this.$el
+                    ? getComputedStyle(this.$el).transitionDuration || '0s'
+                    : '0s';
+                const longest = Math.max(
+                    0,
+                    ...declared.split(',').map((d) => parseFloat(d) * (d.includes('ms') ? 1 : 1000) || 0),
+                );
+
+                this._settleFallback = setTimeout(() => {
+                    this.settling = false;
+                }, longest + 80);
+            }
+
             writePersistedFlag(this._persistKey, this.collapsed);
             this._announce();
         },

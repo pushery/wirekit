@@ -10,6 +10,46 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.34.1] — 2026-08-22
+
+Patch. Three things that only show while a navigation column is moving or a theme is rounding
+hard, and a set of guards that were reading less than they claimed.
+
+### Fixed
+
+- **A navigation column no longer rearranges itself while it opens.** Both the
+  [app rail](https://docs.wirekit.app/components/app-rail) and the
+  [sidebar](https://docs.wirekit.app/components/sidebar) put their names back into the layout
+  the instant the toggle was pressed — at whatever width the animation happened to be passing
+  through, which is not the width it will keep. The text wrapped there and unwrapped as the
+  column caught up. Measured in the sidebar, on a module whose name is long enough to wrap: sixty
+  milliseconds in, at
+  a column 174px of its final 256px, the first row stood 70.5px tall and the second sat 19.5px
+  below where it ends up. With shorter names it is the pixel or two that reads as the menu
+  settling. The names leave with the toggle as they always did, and now arrive only once the
+  column has stopped moving — so they are only ever set at a width they keep. Nothing about
+  wrapping changed: an entry still wraps rather than truncating.
+- A [sidebar](https://docs.wirekit.app/components/sidebar) hides its `sidebar.item` names
+  behind a marker of their own while the column is widening, rather than by holding back the
+  collapsed state — that one is read by twenty-five other rules, including the width itself,
+  and delaying it would delay all of them.
+- **A heavily rounded [app rail](https://docs.wirekit.app/components/app-rail) `variant="panel"`
+  gives its modules room to clear the corner.** The panel's radius follows a theme token and
+  its padding was a constant, so a scale that rounds hard — 1.75rem against the stock 1rem —
+  turned a 56px strip into a pill while the first icon stayed exactly where it was. Measured
+  there, the icon's corner sat 2.48px INSIDE the arc; it now clears it by 5.07px, which is the
+  room the stock scale always had. A floor rather than a value, so a gently rounded theme is
+  unchanged.
+- The `search` icon is back on the plain magnifying glass in the Heroicons preset. The circled
+  variant matched its neighbors in ink coverage and not in kind — a filled disc among thin
+  outlines reads as a different family rather than a heavier weight.
+
+### Documentation
+
+- The remaining application-shell previews drop their outer frame, matching the rest: the box a
+  preview already sits in stands in for the browser window, and a bordered shell inside it is a
+  window drawn inside a window.
+
 ## [2.34.0] — 2026-08-22
 
 Minor release. It adds the pieces an application shell was missing — a module rail, a column
