@@ -108,7 +108,7 @@
         type="button"
         x-on:click="toggle()"
         :aria-expanded="open ? 'true' : 'false'"
-        class="{{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden"
+        class="{{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
     >
         @if($icon)
             {{-- Icon — decorative, hidden from AT. A bare name string resolves
@@ -124,7 +124,7 @@
             </span>
         @endif
         {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
-        <span class="flex-1 break-words text-left group-data-[collapsed]/wk-sidebar:sr-only">{{ $label }}</span>
+        <span class="flex-1 break-words text-left group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $label }}</span>
         @isset($trailing)
             {{-- Anything the caller wants at the end of the trigger.
                  A group is collapsed to keep the list short — and if it contains items with
@@ -143,11 +143,11 @@
                  quantity is one too many. Deliberately not decided for them: a dot that
                  means "unread" reads differently from one that means "attention", and only
                  one of those is redundant when expanded. --}}
-            <span class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden">{{ $trailing }}</span>
+            <span class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">{{ $trailing }}</span>
         @endisset
         {{-- Chevron indicator — rotates when open; hidden in the collapsed rail. --}}
         <svg
-            class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden"
+            class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
             :class="open ? 'rotate-90' : ''"
             fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
         >

@@ -280,10 +280,11 @@ export default function wirekitDropdown(config = {}) {
                     break;
 
                 default:
-                    // TYPE-AHEAD. Documented for a long time and never implemented — the
-                    // line was eventually removed from the docs rather than the behavior
-                    // added, which left the menu the one composite widget here that a
-                    // keyboard reader cannot jump around in.
+                    // TYPE-AHEAD. It was documented for a long time before it existed, and
+                    // the line was eventually removed from the docs rather than the behavior
+                    // added — which left the menu the one composite widget here a keyboard
+                    // reader could not jump around in. This is that behavior; the sentence
+                    // above survived its own fix and read as if the gap were still open.
                     //
                     // Single printable characters only. A modifier means the reader is
                     // reaching for a browser or OS shortcut, and swallowing those is how a

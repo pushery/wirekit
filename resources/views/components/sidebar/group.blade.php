@@ -87,20 +87,20 @@
                  has no icon to show at rail width and its children are hidden too, so a
                  focusable-but-invisible sr-only control would be a keyboard focus trap with
                  no visible focus indicator (WCAG 2.4.7). --}}
-            class="{{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden"
+            class="{{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
         >
             {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
             <span class="break-words">{{ $label }}</span>
             {{-- Chevron rotates when open; hidden in the collapsed icon rail (no room). --}}
             <svg
-                class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden"
+                class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
                 :class="open ? 'rotate-90' : ''"
                 fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
             >
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg>
         </button>
-        @isset($action)<div class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden">{{ $action }}</div></div>@endisset
+        @isset($action)<div class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">{{ $action }}</div></div>@endisset
         {{-- Children — shown/hidden with Alpine when expanded; FORCE-SHOWN as a flat
              icon list in the collapsed rail (the item icons stay reachable), matching
              the static sidebar.group + sidebar.collapsible. The `typeof collapsed`
@@ -127,14 +127,14 @@
         @isset($action)
             <div class="flex items-center justify-between gap-[var(--padding-wk-x-xs)]">
                 @if($label)
-                    <div class="{{ $labelClasses }} min-w-0 break-words group-data-[collapsed]/wk-sidebar:sr-only">{{ $label }}</div>
+                    <div class="{{ $labelClasses }} min-w-0 break-words group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $label }}</div>
                 @endif
-                <div class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden">{{ $action }}</div>
+                <div class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">{{ $action }}</div>
             </div>
         @elseif($label)
             {{-- Visible label; also the accessible name via aria-label above.
                  We render it visually because sighted users benefit from the grouping too. --}}
-            <div class="{{ $labelClasses }} group-data-[collapsed]/wk-sidebar:sr-only">{{ $label }}</div>
+            <div class="{{ $labelClasses }} group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $label }}</div>
         @endisset
         {{ $slot }}
     </div>

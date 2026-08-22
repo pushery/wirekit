@@ -175,7 +175,10 @@
              order rather than by state. Rewriting the mode instead means the expanded
              rail simply IS an inline-label rail, and there is nothing to arbitrate.
              The static attribute below stays for the paint before Alpine initializes. --}}
-        :data-labels="expanded ? 'inline' : '{{ $labels }}'"
+        {{-- `wide`, not `expanded`: the names leave with the toggle and arrive only once the
+             column has stopped widening. Bound to `expanded` they were laid out at a width
+             that was not yet the final one, wrapped there, and unwrapped as it caught up. --}}
+        :data-labels="wide ? 'inline' : '{{ $labels }}'"
         :class="expanded ? '{{ $expandedWidth }}' : '{{ $restingWidth }}'"
     @endif
     {{ $attributes->class([
