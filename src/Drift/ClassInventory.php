@@ -1108,6 +1108,55 @@ final class ClassInventory
      * strings like 'primary', 'neutral', 'success' which would otherwise
      * be flagged as drift on every PR.
      */
+    /**
+     * Replace every balanced `[…]` span with a single-character placeholder.
+     *
+     * Depth-tracked rather than a regex, because the spans nest:
+     * `not-[[aria-current]]:text-[color:var(--x)]` has a bracket pair inside a bracket
+     * pair, and a non-greedy `\[[^\]]*\]` would close the outer one on the inner's
+     * closing bracket and leave a stray `]` behind — which then fails the shape check
+     * for a reason that has nothing to do with the class.
+     *
+     * An UNBALANCED span (more opens than closes) is left as-is on purpose: that is not
+     * a Tailwind class, and the shape check downstream should be the one to say so.
+     */
+    private function maskBracketedSpans(string $candidate): string
+    {
+        $out = '';
+        $depth = 0;
+
+        foreach (str_split($candidate) as $char) {
+            if ($char === '[') {
+                if ($depth === 0) {
+                    $out .= '[X]';
+                }
+                $depth++;
+
+                continue;
+            }
+
+            if ($char === ']') {
+                if ($depth > 0) {
+                    $depth--;
+
+                    continue;
+                }
+
+                // A closing bracket with nothing open — pass it through so the shape
+                // check sees the malformed candidate it is there to reject.
+                $out .= $char;
+
+                continue;
+            }
+
+            if ($depth === 0) {
+                $out .= $char;
+            }
+        }
+
+        return $depth === 0 ? $out : $candidate;
+    }
+
     private function looksLikeTailwindClass(string $candidate, bool $strict = false): bool
     {
         if (strlen($candidate) < 2) {
@@ -1117,6 +1166,46 @@ final class ClassInventory
         if (str_contains($candidate, '{{') || str_contains($candidate, '}}')) {
             return false;
         }
+
+        /*
+         * Template interpolation, rejected on the RAW candidate and before the masking
+         * below — order matters here, and getting it wrong is what this check is for.
+         *
+         * `text-[color:var({$textColor})]` in a PHP string is a template, not a class:
+         * what reaches the browser depends on a variable. It used to be rejected by the
+         * shape regex, which admits neither `{` nor `$` — but those characters sit INSIDE
+         * the brackets, so once the shape check reads a masked form they are no longer
+         * there to reject, and three of VariantResolver's templates started reporting as
+         * classes Tailwind had failed to compile. Which is true, and not a defect: nothing
+         * emits them literally.
+         */
+        if (str_contains($candidate, '{$') || str_contains($candidate, '${')) {
+            return false;
+        }
+
+        /*
+         * The two SHAPE checks below run against a form with every bracketed span
+         * replaced by a placeholder, not against the raw candidate.
+         *
+         * Tailwind's brackets hold CSS, and CSS uses characters that also spell a PHP
+         * or JavaScript expression: `=` in an attribute selector
+         * (`group-data-[labels=below]:`), `>` in a child combinator (`[&>*]:h-full`),
+         * `<` in nothing yet but by the same logic. Read raw, the operator reject below
+         * cannot tell `state === 'open'` from `data-[state=open]:`, and the shape regex
+         * after it does not admit `=` or `>` at all.
+         *
+         * The consequence was not theoretical and not new: `data-[active=true]:…` and
+         * `max-lg:[&>*]:…` were already in the reverse-diff allowlist as
+         * "known-untraceable", when in fact they were traceable and this filter was
+         * blind. That is the worse kind of allowlist entry, because it reads as a fact
+         * about the compiler when it is a fact about us — and it grows by one every time
+         * somebody writes an ordinary Tailwind attribute variant.
+         *
+         * Masking rather than widening the character sets is what keeps the checks
+         * strict where they should be: `>` inside `[…]` is a combinator, `>` outside one
+         * is still not a class, and both statements survive.
+         */
+        $masked = $this->maskBracketedSpans($candidate);
 
         /*
          * Reject Alpine / Blade expression strings (operators in template-
@@ -1137,7 +1226,7 @@ final class ClassInventory
          * `resources/views/components/prose.blade.php` surfacing as
          * reverse-dead Tier-2 entries.
          */
-        if (preg_match('/[?|=!<>;]|===|&&|\|\|/', $candidate) === 1) {
+        if (preg_match('/[?|=!<>;]|===|&&|\|\|/', $masked) === 1) {
             return false;
         }
 
@@ -1160,7 +1249,7 @@ final class ClassInventory
          * Without `+` every calc-addition arbitrary value is rejected here and
          * surfaces as reverse-dead in Tier 2 even though it has a static source.
          */
-        if (preg_match('/^-?(?:[a-z]|\[|\d[a-z])[a-zA-Z0-9:_\-\[\]\(\)\/.,#%*&+]+$/', $candidate) !== 1) {
+        if (preg_match('/^-?(?:[a-z]|\[|\d[a-z])[a-zA-Z0-9:_\-\[\]\(\)\/.,#%*&+]+$/', $masked) !== 1) {
             return false;
         }
 

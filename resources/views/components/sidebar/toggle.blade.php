@@ -37,6 +37,11 @@
 
 <button
     type="button"
+    {{-- The marker app-shell looks for. A shell that turns its navigation into an
+         off-canvas drawer below the breakpoint owes that drawer an opener, and the only
+         way it can tell whether one is present is to look for it in the slots it was
+         handed. Renaming or removing this attribute makes that check blind. --}}
+    data-wk-sidebar-toggle
     x-on:click="sidebarOpen = !sidebarOpen"
     :aria-expanded="sidebarOpen ? 'true' : 'false'"
     aria-label="{{ $ariaLabel }}"

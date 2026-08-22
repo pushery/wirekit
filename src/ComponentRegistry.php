@@ -52,6 +52,7 @@ class ComponentRegistry
             'toggle-button' => ['category' => 'Display', 'description' => 'Single two-state button that stays pressed (aria-pressed) — the bold/italic/mute shape'],
 
             // ── Layout ──
+            'app-rail' => ['category' => 'Navigation', 'description' => 'Full-height module rail with tooltip, caption, or inline labels'],
             'app-shell' => ['category' => 'Layout', 'description' => 'App shell with header, sidebar, and main content'],
             'aspect-ratio' => ['category' => 'Layout', 'description' => 'Constrained aspect ratio wrapper'],
             'center' => ['category' => 'Layout', 'description' => 'Center content horizontally and vertically'],
@@ -99,6 +100,8 @@ class ComponentRegistry
             'pagination' => ['category' => 'Navigation', 'description' => 'Page navigation for paginated data'],
             'profile' => ['category' => 'Navigation', 'description' => 'Avatar and name display for headers'],
             'scroll-to-top' => ['category' => 'Navigation', 'description' => 'Floating scroll-to-top button'],
+            'shell-bar' => ['category' => 'Layout', 'description' => 'Aligned column head that draws an app shell\'s top rule'],
+            'scope-switcher' => ['category' => 'Navigation', 'description' => 'Searchable switcher for the team, server or site a page is about'],
             'sidebar' => ['category' => 'Navigation', 'description' => 'Vertical sidebar navigation'],
             'stepper' => ['category' => 'Navigation', 'description' => 'Step indicator for multi-step flows'],
             'tabs' => ['category' => 'Navigation', 'description' => 'Tabbed content navigation'],

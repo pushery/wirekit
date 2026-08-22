@@ -176,6 +176,42 @@ final class PhosphorPreset implements IconPreset
             // settings/gear, book/book-open and billing/credit-card.
             'stack' => 'phosphor-stack',
 
+            // ─── The overflow affordance, and five words a consuming project
+            // reached for and did not find.
+            //
+            // EVERY ONE OF THESE IS A TRUE COGNATE IN ALL FOUR INTERCHANGEABLE
+            // PRESETS — checked file by file, not assumed. That is the whole
+            // admission test: a word enters this vocabulary only when every set
+            // we ship can answer it with a glyph that means the same thing. An
+            // alias that resolves in three sets and substitutes something else
+            // in the fourth is worse than no alias, because it looks like a
+            // contract right up until somebody changes preset.
+            //
+            // `more` rather than `overflow`, `ellipsis` or `dots-three`. The last
+            // two are one family's own spelling, and enshrining a family spelling
+            // as the contract word is the exact trap documented for `stack` above.
+            // `overflow` is already spoken for in its CSS sense across this
+            // codebase, and `ellipsis` collides with text truncation. `more` is
+            // the concept, and the concept is what every other word here names.
+            //
+            // Both axes ship, because the commonest overflow affordance — a row's
+            // action menu — is drawn vertically. One word without the other means
+            // the next application writes the family's glyph name again.
+            'more' => 'phosphor-dots-three',
+            // The pop-up button's marker: a stacked pair of chevrons, one up and one down.
+            // It says "this shows the current choice, and there are others" — the distinction
+            // from a single downward chevron, which says "this opens a list of actions". A
+            // scope switcher in a breadcrumb is the first thing here to need it, and every
+            // set draws it: Heroicons and Lucide as chevrons, Phosphor and Tabler as carets.
+            // Same shape, same meaning, so the word is honest in all four.
+            'chevron-up-down' => 'phosphor-caret-up-down',
+            'more-vertical' => 'phosphor-dots-three-vertical',
+            'arrows-left-right' => 'phosphor-arrows-left-right',
+            'hash' => 'phosphor-hash',
+            'shield-warning' => 'phosphor-shield-warning',
+            'prohibit' => 'phosphor-prohibit',
+            'scan' => 'phosphor-scan',
+
             // Notification, labeling, mail and media — concepts every
             // administrative interface has, and none of them had a word here.
             // A page that needed one reached for the icon package's own glyph

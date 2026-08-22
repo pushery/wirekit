@@ -20,6 +20,41 @@
         return;
     }
 
+    // A CURSOR PAGINATOR CAN ONLY DRIVE `mini`, so it gets `mini` whatever was asked for.
+    //
+    // `hasPages()` above is the wrong question to decide this on, and it was the only one
+    // being asked. It answers "is there more than one page", which BOTH paginator kinds
+    // answer — so a CursorPaginator walked straight through the guard and then hit
+    // currentPage() / lastPage() in `simple`, or firstItem() / total() / linkCollection()
+    // in `full`, none of which it has. `full` is the default, so the common case threw.
+    //
+    // The failure surfaced as a ViewException out of a collection, a long way from the line
+    // where the decision was actually made — which is why this is decided HERE, once, by
+    // shape rather than by count.
+    //
+    // Degrading rather than throwing: cursor pagination exists for exactly the endless,
+    // append-only lists that cannot afford a COUNT(*), and `mini` is precisely prev/next.
+    // Everything it needs — hasPages(), previousPageUrl(), nextPageUrl() — a CursorPaginator
+    // has. So the developer gets working pagination instead of a stack trace.
+    //
+    // It is said out loud all the same. A silent downgrade is its own puzzle later: the
+    // developer asked for a total and page numbers and would otherwise be left wondering
+    // where they went. Debug only — this is a fact about their code, not about a request.
+    $isCursorPaginator = ! method_exists($paginator, 'currentPage');
+
+    if ($isCursorPaginator && $variant !== 'mini') {
+        if (config('app.debug')) {
+            logger()->debug(sprintf(
+                'WireKit pagination: variant "%s" needs a paginator that knows its total and its page '
+                .'numbers, and a CursorPaginator has neither. Rendering "mini" (previous/next) instead. '
+                .'Pass variant="mini" to make this explicit.',
+                $variant
+            ));
+        }
+
+        $variant = 'mini';
+    }
+
     // Flex justification — controls how summary text and page buttons are spread.
     // 'between' (default) pushes summary left + buttons right.
     // 'center'/'start'/'end' align all controls together.

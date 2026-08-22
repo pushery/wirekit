@@ -77,7 +77,13 @@
     x-on:keydown="handleKeydown"
     x-on:keydown.escape.window="open && close()"
     x-on:click.outside="close()"
-    x-on:click="$event.target.closest('[role=menuitem]:not([aria-disabled=true])') && close()"
+    {{-- The same exact-match trap as `_getItems()`: `[role=menuitem]` does not match a
+         `menuitemradio` or `menuitemcheckbox` row, so a radio menu did not match here
+         either. It still closed — but by ACCIDENT, because the panel is teleported outside
+         this wrapper and a click inside it therefore counts as `click.outside`. Resting a
+         documented behavior on a side effect of the teleport is one refactor away from a
+         silent regression, so all three roles are named. --}}
+    x-on:click="$event.target.closest('[role=menuitem]:not([aria-disabled=true]), [role=menuitemradio]:not([aria-disabled=true]), [role=menuitemcheckbox]:not([aria-disabled=true])') && close()"
     data-wk-panel-id="{{ $panelId }}"
     {{ $attributes->class([$classes]) }}
 >

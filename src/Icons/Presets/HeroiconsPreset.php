@@ -19,6 +19,17 @@ final class HeroiconsPreset implements IconPreset
             // Navigation & Actions
             'close' => 'heroicon-m-x-mark',
             'menu' => 'heroicon-m-bars-3',
+            // The plain glass, and it went the other way once. Heroicons Mini draws it as a
+            // 1.5-unit annulus in a 20-unit box, which measures 17.72% ink against 27–46% for
+            // the solid masses beside it in a rail — so it was moved to the CIRCLE variant at
+            // 42.70%, inside that band. That was a correct measurement of the wrong property:
+            // ink coverage says how much of the box is filled, not what kind of mark it is,
+            // and in the navigation row — close, menu, chevrons, check — every glyph is a thin
+            // outline. A filled disc there is a different species, not a heavier weight.
+            //
+            // The band fits the rail and breaks the row, one alias cannot satisfy both, and
+            // the maintainer chose the plain glass. `IconSystemTest` holds that as a decision
+            // rather than as a threshold, so a future measurement does not quietly overturn it.
             'search' => 'heroicon-m-magnifying-glass',
             'chevron-down' => 'heroicon-m-chevron-down',
             'chevron-up' => 'heroicon-m-chevron-up',
@@ -171,6 +182,42 @@ final class HeroiconsPreset implements IconPreset
             // spellings on one glyph is what this vocabulary already does for
             // settings/gear, book/book-open and billing/credit-card.
             'stack' => 'heroicon-m-square-3-stack-3d',
+
+            // ─── The overflow affordance, and five words a consuming project
+            // reached for and did not find.
+            //
+            // EVERY ONE OF THESE IS A TRUE COGNATE IN ALL FOUR INTERCHANGEABLE
+            // PRESETS — checked file by file, not assumed. That is the whole
+            // admission test: a word enters this vocabulary only when every set
+            // we ship can answer it with a glyph that means the same thing. An
+            // alias that resolves in three sets and substitutes something else
+            // in the fourth is worse than no alias, because it looks like a
+            // contract right up until somebody changes preset.
+            //
+            // `more` rather than `overflow`, `ellipsis` or `dots-three`. The last
+            // two are one family's own spelling, and enshrining a family spelling
+            // as the contract word is the exact trap documented for `stack` above.
+            // `overflow` is already spoken for in its CSS sense across this
+            // codebase, and `ellipsis` collides with text truncation. `more` is
+            // the concept, and the concept is what every other word here names.
+            //
+            // Both axes ship, because the commonest overflow affordance — a row's
+            // action menu — is drawn vertically. One word without the other means
+            // the next application writes the family's glyph name again.
+            'more' => 'heroicon-m-ellipsis-horizontal',
+            // The pop-up button's marker: a stacked pair of chevrons, one up and one down.
+            // It says "this shows the current choice, and there are others" — the distinction
+            // from a single downward chevron, which says "this opens a list of actions". A
+            // scope switcher in a breadcrumb is the first thing here to need it, and every
+            // set draws it: Heroicons and Lucide as chevrons, Phosphor and Tabler as carets.
+            // Same shape, same meaning, so the word is honest in all four.
+            'chevron-up-down' => 'heroicon-m-chevron-up-down',
+            'more-vertical' => 'heroicon-m-ellipsis-vertical',
+            'arrows-left-right' => 'heroicon-m-arrows-right-left',
+            'hash' => 'heroicon-m-hashtag',
+            'shield-warning' => 'heroicon-m-shield-exclamation',
+            'prohibit' => 'heroicon-m-no-symbol', // Heroicons names the concept after the sign, not the act.
+            'scan' => 'heroicon-m-viewfinder-circle', // The nearest true cognate: a framing reticle.
 
             // Notification, labeling, mail and media — concepts every
             // administrative interface has, and none of them had a word here.

@@ -53,3 +53,48 @@ export function moveRovingFocus(root, direction, selector = '[role=tab]:not([dis
 
     return true;
 }
+
+/**
+ * Which item a type-ahead buffer selects — the WAI-ARIA menu behavior, as arithmetic.
+ *
+ * Pure and DOM-free on purpose: this is the part worth testing, and it is the part that is
+ * awkward to test through a browser. It lives beside `moveRovingFocus` because every
+ * composite widget that already imports that one needs this one next, and each of those is
+ * then a few lines rather than a re-derivation.
+ *
+ * THE ONE SUBTLETY IS THE REPEATED CHARACTER, and getting it wrong is what makes a
+ * type-ahead feel broken. Pressing `a` repeatedly must CYCLE through every row starting
+ * with `a`, so a buffer of all-identical characters searches for that single character
+ * beginning AFTER the current row. A genuine refinement — `co` growing to `com` — must
+ * start AT the current row instead, or the row the reader has already narrowed to would be
+ * skipped and `comp` could never reach it.
+ *
+ * @param {string[]} labels    Visible text of each item, in DOM order.
+ * @param {string}   buffer    What the reader has typed so far.
+ * @param {number}   currentIndex  Index of the focused item, or -1 for none.
+ * @returns {number} Index to focus, or -1 when nothing matches.
+ */
+export function typeAheadIndex(labels, buffer, currentIndex) {
+    if (! buffer || ! labels || labels.length === 0) {
+        return -1;
+    }
+
+    const typed = String(buffer).toLowerCase();
+    const sameChar = [...typed].every((c) => c === typed[0]);
+    const term = sameChar ? typed[0] : typed;
+
+    // Repeated character cycles, so start one past the current row; a refinement stays
+    // put, so the already-matched row remains eligible.
+    const offset = sameChar ? 1 : 0;
+    const from = currentIndex < 0 ? 0 : currentIndex;
+
+    for (let i = 0; i < labels.length; i += 1) {
+        const index = (from + offset + i) % labels.length;
+
+        if (String(labels[index] ?? '').trim().toLowerCase().startsWith(term)) {
+            return index;
+        }
+    }
+
+    return -1;
+}

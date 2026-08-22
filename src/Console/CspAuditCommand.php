@@ -18,9 +18,29 @@ use Symfony\Component\Process\Process;
  * Under `script-src` without `'unsafe-eval'`, Alpine's CSP build does not
  * compile expressions — it interprets them with a tokenizer, a parser and an
  * AST evaluator. That grammar is narrower than JavaScript, and an expression
- * outside it is **never evaluated**: it throws nothing, logs nothing, and the
- * page looks correct while the control is dead. There is no symptom, which is
- * exactly why the check has to be mechanical.
+ * outside it is **never evaluated**, and the page looks correct while the
+ * control is dead.
+ *
+ * It is not entirely silent, and this docblock used to say it was — "it throws
+ * nothing, logs nothing". Measured against the shipped CSP bundle, that is
+ * false: it carries `Alpine Expression Error` and `CSP Parser Error`, emitted
+ * through console.error and console.warn. The sentence mattered because
+ * developers quote it, and quoting it tells them not to look in the one place
+ * that would have told them.
+ *
+ * The correction changes what to DO about it, which is why the wording
+ * mattered. "It logs nothing" says there is no net, and the conclusion drawn
+ * from that is that a browser suite cannot see this class at all — so nobody
+ * points one at it. The truth is narrower and more useful: the message fires
+ * when the expression is EVALUATED. A wire:click no test ever clicks stays
+ * silent, and the page looks correct meanwhile.
+ *
+ * So the net exists and has to be TRIGGERED. A browser check catches this
+ * exactly when it operates the control rather than merely rendering the page
+ * — which is a thing worth writing, where "it cannot be caught" is not.
+ *
+ * The static audit remains the reliable half for the same reason: it does not
+ * depend on anyone having exercised the right control on the right page.
  *
  * ## Why the verdict comes from node
  *

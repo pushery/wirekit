@@ -35,7 +35,14 @@
              Applied on the ZONE rather than asked of the caller: the alignment
              is a property of the column, and a developer supplying a brand row
              should not have to know which token the items happen to use. --}}
-        <div @class(['shrink-0', 'px-[var(--padding-wk-x-sm)]' => $zoneInset ?? true])>
+        {{-- A chrome band placed in this zone makes the zone drop its own inset entirely —
+             see the `:has()` rule in dist/wirekit.css. The zone does not have to publish that
+             inset any more: it simply stops applying it, which is one fewer variable and one
+             fewer thing that can be read wrong. --}}
+        <div @class([
+            'shrink-0',
+            'px-[var(--padding-wk-x-sm)]' => $zoneInset ?? true,
+        ])>
             {{ $header }}
         </div>
     @endisset
@@ -67,11 +74,22 @@
         <div
             x-ref="scroller"
             data-wk-sidebar-scroller
-            class="min-h-0 flex-1 overflow-y-auto flex flex-col gap-[var(--space-wk-sm)] wk-scrollbar"
+            class="min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] wk-scrollbar"
         >
-            <div x-ref="topSentinel" aria-hidden="true" class="h-px shrink-0"></div>
-            {{ $slot }}
-            <div x-ref="bottomSentinel" aria-hidden="true" class="h-px shrink-0"></div>
+            {{-- `-mb-px` cancels the sentinel's OWN height. It has to stay one pixel tall
+                 for the observer to report it reliably — a zero-height target is not
+                 dependably "intersecting" — but that pixel is real layout, and it put the
+                 first row one pixel below the rail's. The negative margin gives the
+                 observer its pixel and the reader none. --}}
+            <div x-ref="topSentinel" aria-hidden="true" class="h-px shrink-0 -mb-px"></div>
+            {{-- The rows carry the rhythm, NOT the scroller. When the gap sat on the
+                 scroller the two sentinels were flex children of it and took part: an
+                 invisible 1px marker plus one gap pushed the whole list down, so the
+                 first row sat 17px below the rule where the rail's sat at 6px. The
+                 sentinels are still where the observer needs them — inside the scroll
+                 container — they simply no longer space anything. --}}
+            <div class="flex flex-col gap-[var(--space-wk-nav-gap)]">{{ $slot }}</div>
+            <div x-ref="bottomSentinel" aria-hidden="true" class="h-px shrink-0 -mt-px"></div>
         </div>
         <div aria-hidden="true" x-cloak x-show="topShadow" x-transition.opacity class="wk-scroll-shadow-top"></div>
         <div aria-hidden="true" x-cloak x-show="bottomShadow" x-transition.opacity class="wk-scroll-shadow-bottom"></div>
@@ -82,9 +100,9 @@
          has something to attach to without reaching for a class name. --}}
     <div
         data-wk-sidebar-scroller
-        class="min-h-0 flex-1 overflow-y-auto flex flex-col gap-[var(--space-wk-sm)] wk-scrollbar"
+        class="min-h-0 flex-1 overflow-y-auto flex flex-col py-[var(--padding-wk-y-sm)] wk-scrollbar"
     >
-        {{ $slot }}
+        <div class="flex flex-col gap-[var(--space-wk-nav-gap)]">{{ $slot }}</div>
     </div>
     @endif
 
@@ -92,10 +110,16 @@
         {{-- Same alignment as the head, for the same reason: an account row is
              the bottom of the same column and belongs on the same vertical line
              as the items above it. --}}
-        <div @class(['shrink-0', 'px-[var(--padding-wk-x-sm)]' => $zoneInset ?? true])>
+        <div @class([
+            'shrink-0',
+            'px-[var(--padding-wk-x-sm)]' => $zoneInset ?? true,
+        ])>
             {{ $footer }}
         </div>
     @endisset
 @else
-    {{ $slot }}
+    {{-- No zones: the slot used to inherit its row rhythm from the column's own flex
+         gap. That gap is gone (it also spaced the zones, which is what pushed the
+         first row down), so the rhythm is stated here instead of inherited. --}}
+    <div class="flex flex-col gap-[var(--space-wk-nav-gap)]">{{ $slot }}</div>
 @endif

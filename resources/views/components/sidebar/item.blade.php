@@ -6,7 +6,7 @@
     'icon' => null,
     'submenu' => false,
     // A trailing counter/dot (an unread badge) — a count or short string renders a
-    // pill AFTER the label, OUTSIDE the truncating span so it is never clipped, and
+    // pill AFTER the label, OUTSIDE the label span so a long name can never push it out, and
     // stays visible in the collapsed rail.
     'badge' => null,
     'scope' => null,
@@ -52,7 +52,9 @@
         // Collapse-to-icon rail: center the lone icon when the sidebar collapses.
         'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
-        'rounded-[var(--radius-wk-md)]',
+        // Derived from the container rather than fixed — see dist/wirekit.css. In a card
+        // sidebar the concentric answer is 4px, not the 8px this used to be.
+        'rounded-[var(--radius-wk-nav-item)]',
         // The RESTING foreground is scoped to non-active items for the same reason
         // the hover below is, and it is not optional. Unscoped, this and the active
         // block's `text-[color:var(--color-wk-text)]` are both bare single-class
@@ -140,9 +142,14 @@
     @endif
     {{-- In a collapsed rail the label becomes sr-only — visually hidden but
          still the link's accessible name (the icon is decorative). --}}
-    <span class="flex-1 truncate group-data-[collapsed]/wk-sidebar:sr-only">{{ $slot }}</span>
-    {{-- Trailing counter (an unread badge). Rendered OUTSIDE the truncating label
-         so a long label can never clip it, and pushed to the end with ml-auto.
+    {{-- WRAPS, never truncates. A navigation entry whose name is clipped does not name
+         anything — "Terminal set…" is not a destination, and the reader cannot tell it from
+         its neighbor without hovering. Maintainer's rule, and it is absolute.
+         `break-words` rather than plain wrapping, because a single long word has no space to
+         break at and would otherwise overflow the column instead of wrapping inside it. --}}
+    <span class="flex-1 break-words group-data-[collapsed]/wk-sidebar:sr-only">{{ $slot }}</span>
+    {{-- Trailing counter (an unread badge). Rendered OUTSIDE the label span so a long
+         name wraps beside it rather than pushing it out, and pushed to the end with ml-auto.
 
          In the collapsed rail it becomes a dot. The digits have no room at rail
          width, but the counter must not simply vanish either — that is where an

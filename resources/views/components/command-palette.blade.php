@@ -153,11 +153,16 @@
                 >
                     {{-- Search input --}}
                     <div class="flex items-center gap-[var(--gap-wk-sm)]">
-                        {{-- Search icon --}}
+                        {{-- Search icon, through the icon system rather than hand-drawn.
+                             It used to be this file's own copy of Heroicons' OUTLINE magnifier
+                             at stroke-width 2 on a 24-unit box — the only icon in the package
+                             that bypassed IconResolver, and therefore the only one that ignored
+                             a developer's preset entirely. Someone on Lucide or Phosphor still
+                             got a Heroicon here, and nothing said so. --}}
                         <div class="pl-[var(--padding-wk-x-lg)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
-                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                            </svg>
+                            @if(function_exists('svg'))
+                                {{ svg(\Pushery\WireKit\WireKit::icon('search'), ['class' => 'w-5 h-5']) }}
+                            @endif
                         </div>
                         <input
                             x-ref="input"

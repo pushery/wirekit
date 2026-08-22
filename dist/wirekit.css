@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.33.0 — MIT License
+ * WireKit CSS v2.34.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -351,6 +351,13 @@
     --space-wk-xl: 2.5rem;
     --space-wk-2xl: 4rem;
 
+    /* The gap between rows in a navigation column, and the ONE place it is decided.
+       The rail and the sidebar sit side by side in a console shell, so a reader sees
+       both rhythms at once — and they were 2px and 8px, which reads as two lists that
+       do not belong to the same application. They are one token now rather than two
+       numbers that agree today, because two numbers are what drifted. */
+    --space-wk-nav-gap: 0.25rem;
+
     /* Section-level vertical spacing — used by hero/cta/footer for the
        outer block padding. Sized for marketing pages: tighter on small
        sections (footer), comfortable on medium (cta), generous on hero. */
@@ -439,6 +446,135 @@
     --size-wk-drawer-sm: 20rem;
     --size-wk-drawer-md: 28rem;
     --size-wk-drawer-lg: 40rem;
+
+}
+
+/* ─── The navigation roles are REGISTERED, and that is load-bearing ─── */
+/* An unregistered custom property inherits its TOKEN STREAM, not its value: a
+   descendant re-substitutes `var(…)` against its own declarations. That turns the
+   role set and the subtree remap below into a mutual reference — the role says
+   `var(--color-wk-text-muted)`, the remap says `--color-wk-text-muted:
+   var(--color-wk-rail-muted)`, and on a descendant each resolves through the other.
+   CSS calls that invalid at computed-value time and drops it, silently.
+
+   It was measured rather than reasoned about: in dark mode a resting module rendered
+   the LIGHT muted foreground, 2.64:1 on its own rail, while every static check passed
+   — a stylesheet does not resolve cycles and neither does a string match. Scoping the
+   remap to descendants fixed the first half (a `muted` rail had computed to
+   `rgba(0, 0, 0, 0)`, no background at all) and left this one.
+
+   Registering makes each role compute to a color where it is declared, so a
+   descendant inherits a value with nothing left to substitute. `@property` is inside
+   the supported-browser baseline (Chrome 85 / Safari 16.4 / Firefox 128 against a
+   floor of 111 / 16.4 / 128), so no feature detection is owed.
+
+   `inherits: true` because the whole mechanism is inheritance; the initial values are
+   the light-mode defaults, used only if a declaration is ever invalid. */
+@property --color-wk-rail-bg { syntax: "<color>"; inherits: true; initial-value: #fff; }
+@property --color-wk-rail-text { syntax: "<color>"; inherits: true; initial-value: oklch(14.5% 0 0); }
+@property --color-wk-rail-muted { syntax: "<color>"; inherits: true; initial-value: oklch(47% 0 0); }
+@property --color-wk-rail-hover-bg { syntax: "<color>"; inherits: true; initial-value: oklch(97% 0 0); }
+@property --color-wk-rail-active-bg { syntax: "<color>"; inherits: true; initial-value: oklch(97% 0 0); }
+@property --color-wk-rail-active-text { syntax: "<color>"; inherits: true; initial-value: oklch(14.5% 0 0); }
+@property --color-wk-rail-hover-fg { syntax: "<color>"; inherits: true; initial-value: oklch(14.5% 0 0); }
+@property --color-wk-rail-active-fg { syntax: "<color>"; inherits: true; initial-value: oklch(14.5% 0 0); }
+@property --color-wk-rail-border { syntax: "<color>"; inherits: true; initial-value: oklch(91.4% 0 0); }
+@property --color-wk-rail-ring { syntax: "<color>"; inherits: true; initial-value: oklch(14.5% 0 0); }
+@property --color-wk-rail-badge { syntax: "<color>"; inherits: true; initial-value: oklch(14.5% 0 0); }
+@property --color-wk-rail-badge-fg { syntax: "<color>"; inherits: true; initial-value: #fff; }
+/* The radius of an item INSIDE a navigation surface — registered for the same reason the
+   colors are, and inherited so a rounded container can re-point it for its own subtree. */
+@property --radius-wk-nav-item { syntax: "<length>"; inherits: true; initial-value: 0.5rem; }
+
+:where(:root) {
+    /* ─── Application shell: the top rule, the module rail ─── */
+    /* One height for the horizontal rule that runs across every column of a
+       console shell. It is a single token on purpose: the rail head, the second
+       column's head and the content column's head each render an
+       <x-wirekit::shell-bar>, so the three segments of that line cannot disagree
+       about where they sit. Change this and all three move together. */
+    --size-wk-shell-bar: 3.5rem;
+
+    /* Rail widths, one per labeling mode. `labels="tooltip"` is icon only and
+       matches the sidebar's own collapsed rail (3.5rem) so a shell can switch
+       between the two without the content reflowing. `below` adds room for a
+       caption under the icon; `expanded` is the wide form where the label sits
+       beside it. */
+    --size-wk-rail: 3.5rem;
+    /* Wide enough for a real module name, which is not a comfort setting.
+       At the old 4.75rem the caption had 44px of room after the scroller's and the
+       item's padding — so every name over about seven characters was truncated, and
+       "Insights", "Security" and "Analytics" all were. A rail whose normal case is a
+       clipped word is a rail that does not name its modules.
+       88px leaves ~64px of caption: the common names fit on one line and a long one
+       wraps to two, which is the correct trade. Nothing is ever hidden. */
+    --size-wk-rail-labeled: 5.5rem;
+    --size-wk-rail-expanded: 15rem;
+
+    /* The radius of an inset content panel (<x-wirekit::app-shell panel>). Its own
+       token rather than --radius-wk-lg, because the panel is the largest rounded
+       surface on the page and a theme that wants sharp cards with a soft shell —
+       or the reverse — has no way to say so if the two share a token. */
+    --radius-wk-shell-panel: var(--radius-wk-xl);
+
+    /* What a container pads its children by, published so a chrome band placed inside it
+       can cancel exactly that much without hardcoding the token — see the shell bar's
+       `bleed`. Zero here so `bleed` is a no-op outside such a container rather than a bar
+       hanging off its box, and declared rather than left to a `var(…, 0px)` fallback so a
+       typo in one of the two names cannot silently mean "no padding to cancel".
+       A container of your own opts in by setting them. */
+    --wk-nav-pad: 0px;
+
+    /* The corner radius of a navigation item — a sidebar row, a rail module. It is a token
+       rather than a literal because a rounded CONTAINER has to be able to derive it: see the
+       concentric rule further down. This default is what every nav item has always had, so an
+       unrounded column is unchanged. */
+    --radius-wk-nav-item: var(--radius-wk-md);
+
+    /* The SHAPE of a module in the icon-only rail.
+       `auto` is what it has always been: a pill as tall as its content, filling the column's
+       width. Set it to `1` and every module becomes a SQUARE — which is what an app icon is
+       everywhere else, and the reason this is a token rather than a fixed choice: an
+       application whose rail stands for its product areas usually wants them to read as app
+       icons, and one whose rail is a list of destinations usually does not.
+
+       Applied only where there is no caption beside or under the glyph. A square with a word
+       under it is not a square, and forcing the ratio there would stretch the row instead. */
+    --wk-rail-item-aspect: auto;
+
+    /* The roles a navigation surface needs. These ARE the `tone="default"`
+       values; the other tones re-point the same names further down the file,
+       so a developer who overrides them here reskins every tone's fallback in one
+       place and a developer who wants one tone changed overrides it there. Both
+       the rail and a toned <x-wirekit::sidebar> read only these. */
+    --color-wk-rail-bg: var(--color-wk-bg-elevated);
+    --color-wk-rail-text: var(--color-wk-text);
+    --color-wk-rail-muted: var(--color-wk-text-muted);
+    --color-wk-rail-hover-bg: var(--color-wk-bg-muted);
+    --color-wk-rail-active-bg: var(--color-wk-bg-muted);
+    --color-wk-rail-active-text: var(--color-wk-text);
+    /* The foreground ON a hover or active FILL, as opposed to the foreground on the
+       column. They are the same thing on a neutral surface and must not be on a colored
+       one — which is why they are separate roles rather than one.
+
+       Resolved from the generic token DIRECTLY, never through a sibling role, and that is
+       forced by the registration above: a registered property computes where it is
+       DECLARED, so an alias written here would freeze the root's value and a tone that
+       overrides its target would not move it. Measured exactly that: with
+       `--color-wk-rail-active-fg: var(--color-wk-rail-active-text)` the inverse tone's
+       current module rendered near-black on near-black, 1.78:1, in every preset at once.
+       Every tone block therefore declares all ten roles rather than relying on a default
+       — pinned by RailToneRoleCompletenessTest. */
+    --color-wk-rail-hover-fg: var(--color-wk-text);
+    --color-wk-rail-active-fg: var(--color-wk-text);
+    --color-wk-rail-border: var(--color-wk-border);
+    /* The unread dot, and the pill it becomes in a wide rail. It is a rail ROLE rather
+       than the generic accent because the rail is the one surface whose background is a
+       tone: on the inverse tone the accent is near-black on near-black, so the dot that
+       says "there is something here" was the one thing in the column nobody could see. */
+    --color-wk-rail-badge: var(--color-wk-accent);
+    --color-wk-rail-badge-fg: var(--color-wk-accent-fg);
+    --color-wk-rail-ring: var(--color-wk-ring);
 
     /* ─── Overlay: Tooltip (inverted: dark bg, light text) ─── */
     --size-wk-tooltip-max: 20rem;
@@ -916,7 +1052,7 @@
 
        An expander rather than a size floor, and the difference is the whole
        design. `min-height` changes layout: it is what widened a tuned toolbar
-       past its container and had to be reverted. A centerd pseudo-element is out
+       past its container and had to be reverted. A centered pseudo-element is out
        of flow, so the hit area reaches 44x44 while the visible control keeps the
        size it was designed at and nothing around it moves. Same technique the
        file-upload remove button and the modal / drawer close buttons already use;
@@ -999,6 +1135,473 @@
         width: 3.5rem;
     }
 }
+
+/* ─── Navigation surface tones (app-rail, sidebar tone="…") ──── */
+/* Each tone re-points the same eight role variables declared in :root. That is
+   the whole mechanism: every class inside the rail and the toned sidebar reads
+   `var(--color-wk-rail-*)` and nothing else, so a tone is a change of four to
+   eight declarations rather than a parallel set of utilities per surface.
+
+   `:where()` keeps specificity at 0 so a developer's own
+   `[data-wk-tone="inverse"] { --color-wk-rail-bg: … }` (0,1,0) wins regardless
+   of load order — the same contract the token block at the top of this file
+   makes.
+
+   The mixes are written against the tone's OWN foreground rather than against a
+   neutral, because a hover tint built from --color-wk-text is invisible on a
+   surface that is already near-black. */
+
+/* muted — one step down from the page, still a light surface in light mode.
+   hover/active are mixes of the tone's own text so the step is visible in BOTH
+   modes; a fixed lighter/darker token only works in one of them. */
+:where([data-wk-tone="muted"]) {
+    --color-wk-rail-bg: var(--color-wk-bg-muted);
+    --color-wk-rail-text: var(--color-wk-text);
+    --color-wk-rail-muted: var(--color-wk-text-muted);
+    --color-wk-rail-hover-bg: color-mix(in oklab, var(--color-wk-text) 8%, transparent);
+    --color-wk-rail-active-bg: color-mix(in oklab, var(--color-wk-text) 12%, transparent);
+    --color-wk-rail-active-text: var(--color-wk-text);
+    --color-wk-rail-hover-fg: var(--color-wk-text);
+    --color-wk-rail-active-fg: var(--color-wk-text);
+    --color-wk-rail-border: var(--color-wk-border);
+    --color-wk-rail-ring: var(--color-wk-ring);
+    /* The badge pair is declared here even though it repeats the default set,
+       because these two custom properties INHERIT (@property … inherits: true).
+       Left out, a muted rail standing inside an inverse shell keeps the inverse
+       dot — near-white on a light column, which is the one place the counter
+       becomes invisible. Every tone therefore states the pair rather than
+       relying on the surface it happens to sit on. */
+    --color-wk-rail-badge: var(--color-wk-accent);
+    --color-wk-rail-badge-fg: var(--color-wk-accent-fg);
+}
+
+/* inverse — the dark chrome column of a light application.
+   The values are deliberately MODE-INDEPENDENT and there is no `.dark` override
+   below, which is the opposite of what the rest of this file does. Two reasons.
+   First, --color-wk-bg-inverse cannot be used here: it flips to near-WHITE under
+   `.dark`, so an "inverse" rail would turn white on a dark page. Second, 20.5%
+   is exactly dark mode's own --color-wk-bg-elevated, so in dark mode this tone
+   reads as the elevated chrome surface it should be — one value, correct in both
+   modes, rather than two values that have to be kept in step.
+   Measured: #fff on oklch(20.5%) is ~14.9:1 and the muted 74% is ~7.5:1, so both
+   clear AA on the tone's own surface without depending on the page's palette. */
+:where([data-wk-tone="inverse"]) {
+    --color-wk-rail-bg: oklch(20.5% 0 0);
+    --color-wk-rail-text: oklch(98.5% 0 0);
+    --color-wk-rail-muted: oklch(74% 0 0);
+    --color-wk-rail-hover-bg: color-mix(in oklab, oklch(98.5% 0 0) 10%, transparent);
+    --color-wk-rail-active-bg: color-mix(in oklab, oklch(98.5% 0 0) 16%, transparent);
+    --color-wk-rail-active-text: oklch(98.5% 0 0);
+    --color-wk-rail-hover-fg: oklch(98.5% 0 0);
+    --color-wk-rail-active-fg: oklch(98.5% 0 0);
+    --color-wk-rail-border: color-mix(in oklab, oklch(98.5% 0 0) 14%, transparent);
+    --color-wk-rail-ring: oklch(98.5% 0 0);
+    /* White on the dark column — the accent is near-black on stock theme and vanished
+       here entirely. The digits that ride on it in a wide rail flip with it. */
+    --color-wk-rail-badge: oklch(98.5% 0 0);
+    --color-wk-rail-badge-fg: oklch(20.5% 0 0);
+}
+
+/* accent — the brand-colored chrome column.
+   `muted` equals the full foreground here, and that is a decision this file has
+   already made once for hero/cta variant="accent": a mid-lightness accent leaves
+   only ~4.8-5.3:1 of headroom to its own foreground, so ANY transparency mix
+   drops muted text below the 4.5:1 AA floor. A colored surface has no AA-safe
+   muting room, so muted text on one is simply not muted. */
+:where([data-wk-tone="accent"]) {
+    --color-wk-rail-bg: var(--color-wk-accent);
+    --color-wk-rail-text: var(--color-wk-accent-fg);
+    --color-wk-rail-muted: var(--color-wk-accent-fg);
+    /* Hover and the current module INVERT, rather than tinting.
+
+       Tinting was tried both ways and neither is safe on a colored surface. A mix of the
+       FOREGROUND moves the surface toward the text: measured across the bundled themes,
+       the current module read 4.17:1 on Soft, 3.68:1 on Aurora, 3.63:1 on Cupertino,
+       1.89:1 on Retro Terminal and 1.73:1 on Material dark, against a 4.5:1 floor. A mix
+       of accent-content moves it the other way on most themes but not all — Retro
+       Terminal's accent and its content color are close, so 32% still landed at 3.70:1.
+       Every one of those numbers depends on an accent the PRESET defines, so there is no
+       percentage that is safe for a theme nobody has written yet.
+
+       The inversion has no percentage to get wrong: the fill IS the foreground color and
+       the label is the accent, which is the guaranteed pair read backwards. Its ratio is
+       identical to accent-fg-on-accent, which ThemePresetContrastTest already proves
+       >= 4.5:1 for every bundled preset in both modes — so this holds by construction and
+       keeps holding for a theme that does not exist yet.
+
+       The same decision hero and cta already made one level up, for the same reason: a
+       colored surface has no safe room for a half-measure. */
+    --color-wk-rail-hover-bg: var(--color-wk-accent-fg);
+    --color-wk-rail-hover-fg: var(--color-wk-accent);
+    --color-wk-rail-active-bg: var(--color-wk-accent-fg);
+    --color-wk-rail-active-text: var(--color-wk-accent-fg);
+    --color-wk-rail-active-fg: var(--color-wk-accent);
+    --color-wk-rail-border: color-mix(in oklab, var(--color-wk-accent-fg) 22%, transparent);
+    --color-wk-rail-ring: var(--color-wk-accent-fg);
+    /* Inverted, exactly like hover and the current module above and for the same reason:
+       an accent dot on an accent column is the same color as its own background. */
+    --color-wk-rail-badge: var(--color-wk-accent-fg);
+    --color-wk-rail-badge-fg: var(--color-wk-accent);
+}
+
+/* ─── The brand row sits on the same spine as the modules ─── */
+/* The zone that holds the brand has no inline padding of its own, and while the mark was
+   centered that never showed. Aligned to the start it does: the avatar sat flush against
+   the column edge at 0, with every module below it inset. One row out of line reads as a
+   fault rather than as a choice.
+
+   Applied to the BAR rather than to the zone, and that distinction is the whole point: the
+   bar draws the column's segment of the shell rule as a bottom border, so insetting the
+   zone would shorten that line — the exact defect repaired one release ago. Padding the bar
+   leaves it full width, moves only its contents, and the rule still runs edge to edge.
+
+   It reads the SAME two variables the module list reads rather than repeating their
+   default. Written as a literal, this row went back out of line the moment a shell moved
+   the column's spine: modules at 8, brand at 6. Two places holding one number is how it
+   drifted in the first place. Centered modes are unaffected — symmetric padding does not
+   move a centered mark. */
+:where(.wk-rail) [data-wk-shell-bar] {
+    padding-inline-start: var(--wk-rail-inset-start, var(--padding-wk-y-sm));
+    padding-inline-end: var(--wk-rail-inset-end, var(--padding-wk-y-sm));
+}
+
+/* ─── The brand row follows the rail's width ─── */
+/* Icon-only, the mark is alone in a 3.5rem column and centering is the only thing that
+   looks deliberate. Expanded, the same centering strands it in the middle of a 15rem row
+   with empty space either side, while the modules below it all start at the inline edge —
+   so the one row that names the workspace was the one row not on the column's spine.
+
+   Written here rather than asked of the caller: `align` is a shell-bar prop, and a
+   developer putting a brand in this slot cannot pass one value for two widths the rail
+   switches between at runtime. `:where()` keeps specificity at 0, so an explicit
+   `align="center"` on the bar still wins. */
+:where(.wk-rail[data-labels="tooltip"], .wk-rail[data-labels="below"]) [data-wk-shell-bar] {
+    justify-content: center;
+    /* Centered in the COLUMN, not in what is left of it after the inset. The rule above
+       gives every row in the rail an 8px start inset and none at the end, which is right for
+       a list of items whose hover box runs to the column's edge and wrong for a single mark
+       that is supposed to sit in the middle: measured at 20..52 in a 12..68 column, four
+       pixels left of center, which is exactly what it looks like. */
+    padding-inline: 0;
+}
+
+/* ...and the clusters inside it stop growing.
+   `justify-content` on the bar is inert while its leading cluster is `flex-1`: the cluster
+   fills the row, so the mark sits at the START of something that is already centered. That
+   is why the row reported `justify-content: center` while the avatar was visibly not. */
+:where(.wk-rail[data-labels="tooltip"], .wk-rail[data-labels="below"]) [data-wk-shell-bar] > * {
+    flex: 0 0 auto;
+    justify-content: center;
+}
+:where(.wk-rail[data-labels="inline"]) [data-wk-shell-bar] {
+    justify-content: flex-start;
+}
+
+/* Anything in the brand slot marked as a LABEL appears only while the rail is wide
+   enough to hold it — the workspace name beside the mark, and nothing in a 3.5rem
+   column where it would be clipped to two characters.
+
+   An attribute rather than a utility class, and that is not a style preference: a
+   documentation preview lives in Markdown, and Tailwind scans the package's Blade views
+   only. A `group-data-[labels=inline]` class written in a preview is never compiled, so
+   it silently does nothing — verified by compiling one and finding zero occurrences in
+   the built stylesheet. An attribute the shipped stylesheet answers to works wherever
+   the markup is authored. */
+/* It is REVEALED rather than switched on, and that is the whole fix.
+   `display: none` is not animatable, so on an expandable rail the name appeared at its full
+   width in the first frame of a column that was still 3.5rem wide — it wrapped, the row grew
+   taller, and everything above it jumped for the length of the animation. What a reader saw
+   was the layout settling rather than the rail opening.
+
+   Three properties, and the timing is the point:
+     max-width  travels WITH the column, so the name is uncovered at the rail's own pace;
+     opacity    waits out that travel on the way IN, so nothing is read while it is clipped,
+                and does not wait on the way OUT, so the name is gone before the column is;
+     visibility flips late on the way out, which keeps the name out of the accessibility tree
+                in the resting collapsed state — the one thing `display: none` did get right.
+
+   `nowrap` is what stops the wrap that caused the jump; the clip is what makes a half-open
+   column show a half-open name instead of a broken one. */
+:where(.wk-rail) [data-wk-rail-brand-label] {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
+    /* The row's own gap is still there when the name is not, and a gap with nothing on one
+       side of it is 8px of empty column. It measured as a mark 4px left of center in a rail
+       that had just been taught to center it — the centering was right and the thing being
+       centered was 40px wide instead of 32. Canceling exactly the one gap the name causes
+       leaves any other brand content's spacing alone, which zeroing the row's gap would not. */
+    margin-inline-start: calc(-1 * var(--gap-wk-sm, 0.5rem));
+    transition:
+        max-width var(--transition-wk-duration) ease,
+        margin-inline-start var(--transition-wk-duration) ease,
+        opacity calc(var(--transition-wk-duration) / 2) ease,
+        visibility 0s linear var(--transition-wk-duration);
+}
+
+:where(.wk-rail[data-labels="inline"]) [data-wk-rail-brand-label] {
+    max-width: 100%;
+    opacity: 1;
+    visibility: visible;
+    margin-inline-start: 0;
+    transition:
+        max-width var(--transition-wk-duration) ease,
+        margin-inline-start var(--transition-wk-duration) ease,
+        opacity calc(var(--transition-wk-duration) / 2) ease var(--transition-wk-duration),
+        visibility 0s linear 0s;
+}
+
+/* With motion turned down there is no travel to wait for, so the name simply is or is not.
+   Leaving the delay in place here would read as a name that arrives late for no reason. */
+@media (prefers-reduced-motion: reduce) {
+    :where(.wk-rail) [data-wk-rail-brand-label] {
+        transition: none;
+    }
+}
+
+/* ─── App icons, when a theme asks for them to be square ─── */
+/* Scoped to the icon-only mode by the rail's own `data-labels`, so the token is inert in the
+   two modes where a caption shares the box. `:where()` keeps specificity at 0, so a developer
+   setting the ratio on one rail out-specifies this without `!important`. */
+:where(.wk-rail[data-labels="tooltip"]) [data-wk-rail-item] {
+    aspect-ratio: var(--wk-rail-item-aspect, auto);
+}
+
+/* ─── A rounded column makes its items concentric with itself ─── */
+/* An inner corner that is not (outer radius − the gap between them) is the thing that reads
+   as sloppy even when nobody can name it: the two arcs are not parallel, so the gap between
+   them pinches at 45°. The correct inner radius is arithmetic, not taste.
+
+   Measured before this existed: the item was a flat `--radius-wk-md` (8px) whichever surface
+   it sat in. In the 16px rail panel the concentric answer is 16 − 6 = 10px, so 8px was nearly
+   right BY COINCIDENCE. In the 10px sidebar card it is 10 − 6 = 4px, so the same constant was
+   more than twice too round — an item almost as rounded as the card containing it.
+
+   `max(2px, …)` because a container barely larger than its padding would otherwise ask for a
+   negative radius, which is invalid and would drop the declaration silently.
+
+   Flush columns are deliberately NOT listed: they have no radius to be concentric with, so
+   their items keep the default and nothing about an existing sidebar changes. */
+:where(.wk-rail[data-variant="panel"]) {
+    --radius-wk-nav-item: max(2px, calc(var(--radius-wk-shell-panel) - var(--wk-nav-pad, 0px)));
+}
+
+:where(.wk-sidebar[data-variant="card"]) {
+    --radius-wk-nav-item: max(2px, calc(var(--radius-wk-lg) - var(--wk-nav-pad, 0px)));
+}
+
+/* ─── A container stands aside for a chrome band, rather than the band escaping ─── */
+/* A navigation column pads itself uniformly, which is right for its items and wrong for a head:
+   a bar in its `header` zone would sit inset on three sides while everything below it looked
+   flush, and its rule would land 6px below the rules in the columns either side.
+
+   The bar used to solve that by ESCAPING — negative margins plus a width of `100% + 2 * the
+   padding`. It worked, and it was the fragile shape this file warns about elsewhere: an element
+   that overflows its parent is at the mercy of every ancestor, and one with `overflow: hidden`,
+   `contain: layout`, a transform or a filter clips it silently. The mobile sweep found it as a
+   6px overflow on a zone that happened not to clip.
+
+   So the containers stand aside instead. `:has()` is what makes that expressible at all — a
+   parent reacting to a child — and it is inside the supported-browser baseline (Chrome 105 /
+   Safari 15.4 / Firefox 121, against a floor of 111 / 16.4 / 128), so nothing is owed.
+
+   Scoped to a DIRECT child, so a bleeding bar nested deeper does not silently flatten a zone it
+   is not the head of. */
+:where(.wk-sidebar, .wk-rail) > :has(> [data-wk-shell-bar][data-wk-bleed]) {
+    /* The zone's own inset goes entirely — that is the layer the zone owns. */
+    padding: 0;
+
+    /* And the COLUMN's own padding is pulled back by the zone rather than by the bar. The
+       distinction matters: this margin reaches the column's border box and stops there, so the
+       zone never leaves the element it belongs to and no ancestor can clip it. The old form
+       escaped the zone AND the column by 16px, which is what put it at the mercy of anything
+       further up.
+
+       Block-start too, so the head meets the column's top edge and its rule lands at the same
+       height as the rules in the columns beside it. The block-END is deliberately untouched:
+       the gap under the head is what separates the rule from the first navigation item. */
+    margin-block-start: calc(-1 * var(--wk-nav-pad, 0px));
+    margin-inline: calc(-1 * var(--wk-nav-pad, 0px));
+}
+
+/* ─── Beside an inset panel, a column starts where the panel starts ─── */
+/* The content panel is inset on all four sides, so its head — and the rule under it —
+   begins one inset lower than the chrome column's beside it. Measured on the dark rail
+   shell: the rail's rule sat at 391 and the panel's at 399, eight pixels apart, which is
+   exactly the panel's own margin. Two rules eight pixels apart do not read as two
+   deliberate lines; they read as one line that failed to meet itself.
+
+   The column takes the same inset at the top so both heads begin together. Only the top:
+   the column still runs to the bottom of the shell, because it is chrome and the panel is
+   a sheet lying on it.
+
+   Bound to the same breakpoint as the panel's own margin — below it the panel is flush,
+   so there is nothing to line up with and the column must not be pushed down. */
+@media (width >= 64rem) {
+    :where([data-wk-panel]) > :where(.wk-rail, .wk-sidebar),
+    :where([data-wk-panel]) :where(.wk-rail, .wk-sidebar) {
+        padding-block-start: var(--space-wk-sm, 0.5rem);
+    }
+
+    /* AND THE MODULES CENTER ON WHAT THE READER SEES, not on the column's own box.
+       The panel is inset from the chrome, and that gap is chrome-colored — so it reads as
+       part of the rail. A module inset by the same amount on both sides therefore LOOKS
+       inset by that amount on the left and by that amount plus the gap on the right.
+       Measured on the dark rail shell: 6 against 14, reported as "too wide to the right"
+       — and reported AFTER a check had honestly measured 6 and 6. That check was not
+       wrong; it measured the column's own border box, which is not an edge anyone sees.
+
+       So the column takes the gap's width as its leading inset. What it does with the
+       trailing one depends on whether it OWNS the gap — see the next block, which is where
+       that was finally settled. */
+    :where([data-wk-panel]) :where(.wk-rail) {
+        --wk-rail-inset-start: var(--space-wk-sm, 0.5rem);
+        --wk-rail-inset-end: 0px;
+    }
+}
+
+/* ─── …AND WHERE IT CAN, THE COLUMN OWNS THE GAP OUTRIGHT ─── */
+/* The block above made the gap LOOK like part of the rail. This one makes it part of it.
+   The difference is one line, and it is the shell's most visible one.
+   Every column in this family draws its horizontal rules at the same height, from the same
+   component, off the same token — that is the whole idea of the shape: one rule across all
+   the columns. With the panel's gap sitting between the last column and the panel, that one
+   line arrives at the seam and stops short of it. Measured on the expandable rail shell: the
+   rail's rules end at x=252, the panel's begin at x=260, both at y=431. Eight pixels of
+   nothing, in the middle of the line the whole layout is built around.
+   It was reported three times. It was never a decision — the even four-sided inset on the
+   panel was, and this is not that: the panel keeps every one of its four margins in every
+   shape, and in THIS shape one of them has simply moved to the other side of the seam.
+   The mechanics, and why nothing on screen moves:
+     the column grows by the gap          (`--wk-rail-gutter`, 0 everywhere else)
+     it insets its own contents by it     (so the modules sit exactly where they sat)
+     the panel drops its inline-start margin  (so the panel starts exactly where it started)
+   Net effect: eight pixels that were chrome-colored are now rail-colored, and those two
+   colors are the same — measured in both panel shells that ship, `oklch(0.97 0 0)` on the
+   muted one and `oklch(0.205 0 0)` on the dark one. Nothing else changes. The line meets the
+   panel.
+   ⚠️ THE FLOOR UNDER THAT LAST PARAGRAPH IS A COLOR PAIR, and a theme may pull it apart. If
+   `--color-wk-rail-bg` ever stops matching the shell's own background, this gap becomes eight
+   visible pixels of rail beside the panel. A guard holds the pair for exactly that reason.
+   Scoped by an attribute the SHELL emits rather than by `:has()`, because the shell is the
+   only thing that knows which column ends up beside the panel — and it withholds the marker
+   for the two shapes this cannot be verified against: a `variant="panel"` rail, whose gap is
+   the point of it, and a shell whose panel-adjacent column is the sidebar, of which this
+   library ships no example. Both keep today's behavior exactly. */
+@media (width >= 64rem) {
+    [data-wk-panel][data-wk-nav-gutter] .wk-rail {
+        --wk-rail-gutter: var(--space-wk-sm, 0.5rem);
+        /* Taken back now that the column owns the pixels: without it the modules would run
+           to the panel's edge, and the trailing space the block above went to such lengths
+           to produce would be gone. */
+        --wk-rail-inset-end: var(--space-wk-sm, 0.5rem);
+    }
+
+    [data-wk-panel][data-wk-nav-gutter] [data-wk-content-panel] {
+        margin-inline-start: 0;
+    }
+}
+
+/* ─── Beside an inset panel, a column draws no edge of its own ─── */
+/* An `<x-wirekit::app-shell panel>` lifts its content column off the chrome with a real gap.
+   A navigation column standing on that chrome therefore has nothing to butt against, and its
+   inline-end border becomes a line floating in the middle of the surface — visible in the
+   rendered docs as a doubled 1px rule where the two edges nearly met, and as a stray line
+   once the panel moved away.
+
+   The separation is the gap, so the border goes. Scoped to the flush shapes: a rail or
+   sidebar in its own `panel` variant is a floating card that keeps its full border, and
+   below the breakpoint the panel is not inset at all, so the edges come back with it. */
+@media (min-width: 1024px) {
+    :where([data-wk-panel]) .wk-rail:not([data-variant="panel"]),
+    :where([data-wk-panel]) .wk-sidebar[data-variant="flush"] {
+        border-inline-end-width: 0;
+    }
+}
+
+/* ─── A rounded column CLIPS, so its own rules end at the arc ─── */
+/* A divider and a corner radius on the same box read as a mistake when the box does not
+   clip, and unclipped they genuinely are one: every horizontal rule in this family is
+   drawn full-bleed — the shell bar's bottom border, the footer zone's top border, and the
+   `bleed` prop that removes a host's padding on purpose — so on a rounded box that does not
+   clip, a straight 1px line runs out past the arc and ends in mid-air beside the corner.
+
+   Clipping is what makes them coexist: the line then stops exactly where the curve begins,
+   which is what a rounded panel with a full-bleed divider looks like everywhere it is done
+   properly. Only ONE of the family's three rounded roots had it (the app-shell content panel);
+   these are the other two.
+
+   Safe against the overlays, because they do not live here: dropdown, tooltip, modal and
+   drawer all teleport to the overlay root, so nothing that opens from inside a rail is
+   subject to this. The browser test asserts that rather than trusting it. */
+:where(.wk-rail[data-variant="panel"], .wk-sidebar[data-variant="card"]) {
+    overflow: hidden;
+}
+
+/* ─── What a toned navigation column does to its descendants ─── */
+/* The eight roles above dress the column itself. Its CONTENTS are ordinary
+   components — sidebar items, groups, disclosures, a profile row — and every one
+   of them reads the generic neutral tokens. Without this block a dark rail would
+   hold black-on-black item labels, and the alternative would be teaching every
+   component in the column to know about tones.
+
+   So the column re-points the generic tokens for its own subtree only. This is
+   the same move `.wk-hero[data-variant="dark"]` already makes for muted text, one
+   level up: change the meaning of the token inside the box rather than change
+   every box that reads it.
+
+   Scoped to the NAVIGATION surfaces, never to the shell root. An app-shell may
+   also carry `data-wk-tone` — its chrome color — and remapping there would drag
+   the whole content column into the rail's palette, which is the opposite of what
+   a toned shell with a light content panel is for.
+
+   `.wk-rail` is listed WITHOUT the attribute because a rail inside a toned shell
+   inherits its roles from that ancestor rather than declaring its own. On an
+   untoned rail the remap is a no-op: the roles it reads are the `:root` defaults,
+   which are these same generic tokens. */
+/* DESCENDANTS ONLY, and the `*` is load-bearing rather than tidy.
+   Applied to the column itself this is a CIRCULAR REFERENCE: the tone block
+   declares `--color-wk-rail-bg: var(--color-wk-bg-muted)` on that same element,
+   and this block declares `--color-wk-bg-muted: var(--color-wk-rail-hover-bg)`,
+   which resolves through `--color-wk-text` back to `--color-wk-rail-text`. CSS
+   detects the cycle and makes the properties invalid at computed-value time —
+   silently. Measured in the browser: the muted tone's rail computed to
+   `rgba(0, 0, 0, 0)`, i.e. no background at all, while every static check passed
+   because a stylesheet does not resolve cycles and neither does a string match.
+   Scoped to descendants, the column keeps clean roles and its contents get the
+   remapped generics, which is what was meant in the first place. */
+/* The third selector is a flush column standing on TONED CHROME.
+   A toned app-shell paints the chrome, and a `variant="flush"` sidebar paints nothing —
+   flush means the host's background IS the column's. So the chrome shows through and the
+   column's ordinary contents have to follow it. Without this they kept the page palette:
+   axe measured 1.1:1 on a heading and 2.63:1 on the navigation items of exactly that
+   composition, in a preview this repository shipped.
+   `[data-variant="flush"]` is what keeps a CARD out of it: a card brings its own surface,
+   so remapping its contents would put chrome-colored text on a light panel — the same
+   defect from the other side. */
+:where(.wk-rail, .wk-sidebar[data-wk-tone], [data-wk-tone] .wk-sidebar[data-variant="flush"]) * {
+    --color-wk-text: var(--color-wk-rail-text);
+    --color-wk-text-muted: var(--color-wk-rail-muted);
+    --color-wk-text-subtle: var(--color-wk-rail-muted);
+    --color-wk-bg-muted: var(--color-wk-rail-hover-bg);
+    --color-wk-bg-elevated: var(--color-wk-rail-bg);
+    --color-wk-border: var(--color-wk-rail-border);
+    --color-wk-ring: var(--color-wk-rail-ring);
+}
+
+/* ─── The app-shell's rail column ─────────────────────────────── */
+/* There is deliberately NO width rule here, and the absence is the design.
+   The sidebar column needs one (`aside.wk-app-shell-aside` above) only because
+   its aside carries a hardcoded `w-64` for the mobile overlay that then has to be
+   out-specified at lg, once per state, through `:has()`. The rail column carries no
+   width utility at all, so it is `auto` and the nav inside sizes it directly — and
+   the rail has FOUR width states (three labeling modes plus a live expanded
+   toggle) whose combinations would otherwise need one `:has()` rule each, and a
+   new one for every mode added later.
+   The marker class stays because the browser tests address the column by it. */
 
 /* ─── Blocked-day diagonal hatch (event-calendar day markers) ── */
 /* A day marked `blocked` (unavailable) gets a subtle diagonal hatch on top of
@@ -2184,6 +2787,28 @@
     .wk-radial::before {
         transition: none;
     }
+}
+
+/* ── The shell bar's scrolling strip ─────────────────────────────────────────
+   The bar's leading cluster scrolls, because on a phone a tab strip is wider than the bar
+   and a clipped box that cannot scroll is content nobody can reach. What it must NOT do is
+   paint a scrollbar: the bar's bottom edge is the shell's horizontal rule, level with the
+   same edge in every other column, and a track drawn there is a second, shorter line a few
+   pixels under the real one. It reads as the rule breaking, which is exactly how it was
+   reported — "an underline with nothing else to it".
+
+   Hidden, not thinned. `wk-scrollbar` keeps the track from taking height, which was the
+   older half of the problem; it still paints, which was the rest of it.
+
+   The region stays operable: touch and wheel scroll it, and Tab scrolls each item into view
+   as it takes focus. Where the strip holds no focusable content, `shell-bar`'s own `label`
+   prop turns it into a named tab stop — the same requirement, answered where it applies. */
+.wk-shell-bar-strip {
+    scrollbar-width: none;
+}
+
+.wk-shell-bar-strip::-webkit-scrollbar {
+    display: none;
 }
 
 /* ── Carousel ────────────────────────────────────────────────────────────────

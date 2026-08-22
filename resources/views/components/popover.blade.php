@@ -4,10 +4,20 @@
 @props([
     'placement' => config('wirekit.components.popover.placement', 'bottom'),
     'offset' => config('wirekit.components.popover.offset', 8),
+    // The panel's accessible name. It is a `role="dialog"`, so a screen reader announces
+    // this on entry — and the default said "Popover", which names the mechanism rather than
+    // the content. A page with two of them announced the same word twice.
+    'label' => null,
+    // Whether the panel pads its own contents. `false` hands the whole surface to the
+    // caller, which is what a panel with its own header, scroll region and footer needs:
+    // those three have to reach the panel's edges, and padding on the outside puts a gutter
+    // between the scrollbar and the border and stops a sticky header from sitting flush.
+    'padded' => true,
     'scope' => null,
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -39,6 +49,12 @@
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text)]',
     ]), $scope);
+
+    // Applied AFTER the resolved classes rather than by removing the padding utility from
+    // the list above: a personalization may have replaced that list wholesale, and a
+    // caller asking for an unpadded panel means it whatever the theme did.
+    $padded = BooleanProp::from($padded, true);
+    $paddingClasses = $padded ? '' : 'p-0';
 @endphp
 
 <div
@@ -83,8 +99,8 @@
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
         role="dialog"
-        aria-label="{{ __('Popover') }}"
-        class="{{ $panelClasses }}"
+        aria-label="{{ $label ?? __('Popover') }}"
+        class="{{ $panelClasses }} {{ $paddingClasses }}"
         x-cloak
     >
         {{ $slot }}
