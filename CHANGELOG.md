@@ -10,6 +10,31 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.34.2] — 2026-08-22
+
+Patch. The collapse control on a [sidebar](https://docs.wirekit.app/components/sidebar) moves
+to the bottom of the column, where this library's own documentation already said it was.
+
+### Fixed
+
+- **The collapse control sits below the navigation.** It was the first child of the column, so
+  it rendered at the top — while the page describing it told the reader to click the chevron
+  at the bottom, and while the [app rail](https://docs.wirekit.app/components/app-rail)'s
+  expander really is down there. One gesture, two components, two places to look for it.
+- **It no longer shares an edge with the row beside it.** The column carried no row gap, so
+  the control's hover surface ended at exactly the pixel where the adjacent
+  [`sidebar.item`](https://docs.wirekit.app/components/sidebar)'s began. Two surfaces of the same gray touching read as one smudged block rather than as two
+  controls — and on a collapsed rail, where both are icon-sized squares, nothing else tells
+  them apart. The column now spaces its rows by the token they were already spaced by.
+
+### Internal
+
+- The suite reported a different number of tests depending on how it was run — 5576 in one
+  process, and 5606, 5606 or 5636 across four workers. Two test files reached a helper by
+  loading a third test file, which is a no-op in one process and a second registration of that
+  file's thirty cases in any other. The helper moved to the shared bootstrap; every run now
+  reports the same number.
+
 ## [2.34.1] — 2026-08-22
 
 Patch. Three things that only show while a navigation column is moving or a theme is rounding

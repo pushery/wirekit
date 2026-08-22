@@ -200,6 +200,21 @@
     // rendered before it.
     $collapseBtnClasses = WireKit::resolveClasses('sidebar', 'toggle', implode(' ', [
         $toggle === 'start' ? 'self-start' : 'self-end',
+        // BOTTOM of the column, and never touching the row above it.
+        //
+        // It used to be the first child, which put it at the top — while the documentation
+        // told the reader to click "the chevron toggle at the bottom of the sidebar", and
+        // while the app rail's expander really is down there. Two components, one gesture,
+        // two places to look for it.
+        //
+        // `mt-auto` claims the leftover height when the column is taller than its content;
+        // with a short list it simply ends up last, which is the same thing to look at.
+        //
+        // The spacing is not decoration and does NOT live here: two `mt-` utilities on one
+        // element fight, and the later one wins. The column carries a row gap instead — see
+        // the nav below — because that is what the space is: the distance between two rows,
+        // read from the same token the navigation rows already space themselves by.
+        'mt-auto',
         'inline-flex items-center justify-center shrink-0',
         'p-1 rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
@@ -244,8 +259,12 @@
              width they will not keep — which is what made the rows jump and settle. --}}
         :data-settling="settling ? '' : null"
         :class="collapsed ? 'w-[3.5rem]' : 'w-[var(--wk-sidebar-w,16rem)]'"
-        {{ $attributes->class([$classes, 'group/wk-sidebar transition-[width] duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
+        {{-- The row gap the collapse control needs. Without it the button's hover surface
+             ended exactly where the adjacent item's began — two gray rectangles sharing an
+             edge, which reads as one smudged block rather than as two controls. --}}
+        {{ $attributes->class([$classes, 'group/wk-sidebar gap-[var(--space-wk-nav-gap)] transition-[width] duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
     >
+        @include('wirekit::components.partials.sidebar-zones')
         @if($toggle !== 'none')
         <button
             type="button"
@@ -259,7 +278,6 @@
             </svg>
         </button>
         @endif
-        @include('wirekit::components.partials.sidebar-zones')
     </nav>
 @else
     {{-- <nav> carries a default aria-label so AT distinguishes it from the main
