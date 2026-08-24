@@ -10,6 +10,36 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.34.3] — 2026-08-23
+
+Patch. Two things a navigation column did while it was moving, and one that it did on a page
+that had only just loaded.
+
+### Fixed
+
+- **The icon in an expanding [app rail](https://docs.wirekit.app/components/app-rail) no longer
+  drifts and snaps back.** The attribute that decides where an item's icon sits — centered in an
+  icon strip, at the start edge once names are beside it — is the same one that switches the
+  labeling mode, and it was being held back until the width animation finished so that names
+  would stop being laid out at widths they do not keep. The icon went with it: measured across
+  the expand, it drifted from 17.5px out to 108px as the column grew underneath, then returned
+  to 16px in a single frame. The two concerns are now two attributes, so the alignment follows
+  the mode immediately and only the names wait.
+- **A hard reload no longer animates a navigation column that has never been anywhere else.**
+  Both the app rail and the [sidebar](https://docs.wirekit.app/components/sidebar) carried their
+  width transition unconditionally, so the very first paint after a cache-clearing reload showed
+  the column growing from its collapsed width to its resting one. It was most visible on a column
+  that remembers its state — `persist` restores the collapsed width from `localStorage` before
+  anything is painted, and the transition then animated out of the state it had just restored. The
+  transition is now armed one frame after the column initializes, and only where the column can
+  actually collapse; before that it simply has the width it has.
+
+### Documentation
+
+- The two collapsible sidebars on the sidebar page set their width with the `--wk-sidebar-w`
+  token instead of a plain `width`, which is what the component reads. Pasted as it was, the
+  example produced a column that ignored the value on collapse.
+
 ## [2.34.2] — 2026-08-22
 
 Patch. The collapse control on a [sidebar](https://docs.wirekit.app/components/sidebar) moves
@@ -26,14 +56,6 @@ to the bottom of the column, where this library's own documentation already said
   [`sidebar.item`](https://docs.wirekit.app/components/sidebar)'s began. Two surfaces of the same gray touching read as one smudged block rather than as two
   controls — and on a collapsed rail, where both are icon-sized squares, nothing else tells
   them apart. The column now spaces its rows by the token they were already spaced by.
-
-### Internal
-
-- The suite reported a different number of tests depending on how it was run — 5576 in one
-  process, and 5606, 5606 or 5636 across four workers. Two test files reached a helper by
-  loading a third test file, which is a no-op in one process and a second registration of that
-  file's thirty cases in any other. The helper moved to the shared bootstrap; every run now
-  reports the same number.
 
 ## [2.34.1] — 2026-08-22
 

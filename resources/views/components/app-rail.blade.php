@@ -154,6 +154,10 @@
 <nav
     data-wk-rail
     data-labels="{{ $labels }}"
+    {{-- A rail that cannot expand has no Alpine, so its names must simply be present — but
+         only in the modes that show names at all. An expandable rail overrides this from the
+         binding below, where the words wait for the column to stop moving. --}}
+    @if(! $expandable && $labels !== 'tooltip') data-wk-names @endif
     data-variant="{{ $variant }}"
     data-indicator="{{ $indicator }}"
     @if($tone !== 'default') data-wk-tone="{{ $tone }}" @endif
@@ -175,10 +179,24 @@
              order rather than by state. Rewriting the mode instead means the expanded
              rail simply IS an inline-label rail, and there is nothing to arbitrate.
              The static attribute below stays for the paint before Alpine initializes. --}}
-        {{-- `wide`, not `expanded`: the names leave with the toggle and arrive only once the
-             column has stopped widening. Bound to `expanded` they were laid out at a width
-             that was not yet the final one, wrapped there, and unwrapped as it caught up. --}}
-        :data-labels="wide ? 'inline' : '{{ $labels }}'"
+        :data-wk-ready="ready ? '' : null"
+        {{-- TWO markers, because the mode and the words need two different moments.
+
+             `data-labels` rewrites the mode AT ONCE, and it has to: it also decides where an
+             item's icon sits. Held back to the end of the transition, the icon stayed centered
+             while the column grew and then snapped to the start edge — measured on a 240px
+             rail, it drifted from 17.5px out to 108px and jumped back to 16px in one frame.
+             That is a worse artifact than the one this was meant to remove.
+
+             `data-wk-names` is the words alone, and those wait. Put into the layout at the
+             width the animation happens to be passing through, a name wraps there and unwraps
+             as the column catches up. Two concerns, two markers — the sidebar already splits
+             them the same way, and this file did not. --}}
+        :data-labels="expanded ? 'inline' : '{{ $labels }}'"
+        {{-- Present whenever names belong in the layout: always in a mode that shows them,
+             and in `tooltip` only once the column has finished widening. The mode above flips
+             at once; this waits. --}}
+        :data-wk-names="(wide || '{{ $labels }}' !== 'tooltip') ? '' : null"
         :class="expanded ? '{{ $expandedWidth }}' : '{{ $restingWidth }}'"
     @endif
     {{ $attributes->class([
@@ -190,7 +208,14 @@
         // Tailwind's emission order rather than by state, which is the exact failure
         // sidebar.item documents for its active foreground.
         $restingWidth => ! $expandable,
-        'transition-[width] duration-[var(--transition-wk-duration)]' => $expandable,
+        // Gated on `data-wk-ready`, which Alpine sets one frame after init. Ungated, a cold
+        // load animates the ARRIVAL of the stylesheet rather than any state change: the column
+        // lays out unstyled, the CSS lands, and the browser tweens between the two.
+        // One class per entry: the drift inventory reads this form and reported the combined
+        // one as untraceable, which would have meant allowlisting two classes that are right
+        // here in the source.
+        'data-[wk-ready]:transition-[width]' => $expandable,
+        'data-[wk-ready]:duration-[var(--transition-wk-duration)]' => $expandable,
     ])->merge($navLabelAttrs) }}
 >
     @isset($brand)
