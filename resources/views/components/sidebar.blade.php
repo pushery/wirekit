@@ -262,7 +262,12 @@
         {{-- The row gap the collapse control needs. Without it the button's hover surface
              ended exactly where the adjacent item's began — two gray rectangles sharing an
              edge, which reads as one smudged block rather than as two controls. --}}
-        {{ $attributes->class([$classes, 'group/wk-sidebar gap-[var(--space-wk-nav-gap)] transition-[width] duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
+        :data-wk-ready="ready ? '' : null"
+        {{-- The width transition is gated on `data-wk-ready`, which Alpine sets one frame after
+             init. Ungated, a cold load animates the ARRIVAL of the stylesheet: the column lays
+             out unstyled, the CSS lands, and the browser tweens from one to the other — a column
+             unfolding on a page where nothing was toggled. Only ever visible without a cache. --}}
+        {{ $attributes->class([$classes, 'group/wk-sidebar gap-[var(--space-wk-nav-gap)] data-[wk-ready]:transition-[width] data-[wk-ready]:duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
     >
         @include('wirekit::components.partials.sidebar-zones')
         @if($toggle !== 'none')

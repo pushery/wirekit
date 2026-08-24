@@ -43,7 +43,23 @@ export default function wirekitAppRail(config = {}) {
          */
         wide: false,
 
+        /**
+         * Whether this column may ANIMATE its width yet. False for the first frame.
+         *
+         * The transition is declared on the element, so on a cold load — no cache, stylesheet
+         * still in flight — the column lays out at its unstyled width, and the moment the CSS
+         * lands the browser animates the ARRIVAL of the styled width. The reader sees a column
+         * unfold on a page where nothing was toggled. With a warm cache the styles are there
+         * before first paint and nothing shows, which is why this only ever surfaced on
+         * cmd+shift+R.
+         *
+         * Set after a frame rather than in `init()` itself: setting it synchronously lands in
+         * the same style recalculation as the first paint, which is the thing being avoided.
+         */
+        ready: false,
+
         _persistKey: config.persist || null,
+        _readyFrame: null,
         _onExternalToggle: null,
         _onWidthSettled: null,
         _wideFallback: null,
@@ -53,6 +69,17 @@ export default function wirekitAppRail(config = {}) {
 
             // First paint has no animation to wait for, so the names are simply there.
             this.wide = this.expanded;
+
+            // One frame, then the width may animate. `requestAnimationFrame` is guarded
+            // because a plain unit harness has no browser globals — the same reason `$el` is
+            // optional throughout this file.
+            if (typeof requestAnimationFrame === 'function') {
+                this._readyFrame = requestAnimationFrame(() => {
+                    this.ready = true;
+                });
+            } else {
+                this.ready = true;
+            }
 
             // `width` and not any property: this element also transitions colors, and every
             // one of those would otherwise publish the names early.
@@ -114,6 +141,12 @@ export default function wirekitAppRail(config = {}) {
                 clearTimeout(this._wideFallback);
                 this._wideFallback = null;
             }
+
+            if (this._readyFrame && typeof cancelAnimationFrame === 'function') {
+                cancelAnimationFrame(this._readyFrame);
+                this._readyFrame = null;
+            }
+
         },
 
         toggle() {

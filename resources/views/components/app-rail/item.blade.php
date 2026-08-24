@@ -146,13 +146,17 @@
     // break at and would otherwise overflow the column instead of wrapping inside it.
     $labelClasses = WireKit::resolveClasses('app-rail.item', 'label', implode(' ', [
         'sr-only',
-        'group-data-[labels=below]/wk-rail:not-sr-only',
+        // The words wait for `data-wk-names`; the MODE does not. Held together on one marker,
+        // the icon rode the widening column out to its middle and snapped back at the end —
+        // measured at 17.5px → 108px → 16px in a single frame. The mode still decides HOW a
+        // name is laid out (below, inline); this decides only WHETHER it is in the layout yet.
+        'group-data-[wk-names]/wk-rail:not-sr-only',
         'group-data-[labels=below]/wk-rail:w-full',
         'group-data-[labels=below]/wk-rail:break-words',
         'group-data-[labels=below]/wk-rail:text-center',
         'group-data-[labels=below]/wk-rail:text-[length:var(--text-wk-xs)]',
         'group-data-[labels=below]/wk-rail:leading-tight',
-        'group-data-[labels=inline]/wk-rail:not-sr-only',
+
         'group-data-[labels=inline]/wk-rail:min-w-0',
         'group-data-[labels=inline]/wk-rail:flex-1',
         'group-data-[labels=inline]/wk-rail:break-words',
