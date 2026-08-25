@@ -52,6 +52,23 @@
         // Collapse-to-icon rail: center the lone icon when the sidebar collapses.
         'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
+        // ⚠️ THE ROW HEIGHT MUST NOT DEPEND ON WHICH CHILD HAPPENS TO BE TALLEST.
+        //
+        // Without this the row was sized by its LABEL while expanded and by its ICON while
+        // collapsed, because the label carries `sr-only` in the rail and `sr-only` is a
+        // 1px box. Measured on the docs site: an expanded item is 34.75px (a 22.75px line
+        // box plus 6px top and bottom) and a collapsed one is 32px (a 20px icon plus the
+        // same padding) — 2.75px per row, so a three-item rail changed height by 8.25px
+        // when it collapsed and everything under it moved. Reported four times before
+        // anybody measured it.
+        //
+        // `1lh` is the item's own line box, so the floor tracks the type ramp and the
+        // `--font-scale-wk` accessibility bump instead of pinning a length. Chrome 109 /
+        // Safari 16.4 / Firefox 120 — inside the support floor, not above it.
+        //
+        // The sample app could not see this: it loads no web font, so the fallback's line
+        // box is shorter than the icon and both states measured 32px there.
+        'min-h-[calc(1lh_+_var(--padding-wk-y-sm)_*_2)]',
         // Derived from the container rather than fixed — see dist/wirekit.css. In a card
         // sidebar the concentric answer is 4px, not the 8px this used to be.
         'rounded-[var(--radius-wk-nav-item)]',

@@ -91,7 +91,7 @@
                     type="button"
                     {{-- Keep editor focus + selection while running the command (Pitfall #7). --}}
                     x-on:mousedown.prevent=""
-                    x-on:click="cmd('{{ $command }}')"
+                    x-on:click="cmd({{ \Pushery\WireKit\Support\AlpinePayload::string($command) }})"
                     @if(isset($historyGuard[$command]))
                         {{-- Undo/redo disable themselves when the history stack is empty. --}}
                         :disabled="!{{ $historyGuard[$command] }}"

@@ -58,18 +58,25 @@
         default => WireKit::validateProp('message', 'intent', $intent, ['neutral', 'primary', 'info', 'success', 'warning', 'danger']),
     };
 
-    // Actions reveal. 'hover' reveals on hover OR keyboard focus (focus-within),
-    // so a keyboard user tabbing to the action control makes it visible — the
-    // old group-hover-only reveal was invisible to touch AND keyboard (and never
-    // fired at all, since the <article> carried no `group` class). 'always' keeps
-    // the actions visible for touch surfaces.
+    // Actions reveal. 'hover' reveals on hover, on keyboard focus (focus-within), AND on
+    // a coarse pointer — the last of those was the half this comment used to leave to the
+    // caller. A phone has no hover, and `focus-within` needs the user to first tap a
+    // control they cannot see, so the shipped default rendered every message's action
+    // slot at opacity 0 with no discoverable way to reveal it: reply, react and delete
+    // were gone on every phone until the developer found the prop. The docs even call
+    // 'always' "the accessible choice for touch devices, which have no hover" while the
+    // other one shipped as the default.
+    //
+    // `inline-edit` — same problem, four files away — already solved it in-component with
+    // exactly this media query. 'always' still exists for a surface that wants the
+    // actions permanently visible on every pointer type.
     $actionsRevealValue = match ($actionsReveal) {
         'hover', 'always' => $actionsReveal,
         default => WireKit::validateProp('message', 'actionsReveal', $actionsReveal, ['hover', 'always']),
     };
     $actionsRevealClasses = $actionsRevealValue === 'always'
         ? ''
-        : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100 transition-opacity duration-[var(--transition-wk-duration)]';
+        : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity duration-[var(--transition-wk-duration)]';
 
     // Parse author data
     $authorName = is_array($author) ? ($author['name'] ?? '') : (string) $author;

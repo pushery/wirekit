@@ -96,6 +96,18 @@ export default () => ({
             requestAnimationFrame(tick);
         };
 
+        // Held on the instance so `replay()` can reach it. Everything the counter needs is
+        // captured in this closure — the parsed target, the suffix, the formatter — so a
+        // restart re-runs the same animation rather than re-deriving it from a dataset that
+        // may since have been re-rendered.
+        this._runCounter = runCounter;
+
+        // A restart that a caller who is not Alpine can reach. The documentation site renders
+        // a replay control for anything carrying `data-replayable`, and this component sets it;
+        // dispatching beats reaching into the component's scope from outside.
+        this._replayListener = () => this.replay();
+        this.$root.addEventListener('wirekit:stat-replay', this._replayListener);
+
         // Safety net. Both start-triggers below can MISS:
         // the entrance path waits for an `animationend` that may never fire (a
         // coalesced / skipped keyframe, or a browser that doesn't emit it), and
@@ -171,6 +183,42 @@ export default () => ({
     },
 
     /**
+     * Start the count-up again, from zero.
+     *
+     * The counter is deliberately once-per-mount: `runCounter` is guarded by `_started`, and
+     * the IntersectionObserver disconnects itself the first time it fires. That is right for
+     * the scroll trigger — a stat should not re-count every time it passes the viewport — and
+     * it left no way to ask for a restart at all.
+     *
+     * Two surfaces were promising one anyway. The component emits `data-replayable="true"`,
+     * which makes the documentation site render a replay control, and the component's own page
+     * told developers to "scroll the preview out of view and back in" — which cannot work,
+     * because the observer is gone after the first intersection. The site's control happens to
+     * work by re-mounting the whole subtree, producing a fresh component; that is a property of
+     * the caller destroying the DOM, not something this component offered.
+     *
+     * Reduced motion is honored the same way `init()` honors it: no animation, straight to the
+     * settled state. A restart is still a motion.
+     */
+    replay() {
+        if (! this._runCounter) {
+            return;
+        }
+
+        if (this._fallbackTimer) {
+            clearTimeout(this._fallbackTimer);
+            this._fallbackTimer = null;
+        }
+
+        this._started = false;
+        this.value = '0';
+        this.progress = 0;
+        this.animating = false;
+
+        this._runCounter();
+    },
+
+    /**
      * Alpine teardown hook — disconnect the IntersectionObserver if the
      * stat is removed from the DOM before scrolling into view
      * (Livewire morph, conditional render, navigation). Without this
@@ -190,5 +238,10 @@ export default () => ({
             clearTimeout(this._fallbackTimer);
             this._fallbackTimer = null;
         }
+        if (this._replayListener) {
+            this.$root.removeEventListener('wirekit:stat-replay', this._replayListener);
+            this._replayListener = null;
+        }
+        this._runCounter = null;
     },
 });

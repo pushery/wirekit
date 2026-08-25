@@ -103,6 +103,14 @@ class ClassByAreaCommand extends Command
         if ($compiledCss !== null) {
             $compiled = CompiledCssParser::extractGeneratedSelectors($compiledCss);
             sort($compiled);
+        } else {
+            // Say so. An empty compiled column and a compiled column that was never read
+            // look identical in the output, and the second one silently reports every
+            // class as un-emitted.
+            $this->components->warn(
+                'No compiled CSS found, so the compiled column is empty rather than measured. '.
+                'Run your asset build first (it is looked for at public/build/assets/*.css).'
+            );
         }
 
         $wirekitCssSelectors = $this->extractCustomCssSelectors($projectRoot.'/dist/wirekit.css');
@@ -135,13 +143,36 @@ class ClassByAreaCommand extends Command
         return CompiledCssParser::extractGeneratedSelectors($cssPath);
     }
 
+    /**
+     * The post-Tailwind stylesheet to compare the source inventory against.
+     *
+     * ⚠️ THE ONLY LOCATION THIS LOOKED IN WAS `sample/public/build/assets/app-*.css`, WHICH
+     * NO DEVELOPER INSTALL CONTAINS — `sample/` is export-ignored, so on a real installation
+     * the glob matched nothing, `$compiled` stayed empty, and the command reported its
+     * compiled-CSS column as blank without saying why. Every class looked un-emitted.
+     *
+     * A developer's own build output is the artifact that answers the same question for
+     * them, so it is looked for first. The package's own sample is the fallback, for a run
+     * from inside this repository.
+     */
     private function locateCompiledCss(string $projectRoot): ?string
     {
-        // Prefer the sample app's build output — that's the canonical
-        // post-Tailwind artifact this repo's audit references.
-        $matches = glob($projectRoot.'/sample/public/build/assets/app-*.css');
-        if ($matches !== false && count($matches) > 0) {
-            return $matches[0];
+        $candidates = [];
+
+        // The consuming application's Vite output, which is what a developer actually has.
+        if (function_exists('base_path')) {
+            $candidates[] = base_path('public/build/assets/*.css');
+        }
+
+        // This repository's sample app, for a run from inside the package.
+        $candidates[] = $projectRoot.'/sample/public/build/assets/app-*.css';
+
+        foreach ($candidates as $pattern) {
+            $matches = glob($pattern);
+
+            if ($matches !== false && count($matches) > 0) {
+                return $matches[0];
+            }
         }
 
         return null;

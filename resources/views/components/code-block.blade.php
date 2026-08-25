@@ -44,6 +44,8 @@
 
     $codeClasses = implode(' ', [
         'wk-scrollbar block overflow-x-auto',
+        // A tab stop must show that it has focus.
+        'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'p-[var(--space-wk-md,1rem)]',
         'bg-transparent border-0 rounded-none',
         'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',
@@ -115,5 +117,18 @@
         </div>
     @endif
 
-    <pre @class([$preClasses])><code @class([$codeClasses]) @if($language) data-language="{{ $language }}" @endif>{{ $slot }}</code></pre>
+    {{-- The <code> is the scroller: the wrapper above is overflow-hidden, and a line
+         longer than the container scrolls HERE. Without this wiring that scroll happens
+         by pointer only, so a keyboard-only or switch user cannot reach the hidden text
+         at all (WCAG 2.1.1, Level A). The annotation is the generic-scroll-region shape
+         this library prescribes for itself, the same one scroll-area uses; the name carries the
+         language when one was declared, because "PHP code" locates the region far better
+         in a rotor list than a page full of identical "Code" entries. --}}
+    <pre @class([$preClasses])><code
+        @class([$codeClasses])
+        tabindex="0"
+        role="region"
+        aria-label="{{ $language ? __(':language code', ['language' => $language]) : __('Code') }}"
+        @if($language) data-language="{{ $language }}" @endif
+    >{{ $slot }}</code></pre>
 </div>

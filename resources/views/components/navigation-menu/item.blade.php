@@ -86,22 +86,21 @@
 @else
     {{-- Trigger + flyout panel --}}
     <div
-        x-on:mouseenter="open('{{ $name }}')"
+        x-on:mouseenter="open({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
         x-on:mouseleave="scheduleClose()"
-        class="relative"
-        {{ $attributes }}
+        {{ $attributes->class('relative') }}
     >
         <button
             type="button"
-            x-on:click="open('{{ $name }}')"
-            :aria-expanded="activeItem === '{{ $name }}' ? 'true' : 'false'"
+            x-on:click="open({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
+            :aria-expanded="activeItem === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} ? 'true' : 'false'"
             aria-haspopup="dialog"
             data-wk-nav-trigger="{{ $name }}"
             class="{{ $triggerClasses }}"
         >
             {{ $trigger }}
             {{-- Chevron indicator --}}
-            <svg class="w-4 h-4 text-[color:var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]" :class="activeItem === '{{ $name }}' && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+            <svg class="w-4 h-4 text-[color:var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]" :class="activeItem === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
             </svg>
         </button>
@@ -124,7 +123,7 @@
         <template x-teleport="#wk-overlay-root">
             <div
                 x-ref="panel-{{ $name }}"
-                x-show="activeItem === '{{ $name }}'"
+                x-show="activeItem === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}"
                 x-on:mouseenter="cancelClose()"
                 x-on:mouseleave="scheduleClose()"
                 x-transition:enter="transition ease-out duration-200"

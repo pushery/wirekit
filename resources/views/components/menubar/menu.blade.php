@@ -41,13 +41,13 @@
     ]), $scope);
 @endphp
 
-<div class="relative" {{ $attributes }}>
+<div {{ $attributes->class('relative') }}>
     {{-- Menu trigger --}}
     <button
         type="button"
-        x-on:click="toggleMenu('{{ $name }}')"
-        x-on:mouseenter="openMenu('{{ $name }}')"
-        :aria-expanded="activeMenu === '{{ $name }}' ? 'true' : 'false'"
+        x-on:click="toggleMenu({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
+        x-on:mouseenter="openMenu({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
+        :aria-expanded="activeMenu === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} ? 'true' : 'false'"
         aria-haspopup="menu"
         role="menuitem"
         data-wk-menubar-trigger="{{ $name }}"
@@ -72,7 +72,7 @@
     <template x-teleport="#wk-overlay-root">
         <div
             x-ref="panel-{{ $name }}"
-            x-show="activeMenu === '{{ $name }}'"
+            x-show="activeMenu === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}"
             {{-- Keydown is ALSO wired here, not only on the menubar root: once
                  the panel teleports out of the document flow it is no longer a DOM descendant
                  of the root, so arrow-key / Escape keydowns fired while a panel

@@ -91,7 +91,7 @@
 <div
     {{ $attributes->except(['id', 'class']) }}
     id="{{ $id }}"
-    x-data="wirekitMap({ center: {{ \Pushery\WireKit\Support\AlpinePayload::from($centerArr) }}, zoom: {{ (int) $zoom }}, markers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, provider: '{{ $provider }}'@if($styleUrl), styleUrl: '{{ $styleUrl }}'@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution) }}@endif })"
+    x-data="wirekitMap({ center: {{ \Pushery\WireKit\Support\AlpinePayload::from($centerArr) }}, zoom: {{ (int) $zoom }}, markers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, provider: {{ \Pushery\WireKit\Support\AlpinePayload::string($provider) }}@if($styleUrl), styleUrl: {{ \Pushery\WireKit\Support\AlpinePayload::string($styleUrl) }}@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution) }}@endif })"
     role="group"
     aria-label="{{ $ariaLabel }}"
     {{-- NO flex gap between canvas and list: the list's own divider border (a top

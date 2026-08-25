@@ -178,7 +178,17 @@
             id="{{ $id }}"
             name="{{ $name }}"
             class="peer sr-only"
-            @if($indeterminate) x-init="$el.indeterminate = true" @endif
+            {{-- ALWAYS emitted, in both states. `indeterminate` is a DOM property with no
+                 HTML attribute, so the server cannot render it — and the old form
+                 (`x-init="$el.indeterminate = true"`, emitted only when true) ran once and
+                 could only ever turn the state ON. The third state practically always
+                 arrives AFTER the first render, through a Livewire round trip that morphs
+                 the element: the attribute text changed, Alpine did not re-initialize, and
+                 the property kept its initial value. Measured with one of three rows
+                 selected — the server asked for it and `el.indeterminate` was false, so the
+                 box read as "none selected" while something was. --}}
+            data-wk-indeterminate="{{ $indeterminate ? 'true' : 'false' }}"
+            x-wk-indeterminate
             @if($hasError) aria-invalid="true" @endif
             @if($optimisticConfig)
                 x-ref="control"

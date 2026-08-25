@@ -312,6 +312,8 @@ class ExportApiMapCommand extends Command
      * absent anyway, which is the explanation anyone would reach for and stop at.
      *
      * The group id stays `recipes` — it is the name in the published manifest.
+     *
+     * @return array<string, mixed>
      */
     private function recipesGroup(string $packageRoot): array
     {

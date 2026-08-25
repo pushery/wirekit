@@ -247,6 +247,8 @@ final class ApexChartsAdapter implements ChartAdapter
      * cursor-following defaults that produced visible tooltip jitter.
      * Branch by canonical ApexCharts type so each chart family gets the
      * shape its users expect.
+     *
+     * @return array<string, mixed>
      */
     private function defaultTooltip(string $type): array
     {
@@ -306,6 +308,7 @@ final class ApexChartsAdapter implements ChartAdapter
         return $base;
     }
 
+    /** @return array<string, mixed> */
     private function defaultStroke(string $type): array
     {
         return match ($this->mapType($type)) {

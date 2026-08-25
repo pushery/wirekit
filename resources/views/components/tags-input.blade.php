@@ -154,7 +154,7 @@
     @endif
 
     <div
-        x-data="wirekitTagsInput({ name: '{{ $name }}', maxTags: {{ $maxTags ?? 'null' }}, tags: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialTags) }} })"
+        x-data="wirekitTagsInput({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, maxTags: {{ $maxTags ?? 'null' }}, tags: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialTags) }} })"
         {{ $attributes->only('class') }}
     >
 @if($optimisticConfig)
@@ -170,7 +170,7 @@
 @endif
         {{-- Hidden inputs for form submission — one per tag --}}
         <template x-for="(tag, i) in tags" :key="i">
-            <input type="hidden" :name="'{{ $name }}[]'" :value="tag" />
+            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="tag" />
         </template>
 
         <div class="{{ $containerClasses }} {{ $stateClasses }}" @click="$refs.input.focus()"

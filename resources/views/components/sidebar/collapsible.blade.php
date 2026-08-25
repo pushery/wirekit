@@ -38,6 +38,11 @@
         'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
         'group-data-[collapsed]/wk-sidebar:justify-center',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
+        // Same row-height floor as sidebar.item, and for the same reason: the label carries
+        // `sr-only` in the collapsed rail, so without a floor this row is sized by its
+        // LABEL while expanded and by its ICON while collapsed — 2.75px per row on the
+        // shipped type ramp, which moves everything below the rail when it collapses.
+        'min-h-[calc(1lh_+_var(--padding-wk-y-sm)_*_2)]',
         'rounded-[var(--radius-wk-nav-item)]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-muted)]',

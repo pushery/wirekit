@@ -131,7 +131,31 @@
         // also lets the code element's min-content shrink, so it can't force
         // its parent wider than the viewport).
         '[&_code]:font-[family-name:var(--font-wk-mono)] [&_code]:text-[length:var(--text-wk-sm)] [&_code]:bg-[var(--color-wk-bg-muted)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-[var(--radius-wk-sm)] [&_code]:[overflow-wrap:anywhere]',
-        '[&_pre]:bg-[var(--color-wk-bg-muted)] [&_pre]:rounded-[var(--radius-wk-md)] [&_pre]:p-[var(--padding-wk-x-md)] [&_pre]:mb-[var(--padding-wk-y-md)] [&_pre]:overflow-x-auto',
+        // ⚠️ A DESCENDANT `overflow-x` RULE ON <pre> USED TO BE HERE (the arbitrary-variant
+        // form, spelled out it would be re-emitted by the scanner reading this comment —
+        // Tailwind reads comments too, and writing the class here would resurrect the dead
+        // rule in the shipped stylesheet), AND IT MADE THE DEVELOPER'S OWN
+        // MARKUP INACCESSIBLE. A descendant selector turned every <pre> the caller passed
+        // in into a horizontal scroll region, and a <pre><code> block holds nothing
+        // focusable — so the hidden text was reachable by pointer only (WCAG 2.1.1,
+        // Level A). prose ships no JavaScript, so it cannot put a `tabindex` on markup it
+        // does not author; the only fix available to it is to stop creating the region.
+        //
+        // It was also invisible to every check we have: a static class scan cannot see a
+        // descendant selector, and axe's `scrollable-region-focusable` fires only when the
+        // content actually overflows at the tested viewport — the docs previews use short
+        // snippets, so both sweeps reported it clean.
+        //
+        // Wrapping instead of scrolling shows the whole line rather than hiding half of it,
+        // which is the better reading experience anyway. `anywhere` is the safety net for a
+        // single unbroken token longer than the column.
+        '[&_pre]:bg-[var(--color-wk-bg-muted)] [&_pre]:rounded-[var(--radius-wk-md)] [&_pre]:p-[var(--padding-wk-x-md)] [&_pre]:mb-[var(--padding-wk-y-md)]',
+        '[&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]',
+        // A caller who WANTS horizontal scrolling can have it, by authoring the keyboard
+        // model themselves: `<pre tabindex="0" role="region" aria-label="…">`. Scrolling is
+        // then granted to exactly the markup that is reachable, which is the whole point —
+        // the accessible path is the only path that scrolls.
+        '[&_pre[tabindex]]:whitespace-pre [&_pre[tabindex]]:overflow-x-auto',
         '[&_pre_code]:bg-transparent [&_pre_code]:p-0',
         // Table
         '[&_table]:w-full [&_table]:mb-[var(--padding-wk-y-md)] [&_table]:border-collapse',

@@ -13,7 +13,7 @@
     // an Alpine x-data="wirekitStatAnimate" handler that animates 0 → value
     // over 1.2s once the stat scrolls into view. Respects
     // prefers-reduced-motion (snaps to value, no animation).
-    'animate' => false,
+    'animate' => config('wirekit.components.stat.animate', false),
     // Description animation Option A — defer fade-in. When true AND animate=true,
     // the description span is hidden via x-show while the counter runs (~1.2s)
     // and fades in once the animation settles. Mutually exclusive with descriptionAnimate.

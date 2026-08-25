@@ -98,7 +98,7 @@
 <div
     {{ $attributes->except(['id', 'class']) }}
     id="{{ $id }}"
-    x-data="wirekitEventCalendar({ events: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventsArr) }}, dayMarkers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, view: '{{ $view }}', @if($date) date: '{{ $date }}', @endif weekStartsOn: {{ (int) $weekStartsOn }} })"
+    x-data="wirekitEventCalendar({ events: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventsArr) }}, dayMarkers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, view: {{ \Pushery\WireKit\Support\AlpinePayload::string($view) }}, @if($date) date: {{ \Pushery\WireKit\Support\AlpinePayload::string($date) }}, @endif weekStartsOn: {{ (int) $weekStartsOn }} })"
     role="group"
     aria-label="{{ $ariaLabel }}"
     {{-- Delegated truncated-title tooltip: every [data-wk-tip] pill/chip/row shares

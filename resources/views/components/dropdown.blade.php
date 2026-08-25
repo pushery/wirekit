@@ -73,7 +73,7 @@
          the scope across that move while `closest()` does not — the panel used to
          read this id off `data-wk-panel-id` with an ancestor walk, which returns
          null the moment the element leaves the component. --}}
-    x-data="wirekitDropdown({ placement: '{{ $placement }}', offset: {{ (int) $offset }}, panelId: '{{ $panelId }}' })"
+    x-data="wirekitDropdown({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }}, panelId: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelId) }} })"
     x-on:keydown="handleKeydown"
     x-on:keydown.escape.window="open && close()"
     x-on:click.outside="close()"

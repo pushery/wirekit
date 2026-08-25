@@ -192,12 +192,12 @@
              width the animation happens to be passing through, a name wraps there and unwraps
              as the column catches up. Two concerns, two markers — the sidebar already splits
              them the same way, and this file did not. --}}
-        :data-labels="expanded ? 'inline' : '{{ $labels }}'"
+        :data-labels="expanded ? 'inline' : {{ \Pushery\WireKit\Support\AlpinePayload::string($labels) }}"
         {{-- Present whenever names belong in the layout: always in a mode that shows them,
              and in `tooltip` only once the column has finished widening. The mode above flips
              at once; this waits. --}}
-        :data-wk-names="(wide || '{{ $labels }}' !== 'tooltip') ? '' : null"
-        :class="expanded ? '{{ $expandedWidth }}' : '{{ $restingWidth }}'"
+        :data-wk-names="(wide || {{ \Pushery\WireKit\Support\AlpinePayload::string($labels) }} !== 'tooltip') ? '' : null"
+        :class="expanded ? {{ \Pushery\WireKit\Support\AlpinePayload::string($expandedWidth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($restingWidth) }}"
     @endif
     {{ $attributes->class([
         $classes,

@@ -62,7 +62,12 @@
         'gap-[var(--gap-wk-md)]',
     ]), $scope);
 
-    $stickyClasses = $sticky ? 'sticky top-0 z-[var(--z-wk-sticky)]' : '';
+    // The CHROME layer, not the shared sticky one. A popover opened in page content is a
+    // teleported panel at --z-wk-dropdown (50); this bar used to sit at --z-wk-sticky (40)
+    // and was therefore painted over — arithmetic, not a quirk. A panel anchored INSIDE
+    // this bar opens downward and never overlaps it, so nothing is lost; a modal is still
+    // above, which is correct.
+    $stickyClasses = $sticky ? 'sticky top-0 z-[var(--z-wk-chrome)]' : '';
 
     // When `:container="true"`, the inner wrapper takes 100% of the header
     // content area up to the 2xl container limit and centers itself with

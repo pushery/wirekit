@@ -123,6 +123,14 @@ final class LucidePreset implements IconPreset
             'inbox' => 'lucide-inbox',
             'bolt' => 'lucide-zap', // lucide calls the bolt glyph `zap`
             'refresh' => 'lucide-refresh-cw', // lucide's rotate glyph
+            // Undo — the counter-clockwise arrow every set ships under a different name.
+            // Named for the CONCEPT, not for one family's spelling: the proposal reached us
+            // as `arrow-counter-clockwise`, which is Phosphor's word for it and would have
+            // made the vocabulary read differently depending on which set a project loads.
+            // Verified against the SVG files: lucide `undo`, tabler `arrow-back-up`,
+            // phosphor `arrow-counter-clockwise`, heroicons `arrow-uturn-left` — four real
+            // undo glyphs, not four things that look roughly alike.
+            'undo' => 'lucide-undo',
             // Media controls.
             'play' => 'lucide-play',
             'pause' => 'lucide-pause',

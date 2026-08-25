@@ -142,7 +142,7 @@
                                         x-on:load="loaded = true"
                                         x-on:error="loaded = true"
                                         :class="loaded ? 'opacity-100' : 'opacity-0'"
-                                        class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] object-contain shadow-[var(--shadow-wk-lg)] transition-opacity duration-200"
+                                        class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] object-contain shadow-[var(--shadow-wk-lg)] transition-opacity duration-[var(--transition-wk-duration)]"
                                     />
                                 </div>
                             </template>

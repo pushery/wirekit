@@ -6,6 +6,7 @@ namespace Pushery\WireKit;
 
 use Closure;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Str;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\AvatarPalette;
 use Pushery\WireKit\Support\StrictnessGate;
@@ -30,7 +31,7 @@ class WireKit
     /** @var array<string, array<string, array<string, mixed>>> */
     protected static array $scoped = [];
 
-    /** @var array<string, Closure|array> */
+    /** @var array<string, Closure|array<string, mixed>> */
     protected static array $personalizations = [];
 
     /**
@@ -54,6 +55,8 @@ class WireKit
      * reading-progress and theme-controller. It is retired on `button` and `badge`
      * only, so a blanket search-and-replace across `variant=` breaks thirteen
      * components that are correct.
+     *
+     * @param  array<string, mixed>|Closure  $defaults
      */
     public static function defaults(array|Closure $defaults): void
     {
@@ -115,6 +118,8 @@ class WireKit
      * Register a scoped personalization.
      *
      * In Blade: <x-wirekit::button scope="rounded">
+     *
+     * @param  array<string, mixed>  $personalizations
      */
     public static function scope(string $name, array $personalizations): void
     {
@@ -146,6 +151,8 @@ class WireKit
      *   WireKit::personalize('button', [
      *       'base' => 'inline-flex items-center font-medium',
      *   ]);
+     *
+     * @param  array<string, mixed>|Closure  $blocks
      */
     public static function personalize(string $component, array|Closure $blocks): void
     {
@@ -280,6 +287,90 @@ class WireKit
         return $value;
     }
 
+    /**
+     * @internal Seeds a morph-stable DOM id for a component template.
+     *
+     * Public without an external caller: every call site is a Blade view in this package
+     * (`tabs`, `collapsible`, `data-table`, `filter-builder`, `notification-center`,
+     * `status-matrix`), and a view cannot reach a non-public static. It is plumbing for
+     * those templates, not a promise a developer may build on.
+     *
+     * A DOM id that survives a Livewire round trip.
+     *
+     * An Alpine widget root whose id is re-randomized on every render is a different
+     * element to Livewire's morph, so the morph destroys and rebuilds it — and every
+     * piece of Alpine-only state goes with it: a sorted column, a hidden column, an open
+     * panel. The user sorts, clicks anything that talks to the server, and the sort is
+     * gone. Nothing errors; the widget simply forgets.
+     *
+     * A caller-supplied `id` already solved it and still does. What this fixes is the
+     * DEFAULT, by seeding it from the component's own stable identity — its `name` — which
+     * is precisely what a widget embedded in a Livewire component is given anyway.
+     *
+     * Without a seed there is nothing stable to derive from, so the random suffix remains:
+     * a collision between two unnamed widgets on one page would be worse than a re-render,
+     * and inventing determinism where the inputs have none would only move the surprise.
+     */
+    public static function stableId(string $prefix, ?string $seed = null): string
+    {
+        if ($seed === null || trim($seed) === '') {
+            return $prefix.'-'.Str::random(6);
+        }
+
+        $slug = Str::slug($seed);
+
+        // A seed of nothing but punctuation slugs to an empty string, which would make
+        // every such widget share one id.
+        return $slug === ''
+            ? $prefix.'-'.substr(hash('sha256', $seed), 0, 8)
+            : $prefix.'-'.$slug;
+    }
+
+    /**
+     * @internal Validates the `as` prop for a component template.
+     *
+     * Public without an external caller: every call site is a Blade view in this package —
+     * the eleven components that accept `as` — and a view cannot reach a non-public static.
+     * A developer sets `as` on the component; they do not call this.
+     *
+     * Validate a developer-supplied HTML tag name before it is rendered as one.
+     *
+     * Eleven components accept an `as` prop and interpolate it straight into the opening
+     * tag — `<{{ $as }} …>`. Blade escapes that echo, and `e()` escapes NEITHER A SPACE NOR
+     * AN `=`, so `as="div onmouseover=alert(1)"` renders
+     * `<div onmouseover=alert(1) class="…">`: a working event handler. Measured across
+     * text, container, row, stack, center and section, all six identical.
+     *
+     * `as` is developer-supplied rather than end-user input, which is why this is a hole
+     * rather than a live exploit — but a value derived from data (a CMS block type, a
+     * per-tenant layout setting) reaches it the same way, and nothing said it must not.
+     *
+     * The SHAPE is checked rather than an allowlist of tags, deliberately. An enum would
+     * have to guess which elements a developer legitimately wants — `article`, `aside`,
+     * `figure`, a custom element — and break the ones it did not think of. A tag name has
+     * exactly one shape, and nothing that satisfies it can carry an attribute.
+     *
+     * @throws \InvalidArgumentException when the value cannot be a tag name
+     */
+    public static function tagName(string $component, string $as): string
+    {
+        // A letter, then letters, digits or hyphens. That admits every HTML element and
+        // every valid custom element, and admits no whitespace, quote, slash or equals.
+        if (preg_match('/^[a-zA-Z][a-zA-Z0-9-]*$/', $as) === 1) {
+            return $as;
+        }
+
+        throw new \InvalidArgumentException(sprintf(
+            'WireKit [%s]: `as` must be an HTML tag name, got "%s". Anything with a space or '.
+            'an `=` in it is rendered into the opening tag as an attribute.',
+            $component,
+            $as
+        ));
+    }
+
+    /**
+     * @param  array<int, string>  $allowed
+     */
     /**
      * Validate a prop value against a list of allowed values.
      *

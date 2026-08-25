@@ -11,6 +11,7 @@
  */
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
+import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 import wirekitChartJs from './components/chart.js';
@@ -92,7 +93,15 @@ import wirekitMap from './components/map.js';
 import wirekitStickyPanelShadows from './components/sticky-panel.js';
 import wirekitStream from './components/stream.js';
 
-export default function (Alpine) {
+/**
+ * The shared runtime every WireKit component leans on, separated from the component
+ * registrations so a developer who wants three components can obtain it without
+ * referencing the other seventy-five.
+ *
+ * Called by the default installer AND by `register()`; it is idempotent, so using both
+ * is harmless.
+ */
+export function installRuntime(Alpine) {
     // Inline-Alpine components (combobox, data-table column menu) read this global
     // for panel positioning — they have no module scope to import from. Mirrors
     // the full IIFE bundle. Guarded so it is set once even on repeat plugin use.
@@ -131,6 +140,43 @@ export default function (Alpine) {
 
     registerAncestorDataMagic(Alpine);
 
+    // `indeterminate` is a DOM property with no HTML attribute, so something has to
+    // apply it after EVERY render — not only the first. See utils/indeterminate.js.
+    registerIndeterminateDirective(Alpine);
+}
+
+/**
+ * Register a CHOSEN SUBSET of components, plus the shared runtime.
+ *
+ *   import { register, wirekitDropdown, wirekitModal } from '.../dist/wirekit.esm.js';
+ *   Alpine.plugin((Alpine) => register(Alpine, { wirekitDropdown, wirekitModal }));
+ *
+ * This is what makes the ESM bundle worth choosing over the IIFE one. Until it existed
+ * the module had exactly ONE export — the default installer, which references all 78
+ * factories — so no bundler could drop anything and a one-component app shipped the
+ * whole graph: 235,403 bytes raw / 65.7 KB gzip, byte-for-byte the size of the plain
+ * IIFE build. The docs advertised tree-shaking the whole time.
+ *
+ * The keys are the `x-data` names the Blade components emit, so passing the imported
+ * bindings straight through is both the shortest and the correct spelling.
+ */
+export function register(Alpine, components) {
+    installRuntime(Alpine);
+
+    for (const [name, factory] of Object.entries(components)) {
+        Alpine.data(name, factory);
+    }
+}
+
+/**
+ * The default installer: every component, unchanged.
+ *
+ * A developer who wants all of WireKit keeps `Alpine.plugin(WireKit)` and pays for the
+ * whole library, which is the correct trade for that case — the subset path above is
+ * for the one who does not.
+ */
+export default function (Alpine) {
+    installRuntime(Alpine);
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitDropdown', wirekitDropdown);
@@ -211,3 +257,89 @@ export default function (Alpine) {
     Alpine.data('wirekitStickyPanelShadows', wirekitStickyPanelShadows);
     Alpine.data('wirekitStream', wirekitStream);
 }
+
+/*
+ * Every factory by name, so a bundler can keep the three a developer imports and drop
+ * the seventy-five they do not. Generated from the import list above; the two must stay
+ * in step, which `EsmBundleExportsEveryComponentTest` asserts.
+ */
+export {
+    wirekitChartJs,
+    wirekitDropdown,
+    wirekitSubmenu,
+    wirekitTooltip,
+    wirekitModal,
+    wirekitDrawer,
+    wirekitToast,
+    wirekitTreeView,
+    wirekitHoverCard,
+    wirekitOtpInput,
+    wirekitTagsInput,
+    wirekitInput,
+    wirekitNumberInput,
+    wirekitSidebarDisclosure,
+    wirekitAppRail,
+    wirekitSidebarRail,
+    wirekitClipboardButton,
+    wirekitReplayButton,
+    wirekitAccordion,
+    wirekitTreeViewNode,
+    wirekitScrollFade,
+    wirekitScrollToTop,
+    wirekitDropdownTrigger,
+    wirekitCodeBlock,
+    wirekitSlider,
+    wirekitPasswordInput,
+    wirekitSegmentedControl,
+    wirekitPricingTable,
+    wirekitSortable,
+    wirekitReadingProgress,
+    wirekitFileUpload,
+    wirekitTablist,
+    wirekitTabs,
+    wirekitCountdown,
+    wirekitReadingMeta,
+    wirekitReadingBookmark,
+    wirekitDevWarning,
+    wirekitDataTableColumnMenu,
+    wirekitInlineEdit,
+    wirekitMultiSelect,
+    wirekitCombobox,
+    wirekitDismissible,
+    wirekitRating,
+    wirekitReaction,
+    wirekitRangeSlider,
+    wirekitPopover,
+    wirekitScopeSwitcher,
+    wirekitCommandPalette,
+    wirekitContextMenu,
+    wirekitMenubar,
+    wirekitNavigationMenu,
+    wirekitAlertDialog,
+    wirekitCarousel,
+    wirekitThemeController,
+    wirekitFab,
+    wirekitCalendar,
+    wirekitTableSort,
+    wirekitTour,
+    wirekitResizableHandle,
+    wirekitImageCompare,
+    wirekitLightbox,
+    wirekitConversation,
+    wirekitAssistantMessage,
+    wirekitStatAnimate,
+    wirekitAnimate,
+    wirekitReadingSpine,
+    wirekitReadingMinimap,
+    wirekitReadingToc,
+    wirekitEditor,
+    wirekitColorPicker,
+    wirekitFilterBuilder,
+    wirekitStatusMatrix,
+    wirekitNotificationCenter,
+    wirekitDataTable,
+    wirekitEventCalendar,
+    wirekitMap,
+    wirekitStickyPanelShadows,
+    wirekitStream,
+};

@@ -58,7 +58,7 @@ use JsonException;
  *   attribute + Alpine directive -> AlpinePayload, always through `{{ }}`
  *   inline `<script>`            -> Js::from
  *
- * `tests/Feature/AlpinePayloadContextGuardTest.php` holds both boundaries.
+ * A guard in the package's own suite holds both boundaries.
  */
 final class AlpinePayload
 {
@@ -71,5 +71,32 @@ final class AlpinePayload
             $value,
             JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
         );
+    }
+
+    /**
+     * The same, for a value that must arrive in JavaScript as a STRING.
+     *
+     * This exists because of what it replaces. Ninety-five places wrote a prop straight
+     * into a single-quoted JS literal — `x-data="wirekitModal('{{ $name }}')"` — and
+     * `{{ }}` does not protect that position: the browser decodes `&#039;` back to `'`
+     * before Alpine ever evaluates the attribute. Measured, with a benign control:
+     *
+     *     value  "');alert(1);('"   ->  wirekitFoo('');alert(1);('')     <- Alpine runs it
+     *     value  "plain-name"       ->  wirekitFoo('plain-name')         <- fine
+     *     encoded, either value     ->  wirekitFoo("…")                  <- one argument
+     *
+     * The cast is the point, and `from()` alone would have been the wrong fix. A prop
+     * holding `5` reaches JavaScript as the STRING `'5'` today; `from(5)` would emit the
+     * NUMBER `5`, so any `=== '5'` in a factory would quietly stop matching. Casting
+     * first preserves the type the caller already gets, which makes the change a
+     * security fix and nothing else.
+     *
+     * `null` casts to `''`, which is what Blade already echoed for it.
+     *
+     * @throws JsonException when the value cannot be represented as JSON
+     */
+    public static function string(mixed $value): string
+    {
+        return self::from((string) $value);
     }
 }

@@ -106,6 +106,10 @@
     ])), $scope);
 
     $innerWrapperClass = "flex flex-row items-center gap-[var(--space-wk-md)] w-full {$maxClass} mx-auto";
+
+    // `as` is interpolated straight into the opening tag, and Blade's escaping does
+    // not stop a space or an `=` — so an unvalidated value renders as an attribute.
+    $as = \Pushery\WireKit\WireKit::tagName('brand-bar', (string) $as);
 @endphp
 
 <{{ $as }} {{ $attributes->class([$rootClass]) }}>

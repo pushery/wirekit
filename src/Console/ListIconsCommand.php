@@ -97,9 +97,11 @@ class ListIconsCommand extends Command
 
         if ($findings === []) {
             $this->error(sprintf(
-                'Found no <x-wirekit::icon> usage in %d file(s) across %d path(s).',
+                'Found no icon name in %d file(s) across %d path(s) — neither an <x-wirekit::icon> '
+                .'tag nor an `icon="…"` prop on any of the %d components that take one.',
                 $filesScanned,
-                count($paths)
+                count($paths),
+                count(self::componentsTakingAnIconName())
             ));
             $this->line('  Scanned: '.implode(', ', $paths));
             $this->line('');
@@ -124,13 +126,20 @@ class ListIconsCommand extends Command
          */
         if ($literals === []) {
             $this->error(sprintf(
-                'Found %d <x-wirekit::icon> tag(s) in %d file(s), and not one names an icon literally.',
+                'Found %d icon usage(s) in %d file(s), and not one names an icon literally.',
                 count($findings),
                 $filesScanned
             ));
 
             if ($dynamic > 0) {
-                $this->line(sprintf('  All %d are bound at runtime (:name="…"), which the source cannot resolve.', $dynamic));
+                // Both bound forms, because both surfaces are read: a tag binds its name as
+                // `:name`, a component's prop as `:icon`. Naming only the first sends the
+                // developer whose icons are props looking for a syntax they never wrote.
+                $this->line(sprintf(
+                    '  All %d are bound at runtime (:name="…" on a tag, :icon="…" on a prop), '
+                    .'which the source cannot resolve.',
+                    $dynamic
+                ));
             }
 
             $this->line('');
@@ -357,6 +366,8 @@ class ListIconsCommand extends Command
      * path. Same set as `IconResolver::BUILT_IN_PRESETS` — duplicated
      * here as instances (not classes) so the listing avoids the
      * Reflection round-trip on every render.
+     *
+     * @return array<string, mixed>
      */
     private function buildPresetMap(): array
     {

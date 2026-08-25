@@ -137,8 +137,8 @@
     @if($column) data-wk-sort-column="{{ $column }}" @endif
     @if($sortable && $column)
         {{-- Alpine sort mode: bind click + aria-sort to parent wirekitTableSort state --}}
-        @click="sortBy('{{ $column }}')"
-        :aria-sort="getSortDirection('{{ $column }}') === 'asc' ? 'ascending' : getSortDirection('{{ $column }}') === 'desc' ? 'descending' : 'none'"
+        @click="sortBy({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})"
+        :aria-sort="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc' ? 'ascending' : getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc' ? 'descending' : 'none'"
     @elseif($ariaSort)
         aria-sort="{{ $ariaSort }}"
     @endif
@@ -148,9 +148,9 @@
         {{-- Alpine sort mode: dynamic direction indicator via x-show --}}
         <span class="inline-flex items-center gap-1">
             {{ $slot }}
-            <svg x-show="getSortDirection('{{ $column }}') === 'asc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L2 8h8L6 3z"/></svg>
-            <svg x-show="getSortDirection('{{ $column }}') === 'desc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L2 4h8L6 9z"/></svg>
-            <svg x-show="!getSortDirection('{{ $column }}')" aria-hidden="true" class="h-3 w-3 opacity-40" viewBox="0 0 12 12" fill="currentColor"><path d="M6 2L3 5h6L6 2zM6 10L3 7h6L6 10z"/></svg>
+            <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L2 8h8L6 3z"/></svg>
+            <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L2 4h8L6 9z"/></svg>
+            <svg x-show="!getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})" aria-hidden="true" class="h-3 w-3 opacity-40" viewBox="0 0 12 12" fill="currentColor"><path d="M6 2L3 5h6L6 2zM6 10L3 7h6L6 10z"/></svg>
         </span>
     @elseif($sortable)
         {{-- Livewire sort mode. With `sortAction`, the label + indicator sit in a

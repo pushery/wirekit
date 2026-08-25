@@ -91,7 +91,7 @@ class MakeCommand extends Command
         File::ensureDirectoryExists(dirname($livewireClassPath));
         File::ensureDirectoryExists(dirname($viewPath));
 
-        File::put($livewireClassPath, $this->generateClass($className));
+        File::put($livewireClassPath, $this->generateClass($className, $viewName));
         File::put($viewPath, $this->generateView($template));
 
         $this->info("Created: {$livewireClassPath}");
@@ -100,7 +100,21 @@ class MakeCommand extends Command
         return self::SUCCESS;
     }
 
-    private function generateClass(string $className): string
+    /**
+     * The generated class renders the view this command actually WROTE.
+     *
+     * It used to call `Str::kebab($className)` at runtime instead, which was wrong
+     * twice over. It named a class the stub never imported — inside
+     * `namespace App\Livewire;` an unimported name resolves against that namespace,
+     * so it meant `App\Livewire\Str`, a fatal on the FIRST render while the command
+     * printed "Created: …" and exited 0. And it derived the view name from a second
+     * source: the file is written to `$meta['view']`, so the two agreed only by
+     * coincidence, and any template whose view name is not the kebab of its class
+     * would have rendered a view that does not exist.
+     *
+     * Passing the same value that named the file removes both.
+     */
+    private function generateClass(string $className, string $viewName): string
     {
         $namespace = $this->laravel->getNamespace().'Livewire';
 
@@ -115,7 +129,7 @@ class MakeCommand extends Command
         {
             public function render()
             {
-                return view('livewire.'.Str::kebab('{$className}'));
+                return view('livewire.{$viewName}');
             }
         }
         PHP;
@@ -232,7 +246,7 @@ class MakeCommand extends Command
         File::ensureDirectoryExists(dirname($livewireClassPath));
         File::ensureDirectoryExists(dirname($viewPath));
 
-        File::put($livewireClassPath, $this->generateClass($className));
+        File::put($livewireClassPath, $this->generateClass($className, $viewName));
         File::put($viewPath, $viewBody);
 
         $this->info("Created: {$livewireClassPath}");

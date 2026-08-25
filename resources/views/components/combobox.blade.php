@@ -251,7 +251,7 @@
         <x-wirekit::label :for="$comboId" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 <div
-    x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ \Pushery\WireKit\Support\AlpinePayload::from($normalized) }}, listId: '{{ $listId }}', emptyId: '{{ $listId }}-empty', inputId: '{{ $comboId }}' })"
+    x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ \Pushery\WireKit\Support\AlpinePayload::from($normalized) }}, listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }} })"
     @click.outside="open = false"
     {{-- The roleless wrapper carries ONLY layout — every caller attribute
          (aria-describedby, data-*, autocomplete, required, …) is routed to the
@@ -284,7 +284,7 @@
         aria-expanded="false"
         :aria-expanded="open"
         aria-controls="{{ $listId }}"
-        :aria-activedescendant="open && filtered[highlight] ? '{{ $listId }}-opt-' + highlight : null"
+        :aria-activedescendant="open && filtered[highlight] ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + highlight : null"
         aria-autocomplete="list"
         placeholder="{{ $placeholder }}"
         autocomplete="off"
@@ -421,7 +421,7 @@
                     <template x-for="opt in grp.options" :key="opt.value">
                         <li
                             role="option"
-                            :id="'{{ $listId }}-opt-' + opt._idx"
+                            :id="{{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + opt._idx"
                             :aria-selected="selected === opt.value"
                             :aria-disabled="opt.disabled ? 'true' : null"
                             :class="opt.disabled
@@ -443,7 +443,7 @@
         <template x-for="(opt, idx) in filtered" :key="opt.value">
             <li
                 role="option"
-                :id="'{{ $listId }}-opt-' + idx"
+                :id="{{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + idx"
                 :aria-selected="selected === opt.value"
                 :aria-disabled="opt.disabled ? 'true' : null"
                 :class="opt.disabled

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
+use Composer\InstalledVersions;
+
 /**
  * Resolve the running WireKit version. Single source of truth so the three
  * export commands (`wirekit:export-json`, `wirekit:export-api-map`,
@@ -39,7 +41,39 @@ final class VersionResolver
 {
     public static function resolve(): string
     {
-        // Path 1 — consuming app's installed.json
+        // Path 0 — Composer's own API, which is location-independent.
+        //
+        // ⚠️ PATH 1 BELOW READS `base_path('vendor/composer/installed.json')`, AND
+        // `vendor-dir` IS A CONFIGURABLE SETTING. On a project that sets it — Composer
+        // treats that as ordinary — the hand-rolled path resolves to nothing, the chain
+        // falls through, and every artifact stamped by this resolver reports a
+        // development version for a tagged install: `/components.json`, `/api-map.json`,
+        // `/blocks.json` and the project-root schema, all of which are fed to IDE
+        // extensions and AI tooling. Reproduced against a tree laid out the way Composer
+        // lays one out under `config.vendor-dir: "vendor2"`.
+        //
+        // `InstalledVersions` is what the ecosystem uses for exactly this, and Laravel's
+        // own console commands call it. Guarded on `class_exists` — the same guard
+        // Livewire's provider uses — because this package can be loaded without Composer's
+        // runtime present.
+        if (class_exists(InstalledVersions::class)) {
+            try {
+                if (InstalledVersions::isInstalled('pushery/wirekit')) {
+                    $version = (string) InstalledVersions::getPrettyVersion('pushery/wirekit');
+
+                    if ($version !== '' && $version !== 'dev') {
+                        return $version;
+                    }
+                }
+            } catch (\Throwable) {
+                // Fall through to the paths below. A resolver that throws would take the
+                // whole export command with it, and a wrong version is recoverable where a
+                // fatal is not.
+            }
+        }
+
+        // Path 1 — the consuming app's installed.json, kept as the fallback for a load
+        // without Composer's runtime.
         if (function_exists('base_path')) {
             $installedPath = base_path('vendor/composer/installed.json');
             if (file_exists($installedPath)) {

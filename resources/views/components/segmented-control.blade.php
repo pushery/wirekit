@@ -250,8 +250,8 @@
                 @endif
                 class="{{ $segmentClasses }} {{ $sizeClasses }}"
                 :class="selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }}
-                    ? '{{ $segmentSelectedClasses }}'
-                    : '{{ $segmentUnselectedClasses }}'"
+                    ? {{ \Pushery\WireKit\Support\AlpinePayload::string($segmentSelectedClasses) }}
+                    : {{ \Pushery\WireKit\Support\AlpinePayload::string($segmentUnselectedClasses) }}"
             >
                 {{ $optLabel }}
             </button>

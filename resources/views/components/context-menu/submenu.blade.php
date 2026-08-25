@@ -70,7 +70,7 @@
      teleports out of the document flow (x-teleport preserves x-data scope). The parent's
      click is stopPropagation'd; leaf child items keep their own close(). --}}
 <div
-    x-data="wirekitSubmenu({ placement: '{{ $placement }}', offset: {{ (int) $offset }} })"
+    x-data="wirekitSubmenu({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }} })"
     x-effect="open || closeSub()"
     data-wk-submenu
     class="block w-full"

@@ -124,6 +124,14 @@ final class TablerPreset implements IconPreset
             'inbox' => 'tabler-inbox',
             'bolt' => 'tabler-bolt',
             'refresh' => 'tabler-refresh',
+            // Undo — the counter-clockwise arrow every set ships under a different name.
+            // Named for the CONCEPT, not for one family's spelling: the proposal reached us
+            // as `arrow-counter-clockwise`, which is Phosphor's word for it and would have
+            // made the vocabulary read differently depending on which set a project loads.
+            // Verified against the SVG files: lucide `undo`, tabler `arrow-back-up`,
+            // phosphor `arrow-counter-clockwise`, heroicons `arrow-uturn-left` — four real
+            // undo glyphs, not four things that look roughly alike.
+            'undo' => 'tabler-arrow-back-up', // tabler's undo glyph
             // Media controls.
             'play' => 'tabler-player-play',
             'pause' => 'tabler-player-pause',

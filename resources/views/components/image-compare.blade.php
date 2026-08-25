@@ -134,8 +134,8 @@
     @if($decorative) role="presentation" @endif
     x-data="wirekitImageCompare({
         value: {{ $clampedValue }},
-        orientation: '{{ $isVertical ? 'vertical' : 'horizontal' }}'@if($wireModelSafe !== null),
-        wireModel: '{{ $wireModelSafe }}',
+        orientation: {{ \Pushery\WireKit\Support\AlpinePayload::string($isVertical ? 'vertical' : 'horizontal') }}@if($wireModelSafe !== null),
+        wireModel: {{ \Pushery\WireKit\Support\AlpinePayload::string($wireModelSafe) }},
         wireLive: {{ $isLiveModel ? 'true' : 'false' }}
         @endif
     })"

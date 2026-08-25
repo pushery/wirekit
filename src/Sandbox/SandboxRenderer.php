@@ -53,6 +53,7 @@ final class SandboxRenderer
         'card' => 'card.body',
     ];
 
+    /** @param  array<string, mixed>  $props */
     public static function render(string $component, array $props, string $ipAddress = '0.0.0.0'): RenderResult
     {
         if (! ComponentAllowlist::allows($component)) {

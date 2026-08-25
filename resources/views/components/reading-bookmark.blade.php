@@ -83,14 +83,23 @@
     $useScoped = $resolvedBoundary === 'container' || $resolvedBoundary === 'selector';
     $boundaryClass = $useScoped
         ? 'absolute bottom-[var(--padding-wk-x-lg)] right-[var(--padding-wk-x-lg)]'
-        : 'fixed bottom-[var(--padding-wk-x-lg)] right-[var(--padding-wk-x-lg)]';
+        // ⚠️ The bottom of the viewport is NOT the bottom of the usable screen on a phone
+        // with a home indicator — the inset is 34px on a notched iPhone, and this control
+        // sat inside it. The library states the rule in dist/wirekit.css and already ships
+        // this exact expression for `.wk-fab` and `.wk-bottom-nav`; these offsets were
+        // simply never given the term. `env()` resolves to 0 wherever there is no inset,
+        // so it costs nothing elsewhere.
+        //
+        // No browser test can catch this: `env(safe-area-inset-*)` is 0 in headless
+        // Playwright, which is why it survived every green mobile run.
+        : 'fixed bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[var(--padding-wk-x-lg)]';
 
     $rootClass = WireKit::resolveClasses('reading-bookmark', 'base', implode(' ', [
         'wk-reading-bookmark',
         $boundaryClass,
         'z-[var(--z-wk-sticky)]',
         'flex items-center gap-3 px-4 py-3',
-        'text-sm text-[color:var(--color-wk-text)]',
+        'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]',
     ]), $scope);
 
     $thresholdFloat = max(0.0, min(1.0, (float) $threshold));
@@ -135,7 +144,7 @@
     <button
         type="button"
         @click="resume()"
-        class="wk-reading-bookmark__resume inline-flex items-center px-3 py-1 rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-xs font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
+        class="wk-reading-bookmark__resume inline-flex items-center px-3 py-1 rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-[length:var(--text-wk-xs)] font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
     >
         Resume
     </button>

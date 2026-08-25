@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use InvalidArgumentException;
 use Pushery\WireKit\ComponentRegistry;
+use Pushery\WireKit\Fonts\FontPreset;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\ClassPropsExtractor;
@@ -221,7 +222,11 @@ class InstallCommand extends Command
     /** Counter for --ignore-failed-flags reporting. */
     private int $failedFlagCount = 0;
 
-    /** Pending install-log entries, flushed on closeInstallLog(success). */
+    /**
+     * Pending install-log entries, flushed on closeInstallLog(success).
+     *
+     * @var array<int, array<string, mixed>>
+     */
     private array $pendingInstallLog = [];
 
     /**
@@ -524,14 +529,39 @@ class InstallCommand extends Command
             return self::FAILURE;
         }
 
-        $lines = array_filter(explode("\n", (string) file_get_contents($logPath)));
-        if ($lines === []) {
+        // Streaming, not slurped. The old read loaded the whole log and doubled it in an
+        // array to use one line: a log holding its five retained sessions needed 91.5 MB to
+        // read 44.7 MB and died at memory_limit=64M — the command that undoes a bad install
+        // was the one that ran out of memory.
+        $lastLine = InstallLog::lastSessionLine($logPath);
+
+        if ($lastLine === null) {
             $this->error('.wirekit-install.log is empty — nothing to roll back.');
 
             return self::FAILURE;
         }
 
-        $lastSession = json_decode(end($lines), true);
+        $lastSession = json_decode($lastLine, true);
+
+        // ⚠️ A SECOND --rollback USED TO SILENTLY RE-APPLY THE SAME SESSION AND REPORT
+        // SUCCESS. The handler read the last line and never consumed it, so running it
+        // twice wrote the identical before-snapshots again: the project stayed where the
+        // first rollback had put it, the command printed "Rollback complete — N file(s)
+        // restored." and exited 0. There was no error, no warning and no output difference
+        // from a genuine second step, so a developer stepping back two installs believed
+        // they had reached a baseline they never left.
+        //
+        // A completed rollback now appends a marker, which is what makes the log a record
+        // of what HAPPENED rather than only of what was installed.
+        if (is_array($lastSession) && isset($lastSession['rolled_back'])) {
+            $this->error('The most recent install session has already been rolled back.');
+            $this->line(sprintf('  Session %s was undone at %s.', $lastSession['rolled_back'], $lastSession['at'] ?? 'an earlier time'));
+            $this->line('  Only the newest session is reversible — the older ones are kept so you can');
+            $this->line('  read what previous installs touched, not to step back through them.');
+
+            return self::FAILURE;
+        }
+
         if (! is_array($lastSession) || ! isset($lastSession['actions'])) {
             $this->error('Malformed .wirekit-install.log session — cannot parse last session.');
 
@@ -570,6 +600,15 @@ class InstallCommand extends Command
 
         $this->line('');
         if ($failed === 0) {
+            // Consume the session, so a second --rollback says so instead of replaying it.
+            // Only on a CLEAN rollback: a partial one left the tree half-restored, and
+            // re-running it is then the reasonable next move rather than a mistake.
+            InstallLog::append($logPath, (string) json_encode([
+                'rolled_back' => $lastSession['session_id'] ?? '?',
+                'at' => date('c'),
+                'restored' => $restored,
+            ]));
+
             $this->info(sprintf('Rollback complete — %d file(s) restored.', $restored));
 
             return self::SUCCESS;
@@ -885,7 +924,8 @@ class InstallCommand extends Command
 
             try {
                 $this->injectFontOverrides($category, (string) $key);
-                $this->publishFontAssets();
+                // The key the flag carried, not the whole catalog — see publishFontAssets().
+                $this->publishFontAssets((string) $key);
             } catch (InvalidArgumentException $e) {
                 $this->line('  <fg=red>✗</> '.$e->getMessage());
                 $hadFailure = true;
@@ -962,6 +1002,8 @@ class InstallCommand extends Command
 
     /**
      * CSS-first injection — writes @theme + :root override block into app.css.
+     *
+     * @param  FontPreset  $preset
      */
     private function injectFontOverridesCssFirst(string $category, $preset, bool $isBoth = false): void
     {
@@ -1002,6 +1044,8 @@ class InstallCommand extends Command
      * Anchored regex match against the well-defined Tailwind v3 config shape.
      * On shape mismatch (custom config layout, comments interleaved, etc.),
      * logs an actionable skip message rather than risking AST corruption.
+     *
+     * @param  FontPreset  $preset
      */
     private function injectFontOverridesJsConfig(string $category, $preset): void
     {
@@ -1088,15 +1132,30 @@ CSS;
     }
 
     /**
-     * Triggers the existing `vendor:publish --tag=wirekit-fonts` flow so the
-     * resolved preset's local CSS file lands in `public/vendor/wirekit/fonts/`.
+     * Publish ONE font preset's directory — its CSS and that family's woff2 files.
+     *
+     * ⚠️ THIS USED TO PUBLISH THE WHOLE TREE, once per `--font*` flag. `--tag=wirekit-fonts`
+     * copies 5.8 MB across 90 files in 21 preset directories, and the provider's own comment
+     * says so; an app that activates two families uses roughly 430 KB of it. So
+     * `wirekit:install --font=inter` wrote 5.8 MB into `public/` for one family, up to three
+     * times in a run, and the recommended `post-autoload-dump` wiring re-copied all of it on
+     * every `composer install`.
+     *
+     * It also compounded the rollback path: those 68 binary files are what inflate one
+     * install-log session from 1.33 MB to 8.95 MB — a 6.7x amplification of the file
+     * `--rollback` then has to read.
+     *
+     * The per-preset tags already existed, derived from the same registry the flag's key
+     * comes from, so the key was in hand at the call site the whole time.
      *
      * Non-overwriting (`--force=false`) — re-running won't clobber developer
      * customizations. Idempotent: silently skips already-published files.
+     *
+     * @param  string  $presetKey  the resolved preset key, e.g. `inter`
      */
-    private function publishFontAssets(): void
+    private function publishFontAssets(string $presetKey): void
     {
-        $this->callSilently('vendor:publish', ['--tag' => 'wirekit-fonts']);
+        $this->callSilently('vendor:publish', ['--tag' => 'wirekit-font-'.$presetKey]);
     }
 
     private function publishConfig(): void

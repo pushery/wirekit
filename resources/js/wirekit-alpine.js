@@ -28,6 +28,7 @@
 
 import Alpine from 'alpinejs';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
+import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 
@@ -206,6 +207,10 @@ if (hostAlpine) {
 {
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(target);
+
+    // `indeterminate` is a DOM property with no HTML attribute, so something has to
+    // apply it after EVERY render — not only the first. See utils/indeterminate.js.
+    registerIndeterminateDirective(target);
 
     target.data('wirekitChartJs', wirekitChartJs);
     target.data('wirekitDropdown', wirekitDropdown);

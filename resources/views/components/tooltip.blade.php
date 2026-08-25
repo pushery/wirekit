@@ -70,7 +70,7 @@
 <div
     @if($disabled) data-wk-tooltip-disabled="true" @endif
     x-data="wirekitTooltip({
-        placement: '{{ $placement }}',
+        placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }},
         offset: {{ (int) $offset }},
         delayShow: {{ (int) $delayShow }},
         delayHide: {{ (int) $delayHide }}

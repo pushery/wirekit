@@ -4,6 +4,15 @@
     'paginator' => null,
     'variant' => config('wirekit.components.pagination.variant', 'full'), // full | simple | mini
     'justify' => config('wirekit.components.pagination.justify', 'between'), // between | center | end | start
+    // The two direction labels. `Previous`/`Next` are correct for a page-ordered list and
+    // MISLEADING on a reverse-chronological one, where "next" moves BACKWARD in time — a
+    // reader on a changelog or an activity feed is told the opposite of what the button
+    // does. There was no way to say otherwise: the strings were baked in, and translating
+    // them globally would have changed every paginator in the application.
+    //
+    // Null keeps today's behavior exactly, including its translation.
+    'previousLabel' => null,
+    'nextLabel' => null,
     'scope' => null,
 ])
 
@@ -136,6 +145,11 @@
     // (the translator checks JSON before the group), so localization is unaffected.
     $navLabel = __('Pagination');
     $navLabel = is_string($navLabel) ? $navLabel : 'Pagination';
+
+    // Resolved once. `?:` rather than `??` on purpose: an empty string is a caller asking
+    // for nothing, and rendering an unlabelled arrow would be worse than the default.
+    $previousText = $previousLabel ?: __('Previous');
+    $nextText = $nextLabel ?: __('Next');
 @endphp
 
 <nav role="navigation" aria-label="{{ $navLabel }}" {{ $attributes->class([$navClasses]) }}>
@@ -143,9 +157,9 @@
         {{-- Simple: prev + next only (optionally with a "page X of Y" label) --}}
         <div class="flex items-center gap-2">
             @if($paginator->onFirstPage())
-                <span class="{{ $buttonDisabled }}" aria-hidden="true">&larr; {{ __('Previous') }}</span>
+                <span class="{{ $buttonDisabled }}" aria-hidden="true">&larr; {{ $previousText }}</span>
             @else
-                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}">&larr; {{ __('Previous') }}</a>
+                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}">&larr; {{ $previousText }}</a>
             @endif
         </div>
 
@@ -161,9 +175,9 @@
 
         <div class="flex items-center gap-2">
             @if($paginator->hasMorePages())
-                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}">{{ __('Next') }} &rarr;</a>
+                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}">{{ $nextText }} &rarr;</a>
             @else
-                <span class="{{ $buttonDisabled }}" aria-hidden="true">{{ __('Next') }} &rarr;</span>
+                <span class="{{ $buttonDisabled }}" aria-hidden="true">{{ $nextText }} &rarr;</span>
             @endif
         </div>
     @else
@@ -217,9 +231,9 @@
 
         <div class="flex flex-wrap items-center gap-1">
             @if($paginator->onFirstPage())
-                <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="{{ __('Previous') }}">&larr;</span>
+                <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="{{ $previousText }}">&larr;</span>
             @else
-                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" aria-label="{{ __('Previous') }}">&larr;</a>
+                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" aria-label="{{ $previousText }}">&larr;</a>
             @endif
 
             {{-- Numbered links: linkCollection() returns {url, label, active} per entry.
@@ -247,9 +261,9 @@
             @endforeach
 
             @if($paginator->hasMorePages())
-                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" aria-label="{{ __('Next') }}">&rarr;</a>
+                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" aria-label="{{ $nextText }}">&rarr;</a>
             @else
-                <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="{{ __('Next') }}">&rarr;</span>
+                <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="{{ $nextText }}">&rarr;</span>
             @endif
         </div>
     @endif

@@ -19,7 +19,10 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('filter-builder', $attributes->getAttributes());
 
-    $id = $attributes->get('id', 'filter-builder-'.Str::random(6));
+    // Seeded from `name`, not re-randomized per render: Livewire's morph matches on the
+    // id, so a fresh one each render means destroy-and-rebuild — and the Alpine-only
+    // state (sort order, hidden columns, open panels) goes with it on the next round trip.
+    $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('filter-builder', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 
     // Normalize to plain arrays for the directive payload (accepts Collections too).

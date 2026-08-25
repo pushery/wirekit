@@ -11,7 +11,13 @@ use Illuminate\Support\Facades\File;
  * Installs the WireKit Liquid Glass extension.
  *
  * Publishes CSS/JS assets and registers the glass Blade component.
- * After installation, add <x-wirekit::glass /> to your layout's <head>.
+ * After installation, add <x-wirekit::glass /> at the start of the layout body.
+ *
+ * Placement is not cosmetic. The component emits an <svg> holding the refraction filter,
+ * and the HTML parser has no "in head" insertion mode for SVG: it terminates that section
+ * and switches to the body. Every metadata tag after it — a canonical link, the Open Graph
+ * block, a layout's @stack('meta') — is reparented into <body>, where a crawler does not
+ * look. The page still renders, which is why this went unnoticed.
  */
 class GlassInstallCommand extends Command
 {
@@ -46,8 +52,19 @@ class GlassInstallCommand extends Command
         $this->info('  Published: public/vendor/wirekit/glass/wirekit-glass.css');
         $this->info('  Published: public/vendor/wirekit/glass/wirekit-glass.js');
         $this->newLine();
-        $this->info('Add to your layout\'s <head>:');
-        $this->line('  <x-wirekit::glass />');
+        // The BODY, and as its first element — never the head. This component emits an
+        // <svg>, and an SVG in the head ends head parsing: every metadata tag after it is
+        // reparented into the body, where a crawler does not look. The command is the last
+        // place that still said `<head>`, and it is the one a developer reads while doing
+        // the install rather than afterwards.
+        $this->info('Add as the FIRST element of your layout\'s <body> — not the <head>:');
+        $this->line('  <body>');
+        $this->line('      <x-wirekit::glass />');
+        $this->line('      …');
+        $this->line('  </body>');
+        $this->newLine();
+        $this->line('  It emits an <svg>. An SVG in the <head> ends head parsing, so every');
+        $this->line('  metadata tag after it lands in the body where a crawler will not read it.');
         $this->newLine();
         $this->info('Usage in templates:');
         $this->line('  <div class="wk-glass">Frosted glass (all browsers)</div>');

@@ -35,12 +35,32 @@ export default function wirekitScopeSwitcher(config = {}) {
         /** Announce at most this often, so a fast typist is not read out letter by letter. */
         announceDelay: 150,
 
+        /*
+         * Edge shadows for the option list, which scrolls inside a capped panel.
+         *
+         * The list is the one part of this component a reader can lose their place in: it
+         * caps at `list-max-height` and clips silently, so a long scope list looked like a
+         * complete list that happened to end. The sidebar solved this already with an
+         * IntersectionObserver over two 1px sentinels; the same CSS classes are reused here
+         * (`wk-scroll-shadow-top` / `-bottom`), so the affordance is identical rather than
+         * merely similar.
+         *
+         * It is implemented HERE rather than by nesting `x-data="wirekitStickyPanelShadows"`
+         * around the list, and that is not a preference: Alpine scopes `$refs` to the
+         * nearest `x-data` root, so wrapping the list in a second component would take
+         * `$refs.list` away from this one — and every keyboard and search path reads it.
+         */
+        topShadow: false,
+        bottomShadow: false,
+
         _items: [],
         _announceTimer: null,
+        _shadowObserver: null,
 
         init() {
             this._collect();
             this.reset();
+            this._watchScrollEdges();
 
             // Re-collect when the server replaces the list — a Livewire morph, or the
             // server-search mode of this component. Without it the arrows would walk a list
@@ -55,12 +75,53 @@ export default function wirekitScopeSwitcher(config = {}) {
             }
         },
 
+        /**
+         * Watch the list's two 1px sentinels and mirror their visibility into the shadows.
+         *
+         * A sentinel that is IN VIEW means that edge has been reached, so the shadow on that
+         * side goes away. Guarded on the API existing, because a bundle can run in a context
+         * that has no IntersectionObserver and a missing affordance is better than a throw
+         * inside `init()` — an x-data that throws while building leaves the element with an
+         * empty scope, which silences every directive on it.
+         */
+        _watchScrollEdges() {
+            const list = this.$refs.list;
+            const top = this.$refs.topSentinel;
+            const bottom = this.$refs.bottomSentinel;
+
+            if (!list || !top || !bottom || typeof IntersectionObserver === 'undefined') {
+                return;
+            }
+
+            this._shadowObserver = new IntersectionObserver((entries) => {
+                // Null-guard against a post-destroy fire: a browser-queued callback can run
+                // after Alpine teardown, and writing to a torn-down scope is the exact
+                // null-callback class the house rule for these plugins exists for.
+                if (!this._shadowObserver) {
+                    return;
+                }
+
+                for (const entry of entries) {
+                    if (entry.target === top) {
+                        this.topShadow = ! entry.isIntersecting;
+                    } else if (entry.target === bottom) {
+                        this.bottomShadow = ! entry.isIntersecting;
+                    }
+                }
+            }, { root: list, threshold: 0 });
+
+            this._shadowObserver.observe(top);
+            this._shadowObserver.observe(bottom);
+        },
+
         destroy() {
             // Both of these outlive the component otherwise: an observer holds the node it
             // watches, and a pending timeout fires into a torn-down scope. The house rule for
             // Alpine plugins here exists because of exactly that null-callback class.
             this._observer?.disconnect();
             this._observer = null;
+            this._shadowObserver?.disconnect();
+            this._shadowObserver = null;
 
             if (this._announceTimer) {
                 clearTimeout(this._announceTimer);

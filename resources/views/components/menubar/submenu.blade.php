@@ -72,7 +72,7 @@
      menubar root's handler does not also fire — the WAI-ARIA disambiguation
      (ArrowRight opens a submenu when on a parent, else moves menus). --}}
 <div
-    x-data="wirekitSubmenu({ placement: '{{ $placement }}', offset: {{ (int) $offset }} })"
+    x-data="wirekitSubmenu({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }} })"
     x-effect="(activeMenu === ($wkAncestorData('[data-wk-menubar-panel]', 'wkMenubarPanel'))) || closeSub()"
     data-wk-submenu
     class="block w-full"

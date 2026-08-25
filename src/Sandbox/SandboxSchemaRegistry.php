@@ -212,8 +212,18 @@ final class SandboxSchemaRegistry
             'body' => ['type' => 'string', 'default' => 'Text body'],
         ]);
 
+        // `href` is a URL prop, and the threat model (section 6) makes a whitelist
+        // mandatory for one: an enum, or a validator that whitelists the scheme. An enum
+        // would make the link demo useless, so the scheme list is the one that applies.
+        // Without it `javascript:alert(document.domain)` reached the rendered href
+        // verbatim through an endpoint that is documented as the boundary for untrusted
+        // payloads and audit-logs the caller's IP.
         self::register('link', [
-            'href' => ['type' => 'string', 'default' => '#'],
+            'href' => [
+                'type' => 'string',
+                'default' => '#',
+                'allowed_schemes' => ['http', 'https', 'mailto', 'tel'],
+            ],
             'body' => ['type' => 'string', 'default' => 'Link'],
         ]);
     }

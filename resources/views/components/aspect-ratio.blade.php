@@ -29,7 +29,7 @@
      a radius) silently took the ratio away, which is the one thing this
      component is for. merge() folds them into one declaration list with the
      caller last, so a caller who really means to override the ratio still can.
-     Pinned by tests/Feature/StyleAttributeMergeTest.php. --}}
+     Pinned by a guard in the package's own suite. --}}
 <div {{ $attributes->merge(['style' => 'aspect-ratio: '.$aspectValue])->class([$classes]) }}>
     {{ $slot }}
 </div>

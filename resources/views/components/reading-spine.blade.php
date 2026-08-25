@@ -250,7 +250,7 @@
                         :data-active="item.index === activeIndex ? 'true' : 'false'"
                         :data-level="item.level"
                         :aria-current="item.index === activeIndex ? 'location' : null"
-                        class="wk-reading-spine__link group flex items-center gap-2 cursor-pointer text-sm rounded-[var(--radius-wk-sm)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="wk-reading-spine__link group flex items-center gap-2 cursor-pointer text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                         :style="linkStyle(item)"
                         @click="scrollTo(item.id, $event)"
                     >
@@ -282,7 +282,7 @@
                              label slot (collapsed-state covered by CSS). --}}
                         @if (filter_var($numbered, FILTER_VALIDATE_BOOL))
                             <span
-                                class="wk-reading-spine__number tabular-nums text-xs text-[var(--reading-spine-color-idle)]"
+                                class="wk-reading-spine__number tabular-nums text-[length:var(--text-wk-xs)] text-[var(--reading-spine-color-idle)]"
                                 x-text="item.label"
                                 aria-hidden="true"
                             ></span>

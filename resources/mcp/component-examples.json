@@ -466,15 +466,15 @@
     "combobox": [
         {
             "title": "Country Picker",
-            "code": "<x-wirekit::combobox\n    name=\"country\"\n    :options=\"[\n        'de' => 'Germany',\n        'fr' => 'France',\n        'es' => 'Spain',\n        'it' => 'Italy',\n        'nl' => 'Netherlands',\n        'be' => 'Belgium',\n        'at' => 'Austria',\n        'ch' => 'Switzerland',\n    ]\"\n    placeholder=\"Search countries...\"\n/>"
+            "code": "<x-wirekit::combobox\n    name=\"country\"\n    label=\"Country\"\n    :options=\"[\n        'de' => 'Germany',\n        'fr' => 'France',\n        'es' => 'Spain',\n        'it' => 'Italy',\n        'nl' => 'Netherlands',\n        'be' => 'Belgium',\n        'at' => 'Austria',\n        'ch' => 'Switzerland',\n    ]\"\n    placeholder=\"Search countries...\"\n/>"
         },
         {
             "title": "Combobox with Initial Selection",
-            "code": "<x-wirekit::combobox\n    name=\"framework\"\n    value=\"laravel\"\n    :options=\"[\n        'laravel' => 'Laravel',\n        'symfony' => 'Symfony',\n        'django' => 'Django',\n        'rails' => 'Ruby on Rails',\n        'express' => 'Express.js',\n    ]\"\n/>"
+            "code": "<x-wirekit::combobox\n    name=\"framework\"\n    label=\"Framework\"\n    value=\"laravel\"\n    :options=\"[\n        'laravel' => 'Laravel',\n        'symfony' => 'Symfony',\n        'django' => 'Django',\n        'rails' => 'Ruby on Rails',\n        'express' => 'Express.js',\n    ]\"\n/>"
         },
         {
             "title": "Combobox with disabled premium options",
-            "code": "<x-wirekit::combobox\n    name=\"plan\"\n    placeholder=\"Select a plan...\"\n    :options=\"[\n        ['value' => 'free', 'label' => 'Free — 5 projects'],\n        ['value' => 'starter', 'label' => 'Starter — 25 projects'],\n        ['value' => 'pro', 'label' => 'Pro — Unlimited (upgrade required)', 'disabled' => true],\n        ['value' => 'enterprise', 'label' => 'Enterprise — Contact sales', 'disabled' => true],\n    ]\"\n/>"
+            "code": "<x-wirekit::combobox\n    name=\"plan\"\n    label=\"Plan\"\n    placeholder=\"Select a plan...\"\n    :options=\"[\n        ['value' => 'free', 'label' => 'Free — 5 projects'],\n        ['value' => 'starter', 'label' => 'Starter — 25 projects'],\n        ['value' => 'pro', 'label' => 'Pro — Unlimited (upgrade required)', 'disabled' => true],\n        ['value' => 'enterprise', 'label' => 'Enterprise — Contact sales', 'disabled' => true],\n    ]\"\n/>"
         }
     ],
     "command-palette": [

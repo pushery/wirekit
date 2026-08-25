@@ -132,8 +132,8 @@
                 x-on:click="interval = {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}"
                 :aria-pressed="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }} ? 'true' : 'false'"
                 :class="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}
-                    ? '{{ $intervalSelectedClasses }}'
-                    : '{{ $intervalUnselectedClasses }}'"
+                    ? {{ \Pushery\WireKit\Support\AlpinePayload::string($intervalSelectedClasses) }}
+                    : {{ \Pushery\WireKit\Support\AlpinePayload::string($intervalUnselectedClasses) }}"
                 class="cursor-pointer rounded-[var(--radius-wk-full)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] transition-colors duration-[var(--transition-wk-duration)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 data-wk-pricing-interval-toggle="{{ $intervalKey }}"
             >{{ $intervalLabelText }}</button>
