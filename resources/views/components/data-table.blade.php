@@ -220,9 +220,23 @@
             </tbody>
         </table>
 
-        {{-- Empty state --}}
+        {{-- Empty state.
+
+             The `empty` slot replaces the line, it does not sit beside it. The screen a new
+             user sees FIRST is this one, and a single muted sentence can only say that
+             nothing is here — it cannot say what to do about it, which is the whole job of
+             that screen. `emptyText` stays the default so nothing changes for a table that
+             does not care.
+
+             The container keeps its own centering and padding either way, so a slot holding
+             an `<x-wirekit::empty-state>` lands where the sentence did rather than needing
+             the caller to re-center it. --}}
         <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
-            <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
+            @isset($empty)
+                {{ $empty }}
+            @else
+                <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
+            @endisset
         </div>
     </div>
 </div>

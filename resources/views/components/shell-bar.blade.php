@@ -9,11 +9,17 @@
      was measured against the file rather than trusted, which is the point of that arm. --}}
 {{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
-    // The bottom border. This is THE horizontal line of a console shell: place one
-    // bar at the head of each column and the segments meet, because they are the
-    // same component reading the same height token rather than three hand-aligned
+    // The border. This is THE horizontal line of a console shell: place one bar at
+    // the head of each column and the segments meet, because they are the same
+    // component reading the same height token rather than three hand-aligned
     // headers. Set false for a second, stacked bar that should not draw a rule of
     // its own (a tab strip directly under the title bar).
+    //
+    // `true` draws it BELOW the bar, which is what a head wants. `'top'` draws it
+    // above instead, for a bar sitting at the FOOT of a column — an account row at
+    // the bottom of a sidebar is the case. Without it such a bar drew its rule along
+    // the column's bottom edge, so the only way to get a symmetric column was to
+    // leave the foot as a bare row, and a bare row does not match the head it faces.
     'rule' => true,
     // Inline padding, on the page-edge spine scale. `none` is for the rail head,
     // whose content is a centered mark rather than text on the spine.
@@ -69,7 +75,19 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `rule="false"` would otherwise KEEP the rule. Normalize against each prop's
     // own default so a cast never engages a mode that was meant off.
-    $rule = BooleanProp::from($rule, true);
+    // The edge is read BEFORE the boolean normalization below, which is the whole
+    // reason this line exists: BooleanProp::from() collapses any truthy value to
+    // `true`, so `'top'` would arrive at the rule branch as an ordinary bottom rule
+    // and the foot bar would draw its line along the column's bottom edge — the exact
+    // defect this option was added to remove, and silently, since it still draws A rule.
+    // TRI-STATE, modeled as two booleans rather than cast down to one. `rule` accepts
+    // `true` (below), `false` (none) and `'top'` (above), and running it through the boolean
+    // normalizer flattens the third into `true` — the string is truthy. An earlier version
+    // did exactly that and rescued the edge into a variable read one line before the cast,
+    // which works and reads as a workaround around its own modeling. It also tripped the
+    // guard that looks for a prop cast to bool and compared against strings, correctly.
+    $ruleOnTop = $rule === 'top';
+    $hasRule = $ruleOnTop || BooleanProp::from($rule, true);
     $sticky = BooleanProp::from($sticky, false);
     $bleed = BooleanProp::from($bleed, false);
 
@@ -122,9 +140,16 @@
     // segment crossing a toned column matches that column's own edge instead of
     // drawing a light hairline across a dark surface. On an untoned column the
     // role falls back to --color-wk-border, so nothing changes there.
-    $ruleClasses = $rule
-        ? 'border-b-[length:var(--border-wk-width)] border-[var(--color-wk-rail-border,var(--color-wk-border))]'
-        : '';
+    // Both variants are written out as WHOLE literals rather than concatenated from an
+    // edge and a suffix. Tailwind generates a utility only if it can see the class as
+    // text in a source file; `$edge.'-[length:…]'` is assembled at runtime, so the
+    // scanner never sees it and the border silently does not exist. `'top'` is matched
+    // before the boolean because the two are not exclusive: a top rule is also A rule.
+    $ruleClasses = match (true) {
+        $ruleOnTop => 'border-t-[length:var(--border-wk-width)] border-[var(--color-wk-rail-border,var(--color-wk-border))]',
+        $hasRule => 'border-b-[length:var(--border-wk-width)] border-[var(--color-wk-rail-border,var(--color-wk-border))]',
+        default => '',
+    };
 
     $stickyClasses = $sticky ? 'sticky top-0 z-[var(--z-wk-sticky)]' : '';
 
@@ -152,6 +177,10 @@
 <div
     data-wk-shell-bar
     @if($bleed) data-wk-bleed @endif
+    {{-- Marks WHICH edge the zone must pull back. A head bleeds upward, a foot downward, and
+         the stylesheet cannot tell them apart from position alone: in a collapsible column the
+         foot zone is not the last child — the fold control is. --}}
+    @if($ruleOnTop) data-wk-rule-top @endif
     {{ $attributes->class([$classes, $paddingClasses, $alignClasses, $ruleClasses, $stickyClasses, $bleedClasses]) }}
 >
     {{-- min-w-0 is load-bearing: a flex item's automatic minimum size is its content, so a

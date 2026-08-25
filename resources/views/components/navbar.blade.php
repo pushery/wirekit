@@ -115,9 +115,19 @@
     {{ $attributes->class([$navClasses, $variantClasses, $stickyClasses]) }}
 >
     <div class="{{ $containerClasses }}">
-        {{-- Brand / Logo slot --}}
+        {{-- Brand / Logo slot.
+
+             A ROW, not a block. The canonical brand is a mark beside a wordmark, and the
+             wordmark is `<x-wirekit::text>`, which renders a block `<p>` — so in a block
+             wrapper the two stacked: measured 38x53, with the name sitting a full line under
+             the avatar. Nothing in the slot can fix that from the inside, because the wrapper
+             is what decides the flow, and a developer supplying a brand should not have to
+             know to wrap it a second time.
+
+             `gap-[var(--gap-wk-sm)]` rather than a margin on either child, so a brand that is
+             a single logo carries no stray space. --}}
         @isset($brand)
-            <div class="shrink-0">
+            <div class="shrink-0 flex items-center gap-[var(--gap-wk-sm)]">
                 {{ $brand }}
             </div>
         @endisset

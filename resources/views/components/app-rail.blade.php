@@ -79,7 +79,7 @@
     $restingWidth = match ($labels) {
         'below' => 'w-[calc(var(--size-wk-rail-labeled,4.75rem)_+_var(--wk-rail-gutter,0px))]',
         'inline' => 'w-[calc(var(--size-wk-rail-expanded,15rem)_+_var(--wk-rail-gutter,0px))]',
-        default => 'w-[calc(var(--size-wk-rail,3.5rem)_+_var(--wk-rail-gutter,0px))]',
+        default => 'w-[calc(var(--size-wk-rail,3.25rem)_+_var(--wk-rail-gutter,0px))]',
     };
 
     // The expanded width, as one string, so the `:class` below and the static branch cannot
@@ -197,17 +197,38 @@
              and in `tooltip` only once the column has finished widening. The mode above flips
              at once; this waits. --}}
         :data-wk-names="(wide || {{ \Pushery\WireKit\Support\AlpinePayload::string($labels) }} !== 'tooltip') ? '' : null"
-        :class="expanded ? {{ \Pushery\WireKit\Support\AlpinePayload::string($expandedWidth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($restingWidth) }}"
+        {{-- OBJECT syntax, not a ternary. A ternary hands Alpine one class to add, and Alpine
+             only ever removes what it added itself — so the static initial width emitted below
+             survived every toggle, leaving two width utilities on the element and a rail that
+             never actually changed size. The object form names BOTH classes, so the one whose
+             condition is false is removed regardless of who put it there. --}}
+        :class="{ [{{ \Pushery\WireKit\Support\AlpinePayload::string($expandedWidth) }}]: expanded, [{{ \Pushery\WireKit\Support\AlpinePayload::string($restingWidth) }}]: ! expanded }"
     @endif
     {{ $attributes->class([
         $classes,
         'group/wk-rail',
         // The width belongs to the static branch only. With `expandable` the same
-        // property is driven by the `:class` above, and emitting both would leave two
-        // width utilities of equal specificity on one element — the winner decided by
-        // Tailwind's emission order rather than by state, which is the exact failure
-        // sidebar.item documents for its active foreground.
-        $restingWidth => ! $expandable,
+        // property is driven by the `:class` above, and emitting BOTH widths would leave two
+        // utilities of equal specificity on one element — the winner decided by Tailwind's
+        // emission order rather than by state, which is the exact failure sidebar.item
+        // documents for its active foreground.
+        // …but withholding the width from an expandable rail ENTIRELY is what made the column
+        // flicker into place on load, reported from three separate shells. Until Alpine boots,
+        // `:class` has not run, so the element carries no width at all: it lays out at content
+        // width and then snaps to its real one. Emitting the width of the INITIAL state fixes
+        // the first paint without reintroducing the conflict above — Alpine's `:class` swaps
+        // the two, so exactly one width utility is ever in the list. The state is known here:
+        // it is the same `$expanded` the Alpine component is seeded with a few lines up.
+        //
+        // ONE array key, deliberately. Written as two entries — a resting one for the static
+        // branch and an initial one for the expandable branch — the keys COLLIDE whenever both
+        // resolve to the same class string, and the later entry silently wins. That is not
+        // hypothetical: it stripped the width off every non-expandable rail, because the second
+        // entry re-keyed the resting width to `$expandable`, which is false there.
+        //
+        // A persisted rail can still move once, and that is not fixable from the server: the
+        // stored choice lives in the reader's browser and only Alpine can read it.
+        ($expandable && $expanded ? $expandedWidth : $restingWidth) => true,
         // Gated on `data-wk-ready`, which Alpine sets one frame after init. Ungated, a cold
         // load animates the ARRIVAL of the stylesheet rather than any state change: the column
         // lays out unstyled, the CSS lands, and the browser tweens between the two.

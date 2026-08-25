@@ -10,6 +10,92 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.36.0] — 2026-08-25
+
+Minor. A navigation column now paints at its real width on the very first frame instead of
+flicking into place, a brand keeps its mark and its name on one row, and a counter that is
+asked to run again always ends on its target rather than on a zero.
+
+### Added
+
+- **An `empty` slot on [`<x-wirekit::data-table>`](https://docs.wirekit.app/components/data-table)** — put a real starting point on the screen a
+  new user reaches first. `emptyText` can say that nothing is here; it cannot say what to do
+  about it, and there was no way to supply anything that could. The slot replaces the muted
+  line rather than joining it, so a table never shows a call to action and a sentence saying
+  nothing is here at the same time. Leave it off and nothing changes.
+- **`rule="top"` on [`<x-wirekit::shell-bar>`](https://docs.wirekit.app/components/shell-bar)** — draw the bar's rule above itself instead of
+  below. A bar at the FOOT of a navigation column needs its line between itself and the last
+  item, not along the column's bottom edge; without this the only symmetric column available
+  was one with a band at the head and a bare row at the foot.
+
+### Fixed
+
+- **A navigation column no longer flickers into place on load.** An interactive
+  [`<x-wirekit::sidebar collapsible>`](https://docs.wirekit.app/components/sidebar) or [`<x-wirekit::app-rail expandable>`](https://docs.wirekit.app/components/app-rail) carried its width only in a
+  binding that runs after the page has already painted, so the column laid out at content
+  width and snapped to its real width a frame later. The width is now on the element from
+  the first frame. A column whose collapsed state is remembered across reloads can still
+  move once — that choice lives in the reader's browser and only the client can read it.
+- **The brand slot of [`<x-wirekit::navbar>`](https://docs.wirekit.app/components/navbar) keeps a mark and a wordmark on one row.** The
+  wordmark is a block element, so in the previous wrapper the name dropped to a second line
+  under the logo. Nothing inside the slot could correct that — the wrapper is what decides
+  the flow.
+- **[`<x-wirekit::popover>`](https://docs.wirekit.app/components/popover) and [`<x-wirekit::hover-card>`](https://docs.wirekit.app/components/hover-card) now sit below page chrome.** Both are
+  anchored panels that trap focus, so they belong on the dropdown layer rather than the
+  tooltip layer, and a sticky header painted over them the way `--z-wk-chrome` was
+  introduced to prevent. The tooltip layer keeps the surfaces that cannot be interacted
+  with at all.
+- **`wirekit:doctor` now notices a package update when it checks the compiled-view cache.**
+  It compared your own `resources/views/` against `storage/framework/views/` and nothing
+  else, so a `composer update pushery/wirekit` — which moves the package's views and touches
+  none of yours — left it reporting a fresh cache while every compiled template still held
+  the previous version's markup. That is the state right after an upgrade, and the one where
+  `php artisan view:clear` is the answer it exists to give.
+- **`hreflang` and `media` no longer read as unknown props.** Both are standard anchor
+  attributes, and passing either to [`<x-wirekit::link>`](https://docs.wirekit.app/components/link) logged a warning that named a real,
+  spec-defined attribute and offered a spelling suggestion for it — a gap in the reserved
+  list that read like a typo in your markup. The rendered output was correct throughout.
+- **A restarted counter no longer runs two animations at once.** Asking for a replay while
+  the first count-up was still in flight left both running against the same value, so the
+  number stuttered between them.
+- **Restarting a [`<x-wirekit::stat animate>`](https://docs.wirekit.app/components/stat) counter always ends on the target value.** The
+  restart resets to zero and then counts up on animation frames, which a browser stops
+  delivering while a document is not being rendered — a hidden or zero-sized frame kept the
+  counter at zero for as long as that lasted. It now settles on the target if no frame
+  arrives.
+
+### Security
+
+- **Every Alpine expression a component writes into an attribute is escaped through one
+  helper.** This landed in 2.35.0 across 117 call sites in 34 component views and was not
+  named in that release's notes, so nobody reading them could tell it was worth prioritizing.
+  It is stated here instead. No exploitable path was found in the shipped components — every
+  value reaching those sites is either an allow-list member or already escaped — but the
+  attribute was previously assembled by hand in each view, which is the shape where the next
+  value nobody checks becomes a hole.
+
+### Changed
+
+- **`--size-wk-rail` is derived from its own content** rather than written as a round
+  number, and resolves about a quarter of a rem narrower than before. It has to be exact:
+  a column that is wider than the icon plus its paddings and border leaves slack, and the
+  slack showed up as a sideways jump on every expand. Override the token to keep the
+  previous width.
+- **An icon-only rail row aligns its glyph to the leading padding instead of centering it.**
+  With the width above derived from exactly that content the two look identical — centering
+  had nothing left to center. Where they differed is a shell that insets the column beside a
+  panel: centering averaged that inset in and moved the icon sideways on every expand, while
+  the expanded row, which has a label beside the glyph, did not move. A caption placed UNDER
+  the icon still centers, because there the axis in question is the vertical one.
+
+### Documentation
+
+- **The [Sidebar Shell](https://docs.wirekit.app/layouts/application-shells/sidebar-shell), [Stacked Shell](https://docs.wirekit.app/layouts/application-shells/stacked-shell) and [Multi-Column Shell](https://docs.wirekit.app/layouts/application-shells/multi-column) pages are published.**
+- **The observer helper leads the [custom Alpine plugin guide](https://docs.wirekit.app/extending/authoring-custom-alpine-plugins)** instead of appearing as an
+  alternative to writing the guard by hand.
+
+---
+
 ## [2.35.0] — 2026-08-25
 
 Minor. The stylesheet you serve is a fifth of the size it was, the ES module can finally be

@@ -26,7 +26,7 @@
     ]), $scope);
 
     $panelClasses = WireKit::resolveClasses('hover-card', 'panel', implode(' ', [
-        'fixed z-[var(--z-wk-tooltip)]',
+        'fixed z-[var(--z-wk-dropdown)]',
         'w-72',
         'rounded-[var(--radius-wk-lg)]',
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
