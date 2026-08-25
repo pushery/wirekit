@@ -121,7 +121,7 @@
      safe even if focus-trap happens to catch it too. Only registered when the
      modal is dismissible — non-dismissible modals must never close on ESC. --}}
 <div
-    x-data="wirekitModal({ name: '{{ $name }}', dismissible: {{ $dismissible ? 'true' : 'false' }} })"
+    x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }} })"
     @if($dismissible) x-on:keydown.escape.window="open && isTopmost && close()" @endif
     {{ $attributes }}
 >

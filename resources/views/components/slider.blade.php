@@ -226,13 +226,25 @@
     // `bottom-full` (pt-7 ≈ bubble + gap) and the tick marks hang `top-full`
     // (pb-6 with labels, pb-2 ticks-only). Without the reservation the bubble
     // clips inside overflow-hidden ancestors and labeled marks overlap the
-    // content below. `min-w-[16rem]` is the same usability floor as
+    // content below. a bare `min-w` of 16rem is the same usability floor as
     // range-slider: in any shrink-to-fit context (flex/grid auto item, table
     // cell, fit-content wrapper) a w-full track has no intrinsic width and
     // collapses to a few px — far too narrow to drag.
     $wrapperClasses = WireKit::resolveClasses('slider', 'wrapper', implode(' ', array_filter([
         'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
-        'min-w-[16rem]',
+        // ⚠️ `min(16rem, 100%)`, NOT a bare `16rem`. The floor keeps a shrink-to-fit
+        // context (a flex or grid auto item, a table cell, a fit-content wrapper) from
+        // collapsing the track to a few unusable pixels — but `min-width` is a HARD floor,
+        // so a bare value does NOT "shrink to 100% of a narrower parent", which is what the
+        // comment here used to claim. In the documentation preview column, roughly 280px
+        // wide at phone width, 256px of track plus 32px of card padding is 288px: the
+        // control pushed past its own container. `min()` gives the intended behavior —
+        // 16rem where there is room, the parent's width where there is not.
+        //
+        // (The same comment also argued for a 20rem floor while shipping 16rem. Whichever
+        // of the two was meant, one of them was wrong in the source of truth; 16rem is what
+        // shipped and what every preview is drawn against, so that is what stays.)
+        'min-w-[min(16rem,100%)]',
         $tooltip ? 'pt-7' : '',
         $hasLabeledMarks ? 'pb-6' : (! empty($normalizedMarks) ? 'pb-2' : ''),
     ])), $scope);

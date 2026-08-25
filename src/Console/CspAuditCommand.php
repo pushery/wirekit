@@ -539,8 +539,8 @@ class CspAuditCommand extends Command
      * string, was already fully resolvable, and the advice below told them to replace the
      * encoder with hand-written interpolation — trading a safe encoding for one the next
      * apostrophe breaks. A hint that leads from correct code to unsafe code is worse than
-     * no hint. `tests/Feature/CspAuditEncoderClaimTest.php` now derives the claim from
-     * `Js::from()` itself rather than restating it here.
+     * no hint. A guard in the package's own suite derives the claim from `Js::from()`
+     * itself rather than restating it here.
      */
     private static function unresolvedReason(string $raw): ?string
     {
@@ -662,6 +662,25 @@ class CspAuditCommand extends Command
         // well-founded confidence, and on the second round that confidence did not
         // hold.
         $this->line(sprintf('Scanned %d Alpine expression(s) for GRAMMAR and resolvability.', count($found)));
+
+        // ⚠️ AND THE ONE THING IT CANNOT DECIDE FROM THE SOURCE, NAMED IN THE SAME BREATH.
+        //
+        // "Resolvability" here means: does the identifier exist in a scope this audit can
+        // see in the template. It cannot mean: does that scope SURVIVE the rendered markup.
+        // A caller who passes their own `x-data` to a component that sets its own has the
+        // second one silently thrown away — HTML keeps the first of two identical attributes
+        // — so every identifier in it becomes unresolvable at runtime while remaining
+        // perfectly resolvable at the source this audit reads.
+        //
+        // That is not a defect in the check; it is a boundary of it. It is printed because
+        // of what happened without it: a developer read PASS over 83 expressions, believed
+        // the scope question settled, and looked at the markup layer LAST — after the
+        // runtime error had already named their own expression and sent them the other way.
+        // An oracle that does not state its boundary is read as covering it.
+        $this->line('This does NOT decide whether a scope survives the rendered markup — a passed-through');
+        $this->line('`x-data` on a component that sets its own is discarded, and every identifier in it is');
+        $this->line('then dead at runtime while resolving fine here. WireKit warns about that collision');
+        $this->line('separately, in the application log, when app.debug is on.');
 
         // Listed before the verdict, so the verdict is the last thing on screen and cannot be
         // read without this qualifying it.

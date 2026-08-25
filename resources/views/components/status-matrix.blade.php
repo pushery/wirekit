@@ -42,7 +42,10 @@
     $cellType = WireKit::validateProp('status-matrix', 'cellType', $cellType, ['tristate', 'toggle', 'status', 'heat']);
     $isEditable = filter_var($editable, FILTER_VALIDATE_BOOLEAN) && in_array($cellType, ['tristate', 'toggle'], true);
 
-    $id = $attributes->get('id', 'status-matrix-'.Str::random(6));
+    // Seeded from `name`, not re-randomized per render: Livewire's morph matches on the
+    // id, so a fresh one each render means destroy-and-rebuild — and the Alpine-only
+    // state (sort order, hidden columns, open panels) goes with it on the next round trip.
+    $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('status-matrix', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 
     // Normalize axes to plain arrays of {key,label}.
@@ -127,7 +130,7 @@
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitStatusMatrix({ cells: {{ \Pushery\WireKit\Support\AlpinePayload::from($flatCells) }}, cellType: '{{ $cellType }}', editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ (float) $heatMin }}, heatMax: {{ (float) $heatMax }} })"
+    x-data="wirekitStatusMatrix({ cells: {{ \Pushery\WireKit\Support\AlpinePayload::from($flatCells) }}, cellType: {{ \Pushery\WireKit\Support\AlpinePayload::string($cellType) }}, editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ (float) $heatMin }}, heatMax: {{ (float) $heatMax }} })"
     {{ $attributes->only('class')->class([$base]) }}
 >
     @if($isEditable)
@@ -178,21 +181,21 @@
                                             data-r="{{ $ri }}" data-c="{{ $ci }}"
                                             tabindex="{{ $tabindex }}"
                                             @if($isEditable)
-                                                @click="activate('{{ $rk }}', '{{ $ck }}')"
+                                                @click="activate({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                                 @keydown="moveFocus($event, {{ $ri }}, {{ $ci }})"
-                                                @keydown.enter.prevent="activate('{{ $rk }}', '{{ $ck }}')"
-                                                @keydown.space.prevent="activate('{{ $rk }}', '{{ $ck }}')"
+                                                @keydown.enter.prevent="activate({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
+                                                @keydown.space.prevent="activate({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                             @endif
-                                            :aria-label="'{{ $row['label'] }}, {{ $col['label'] }}: ' + tristateLabel('{{ $rk }}', '{{ $ck }}')"
-                                            :class="isChanged('{{ $rk }}', '{{ $ck }}') ? 'ring-[length:var(--ring-wk-width)] ring-[var(--color-wk-warning)]' : ''"
+                                            :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::string($row['label'].', '.$col['label'].': ') }} + tristateLabel({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
+                                            :class="isChanged({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? 'ring-[length:var(--ring-wk-width)] ring-[var(--color-wk-warning)]' : ''"
                                             class="{{ $cellButton }}"
                                         >
                                             {{-- Shape differentiates the three states (colorblind-safe);
                                                  color is redundant reinforcement; the text state lives
                                                  in aria-label. --}}
-                                            <svg x-show="tristateValue('{{ $rk }}', '{{ $ck }}') === 'allow'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-success)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg>
-                                            <svg x-show="tristateValue('{{ $rk }}', '{{ $ck }}') === 'deny'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-danger)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
-                                            <svg x-show="tristateValue('{{ $rk }}', '{{ $ck }}') === 'inherit'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 8h8"/></svg>
+                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'allow'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-success)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg>
+                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'deny'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-danger)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>
+                                            <svg x-show="tristateValue({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) === 'inherit'" x-cloak aria-hidden="true" class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 8h8"/></svg>
                                         </button>
                                         @break
 
@@ -202,18 +205,18 @@
                                             data-r="{{ $ri }}" data-c="{{ $ci }}"
                                             tabindex="{{ $tabindex }}"
                                             role="switch"
-                                            :aria-checked="toggleOn('{{ $rk }}', '{{ $ck }}') ? 'true' : 'false'"
+                                            :aria-checked="toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? 'true' : 'false'"
                                             @if($isEditable)
-                                                @click="toggleCell('{{ $rk }}', '{{ $ck }}')"
+                                                @click="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                                 @keydown="moveFocus($event, {{ $ri }}, {{ $ci }})"
-                                                @keydown.enter.prevent="toggleCell('{{ $rk }}', '{{ $ck }}')"
-                                                @keydown.space.prevent="toggleCell('{{ $rk }}', '{{ $ck }}')"
+                                                @keydown.enter.prevent="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
+                                                @keydown.space.prevent="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                             @endif
-                                            :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($row['label'].', '.$col['label'].': ') }} + (toggleOn('{{ $rk }}', '{{ $ck }}') ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('On')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Off')) }})"
+                                            :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($row['label'].', '.$col['label'].': ') }} + (toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('On')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Off')) }})"
                                             class="{{ $cellButton }}"
                                         >
-                                            <span x-show="toggleOn('{{ $rk }}', '{{ $ck }}')" x-cloak class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span>
-                                            <span x-show="!toggleOn('{{ $rk }}', '{{ $ck }}')" x-cloak class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></span>
+                                            <span x-show="toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})" x-cloak class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span>
+                                            <span x-show="!toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})" x-cloak class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></span>
                                         </button>
                                         @break
 

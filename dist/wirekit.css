@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.34.3 — MIT License
+ * WireKit CSS v2.35.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -431,6 +431,18 @@
     /* ─── Overlay: Z-Index Layers ─── */
     --z-wk-sticky: 40;
     --z-wk-dropdown: 50;
+    /* Page chrome that must LEAD — the sticky <header> and <navbar> bars.
+       Deliberately ABOVE --z-wk-dropdown, and that is the whole point: a popover opened
+       inside page content used to paint straight over the site header, because the header
+       shared the sticky layer (40) with everything else and a teleported panel is 50.
+       Arithmetic, not a rendering quirk.
+       It does NOT break a dropdown anchored in the header: top chrome opens its panels
+       DOWNWARD, so the panel never overlaps the bar it hangs from.
+       It stays BELOW --z-wk-modal / --z-wk-drawer (70), because a modal is meant to take
+       the whole surface, header included.
+       Only header and navbar sit here. A sticky TABLE head must keep sharing the sticky
+       layer: a dropdown opened inside a table has to paint over it. */
+    --z-wk-chrome: 55;
     --z-wk-tooltip: 60;
     --z-wk-modal: 70;
     --z-wk-drawer: 70;
@@ -987,6 +999,23 @@
     select.wk-field,
     input.wk-field,
     textarea.wk-field {
+        font-size: 16px;
+    }
+
+    /* The same floor for the OTHER kind of text entry, which the rule above cannot
+       reach. A rich-text editor types into a `contenteditable` element, not a form
+       control, so no element-qualified `.wk-field` selector matches it — and iOS
+       does not care about the tag: it zooms on any editable host below 16px. The
+       editor host inherits --text-wk-md (14px), so the surface a developer actually
+       ships zoomed while the Tiptap-absent fallback textarea, which does carry
+       `.wk-field`, did not.
+
+       `[contenteditable]` is matched rather than the marker class alone, because the
+       editable host is created by the editor library at runtime and the class is only
+       one of the two ways it is identifiable. The attribute is the invariant. */
+    .wk-editor-content,
+    [contenteditable="true"],
+    [contenteditable=""] {
         font-size: 16px;
     }
 
@@ -1963,7 +1992,7 @@
    only dims fails 1.4.3 at the moment the user most wants to read it". Text
    contrast here is untouched — only a non-text indicator is added, which is
    1.4.11's 3:1 floor, and the accent token clears it against every surface in
-   the palette (asserted in tests/Feature/OptimisticPendingVisibilityTest.php). */
+   the palette (asserted by a guard in the package's own suite). */
 /* TWO selectors, because `aria-busy` does not always sit on something that paints.
    The first version of this rule had only the first of them and was invisible on the two
    controls the paragraph above names.
@@ -3514,7 +3543,24 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /*  - require the wk-animate-* class is NOT YET present (deactivates the  */
 /*    rule the moment Alpine fires, so the keyframe `from` opacity takes  */
 /*    over).                                                              */
-[x-data*="wirekitAnimate('"]:not([x-data*='"trigger":"click"']):not([x-data*='"trigger":"manual"'])[x-data*="-in"]:not([class*="wk-animate-"]) {
+/* Every clause is quote-AGNOSTIC, and that is the whole repair. Two authoring   */
+/* forms reach this rule and they are spelled differently:                      */
+/*                                                                              */
+/*   the component  wirekitAnimate("slide-up-in", {"trigger":"viewport"})       */
+/*   by hand        wirekitAnimate('slide-up-in', { trigger: 'viewport' })      */
+/*                                                                              */
+/* Anchoring on `wirekitAnimate('` matched only the second, and the two         */
+/* exclusions matched only the first — so each form was half-covered, in        */
+/* OPPOSITE directions. Measured against all five combinations: a component     */
+/* viewport reveal was not pre-hidden at all (it flashed at full opacity before */
+/* animating), while a hand-authored click or manual trigger WAS pre-hidden —   */
+/* an invisible element whose only affordance is a click nobody can aim at,     */
+/* which is precisely what the comment above says this rule must never do.      */
+/*                                                                              */
+/* `click` / `manual` are matched as bare substrings deliberately: no preset    */
+/* name contains either, and the options object carries nothing else that       */
+/* could. That is what makes one selector cover both spellings.                 */
+[x-data*="wirekitAnimate("][x-data*="-in"]:not([x-data*="click"]):not([x-data*="manual"]):not([class*="wk-animate-"]) {
     opacity: 0;
 }
 
@@ -4020,6 +4066,15 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
        keyword makes the declaration behave as if undeclared, so the
        fallback chain works as intended. */
     --reading-progress-fill: initial;
+    /* reading-progress SEGMENT override — the same hook for the chapter dividers the
+       `segments` prop paints. They were a hardcoded rgba(0,0,0,0.4) on a transparent
+       strip, so on any dark theme they were 40%-opacity black on near-black: invisible,
+       and the dividers are the whole point of the prop. They resolve to
+       var(--reading-progress-segment, var(--color-wk-border-strong)) now, so they flip
+       with the theme AND a developer retinting the bar can reach them.
+
+       `initial` for the same reason as the fill hook above. */
+    --reading-progress-segment: initial;
     /* reading-spine */
     --reading-spine-width-collapsed: 1.5rem;
     --reading-spine-width-expanded: 16rem;

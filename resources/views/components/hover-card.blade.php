@@ -39,7 +39,7 @@
 @endphp
 
 <span
-    x-data="wirekitHoverCard({ placement: '{{ $placement }}', offset: {{ $offset }}, delayShow: {{ $delayShow }}, delayHide: {{ $delayHide }} })"
+    x-data="wirekitHoverCard({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ $offset }}, delayShow: {{ $delayShow }}, delayHide: {{ $delayHide }} })"
     {{-- Escape listens on the WINDOW, and it has to.
          The panel below carries its own `@keydown.escape`, which only ever fires
          when focus is already inside the panel — and it never is: the panel is

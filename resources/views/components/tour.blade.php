@@ -32,7 +32,7 @@
 @endphp
 
 <div
-    x-data="wirekitTour({ name: '{{ $name }}' })"
+    x-data="wirekitTour({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} })"
     @keydown.escape.window="active && dismiss()"
     {{ $attributes->class([$classes]) }}
 >

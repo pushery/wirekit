@@ -132,7 +132,7 @@
         for="{{ $uploadId }}"
         :class="dragging
             ? 'border-[var(--color-wk-accent)] bg-[var(--color-wk-bg-muted)]'
-            : '{{ $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]' }} hover:border-[var(--color-wk-accent)]'"
+            : {{ \Pushery\WireKit\Support\AlpinePayload::string(($hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]').' hover:border-[var(--color-wk-accent)]') }}"
         class="{{ $dropzoneClasses }}"
         @dragover.prevent="dragging = true"
         @dragleave.prevent="dragging = false"

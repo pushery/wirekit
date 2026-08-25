@@ -172,7 +172,13 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Check that wirekit.css and wirekit.js are published to public/vendor/wirekit/.
+     * Check that wirekit.min.css and wirekit.js are published to public/vendor/wirekit/.
+     *
+     * The CSS checked here is the MINIFIED twin, because that is the file `@wirekitStyles`
+     * links. The readable `wirekit.css` is published too — it is the source of truth and
+     * what a developer reads — but its presence says nothing about whether the page will
+     * be styled. Checking the readable one and reporting PASS while the linked one was
+     * absent is precisely the shape of green this command exists to prevent.
      */
     private function checkPublishedAssets(): void
     {
@@ -187,7 +193,7 @@ class VerifyInstallationCommand extends Command
         // into every future deploy.
         $vendorDirExists = is_dir($vendorDir);
 
-        $cssMissing = ! file_exists(public_path('vendor/wirekit/wirekit.css'));
+        $cssMissing = ! file_exists(public_path('vendor/wirekit/wirekit.min.css'));
         $jsMissing = ! file_exists(public_path('vendor/wirekit/wirekit.js'));
 
         // --fix self-heal. When the
@@ -203,14 +209,14 @@ class VerifyInstallationCommand extends Command
             ]);
             // Re-test the asset paths after the publish — if they're
             // now present, treat the check as a pass.
-            $cssMissing = ! file_exists(public_path('vendor/wirekit/wirekit.css'));
+            $cssMissing = ! file_exists(public_path('vendor/wirekit/wirekit.min.css'));
             $jsMissing = ! file_exists(public_path('vendor/wirekit/wirekit.js'));
         }
 
         if ($cssMissing) {
-            $this->reportFail('wirekit.css not found in public/vendor/wirekit/');
+            $this->reportFail('wirekit.min.css not found in public/vendor/wirekit/');
         } else {
-            $this->reportPass('wirekit.css published');
+            $this->reportPass('wirekit.min.css published');
         }
 
         if ($jsMissing) {
@@ -349,7 +355,16 @@ class VerifyInstallationCommand extends Command
         $hasSource = false;
 
         foreach ($cssFiles as $file) {
-            $content = file_get_contents($file);
+            // `@` plus an explicit false check. Under strict_types a `false` here is a
+            // fatal TypeError in str_contains(), and the unsuppressed warning is promoted
+            // to an ErrorException before that — so this command, the one a developer runs
+            // BECAUSE the install is broken, died on the broken install.
+            $content = @file_get_contents($file);
+
+            if ($content === false) {
+                continue;
+            }
+
             if (str_contains($content, 'wirekit') && str_contains($content, '@source')) {
                 $hasSource = true;
 
@@ -856,7 +871,12 @@ class VerifyInstallationCommand extends Command
         );
 
         foreach ($jsFiles as $file) {
-            $content = file_get_contents($file);
+            $content = @file_get_contents($file);
+
+            if ($content === false) {
+                continue;
+            }
+
             if (preg_match('/alpinejs|alpine\.js/', $content)) {
                 $hasAlpine = true;
 
@@ -867,7 +887,12 @@ class VerifyInstallationCommand extends Command
         // Also check all blade files for CDN script tag
         if (! $hasAlpine) {
             foreach ($this->findAllBladeFiles() as $file) {
-                $content = file_get_contents($file);
+                $content = @file_get_contents($file);
+
+                if ($content === false) {
+                    continue;
+                }
+
                 if (str_contains($content, 'alpinejs') || str_contains($content, 'alpine.js') || str_contains($content, 'Alpine.start')) {
                     $hasAlpine = true;
 
@@ -1250,6 +1275,8 @@ class VerifyInstallationCommand extends Command
      * (config/wirekit.php → 'sans' => 'inter', serif + mono null). When
      * true, the "assets not published" state is a natural bare-install
      * condition, not a warning.
+     *
+     * @param  array<string, mixed>  $fontConfig
      */
     private function isPackageDefaultFontConfig(array $fontConfig): bool
     {
@@ -2519,6 +2546,8 @@ class VerifyInstallationCommand extends Command
      * Returns ['--color-wk-name' => 'value', ...]. Comments stripped first.
      * Restricted to the color-wk family — font/radius/shadow/motion tokens
      * are theme-agnostic and don't need .dark counterparts.
+     *
+     * @return array<string, string>
      */
     private function parseColorTokens(string $block): array
     {

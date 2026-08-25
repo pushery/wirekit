@@ -107,6 +107,7 @@ final class BladeParser
      *                                            appear as bare `{{ $name }}`
      *                                            references in the template
      *                                            but are NOT real slots.
+     * @return list<array{name: string, required: bool}>
      */
     public static function extractSlotsWithMetadataFromSource(string $contents, ?string $bladePathForPropExclusion = null, array $additionalExcludes = []): array
     {

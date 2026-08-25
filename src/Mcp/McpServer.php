@@ -66,7 +66,10 @@ final class McpServer
         };
     }
 
-    /** @param array<string, mixed> $params */
+    /**
+     * @param  array<string, mixed>  $params
+     * @return array<string, mixed>
+     */
     private function initializeResult(array $params): array
     {
         $requested = is_string($params['protocolVersion'] ?? null)
@@ -153,6 +156,7 @@ final class McpServer
         };
     }
 
+    /** @return array<string, mixed> */
     private function getComponentResult(int|string|null $id, string $name): array
     {
         $component = $this->catalog->getComponent($name);
@@ -167,6 +171,7 @@ final class McpServer
         return $this->toolResult($id, $component);
     }
 
+    /** @return array<string, mixed> */
     private function getComponentExamplesResult(int|string|null $id, string $name): array
     {
         $examples = $this->catalog->examples($name);
@@ -187,6 +192,8 @@ final class McpServer
      * Wrap a catalog payload as an MCP tool result (a single text content block
      * carrying pretty-printed JSON — readable for a human curling the server,
      * structured for an editor that re-parses it).
+     *
+     * @return array<string, mixed>
      */
     private function toolResult(int|string|null $id, mixed $payload): array
     {
@@ -195,11 +202,13 @@ final class McpServer
         return $this->ok($id, ['content' => [['type' => 'text', 'text' => $text]]]);
     }
 
+    /** @return array<string, mixed> */
     private function ok(int|string|null $id, mixed $result): array
     {
         return ['jsonrpc' => '2.0', 'id' => $id, 'result' => $result];
     }
 
+    /** @return array<string, mixed> */
     private function error(int|string|null $id, int $code, string $message): array
     {
         return ['jsonrpc' => '2.0', 'id' => $id, 'error' => ['code' => $code, 'message' => $message]];

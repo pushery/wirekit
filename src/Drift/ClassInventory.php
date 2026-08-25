@@ -526,7 +526,20 @@ final class ClassInventory
      */
     private function harvestAtClassDirectives(string $contents, string $file, array &$inventory): void
     {
-        $pattern = '/@class\(\s*\[(?P<body>.*?)\]\s*\)/su';
+        /*
+         * ⚠️ BOTH SPELLINGS. `@class([...])` is the directive; `->class([...])` is the
+         * attribute-bag method, and 19 component views use it with literal strings.
+         *
+         * The second was not matched at all, so the harvester read NOTHING inside those
+         * calls — not the arbitrary variants that prompted this, not even a plain `gap-2`.
+         * The consequence was quiet in the worst way: two classes that ARE in the source
+         * were recorded in the reverse-diff allowlist as "known-untraceable", with a
+         * comment reasoning about which bracket shape defeats the harvester. The shape was
+         * never the problem; the CALL was. Measured across the four spellings the catalog
+         * uses — attribute, `@class` key, `implode` array, `->class` — only the last one
+         * came back empty.
+         */
+        $pattern = '/(?:@class|->class)\(\s*\[(?P<body>.*?)\]\s*\)/su';
 
         if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
             return;
@@ -535,6 +548,25 @@ final class ClassInventory
         foreach ($matches['body'] as $match) {
             [$body, $offset] = $match;
             $line = $this->offsetToLine($contents, (int) $offset);
+
+            /*
+             * Drop the two NAME arguments of a nested `resolveClasses(…)` call.
+             *
+             * `->class([resolveClasses('date-separator', 'base', implode(' ', [...]))])` puts
+             * a component name and a slot name inside a class array, and both are shaped
+             * exactly like a class. `date-separator` surfaced as forward drift the moment the
+             * method spelling started being read — a class Tailwind had "failed to compile",
+             * which it had not, because it was never a class.
+             *
+             * Removing them rather than allowlisting the names: an allowlist would need a new
+             * entry for every component that composes this way, and each one would read as a
+             * Tailwind class somebody had excused.
+             */
+            $body = (string) preg_replace(
+                '/resolveClasses\(\s*[\'"][^\'"]*[\'"]\s*,\s*[\'"][^\'"]*[\'"]\s*,/',
+                'resolveClasses(',
+                $body
+            );
 
             /*
              * Capture string literals AND remember whether each is followed
@@ -882,6 +914,7 @@ final class ClassInventory
         }
     }
 
+    /** @param  array<string, mixed>  $inventory */
     private function harvestMatchArmClassStrings(string $contents, string $file, array &$inventory): void
     {
         /*
@@ -1262,6 +1295,24 @@ final class ClassInventory
          * because they live in dist/wirekit.css, not because they drifted.
          */
         if (str_starts_with($candidate, 'wk-') || str_starts_with($candidate, 'wirekit-')) {
+            return false;
+        }
+
+        /*
+         * A NAMED GROUP OR PEER MARKER — `group/wk-sidebar`, `peer/label`.
+         *
+         * Tailwind emits no rule for these and never has: the marker exists so a
+         * `group-data-[…]/wk-sidebar:` variant elsewhere can address THIS ancestor rather
+         * than the nearest one. It is consumed by the variant's selector, not compiled into
+         * one of its own.
+         *
+         * Two of them surfaced as forward drift the moment `$attributes->class([...])`
+         * started being read — reported as classes Tailwind had failed to generate, which is
+         * true and is not a defect. Filtered here rather than allowlisted by name, because
+         * every future named group would otherwise need its own entry and would read as a
+         * missing utility somebody had excused.
+         */
+        if (preg_match('/^(?:group|peer)\/[a-z0-9_-]+$/', $candidate) === 1) {
             return false;
         }
 

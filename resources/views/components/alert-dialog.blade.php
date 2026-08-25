@@ -14,6 +14,16 @@
     // dialog falls back to the nearest ancestor of the trigger that survived.
     'focusReturnTo' => null,
     'scope' => null,
+    // An explicit accessible name, for an alert-dialog composed WITHOUT
+    // `alert-dialog.title`. Same reasoning as `drawer`: `aria-labelledby` points at an id
+    // the title would have bound at runtime, and a caller `aria-label` never reaches the
+    // element that carries the role. WCAG 2.1 4.1.2, Level A.
+    'label' => null,
+    // `false` drops `aria-describedby` for an alert-dialog composed without
+    // `alert-dialog.description`, where the attribute otherwise ships a permanently
+    // unresolvable reference. Default `null` keeps the documented behavior, so nothing
+    // that composes the description changes.
+    'describedby' => null,
 ])
 
 @php
@@ -29,6 +39,15 @@
     // Non-dismissible by default — user must click Cancel or Confirm.
     $titleId = 'wk-alert-dialog-title-' . ($name ?? \Illuminate\Support\Str::random(12));
     $descId = 'wk-alert-dialog-desc-' . ($name ?? \Illuminate\Support\Str::random(12));
+
+    // A caller-supplied `aria-label` names the DIALOG, not the wrapper it was landing on.
+    // `{{ $attributes }}` sits on the roleless outer element, so `<x-wirekit::alert-dialog
+    // aria-label="…">` rendered a name on something no assistive technology reads as a
+    // dialog — WCAG 4.1.2. It is pulled out here and applied to the panel below, where
+    // `label` already goes; the two are the same intent spelled two ways, so `label` wins
+    // when both are given rather than emitting a conflicting pair.
+    $callerLabel = $attributes->get('aria-label');
+    $attributes = $attributes->except(['aria-label']);
 
     $backdropClasses = WireKit::resolveClasses('alert-dialog', 'backdrop', implode(' ', [
         'fixed inset-0',
@@ -105,8 +124,12 @@
                     x-transition:leave-end="opacity-0 scale-95"
                     role="alertdialog"
                     aria-modal="true"
-                    aria-labelledby="{{ $titleId }}"
-                    aria-describedby="{{ $descId }}"
+                    @if($label || $callerLabel)
+                        aria-label="{{ $label ?: $callerLabel }}"
+                    @else
+                        aria-labelledby="{{ $titleId }}"
+                    @endif
+                    @if($describedby !== false) aria-describedby="{{ $descId }}" @endif
                     class="{{ $panelClasses }}"
                     x-on:click.stop
                     data-wk-title-id="{{ $titleId }}"

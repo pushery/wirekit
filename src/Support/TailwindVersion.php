@@ -59,7 +59,19 @@ final class TailwindVersion
         $cssFiles = glob(rtrim($basePath, '/').'/resources/css/*.css') ?: [];
 
         foreach ($cssFiles as $file) {
-            $content = (string) file_get_contents($file);
+            // `@` and an explicit false check, not just a `(string)` cast.
+            //
+            // The cast catches the RETURN value; it does not stop the warning, and
+            // Laravel's error handler promotes a warning to an ErrorException — so an
+            // unreadable file (a dangling symlink, an artifact owned by another user, a
+            // file mid-write) killed the caller either way. glob() lists such a file
+            // happily, which is what makes it reachable at all.
+            $content = @file_get_contents($file);
+
+            if ($content === false) {
+                continue;
+            }
+
             if (preg_match('/@tailwind\s+(base|components|utilities)\b/', $content) === 1) {
                 return true;
             }

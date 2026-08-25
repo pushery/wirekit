@@ -188,9 +188,20 @@
         </div>
     @endisset
     <div
-        @if($label) role="group" aria-label="{{ $label }}" tabindex="0" @endif
+        {{-- Unconditional, and that is the fix. This wiring used to sit behind
+             `@if($label)`, which tied a WCAG 2.1.1 obligation to a cosmetic prop:
+             the strip always carries `overflow-x-auto`, and 35 of the 41 documented
+             usages omit `label` — so the configuration that failed was the default
+             one. The name falls back to a translated generic rather than being
+             dropped, because a region with no name is announced as "group" and tells
+             a screen-reader user nothing. --}}
+        role="group"
+        aria-label="{{ $label ?: __('Toolbar') }}"
+        tabindex="0"
         @class([
             'wk-shell-bar-strip flex min-w-0 items-center gap-[var(--gap-wk-sm,0.5rem)] overflow-x-auto',
+            // The strip is a tab stop now, so it must show that it has focus.
+            'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
             // Grows to fill, so a child that asks for the full width gets it — a workspace
             // brand in a rail's head is the case. NOT applied under `align="center"`, where
             // the whole point is that the cluster is narrower than the bar and sits in the

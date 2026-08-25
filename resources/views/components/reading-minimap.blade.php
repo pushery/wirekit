@@ -263,7 +263,7 @@
          Centering gives a "pointer-at-the-tooltip-arrow" feel even though
          there's no literal arrow. --}}
     <div
-        class="wk-reading-minimap__tooltip absolute pointer-events-none px-2 py-1 text-xs rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] text-[color:var(--color-wk-tooltip-text)] truncate max-w-[16rem]"
+        class="wk-reading-minimap__tooltip absolute pointer-events-none px-2 py-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] text-[color:var(--color-wk-tooltip-text)] truncate max-w-[16rem]"
         :class="tooltipText ? '' : 'hidden'"
         :style="tooltipStyle()"
         x-text="tooltipText"

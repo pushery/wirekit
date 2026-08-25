@@ -92,7 +92,7 @@
      before Alpine reads localStorage. --}}
 <div
     @if($isDismissible)
-        x-data="wirekitDismissible({@if($persistsDismissal) persistKey: 'wk-banner:{{ $dismissKey }}' @endif })"
+        x-data="wirekitDismissible({@if($persistsDismissal) persistKey: {{ \Pushery\WireKit\Support\AlpinePayload::string('wk-banner:'.$dismissKey) }} @endif })"
         x-show="shown"
         x-cloak
         {{-- Opts the dismissed-then-empty preview into the docs preview frame's

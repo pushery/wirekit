@@ -58,7 +58,7 @@
 @endphp
 
 <div
-    x-data="wirekitPopover({ placement: '{{ $placement }}', offset: {{ (int) $offset }} })"
+    x-data="wirekitPopover({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }} })"
     x-on:click.outside="close()"
     {{ $attributes->class([$wrapperClasses]) }}
 >

@@ -73,7 +73,7 @@
      parent from bubbling to the dropdown root's auto-close delegated handler
      (which would otherwise dismiss the whole menu). --}}
 <div
-    x-data="wirekitSubmenu({ placement: '{{ $placement }}', offset: {{ (int) $offset }} })"
+    x-data="wirekitSubmenu({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }} })"
     x-effect="open || closeSub()"
     data-wk-submenu
     class="block w-full"

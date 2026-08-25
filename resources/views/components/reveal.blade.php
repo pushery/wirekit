@@ -119,7 +119,7 @@
 
 <div
     {{ $attributes->except('style')->merge(['data-replayable' => 'true', 'class' => 'w-full']) }}
-    x-data="wirekitAnimate('{{ $validatedPreset }}', {{ $optionsJson }})"
+    x-data="wirekitAnimate({{ \Pushery\WireKit\Support\AlpinePayload::string($validatedPreset) }}, {{ $optionsJson }})"
     @if($mergedStyle !== '') style="{{ $mergedStyle }}" @endif
 >
     {{ $slot }}

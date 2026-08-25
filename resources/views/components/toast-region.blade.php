@@ -208,11 +208,11 @@
             @focusin="pause(toast.id)"
             @focusout="resume(toast.id)"
             :class="[
-                '{{ $toastClasses }}',
-                toast.variant === 'success' ? '{{ $variantMap['success']['border'] }} {{ $variantMap['success']['bg'] }}' : '',
-                toast.variant === 'warning' ? '{{ $variantMap['warning']['border'] }} {{ $variantMap['warning']['bg'] }}' : '',
-                toast.variant === 'danger' ? '{{ $variantMap['danger']['border'] }} {{ $variantMap['danger']['bg'] }}' : '',
-                toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant) ? '{{ $variantMap['info']['border'] }} {{ $variantMap['info']['bg'] }}' : '',
+                {{ \Pushery\WireKit\Support\AlpinePayload::string($toastClasses) }},
+                toast.variant === 'success' ? {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['success']['border'].' '.$variantMap['success']['bg']) }} : '',
+                toast.variant === 'warning' ? {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['warning']['border'].' '.$variantMap['warning']['bg']) }} : '',
+                toast.variant === 'danger' ? {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['danger']['border'].' '.$variantMap['danger']['bg']) }} : '',
+                toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['info']['border'].' '.$variantMap['info']['bg']) }} : '',
             ]"
         >
             {{-- Variant icon --}}
@@ -220,10 +220,10 @@
                 aria-hidden="true"
                 class="shrink-0 mt-0.5"
                 :class="{
-                    '{{ $variantMap['success']['icon'] }}': toast.variant === 'success',
-                    '{{ $variantMap['warning']['icon'] }}': toast.variant === 'warning',
-                    '{{ $variantMap['danger']['icon'] }}': toast.variant === 'danger',
-                    '{{ $variantMap['info']['icon'] }}': toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant),
+                    {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['success']['icon']) }}: toast.variant === 'success',
+                    {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['warning']['icon']) }}: toast.variant === 'warning',
+                    {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['danger']['icon']) }}: toast.variant === 'danger',
+                    {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['info']['icon']) }}: toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant),
                 }"
             >
                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
@@ -247,20 +247,20 @@
                     <div
                         class="font-[number:var(--font-wk-heading-weight)]"
                         :class="{
-                            '{{ $variantMap['success']['text'] }}': toast.variant === 'success',
-                            '{{ $variantMap['warning']['text'] }}': toast.variant === 'warning',
-                            '{{ $variantMap['danger']['text'] }}': toast.variant === 'danger',
-                            '{{ $variantMap['info']['text'] }}': toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant),
+                            {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['success']['text']) }}: toast.variant === 'success',
+                            {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['warning']['text']) }}: toast.variant === 'warning',
+                            {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['danger']['text']) }}: toast.variant === 'danger',
+                            {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['info']['text']) }}: toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant),
                         }"
                         x-text="toast.title"
                     ></div>
                 </template>
                 <div
                     :class="{
-                        '{{ $variantMap['success']['muted'] }}': toast.variant === 'success',
-                        '{{ $variantMap['warning']['muted'] }}': toast.variant === 'warning',
-                        '{{ $variantMap['danger']['muted'] }}': toast.variant === 'danger',
-                        '{{ $variantMap['info']['muted'] }}': toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant),
+                        {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['success']['muted']) }}: toast.variant === 'success',
+                        {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['warning']['muted']) }}: toast.variant === 'warning',
+                        {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['danger']['muted']) }}: toast.variant === 'danger',
+                        {{ \Pushery\WireKit\Support\AlpinePayload::string($variantMap['info']['muted']) }}: toast.variant === 'info' || !['success','warning','danger'].includes(toast.variant),
                     }"
                     x-text="toast.message"
                 ></div>

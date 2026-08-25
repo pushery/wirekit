@@ -62,6 +62,10 @@
         ? trim($relAttr.' noopener noreferrer')
         : $relAttr;
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
+
+    // `as` is interpolated straight into the opening tag, and Blade's escaping does
+    // not stop a space or an `=` — so an unvalidated value renders as an attribute.
+    $as = \Pushery\WireKit\WireKit::tagName('link', (string) $as);
 @endphp
 
 @php

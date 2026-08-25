@@ -59,7 +59,12 @@
         default => 'border-b border-[var(--color-wk-border)]',
     };
 
-    $stickyClasses = $sticky ? 'sticky top-0 z-[var(--z-wk-sticky)]' : '';
+    // The CHROME layer, not the shared sticky one. A popover opened in page content is a
+    // teleported panel at --z-wk-dropdown (50); this bar used to sit at --z-wk-sticky (40)
+    // and was therefore painted over — arithmetic, not a quirk. A panel anchored INSIDE
+    // this bar opens downward and never overlaps it, so nothing is lost; a modal is still
+    // above, which is correct.
+    $stickyClasses = $sticky ? 'sticky top-0 z-[var(--z-wk-chrome)]' : '';
 
     $isContainerWrapped = filter_var($container, FILTER_VALIDATE_BOOL);
     // No hardcoded fallback values — the `--size-wk-container-*` tokens

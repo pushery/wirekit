@@ -250,6 +250,7 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../dist/wirekit-optimistic.js' => public_path('vendor/wirekit/wirekit-optimistic.js'),
                 __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
                 __DIR__.'/../dist/wirekit-alpine.csp.js' => public_path('vendor/wirekit/wirekit-alpine.csp.js'),
+                __DIR__.'/../dist/wirekit.min.css' => public_path('vendor/wirekit/wirekit.min.css'),
             ], 'wirekit-assets');
         }
 
@@ -270,7 +271,20 @@ class WireKitServiceProvider extends ServiceProvider
         // Default: <x-wirekit::button>, <x-wirekit::input>, etc.
         // Uses anonymousComponentPath() on the compiler for file-based anonymous components
         $prefix = config('wirekit.prefix', 'wirekit');
-        $this->app->afterResolving('blade.compiler', function (BladeCompiler $blade) use ($prefix) {
+
+        // `callAfterResolving`, not `$this->app->afterResolving`.
+        //
+        // The container's own hook fires only on a resolution that happens LATER. In an
+        // application where anything reached Blade first — another provider rendering a
+        // view, a cached route file, a view composer — the callback never ran, the path
+        // was never registered, and every `<x-{prefix}::*>` tag threw "Unable to locate a
+        // class or view for component". The documented `wirekit.prefix` was inert exactly
+        // where an application is realistic, and green in a test where the provider boots
+        // first.
+        //
+        // The framework's helper is that hook PLUS "call it now if the service is already
+        // resolved" — the half that was missing.
+        $this->callAfterResolving('blade.compiler', function (BladeCompiler $blade) use ($prefix) {
             $blade->anonymousComponentPath(__DIR__.'/../resources/views/components', $prefix);
         });
 
@@ -286,7 +300,12 @@ class WireKitServiceProvider extends ServiceProvider
         $this->registerAssetRoutes();
 
         // ── Blade Directives ──
-        // @wirekitStyles — outputs a <link> tag for wirekit.css.
+        // @wirekitStyles — outputs a <link> tag for wirekit.min.css.
+        //
+        // The MINIFIED twin, not the readable dist/wirekit.css. That file is the source of
+        // truth for every design token and stays published so a developer can read it, but
+        // two thirds of it is comments and it is RENDER-BLOCKING: linking it cost 60 KB gzip
+        // on every uncached page-view to deliver rules that compress to 13 KB.
         //
         // Two-tier serving strategy with automatic staleness detection:
         //
@@ -328,7 +347,7 @@ class WireKitServiceProvider extends ServiceProvider
             return '<?php
                 $__wk_nonce = '.$nonceExpr.';
                 $__wk_nonceAttr = $__wk_nonce ? \' nonce="\' . e($__wk_nonce) . \'"\' : "";
-                echo \Pushery\WireKit\WireKitServiceProvider::styleTag(\'wirekit.css\', $__wk_nonceAttr);
+                echo \Pushery\WireKit\WireKitServiceProvider::styleTag(\'wirekit.min.css\', $__wk_nonceAttr);
             ?>';
         });
 
@@ -765,6 +784,7 @@ class WireKitServiceProvider extends ServiceProvider
         // these nine were written first and never caught up.
         $assets = [
             'wirekit/wirekit.css' => ['file' => 'wirekit.css', 'type' => 'text/css; charset=utf-8'],
+            'wirekit/wirekit.min.css' => ['file' => 'wirekit.min.css', 'type' => 'text/css; charset=utf-8'],
             'wirekit/wirekit.js' => ['file' => 'wirekit.js', 'type' => 'application/javascript; charset=utf-8'],
             'wirekit/wirekit.core.js' => ['file' => 'wirekit.core.js', 'type' => 'application/javascript; charset=utf-8'],
             'wirekit/wirekit.esm.js' => ['file' => 'wirekit.esm.js', 'type' => 'application/javascript; charset=utf-8'],

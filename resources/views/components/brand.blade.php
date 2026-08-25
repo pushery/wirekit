@@ -85,8 +85,8 @@
     // same literal exists elsewhere in their `@source` corpus, and vanishes on a
     // WireKit bump, taking the logo's visibility with it. Emitting the literals
     // here keeps every variant statically discoverable in the scanned vendor
-    // view. Same precedent as grid.blade.php's `$colsMap`. Guarded by
-    // tests/Feature/InterpolatedVariantClassGuardTest.php.
+    // view. Same precedent as grid.blade.php's `$colsMap`. A guard in the package's own
+    // suite fails the build if an interpolated variant class reappears here.
     $bpHidden = match ($resolvedBreakpoint) {
         'sm' => 'sm:hidden', 'md' => 'md:hidden', 'lg' => 'lg:hidden', 'xl' => 'xl:hidden',
     };

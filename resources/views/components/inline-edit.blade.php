@@ -96,6 +96,13 @@
     $hasError = (bool) $error || (bool) ($errors ?? null)?->has($name);
     $errorMessage = $error ?: ($errors ?? null)?->first($name);
 
+    // A caller-supplied `aria-label` names the CONTROL, and `{{ $attributes }}` lands on
+    // the roleless root wrapper — so `<x-wirekit::inline-edit aria-label="Notes" />`
+    // rendered a name on a div while the <input> kept none at all (WCAG 4.1.2). It is
+    // NOT folded into `label`: that renders a VISIBLE label, and a caller reaching for
+    // `aria-label` is asking for the opposite.
+    $callerAriaLabel = $attributes->get('aria-label');
+    $attributes = $attributes->except(['aria-label']);
     $attributes = $attributes->except(['announceErrors', 'announce-errors']);
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
@@ -157,6 +164,23 @@
     // first one — so every label in the list would point at row one. The form
     // controls already had to be corrected for exactly this.
     $id = $attributes->get('id') ?: DomId::unique('inline-edit', 'inline-edit-');
+
+    // ⚠️ THE LABEL'S `for` AND THE CONTROL'S `id` WERE TWO DIFFERENT STRINGS.
+    //
+    // `$id` is registered here, and the control component then runs the SAME value through
+    // `DomId::unique()` again — which finds it taken and hands back `inline-edit-2`. So the
+    // label pointed at `inline-edit` while the <input> was `inline-edit-2`, and every
+    // labeled inline-edit shipped a control with no accessible name at all (WCAG 4.1.2).
+    // Nothing looked wrong: both elements were present, both carried plausible ids, and
+    // the visible label sat right above the field.
+    //
+    // The control gets its OWN id, derived from `$id` and — deliberately — NOT registered
+    // here. Registering it was the first attempt and it reproduced the same defect one
+    // level down: the control component dedups whatever id it is handed, so a
+    // pre-registered value comes back with `-2` appended and the label misses again.
+    // `$id` is already page-unique, so `$id-control` is too, and the single registration
+    // that does happen is the control's own.
+    $controlId = $id.'-control';
     $attributes = $attributes->except(['id']);
 
     $hintId = $hint ? $id.'-hint' : null;
@@ -251,7 +275,7 @@
          Inside it, the field would be unlabelled while reading and the label
          would jump into place on open — a layout shift caused by a11y markup. --}}
     @if($label)
-        <label for="{{ $id }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        <label for="{{ $controlId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $label }}
         </label>
     @endif
@@ -351,7 +375,8 @@
              which is WCAG 2.4.11. So the block-axis growth is deliberate, and
              documented rather than defined away. --}}
         <x-wirekit::partials.inline-edit-editor
-            :id="$id"
+            :id="$controlId"
+            :aria-label="$callerAriaLabel"
             :control="$control"
             :size="$size"
             :described-by="$describedBy"

@@ -96,11 +96,21 @@
         // collapses to the width of its widest text row (the two bound labels,
         // e.g. "0 … 10"), i.e. ~60px: far too narrow to drag. A min-width keeps
         // it operable everywhere while still expanding to 100% in normal flow.
-        // 20rem (not the single slider's 16rem): a DUAL-thumb track needs room
-        // for two handles plus their value bubbles without the bubbles colliding
-        // on contact — the wider floor keeps the demo and tight-column real
-        // usages comfortable. Still shrinks to 100% of a narrower parent.
-        'min-w-[16rem]',
+        // A dual-thumb track needs room for two handles plus their value bubbles without
+        // the bubbles colliding on contact, which is what the floor below is sized for.
+        // ⚠️ `min(16rem, 100%)`, NOT a bare `16rem`. The floor keeps a shrink-to-fit
+        // context (a flex or grid auto item, a table cell, a fit-content wrapper) from
+        // collapsing the track to a few unusable pixels — but `min-width` is a HARD floor,
+        // so a bare value does NOT "shrink to 100% of a narrower parent", which is what the
+        // comment here used to claim. In the documentation preview column, roughly 280px
+        // wide at phone width, 256px of track plus 32px of card padding is 288px: the
+        // control pushed past its own container. `min()` gives the intended behavior —
+        // 16rem where there is room, the parent's width where there is not.
+        //
+        // (The same comment also argued for a 20rem floor while shipping 16rem. Whichever
+        // of the two was meant, one of them was wrong in the source of truth; 16rem is what
+        // shipped and what every preview is drawn against, so that is what stays.)
+        'min-w-[min(16rem,100%)]',
     ]), $scope);
 
     // wire:model integration (Strategy B — split-min/split-max):

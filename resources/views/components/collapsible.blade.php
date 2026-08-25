@@ -30,7 +30,22 @@
     // For smooth height animation we lean on Alpine's x-collapse plugin, which every
     // full-catalog WireKit bundle registers. It says so because the sentence used to
     // be a guess: nothing imported the plugin, and the claim is why nobody checked.
-    $uid = 'wk-collapsible-'.Str::random(6);
+    // A per-render random id makes Livewire's morph treat the content region as a NEW
+    // node on every round trip: it keys by `el.id`, finds no match, and replaces the live
+    // node with a clone of the server-rendered one. Three things follow from that single
+    // event — focus inside the developer's slot moves to <body>, anything typed into an
+    // input they did not bind with wire:model is gone, `x-collapse` replays its height
+    // transition instead of holding the open height, and the clone still carries the
+    // literal `x-cloak` (Alpine strips it only after init), so an OPEN panel flashes
+    // hidden for a few frames.
+    //
+    // A caller-supplied id already solved it. The default is now seeded from the trigger
+    // label, which is the only stable identity a collapsible has — and the one thing
+    // about it that does not change between renders.
+    $uid = $attributes->get('id') ?: \Pushery\WireKit\WireKit::stableId(
+        'wk-collapsible',
+        is_string($trigger) || $trigger instanceof \Stringable ? trim((string) $trigger) : null
+    );
     $openBool = (bool) $open;
 
     $rootClasses = WireKit::resolveClasses('collapsible', 'base', 'font-[family-name:var(--font-wk-sans)]', $scope);

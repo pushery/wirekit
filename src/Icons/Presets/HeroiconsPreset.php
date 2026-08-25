@@ -141,6 +141,14 @@ final class HeroiconsPreset implements IconPreset
             'inbox' => 'heroicon-m-inbox',
             'bolt' => 'heroicon-m-bolt',
             'refresh' => 'heroicon-m-arrow-path', // heroicons calls it arrow-path
+            // Undo — the counter-clockwise arrow every set ships under a different name.
+            // Named for the CONCEPT, not for one family's spelling: the proposal reached us
+            // as `arrow-counter-clockwise`, which is Phosphor's word for it and would have
+            // made the vocabulary read differently depending on which set a project loads.
+            // Verified against the SVG files: lucide `undo`, tabler `arrow-back-up`,
+            // phosphor `arrow-counter-clockwise`, heroicons `arrow-uturn-left` — four real
+            // undo glyphs, not four things that look roughly alike.
+            'undo' => 'heroicon-m-arrow-uturn-left', // heroicons calls it arrow-uturn-left
             // Media controls. An app with audio playback had to
             // hand-roll inline SVGs — against the catalog's own "use the icon
             // component" rule — because the base set had no play/pause at all.

@@ -78,7 +78,20 @@
 
     // Unique instance id — needed so multiple Tabs components on the same page
     // don't clash on `aria-controls`/`id` attributes when mounted together.
-    $uid = 'wk-tabs-' . \Illuminate\Support\Str::random(6);
+    // Same morph defect as collapsible, multiplied by the number of tabs: every button
+    // and every panel carries this prefix in its id, so a random one has Livewire remove
+    // and re-clone all 2N of them on every round trip. A keyboard user loses focus to
+    // <body> mid-interaction (the roving-tabindex position goes with the node), and the
+    // active panel's slot — the developer's own markup, which is where forms live — is
+    // destroyed and rebuilt.
+    //
+    // The tab KEYS are the seed: they are the caller's own vocabulary, they are stable
+    // across renders by construction, and two different tabsets on one page have
+    // different ones. A caller-supplied id still wins.
+    $uid = $attributes->get('id') ?: \Pushery\WireKit\WireKit::stableId(
+        'wk-tabs',
+        implode('-', array_keys($tabs))
+    );
 
     // Tablist container — horizontal row of tab buttons. Variant controls bottom
     // border (underline), background pill track (pills), or bordered segments.
@@ -195,7 +208,7 @@
                 @endif
                 @keydown.home.prevent="focusTab('first')"
                 @keydown.end.prevent="focusTab('last')"
-                :class="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? '{{ $tabActiveClasses }}' : '{{ $tabInactiveClasses }}'"
+                :class="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? {{ \Pushery\WireKit\Support\AlpinePayload::string($tabActiveClasses) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($tabInactiveClasses) }}"
                 class="{{ $tabClasses }}"
             >
                 @if($tab['icon'])

@@ -61,6 +61,10 @@
         $bgClasses,
         $dividerClasses,
     ])), $scope);
+
+    // `as` is interpolated straight into the opening tag, and Blade's escaping does
+    // not stop a space or an `=` — so an unvalidated value renders as an attribute.
+    $as = \Pushery\WireKit\WireKit::tagName('section', (string) $as);
 @endphp
 
 <{{ $as }} {{ $attributes->class([$classes]) }}>

@@ -30,7 +30,10 @@
     $open = BooleanProp::from($open, false);
 
     $groupBy = WireKit::validateProp('notification-center', 'groupBy', $groupBy, ['none', 'time', 'type']);
-    $id = $attributes->get('id', 'notification-center-'.Str::random(6));
+    // Seeded from `name`, not re-randomized per render: Livewire's morph matches on the
+    // id, so a fresh one each render means destroy-and-rebuild — and the Alpine-only
+    // state (sort order, hidden columns, open panels) goes with it on the next round trip.
+    $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('notification-center', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
 
     $itemsArr = $items instanceof \Illuminate\Support\Collection ? $items->values()->all() : array_values((array) $items);
@@ -54,7 +57,7 @@
     {{-- State-mutating demo (open/close, mark-read, realtime): opt into the docs
          replay affordance so a "used-up" preview can be reset (mirrors alert/badge). --}}
     data-replayable="true"
-    x-data="wirekitNotificationCenter({ items: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemsArr) }}, latestLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('unread. Latest:')) }}, groupBy: '{{ $groupBy }}', open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: '{{ $realtimeEvent }}'@endif })"
+    x-data="wirekitNotificationCenter({ items: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemsArr) }}, latestLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('unread. Latest:')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
          escape stays here (window-scoped, teleport-agnostic). --}}
     x-on:keydown.escape.window="open && close(true)"

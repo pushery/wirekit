@@ -353,7 +353,10 @@ return [
         'stepper' => ['orientation' => 'horizontal'],
 
         // Advanced form components
-        'date-picker' => ['size' => 'md', 'format' => 'Y-m-d'],
+        // No 'format' key: date-picker renders a native <input type="date">, whose
+        // displayed format is the viewer's locale by specification and is not settable
+        // by the page. The key shipped for a while and could never have had an effect.
+        'date-picker' => ['size' => 'md'],
         'file-upload' => ['size' => 'md', 'multiple' => false, 'accept' => null],
         'combobox' => ['size' => 'md', 'placeholder' => 'Select...'],
         'slider' => ['size' => 'md', 'min' => 0, 'max' => 100, 'step' => 1],

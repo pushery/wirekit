@@ -172,6 +172,8 @@ final class ChartJsAdapter implements ChartAdapter
      * "setContext is not a function" errors. Colors and fonts for
      * ticks/grid are set client-side via Chart.defaults in the Alpine
      * component (resources/js/components/chart.js).
+     *
+     * @return array<string, mixed>
      */
     private function defaultScales(string $type): array
     {

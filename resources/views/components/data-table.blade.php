@@ -37,7 +37,10 @@
     // Server-driven mode (client | server) — derived from the boolean `server`
     // prop. Named `server` (not `mode`) to stay off the surface-treatment axis.
     $mode = filter_var($server, FILTER_VALIDATE_BOOLEAN) ? 'server' : 'client';
-    $id = $attributes->get('id', 'data-table-'.Str::random(6));
+    // Seeded from `name`, not re-randomized per render: Livewire's morph matches on the
+    // id, so a fresh one each render means destroy-and-rebuild — and the Alpine-only
+    // state (sort order, hidden columns, open panels) goes with it on the next round trip.
+    $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('data-table', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
     $captionId = $id.'-caption';
 
@@ -64,7 +67,7 @@
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitDataTable({ rows: {{ \Pushery\WireKit\Support\AlpinePayload::from($rowsArr) }}, columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: '{{ $rowKey }}', mode: '{{ $mode }}', density: '{{ $density }}', hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }} })"
+    x-data="wirekitDataTable({ rows: {{ \Pushery\WireKit\Support\AlpinePayload::from($rowsArr) }}, columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }} })"
     {{ $attributes->only('class')->class([$base]) }}
 >
     @if($selectable && $name)

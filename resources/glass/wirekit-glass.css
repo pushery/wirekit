@@ -1,7 +1,9 @@
 /* WireKit Liquid Glass Extension v1.0.0
  * Tier 1: backdrop-filter (all modern browsers)
  * Tier 2: SVG feDisplacementMap refraction (Chrome/Chromium)
- * Requires: <x-wirekit::glass /> in layout <head>
+ * Requires: <x-wirekit::glass /> at the start of the layout body.
+ *           Not the document's metadata section: the component emits an <svg>, which
+ *           terminates it and reparents every tag after it.
  */
 
 /* ── Tier 1 — Frosted Glass ──────────────────────────────── */

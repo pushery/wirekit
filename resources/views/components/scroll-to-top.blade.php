@@ -65,12 +65,41 @@
         default => 'h-5 w-5',
     };
 
-    // Position: four corners + custom via attributes
+    // Position: four corners + custom via attributes.
+    //
+    // ⚠️ The two BOTTOM corners carry `env(safe-area-inset-bottom, 0px)`; the top two do
+    // not need it. On a notched iPhone the home-indicator inset is 34px and this button
+    // sat 16px up, so the lower half of its 44px coarse-pointer hit area lay inside the
+    // gesture strip — where, in the library's own words, "the bottom row of a swipe-up
+    // gesture eats the taps". `.wk-fab` already ships this exact expression.
+    //
+    // `env()` is 0 in headless Playwright, so no browser test can see this either way.
+    // ⚠️ WRITTEN OUT IN FULL, TWICE, AND NOT ASSEMBLED FROM A VARIABLE.
+    //
+    // Tailwind scans this file as TEXT, so a class assembled by string concatenation is
+    // extracted WITH the PHP in it: the utility prefix, the opening bracket, a variable
+    // reference and the closing bracket all become one candidate, and Tailwind emits a
+    // rule for that nonsense selector while the class the component actually renders gets
+    // none. The drift audit's reverse pass caught exactly that and named the expression as
+    // an untraceable compiled selector.
+    //
+    // (And it caught it a second time, in the comment that first explained it — writing
+    // the offending shape out verbatim re-emits the dead rule. Hence the prose.)
+    //
+    // Underscores rather than spaces for the same class of reason: an arbitrary value
+    // containing a literal space is never compiled, so the offset silently falls back to
+    // `auto`. `ArbitraryValueHasNoLiteralSpaceTest` caught this line's first draft.
+    //
+    // The two BOTTOM corners carry `env(safe-area-inset-bottom, 0px)`; the top two do not
+    // need it. On a notched iPhone the home-indicator inset is 34px and this button sat
+    // 16px up, so the lower half of its 44px coarse-pointer hit area lay inside the
+    // gesture strip — where, in the library's own words, "the bottom row of a swipe-up
+    // gesture eats the taps". `.wk-fab` already ships this expression.
     $positionClasses = match ($position) {
-        'bottom-left' => 'bottom-[var(--padding-wk-x-lg)] left-[var(--padding-wk-x-lg)]',
+        'bottom-left' => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] left-[var(--padding-wk-x-lg)]',
         'top-right' => 'top-[var(--padding-wk-x-lg)] right-[var(--padding-wk-x-lg)]',
         'top-left' => 'top-[var(--padding-wk-x-lg)] left-[var(--padding-wk-x-lg)]',
-        default => 'bottom-[var(--padding-wk-x-lg)] right-[var(--padding-wk-x-lg)]',
+        default => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[var(--padding-wk-x-lg)]',
     };
 @endphp
 

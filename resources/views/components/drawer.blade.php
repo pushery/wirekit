@@ -7,6 +7,17 @@
     'size' => config('wirekit.components.drawer.size', 'md'),
     'dismissible' => config('wirekit.components.drawer.dismissible', true),
     'describedby' => null,
+    // An explicit accessible name, for a drawer composed WITHOUT `drawer.header`.
+    //
+    // Without it such a drawer announces as a bare "dialog": `aria-labelledby` points at
+    // an id the header would have bound at runtime, and a caller `aria-label` lands on
+    // the outer x-data wrapper — which carries no role — while the element that IS the
+    // dialog keeps the unresolvable reference. WCAG 2.1 4.1.2, Level A.
+    //
+    // A prop rather than server-side detection of the header: the header binds its id
+    // through Alpine (`x-bind:id`), so it is not in the rendered slot for the parent to
+    // find. This also means the name survives with JavaScript disabled.
+    'label' => null,
     'scope' => null,
 ])
 
@@ -22,6 +33,15 @@
     $titleId = 'wk-drawer-title-' . ($name ?? \Illuminate\Support\Str::random(12));
 
     // Backdrop classes — semi-transparent overlay behind the drawer
+    // A caller-supplied `aria-label` names the DIALOG, not the wrapper it was landing on.
+    // `{{ $attributes }}` sits on the roleless outer element, so `<x-wirekit::drawer
+    // aria-label="…">` rendered a name on something no assistive technology reads as a
+    // dialog — WCAG 4.1.2. It is pulled out here and applied to the panel below, where
+    // `label` already goes; the two are the same intent spelled two ways, so `label` wins
+    // when both are given rather than emitting a conflicting pair.
+    $callerLabel = $attributes->get('aria-label');
+    $attributes = $attributes->except(['aria-label']);
+
     $backdropClasses = WireKit::resolveClasses('drawer', 'backdrop', implode(' ', [
         'fixed inset-0',
         'z-[var(--z-wk-drawer)]',
@@ -69,8 +89,20 @@
     // is relative to the element's own, now-clamped, size) while leaving a
     // 3rem backdrop strip so the overlay still reads as a sheet.
     $sizeClass .= $isHorizontal
-        ? ' max-w-[calc(100vw-3rem)]'
-        : ' max-h-[calc(100vh-3rem)]';
+        // `dvh`/`dvw`, not `vh`/`vw`. `vh` is defined against the LARGE viewport — toolbars
+        // retracted — which is the whole reason `dvh` exists. Clamping to `100vh - 3rem`
+        // reserved 48px against a height the user cannot see while Safari's toolbars are
+        // shown, and the toolbar delta on iOS is larger than 48px: for a top or bottom
+        // drawer the promised backdrop strip was not merely thinner, it was negative, and
+        // the panel's non-scrolling edge (a top drawer's footer, a bottom drawer's header
+        // and close button) ended up outside the visible viewport where it cannot be
+        // reached — the body scrolls internally, but those are `shrink-0` siblings.
+        //
+        // The same repo already states this rule twice and follows it, in app-shell and
+        // sticky-panel. No browser test can catch it: headless Playwright has no dynamic
+        // browser chrome, so `100vh === 100dvh` in every run of the mobile sweep.
+        ? ' max-w-[calc(100dvw-3rem)]'
+        : ' max-h-[calc(100dvh-3rem)]';
 
     // Slide transition classes — direction depends on position
     $enterStart = match ($position) {
@@ -100,7 +132,7 @@
      safe even if focus-trap happens to catch it too. Only registered when the
      drawer is dismissible — non-dismissible drawers must never close on ESC. --}}
 <div
-    x-data="wirekitDrawer({ name: '{{ $name }}', dismissible: {{ $dismissible ? 'true' : 'false' }} })"
+    x-data="wirekitDrawer({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }} })"
     @if($dismissible) x-on:keydown.escape.window="open && isTopmost && close()" @endif
     {{ $attributes }}
 >
@@ -135,7 +167,11 @@
                      nested drawer) pair only marks the topmost as modal. --}}
                 :aria-modal="isTopmost ? 'true' : 'false'"
                 aria-modal="true"
-                aria-labelledby="{{ $titleId }}"
+                @if($label || $callerLabel)
+                    aria-label="{{ $label ?: $callerLabel }}"
+                @else
+                    aria-labelledby="{{ $titleId }}"
+                @endif
                 @if($describedby) aria-describedby="{{ $describedby }}" @endif
                 class="{{ $panelClasses }} {{ $positionClasses }} {{ $sizeClass }}"
                 x-on:click.stop

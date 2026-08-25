@@ -138,10 +138,18 @@
     // content scanner picks both variants up cleanly.
     $rootClass = WireKit::resolveClasses('reading-progress', 'base', implode(' ', [
         'wk-reading-progress',
+        // ⚠️ The dot's bottom offset carries `env(safe-area-inset-bottom, 0px)` in BOTH
+        // branches. Sticky and fixed both settle against the viewport's bottom edge, and on
+        // a phone with a home indicator the plain padding puts the dot inside the gesture
+        // strip — where the system swallows the tap. It resolves to zero everywhere else,
+        // so this is the same offset on a desktop.
+        //
+        // Three siblings already did this (action-bar, scroll-to-top, reading-bookmark);
+        // this one was missed because the guard listed the components by hand.
         $indicator === 'dot'
             ? ($useSticky
-                ? 'sticky z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[var(--padding-wk-x-lg)]'
-                : 'fixed z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[var(--padding-wk-x-lg)]')
+                ? 'sticky z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]'
+                : 'fixed z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]')
             : ($useSticky
                 ? 'sticky left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$positionClass
                 : 'fixed left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$positionClass),
@@ -160,10 +168,24 @@
         $stops = [];
         foreach ($segmentsArray as $pos) {
             $pct = $pos * 100;
-            // Tiny dark sliver at each position, transparent elsewhere.
+            // A 1px sliver at each position, transparent elsewhere.
+            //
+            // ⚠️ THIS WAS `rgba(0,0,0,0.4)`, WHICH IS INVISIBLE ON EVERY DARK THEME. The
+            // strip it paints on is `bg-transparent`, so on a dark surface the dividers
+            // were 40%-opacity black on near-black — and the dividers ARE the `segments`
+            // prop. Every other color in this file is already a token with an override
+            // hook; this one had neither, and no exemption anywhere records it as
+            // deliberate.
+            //
+            // `--color-wk-border-strong` is the token for a separator that has to read
+            // against the surface it divides, and it flips with the theme. The dedicated
+            // `--reading-progress-segment` hook mirrors `--reading-progress-fill` above,
+            // so a developer retinting the bar can reach the dividers too.
+            $segmentColor = 'var(--reading-progress-segment, var(--color-wk-border-strong))';
+
             $stops[] = 'transparent '.$pct.'%';
-            $stops[] = 'rgba(0,0,0,0.4) '.$pct.'%';
-            $stops[] = 'rgba(0,0,0,0.4) calc('.$pct.'% + 1px)';
+            $stops[] = $segmentColor.' '.$pct.'%';
+            $stops[] = $segmentColor.' calc('.$pct.'% + 1px)';
             $stops[] = 'transparent calc('.$pct.'% + 1px)';
         }
         $segmentsStyle = 'background-image: linear-gradient(to right, '.implode(', ', $stops).');';

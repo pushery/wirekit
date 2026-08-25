@@ -158,7 +158,7 @@
     @endif
 
     <div
-        x-data="wirekitMultiSelect({ options: {{ json_encode($encodedOptions) }}, name: '{{ $name }}', value: {{ json_encode($selectedValues) }} })"
+        x-data="wirekitMultiSelect({ options: {{ json_encode($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ json_encode($selectedValues) }} })"
         class="relative"
         @click.away="dropdownOpen = false"
         @keydown.escape="dropdownOpen = false"
@@ -171,7 +171,7 @@
 
         {{-- Hidden inputs for form submission --}}
         <template x-for="(val, i) in selected" :key="i">
-            <input type="hidden" :name="'{{ $name }}[]'" :value="val" />
+            <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="val" />
         </template>
 
         {{-- Input container with pills --}}
@@ -219,7 +219,7 @@
                 {{-- satisfied even when the parent <x-wirekit::field label="..."> --}}
                 {{-- doesn't reach this internal combobox input.                 --}}
                 aria-label="{{ $resolvedAriaLabel }}"
-                :placeholder="selected.length === 0 ? '{{ $placeholder }}' : ''"
+                :placeholder="selected.length === 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::string($placeholder) }} : ''"
                 class="wk-field flex-1 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] outline-none"
             />
         </div>

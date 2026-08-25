@@ -301,6 +301,102 @@ final class StrictnessGate
 
             logger()->warning($message);
         }
+
+        self::warnScopeDirectiveCollisions($context, $actual);
+    }
+
+    /**
+     * Warn when a caller passes an Alpine scope directive the component already sets.
+     *
+     * HTML keeps the FIRST of two identical attributes and discards the rest, so a
+     * component that renders `x-data="…"` and `{{ $attributes }}` on the SAME element
+     * silently throws away the caller's `x-data`. The caller's scope never comes into
+     * existence, and everything they wrote against it — an `x-init` beside it, a
+     * `@click` inside it — resolves against the COMPONENT's data instead.
+     *
+     * It cost a real application a confirmation dialog in front of a destructive action:
+     * the dialog stopped opening and the row was deleted without asking. Four things
+     * looked at that markup and all four were green — Blade renders a duplicate attribute
+     * without complaint because it is valid input, `warnUnknownProps` reads `x-data` as
+     * legitimate passthrough because it is, the CSP audit passed 83 expressions, and the
+     * runtime error it eventually produced named the CALLER's expression, sending everyone
+     * in the wrong direction first.
+     *
+     * Scoped to the three directives whose loss is not a degradation but a disconnection:
+     * `x-data`, `x-init` and `x-modelable` all sever everything downstream from the object
+     * it was written against. A duplicate `class` is merged by Blade and a duplicate
+     * `aria-*` reads as an intended override; those are not this.
+     *
+     * 97 of the 259 component views set `x-data`, 5 set `x-init` and 2 set `x-modelable`.
+     *
+     * @param  array<string, mixed>  $actual  attribute name => value
+     */
+    private static function warnScopeDirectiveCollisions(string $context, array $actual): void
+    {
+        $passed = array_values(array_filter(
+            array_keys($actual),
+            static fn (string $name): bool => in_array($name, ['x-data', 'x-init', 'x-modelable'], true)
+        ));
+
+        if ($passed === []) {
+            return;
+        }
+
+        // The component's own template, read once per component per request. Only reached
+        // when a caller actually passed one of the three, so the common path costs nothing.
+        static $occupiedCache = [];
+
+        if (! array_key_exists($context, $occupiedCache)) {
+            $occupiedCache[$context] = self::scopeDirectivesSetBy($context);
+        }
+
+        $occupied = $occupiedCache[$context];
+
+        foreach ($passed as $directive) {
+            if (! in_array($directive, $occupied, true)) {
+                continue;
+            }
+
+            logger()->warning(sprintf(
+                'WireKit [%s]: your `%s` is DISCARDED — the component sets its own on the same '.
+                'element, and HTML keeps the first of two identical attributes. Your scope never '.
+                'exists, so anything written against it resolves against the component\'s data '.
+                'instead. Wrap the component in your own element, or use the methods the '.
+                'component already exposes.',
+                $context,
+                $directive
+            ));
+        }
+    }
+
+    /**
+     * Which scope directives a component's own template sets.
+     *
+     * Read from the Blade source rather than declared by hand: a hand-kept list is one more
+     * thing to forget, and the template is the authority for what it renders. Anything
+     * unreadable yields an empty list — a missing warning is better than a throw inside a
+     * component's render path.
+     *
+     * @return list<string>
+     */
+    private static function scopeDirectivesSetBy(string $context): array
+    {
+        try {
+            $path = ComponentRegistry::existingBladeFilePath($context);
+        } catch (\Throwable) {
+            return [];
+        }
+
+        if ($path === null || ! is_file($path)) {
+            return [];
+        }
+
+        $source = (string) file_get_contents($path);
+
+        return array_values(array_filter(
+            ['x-data', 'x-init', 'x-modelable'],
+            static fn (string $directive): bool => preg_match('/\s'.preg_quote($directive, '/').'\s*=/', $source) === 1
+        ));
     }
 
     /**

@@ -228,7 +228,7 @@
     <div
         class="flex flex-col"
         style="width: {{ $width }}; max-width: calc(100vw - 2rem);"
-        x-data="wirekitScopeSwitcher({ idPrefix: '{{ $id }}' })"
+        x-data="wirekitScopeSwitcher({ idPrefix: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }} })"
         {{-- Reset from the popover's own state, not from an event.
              The overlay event vocabulary has show/close pairs for modal, drawer,
              alert-dialog and toast — the popover is not among them, so there is no
@@ -270,7 +270,14 @@
         </div>
 
         {{-- Body. `overscroll-contain` stops a flick at the end of this list from scrolling
-             the page behind the panel. --}}
+             the page behind the panel.
+
+             `relative` is the containing block for the two edge shadows below. The list
+             caps at `list-max-height` and clips silently, so a long scope list read as a
+             complete list that happened to end — the same problem the sidebar solved, and
+             the same two CSS classes are reused so the affordance is identical rather than
+             merely similar. --}}
+        <div class="relative">
         <div
             x-ref="list"
             role="listbox"
@@ -279,6 +286,10 @@
             class="wk-scrollbar overflow-y-auto py-[var(--padding-wk-y-sm)]"
             style="max-height: {{ $listMaxHeight }}; overscroll-behavior: contain;"
         >
+            {{-- The observer needs a target with real height — a zero-height element is not
+                 dependably "intersecting" — and that pixel is real layout. The negative
+                 margin gives the observer its pixel and the reader none. --}}
+            <div x-ref="topSentinel" aria-hidden="true" class="h-px -mb-px"></div>
             @foreach($grouped as $groupName => $groupRows)
                 @php $groupId = $id.'-group-'.\Illuminate\Support\Str::slug((string) $groupName ?: 'ungrouped'); @endphp
 
@@ -309,7 +320,7 @@
                         {{-- pointermove, not mouseenter: scrolling the list under a resting
                              cursor fires mouseenter on every row that passes beneath it, and
                              the highlight would chase the scroll instead of the reader. --}}
-                        x-on:pointermove="setActive('{{ $row['key'] }}', false)"
+                        x-on:pointermove="setActive({{ \Pushery\WireKit\Support\AlpinePayload::string($row['key']) }}, false)"
                         data-label="{{ $row['label'] }}"
                         x-on:click="onItemClick($event, {{ $isCurrent ? 'true' : 'false' }})"
                         class="{{ $itemClasses }}"
@@ -358,12 +369,22 @@
             @endforeach
 
             <div x-show="visibleCount === 0" x-cloak class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyLabel }}</div>
+
+            <div x-ref="bottomSentinel" aria-hidden="true" class="h-px -mt-px"></div>
+        </div>
+
+        {{-- Decorative, and it must stay that way: the shadow says "there is more this
+             way", which the scrollbar and the keyboard already say to anyone not looking
+             at it. Same two classes the sidebar uses, so the two surfaces cannot drift
+             into looking almost-alike. --}}
+        <div aria-hidden="true" x-cloak x-show="topShadow" x-transition.opacity class="wk-scroll-shadow-top"></div>
+        <div aria-hidden="true" x-cloak x-show="bottomShadow" x-transition.opacity class="wk-scroll-shadow-bottom"></div>
         </div>
 
         {{-- The count, for a reader who cannot see the list shrink. Throttled in the plugin
              so a fast typist is not read out letter by letter. --}}
         <x-wirekit::visually-hidden role="status" aria-live="polite">
-            <span x-text="announcement === 1 ? '{{ __('1 result') }}' : announcement + ' {{ __('results') }}'"></span>
+            <span x-text="announcement === 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::string(__('1 result')) }} : announcement + {{ \Pushery\WireKit\Support\AlpinePayload::string(__('results')) }}"></span>
         </x-wirekit::visually-hidden>
 
         @if($create)

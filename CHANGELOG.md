@@ -10,6 +10,148 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.35.0] — 2026-08-25
+
+Minor. The stylesheet you serve is a fifth of the size it was, the ES module can finally be
+tree-shaken, and a handful of controls now do what they always said they did — a rich-text
+editor that stops zooming iOS, a checkbox whose third state survives a server round trip, a
+sidebar rail that no longer shifts the page when it collapses.
+
+### Added
+
+- **`--z-wk-chrome`** — a layer for page chrome that must stay above overlays opened in page
+  content. [`<x-wirekit::header sticky>`](https://docs.wirekit.app/components/header) and [`<x-wirekit::navbar sticky>`](https://docs.wirekit.app/components/navbar) sit on it, so a
+  popover in an article no longer paints over the site header. It stays below
+  `--z-wk-modal`, and a panel anchored inside the header is unaffected: top chrome opens
+  downward and never overlaps the bar it hangs from.
+- **`--reading-progress-segment`** — retint the chapter dividers `<x-wirekit::reading-progress
+  :segments="…">` draws, independently of the bar itself.
+- **`previous-label` and `next-label` on [`<x-wirekit::pagination>`](https://docs.wirekit.app/components/pagination)** — name the two direction
+  controls. "Previous" and "Next" are misleading on a reverse-chronological list, where
+  moving "next" goes backward in time; on a changelog or an activity feed,
+  `previous-label="Newer"` says what the button does. Unset keeps the translated defaults.
+- **`label` on [`<x-wirekit::drawer>`](https://docs.wirekit.app/components/drawer) and [`<x-wirekit::alert-dialog>`](https://docs.wirekit.app/components/alert-dialog)** — name the dialog
+  without a header slot. A drawer built from body content alone previously had no accessible
+  name and no way to give it one.
+- **The `undo` icon alias** — a real undo glyph in all four presets, so the name keeps meaning
+  the same thing when a project changes preset.
+- **Per-component ES module exports.** Every Alpine factory is exported by name and
+  `register()` takes a chosen subset, so a bundler can drop what you never render. Measured
+  with esbuild: one component 26 KB raw / 10 KB gzip against 235 KB / 66 KB for the whole
+  library. The default export is unchanged.
+
+### Changed
+
+- **`@wirekitStyles` links a minified stylesheet.** The readable, fully commented
+  `dist/wirekit.css` is still published beside it — it is the source of truth for what every
+  token means — but two thirds of it is comments, and it is render-blocking. The linked file
+  is now **12 KB gzip instead of 74 KB**, verified to contain every token, component class
+  and at-rule the readable one does.
+- **`wirekit:install --font=<key>` publishes that family only.** It copied the whole 5.8 MB
+  font tree for a single flag, once per `--font*` flag, and again on every `composer install`
+  where the publish is wired into `post-autoload-dump`.
+- **[`<x-wirekit::prose>`](https://docs.wirekit.app/components/prose) wraps long lines in a `<pre>` instead of scrolling them.** A
+  horizontal scroll region has to be reachable by keyboard, and Prose styles markup it did not
+  author, so it cannot put a tab stop on your `<pre>`. Author one yourself —
+  `<pre tabindex="0" role="region" aria-label="…">` — and Prose gives that block its
+  horizontal scrolling back.
+- **[`wirekit:doctor`](https://docs.wirekit.app/cli-reference) checks the stylesheet the page actually links.** It reported the readable
+  copy as published while the linked one was missing, which is a green tick over an unstyled
+  page.
+- **Sidebar rows keep one height whether the rail is expanded or collapsed.** They were sized
+  by the label when it showed and by the icon when it did not — 2.75px per row on the shipped
+  type ramp, so a three-item rail moved everything below it by 8.25px on every toggle.
+
+### Fixed
+
+- **[`<x-wirekit::editor>`](https://docs.wirekit.app/components/editor) no longer makes iOS zoom on focus.** Its typing surface computed to
+  14px: the 16px floor was written for form controls, and a rich-text editor types into a
+  `contenteditable`, which no `input`/`textarea` selector reaches.
+- **A caller's `aria-label` reaches the control on `inline-edit`, `editor`,
+  `command-palette`, `drawer` and `alert-dialog`.** It was landing on a wrapper with no role,
+  so the element the user operates had no accessible name at all.
+- **Every labeled [`<x-wirekit::inline-edit>`](https://docs.wirekit.app/components/inline-edit) had a control with no accessible name** — the
+  label's `for` and the control's `id` were two different strings.
+- **[`<x-wirekit::checkbox indeterminate>`](https://docs.wirekit.app/components/checkbox) follows a change made after the first render.** The
+  third state is a DOM property with no HTML attribute, and it was applied once; a Livewire
+  round trip left the box reading "none selected" while something was selected.
+- **[`<x-wirekit::collapsible>`](https://docs.wirekit.app/components/collapsible) and [`<x-wirekit::tabs>`](https://docs.wirekit.app/components/tabs) keep their content across a Livewire
+  round trip.** Both built ids that changed on every render, so the morph replaced the
+  region: focus left the slot, anything typed into an unbound input was discarded, and an
+  open panel flashed hidden.
+- **[`<x-wirekit::menubar.menu>`](https://docs.wirekit.app/components/menubar) and [`<x-wirekit::navigation-menu.item>`](https://docs.wirekit.app/components/navigation-menu) keep the classes you
+  pass them.** They emitted `class` twice, and the browser discards the second.
+- **[`<x-wirekit::code-block>`](https://docs.wirekit.app/components/code-block) and [`<x-wirekit::shell-bar>`](https://docs.wirekit.app/components/shell-bar) scroll regions are reachable by
+  keyboard.** The shell bar's wiring depended on its optional `label`, so the common usage
+  shipped an unreachable scroller.
+- **[`<x-wirekit::message>`](https://docs.wirekit.app/components/message) reveals its actions on touch.** The default reveal used hover and
+  focus, and a phone has neither in a discoverable form — reply, react and delete were
+  invisible with no way to summon them.
+- **Bottom-anchored floating controls clear the iOS home indicator.** `action-bar`,
+  `scroll-to-top`, `reading-bookmark` and the [`<x-wirekit::reading-progress indicator="dot">`](https://docs.wirekit.app/components/reading)
+  badge sat inside the gesture strip, which swallows taps.
+- **`<x-wirekit::drawer>` measures against the dynamic viewport**, so the strip it reserves is
+  not consumed by the mobile browser's own chrome.
+- **Reveals no longer flash before they animate, and a click-triggered one is visible enough
+  to click.** The rule that pre-hides an element until its animation runs was spelled for one
+  authoring form in its anchor and for the other in its exclusions, so each was half-covered
+  in opposite directions: a [`<x-wirekit::reveal>`](https://docs.wirekit.app/components/reveal)
+  painted at full opacity before sliding in, while a `wirekitAnimate('…', { trigger: 'click' })`
+  written by hand was hidden into a target nobody could aim at. Measured across all seven
+  combinations.
+- **A [`<x-wirekit::stat animate>`](https://docs.wirekit.app/components/stat) counter can be
+  started again.** It fires once when the stat scrolls into view — correctly, since a stat that
+  re-counts on every pass would be distracting — but nothing could ask for a restart: the
+  observer disconnects itself after the first intersection, and the page said to scroll the
+  stat out of view and back, which for that reason could never have worked. Dispatch
+  `wirekit:stat-replay` on the stat's root. Under `prefers-reduced-motion: reduce` the value is
+  already settled and the event does nothing.
+- **[`<x-wirekit::mark>`](https://docs.wirekit.app/components/mark) renders its themed background again.**
+- **`reading-progress` chapter dividers are visible in dark mode** — they were a fixed
+  near-black on a transparent strip.
+- **The sliders shrink with a narrow parent instead of overflowing it.** Their minimum width
+  was a hard floor, against a comment promising the opposite.
+- **[`<x-wirekit::glass />`](https://docs.wirekit.app/components/liquid-glass) is documented for the start of the body, not the head.** It emits an
+  `<svg>`, and an SVG in the head ends head parsing — every metadata tag after it is reparented
+  into the body, where a crawler does not look.
+- **Config defaults that nothing read are wired or removed** — `stat.animate`, `editor.format`,
+  `editor.toolbar` and `editor.size` are read from config now; `date-picker.format` is gone,
+  since a native date input renders in the viewer's locale and cannot be told otherwise.
+- **`as` is validated before it becomes a tag name.** A value containing a space or an `=`
+  was rendered into the opening tag as an attribute.
+- **`wirekit:install --rollback` no longer runs out of memory on a large install log**, and a
+  second run reports that the session is already undone instead of silently replaying it.
+- **[`<x-wirekit::fonts>`](https://docs.wirekit.app/components/fonts) documents its one prop.**
+  `nonce` was explained in prose but never listed as a prop, so it was absent from the one place
+  a developer looks for the component's surface.
+- **The `wirekit:doctor` page shows the glyphs the command prints.** Five of its six output
+  examples used `⚠` for a warning, which the command has never emitted — it prints `!` — and the
+  page asserted the wrong glyph in its own legend. Four of the quoted lines also carried labels
+  and a shape the command does not produce. A developer comparing their terminal against the page
+  was matching it to output that does not exist.
+- **[`wirekit:glass install`](https://docs.wirekit.app/components/liquid-glass) tells you to put
+  the component in the body, where it belongs.** The command and both pages that show the
+  placement still put it in the `<head>` — the placement this release announced as corrected. An
+  SVG there ends head parsing, so every metadata tag after it is reparented into the body.
+- **[`wirekit:icons --audit`](https://docs.wirekit.app/cli-reference) says what it looked at when
+  it finds nothing.** It reads two surfaces — the `<x-wirekit::icon>` tag and the `icon` prop on
+  every component that takes one — but both of its refusals named only the tag, so a project
+  whose icons are props was told no icon tags were found and sent looking for a scanning path
+  that was not the problem. The bound-value line said `:name="…"` where a prop binds as `:icon`.
+- **[`wirekit:class-by-area`](https://docs.wirekit.app/cli-reference) looks for your application's own compiled CSS**, and says so when
+  it finds none.
+
+### Documentation
+
+- The ES module page explains how to import a subset, with measured sizes.
+- `wirekit:doctor`'s example output is transcribed once, on the command's own page.
+- Fifty-seven blueprint code blocks that name a destination `.php` file now open with `<?php`.
+- Thirteen page-to-page links that pointed at a fragment no heading generates are corrected.
+- Every publicly served page has an authored meta description within the serving cap, and no
+  two share a title.
+
+---
+
 ## [2.34.3] — 2026-08-23
 
 Patch. Two things a navigation column did while it was moving, and one that it did on a page

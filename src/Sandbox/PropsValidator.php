@@ -86,6 +86,14 @@ final class PropsValidator
                 continue;
             }
 
+            if (isset($spec['allowed_schemes']) && is_array($spec['allowed_schemes'])
+                && is_string($value)
+                && ! self::schemeIsAllowed($value, $spec['allowed_schemes'])) {
+                $violations[] = "prop '{$name}' URL scheme not allowed";
+
+                continue;
+            }
+
             $sanitized = self::sanitize($value, $name, $violations);
             if ($sanitized !== null || $value === null) {
                 $clean[$name] = $sanitized;
@@ -145,8 +153,9 @@ final class PropsValidator
 
     /**
      * @param  array<int, string>  $violations
+     *
+     * mixed: recursively sanitizes any PHP value (string, bool, int, float, null, array).
      */
-    /** mixed: recursively sanitizes any PHP value (string, bool, int, float, null, array). */
     private static function sanitize(mixed $value, string $propName, array &$violations, int $depth = 0): mixed
     {
         if ($depth > self::MAX_ARRAY_DEPTH) {
@@ -181,5 +190,52 @@ final class PropsValidator
 
         // Scalars (int/float/bool/null) pass through unchanged
         return $value;
+    }
+
+    /**
+     * Is this URL's scheme one a rendered attribute may carry?
+     *
+     * The sandbox threat model (section 6) makes a whitelist mandatory for any URL prop:
+     * either a strict `allowed_values` enum or "a custom URL validator that whitelists
+     * scheme + host". An enum is the wrong half for a PREVIEW sandbox — a link demo whose
+     * href may only be three fixed strings previews nothing — so this is the other half.
+     *
+     * It is written against what a BROWSER reads, not against what looks like a URL.
+     * Before a browser reads the scheme it strips leading whitespace and removes ASCII
+     * control characters ANYWHERE in it, which is why `java\nscript:` and `java\0script:`
+     * execute while a naive `str_starts_with($value, 'javascript:')` sees neither. The
+     * value is normalized the same way here, and only then split on the first colon.
+     *
+     * A value with no scheme at all — `#anchor`, `/path`, `path` — is allowed: it cannot
+     * name a protocol handler, so it cannot execute.
+     *
+     * @param  array<int, string>  $allowed
+     */
+    private static function schemeIsAllowed(string $value, array $allowed): bool
+    {
+        // Strip ASCII control characters (including NUL, TAB, LF, CR) wherever they sit,
+        // then leading whitespace — the browser's own order.
+        $normalized = ltrim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $value));
+
+        // No colon before the first `/`, `?` or `#` means there is no scheme. `a/b:c` is a
+        // path, not a scheme, and `#x:y` is a fragment.
+        $stop = strcspn($normalized, '/?#');
+        $head = substr($normalized, 0, $stop);
+        $colon = strpos($head, ':');
+
+        if ($colon === false) {
+            return true;
+        }
+
+        $scheme = strtolower(substr($head, 0, $colon));
+
+        // An empty or non-conforming scheme is not a scheme a browser would dispatch on,
+        // but it is also not something this sandbox needs to render — reject it rather
+        // than reason about it.
+        if ($scheme === '' || preg_match('/^[a-z][a-z0-9+.-]*$/', $scheme) !== 1) {
+            return false;
+        }
+
+        return in_array($scheme, array_map('strtolower', $allowed), true);
     }
 }

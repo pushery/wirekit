@@ -68,7 +68,7 @@
          out of its grammar too — no panel opened under a strict policy. The
          mode is a validated enum, so it goes in as a plain quoted literal
          rather than through {{ \Pushery\WireKit\Support\AlpinePayload::from() }}. --}}
-    x-data="wirekitAccordion({ mode: '{{ $mode }}' })"
+    x-data="wirekitAccordion({ mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }} })"
     data-wk-accordion-mode="{{ $mode }}"
     {{-- WAI-ARIA 1.2 forbids author naming on an element with an implicit
          role="generic": a bare <div> carrying aria-label is not reliably exposed

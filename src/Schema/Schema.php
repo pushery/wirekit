@@ -34,6 +34,7 @@ final class Schema
      * @param  array<string, mixed>|null  $aggregateRating
      * @param  list<array<string, mixed>>|null  $review
      * @param  array<string, mixed>  $extra  Any additional schema.org properties.
+     * @param  string|array<string, mixed>|null  $image
      * @return array<string, mixed>
      */
     public static function product(
@@ -174,6 +175,7 @@ final class Schema
      * An article / blog post.
      *
      * @param  array<string, mixed>  $extra
+     * @param  string|array<string, mixed>|null  $image
      * @return array<string, mixed>
      */
     public static function article(
@@ -262,6 +264,7 @@ final class Schema
      *
      * @param  list<string>|null  $sameAs
      * @param  array<string, mixed>  $extra
+     * @param  string|array<string, mixed>|null  $logo
      * @return array<string, mixed>
      */
     public static function organization(

@@ -29,6 +29,14 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('command-palette', $attributes->getAttributes());
 
+    // A caller-supplied `aria-label` names the CONTROL, not the wrapper `{{ $attributes }}`
+    // lands on. `<x-wirekit::command-palette aria-label="…">` put the name on a roleless element,
+    // so the control the user actually operates kept no accessible name at all — WCAG
+    // 4.1.2, and it looked correct in the markup, which is why nothing caught it.
+    $callerLabel = $attributes->get('aria-label');
+    $attributes = $attributes->except(['aria-label']);
+
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -93,7 +101,7 @@
 @endphp
 
 <div
-    x-data="wirekitCommandPalette({ hotkey: '{{ $hotkey }}', lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
+    x-data="wirekitCommandPalette({ hotkey: {{ \Pushery\WireKit\Support\AlpinePayload::string($hotkey) }}, lockScroll: {{ $lockScroll ? 'true' : 'false' }} })"
     {{ $attributes }}
 >
     {{-- Overlay markup. Wrapped in `<template x-teleport="#wk-overlay-root">` by default so
@@ -169,6 +177,10 @@
                             x-model="query"
                             type="text"
                             role="combobox"
+                            {{-- The palette's own input is the control the caller means; without a
+                                 name it is announced as an unlabeled combobox. The placeholder is
+                                 NOT a name — it disappears the moment the user types. --}}
+                            aria-label="{{ $callerLabel ?: __('Search commands') }}"
                             aria-expanded="true"
                             aria-controls="wk-command-list"
                             :aria-activedescendant="activeDescendant"

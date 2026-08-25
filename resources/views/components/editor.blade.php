@@ -26,16 +26,16 @@
     'name' => null,
     'id' => null,
     'value' => null,
-    'format' => 'html',          // html | json
+    'format' => config('wirekit.components.editor.format', 'html'),   // html | json
     'extensions' => null,        // array of editor extension NAMES (hint for window.wirekitEditor)
-    'toolbar' => 'basic',        // false | 'basic' | 'full' | 'custom'
+    'toolbar' => config('wirekit.components.editor.toolbar', 'basic'), // false | 'basic' | 'full' | 'custom'
     'placeholder' => null,
     'maxLength' => null,
     'editable' => true,
     'label' => null,
     'hint' => null,
     'error' => null,
-    'size' => 'md',              // sm | md | lg
+    'size' => config('wirekit.components.editor.size', 'md'),         // sm | md | lg
     // Cap the editable area's height (any CSS length, e.g. '20rem' / '50vh'). The
     // content host already scrolls (overflow-y-auto); maxHeight gives it a CEILING
     // so a long document scrolls INSIDE the field instead of growing the page
@@ -68,6 +68,14 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('editor', $attributes->getAttributes());
+
+    // A caller-supplied `aria-label` names the CONTROL, not the wrapper `{{ $attributes }}`
+    // lands on. `<x-wirekit::editor aria-label="…">` put the name on a roleless element,
+    // so the control the user actually operates kept no accessible name at all — WCAG
+    // 4.1.2, and it looked correct in the markup, which is why nothing caught it.
+    $callerLabel = $attributes->get('aria-label');
+    $attributes = $attributes->except(['aria-label']);
+
 
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
@@ -147,7 +155,13 @@
         // So the label is wired by REFERENCE instead, and aria-label stays the
         // fallback for the unlabeled case.
         'ariaLabelledby' => $label ? $id.'-label' : null,
-        'ariaLabel' => $label ? null : ($name ? Str::headline((string) $name) : 'Rich text editor'),
+        // `__()` on both halves of the same name. editor.js spreads this onto the
+        // contenteditable as its aria-label, so an untranslated literal here announces
+        // the editor in English on the Tiptap path while the textarea path below is
+        // correct — one string, two writes, and only one of them was translated.
+        // `Str::headline($name)` stays untranslated on purpose: it is derived from a
+        // developer-supplied name, not a string this package ships.
+        'ariaLabel' => $label ? null : ($name ? Str::headline((string) $name) : __('Rich text editor')),
         'ariaDescribedby' => $describedBy !== '' ? $describedBy : null,
         'ariaInvalid' => (bool) $hasError,
         // Plumbed to the Tiptap path too (not just the textarea fallback's
@@ -232,6 +246,9 @@
         <div
             x-ref="content"
             id="{{ $id }}"
+            {{-- The editable host is the control. A caller's name belongs here, not on the
+                 Alpine wrapper it was landing on; `label` still wins when both are given. --}}
+            @if($callerLabel && ! $label) aria-label="{{ $callerLabel }}" @endif
             class="flex flex-col cursor-text [contain:inline-size] {{ $minHeight }} overflow-y-auto wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]"
             @if($maxHeight) style="max-height: {{ $maxHeight }};" @endif
         ><div data-wk-editor-seed class="wk-editor-content">{!! $initialHtml !!}</div></div>
@@ -248,7 +265,10 @@
                 {{-- Named so that when Tiptap is ABSENT and the factory un-hides this
                      textarea as the fallback, it still has an accessible name (the
                      <label for> targets the content host, not this field). --}}
-                aria-label="{{ $label ?? ($name ? Str::headline((string) $name) : 'Rich text editor') }}"
+                {{-- The caller's own name first. This is the control a reader without the
+                     editor engine actually types into, so a name that stops at the
+                     wrapper never reaches them. --}}
+                aria-label="{{ $label ?? $callerLabel ?? ($name ? Str::headline((string) $name) : __('Rich text editor')) }}"
                 @if($autofocus) data-autofocus @endif
                 {{-- Mirror the maxHeight cap on the fallback textarea so the absent-Tiptap
                      path scrolls at the same ceiling (a textarea scrolls natively). --}}

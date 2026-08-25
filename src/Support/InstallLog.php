@@ -42,6 +42,49 @@ final class InstallLog
     }
 
     /**
+     * The newest session line, read WITHOUT loading the log.
+     *
+     * `--rollback` used to do `explode("\n", file_get_contents($path))` and then take
+     * `end()` of it — reading the whole file, doubling it in an array, and using one line.
+     * Measured against a log holding its five retained sessions of this package's own
+     * publishable tree (99 files, 6.92 MB on disk, 8.95 MB per line once binaries are
+     * base64'd): a 44.7 MB log peaked at **91.5 MB** and died outright at
+     * `memory_limit=64M`. The command that undoes a bad install was the one that ran out
+     * of memory — a safety net failing exactly when it is reached for.
+     *
+     * This file's own docblock already described that defect. The WRITE path was fixed with
+     * a bounded ring; the reader it was written about was not, which is what this closes.
+     * The same streaming shape as `trim()` below peaks at 30.9 MB on that file and clears
+     * a 64M limit.
+     *
+     * @return string|null the last non-empty line, or null when there is none
+     */
+    public static function lastSessionLine(string $path): ?string
+    {
+        $handle = @fopen($path, 'rb');
+
+        if ($handle === false) {
+            return null;
+        }
+
+        $last = null;
+
+        // One line held at a time. `fgets` is what makes this bounded by the longest LINE
+        // rather than by the file — and the longest line is the one the caller wanted anyway.
+        while (($line = fgets($handle)) !== false) {
+            $line = rtrim($line, "\r\n");
+
+            if ($line !== '') {
+                $last = $line;
+            }
+        }
+
+        fclose($handle);
+
+        return $last;
+    }
+
+    /**
      * Keep only the newest SESSIONS_KEPT lines.
      *
      * Read line by line rather than with `file_get_contents`, and that is the whole point of

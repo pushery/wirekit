@@ -136,6 +136,14 @@ final class PhosphorPreset implements IconPreset
             'inbox' => 'phosphor-tray', // phosphor calls the inbox glyph `tray`
             'bolt' => 'phosphor-lightning', // phosphor calls it `lightning`
             'refresh' => 'phosphor-arrows-clockwise', // phosphor's rotate glyph
+            // Undo — the counter-clockwise arrow every set ships under a different name.
+            // Named for the CONCEPT, not for one family's spelling: the proposal reached us
+            // as `arrow-counter-clockwise`, which is Phosphor's word for it and would have
+            // made the vocabulary read differently depending on which set a project loads.
+            // Verified against the SVG files: lucide `undo`, tabler `arrow-back-up`,
+            // phosphor `arrow-counter-clockwise`, heroicons `arrow-uturn-left` — four real
+            // undo glyphs, not four things that look roughly alike.
+            'undo' => 'phosphor-arrow-counter-clockwise',
             // Media controls.
             'play' => 'phosphor-play',
             'pause' => 'phosphor-pause',

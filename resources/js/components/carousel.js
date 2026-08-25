@@ -14,7 +14,7 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/carousel/
  */
-import { prefersReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 export default function wirekitCarousel(config = {}) {
     return {
         current: 0,
@@ -28,6 +28,7 @@ export default function wirekitCarousel(config = {}) {
         _hoverPaused: false,
         _observer: null,
         _slides: [],
+        _unwatchMotion: null,
 
         init() {
             this._slides = Array.from(this.$el.querySelectorAll('[data-wk-carousel-slide]'));
@@ -42,6 +43,25 @@ export default function wirekitCarousel(config = {}) {
             if (this.autoplay && this.total > 1 && !this._prefersReducedMotion()) {
                 this.play();
             }
+
+            // ⚠️ THAT DECISION IS MADE ONCE, AND THE PREFERENCE CAN CHANGE WHILE THE PAGE IS
+            // OPEN — both the OS setting and the application's own attribute, which is what
+            // a user flipping a preferences toggle without a reload does. Until now nothing
+            // in the library watched for it: `watchReducedMotion` was written for exactly
+            // this and had zero callers, so a reader who asked for less motion mid-session
+            // kept a running autoplay timer, and one who withdrew the request had to reload
+            // to get the carousel back.
+            //
+            // Every other reducedMotion read in the catalog happens at the moment of use
+            // and therefore picks a change up naturally. This one and stat-animate's are
+            // the two that do not.
+            this._unwatchMotion = watchReducedMotion((reduced) => {
+                if (reduced) {
+                    this._stopTimer();
+                } else if (this.autoplay && this.total > 1) {
+                    this.play();
+                }
+            });
         },
 
         destroy() {
@@ -55,6 +75,11 @@ export default function wirekitCarousel(config = {}) {
                 this._observer.disconnect();
                 this._observer = null;
             }
+
+            // The watcher holds a media-query listener and a MutationObserver on <html>,
+            // both of which outlive the element otherwise.
+            this._unwatchMotion?.();
+            this._unwatchMotion = null;
 
             this._slides = [];
         },
