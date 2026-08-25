@@ -67,7 +67,7 @@ final class StrictnessGate
         'readonly', 'required', 'checked', 'selected', 'multiple', 'min', 'max',
         'step', 'pattern', 'minlength', 'maxlength', 'size', 'for', 'form',
         'method', 'action', 'formaction', 'formmethod', 'novalidate', 'accept',
-        'rel', 'target', 'href', 'download', 'ping', 'referrerpolicy',
+        'rel', 'target', 'href', 'download', 'ping', 'referrerpolicy', 'hreflang', 'media',
         'src', 'srcset', 'sizes', 'alt', 'loading', 'decoding', 'width', 'height',
         'poster', 'preload', 'controls', 'muted', 'loop', 'autoplay',
         'colspan', 'rowspan', 'scope', 'headers', 'datetime', 'open', 'cite',

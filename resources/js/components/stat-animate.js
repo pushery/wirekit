@@ -76,11 +76,32 @@ export default () => ({
                 this._fallbackTimer = null;
             }
             this.animating = true;
+
+            // Each run carries a token, and a tick abandons itself when the token has moved
+            // on. Without it a restart during an in-flight animation leaves TWO frame loops
+            // running against the same value: the new one counts up from zero while the old
+            // one keeps writing where it had got to, and the reader sees the number stutter
+            // between two runs. Found by a test that dispatched mid-animation by accident —
+            // which is exactly what a reader does when they hit a replay control early.
+            const run = (this._run = (this._run ?? 0) + 1);
+
             const start = performance.now();
             const duration = 1200;
             const ease = (t) => 1 - Math.pow(1 - t, 3); // ease-out cubic
 
             const tick = (now) => {
+                // A superseded run stops here and writes nothing.
+                if (this._run !== run) return;
+
+                // Cancels the settle watchdog below on the first frame that lands:
+                // once the animation is ticking it owns the value, and a watchdog
+                // firing mid-count would snap over a running animation.
+                this._ticked = true;
+                if (this._settleTimer) {
+                    clearTimeout(this._settleTimer);
+                    this._settleTimer = null;
+                }
+
                 const t = Math.min(1, (now - start) / duration);
                 const eased = ease(t);
                 this.value = formatValue(eased * numeric);
@@ -92,6 +113,31 @@ export default () => ({
                     this.progress = 1;
                 }
             };
+
+            // Settle watchdog. `requestAnimationFrame` only runs while the document
+            // is actually being rendered — a frame that is hidden, zero-sized or
+            // otherwise not rendered pauses it indefinitely, while `setTimeout` keeps
+            // running. In that state the counter has already reset to "0" and no tick
+            // ever arrives, so a correct value stays overpainted with a zero for as
+            // long as the condition lasts. `init()` already treats a start signal that
+            // never arrives as this component's own problem (the fallback timer above);
+            // a restart whose frames never arrive is that same problem one step later.
+            //
+            // Settling costs nothing in the paused-then-resumed case: `start` is
+            // captured before the pause, so the first frame after rendering resumes
+            // already has `t >= 1` and snaps to the target without animating either.
+            this._ticked = false;
+            if (this._settleTimer) {
+                clearTimeout(this._settleTimer);
+            }
+            this._settleTimer = setTimeout(() => {
+                this._settleTimer = null;
+                if (this._run !== run) return;
+                if (this._ticked) return;
+                this.value = formatValue(numeric);
+                this.progress = 1;
+                this.animating = false;
+            }, duration + 400);
 
             requestAnimationFrame(tick);
         };
@@ -106,7 +152,25 @@ export default () => ({
         // a replay control for anything carrying `data-replayable`, and this component sets it;
         // dispatching beats reaching into the component's scope from outside.
         this._replayListener = () => this.replay();
-        this.$root.addEventListener('wirekit:stat-replay', this._replayListener);
+
+        // Bound to BOTH elements a caller could reasonably aim at, because with an entrance
+        // wrapper they are not the same element: `data-replayable` — the marker the
+        // documentation site renders its replay control for — sits on the OUTER wrapper,
+        // while `x-data` and `data-target` sit on the inner root. Events bubble up, so a
+        // dispatch on the wrapper could never reach a listener bound to the root, and the
+        // control did nothing at all in exactly the configuration that renders one.
+        //
+        // NOT delegated on `window`, which is how `wirekit:reveal` reaches its components:
+        // that event is deliberately a broadcast, and a replay is not. A window listener
+        // would restart every counter on the page instead of the one that was asked.
+        this._replayTargets = [this.$root];
+
+        const replayMarker = this.$root.parentElement;
+        if (replayMarker?.hasAttribute('data-replayable')) {
+            this._replayTargets.push(replayMarker);
+        }
+
+        this._replayTargets.forEach((el) => el.addEventListener('wirekit:stat-replay', this._replayListener));
 
         // Safety net. Both start-triggers below can MISS:
         // the entrance path waits for an `animationend` that may never fire (a
@@ -210,6 +274,13 @@ export default () => ({
             this._fallbackTimer = null;
         }
 
+        // A watchdog from the previous run must not outlive it — left armed, it
+        // would fire during the restart and snap the counter to target mid-count.
+        if (this._settleTimer) {
+            clearTimeout(this._settleTimer);
+            this._settleTimer = null;
+        }
+
         this._started = false;
         this.value = '0';
         this.progress = 0;
@@ -238,8 +309,15 @@ export default () => ({
             clearTimeout(this._fallbackTimer);
             this._fallbackTimer = null;
         }
+        if (this._settleTimer) {
+            clearTimeout(this._settleTimer);
+            this._settleTimer = null;
+        }
         if (this._replayListener) {
-            this.$root.removeEventListener('wirekit:stat-replay', this._replayListener);
+            (this._replayTargets ?? [this.$root]).forEach(
+                (el) => el?.removeEventListener('wirekit:stat-replay', this._replayListener)
+            );
+            this._replayTargets = null;
             this._replayListener = null;
         }
         this._runCounter = null;

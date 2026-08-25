@@ -309,17 +309,22 @@ class WireKitServiceProvider extends ServiceProvider
         //
         // Two-tier serving strategy with automatic staleness detection:
         //
-        //   1. If a published copy exists at public/vendor/wirekit/wirekit.css
-        //      AND that copy is at least as new as the package's dist/wirekit.css,
-        //      the web server serves it directly (fastest path).
+        // Written without naming a file on purpose. `styleTag()` takes the filename as an
+        // argument and both twins are published side by side, so a comment that hardcodes one
+        // of them is wrong for the other and goes stale the moment the directive is repointed
+        // — which is exactly what happened when this directive moved to the minified twin and
+        // these lines kept naming the readable one, sending anyone chasing a stale stylesheet
+        // to the file that is not being served.
         //
-        //   2. Otherwise — either no published copy, OR a published copy that
-        //      is older than the package's dist/ file (e.g. user ran
-        //      `composer update pushery/wirekit` but forgot
-        //      `vendor:publish --tag=wirekit-assets --force`) — we fall back to
-        //      the route, which reads straight from the package's own dist/
-        //      directory and is therefore guaranteed fresh after every
-        //      `composer update`.
+        //   1. If a published copy of the file this directive links exists under
+        //      public/vendor/wirekit/ AND is at least as new as the package's own copy in
+        //      dist/, the web server serves it directly (fastest path).
+        //
+        //   2. Otherwise — either no published copy, OR one older than the package's (a
+        //      `composer update pushery/wirekit` without the matching
+        //      `vendor:publish --tag=wirekit-assets --force`) — we fall back to the route,
+        //      which reads straight from the package's own dist/ directory and is therefore
+        //      guaranteed fresh after every `composer update`.
         //
         // The generated URL is cache-busted with `?v={filemtime}` so browsers
         // automatically pick up new content instead of serving a stale cached

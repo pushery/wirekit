@@ -243,8 +243,14 @@
     {{-- Collapsible rail. The `collapsed` state lives here; `group/wk-sidebar` +
          the `data-collapsed` marker let descendant labels/indicators react via
          pure CSS (`group-data-[collapsed]/wk-sidebar:*`) — no per-item Alpine.
-         3.5rem is the structural icon-rail width (icon + padding), not a theme
-         value, so it stays a literal like the structural w-9 day cells. --}}
+         The collapsed width reads --size-wk-rail, the same token the app-rail uses,
+         so the two columns stay interchangeable in a shell. It is DERIVED from the
+         icon and the paddings rather than written as a round number: a collapsed row
+         centers its icon and an expanded row aligns it to the leading padding, and
+         those coincide only when the column is exactly as wide as its content. The
+         literal 3.5rem that stood here was described as "icon + padding" and was a
+         quarter-rem wider, which centering halved into a 1.5px sideways jump on
+         every expand. --}}
     <nav
         {{-- The rail's folded state lives in resources/js/components/sidebar-rail.js.
              It cannot live here: an inline object literal cannot declare methods
@@ -258,7 +264,12 @@
              is widening back the names stay out of the layout, so they are never set at a
              width they will not keep — which is what made the rows jump and settle. --}}
         :data-settling="settling ? '' : null"
-        :class="collapsed ? 'w-[3.5rem]' : 'w-[var(--wk-sidebar-w,16rem)]'"
+        {{-- OBJECT syntax, not a ternary, and the difference is load-bearing. A ternary hands
+             Alpine one class to add, and Alpine only ever removes what it added itself — so the
+             static width below survived every toggle and a collapsed column stayed at 16rem with
+             two width utilities on it. The object form names BOTH classes, so Alpine removes the
+             one whose condition is false no matter who put it there. --}}
+        :class="{ 'w-[var(--size-wk-rail,3.25rem)]': collapsed, 'w-[var(--wk-sidebar-w,16rem)]': ! collapsed }"
         {{-- The row gap the collapse control needs. Without it the button's hover surface
              ended exactly where the adjacent item's began — two gray rectangles sharing an
              edge, which reads as one smudged block rather than as two controls. --}}
@@ -267,7 +278,14 @@
              init. Ungated, a cold load animates the ARRIVAL of the stylesheet: the column lays
              out unstyled, the CSS lands, and the browser tweens from one to the other — a column
              unfolding on a page where nothing was toggled. Only ever visible without a cache. --}}
-        {{ $attributes->class([$classes, 'group/wk-sidebar gap-[var(--space-wk-nav-gap)] data-[wk-ready]:transition-[width] data-[wk-ready]:duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
+        {{-- The initial width is emitted STATICALLY as well as through the `:class` above.
+             Until Alpine boots, `:class` has not run, so without this the column carries no
+             width at all — it lays out at content width and snaps to its real one a frame
+             later, which is the flicker reported from three shells. Alpine's `:class` swaps
+             the two widths, so exactly one width utility is ever in the list and the
+             equal-specificity conflict never arises. A persisted rail can still move once:
+             the stored choice lives in the reader's browser and only Alpine can read it. --}}
+        {{ $attributes->class([$classes, $collapsed ? 'w-[var(--size-wk-rail,3.25rem)]' : 'w-[var(--wk-sidebar-w,16rem)]', 'group/wk-sidebar gap-[var(--space-wk-nav-gap)] data-[wk-ready]:transition-[width] data-[wk-ready]:duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
     >
         @include('wirekit::components.partials.sidebar-zones')
         @if($toggle !== 'none')

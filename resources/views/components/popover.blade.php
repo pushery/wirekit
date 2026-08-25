@@ -39,7 +39,7 @@
     // Width: min-w-72 instead of fixed w-72 so the panel grows to fit content
     // wider than 18 rem (e.g. long share URLs in input fields) instead of clipping.
     $panelClasses = WireKit::resolveClasses('popover', 'panel', implode(' ', [
-        'fixed z-[var(--z-wk-tooltip)]',
+        'fixed z-[var(--z-wk-dropdown)]',
         'min-w-72 max-w-[calc(100vw-1rem)] w-max',
         'rounded-[var(--radius-wk-lg)]',
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',

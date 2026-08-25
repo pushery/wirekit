@@ -954,13 +954,7 @@ class VerifyInstallationCommand extends Command
         // The newest mtime among the package sources the manifests are built
         // from — the registry + the component views. If a manifest predates it,
         // it was generated against an older package.
-        $packageNewest = filemtime(__DIR__.'/../ComponentRegistry.php') ?: 0;
-        $componentsDir = __DIR__.'/../../resources/views/components';
-        if (is_dir($componentsDir)) {
-            foreach (File::allFiles($componentsDir) as $file) {
-                $packageNewest = max($packageNewest, $file->getMTime());
-            }
-        }
+        $packageNewest = $this->packageNewestMtime();
 
         $manifests = [
             '.boost/wirekit.json' => 'php artisan wirekit:boost-skills --force',
@@ -1554,7 +1548,13 @@ class VerifyInstallationCommand extends Command
         if ($tier === 'commercial' || $tier === 'oem') {
             $this->reportPass(sprintf('ApexCharts license tier declared: %s', $tier));
         } elseif ($tier === 'community') {
-            $this->reportWarn(
+            // INFO, not WARN, and the distinction is what makes `--fail-on=warning` usable
+            // as a gate. This line is a standing license reminder — it is true on every run
+            // of a correctly configured install and will never stop being true, so counted
+            // as a warning it holds the exit code at 1 forever. A gate that is permanently
+            // red is a gate everybody learns to pass with `|| true`, and then the config
+            // drift it was actually meant to catch goes with it. The reminder still prints.
+            $this->reportInfo(
                 'Declared tier: community. This reminder stays — the $2M USD revenue '
                 .'threshold for the ApexCharts Community License is a continuing '
                 .'condition, not an install step. Purchase a Commercial License at '
@@ -2587,6 +2587,27 @@ class VerifyInstallationCommand extends Command
      * threshold is tuned to bite on "I edited an hour ago and the test
      * still fails" — not on "I just hit save".
      */
+    /**
+     * The newest mtime the PACKAGE itself carries — its registry plus every component view.
+     *
+     * A `composer update pushery/wirekit` moves this and touches nothing under
+     * `resources/views/`, so any check that compares the app's own sources against a cache
+     * is blind to it by construction.
+     */
+    private function packageNewestMtime(): int
+    {
+        $newest = filemtime(__DIR__.'/../ComponentRegistry.php') ?: 0;
+        $componentsDir = __DIR__.'/../../resources/views/components';
+
+        if (is_dir($componentsDir)) {
+            foreach (File::allFiles($componentsDir) as $file) {
+                $newest = max($newest, $file->getMTime());
+            }
+        }
+
+        return $newest;
+    }
+
     private function checkCompiledViewsFreshness(): void
     {
         $compiledDir = storage_path('framework/views');
@@ -2615,6 +2636,14 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
+        // The PACKAGE counts as a source here, and leaving it out is what made this check
+        // unable to see the one event it most needs to: a `composer update pushery/wirekit`
+        // moves the package's views and touches nothing under `resources/views/`, so the
+        // comparison above stayed green while every compiled template still held the
+        // previous version's markup. That is precisely the state a developer is in right
+        // after an upgrade — and the state in which `view:clear` is the answer.
+        $newestSource = max($newestSource, $this->packageNewestMtime());
+
         $lagSeconds = $newestSource - $newestCompiled;
         $thresholdSeconds = 60;
 
@@ -2625,7 +2654,8 @@ class VerifyInstallationCommand extends Command
         }
 
         $this->reportWarn(sprintf(
-            'Compiled views may be stale (resources/views/ has files newer than storage/framework/views/ by %s).',
+            'Compiled views may be stale (a source newer than storage/framework/views/ by %s — '
+            .'your own resources/views/, or the installed package after an update).',
             $this->humanDuration($lagSeconds)
         ));
         $this->line('  Run: php artisan view:clear');

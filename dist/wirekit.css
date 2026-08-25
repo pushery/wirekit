@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.35.0 — MIT License
+ * WireKit CSS v2.36.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -508,11 +508,24 @@
     --size-wk-shell-bar: 3.5rem;
 
     /* Rail widths, one per labeling mode. `labels="tooltip"` is icon only and
-       matches the sidebar's own collapsed rail (3.5rem) so a shell can switch
-       between the two without the content reflowing. `below` adds room for a
-       caption under the icon; `expanded` is the wide form where the label sits
-       beside it. */
-    --size-wk-rail: 3.5rem;
+       matches the sidebar's own collapsed rail, so a shell can switch between the
+       two without the content reflowing. `below` adds room for a caption under the
+       icon; `expanded` is the wide form where the label sits beside it.
+
+       The icon-only width is DERIVED, and it has to be. A collapsed row centers its
+       icon while an expanded row aligns it to the leading padding, and those two
+       land on the same pixel only when the column is exactly as wide as its own
+       content. This value used to be a round 3.5rem described as "icon + padding" —
+       it is a quarter-rem wider than that, and centering halved the surplus into a
+       1.5px sideways jump on every expand, which is what the eye sees when the
+       labels come in. Derived, the surplus is zero by construction, and it stays
+       zero if the padding scale is ever retuned.
+
+       The trailing border term is not a fudge factor: the column is border-box, so
+       its inline-end rule is paid for out of the declared width. Leave it out and
+       the content box is one pixel short, which centering halves back into the same
+       jump in the opposite direction — measured at 0.5px before it was added. */
+    --size-wk-rail: calc(1.25rem + (2 * var(--padding-wk-x-sm)) + (2 * var(--padding-wk-y-sm)) + var(--border-wk-width));
     /* Wide enough for a real module name, which is not a comfort setting.
        At the old 4.75rem the caption had 44px of room after the scroller's and the
        item's padding — so every name over about seven characters was truncated, and
@@ -1470,11 +1483,25 @@
        escaped the zone AND the column by 16px, which is what put it at the mercy of anything
        further up.
 
-       Block-start too, so the head meets the column's top edge and its rule lands at the same
-       height as the rules in the columns beside it. The block-END is deliberately untouched:
-       the gap under the head is what separates the rule from the first navigation item. */
-    margin-block-start: calc(-1 * var(--wk-nav-pad, 0px));
+       Which BLOCK edge gets pulled back depends on which end of the column the band sits at,
+       so it is set by the two rules below rather than here. The other edge is deliberately
+       left alone: the gap between a rule and the nearest navigation item is what keeps the
+       two apart. */
     margin-inline: calc(-1 * var(--wk-nav-pad, 0px));
+}
+
+/* A head bleeds upward, so its rule lands at the same height as the rules in the columns
+   beside it. */
+:where(.wk-sidebar, .wk-rail) > :has(> [data-wk-shell-bar][data-wk-bleed]:not([data-wk-rule-top])) {
+    margin-block-start: calc(-1 * var(--wk-nav-pad, 0px));
+}
+
+/* A foot bleeds downward — the mirror, and the reason `rule="top"` exists at all. Selected by
+   the bar's own marker rather than by `:last-child`: in a collapsible column the foot zone is
+   NOT the last child, the fold control is, so a positional selector would miss it exactly where
+   the column is most likely to have a foot band. */
+:where(.wk-sidebar, .wk-rail) > :has(> [data-wk-shell-bar][data-wk-bleed][data-wk-rule-top]) {
+    margin-block-end: calc(-1 * var(--wk-nav-pad, 0px));
 }
 
 /* ─── Beside an inset panel, a column starts where the panel starts ─── */

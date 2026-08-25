@@ -73,8 +73,21 @@
         'rounded-[var(--radius-wk-nav-item)]',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'gap-[var(--padding-wk-x-sm)]',
-        // The icon-only default: one centered glyph.
-        'justify-center',
+        // Leading-aligned, NOT centered — and in the icon-only mode that looks identical,
+        // because `--size-wk-rail` is derived from exactly this content: the icon plus these
+        // paddings plus the border. Centering there had nothing left to center.
+        //
+        // Where it stops being identical is the panel shell, which widens the column by the
+        // gap to the panel and insets the contents by it. Centering then averaged that gap
+        // in and moved the icon 2.5px sideways on every expand, while the expanded row —
+        // `justify-start` since it has a label beside the glyph — did not move. Two
+        // alignments on one row is what produced the shift; there is one now.
+        'justify-start',
+        // …except with a caption UNDER the icon, where the row is `flex-col` and the main
+        // axis is vertical. There `justify-center` centers the pair in the row's height,
+        // which is a different question and still the right answer. Horizontal centering in
+        // that mode comes from `items-center` above, on the cross axis.
+        'group-data-[labels=below]/wk-rail:justify-center',
         // A caption under the icon. A tighter gap than the row form — a vertical pair
         // reads as one unit at a spacing that would look cramped horizontally.
         //

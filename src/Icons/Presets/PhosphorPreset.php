@@ -143,6 +143,21 @@ final class PhosphorPreset implements IconPreset
             // Verified against the SVG files: lucide `undo`, tabler `arrow-back-up`,
             // phosphor `arrow-counter-clockwise`, heroicons `arrow-uturn-left` — four real
             // undo glyphs, not four things that look roughly alike.
+            // FIVE NAMES WERE PROPOSED FOR THIS VOCABULARY AND ARE DELIBERATELY ABSENT.
+            // Written here rather than left to a ticket, because the next person to see the
+            // gap will see it in this file:
+            //
+            //   `arrow-counter-clockwise` — literally the TARGET of the alias below. Adding
+            //     it would declare Phosphor's own spelling as a vocabulary word, which is
+            //     the `dots-three` mistake: name the CONCEPT, not one family's glyph name.
+            //   `users-three`             — Phosphor's spelling for `users`, which all four
+            //     presets already carry.
+            //   `warning-diamond`, `plugs-connected`, `user-switch` — Heroicons has no
+            //     genuine cognate: 0 of its 1288 files match plug|diamond|switch|toggle
+            //     (control: 53 match ^o-arrow, so the listing does see files). An alias that
+            //     resolves in three sets and substitutes something merely similar in the
+            //     fourth is worse than no alias — it looks like a contract until somebody
+            //     switches preset, and then it is a silent iconography change.
             'undo' => 'phosphor-arrow-counter-clockwise',
             // Media controls.
             'play' => 'phosphor-play',
