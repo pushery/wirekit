@@ -265,6 +265,69 @@ final class HeroiconsPreset implements IconPreset
             'message' => 'heroicon-m-chat-bubble-left-right',
             'reply' => 'heroicon-m-arrow-uturn-left',
             'forward' => 'heroicon-m-arrow-uturn-right',
+            // ---------------------------------------------------------------
+            // Promoted from the heroicons extension presets on 2026-08-26.
+            // ---------------------------------------------------------------
+            // These words lived only in `heroicons-app` / `heroicons-marketing`, which
+            // emit heroicon identifiers exclusively. A lucide, phosphor or tabler
+            // install therefore could not reach them at all — stacking the extensions
+            // resolved the alias onto a glyph that set does not ship, and blade-icons
+            // threw rather than degrading.
+            //
+            // Each one was checked against the real SVG trees in vendor/, per set, per
+            // name — not against a website and not by assuming a spelling. What is
+            // taken here is the CONCEPT; the target is each family's own picture of it,
+            // which is why the right-hand sides differ.
+            //
+            // Deliberately NOT taken, and the reasons are worth keeping:
+            //   a11y, cursor-arrow-rays, paint-brush — no genuine cognate in all three.
+            //   ai, sparkle, sparkles, cube, cube-transparent — a cognate exists, but it
+            //     is ALREADY another alias's target in the same set (lucide has one
+            //     `sparkle`, one `box`). That is the same picture under two names, not a
+            //     second concept, and shipping it would make the vocabulary lie about
+            //     what it can distinguish.
+
+            'arrow-down' => 'heroicon-m-arrow-down',
+            'arrow-right' => 'heroicon-m-arrow-right',
+            'arrow-up' => 'heroicon-m-arrow-up',
+            // NOT `arrow-top-right-on-square` — that is the box-with-escaping-arrow glyph,
+            // and `external-link` above already owns it. Pointing both words at it made them
+            // render identically here while staying two distinct glyphs on lucide, phosphor
+            // and tabler: switching preset silently swapped an external-link mark for a plain
+            // diagonal arrow. Heroicons ships the true cognate, so the word means one thing.
+            'arrow-up-right' => 'heroicon-m-arrow-up-right',
+            'chart-pie' => 'heroicon-m-chart-pie',
+            'code-bracket' => 'heroicon-m-code-bracket',
+            'cog-6-tooth' => 'heroicon-m-cog-6-tooth',
+            // Promoted out of the marketing extension: every set draws the same isometric
+            // box for this concept, so the word means one thing whichever is installed.
+            'cube' => 'heroicon-m-cube',
+            // Likewise. Note the SINGULAR `sparkle` stays in the extension — phosphor and
+            // heroicons each ship only one sparkle glyph, so promoting both words would
+            // make them indistinguishable there.
+            'sparkles' => 'heroicon-m-sparkles',
+            'command-line' => 'heroicon-m-command-line',
+            'finger-print' => 'heroicon-m-finger-print',
+            'fire' => 'heroicon-m-fire',
+            'heart' => 'heroicon-m-heart',
+            'link' => 'heroicon-m-link',
+            // A paperclip, not a chain link: three blueprint pages were drawing an
+            // external-link box on an "Attach file" button because the vocabulary had no
+            // word for an attachment. All four sets ship a real paperclip, checked against
+            // the svg files rather than against a website.
+            'attach' => 'heroicon-m-paper-clip',
+            'live' => 'heroicon-m-signal',
+            'lock-closed' => 'heroicon-m-lock-closed',
+            'open-source' => 'heroicon-m-code-bracket',
+            'puzzle-piece' => 'heroicon-m-puzzle-piece',
+            'security' => 'heroicon-m-lock-closed',
+            'speed' => 'heroicon-m-bolt',
+            'squares-2x2' => 'heroicon-m-squares-2x2',
+            'star' => 'heroicon-m-star',
+            'swatch' => 'heroicon-m-swatch',
+            'unlock' => 'heroicon-m-lock-open',
+            'user-group' => 'heroicon-m-user-group',
+            'x-circle' => 'heroicon-m-x-circle',
         ];
     }
 

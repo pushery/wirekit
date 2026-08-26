@@ -450,10 +450,12 @@ return [
     |
     | Available built-in presets:
     |   'heroicons'           — base, blade-ui-kit/blade-heroicons (~316 icons, Mini style)
-    |   'heroicons-app'       — stackable extension with app-state aliases
-    |                           (arrow-up/down, lock/unlock, bell, lightbulb, …)
+    |   'heroicons-app'       — stackable extension, EMPTY since v2.37.0. Every word
+    |                           it carried moved into all four base presets, so it
+    |                           adds nothing now. The name still resolves so an
+    |                           existing config keeps booting.
     |   'heroicons-marketing' — stackable extension with marketing/landing aliases
-    |                           (bolt, sparkles, rocket-launch, shield, …)
+    |                           (sparkles, cursor-arrow-rays, cube, pulse, …)
     |   'lucide'              — mallardduck/blade-lucide-icons (~1,500 icons)
     |   'phosphor'            — codeat3/blade-phosphor-icons (~9,000 icons)
     |   'tabler'              — secondnetwork/blade-tabler-icons (~7,200 icons)
@@ -468,7 +470,14 @@ return [
     |   To compose multiple presets, use 'presets' instead of 'preset'. Later
     |   entries override earlier ones; developer 'aliases' override all presets.
     |
-    |   'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
+    |   'presets' => ['heroicons', 'heroicons-marketing'],
+    |
+    |   The extension preset above resolves to heroicons glyphs, so it needs
+    |   blade-ui-kit/blade-heroicons installed — stacking it onto a lucide,
+    |   phosphor or tabler set gives you names that resolve to an icon that set
+    |   does not carry, and the failure lands at render time rather than at
+    |   boot. On those sets, define the names you want under 'aliases' below,
+    |   pointing at glyphs your own package provides.
     |
     */
 
@@ -477,7 +486,10 @@ return [
         // stack multiple presets — see the comment block above.
         'preset' => 'heroicons',
 
-        // 'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
+        // Stack extra presets. The one below is heroicons-based and needs
+        // blade-heroicons installed — see the note in the comment block above
+        // before stacking it onto lucide, phosphor or tabler.
+        // 'presets' => ['heroicons', 'heroicons-marketing'],
 
         // Override individual aliases (optional).
         // Overrides every preset for the specified aliases.

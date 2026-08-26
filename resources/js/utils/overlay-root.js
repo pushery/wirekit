@@ -108,6 +108,12 @@ export function overlayRoot() {
             root.setAttribute('aria-label', overlayRootLabel());
         }
 
+        // The check belongs on BOTH paths. An application that ships the root in its
+        // own layout markup — a perfectly reasonable thing to do — would otherwise
+        // never reach it, and that is precisely the kind of setup most likely to have
+        // the stylesheet wrong too.
+        warnIfStylesheetMissing(root);
+
         return root;
     }
 
@@ -125,7 +131,69 @@ export function overlayRoot() {
 
     document.body.appendChild(root);
 
+    warnIfStylesheetMissing(root);
+
     return root;
+}
+
+/** Set once, so a page with twenty dialogs says this once rather than twenty times. */
+let stylesheetWarningShown = false;
+
+/**
+ * Say so when this package's stylesheet is not loaded.
+ *
+ * Every overlay here positions itself with `position: fixed` — from the shipped
+ * stylesheet, and from Tailwind utilities on the same elements. When NEITHER is
+ * present the overlay still renders: the markup is correct, the text is there, the
+ * buttons are visible and enabled. It simply sits in normal document flow at the end
+ * of the page, and whether any of it lands inside the viewport depends on how long
+ * the page happens to be.
+ *
+ * Nothing about that failure announces itself. Nothing throws, nothing logs, no test
+ * of the markup can see it, and on a short page it does not even reproduce. A
+ * consuming application chased it across three releases and reasonably concluded the
+ * component library was broken — the trigger they had isolated was a taller form
+ * control, which pushed their page past one screen and the dialog out of sight.
+ *
+ * One console line at the moment the first overlay is created would have ended that
+ * search on day one. That is all this does.
+ *
+ * The probe is the geometry itself rather than a marker class, because the geometry
+ * is the thing that has to work: a stylesheet that loaded but was overridden fails
+ * here too, and should.
+ */
+function warnIfStylesheetMissing(root) {
+    if (stylesheetWarningShown || typeof getComputedStyle !== 'function') {
+        return;
+    }
+
+    const probe = document.createElement('div');
+    probe.className = 'wk-overlay-fixed';
+    probe.setAttribute('aria-hidden', 'true');
+
+    // Inside the root, so a scoped stylesheet is measured the way a real overlay is.
+    root.appendChild(probe);
+
+    const positioned = getComputedStyle(probe).position === 'fixed';
+
+    probe.remove();
+
+    if (positioned) {
+        return;
+    }
+
+    stylesheetWarningShown = true;
+
+    console.error(
+        '[WireKit] Overlay styles are missing, so dialogs, drawers and the command '
+        + 'palette will render in normal page flow instead of over the page. They will '
+        + 'look correct and be unusable — on a long page the panel can sit below the '
+        + 'fold entirely.\n'
+        + 'Load the package stylesheet with the @wirekitStyles directive, or import '
+        + "'wirekit/dist/wirekit.css'. If you build Tailwind yourself, also point it at "
+        + "this package: @source '../../vendor/pushery/wirekit/resources/views';\n"
+        + 'Check the whole install with: php artisan wirekit:verify'
+    );
 }
 
 /** Set once the navigation listeners are bound, so a second install does not double them. */

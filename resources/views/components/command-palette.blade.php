@@ -46,8 +46,8 @@
     // Command Palette — spotlight-style search modal (Cmd/Ctrl+K).
     // Uses combobox + listbox pattern with keyboard navigation.
     $backdropClasses = WireKit::resolveClasses('command-palette', 'backdrop', implode(' ', [
-        'fixed inset-0',
-        'z-[var(--z-wk-modal)]',
+        'wk-overlay-fixed fixed inset-0',
+        'wk-overlay-layer-modal z-[var(--z-wk-modal)]',
         'bg-[var(--color-wk-overlay)]',
     ]), $scope);
 

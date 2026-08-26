@@ -69,8 +69,11 @@ class ExportBlocksCommand extends Command
         // An absence is not an answer. It fails now, by name, and the message says which of
         // the two states it is in — because "the package does not carry these" and "the
         // catalog is empty" want completely different reactions from whoever reads it.
+        // One directory now, not two: page layouts moved under `docs/blueprints/` when the
+        // two sections merged, so `docs/layouts/` no longer exists and looking for it would
+        // report a package as broken for carrying exactly what it should.
         $missing = array_values(array_filter(
-            ['layouts', 'blueprints'],
+            ['blueprints'],
             fn (string $kind): bool => ! is_dir($packageRoot.'/docs/'.$kind),
         ));
 
@@ -81,7 +84,7 @@ class ExportBlocksCommand extends Command
                 $packageRoot,
             ));
             $this->line('');
-            $this->line('This command reads the layout and blueprint pages, and those are export-ignored —');
+            $this->line('This command reads the blueprint pages, and those are export-ignored —');
             $this->line('a published release does not carry them. It works in a checkout of the package');
             $this->line('repository and cannot work from a Composer install.');
 
@@ -92,10 +95,7 @@ class ExportBlocksCommand extends Command
             return self::FAILURE;
         }
 
-        $blocks = array_merge(
-            $this->scanDirectory($packageRoot, 'layouts'),
-            $this->scanDirectory($packageRoot, 'blueprints'),
-        );
+        $blocks = $this->scanDirectory($packageRoot, 'blueprints');
 
         // --public: hard-filter to the public blocks at the SOURCE. A
         // public machine-readable manifest (served at /blocks.json) must NEVER
@@ -178,7 +178,11 @@ class ExportBlocksCommand extends Command
             // Recipes live under docs/blueprints/recipes/ and carry a lighter
             // frontmatter shape without the responsive / dark_compatible /
             // category fields.
-            if ($file->getBasename() === 'index.md') {
+            // `page-layouts.md` joins them: it is the introduction the page-layout sections
+            // brought with them when they moved under blueprints, and it was `index.md`
+            // until the rename. Same kind of page, same reason to skip — it describes the
+            // five shapes and links to them, and has no block of its own to export.
+            if ($file->getBasename() === 'index.md' || $file->getBasename() === 'page-layouts.md') {
                 continue;
             }
             if (str_contains($file->getPathname(), DIRECTORY_SEPARATOR.'partials'.DIRECTORY_SEPARATOR)) {

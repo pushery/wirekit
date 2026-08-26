@@ -10,6 +10,95 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.37.0] — 2026-08-26
+
+Minor. Twenty-four icon names that only carried a real meaning if you happened to be on
+Heroicons now carry it on every interchangeable preset, a streaming component can hand its
+announcements to a page that already has a status region, and an overlay is an overlay even
+when your Tailwind build never scanned this package.
+
+### Added
+
+- **Twenty-four alias words now carry a defined meaning on all four interchangeable icon
+  presets, not just Heroicons.** The vocabulary's whole promise is that a name keeps meaning
+  the same thing when a project changes preset, and these words broke that promise quietly.
+  On a non-Heroicons set they were never declared, so they fell through to whatever glyph
+  happened to share the name — which is a coincidence rather than a mapping, and produced
+  nothing at all where no such glyph existed. Each word was checked against the actual glyph
+  files of every set before it was taken, and nine candidates stayed in the extension. Two
+  reasons, both measured rather than assumed: for some, at least one set has no true cognate —
+  `pulse` is the clearest, an EKG trace on three sets and a refresh arrow on the fourth — and
+  for others the only candidate glyph is one another alias already uses there, so promoting
+  the word would make two names indistinguishable on that set. Either way an alias that
+  silently substitutes something merely similar is worse than one that is simply absent.
+  Every base preset now carries an identical vocabulary.
+  See [Icon](https://docs.wirekit.app/components/icon).
+- **`cube` and `sparkles` join the base vocabulary too, so every alias a documented example
+  uses now resolves on a stock install.** They had lived only in the marketing extension,
+  which meant eight blueprint call sites rendered on the documentation site and threw
+  `Unknown icon alias` for anyone who pasted them into a fresh project. Both were measured
+  against the real glyph files of all four sets first — a box for `cube`, a sparkle for
+  `sparkles`, everywhere. The singular `sparkle` deliberately stays in the extension:
+  Heroicons and Phosphor each ship exactly one sparkle glyph, so promoting both words would
+  make them indistinguishable there.
+- **`attach` — a paperclip, on every preset.** Three blueprint pages were drawing the
+  external-link box on an "Attach file" button, because the vocabulary had no word for an
+  attachment and that was the nearest thing anyone could reach for. All four interchangeable
+  presets ship a real paperclip, so the word is taken and those pages say what they mean.
+  See [Icon](https://docs.wirekit.app/components/icon).
+- **`announce="none"` on [Stream](https://docs.wirekit.app/components/stream).** A page that
+  already owns a status region can now take the streaming transport without shipping a second
+  one alongside it — previously the component always rendered its own, so adopting it meant a
+  screen reader heard every completion twice. The failure announcement is deliberately not
+  part of the bargain: the alert region is rendered in every mode, because a setting about
+  routine progress should not quietly remove the one message a reader cannot afford to miss.
+  The default is unchanged.
+
+### Fixed
+
+- **`arrow-up-right` draws a diagonal arrow now, not an external-link mark.** If you stack
+  the marketing extension, this is a visible change: the word used to resolve to the
+  box-with-escaping-arrow — the same glyph `external-link` gives you — so the two names were
+  indistinguishable. It now draws what its name says, which is also what an unstacked
+  Heroicons install has always rendered. If you meant the outbound-link mark, use
+  `external-link`. Nothing changes on an unstacked install.
+- **The `api-map.json` page-layout group is now called `page-layouts`, and the documented
+  shape says so.** It was `layouts` until the pages moved under `blueprints/`; the rename
+  shipped and the documented output shape did not follow, so a tool reading the catalog by
+  name got nothing back instead of an error. The `partials` group had never been listed at
+  all. If you read that artifact by group id, this is the one line in this release that
+  affects you. See the [CLI reference](https://docs.wirekit.app/cli-reference).
+- **An overlay is now positioned by the shipped stylesheet, not only by your Tailwind build.**
+  Alert dialog, modal, drawer, command palette and the other overlays carried their geometry
+  as utility classes, which exist only if your build scans this package's views. Where it did
+  not, the overlay rendered in the document flow instead of above it: on a long page the
+  dialog opened somewhere down the document, its confirm button sat below the fold, and a
+  click on it did nothing at all — no error, no feedback, the button simply out of reach
+  behind a scroll-locked body. The geometry now also lives in the stylesheet you already
+  load, so the overlay is correct with or without the utilities. When both are missing, the
+  overlay root says so once in the console and names the three things worth checking — one of
+  them being `wirekit:verify`, which reports the same condition without waiting for a reader
+  to open a dialog. See the [CLI reference](https://docs.wirekit.app/cli-reference).
+
+### Documentation
+
+- **[Localization](https://docs.wirekit.app/localization) now covers the case that surprises
+  people on an upgrade: a word you deliberately left untranslated changes when WireKit learns
+  a language.** The page explained that your own catalog wins per key, and warned about new
+  keys appearing — but not the reverse. If your app defines no entry for a key, WireKit's
+  catalog answers, and that answer depends on which languages WireKit speaks at the moment.
+  Leaving a key undefined to keep the English word therefore holds only until a release adds
+  your visitor's language. A real report: a plan tier *named* `Unlimited` — a proper noun,
+  not a quantity — read `Unbegrenzt` for German visitors after the release that added German.
+  Absence is not an override; the override props exist for this, and the page now says which
+  of the two mechanisms fits which case.
+
+- The published configuration file now states what stacking the extension presets requires,
+  so the commented-out line under `preset` no longer reads as free to enable on any install.
+- The SQLite step in [Getting started](https://docs.wirekit.app/getting-started) explains why
+  the database file has to be created and why the migration follows it, instead of leaving
+  both commands unannotated.
+
 ## [2.36.0] — 2026-08-25
 
 Minor. A navigation column now paints at its real width on the very first frame instead of
@@ -90,7 +179,7 @@ asked to run again always ends on its target rather than on a zero.
 
 ### Documentation
 
-- **The [Sidebar Shell](https://docs.wirekit.app/layouts/application-shells/sidebar-shell), [Stacked Shell](https://docs.wirekit.app/layouts/application-shells/stacked-shell) and [Multi-Column Shell](https://docs.wirekit.app/layouts/application-shells/multi-column) pages are published.**
+- **The [Sidebar Shell](https://docs.wirekit.app/blueprints/application-shells/sidebar-shell), [Stacked Shell](https://docs.wirekit.app/blueprints/application-shells/stacked-shell) and [Multi-Column Shell](https://docs.wirekit.app/blueprints/application-shells/multi-column) pages are published.**
 - **The observer helper leads the [custom Alpine plugin guide](https://docs.wirekit.app/extending/authoring-custom-alpine-plugins)** instead of appearing as an
   alternative to writing the guard by hand.
 

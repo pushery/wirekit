@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.36.0 — MIT License
+ * WireKit CSS v2.37.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -5064,4 +5064,44 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 .apexcharts-canvas .apexcharts-pie-area,
 .apexcharts-canvas .apexcharts-radar-series path {
     cursor: pointer;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Overlay geometry — the one thing an overlay cannot borrow from Tailwind  */
+/* ----------------------------------------------------------------------- */
+/*                                                                         */
+/* Every overlay in this library positions itself with `fixed inset-0` and  */
+/* a z-index utility. Those are Tailwind classes, so they exist only if the */
+/* developer's build scanned this package. When it did not, the overlay     */
+/* still renders — the tokens below resolve, the text is there, the button  */
+/* is visible and enabled — and it sits in normal document flow at the end  */
+/* of the page. It looks like a dialog and cannot be used as one.           */
+/*                                                                         */
+/* That failure is silent in every direction: nothing throws, nothing logs, */
+/* the markup is correct, and whether the panel happens to land inside the  */
+/* viewport depends on how long the page is. A consuming application chased */
+/* it across three releases and reasonably concluded the library was at     */
+/* fault — the trigger they had isolated was a taller form control, which   */
+/* pushed the page past one screen and the dialog out of sight with it.     */
+/*                                                                         */
+/* So the geometry lives HERE, in the stylesheet this package ships built.  */
+/* It cannot go missing. The Tailwind utilities stay on the elements: with  */
+/* a complete build both say the same thing, and a developer who overrides  */
+/* one of them through `scope` still wins on specificity — these are single */
+/* class selectors, the same weight as a utility, and they come first.      */
+.wk-overlay-fixed {
+    position: fixed;
+    inset: 0;
+}
+
+/* Split from the geometry on purpose. An overlay that is fixed but has no  */
+/* stacking order is a different, quieter bug — it covers the page and gets */
+/* covered by the next positioned thing — so the two are separate classes   */
+/* and a component states which it needs.                                   */
+.wk-overlay-layer-modal {
+    z-index: var(--z-wk-modal);
+}
+
+.wk-overlay-layer-drawer {
+    z-index: var(--z-wk-drawer);
 }
