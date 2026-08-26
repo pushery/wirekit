@@ -10,6 +10,21 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.37.1] — 2026-08-26
+
+Patch. The alias reference on the Icon page promised a mapping for every base preset and
+showed two of the four.
+
+### Fixed
+
+- **The icon alias tables now carry a column for every base preset, not two of four.** The
+  page states that every base preset maps the complete set, and then listed only Heroicons
+  and Lucide across all ten tables — so a reader whose `wirekit.icons.preset` is `phosphor`
+  or `tabler` could not look up a single one of the 141 words. Both new columns are
+  generated from the presets themselves rather than typed, so they cannot drift from what
+  the package resolves. See
+  [Icon](https://docs.wirekit.app/components/icon).
+
 ## [2.37.0] — 2026-08-26
 
 Minor. Twenty-four icon names that only carried a real meaning if you happened to be on
