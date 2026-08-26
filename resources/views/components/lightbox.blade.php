@@ -86,7 +86,7 @@
                 x-on:keydown.escape.prevent="close()"
                 x-on:keydown.arrow-right.prevent="next()"
                 x-on:keydown.arrow-left.prevent="prev()"
-                class="fixed inset-0 z-[var(--z-wk-modal)] flex items-center justify-center p-[var(--space-wk-md)]"
+                class="wk-overlay-fixed wk-overlay-layer-modal fixed inset-0 z-[var(--z-wk-modal)] flex items-center justify-center p-[var(--space-wk-md)]"
             >
                 {{-- Backdrop — click closes. Per-instance color via inline style. --}}
                 <div

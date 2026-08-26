@@ -228,7 +228,39 @@ class ExportApiMapCommand extends Command
      */
     private function layoutsGroup(string $packageRoot): array
     {
-        return $this->scanDocsDir($packageRoot, 'layouts');
+        // The five page-layout sections live under `docs/blueprints/` since the two docs
+        // sections merged — `docs/layouts/` is gone, and scanning it produced a warning
+        // line ahead of the JSON, which made the whole manifest unparseable.
+        //
+        // They keep a group of their own because they ARE a different thing: a page layout
+        // is a generic shape (a shell, a dashboard, a sign-in screen) that the product
+        // verticals below are built out of. Folding them into `blueprints` would describe
+        // 21 pages as something they are not, and `blueprintsGroup()` excludes them for the
+        // same reason it already excludes partials and recipes.
+        $group = $this->scanDocsDir($packageRoot, 'blueprints');
+        $group['id'] = 'page-layouts';
+
+        $group['items'] = array_values(array_filter(
+            $group['items'],
+            static fn (array $item): bool => self::isPageLayout($item['id']),
+        ));
+        $group['count'] = count($group['items']);
+
+        return $group;
+    }
+
+    /** The page-layout sections, by the directory they sit in under `docs/blueprints/`. */
+    private const PAGE_LAYOUT_SECTIONS = ['application-shells', 'auth', 'dashboards', 'errors', 'marketing'];
+
+    private static function isPageLayout(string $id): bool
+    {
+        foreach (self::PAGE_LAYOUT_SECTIONS as $section) {
+            if (str_starts_with($id, $section.'/')) {
+                return true;
+            }
+        }
+
+        return $id === 'page-layouts';
     }
 
     /**
@@ -258,7 +290,9 @@ class ExportApiMapCommand extends Command
         $group['items'] = array_values(array_filter(
             $group['items'],
             static fn (array $item): bool => ! str_starts_with($item['id'], 'partials/')
-                && ! str_starts_with($item['id'], 'recipes/'),
+                && ! str_starts_with($item['id'], 'recipes/')
+                // …and the page-layout sections, which carry their own group above.
+                && ! self::isPageLayout($item['id']),
         ));
         $group['count'] = count($group['items']);
 

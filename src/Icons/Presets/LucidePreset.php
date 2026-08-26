@@ -241,6 +241,58 @@ final class LucidePreset implements IconPreset
             'message' => 'lucide-message-circle',
             'reply' => 'lucide-reply',
             'forward' => 'lucide-forward',
+            // ---------------------------------------------------------------
+            // Promoted from the heroicons extension presets on 2026-08-26.
+            // ---------------------------------------------------------------
+            // These words lived only in `heroicons-app` / `heroicons-marketing`, which
+            // emit heroicon identifiers exclusively. A lucide, phosphor or tabler
+            // install therefore could not reach them at all — stacking the extensions
+            // resolved the alias onto a glyph that set does not ship, and blade-icons
+            // threw rather than degrading.
+            //
+            // Each one was checked against the real SVG trees in vendor/, per set, per
+            // name — not against a website and not by assuming a spelling. What is
+            // taken here is the CONCEPT; the target is each family's own picture of it,
+            // which is why the right-hand sides differ.
+            //
+            // Deliberately NOT taken, and the reasons are worth keeping:
+            //   a11y, cursor-arrow-rays, paint-brush — no genuine cognate in all three.
+            //   ai, sparkle, sparkles, cube, cube-transparent — a cognate exists, but it
+            //     is ALREADY another alias's target in the same set (lucide has one
+            //     `sparkle`, one `box`). That is the same picture under two names, not a
+            //     second concept, and shipping it would make the vocabulary lie about
+            //     what it can distinguish.
+
+            'arrow-down' => 'lucide-arrow-down',
+            'arrow-right' => 'lucide-arrow-right',
+            'arrow-up' => 'lucide-arrow-up',
+            'arrow-up-right' => 'lucide-arrow-up-right',
+            'chart-pie' => 'lucide-chart-pie',
+            'code-bracket' => 'lucide-code',
+            'cog-6-tooth' => 'lucide-settings',
+            'cube' => 'lucide-box',
+            'sparkles' => 'lucide-sparkles',
+            'command-line' => 'lucide-terminal',
+            'finger-print' => 'lucide-fingerprint',
+            'fire' => 'lucide-flame',
+            'heart' => 'lucide-heart',
+            'link' => 'lucide-link',
+            'attach' => 'lucide-paperclip',
+            'live' => 'lucide-radio',
+            'lock-closed' => 'lucide-lock',
+            'open-source' => 'lucide-git-branch',
+            'puzzle-piece' => 'lucide-puzzle',
+            'security' => 'lucide-shield',
+            'speed' => 'lucide-gauge',
+            // `lucide-grid` carries two dividers on each axis — a 3x3 of nine cells, against
+            // the four every other preset gives for this word. `grid-2x2` is one divider per
+            // axis, which is what the alias is named for.
+            'squares-2x2' => 'lucide-grid-2x2',
+            'star' => 'lucide-star',
+            'swatch' => 'lucide-palette',
+            'unlock' => 'lucide-unlock',
+            'user-group' => 'lucide-users',
+            'x-circle' => 'lucide-x-circle',
         ];
     }
 

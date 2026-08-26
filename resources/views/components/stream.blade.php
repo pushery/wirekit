@@ -10,6 +10,18 @@
     // How the result is announced to assistive tech once the stream settles:
     //   'result' (default) — announce the final text once.
     //   'status'           — announce only "Response ready".
+    //   'none'             — announce nothing, and render NO live region.
+    //
+    // 'none' exists for one situation and is wrong everywhere else: an application
+    // that already has its own status region for this response. Two regions announcing
+    // the same completion is not twice the accessibility — a screen-reader user hears
+    // it twice and cannot tell which one is the real one. Pair it with the `output`
+    // slot, which replaces the visible block for the same reason.
+    //
+    // If you use it and do NOT announce completion yourself, the response finishes
+    // silently for anyone not watching the screen. That is the trade, stated rather
+    // than buried: this prop hands the announcement contract to the caller, it does
+    // not delete it.
     'announce' => 'result',
     // Open the stream on init. Set false to start it from your own control.
     'autoStart' => true,
@@ -84,7 +96,7 @@
         // the same statement as the default and is treated as one.
         'eventName' => $eventName !== 'message' ? $eventName : null,
         'doneSignal' => $doneSignal,
-        'announce' => $announce === 'status' ? 'status' : 'result',
+        'announce' => in_array($announce, ['status', 'none'], true) ? $announce : 'result',
         'autoStart' => (bool) $autoStart,
         'initialText' => $initialText,
         'simulate' => $simulate,
@@ -132,7 +144,9 @@
     {{-- Single live region: announces that a response is GENERATING (once), then the
          RESULT (once) when it settles. The visible output below is deliberately NOT a
          live region, so a screen reader is not re-read on every token. --}}
+    @if($announce !== 'none')
     <span class="sr-only" role="status" aria-live="polite" aria-atomic="true" x-text="_announceText"></span>
+    @endif
 
     {{-- The streamed output.
 

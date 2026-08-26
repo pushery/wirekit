@@ -72,7 +72,11 @@ export default function wirekitStream(config = {}) {
         // they have to mean different things — see _readFramedStream().
         _eventNameSet: typeof config.eventName === 'string' && config.eventName !== '',
         _doneSignal: config.doneSignal ?? '[DONE]',
-        _announceMode: config.announce === 'status' ? 'status' : 'result',
+        // 'none' means the caller announces completion itself and the markup renders
+        // no live region. Kept as a real third value rather than folded into 'status':
+        // the writes below have to be skipped too, or the component keeps composing
+        // announcement strings for an element that is not on the page.
+        _announceMode: ['status', 'none'].includes(config.announce) ? config.announce : 'result',
         _autoStart: config.autoStart !== false,
         _startMessage: config.startMessage || 'Generating response…',
         _readyMessage: config.readyMessage || 'Response ready',
@@ -199,7 +203,7 @@ export default function wirekitStream(config = {}) {
             this._buffer = '';
             this.error = null;
             this.status = 'streaming';
-            this._announceText = this._startMessage;
+            this._announce(this._startMessage);
             this._open();
         },
 
@@ -214,7 +218,7 @@ export default function wirekitStream(config = {}) {
                 this._buffer = '';
             }
             this.status = 'aborted';
-            this._announceText = this._stoppedMessage;
+            this._announce(this._stoppedMessage);
             this._close();
         },
 
@@ -472,6 +476,21 @@ export default function wirekitStream(config = {}) {
             this._replace(String(text ?? ''));
         },
 
+        /**
+         * The ONE place `_announceText` is written.
+         *
+         * Under `announce="none"` the markup renders no live region, so anything
+         * written here would be composed for an element that is not on the page. Four
+         * call sites reach this — start, stop, finish and fail — and gating them
+         * individually is how three of them stay gated and the fourth quietly does not.
+         */
+        _announce(text) {
+            if (this._announceMode === 'none') {
+                return;
+            }
+            this._announceText = text;
+        },
+
         /** Settle the stream successfully — announces the result once. */
         finish() {
             if (this.status === 'streaming') {
@@ -518,9 +537,9 @@ export default function wirekitStream(config = {}) {
                 this._buffer = '';
             }
             this.status = 'done';
-            this._announceText = this._announceMode === 'result'
+            this._announce(this._announceMode === 'result'
                 ? (this.text || this._readyMessage)
-                : this._readyMessage;
+                : this._readyMessage);
             this._close();
         },
 
@@ -570,7 +589,7 @@ export default function wirekitStream(config = {}) {
 
             this.error = message || this._failMessages.generic;
             this.status = 'failed';
-            this._announceText = this._failedMessage.replace(':message', this.error);
+            this._announce(this._failedMessage.replace(':message', this.error));
             this._close();
         },
 

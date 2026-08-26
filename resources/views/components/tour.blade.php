@@ -43,7 +43,7 @@
         <div x-show="active" x-cloak x-ref="overlay">
             {{-- Overlay backdrop --}}
             <div
-                class="fixed inset-0 z-[var(--z-wk-modal)] bg-[var(--color-wk-overlay)]"
+                class="wk-overlay-fixed wk-overlay-layer-modal fixed inset-0 z-[var(--z-wk-modal)] bg-[var(--color-wk-overlay)]"
                 x-show="active"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0"

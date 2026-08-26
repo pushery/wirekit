@@ -34,30 +34,27 @@ final class HeroiconsMarketingPreset implements IconPreset
             // Energy & motion
             // `bolt` promoted to the base presets in v2.12.0 — removed here to
             // keep the marketing extension non-overlapping with the base set.
-            'sparkles' => 'heroicon-m-sparkles',
-            'fire' => 'heroicon-m-fire',
             'cursor-arrow-rays' => 'heroicon-m-cursor-arrow-rays',
 
             // Time & metrics
-            'chart-pie' => 'heroicon-m-chart-pie',
+            // `pulse` stays HERE rather than in the base presets, and that is the
+            // vocabulary rule doing its job. Lucide, phosphor and tabler all draw an
+            // EKG trace for this word; heroicons has no waveform glyph at all — its
+            // nearest neighbor is `arrow-path-rounded-square`, a two-arrow refresh
+            // cycle. Promoting it would have made one word mean "live signal" on three
+            // sets and "repeat" on the fourth, which is the silent iconography change
+            // the rule exists to prevent. Heroicons-only, it means one thing.
+            'pulse' => 'heroicon-m-arrow-path-rounded-square',
 
             // Building blocks
-            'cube' => 'heroicon-m-cube',
             'cube-transparent' => 'heroicon-m-cube-transparent',
-            'squares-2x2' => 'heroicon-m-squares-2x2',
-            'puzzle-piece' => 'heroicon-m-puzzle-piece',
 
             // Branding & creative
-            'swatch' => 'heroicon-m-swatch',
             'paint-brush' => 'heroicon-m-paint-brush',
-            'star' => 'heroicon-m-star',
-            'heart' => 'heroicon-m-heart',
 
             // Trust & security
             // `shield` / `shield-check` promoted to the base presets in v2.12.0 —
             // removed here to keep the marketing extension non-overlapping.
-            'lock-closed' => 'heroicon-m-lock-closed',
-            'finger-print' => 'heroicon-m-finger-print',
 
             // Audience
             // (`globe` moved to the base preset in v2.6.4; `live` stays here —
@@ -68,28 +65,17 @@ final class HeroiconsMarketingPreset implements IconPreset
             // the same promotion `copy`, `globe`, `book` and `lightbulb` went
             // through in v2.6.4, for the same reason: managing accounts is not a
             // marketing concept, it is what every signed-in application has.
-            'user-group' => 'heroicon-m-user-group',
 
             // Developer / product
-            'code-bracket' => 'heroicon-m-code-bracket',
-            'command-line' => 'heroicon-m-command-line',
-            'cog-6-tooth' => 'heroicon-m-cog-6-tooth',
 
             // Directional (marketing-oriented; base preset uses chevron-* for UI nav)
-            'arrow-right' => 'heroicon-m-arrow-right',
-            'arrow-up-right' => 'heroicon-m-arrow-top-right-on-square',
 
             // Marketing-copy semantic aliases. Names map to landing-page
             // bullet copy ("live status", "AI feature", "open source") rather
             // than to the underlying icon name. Anti-collision verified by
             // IconSystemTest — none of these shadow a base alias.
-            'live' => 'heroicon-m-signal',
-            'pulse' => 'heroicon-m-arrow-path-rounded-square',
             'a11y' => 'heroicon-m-finger-print',
             'sparkle' => 'heroicon-m-sparkles',
-            'security' => 'heroicon-m-lock-closed',
-            'speed' => 'heroicon-m-bolt',
-            'open-source' => 'heroicon-m-code-bracket',
             'ai' => 'heroicon-m-cpu-chip',
         ];
     }

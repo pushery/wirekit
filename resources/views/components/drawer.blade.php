@@ -43,15 +43,15 @@
     $attributes = $attributes->except(['aria-label']);
 
     $backdropClasses = WireKit::resolveClasses('drawer', 'backdrop', implode(' ', [
-        'fixed inset-0',
-        'z-[var(--z-wk-drawer)]',
+        'wk-overlay-fixed fixed inset-0',
+        'wk-overlay-layer-drawer z-[var(--z-wk-drawer)]',
         'bg-[var(--color-wk-overlay)]',
     ]), $scope);
 
     // Panel classes — the drawer surface
     $panelClasses = WireKit::resolveClasses('drawer', 'panel', implode(' ', [
         'fixed',
-        'z-[var(--z-wk-drawer)]',
+        'wk-overlay-layer-drawer z-[var(--z-wk-drawer)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',

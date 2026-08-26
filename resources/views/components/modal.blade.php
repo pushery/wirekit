@@ -72,15 +72,15 @@
 
     // Backdrop classes — semi-transparent overlay behind the dialog
     $backdropClasses = WireKit::resolveClasses('modal', 'backdrop', implode(' ', [
-        'fixed inset-0',
-        'z-[var(--z-wk-modal)]',
+        'wk-overlay-fixed fixed inset-0',
+        'wk-overlay-layer-modal z-[var(--z-wk-modal)]',
         'bg-[var(--color-wk-overlay)]',
     ]), $scope);
 
     // Container classes — centers the dialog on screen
     $containerClasses = WireKit::resolveClasses('modal', 'container', implode(' ', [
-        'fixed inset-0',
-        'z-[var(--z-wk-modal)]',
+        'wk-overlay-fixed fixed inset-0',
+        'wk-overlay-layer-modal z-[var(--z-wk-modal)]',
         'flex items-center justify-center',
         'p-[var(--padding-wk-y-xl)]',
         'wk-scrollbar overflow-y-auto',
