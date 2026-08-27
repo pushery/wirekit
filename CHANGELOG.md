@@ -10,6 +10,41 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.37.2] — 2026-08-27
+
+Patch. v2.37.1 gave the icon alias tables a column for every base preset and left the
+prose above and below them saying there were two.
+
+### Fixed
+
+- **The paragraph introducing the alias tables no longer says they show two of the four
+  base presets.** It is the sentence that described the defect v2.37.1 fixed, and it went
+  out unchanged — so a reader arriving on `phosphor` or `tabler` was told, immediately
+  above the tables, that the column they needed was not there. See
+  [Icon](https://docs.wirekit.app/components/icon).
+- **The note under the last alias table names every preset column, not two of them.** It
+  is the only sentence on the page that says what those columns contain — the exact string
+  `@svg()` receives — and it excluded half of them.
+- **Correction to v2.37.0: the drawer's panel is not yet covered by the stylesheet-only
+  geometry that release announced.** That entry named alert dialog, modal, **drawer** and
+  command palette, and said the overlay is correct with or without the utilities. It is, for
+  every surface it named except this one. The drawer's backdrop carries the shipped positioning
+  class; its panel takes `position: fixed` from the utility alone, so in a build that does not
+  scan this package the backdrop covers the page and the panel sits inside it in the document
+  flow.
+
+  The fix is not the obvious one and is deliberately not being rushed: the positioning class
+  also sets `inset: 0`, which is right for a dialog that fills the viewport and wrong for a
+  panel that sits on one edge — and the panel's edges and size come from utilities too, so
+  position alone would leave it fixed with no geometry. Tracked, with the drawer's own
+  geometry as the intended fix. Reported by a developer who checked the release note against
+  the shipped stylesheet instead of adopting it. See
+  [Drawer](https://docs.wirekit.app/components/drawer).
+
+- **The Props table on the Icon page renders again.** Widening the ten alias tables also
+  widened that table's delimiter row to six cells while its header row stayed at four,
+  which is not a table any Markdown renderer will lay out as one.
+
 ## [2.37.1] — 2026-08-26
 
 Patch. The alias reference on the Icon page promised a mapping for every base preset and
