@@ -288,6 +288,92 @@ final class BladeParser
     }
 
     /**
+     * Does this source set `$attribute` on a line that ALWAYS renders?
+     *
+     * The question is deliberately about the unconditional case, because the only caller
+     * makes an absolute claim with the answer: `StrictnessGate` tells a developer their own
+     * scope "never exists" because the component sets one. That sentence is true only when
+     * the component sets it every time — and a plain regex over the source cannot tell the
+     * difference, because it does not see conditions.
+     *
+     * Measured across this package on 2026-08-27: of the components that set `x-data` at
+     * all, 18 set it ONLY inside a condition, 17 set it both ways, and 60 set it plainly.
+     * `x-init` has the same shape (one of four). Every one of those 18 produced a warning
+     * telling a developer to change working code — `card` is the reported case, where the
+     * `x-data` belongs to a debug warning that fires only when a card is composed wrongly.
+     *
+     * ⚠️ THIS UNDER-REPORTS ON PURPOSE, and that is the trade. A component that sets the
+     * attribute only inside a condition that happens to be TRUE at runtime does collide, and
+     * this answers "no". The alternative is the behavior being replaced, which asserts a
+     * collision that mostly is not there. A hint that is silent in a rare real case costs a
+     * developer nothing; one that tells them to rewrite correct code costs them the trust
+     * they had in every other hint.
+     *
+     * The exact answer would need the component's own runtime state and would have to be
+     * wired per component. That is the right shape for a component that genuinely wants it,
+     * and the wrong price for every component that does not.
+     */
+    public static function setsAttributeUnconditionally(string $contents, string $attribute): bool
+    {
+        // Comments and `@php` blocks are stripped first: both can contain the very text this
+        // scans for, and a `{{-- @if --}}` would otherwise open a block that never closes,
+        // after which the whole rest of the file reads as conditional.
+        $contents = (string) preg_replace('/\{\{--.*?--\}\}/s', '', $contents);
+        $contents = (string) preg_replace('/@php\b.*?@endphp\b/s', '', $contents);
+
+        $needle = '/\s'.preg_quote($attribute, '/').'\s*=/';
+
+        $depth = 0;
+
+        foreach (preg_split('/\R/', $contents) ?: [] as $line) {
+            // The depth BEFORE this line is what governs the line itself — an `@if` and the
+            // attribute on the same line means the attribute is inside it, and an `@endif`
+            // on the same line does not retroactively free what came before it.
+            if ($depth === 0 && preg_match($needle, $line) === 1) {
+                return true;
+            }
+
+            $depth += self::conditionalDepthDelta($line);
+        }
+
+        return false;
+    }
+
+    /**
+     * How much one line changes the conditional nesting depth.
+     *
+     * ⚠️ `@else`, `@elseif`, `@case`, `@default` and the bare `@empty` of a `@forelse` are
+     * NOT openers — they continue a block someone else opened and have no `@end…` of their
+     * own. Counting them opens a level that never closes, so after the first `@if … @else …
+     *
+     * @endif` the depth never returns to zero and every later attribute in the file reads as
+     * conditional. That mistake is silent and it inflates: it reported 22 exclusively-
+     * conditional components here where there are 18.
+     *
+     * `@empty` is the ambiguous one and is split by its parentheses: `@empty($x)` is a block
+     * with an `@endempty`, the bare `@empty` inside a `@forelse` is not.
+     */
+    private static function conditionalDepthDelta(string $line): int
+    {
+        $withArgs = 'if|unless|isset|switch|forelse|foreach|for|while|auth|guest|env|production'
+            .'|hasSection|sectionMissing|can|cannot|canany|error|once|empty';
+
+        $opens = preg_match_all('/@('.$withArgs.')\s*\(/', $line);
+
+        // These four are valid with no argument list at all.
+        $opens += preg_match_all('/@(auth|guest|once|production)\b(?!\s*\()/', $line);
+
+        $closes = preg_match_all(
+            '/@(endif|endunless|endisset|endempty|endswitch|endforelse|endforeach|endfor'
+            .'|endwhile|endauth|endguest|endenv|endproduction|endcan|endcannot|endcanany'
+            .'|enderror|endonce)\b/',
+            $line
+        );
+
+        return $opens - $closes;
+    }
+
+    /**
      * Extract every Blade comment (`{{-- … --}}`) from a file.
      *
      * Useful for content-audit tools (e.g. "find every TODO comment"

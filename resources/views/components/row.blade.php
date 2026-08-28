@@ -5,6 +5,21 @@
 @props([
     'gap' => config('wirekit.components.row.gap', 'md'),
     'align' => 'center',
+    // Line the CONTROLS up when this row holds form fields.
+    //
+    // A labeled field is taller than an unlabeled one and a field with a hint is taller
+    // still, so any single `align` value lines up the wrong edge for some mix of them.
+    // Measured across six combinations: `center` leaves the controls 13.5px apart, `end`
+    // fixes that and then breaks by 25.5px as soon as one field carries a hint, and
+    // `start`/`stretch`/`baseline` are worse than either.
+    //
+    // With this on, the row becomes a three-row grid — labels, controls, messages — that
+    // every field shares, so a control sits on the control row whatever its neighbors
+    // carry. Children that are not fields (a submit button) sit on the control row too.
+    //
+    // Opt-in, and it has to be: it changes the row's display model and asks the fields
+    // inside it to render placeholder parts. Nothing renders differently until asked.
+    'alignFields' => false,
     'justify' => 'start',
     'wrap' => false,
     'as' => 'div',
@@ -55,12 +70,17 @@
         default => WireKit::validateProp('row', 'justify', $justify, ['start', 'center', 'end', 'between', 'around', 'evenly']),
     };
 
+    $alignFields = BooleanProp::from($alignFields, false);
+
     $classes = WireKit::resolveClasses('row', 'base', implode(' ', array_filter([
-        'flex flex-row',
+        // `wk-form-row` replaces the flex model with a shared three-row grid, so the flex
+        // utilities below would be dead weight rather than harmless — and `align`/`justify`
+        // no longer describe anything, which is why they are dropped rather than overridden.
+        $alignFields ? 'wk-form-row' : 'flex flex-row',
         $gapClasses,
-        $alignClasses,
-        $justifyClasses,
-        $wrap ? 'flex-wrap' : '',
+        $alignFields ? '' : $alignClasses,
+        $alignFields ? '' : $justifyClasses,
+        $alignFields || ! $wrap ? '' : 'flex-wrap',
     ])), $scope);
 
     // `as` is interpolated straight into the opening tag, and Blade's escaping does

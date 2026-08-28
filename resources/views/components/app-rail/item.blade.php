@@ -2,6 +2,22 @@
      A navigation entry that may carry a developer action; the action's result is not this component's. --}}
 @props([
     'href' => '#',
+    // `a` or `button`. A rail module is a destination, so a link is the default and stays
+    // the default — this exists for the OTHER thing a rail entry legitimately is: the
+    // trigger of a dropdown, which our own console-shell blueprint builds out of one.
+    //
+    // As a link that trigger is subtly broken. A link activates on Enter and NOT on Space,
+    // measured against the blueprint's own pattern: Enter opened the menu and moved focus
+    // to the first entry, Escape closed it and returned focus, and Space did nothing —
+    // `aria-expanded` stayed "false". In a `viewport` shell Space is not even scrolling,
+    // so the key simply has no effect anywhere. On top of that every click on an `href="#"`
+    // pushes a history entry and writes `…#` into the address bar, and a modified click
+    // opens a dead duplicate tab.
+    //
+    // Additive on purpose: switching automatically when `href` is "#" would have been the
+    // tidier API and would have changed the rendered element under every existing caller,
+    // including their CSS.
+    'as' => 'a',
     'active' => false,
     // The module's icon. A bare name string ("chart-bar") resolves through the WireKit
     // icon system; a <x-slot:icon> or inline markup renders verbatim. Consistent with
@@ -192,7 +208,16 @@
     // partial that reached for it would silently render the tooltip's attributes onto
     // the link in the tooltip branch and this component's in the other, which is a
     // difference no test would notice until something depended on it.
-    $linkAttributes = $attributes->except('rel')->class([$classes, $activeClasses => $active]);
+    $railTag = \Pushery\WireKit\WireKit::validateProp('app-rail.item', 'as', (string) $as, ['a', 'button']);
+
+    // A `<button>` arrives with a border, a background, its own font and centered text, and
+    // none of that is in the rail's class list because an anchor needs none of it. The reset
+    // lives in the SHIPPED stylesheet, not as utilities here — otherwise `as="button"` would
+    // work only where the developer's build scanned this package, which is the same failure
+    // the drawer panel had.
+    $buttonReset = $railTag === 'button' ? 'wk-rail-item-button' : '';
+
+    $linkAttributes = $attributes->except('rel')->class([$classes, $activeClasses => $active, $buttonReset => $railTag === 'button']);
 @endphp
 
 {{-- THREE literal branches, and the shape is forced rather than chosen.

@@ -628,7 +628,22 @@ class WireKitServiceProvider extends ServiceProvider
             $src = asset('vendor/wirekit/'.$file).'?v='.filemtime($published);
         }
 
-        return '<script'.$nonceAttr.$extraAttrs.' src="'.$src.'" defer></script>'."\n";
+        // `data-navigate-once` — the bundle registers Alpine components and document
+        // listeners, and that is a once-per-DOCUMENT job. Livewire's navigate re-executes a
+        // head script on every client-side hop unless the attribute is there, which its own
+        // bundle carries and this one did not: measured by an adopting application at one
+        // extra execution per hop against Livewire's steady one, with the listener set
+        // growing for as long as somebody navigates without a full reload. In a console
+        // shell that is the normal way to use the app.
+        //
+        // Counting <script> tags does not see it — the old tag is replaced rather than added,
+        // so the DOM keeps showing exactly one. The measurement that does is
+        // `performance.getEntriesByType('resource')` across two real hops.
+        //
+        // Unconditional rather than gated on Livewire being installed. It is an inert data
+        // attribute to anything that does not read it, and a detection branch here would be
+        // a second thing to keep right for no gain.
+        return '<script'.$nonceAttr.$extraAttrs.' data-navigate-once="true" src="'.$src.'" defer></script>'."\n";
     }
 
     /**

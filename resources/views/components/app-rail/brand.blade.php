@@ -31,12 +31,6 @@
     // on this tag would render as a stray HTML attribute.
     $attributes = $attributes->except(['labels']);
 
-    // The name is drawn ONLY in the wide rail. In `below` mode the column is sized for a
-    // module caption of about ten characters — a workspace name would wrap to four lines and
-    // push the modules off the screen, which is worse than not drawing it. It stays the
-    // accessible name in every mode either way.
-    $namesVisible = $labels === 'inline';
-
     $classes = WireKit::resolveClasses('app-rail.brand', 'base', implode(' ', [
         'flex w-full min-w-0 items-center',
         // Centered while the rail is narrow — the mark is all there is, and a mark pushed to
@@ -111,21 +105,32 @@
     <span class="shrink-0">{{ $slot }}</span>
 
     @if(filled($name))
-        {{-- `sr-only` while the rail is narrow, never absent: the name is what identifies the
-             workspace, and a screen-reader user gets no visual mark to fall back on. --}}
-        <span @class([
-            'min-w-0 flex flex-col',
-            'sr-only' => ! $namesVisible,
-        ])>
+        {{-- Visually hidden while the rail is narrow, never absent: the name is what
+             identifies the workspace, and a screen-reader user gets no visual mark to fall
+             back on.
+
+             ⚠️ THE MARKER DOES THE DECIDING NOW, NOT PHP. This used to read a boolean
+             derived from `labels` at render time — so an `expandable` rail that started
+             narrow hid its name and kept it hidden at every width, because widening is an
+             Alpine change that happens long after. The modules never had the bug: they
+             follow the rail's live attributes. The mark took part in neither.
+
+             The rule is in the shipped stylesheet rather than on this element, and the
+             comment there carries the reasoning: the condition is a CONJUNCTION of the mode
+             and the words-are-settled marker, each half preventing a different regression,
+             and two `group-data-*` variants of one group cannot express it. --}}
+        <span data-wk-rail-brand-name class="min-w-0 flex flex-col">
             <span class="{{ $nameClasses }}">{{ $name }}</span>
             @if(filled($description))
                 {{-- Drawn only beside the name. In the narrow rail it is dropped entirely
                      rather than read out: "Free plan" with no subject is noise in a screen
                      reader's landmark summary, and the name above already carries the
-                     identity. --}}
-                @if($namesVisible)
-                    <span class="{{ $descriptionClasses }}">{{ $description }}</span>
-                @endif
+                     identity.
+
+                     So this one is `display: none` and not merely visually hidden — that
+                     distinction IS the paragraph above, and the stylesheet keeps it while
+                     moving the decision to the live marker. --}}
+                <span data-wk-rail-brand-desc class="{{ $descriptionClasses }}">{{ $description }}</span>
             @endif
         </span>
     @endif

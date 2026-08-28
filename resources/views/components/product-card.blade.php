@@ -1,9 +1,13 @@
 {{-- optimistic-ui: n/a — navigation
      Reclassified after reading the component instead of the idea of it. I marked
      this a candidate on the reasoning that "a favorite or cart action on a card
-     is the mutation case" — but this card has no such action and no slot to put
-     one in. Its only interactive element is a link to the product page, and a
-     link navigates.
+     is the mutation case" — but this card has no such action. Its only interactive
+     element is a link to the product page, and a link navigates.
+
+     It does have slots now (`media`, `badge`), and neither changes that: one holds
+     a picture, the other a word. Put a mutating control in either and the
+     classification above stops applying — that would be the caller adding an action
+     the component does not have, not the component growing one.
 
      The server-built review count that supposedly blocked it was never in the
      way either: nothing here can change that number, so naming it on the server
@@ -88,7 +92,23 @@
     {{ $attributes->class([$classes]) }}
 >
     <div class="relative">
-        @if($image)
+        {{-- The media area takes a URL or a slot, and the slot wins.
+
+             `image` covers the ordinary case and stays exactly as it was. The slot is for
+             everything that is not a URL: a painted placeholder, a `<video>`, a plain color
+             field, a chart. Without it this card could only render a product that HAS a photo
+             — an adopting page whose tiles draw their own placeholders had no way in at all,
+             and rewriting it onto this component would have silently dropped the artwork.
+
+             `@if`/`@elseif` rather than `@isset` with a nested branch, because the fallthrough
+             is the point and this way it reads in the order it happens.
+
+             Deliberately NO automatic placeholder when both are absent. A gray box would then
+             appear on every card that legitimately has no picture, and a caller who wants one
+             now has the slot to put exactly the box they mean. --}}
+        @if(isset($media))
+            {{ $media }}
+        @elseif($image)
             <x-wirekit::image
                 :src="$image"
                 :alt="$imageAlt ?? ''"
@@ -98,13 +118,31 @@
             />
         @endif
 
-        @if($onSale)
-            {{-- The badge is the visual shorthand. It is NOT the accessible story:
-                 the price itself announces "was X, N% off" (see price), so this
-                 carries no meaning a screen-reader user would miss without it. --}}
-            <span data-wk-product-card-sale class="absolute start-[var(--padding-wk-x-sm)] top-[var(--padding-wk-y-sm)] z-10">
-                <x-wirekit::badge intent="danger" surface="solid" size="sm">{{ __('Sale') }}</x-wirekit::badge>
-            </span>
+        {{-- One start-anchored stack, so a derived badge and a caller's own badge cannot land
+             on top of each other. The wrapper carries the position; the inner spans keep their
+             own names because those are what a test and a stylesheet reach for.
+
+             The `badge` slot exists because the derived ones answer only two questions — is it
+             on sale, is it in stock. "New", "Limited", "Last pair" have no equivalent and no
+             way in, and a page that needs one had to drop the component. --}}
+        @if($onSale || isset($badge))
+            <div
+                data-wk-product-card-badges
+                class="absolute start-[var(--padding-wk-x-sm)] top-[var(--padding-wk-y-sm)] z-10 flex flex-col items-start gap-[var(--gap-wk-xs)]"
+            >
+                @if($onSale)
+                    {{-- The badge is the visual shorthand. It is NOT the accessible story:
+                         the price itself announces "was X, N% off" (see price), so this
+                         carries no meaning a screen-reader user would miss without it. --}}
+                    <span data-wk-product-card-sale>
+                        <x-wirekit::badge intent="danger" surface="solid" size="sm">{{ __('Sale') }}</x-wirekit::badge>
+                    </span>
+                @endif
+
+                @isset($badge)
+                    <span data-wk-product-card-badge>{{ $badge }}</span>
+                @endisset
+            </div>
         @endif
 
         @if($isOut)

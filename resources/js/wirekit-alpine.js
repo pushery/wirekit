@@ -47,6 +47,7 @@ import wirekitInput from './components/input.js';
 import wirekitNumberInput from './components/number-input.js';
 import wirekitSidebarDisclosure from './components/sidebar-disclosure.js';
 import wirekitAppRail from './components/app-rail.js';
+import wirekitAppShell from './components/app-shell.js';
 import wirekitSidebarRail from './components/sidebar-rail.js';
 import wirekitClipboardButton from './components/clipboard-button.js';
 import wirekitReplayButton from './components/replay-button.js';
@@ -227,6 +228,7 @@ if (hostAlpine) {
     target.data('wirekitNumberInput', wirekitNumberInput);
     target.data('wirekitSidebarDisclosure', wirekitSidebarDisclosure);
     target.data('wirekitAppRail', wirekitAppRail);
+    target.data('wirekitAppShell', wirekitAppShell);
     target.data('wirekitSidebarRail', wirekitSidebarRail);
     target.data('wirekitClipboardButton', wirekitClipboardButton);
     target.data('wirekitReplayButton', wirekitReplayButton);

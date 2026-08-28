@@ -18,12 +18,21 @@
      explicitly: `$attributes->merge` treats a value as a DEFAULT, so a caller's own `rel`
      (even `rel="prev"`) would win and silently defeat the tabnabbing injection, and a
      caller's own `aria-current` would beat the component's own notion of "current". --}}
-<a
+{{-- The element is chosen by the including view's `as` prop and defaults to `a`. A rail
+     module is a destination, so a link is right for nearly all of them; a `button` is for
+     the entry that OPENS something — our own console-shell blueprint builds a dropdown
+     trigger out of one, and as a link that trigger does not activate on Space.
+     `href` and `rel` are written only in the link branch: they mean nothing on a button,
+     and an `href` there is invalid rather than merely useless. `aria-current` is written
+     in both, because it is defined for any element and an "active" module is active
+     whichever tag draws it. --}}
+<{{ $railTag }}
     {{-- The marker the square-app-icon rule addresses. --}}
     data-wk-rail-item
-    href="{{ $href }}"
+    @if($railTag === 'button') type="button" @endif
+    @if($railTag === 'a') href="{{ $href }}" @endif
     @if($active) aria-current="page" @endif
-    @if($computedRel) rel="{{ $computedRel }}" @endif
+    @if($railTag === 'a' && $computedRel) rel="{{ $computedRel }}" @endif
     {{ $linkAttributes }}
 >
     @if($icon)
@@ -36,7 +45,7 @@
             @endif
         </span>
     @endif
-    <span class="{{ $labelClasses }}">{{ $labelText }}</span>
+    <span data-wk-rail-label class="{{ $labelClasses }}">{{ $labelText }}</span>
     @if(filled($badge))
         {{-- Going `absolute` in the icon-only rail is what keeps the lone glyph centered —
              sharing the flex row pushes it visibly off-center, which is what the browser
@@ -56,7 +65,11 @@
             group-data-[labels=inline]/wk-rail:font-[number:var(--font-wk-heading-weight)]
             group-data-[labels=inline]/wk-rail:text-[color:var(--color-wk-rail-badge-fg)]"><span class="sr-only group-data-[labels=inline]/wk-rail:not-sr-only">{{ $badge }}</span></span>
     @endif
-    @if($opensNewTab)
+    {{-- Link branch only. `$opensNewTab` is derived from a `target` attribute, and a
+         `<button>` has no target — so on a button this promised a new tab that never
+         opens, which is worse than saying nothing: it is a claim made only to the
+         people who cannot check it. --}}
+    @if($railTag === 'a' && $opensNewTab)
         <span class="sr-only">{{ __('(opens in new tab)') }}</span>
     @endif
-</a>
+</{{ $railTag }}>

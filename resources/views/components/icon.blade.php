@@ -93,13 +93,44 @@
      then re-inject our resolved choice (or none, for informative icons).
      This guarantees the rendered SVG carries AT MOST ONE aria-hidden
      attribute, matching the developer's declared intent. --}}
-@if (function_exists('svg') && $resolved !== '')
 @php
-    // BladeUI\Icons\Svg implements Htmlable, not __toString — use toHtml().
-    // $resolved is guaranteed non-empty here: an unknown alias in an HTTP
-    // request degrades to '' in IconResolver (logged), so we fall through to
-    // the inert placeholder below instead of calling svg('') (which would throw).
-    $svgHtml = svg($resolved, $mergedAttributes->getAttributes())->toHtml();
+    // ⚠️ THE RENDER IS ATTEMPTED HERE, NOT INSIDE THE @if BELOW, BECAUSE IT CAN FAIL IN A
+    // WAY THE CONDITION CANNOT SEE.
+    //
+    // The condition covered two of the three ways an icon goes missing: blade-icons not
+    // installed at all, and an alias that resolved to '' because it is unknown. The third
+    // is an alias that resolves PERFECTLY onto a set nobody registered — `inbox` becomes
+    // `heroicon-m-inbox` from a static preset table that never checks whether the glyph
+    // exists. With blade-icons present and blade-heroicons absent, that name reaches svg(),
+    // finds neither the set nor a fallback, and throws SvgNotFound. Nothing caught it, so
+    // the page 500s — and icons render transitively through buttons, dropdowns and modals,
+    // which is every page. Reported from a consuming project, reproduced here against a
+    // bare factory: `Svg by name "heroicon-m-inbox" from set "default" not found.`
+    //
+    // Catching SvgNotFound rather than pre-checking the registry is deliberate. svg() only
+    // throws after exhausting the per-set fallback AND the global one, so a developer who
+    // configured either still gets their fallback icon; a registry check here would have
+    // replaced it with this placeholder and called that a fix.
+    $svgHtml = null;
+    if (function_exists('svg') && $resolved !== '') {
+        try {
+            // BladeUI\Icons\Svg implements Htmlable, not __toString — use toHtml().
+            $svgHtml = svg($resolved, $mergedAttributes->getAttributes())->toHtml();
+        } catch (\BladeUI\Icons\Exceptions\SvgNotFound $e) {
+            // Symmetric with the unknown-alias path in IconResolver, and for the same
+            // reason: a console or test context should break loudly, because there the
+            // missing package is a build problem somebody can fix now. An HTTP request
+            // degrades, because taking the page down teaches the reader nothing.
+            if (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid()) {
+                throw $e;
+            }
+
+            \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string) $name, $resolved);
+        }
+    }
+@endphp
+@if ($svgHtml !== null)
+@php
     // Strip EVERY aria-hidden attribute from the OUTER <svg ...> open tag.
     // The blade-heroicons source bakes `aria-hidden="true"` into the SVG
     // root; our $mergedAttributes may ALSO have injected one; we leave

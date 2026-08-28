@@ -50,7 +50,10 @@
 
     // Panel classes — the drawer surface
     $panelClasses = WireKit::resolveClasses('drawer', 'panel', implode(' ', [
-        'fixed',
+        // `wk-drawer-panel` carries the same geometry from the shipped stylesheet, so the
+        // panel is a drawer even where no build scanned this package. The utilities stay:
+        // with a build both say the same thing, and a `scope` override still wins.
+        'wk-drawer-panel fixed',
         'wk-overlay-layer-drawer z-[var(--z-wk-drawer)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
@@ -62,23 +65,23 @@
 
     // Position classes — inset positioning per side
     $positionClasses = match ($position) {
-        'left' => 'inset-y-0 left-0',
-        'right' => 'inset-y-0 right-0',
-        'top' => 'inset-x-0 top-0',
-        'bottom' => 'inset-x-0 bottom-0',
-        default => 'inset-y-0 right-0',
+        'left' => 'wk-drawer-panel-left inset-y-0 left-0',
+        'right' => 'wk-drawer-panel-right inset-y-0 right-0',
+        'top' => 'wk-drawer-panel-top inset-x-0 top-0',
+        'bottom' => 'wk-drawer-panel-bottom inset-x-0 bottom-0',
+        default => 'wk-drawer-panel-right inset-y-0 right-0',
     };
 
     // Size classes — width for left/right, height for top/bottom
     $isHorizontal = in_array($position, ['left', 'right']);
     $sizeClass = match (true) {
-        $isHorizontal && $size === 'sm' => 'w-[var(--size-wk-drawer-sm)]',
-        $isHorizontal && $size === 'md' => 'w-[var(--size-wk-drawer-md)]',
-        $isHorizontal && $size === 'lg' => 'w-[var(--size-wk-drawer-lg)]',
-        ! $isHorizontal && $size === 'sm' => 'h-[var(--size-wk-drawer-sm)]',
-        ! $isHorizontal && $size === 'md' => 'h-[var(--size-wk-drawer-md)]',
-        ! $isHorizontal && $size === 'lg' => 'h-[var(--size-wk-drawer-lg)]',
-        default => $isHorizontal ? 'w-[var(--size-wk-drawer-md)]' : 'h-[var(--size-wk-drawer-md)]',
+        $isHorizontal && $size === 'sm' => 'wk-drawer-panel-w-sm w-[var(--size-wk-drawer-sm)]',
+        $isHorizontal && $size === 'md' => 'wk-drawer-panel-w-md w-[var(--size-wk-drawer-md)]',
+        $isHorizontal && $size === 'lg' => 'wk-drawer-panel-w-lg w-[var(--size-wk-drawer-lg)]',
+        ! $isHorizontal && $size === 'sm' => 'wk-drawer-panel-h-sm h-[var(--size-wk-drawer-sm)]',
+        ! $isHorizontal && $size === 'md' => 'wk-drawer-panel-h-md h-[var(--size-wk-drawer-md)]',
+        ! $isHorizontal && $size === 'lg' => 'wk-drawer-panel-h-lg h-[var(--size-wk-drawer-lg)]',
+        default => $isHorizontal ? 'wk-drawer-panel-w-md w-[var(--size-wk-drawer-md)]' : 'wk-drawer-panel-h-md h-[var(--size-wk-drawer-md)]',
     };
 
     // Clamp to the viewport so the panel never exceeds the screen on small
@@ -87,11 +90,11 @@
     // past the screen edge on mobile (content clipped, no backdrop strip).
     // `max-w`/`max-h` keep the slide-in transition intact (translate-*-full
     // is relative to the element's own, now-clamped, size) while leaving a
-    // 3rem backdrop strip so the overlay still reads as a sheet.
+    // strip of backdrop (`--size-wk-drawer-inset`) so the overlay still reads as a sheet.
     $sizeClass .= $isHorizontal
         // `dvh`/`dvw`, not `vh`/`vw`. `vh` is defined against the LARGE viewport — toolbars
         // retracted — which is the whole reason `dvh` exists. Clamping to `100vh - 3rem`
-        // reserved 48px against a height the user cannot see while Safari's toolbars are
+        // reserved the inset against a height the user cannot see while Safari's toolbars are
         // shown, and the toolbar delta on iOS is larger than 48px: for a top or bottom
         // drawer the promised backdrop strip was not merely thinner, it was negative, and
         // the panel's non-scrolling edge (a top drawer's footer, a bottom drawer's header
@@ -101,8 +104,8 @@
         // The same repo already states this rule twice and follows it, in app-shell and
         // sticky-panel. No browser test can catch it: headless Playwright has no dynamic
         // browser chrome, so `100vh === 100dvh` in every run of the mobile sweep.
-        ? ' max-w-[calc(100dvw-3rem)]'
-        : ' max-h-[calc(100dvh-3rem)]';
+        ? ' max-w-[calc(100dvw-var(--size-wk-drawer-inset))]'
+        : ' max-h-[calc(100dvh-var(--size-wk-drawer-inset))]';
 
     // Slide transition classes — direction depends on position
     $enterStart = match ($position) {

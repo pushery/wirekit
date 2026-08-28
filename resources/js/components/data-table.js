@@ -148,6 +148,32 @@ export default function wirekitDataTable(config = {}) {
             return v === null || v === undefined ? '' : String(v);
         },
         /**
+         * The quieter second line of a cell, when the column asks for one.
+         *
+         * An admin table's ordinary cell is two lines, not one: order number over date,
+         * customer over email, product over SKU. Measured across this package's four admin
+         * data grids, between 29% and 50% of their cells are that shape — which is why none
+         * of those pages could be built on this component and all of them are still on the
+         * plain table.
+         *
+         * Deliberately a SECOND KEY rather than a template. A template per column is the
+         * complete answer and a much larger one: the body is an Alpine `x-for` over rows, so
+         * there is no Blade cell to hand back, and getting one means a real API. This covers
+         * the measured majority, costs one optional field, and forecloses none of it — a
+         * column can gain a template later and this stays the shortcut for the common case.
+         *
+         * Empty behaves as absent: a row whose sub-field is null renders one line, not one
+         * line and a gap. Whether a row HAS the second value is data, not configuration.
+         */
+        subText(row, col) {
+            if (! col.subKey) {
+                return '';
+            }
+            const v = row[col.subKey];
+
+            return v === null || v === undefined ? '' : String(v);
+        },
+        /**
          * Status word -> intent for a `cellType: 'badge'` column.
          *
          * The column is consulted FIRST, and that is the whole change. The built-in

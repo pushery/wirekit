@@ -44,6 +44,12 @@
     data-wk-sidebar-toggle
     x-on:click="sidebarOpen = !sidebarOpen"
     :aria-expanded="sidebarOpen ? 'true' : 'false'"
+    {{-- Names the drawer this opens. Read through `$data` rather than as a bare
+         `drawerId`, because a bare reference throws where the property does not exist —
+         and it legitimately does not: a shell whose `x-data` a developer replaced, or a
+         toggle placed outside one. A missing `aria-controls` is a smaller defect than a
+         console error that stops the rest of the expression. --}}
+    :aria-controls="$data.drawerId || null"
     aria-label="{{ $ariaLabel }}"
     {{ $attributes->except('aria-label')->class([$classes]) }}
 >

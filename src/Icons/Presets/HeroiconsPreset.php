@@ -281,11 +281,22 @@ final class HeroiconsPreset implements IconPreset
             //
             // Deliberately NOT taken, and the reasons are worth keeping:
             //   a11y, cursor-arrow-rays, paint-brush — no genuine cognate in all three.
-            //   ai, sparkle, sparkles, cube, cube-transparent — a cognate exists, but it
-            //     is ALREADY another alias's target in the same set (lucide has one
-            //     `sparkle`, one `box`). That is the same picture under two names, not a
-            //     second concept, and shipping it would make the vocabulary lie about
-            //     what it can distinguish.
+            //   ai, sparkle, cube-transparent — a spelling variant of a word that is
+            //     already here, not a second concept. `sparkle` beside `sparkles`, or
+            //     `cube-transparent` beside `cube`, gives the vocabulary two ways to ask
+            //     for one picture, and a reader has no way to guess which.
+            //
+            // ⚠️ This list named `sparkles` and `cube` as well, and both are declared
+            // below it — in this file and in the three sibling presets, which carried
+            // the same paragraph word for word. The reason it gave was that a cognate
+            // existed but was ALREADY another alias's target, and that is not the rule
+            // this vocabulary follows. Sharing a glyph is ordinary here: measured across
+            // the four base presets, 10 to 14 targets each carry more than one alias, on
+            // purpose. `danger` and `x-circle` are the same picture; so are `settings`,
+            // `gear` and `cog-6-tooth`. Two words for two INTENTS that happen to look
+            // alike is the pattern. Two spellings of one word is not, and that is the
+            // line above. (It also cited lucide's inventory as the evidence, in all four
+            // files — including the two that are not about lucide.)
 
             'arrow-down' => 'heroicon-m-arrow-down',
             'arrow-right' => 'heroicon-m-arrow-right',
