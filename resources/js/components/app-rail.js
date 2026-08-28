@@ -19,7 +19,9 @@ import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.j
  *
  * @param {Object}       config
  * @param {boolean}      [config.expanded]  state on a first visit, before storage
- * @param {string|null}  [config.persist]   localStorage key; null keeps it ephemeral
+ * @param {string|null}  [config.persist]   storage key; null keeps it ephemeral
+ * @param {string}       [config.persistDriver] 'local' (default) or 'cookie'. The cookie
+ *   driver exists so the SERVER can seed the first render — see persisted-flag.js.
  */
 export default function wirekitAppRail(config = {}) {
     return {
@@ -59,13 +61,66 @@ export default function wirekitAppRail(config = {}) {
         ready: false,
 
         _persistKey: config.persist || null,
+        _persistDriver: config.persistDriver === 'cookie' ? 'cookie' : 'local',
         _readyFrame: null,
         _onExternalToggle: null,
         _onWidthSettled: null,
         _wideFallback: null,
 
+        /**
+         * The stored preference, kept apart from `expanded` because below the breakpoint
+         * they are not the same thing.
+         *
+         * Below `lg` this rail is not a column — it is the left strip of an off-canvas
+         * drawer, and the drawer's width is the sum of its columns. Measured at 375px with
+         * the drawer open: collapsed it spans 0…309 and all 243px of the module entries are
+         * visible; EXPANDED it spans 0…496, and 121px of that column is simply gone.
+         * `document.documentElement.scrollWidth` stays 375, so there is nothing to scroll
+         * to — the entries and the column edge are off the device with no way to reach them.
+         *
+         * The preference is stored, is not tied to a breakpoint, and the control that sets
+         * it lives INSIDE the drawer. So a phone can reach that state without a desktop ever
+         * having been involved.
+         *
+         * Forced collapsed below the breakpoint, and the stored value left untouched, so a
+         * reader who expanded the rail on a laptop still finds it expanded there.
+         */
+        _persisted: false,
+
+        /** The `lg` breakpoint, or null where `matchMedia` does not exist. */
+        _viewport: null,
+
+        /**
+         * Whether an expanded rail means anything at this width.
+         *
+         * True when there is no `matchMedia` to ask — a unit harness, an unusual host —
+         * because that is what this component did before the breakpoint existed, and a
+         * guard that changes behavior where it cannot measure is worse than no guard.
+         */
+        _expandable() {
+            return this._viewport ? this._viewport.matches === true : true;
+        },
+
         init() {
-            this.expanded = readPersistedFlag(this._persistKey, this.expanded);
+            this._persisted = readPersistedFlag(this._persistKey, this.expanded, this._persistDriver);
+
+            // `64rem` rather than `1024px`: the shell's own `lg:` utilities are rem-based,
+            // so a reader with a larger root font size crosses both at the same moment.
+            this._viewport = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+                ? window.matchMedia('(min-width: 64rem)')
+                : null;
+
+            this.expanded = this._persisted && this._expandable();
+
+            // Re-decide on a rotation or a resize across the breakpoint. Without this, a
+            // phone held sideways at 812px keeps whichever state it entered with.
+            this._onViewportChange = () => {
+                this.expanded = this._persisted && this._expandable();
+                this.wide = this.expanded;
+                this._announce();
+            };
+
+            this._viewport?.addEventListener?.('change', this._onViewportChange);
 
             // First paint has no animation to wait for, so the names are simply there.
             this.wide = this.expanded;
@@ -121,6 +176,11 @@ export default function wirekitAppRail(config = {}) {
         },
 
         destroy() {
+            if (this._onViewportChange) {
+                this._viewport?.removeEventListener?.('change', this._onViewportChange);
+                this._onViewportChange = null;
+            }
+
             // A Livewire navigation replaces the rail. A listener still holding the old
             // component's `this` would toggle a node no longer in the document, and the
             // state would disagree with the screen without anything looking broken.
@@ -150,7 +210,16 @@ export default function wirekitAppRail(config = {}) {
         },
 
         toggle() {
+            // The control is not rendered below the breakpoint, so this is the guard behind
+            // it rather than the one in front: an external `wirekit:rail:toggle` event, or a
+            // developer's own button, reaches this method the same way and must not be able
+            // to widen the drawer past the device.
+            if (! this._expandable()) {
+                return;
+            }
+
             this.expanded = ! this.expanded;
+            this._persisted = this.expanded;
 
             if (this.expanded) {
                 // A belt for the case where `transitionend` never comes: a zero duration,
@@ -177,7 +246,7 @@ export default function wirekitAppRail(config = {}) {
                 this.wide = false;
             }
 
-            writePersistedFlag(this._persistKey, this.expanded);
+            writePersistedFlag(this._persistKey, this.expanded, this._persistDriver);
             this._announce();
         },
 

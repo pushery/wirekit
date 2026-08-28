@@ -29,6 +29,7 @@ import wirekitInput from './components/input.js';
 import wirekitNumberInput from './components/number-input.js';
 import wirekitSidebarDisclosure from './components/sidebar-disclosure.js';
 import wirekitAppRail from './components/app-rail.js';
+import wirekitAppShell from './components/app-shell.js';
 import wirekitSidebarRail from './components/sidebar-rail.js';
 import wirekitClipboardButton from './components/clipboard-button.js';
 import wirekitReplayButton from './components/replay-button.js';
@@ -193,6 +194,7 @@ export default function (Alpine) {
     Alpine.data('wirekitNumberInput', wirekitNumberInput);
     Alpine.data('wirekitSidebarDisclosure', wirekitSidebarDisclosure);
     Alpine.data('wirekitAppRail', wirekitAppRail);
+    Alpine.data('wirekitAppShell', wirekitAppShell);
     Alpine.data('wirekitSidebarRail', wirekitSidebarRail);
     Alpine.data('wirekitClipboardButton', wirekitClipboardButton);
     Alpine.data('wirekitReplayButton', wirekitReplayButton);
@@ -279,6 +281,7 @@ export {
     wirekitNumberInput,
     wirekitSidebarDisclosure,
     wirekitAppRail,
+    wirekitAppShell,
     wirekitSidebarRail,
     wirekitClipboardButton,
     wirekitReplayButton,

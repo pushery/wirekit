@@ -15,10 +15,25 @@
     // selects and the expanded width, so `labels="below"` plus `expandable` gives
     // captions that become full labels.
     'expandable' => false,
-    // Initial state on a first visit, before storage answers.
-    'expanded' => false,
-    // localStorage key. Null keeps the choice for the session only.
+    // Initial state on a first visit, before storage answers. Left unset, the cookie
+    // driver below is allowed to answer it instead — which is the whole point of that
+    // driver, so an explicit value here wins and turns the seeding off.
+    'expanded' => null,
+    // Storage key. Null keeps the choice for the session only.
     'persist' => null,
+    // WHERE the choice is remembered: 'local' (default) or 'cookie'.
+    //
+    // No server can read localStorage, so a rail that remembers being expanded renders
+    // collapsed and widens itself after the first paint. An adopting application measured
+    // that at 0.1097 CLS against a budget of 0.1 — the content column moving 187px, 53ms in.
+    // The usual fix is a blocking inline script in the head, which a strict
+    // `script-src 'self'` policy without a nonce simply blocks.
+    //
+    // A cookie is the only store Blade and Alpine both read, so this driver mirrors the
+    // flag there and the first render is already right. Opt-in on purpose: writing a cookie
+    // where a developer asked for localStorage is a behavior change, and a cookie is
+    // something an application has to be able to account for.
+    'persistDriver' => 'local',
     // The surface. Each tone re-points the `--color-wk-rail-*` roles in
     // dist/wirekit.css; every class below reads only those, so a tone is a change of
     // variables rather than a parallel set of utilities. Override the roles in your
@@ -58,6 +73,17 @@
     // `expandable="false"` would otherwise turn the toggle ON. Normalize against each
     // prop's own default so a cast never engages a mode that was meant off.
     $expandable = BooleanProp::from($expandable, false);
+    $persistDriver = WireKit::validateProp('app-rail', 'persistDriver', $persistDriver, ['local', 'cookie']);
+
+    // The server half of the cookie driver. Read straight from $_COOKIE rather than through
+    // the request, because the value is written by the browser and Laravel's cookie
+    // encryption would refuse to decrypt it — correctly, since it never encrypted it. What
+    // comes back is used only as a boolean comparison, so an arbitrary value cannot reach
+    // the page; anything that is not '1' reads as collapsed.
+    if ($expanded === null && $persistDriver === 'cookie' && $persist !== null && isset($_COOKIE[$persist])) {
+        $expanded = $_COOKIE[$persist] === '1';
+    }
+
     $expanded = BooleanProp::from($expanded, false);
 
     $labels = WireKit::validateProp('app-rail', 'labels', $labels, ['tooltip', 'below', 'inline']);
@@ -168,7 +194,7 @@
              `persist` goes through AlpinePayload; the boolean is written as a literal
              because a non-empty payload renders as JSON.parse(…) and JSON is a global
              the CSP evaluator cannot resolve. --}}
-        x-data="wirekitAppRail({ expanded: {{ $expanded ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
+        x-data="wirekitAppRail({ persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::string($persistDriver) }}, expanded: {{ $expanded ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
         :data-expanded="expanded ? '' : null"
         {{-- ONE attribute drives every per-mode style below, and that is deliberate.
              Items react through `group-data-[labels=…]/wk-rail:` variants; if the live
@@ -296,6 +322,13 @@
             @if($expandable)
                 <div @class([
                     'flex',
+                    // Not below `lg`. There the rail is the left strip of an off-canvas
+                    // drawer, and expanding it widens that drawer past the device: measured
+                    // at 375px, 0…309 collapsed against 0…496 expanded, with 121px of the
+                    // module column gone and `scrollWidth` still 375 — nothing to scroll to.
+                    // The factory refuses the state at this width regardless, so leaving the
+                    // control here would present a button that does nothing.
+                    'max-lg:hidden',
                     // Centered while the rail is narrow, pushed to the trailing edge once it
                     // is wide — where a collapse control is expected, and clear of the names.
                     'justify-center group-data-[expanded]/wk-rail:justify-end',

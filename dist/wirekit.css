@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.37.2 — MIT License
+ * WireKit CSS v2.38.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -458,6 +458,13 @@
     --size-wk-drawer-sm: 20rem;
     --size-wk-drawer-md: 28rem;
     --size-wk-drawer-lg: 40rem;
+    /* The strip of backdrop that stays visible beside an open drawer. It is what keeps
+       the panel reading as a sheet over the page rather than as a second page: the size
+       tokens above are all wider than a phone, so every drawer is clamped against the
+       viewport, and this is how much of the page is left showing. Tunable because the
+       right amount depends on the design — a dense console wants less than a marketing
+       shell. */
+    --size-wk-drawer-inset: 3rem;
 
 }
 
@@ -525,7 +532,12 @@
        its inline-end rule is paid for out of the declared width. Leave it out and
        the content box is one pixel short, which centering halves back into the same
        jump in the opposite direction — measured at 0.5px before it was added. */
-    --size-wk-rail: calc(1.25rem + (2 * var(--padding-wk-x-sm)) + (2 * var(--padding-wk-y-sm)) + var(--border-wk-width));
+    /* The glyph box a rail entry is built around. It was a literal inside the width
+       calculation below, and it is a token now because a second rule needs the same
+       number: the entry's label has to sit in a line box no taller than this one, or
+       the row grows the moment a name appears. */
+    --size-wk-rail-icon: 1.25rem;
+    --size-wk-rail: calc(var(--size-wk-rail-icon) + (2 * var(--padding-wk-x-sm)) + (2 * var(--padding-wk-y-sm)) + var(--border-wk-width));
     /* Wide enough for a real module name, which is not a comfort setting.
        At the old 4.75rem the caption had 44px of room after the scroller's and the
        item's padding — so every name over about seven characters was truncated, and
@@ -766,6 +778,186 @@
 /* Corner piece where horizontal and vertical scrollbars meet */
 .wk-scrollbar::-webkit-scrollbar-corner {
     background: var(--color-wk-scrollbar-track);
+}
+
+/* ─── A row of form controls lines up on the CONTROL, not on an edge ───────── */
+/* `<x-wirekit::row align-fields>`. A labeled field is taller than an unlabeled  */
+/* one and a field with a hint is taller still, so no single `align-items` value   */
+/* lines up the right edge for every mix. Measured across six combinations of      */
+/* three controls: `center` leaves them 13.5px apart, `end` fixes that and then    */
+/* breaks by 25.5px the moment one field carries a hint, and start/stretch/baseline */
+/* are worse than either.                                                          */
+/*                                                                                 */
+/* So the row becomes three shared rows — labels, controls, messages — and each     */
+/* field hands its parts to them. A field always contributes three parts: the Blade */
+/* renders an empty, aria-hidden placeholder for a label or message it does not     */
+/* have, because a field one part short slides up into the row above and takes its  */
+/* neighbors' alignment with it (measured: 48px).                                  */
+/*                                                                                 */
+/* Anything that is NOT a field — a submit button — sits on the control row alone   */
+/* and stretches to the height of the controls beside it.                          */
+/* ⚠️ ONE COLUMN FIRST, AND THAT IS NOT A PREFERENCE — IT IS WHAT A PHONE HAS ROOM FOR. */
+/* `grid-auto-flow: column` gives EVERY child its own track at EVERY width, and three     */
+/* fields on a 393px screen are three 63px columns. Measured by the mobile sweep on the   */
+/* docs preview this feature shipped with: "3-col, narrowest cell 63px" on an iPhone 14   */
+/* Pro. A control that narrow is not a degraded control; it is an unusable one.           */
+/*                                                                                        */
+/* So the row stacks below the breakpoint and becomes the shared-track grid above it.     */
+/* 48rem is the breakpoint this stylesheet already uses; a third one would be a new       */
+/* number for a reader to learn.                                                          */
+.wk-form-row {
+    display: grid;
+    grid-auto-flow: row;
+}
+
+@media (min-width: 48rem) {
+    .wk-form-row {
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, auto);
+        grid-template-rows: auto auto auto;
+        align-items: end;
+    }
+
+    .wk-form-row > * {
+        grid-row: 2;
+        align-self: stretch;
+    }
+
+    /* ⚠️ ABOVE THE SUPPORT BASELINE, so it is additive polish behind a feature test.  */
+    /* `subgrid` is Chrome 117 / Safari 16 / Firefox 71 against a floor of Chrome 111,  */
+    /* so a reader on an older Chromium gets the row as it renders today — the controls */
+    /* sit on their own row and the labels above them, just not sharing one grid track. */
+    /* Nothing depends on it; the fields are usable either way. */
+    @supports (grid-template-rows: subgrid) {
+        .wk-form-row > [data-wk-field] {
+            display: grid;
+            grid-row: 1 / -1;
+            grid-template-rows: subgrid;
+            align-self: stretch;
+        }
+    }
+}
+
+/* The spacers exist to keep three fields' controls on one line. Stacked, there is no line */
+/* to keep — and an empty label span above a field that has no label is a gap the reader   */
+/* reads as a missing word. They come back with the columns.                                */
+.wk-form-row > [data-wk-field] > [data-wk-field-part] {
+    display: none;
+}
+
+@media (min-width: 48rem) {
+    .wk-form-row > [data-wk-field] > [data-wk-field-part] {
+        display: block;
+    }
+}
+
+/* ─── The rail scroller has ONE scroll axis, and it has to say so ─────────── */
+/* A navigation rail scrolls vertically when its modules outgrow the column,   */
+/* and it never scrolls sideways — there is no horizontal affordance to reach. */
+/* The markup only ever asked for the vertical one (`overflow-y-auto`), but    */
+/* CSS turns `overflow-x: visible` into `auto` the moment the other axis is    */
+/* scrollable, so the element became horizontally scrollable by omission.      */
+/*                                                                             */
+/* That is invisible at rest and visible while the rail expands: the labels    */
+/* switch from sr-only to inline in one frame while the width is still         */
+/* animating, so for two frames the content is 14px then 9px wider than the    */
+/* box — measured — and a horizontal scrollbar flashes along the bottom edge.  */
+/*                                                                             */
+/* It is stated HERE rather than as a utility on the element because a bare    */
+/* Tailwind class exists only where a developer's build scanned this package.  */
+/* `overflow-x-clip` was tried there first and was inert: zero occurrences in  */
+/* the sample's compiled CSS against one for `overflow-y-auto` on the same     */
+/* element. The same argument the drawer panel and the rail button reset       */
+/* already settled.                                                            */
+/* ─── A rail entry keeps its height when its name appears ─────────────────── */
+/* The entry is `align-items: center` around a 1.25rem glyph and 0.375rem of      */
+/* padding, so it is 2rem tall while the rail is collapsed. The label is 13px      */
+/* text in a line box of 22.75px — 2.75px TALLER than the glyph — and nothing     */
+/* held a ceiling, so expanding the rail grew every entry by that much.           */
+/*                                                                                */
+/* The offset compounds down the column, which is why it reads as the content     */
+/* sliding rather than as rows changing: measured on the second entry +2.8px,     */
+/* the third +5.5px, the fourth +8.3px, while the rail's own height and its       */
+/* scroller did not move at all.                                                  */
+/*                                                                                */
+/* Capping the line box is the half that changes nothing anyone already sees: the */
+/* collapsed rail is the rail's default state and keeps its rhythm, and 1.25rem   */
+/* around 13px text is 1.54 — a normal single-line nav measure, with no clipping.  */
+/* `labels="below"` is deliberately untouched: there the name wraps and is MEANT   */
+/* to make the entry taller, and it already sets its own tighter leading.         */
+[data-wk-rail][data-labels='inline'] [data-wk-rail-label] {
+    line-height: var(--size-wk-rail-icon);
+}
+
+[data-wk-rail-scroller] {
+    overflow-x: clip;
+}
+
+/* ─── The workspace mark shows its name at the same moments the modules do ─── */
+/* The mark used to decide this in PHP — `$labels === 'inline'`, frozen at render.  */
+/* Expanding the rail is an Alpine change in the browser, long after that, so an    */
+/* `expandable` rail that started narrow rendered its name hidden and KEPT it at    */
+/* every width. The failure is silent in the worst way: the name is in the DOM and  */
+/* announced, merely never drawn, so there is no empty element and no error for a   */
+/* test to trip over. Reported from a running application, not from the suite.      */
+/*                                                                                  */
+/* THE CONDITION IS A CONJUNCTION, AND EACH HALF IS LOAD-BEARING:                   */
+/*                                                                                  */
+/*   [data-labels='inline']  the mode. `below` sizes the column for a ten-character */
+/*                           module caption; a workspace name there wraps to four   */
+/*                           lines and pushes the modules off the screen. The rail   */
+/*                           rewrites this to `inline` the moment it expands, which  */
+/*                           is why one attribute covers both the static inline mode */
+/*                           and the expanded one.                                   */
+/*                                                                                  */
+/*   [data-wk-names]         the timing. The mode flips AT ONCE, because it also     */
+/*                           decides where an item's icon sits; the words WAIT for   */
+/*                           the column to stop moving, or a name wraps at whatever  */
+/*                           width the animation is passing through and unwraps      */
+/*                           again as it catches up.                                 */
+/*                                                                                  */
+/* Following either marker alone is wrong, and wrong in a different direction each   */
+/* time: `data-wk-names` alone reveals the name in a narrow `below` rail, and        */
+/* `data-labels` alone reintroduces the wrap-during-the-animation artifact. Tailwind */
+/* cannot express the conjunction — two `group-data-*` variants of the SAME group    */
+/* stack into a descendant selector, which asks the rail to contain itself — so it   */
+/* is stated here, where a plain attribute selector says it directly.                */
+/*                                                                                  */
+/* It also belongs here for the reason the scroller above already gives: a bare      */
+/* Tailwind class exists only where a developer's build scanned this package.        */
+/*                                                                                  */
+/* The resting state of the NAME is visually-hidden and NEVER absent — it is what    */
+/* identifies the workspace, and a screen-reader user gets no visual mark to fall    */
+/* back on. The DESCRIPTION is the opposite and deliberately so: `display: none`     */
+/* while narrow, because "Free plan" with no subject is noise in a landmark summary. */
+[data-wk-rail-brand-name] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+[data-wk-rail][data-wk-names][data-labels='inline'] [data-wk-rail-brand-name] {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+}
+
+[data-wk-rail-brand-desc] {
+    display: none;
+}
+
+[data-wk-rail][data-wk-names][data-labels='inline'] [data-wk-rail-brand-desc] {
+    display: block;
 }
 
 /* ─── Scroll-fade utility (<x-wirekit::scroll-area fade="…">) ── */
@@ -4028,6 +4220,39 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     display: none !important;
 }
 
+/* ─── …except the shell columns, which are not drawers above the breakpoint ── */
+/* A shell's navigation is a DRAWER below `lg` and an ordinary column above it.  */
+/* The markup cloaks it either way, so until Alpine boots, `display: none`       */
+/* removes it from the layout on a desktop viewport too — the content column     */
+/* paints across the full width and then jumps aside when the columns arrive.    */
+/*                                                                              */
+/* Measured on the console shell at 1728px: one layout shift, 0.1788 against a   */
+/* Core-Web-Vitals budget of 0.1, at 164ms, sourced to the content column moving */
+/* 1728x1117@0,0 → 1419x1117@309,0. The 309px are the two columns landing. It    */
+/* was the page's entire CLS.                                                    */
+/*                                                                              */
+/* ⚠️ THE MARKUP CARRIED AN ANTIDOTE THAT DOES NOTHING. One branch wrote          */
+/* `class:lg="!x-cloak"` beside its `x-cloak`, which reads like the fix and is    */
+/* neither Alpine nor Tailwind: it produces no rule, and measuring it in a        */
+/* browser at 1440px returns `display: none` exactly like the bare attribute.     */
+/* It is removed rather than copied to the other branch — a false antidote is     */
+/* worse than none, because the next person reads it as coverage. The report      */
+/* this fix came from did exactly that, and so nearly did the fix.                */
+/*                                                                              */
+/* The two restored values are measured, not assumed: `contents` for the console  */
+/* wrapper, whose children are the grid items, and `block` for the single-column  */
+/* aside. Below `lg` nothing changes — there the wrapper really is a sheet that   */
+/* must stay hidden until Alpine can park it off-screen.                          */
+@media (min-width: 64rem) {
+    .wk-app-shell-nav[x-cloak] {
+        display: contents !important;
+    }
+
+    .wk-app-shell-aside[x-cloak] {
+        display: block !important;
+    }
+}
+
 /* Image Compare component tokens. Both are optional overrides — the Blade */
 /* template uses var(..., <fallback>) so the component keeps working even  */
 /* when a developer ships an older CSS file than the current template.      */
@@ -5104,4 +5329,111 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 
 .wk-overlay-layer-drawer {
     z-index: var(--z-wk-drawer);
+}
+
+/* The drawer's PANEL, which the block above does not cover and which the     */
+/* v2.37.0 note nonetheless promised. The backdrop is a full-bleed sheet and  */
+/* uses `.wk-overlay-fixed`; the panel is not. It sits on ONE edge, so the    */
+/* shared class is actively wrong for it — `inset: 0` would override the      */
+/* edge it is supposed to hug.                                                */
+/*                                                                           */
+/* And `position: fixed` ALONE would not have been a fix either. A panel that */
+/* is fixed and has no edges, no size and no background is not a better state */
+/* than an unpositioned one; it is a new failure that merely looks repaired,  */
+/* because it collapses to its content in the top-left corner. So the whole   */
+/* geometry moves here, in the same shape the utilities produce: with a build */
+/* that scans this package both say the same thing, and without one the panel */
+/* is still a drawer.                                                         */
+.wk-drawer-panel {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    background-color: var(--color-wk-bg-elevated);
+    border-width: var(--border-wk-width);
+    /* The utility pair on the element sets width and color only — Tailwind's */
+    /* preflight supplies the style. Without that preflight there is no build */
+    /* at all, which is exactly the case this block exists for.               */
+    border-style: solid;
+    border-color: var(--color-wk-border);
+    box-shadow: var(--shadow-wk-lg);
+}
+
+/* One edge each, mirroring `inset-y-0 right-0` and its three siblings. The   */
+/* logical properties are the same declaration Tailwind emits for `inset-y`   */
+/* and `inset-x`.                                                             */
+.wk-drawer-panel-left {
+    inset-block: 0;
+    left: 0;
+}
+
+.wk-drawer-panel-right {
+    inset-block: 0;
+    right: 0;
+}
+
+.wk-drawer-panel-top {
+    inset-inline: 0;
+    top: 0;
+}
+
+.wk-drawer-panel-bottom {
+    inset-inline: 0;
+    bottom: 0;
+}
+
+/* Size follows the axis: a left/right drawer takes a width, a top/bottom one */
+/* takes a height. The clamp is not decoration — the size tokens are wider    */
+/* than a phone, and the template carries the same `dvw`/`dvh` pair for the   */
+/* reason written there: `vh` measures the LARGE viewport, so clamping        */
+/* against it reserves nothing while a mobile browser's toolbars are shown.   */
+.wk-drawer-panel-w-sm {
+    width: var(--size-wk-drawer-sm);
+    max-width: calc(100dvw - var(--size-wk-drawer-inset));
+}
+
+.wk-drawer-panel-w-md {
+    width: var(--size-wk-drawer-md);
+    max-width: calc(100dvw - var(--size-wk-drawer-inset));
+}
+
+.wk-drawer-panel-w-lg {
+    width: var(--size-wk-drawer-lg);
+    max-width: calc(100dvw - var(--size-wk-drawer-inset));
+}
+
+.wk-drawer-panel-h-sm {
+    height: var(--size-wk-drawer-sm);
+    max-height: calc(100dvh - var(--size-wk-drawer-inset));
+}
+
+.wk-drawer-panel-h-md {
+    height: var(--size-wk-drawer-md);
+    max-height: calc(100dvh - var(--size-wk-drawer-inset));
+}
+
+.wk-drawer-panel-h-lg {
+    height: var(--size-wk-drawer-lg);
+    max-height: calc(100dvh - var(--size-wk-drawer-inset));
+}
+
+/* A rail entry that OPENS something rather than going somewhere renders as a  */
+/* `<button>`, and a button arrives with a border, a background, its own font  */
+/* and centered text. None of that is in the rail's class list, because an     */
+/* anchor needs none of it.                                                    */
+/*                                                                            */
+/* Here rather than as utilities on the element, for the same reason as the    */
+/* drawer geometry above: `as="button"` would otherwise work only where the    */
+/* developer's build scanned this package, and a trigger whose text is         */
+/* centered and boxed is not a rail entry. It is also the honest place — the   */
+/* rail item is the only caller, and none of these belong to a developer.      */
+.wk-rail-item-button {
+    width: 100%;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    text-align: start;
+    font: inherit;
+    color: inherit;
 }

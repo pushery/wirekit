@@ -327,7 +327,15 @@ final class StrictnessGate
      * it was written against. A duplicate `class` is merged by Blade and a duplicate
      * `aria-*` reads as an intended override; those are not this.
      *
-     * 97 of the 259 component views set `x-data`, 5 set `x-init` and 2 set `x-modelable`.
+     * Most component views set `x-data`; a handful set `x-init` and fewer still set
+     * `x-modelable`. The tally itself is deliberately not written down — the one that used to
+     * stand here went stale, and a docblock count in this package has already shipped a wrong
+     * promise once.
+     *
+     * What DOES matter is a distinction the tally hid: a large minority of them set the
+     * attribute only inside a condition, and for those the sentence this method logs — "your
+     * scope never exists" — is simply false. `scopeDirectivesSetBy()` therefore asks whether
+     * the component sets it UNCONDITIONALLY, which is the claim actually being made.
      *
      * @param  array<string, mixed>  $actual  attribute name => value
      */
@@ -393,9 +401,22 @@ final class StrictnessGate
 
         $source = (string) file_get_contents($path);
 
+        // UNCONDITIONALLY, not merely somewhere in the file. The warning built on this answer
+        // tells a developer their scope "never exists" — an absolute claim, so the test behind
+        // it has to be absolute too. A regex over raw Blade sees no conditions, and reported a
+        // collision for every component whose `x-data` sits inside an `@if`.
+        //
+        // `card` is the case that surfaced it: its `x-data` is a debug warning that renders
+        // only when a card is composed WRONGLY, so on a correctly composed card the attribute
+        // never exists and collides with nothing. A developer whose countdown was demonstrably
+        // running got told three times a day to wrap the component in their own element.
+        //
+        // Measured here on 2026-08-27: 18 components set `x-data` only inside a condition and
+        // 17 set it both ways. The second group still warns, which is the point of asking about
+        // the unconditional case rather than simply exempting anything conditional.
         return array_values(array_filter(
             ['x-data', 'x-init', 'x-modelable'],
-            static fn (string $directive): bool => preg_match('/\s'.preg_quote($directive, '/').'\s*=/', $source) === 1
+            static fn (string $directive): bool => BladeParser::setsAttributeUnconditionally($source, $directive)
         ));
     }
 

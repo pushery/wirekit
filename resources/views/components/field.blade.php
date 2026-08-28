@@ -20,9 +20,16 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+{{-- Whether the surrounding row lines its fields up on a shared grid. Read from the parent
+     rather than passed, because a field cannot see its siblings and the decision belongs to
+     whoever composed the row. `alignFields` is a name no other component declares, which
+     matters: @aware matches on the prop NAME, so a generic one would also answer from a
+     `hero` or a `data-list` that happens to be an ancestor. --}}
+@aware(['alignFields' => false, 'announceErrors' => null])
 
 @php
+    $inAlignedRow = \Pushery\WireKit\Support\BooleanProp::from($alignFields, false);
+
     use Pushery\WireKit\Support\BooleanProp;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -40,7 +47,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'alignFields', 'align-fields']);
 @endphp
 
 
@@ -72,7 +79,11 @@
     $wrapperClasses = WireKit::resolveClasses('field', 'base', $isHorizontal ? '' : 'space-y-1.5', $scope);
 @endphp
 
-<div {{ $attributes->class([$wrapperClasses]) }}>
+{{-- `data-wk-field` is how the shared row grid tells a field from a submit button: the
+     first takes all three rows and hands its parts to them, the second sits on the control
+     row alone. Emitted always, not only inside such a row — an identity hook that appears
+     conditionally is one nothing else can ever rely on. --}}
+<div data-wk-field {{ $attributes->class([$wrapperClasses]) }}>
     @if($isHorizontal)
         {{-- Horizontal: label in a left column beside the control; control + messages
              take the remaining inline space. --}}
@@ -97,6 +108,12 @@
             <x-wirekit::label :for="$targetId" :required="$required" :scope="$scope">
                 {{ $label }}
             </x-wirekit::label>
+        @elseif($inAlignedRow)
+            {{-- A field with no label still needs to occupy the label row, or it slides up
+                 into it and its control stops lining up with its neighbors'. Measured on a
+                 row of three: one field without a label sat 13.5px above the other. Empty
+                 and aria-hidden — it is spacing, and there is no name here to announce. --}}
+            <span data-wk-field-part="label" aria-hidden="true"></span>
         @endif
 
         {{-- The actual input/select/textarea/checkbox — passed in as default slot.
@@ -105,6 +122,13 @@
         {{ $slot }}
 
         {{-- Error takes precedence over hint — show one, not both --}}
+        @if($inAlignedRow && ! ($hasError && $errorMessage) && ! $hint)
+            {{-- The other half of the same problem: a field with nothing below its control
+                 would end one row short, and the shared grid would pull the next field's
+                 control up to fill the gap. --}}
+            <span data-wk-field-part="message" aria-hidden="true"></span>
+        @endif
+
         @if($hasError && $errorMessage)
             <p @if($errorId) id="{{ $errorId }}" @endif @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
                 {{ $errorMessage }}

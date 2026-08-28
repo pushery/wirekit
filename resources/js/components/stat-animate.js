@@ -93,14 +93,15 @@ export default () => ({
                 // A superseded run stops here and writes nothing.
                 if (this._run !== run) return;
 
-                // Cancels the settle watchdog below on the first frame that lands:
-                // once the animation is ticking it owns the value, and a watchdog
-                // firing mid-count would snap over a running animation.
-                this._ticked = true;
-                if (this._settleTimer) {
-                    clearTimeout(this._settleTimer);
-                    this._settleTimer = null;
-                }
+                // ⚠️ THE WATCHDOG BELOW IS NOT CANCELED HERE, AND THAT IS THE FIX.
+                // It used to be, on the first frame that landed, reasoned as "once the
+                // animation is ticking it owns the value". But one frame is not ticking.
+                // Exactly one frame lands at t ≈ 0, writes formatValue(0 × target) — the
+                // string "0" — and if no successor ever arrives, that zero is final. So the
+                // one shape the net was spanned for was the one shape that took it down.
+                // Reported from the documentation site as frames: 1, progress: 0, value "0"
+                // still at 5000ms, with 146 rAF callbacks firing elsewhere in the document.
+                // The watchdog now decides for itself, by progress, when it fires.
 
                 const t = Math.min(1, (now - start) / duration);
                 const eased = ease(t);
@@ -126,14 +127,19 @@ export default () => ({
             // Settling costs nothing in the paused-then-resumed case: `start` is
             // captured before the pause, so the first frame after rendering resumes
             // already has `t >= 1` and snaps to the target without animating either.
-            this._ticked = false;
             if (this._settleTimer) {
                 clearTimeout(this._settleTimer);
             }
             this._settleTimer = setTimeout(() => {
                 this._settleTimer = null;
+                // A superseded run's watchdog writes nothing, same as its frames.
                 if (this._run !== run) return;
-                if (this._ticked) return;
+                // The question is whether this run ARRIVED, not whether it was ever seen
+                // moving. `t` is wall-clock against a start captured before any pause, so by
+                // now — a full duration plus 400ms — a run whose frames are being delivered
+                // at all has passed t >= 1 and set progress to 1. Anything short of that
+                // means the frames stopped, whether after none of them or after one.
+                if (this.progress >= 1) return;
                 this.value = formatValue(numeric);
                 this.progress = 1;
                 this.animating = false;

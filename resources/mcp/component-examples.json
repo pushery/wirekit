@@ -1323,6 +1323,10 @@
         {
             "title": "Product cards on sale, low stock and sold out",
             "code": "<x-wirekit::grid cols=\"1 sm:2 lg:3\" gap=\"lg\">\n    <x-wirekit::product-card\n        name=\"Brass desk lamp\"\n        href=\"#\"\n        image=\"/placeholder/400x400?bg=fde68a&fg=78350f&label=Lamp&gradient=none\"\n        :price=\"3900\"\n        :compare-at=\"5900\"\n        :minor-units=\"true\"\n        currency=\"EUR\"\n        :rating=\"4.5\"\n        :review-count=\"128\"\n        description=\"Warm, dimmable, and heavy enough to stay where you put it.\"\n    />\n    <x-wirekit::product-card\n        name=\"Walnut notebook\"\n        href=\"#\"\n        image=\"/placeholder/400x400?bg=d6d3d1&fg=1c1917&label=Notebook&gradient=none\"\n        :price=\"1200\"\n        :minor-units=\"true\"\n        currency=\"EUR\"\n        :rating=\"4\"\n        :review-count=\"12\"\n        availability=\"low-stock\"\n        description=\"Dotted, lies flat, survives a bag.\"\n    />\n    <x-wirekit::product-card\n        name=\"Studio chair\"\n        href=\"#\"\n        image=\"/placeholder/400x400?bg=bfdbfe&fg=1e3a8a&label=Chair&gradient=none\"\n        :price=\"24900\"\n        :minor-units=\"true\"\n        currency=\"EUR\"\n        :rating=\"5\"\n        :review-count=\"41\"\n        availability=\"out-of-stock\"\n        description=\"The one you stop noticing after a week.\"\n    />\n</x-wirekit::grid>"
+        },
+        {
+            "title": "A card whose media is drawn, not photographed",
+            "code": "<x-wirekit::product-card name=\"Gift card\" :price=\"5000\" href=\"#\">\n    <x-slot:media>\n        <x-wirekit::aspect-ratio ratio=\"1/1\" style=\"background: var(--color-wk-bg-subtle); display: grid; place-items: center;\">\n            <x-wirekit::text size=\"xl\" weight=\"semibold\" intent=\"muted\">G</x-wirekit::text>\n        </x-wirekit::aspect-ratio>\n    </x-slot:media>\n    <x-slot:badge>\n        <x-wirekit::badge intent=\"info\" surface=\"solid\" size=\"sm\">New</x-wirekit::badge>\n    </x-slot:badge>\n</x-wirekit::product-card>"
         }
     ],
     "profile": [

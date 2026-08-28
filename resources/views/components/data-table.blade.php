@@ -202,11 +202,37 @@
                                 <template x-if="col.cellType === 'badge'">
                                     <span class="inline-flex items-center px-[var(--padding-wk-x-sm)] py-0.5 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] capitalize" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($badgeClasses) }}[badgeIntent(cellText(row, col), col)]" x-text="cellText(row, col)"></span>
                                 </template>
+                                {{-- A column may carry a `subKey`, and the cell then reads as two lines:
+                                     the value over a quieter second one. That is the ordinary shape of an
+                                     admin table — order number over date, customer over email, product over
+                                     SKU — and without it between a third and a half of the cells on a real
+                                     data grid cannot be expressed, which is why those pages are still built
+                                     on the plain table.
+
+                                     The wrapper stays a `span` with `block` children rather than becoming a
+                                     stack component: the body is an Alpine template, so a WireKit tag here
+                                     would be rendered once by Blade and then cloned per row with the same
+                                     resolved classes — the composition would be a lie about where it came
+                                     from. Two spans and two tokens say what they are.
+
+                                     An empty second value renders nothing at all, not an empty line: whether
+                                     a row HAS the second value is data, and a gap where a row happens to
+                                     lack one reads as a rendering fault. --}}
                                 <template x-if="col.cellType === 'number'">
-                                    <span class="tabular-nums" x-text="cellText(row, col)"></span>
+                                    <span>
+                                        <span class="tabular-nums block" x-text="cellText(row, col)"></span>
+                                        <template x-if="subText(row, col)">
+                                            <span class="tabular-nums block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
+                                        </template>
+                                    </span>
                                 </template>
                                 <template x-if="!col.cellType || col.cellType === 'text'">
-                                    <span x-text="cellText(row, col)"></span>
+                                    <span>
+                                        <span class="block" x-text="cellText(row, col)"></span>
+                                        <template x-if="subText(row, col)">
+                                            <span class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
+                                        </template>
+                                    </span>
                                 </template>
                             </td>
                         </template>

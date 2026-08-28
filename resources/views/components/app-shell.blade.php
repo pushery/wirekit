@@ -230,10 +230,27 @@
             );
         }
     }
+    // The drawer's id, so the toggle's `aria-controls` has something to name.
+    //
+    // `DomId::unique` and NOT `Str::random`, which is what this line said first. A random
+    // id is minted afresh on every render, and inside a Livewire morph or a `wire:poll`
+    // region that means the two halves stop naming each other while both remain perfectly
+    // well-formed. `dropdown` and `progress` each carried that exact defect and each says
+    // so in its own comment; this file does not need to learn it a third time.
+    //
+    // The counted fallback is unique by construction, so two shells on one page still get
+    // two ids — which was the reason the random version looked right.
+    $drawerId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-shell-nav-');
 @endphp
 
 <div
-    x-data="{ sidebarOpen: false }"
+    x-data="wirekitAppShell({ drawerId: {{ \Pushery\WireKit\Support\AlpinePayload::from($drawerId) }} })"
+    {{-- The stable way to find this shell from a test or a developer's own script.
+         Its three siblings below are conditional, and the `x-data` expression above is
+         not an identity: a browser case matched the literal "sidebarOpen" inside it and
+         went dark the moment that state moved into a factory, while the shell rendered
+         exactly as before. Seventy-three components already carry such a hook. --}}
+    data-wk-app-shell
     @if($tone !== 'default') data-wk-tone="{{ $tone }}" @endif
     @if($panel) data-wk-panel @endif
     @if($navTakesPanelGutter) data-wk-nav-gutter @endif
@@ -315,6 +332,43 @@
                      when either end of the interpolation is `visible`, that value holds for
                      the whole duration. --}}
                 x-bind:class="sidebarOpen ? 'translate-x-0 visible' : '-translate-x-full invisible lg:visible'"
+                {{-- Dialog semantics, and ONLY where it is a dialog. Below the breakpoint
+                     this element slides over the page behind a backdrop; at and above it,
+                     it is layout — `display: contents` for the group, an ordinary column
+                     for the single aside — and a `role` there would announce a dialog
+                     nobody opened.
+                     That is why the width is asked of `matchMedia` in the factory instead
+                     of being expressed as a `lg:` class: `role` and `aria-modal` are
+                     attributes, and an attribute has one value at a time however wide the
+                     window is.
+                     Measured by an adopting application at 375px with the drawer open,
+                     before this existed: `role` null, `aria-modal` null, `aria-controls`
+                     null, and Escape did nothing. The backdrop blocks POINTERS from the
+                     page behind it and does not block the keyboard, so focus walked on
+                     through controls the backdrop was covering — invisible to everyone
+                     except the people who cannot see where focus went. --}}
+                x-ref="drawer"
+                {{-- Written by the server, not bound through Alpine. The id is known at
+                     render time, so a binding would only make it appear once Alpine has
+                     initialized — and until then the toggle's `aria-controls` names an
+                     element that does not exist. The factory still carries the same value
+                     so the toggle can read it from scope. --}}
+                id="{{ $drawerId }}"
+                :role="isDrawer && sidebarOpen ? 'dialog' : null"
+                :aria-modal="isDrawer && sidebarOpen ? 'true' : null"
+                :aria-label="isDrawer && sidebarOpen ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Navigation')) }} : null"
+                {{-- `tabindex="-1"` while it is a dialog, and it is not decoration: it is what
+                     lets the panel RECEIVE focus. `focus-trap` looks for a tabbable element at
+                     activation and falls back to the container when it finds none — and a
+                     container without a tabindex cannot take focus, so the trap reports itself
+                     active while `document.activeElement` is still `<body>`.
+                     Measured exactly that way in a browser: trap present, `active: true`, two
+                     focusable elements in the panel, focus on BODY. Every ESM case was green
+                     throughout, because they construct the state machine and this is a question
+                     the DOM answers.
+                     Only while it is a drawer: a `tabindex` on an ordinary layout column adds a
+                     stop to the tab order that leads nowhere. --}}
+                :tabindex="isDrawer && sidebarOpen ? '-1' : null"
                 x-cloak
             >
                 <aside class="wk-app-shell-rail flex shrink-0">
@@ -359,6 +413,43 @@
                      still seen: when either end of the interpolation is
                      `visible`, that value holds for the whole duration. --}}
                 x-bind:class="sidebarOpen ? 'translate-x-0 visible' : '-translate-x-full invisible lg:visible'"
+                {{-- Dialog semantics, and ONLY where it is a dialog. Below the breakpoint
+                     this element slides over the page behind a backdrop; at and above it,
+                     it is layout — `display: contents` for the group, an ordinary column
+                     for the single aside — and a `role` there would announce a dialog
+                     nobody opened.
+                     That is why the width is asked of `matchMedia` in the factory instead
+                     of being expressed as a `lg:` class: `role` and `aria-modal` are
+                     attributes, and an attribute has one value at a time however wide the
+                     window is.
+                     Measured by an adopting application at 375px with the drawer open,
+                     before this existed: `role` null, `aria-modal` null, `aria-controls`
+                     null, and Escape did nothing. The backdrop blocks POINTERS from the
+                     page behind it and does not block the keyboard, so focus walked on
+                     through controls the backdrop was covering — invisible to everyone
+                     except the people who cannot see where focus went. --}}
+                x-ref="drawer"
+                {{-- Written by the server, not bound through Alpine. The id is known at
+                     render time, so a binding would only make it appear once Alpine has
+                     initialized — and until then the toggle's `aria-controls` names an
+                     element that does not exist. The factory still carries the same value
+                     so the toggle can read it from scope. --}}
+                id="{{ $drawerId }}"
+                :role="isDrawer && sidebarOpen ? 'dialog' : null"
+                :aria-modal="isDrawer && sidebarOpen ? 'true' : null"
+                :aria-label="isDrawer && sidebarOpen ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Navigation')) }} : null"
+                {{-- `tabindex="-1"` while it is a dialog, and it is not decoration: it is what
+                     lets the panel RECEIVE focus. `focus-trap` looks for a tabbable element at
+                     activation and falls back to the container when it finds none — and a
+                     container without a tabindex cannot take focus, so the trap reports itself
+                     active while `document.activeElement` is still `<body>`.
+                     Measured exactly that way in a browser: trap present, `active: true`, two
+                     focusable elements in the panel, focus on BODY. Every ESM case was green
+                     throughout, because they construct the state machine and this is a question
+                     the DOM answers.
+                     Only while it is a drawer: a `tabindex` on an ordinary layout column adds a
+                     stop to the tab order that leads nowhere. --}}
+                :tabindex="isDrawer && sidebarOpen ? '-1' : null"
                 {{-- wk-app-shell-aside: on lg the dist/wirekit.css rule sizes this column
                      to the inner sidebar's width (var(--wk-sidebar-w,16rem)), and shrinks it
                      to the 3.5rem icon rail when the sidebar is data-collapsed, so the main
@@ -395,7 +486,6 @@
                      variant's own surface, so that case renders identically. --}}
                 class="wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-64 transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] {{ $asideInset }}"
                 x-cloak
-                class:lg="!x-cloak"
             >
                 {{ $sidebar }}
             </aside>

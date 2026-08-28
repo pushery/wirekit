@@ -10,6 +10,146 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.38.0] — 2026-08-28
+
+Minor. The overlay work of the last two releases reached the drawer: its geometry ships in the
+stylesheet now rather than depending on your Tailwind build, and the panel became a real dialog
+instead of one that only looked like it. Alongside that, three layout defects that each cost a
+visible jump on a page load, and a row that lines its form controls up whatever mix of labels
+they carry.
+
+### Added
+
+- **A `<x-wirekit::data-table>` column takes a `subKey`, so a cell can be two lines.** The
+  ordinary shape of an admin table is a value over a quieter second one — order number over date,
+  customer over email, product over SKU — and a column could previously render only a single
+  string, a number or a status pill. A row whose second field is empty draws one line rather than
+  one line and a gap. On a `number` column both lines stay tabular. See
+  [Data Table](https://docs.wirekit.app/components/data-table).
+- **`<x-wirekit::product-card>` takes a `media` slot and a `badge` slot.** `image` is a URL, and
+  there was no branch for its absence — so a product whose artwork is drawn rather than
+  photographed, or is a video or a color field, had no way into the component at all. The slot
+  wins over `image` when both are given, and with neither the card draws no media area, which is
+  deliberate: a placeholder invented here would appear on every card that legitimately has no
+  picture. The `badge` slot sits beside the ones the card derives — those answer on-sale and
+  in-stock, and "New" or "Limited" had no equivalent — and the two stack rather than overlapping.
+  See [Product Card](https://docs.wirekit.app/components/product-card).
+- **`<x-wirekit::row align-fields>` puts every control in a row on one line, and stacks them
+  below 48rem.** A labeled field
+  is taller than an unlabeled one and a field with a hint is taller still, so no single `align`
+  value lines the controls up for every mix — and a submit button beside them has no label row
+  at all. The row becomes three shared tracks (labels, controls, messages) and each field hands
+  its parts to them. Opt-in: it changes the row's display model, and `align` / `justify` stop
+  applying while it is on. See [Row](https://docs.wirekit.app/components/row).
+- **`<x-wirekit::app-rail.item as="button">`.** A rail entry that opens a menu is not a
+  destination, and as a link it was subtly broken: a link activates on Enter and not on Space,
+  so the key did nothing. Every click on the placeholder `href` also pushed a history entry and
+  wrote a bare `#` into the address bar. See
+  [App Rail](https://docs.wirekit.app/components/app-rail).
+- **`<x-wirekit::app-rail persist-driver="cookie">`.** `persist` keeps the reader's choice in
+  `localStorage`, which no server can read — so a rail that remembers being expanded renders
+  collapsed and widens itself after the first paint. A cookie is the only store Blade and Alpine
+  both read, so the first render is already right. Opt-in, because writing a cookie is something
+  an application has to be able to account for. See
+  [App Rail](https://docs.wirekit.app/components/app-rail).
+- **`wirekit:doctor` says what a stale published asset costs.** "Outdated" undersold it: the
+  Blade directives compare size and hash, decide a stale copy cannot be trusted, and serve the
+  package route instead — so every asset travels through PHP, without the cache headers or the
+  precompressed sibling configured for `public/vendor/`. The report names that now, once per
+  run. See [CLI Reference](https://docs.wirekit.app/cli-reference).
+- **Two design tokens, `--size-wk-drawer-inset` and `--size-wk-rail-icon`.** Both were literals
+  repeated across rules that had to agree; each is one value now. See
+  [Design Tokens](https://docs.wirekit.app/theming/design-tokens).
+
+### Fixed
+
+- **An icon whose set is not installed renders a placeholder instead of a 500.** The
+  component degraded for two of the three ways an icon can go missing: `blade-icons`
+  absent, and an alias nobody has. The third is an alias that resolves perfectly onto a
+  set nobody registered — `inbox` becomes `heroicon-m-inbox` out of a static table that
+  never checks whether the glyph is there — and that name reached the renderer, found
+  neither the set nor a fallback, and threw. Icons draw transitively through buttons,
+  dropdowns and modals, so the page it took down was most pages. It is the state an
+  application lands in by accident: one that already had `blade-icons` for its own set
+  reads the set package as optional. The log line names the package to install, once per
+  prefix rather than once per icon, and a fallback you configured still wins. A console
+  command or a test still fails loudly, because there the missing package is fixable now.
+  See [Icon](https://docs.wirekit.app/components/icon).
+- **A restarted `<x-wirekit::stat>` counter no longer stays on zero when its frames stop after
+  the first one.** The counter carries a watchdog for exactly that case — a frame that is hidden
+  or unpainted pauses `requestAnimationFrame` indefinitely while timers keep running — and the
+  watchdog was being called off by the first frame that landed. One frame does land: it writes
+  zero and is then never followed, so the one state the net was there for was the one state that
+  took it down. The watchdog now decides by whether the run actually finished. See
+  [Stat](https://docs.wirekit.app/components/stat).
+- **The scope-collision warning no longer fires at developers whose scope is fine.** It told a
+  caller their `x-data` was discarded whenever the component's own template mentioned one — but
+  it read the template with a pattern that cannot see conditions, and a large minority of
+  components set theirs only inside one. `<x-wirekit::card>` is the case that surfaced it: its
+  `x-data` belongs to a debug warning that renders only when a card is composed wrongly, so a
+  correctly composed card collides with nothing and the message asked for working code to be
+  rewritten. The check now asks whether the component sets one on every render, which is the
+  claim the message makes. A component that sets one both ways still warns.
+- **The workspace mark in an expandable `<x-wirekit::app-rail>` now shows its name when the rail
+  expands.** The mark decided that in PHP, from `labels`, while rendering — and widening the rail
+  is a browser-side change that happens long after, so a rail that started narrow kept its name
+  hidden at every width. Move the workspace name out of your header because the rail was meant to
+  carry it, and it was nowhere. The failure was silent: the name was in the document and
+  announced, merely never drawn. The mark now reads the same live state its modules read. See
+  [App Rail](https://docs.wirekit.app/components/app-rail).
+
+- **The drawer's panel gets its geometry from the stylesheet, not from your Tailwind build.**
+  Its position, size and edge came from bare utility classes, which exist only where a build
+  scanned this package — so an application that did not would get a panel with no position at
+  all. Alert dialog and modal already shipped theirs; the drawer was the one that did not. See
+  [Drawer](https://docs.wirekit.app/components/drawer).
+- **The navigation drawer is a dialog to the keyboard, not only to the mouse.** Below the
+  breakpoint it slid over the page like a modal sheet and had none of a dialog's semantics: no
+  `role`, no `aria-modal`, no focus trap, and Escape did nothing. Tab walked straight out of it
+  into the page behind. See [App Shell](https://docs.wirekit.app/components/app-shell).
+- **An expanded rail no longer makes the mobile drawer wider than the phone.** The drawer took
+  the rail's expanded width with it, so a reader who had expanded the rail on a desktop got a
+  sheet wider than the viewport on their phone. See
+  [App Shell](https://docs.wirekit.app/components/app-shell).
+- **The shell's columns stay in the layout above the breakpoint while the page is still
+  booting.** A shell column is a drawer below `lg` and an ordinary column above it, and it was
+  hidden either way until Alpine ran — so the content column painted across the full width and
+  jumped aside when the columns arrived. Measured on a console shell at 0.1788 cumulative layout
+  shift against a budget of 0.1, and it was the page's entire CLS. See
+  [App Shell](https://docs.wirekit.app/components/app-shell).
+- **The rail no longer flashes a horizontal scrollbar or slides its rows while it expands.** Its
+  scroller asked only for a vertical axis, and CSS promotes the other one to `auto` as soon as
+  one axis scrolls — so the region was horizontally scrollable by omission. Separately, a
+  module name sat in a line box taller than the glyph beside it, and every entry grew by the
+  difference the moment its name appeared. See
+  [App Rail](https://docs.wirekit.app/components/app-rail).
+- **The script tag carries `data-navigate-once`, so a client-side navigation does not execute
+  the bundle again.** The bundle registers Alpine components and document listeners, which is a
+  once-per-document job; without the attribute Livewire re-ran it on every hop and the listener
+  set grew for as long as somebody navigated without a full reload. See
+  [Integration](https://docs.wirekit.app/getting-started/integration).
+
+### Documentation
+
+- **The one diagnostic WireKit emits at `error` level is now documented as such.** A missing
+  package stylesheet makes every dialog and drawer render inside the page instead of over it —
+  finished-looking and unusable — so the message is an error rather than a warning. The
+  consequence worth knowing beforehand is that a console check gating on `error` goes red in that
+  situation over an install step rather than a defect. See
+  [Console Output Baseline](https://docs.wirekit.app/extending/console-output-baseline).
+- **The marketing icon preset no longer puts a number on its own size.** Its docblock claimed a
+  count several times what the file declares: v2.37.0 moved the common semantic names into every
+  base preset and the sentence stayed behind. A reader deciding whether to stack the extension
+  at all was reading a figure that had been wrong for four minors — and the words it implied
+  were missing had in fact become reachable from every preset. See
+  [Icon](https://docs.wirekit.app/components/icon).
+- **The shipped asset sizes match the files again.** Four rows in the bundle catalog and three
+  on the dependencies page had drifted; the readable stylesheet's row now names its property
+  instead of a figure that moves whenever a rule gains a comment. See
+  [Dependencies](https://docs.wirekit.app/dependencies).
+
+---
+
 ## [2.37.2] — 2026-08-27
 
 Patch. v2.37.1 gave the icon alias tables a column for every base preset and left the

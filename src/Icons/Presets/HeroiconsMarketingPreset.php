@@ -7,8 +7,14 @@ namespace Pushery\WireKit\Icons\Presets;
 use Pushery\WireKit\Contracts\IconPreset;
 
 /**
- * Heroicons marketing extension — stackable preset adding ~30 marketing &
- * landing-page aliases on top of the base Heroicons preset.
+ * Heroicons marketing extension — a stackable preset carrying the marketing and
+ * landing-page names the base Heroicons preset does not.
+ *
+ * It is deliberately small, and it got smaller: v2.37.0 moved the common semantic
+ * names into every base preset, so the vocabulary a landing page usually reaches for
+ * resolves without stacking this at all. What is left here are the names that stayed
+ * heroicons-specific. Read icons() for the current set rather than trusting a number
+ * in a comment — this line said "~30" for four minors while the file declared seven.
  *
  * All identifiers use the Mini (heroicon-m-*) style to match HeroiconsPreset.
  *
