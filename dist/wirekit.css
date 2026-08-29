@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.38.1 — MIT License
+ * WireKit CSS v2.39.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -254,7 +254,7 @@
        `band` is the HALF-WIDTH (in ch) of the bright traveling highlight;
        `angle` tilts the band. */
     --shimmer-wk-duration: 2s;
-    --shimmer-wk-band: 3ch;
+    --shimmer-wk-band: calc(3 * var(--ch-wk-sans, 1ch));
     --shimmer-wk-angle: 105deg;
     /* Indicator badge (<x-wirekit::indicator>): how far the badge is nudged out
        past its target's corner. 0 centers it exactly on the corner. Override per
@@ -422,8 +422,22 @@
 
     /* Readable line-length measure for long-form prose (<x-wirekit::prose>).
        ~65ch is the established comfortable reading width; `wide` relaxes it. */
-    --measure-wk: 65ch;
-    --measure-wk-wide: 78ch;
+    /* Measured in the digit-zero advance of the loaded face rather than in `ch`.
+       `ch` IS that advance, so a box sized in it changes width the moment
+       `font-display: swap` exchanges the fallback for the web font -- and the
+       metric-matched fallback does not prevent it: `size-adjust` corrects a
+       frequency-weighted mean over 27 characters, which keeps a paragraph the same
+       LENGTH, while `ch` reads one glyph. For Inter the two ratios are 107.47%
+       against 113.53%, and that 5.64% is about 35px on a 65ch measure -- a visible
+       reflow of long-form text on every first load.
+
+       `--ch-wk-*` is declared by the font CSS this package ships, never here: two
+       `:root` declarations of one name have equal specificity, and which of them won
+       would then depend on the order a developer happens to include them in. The
+       `1ch` fallback is what applies when no WireKit font stylesheet is loaded, and
+       is exactly the old behavior. */
+    --measure-wk: calc(65 * var(--ch-wk-sans, 1ch));
+    --measure-wk-wide: calc(78 * var(--ch-wk-sans, 1ch));
 
     /* ─── Overlay: Backdrop ─── */
     --color-wk-overlay: oklch(0% 0 0 / 0.5);
@@ -4454,7 +4468,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     --reading-toc-padding-y: 0.5rem;
     --reading-toc-padding-x: 1rem;
     --reading-toc-gap: 1rem;
-    --reading-toc-link-max-width: 24ch;
+    --reading-toc-link-max-width: calc(24 * var(--ch-wk-sans, 1ch));
     /* Horizontal gutter the article reserves on its inline-end edge so the
        fixed-position reading-spine never overlaps body text. Applied ONLY
        at md+ (see .wk-reading-content below) because the spine itself is
