@@ -10,6 +10,58 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.40.0] — 2026-08-29
+
+Minor. Two silent-failure repairs — a rail that renders the wrong state on a server that
+keeps its workers alive, and a table that accepted a valid intent and drew it gray — plus a
+documentation page that described a mechanism replaced months ago.
+
+Classified MINOR rather than PATCH for one reason: the table now accepts three intent values
+it previously rejected, and widening what an input accepts is additive.
+
+### Added
+
+- **`<x-wirekit::data-table>`'s badge columns accept every intent `<x-wirekit::badge>` does.**
+  A column can map a cell value to an intent — `'intents' => ['processing' => 'accent']` — and
+  the set was four values wide while the badge component validates against seven. Naming
+  `primary`, `accent` or `info` produced a gray pill with no warning, which reads as "no
+  status" rather than as a value the table did not know. All seven now render, and `primary`
+  and `info` use the same accent-derived strengths the badge itself uses, so the word means
+  the same thing in a cell as on a badge. See
+  [Data Table](https://docs.wirekit.app/components/data-table).
+
+### Fixed
+
+- **`<x-wirekit::app-rail>` reads its persisted width from the request, not from the process.**
+  With `persist-driver="cookie"`, the server half read `$_COOKIE`, which PHP fills once per
+  PROCESS rather than once per request. Under `fpm-fcgi` those are the same thing; on any
+  server that keeps a worker alive across requests — Octane, FrankenPHP, RoadRunner — it is
+  filled at boot and never again. The rail then rendered collapsed and the browser widened it
+  a frame later, moving the content column by 187px. Nothing threw; it rendered the other
+  state. The request is asked first now, and the process globals remain as a fallback so an
+  application that has not excepted the cookie from `EncryptCookies` keeps working exactly as
+  before. See [App Rail](https://docs.wirekit.app/components/app-rail).
+
+### Changed
+
+- **The self-contained bundles carry Alpine 3.16.3**, up from 3.15 and inside the range already
+  declared. `wirekit-alpine.js` grows from 282 to 290 KB raw, `wirekit-alpine.csp.js` from 297
+  to 305 KB. Nothing changes for a developer who supplies their own Alpine. See
+  [Integration](https://docs.wirekit.app/getting-started/integration).
+
+### Documentation
+
+- **[Checkbox](https://docs.wirekit.app/components/checkbox) describes how the third state
+  actually survives a re-render.** The page credited an Alpine `x-init` snippet, which is the
+  mechanism that was replaced — `x-init` runs once, while the indeterminate state usually
+  arrives after the first render and is lost when a round trip morphs the element. The page
+  now names the attribute the component watches, explains why an effect over a server-rendered
+  value would not help, and says what to look for when verifying it from outside the package.
+- **[App Rail](https://docs.wirekit.app/components/app-rail) carries the `EncryptCookies` note
+  the theme controller has always had.** The cookie is written by JavaScript and therefore
+  arrives unencrypted, so Laravel's default middleware drops it on the server read unless the
+  key is excepted.
+
 ## [2.39.0] — 2026-08-29
 
 Minor. One new primitive, one new check in the CSP audit, and a font-loading fix that moved
@@ -2028,7 +2080,7 @@ Every addition here is opt-in: an unchanged call site renders exactly what it di
 
   `bell` and `bell-slash` move out of the `heroicons-app` extension into the base set. Same glyph, so nothing rendered changes; what changes is that they now resolve without stacking an extension.
 
-- **The [sidebar](https://docs.wirekit.app/components/sidebar)'s scrolling list shows where it continues.** A long navigation column scrolls, and a scrollbar alone is easy to miss on a track that fades when idle. The list now carries the same edge shadows `sticky-panel` uses: at the top there is a shadow below the fold and none above it, and at the bottom the reverse. Sentinel-driven rather than masked, so the shadow appears exactly when there is somewhere left to scroll — a mask dims the edge whether or not anything follows, which leaves the last item greyed out once you have reached it.
+- **The [sidebar](https://docs.wirekit.app/components/sidebar)'s scrolling list shows where it continues.** A long navigation column scrolls, and a scrollbar alone is easy to miss on a track that fades when idle. The list now carries the same edge shadows `sticky-panel` uses: at the top there is a shadow below the fold and none above it, and at the bottom the reverse. Sentinel-driven rather than masked, so the shadow appears exactly when there is somewhere left to scroll — a mask dims the edge whether or not anything follows, which leaves the last item grayed out once you have reached it.
 
 - **`charts.apex_license` is in the published config.** The doctor told you to record your ApexCharts tier "in config/wirekit.php" and the file shipped without that key, so the instruction pointed at nothing. The `charts` block also never listed `apexcharts` among its adapters, though the component and the script bundle both offer it.
 
