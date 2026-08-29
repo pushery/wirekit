@@ -51,7 +51,25 @@
     // Soft tinted intent pills for `cellType: 'badge'` columns. Defined here (PHP
     // string literals) so Tailwind compiles them AND the drift inventory traces
     // them; the cell binds `:class="badgeClasses[badgeIntent(...)]"`.
+    //
+    // ⚠️ ALL SEVEN of `badge`'s intents, and the count is the point. This map and
+    // `badgeIntent()` in the JS both carried FOUR — `success`, `warning`, `danger`,
+    // `neutral` — while `<x-wirekit::badge>` validates against seven. A column
+    // declaring `'intents' => ['processing' => 'accent']` therefore named a value the
+    // badge component accepts, and this table silently rendered it `neutral`. Nothing
+    // warned; the pill simply came out gray, which reads as "no status" rather than as
+    // a rejected value.
+    //
+    // `primary` and `info` have no base color of their own — they are soft accents, and
+    // `badge` says so in its own branch. The strengths below mirror badge's exactly
+    // (info 8%, primary 12%, accent the solid fill) so the same word means the same
+    // thing in a table cell as on a badge. That equivalence IS the fix; three
+    // indistinguishable tints of one hue would have closed the vocabulary gap and
+    // reopened it as a visual one.
     $badgeClasses = [
+        'primary' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-accent-content)]',
+        'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
+        'info' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_8%,var(--color-wk-bg))] text-[color:var(--color-wk-accent-content)]',
         'success' => 'bg-[color-mix(in_oklch,var(--color-wk-success)_15%,transparent)] text-[color:var(--color-wk-success-text)]',
         'warning' => 'bg-[color-mix(in_oklch,var(--color-wk-warning)_15%,transparent)] text-[color:var(--color-wk-warning-text)]',
         'danger' => 'bg-[color-mix(in_oklch,var(--color-wk-danger)_15%,transparent)] text-[color:var(--color-wk-danger-text)]',

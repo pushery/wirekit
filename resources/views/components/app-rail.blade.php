@@ -75,13 +75,38 @@
     $expandable = BooleanProp::from($expandable, false);
     $persistDriver = WireKit::validateProp('app-rail', 'persistDriver', $persistDriver, ['local', 'cookie']);
 
-    // The server half of the cookie driver. Read straight from $_COOKIE rather than through
-    // the request, because the value is written by the browser and Laravel's cookie
-    // encryption would refuse to decrypt it — correctly, since it never encrypted it. What
-    // comes back is used only as a boolean comparison, so an arbitrary value cannot reach
-    // the page; anything that is not '1' reads as collapsed.
-    if ($expanded === null && $persistDriver === 'cookie' && $persist !== null && isset($_COOKIE[$persist])) {
-        $expanded = $_COOKIE[$persist] === '1';
+    // The server half of the cookie driver. The REQUEST is asked first and the superglobal
+    // only as a fallback, and that order is the whole fix rather than a detail.
+    //
+    // PHP fills `$_COOKIE` once per PROCESS, not once per request. Under `fpm-fcgi` those are
+    // the same thing — a process serves one request and dies — which is why reading it alone
+    // looked correct for as long as it did. Every server that keeps a worker alive across
+    // requests (Octane, FrankenPHP, RoadRunner) fills it at boot, when there is no request,
+    // and never again. Measured on one page with one cookie under two SAPIs: present under
+    // FPM, EMPTY under a long-lived CLI SAPI, where the rail then rendered collapsed and the
+    // client widened it a frame later — 187px of column movement, 0.1097 CLS against a
+    // budget of 0.1. Nothing throws; it simply renders the other state.
+    //
+    // The superglobal stays as a FALLBACK because dropping it would be a regression, not a
+    // cleanup. The cookie is written by JavaScript, so it arrives as plaintext, and Laravel's
+    // `EncryptCookies` nulls a plaintext cookie it cannot decrypt unless the name is excepted
+    // — which is what `theme-controller` has always documented. An application on FPM that
+    // never added that exception is served by `$_COOKIE` today, and must keep working.
+    //
+    // The fallback can fail to answer but cannot answer WRONGLY: on a long-lived server
+    // nothing writes `$_COOKIE` per request, so it is empty rather than another visitor's
+    // value. Either way the result is used only as a boolean comparison — anything that is
+    // not '1' reads as collapsed, so no arbitrary value reaches the page.
+    if ($expanded === null && $persistDriver === 'cookie' && $persist !== null) {
+        $stored = request()->cookie($persist);
+
+        if (! is_string($stored)) {
+            $stored = isset($_COOKIE[$persist]) && is_string($_COOKIE[$persist]) ? $_COOKIE[$persist] : null;
+        }
+
+        if ($stored !== null) {
+            $expanded = $stored === '1';
+        }
     }
 
     $expanded = BooleanProp::from($expanded, false);

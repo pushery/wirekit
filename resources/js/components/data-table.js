@@ -195,7 +195,12 @@ export default function wirekitDataTable(config = {}) {
          */
         badgeIntent(value, col = null) {
             const v = String(value).toLowerCase();
-            const known = ['success', 'warning', 'danger', 'neutral'];
+            // The SAME seven `<x-wirekit::badge>` validates against. This list held four
+            // until 2026-08-29, so a column declaring `'intents' => ['processing' => 'accent']`
+            // named a value the badge component accepts and got `neutral` back — silently,
+            // because an unknown intent falls back rather than complaining. One library, one
+            // word, two vocabularies is the defect; the fallback only hid it.
+            const known = ['primary', 'accent', 'info', 'success', 'warning', 'danger', 'neutral'];
 
             if (col && col.intents) {
                 for (const key of Object.keys(col.intents)) {

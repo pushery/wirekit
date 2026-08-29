@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.39.0 — MIT License
+ * WireKit CSS v2.40.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -1122,7 +1122,7 @@
 
    These exist because `fade` is not a substitute. That mask is STATIC: it dims
    the edge whether or not anything follows, so at a strip's end the last item
-   stays greyed out as if it were unreachable. The overlay shadows are driven by
+   stays grayed out as if it were unreachable. The overlay shadows are driven by
    sentinels through an IntersectionObserver, so they appear exactly when there
    is more to scroll toward — and that observer never cared which axis it was
    watching. Only the names and the CSS were pinned to one.
