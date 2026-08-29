@@ -92,7 +92,17 @@
         default => WireKit::validateProp('editor', 'size', $size, ['sm', 'md', 'lg']),
     };
 
-    $id = $id ?? ($name ? 'wk-editor-' . Str::slug($name) : 'wk-editor-' . Str::random(6));
+    // STABLE across re-renders, which the old `Str::random(6)` was not. Here the two
+    // halves are on opposite sides of the server/client line: the <label id> and the
+    // error/hint <p id> are re-rendered per request, while aria-labelledby and
+    // aria-describedby are serialized into the x-data payload and applied ONCE, at
+    // mount, as Tiptap editorProps. A re-minted id therefore leaves the contenteditable
+    // announcing with no accessible name at all (WCAG 4.1.2) — and label[for] cannot
+    // reach a contenteditable div, so this reference wiring is the only thing naming it.
+    $id = \Pushery\WireKit\Support\DomId::unique(
+        $id ?? ($name ? 'wk-editor-'.Str::slug($name) : null),
+        'wk-editor-'
+    );
 
     // Error detection: explicit prop OR Laravel validation bag.
     $hasError = $error || ($name && ($errors ?? null)?->has($name));

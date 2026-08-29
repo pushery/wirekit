@@ -38,7 +38,12 @@
 
     // Each item needs a stable id so Alpine can track open/closed state in the
     // parent's `opened` array, and so aria-controls / aria-labelledby can pair.
-    $itemId = $id ?? 'wk-accordion-item-' . Str::random(6);
+    // STABLE across re-renders, which the old `Str::random(6)` was not. Both halves of
+    // BOTH pairings descend from this one value — the button carries id + aria-controls,
+    // the panel carries id + aria-labelledby — so a re-mint breaks the accordion's entire
+    // relationship in one step, while every attribute stays well-formed. An item inside a
+    // keyed loop or behind an @if is re-rendered on its own, which is the ordinary case.
+    $itemId = \Pushery\WireKit\Support\DomId::unique($id, 'wk-accordion-item-');
     $buttonId = $itemId . '-button';
     $panelId = $itemId . '-panel';
 

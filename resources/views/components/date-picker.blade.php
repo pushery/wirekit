@@ -194,6 +194,14 @@
              submission of the {name}[start] / {name}[end] fields still works. --}}
         <div
             x-data="{ s: {{ \Pushery\WireKit\Support\AlpinePayload::from($startValue) }}, e: {{ \Pushery\WireKit\Support\AlpinePayload::from($endValue) }} }"
+            {{-- min-w-0 on the two fields is what makes this row survive a narrow
+                 container. A flex item defaults to `min-width: auto`, so it cannot shrink
+                 past its intrinsic content width — and a native date input has a large one
+                 (the format text plus the picker button). Two of those plus the separator
+                 exceed anything under roughly 330px, and a preview frame that does not
+                 scroll CLIPS the excess: the end date becomes unreachable on a phone.
+                 Measured at a 310px frame before the fix: 25px past the edge, and the
+                 fields at 139/155 rather than an even split. --}}
             class="flex items-center gap-[var(--padding-wk-x-sm)]"
         >
             <input
@@ -209,7 +217,7 @@
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @unless($label) aria-label="{{ __(':label start', ['label' => $fallbackLabel]) }}" @endunless
-                class="wk-field {{ $inputClasses }}"
+                class="wk-field min-w-0 flex-1 {{ $inputClasses }}"
             />
             <span aria-hidden="true" class="shrink-0 text-[color:var(--color-wk-text-muted)]">&ndash;</span>
             <input
@@ -225,7 +233,7 @@
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 aria-label="{{ __(':label end', ['label' => $label ?: $fallbackLabel]) }}"
-                class="wk-field {{ $inputClasses }}"
+                class="wk-field min-w-0 flex-1 {{ $inputClasses }}"
             />
         </div>
     @else
