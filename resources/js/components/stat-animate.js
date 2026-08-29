@@ -327,5 +327,21 @@ export default () => ({
             this._replayListener = null;
         }
         this._runCounter = null;
+
+        // A torn-down component must not read as a running one.
+        //
+        // Without these two, teardown leaves `_started` true and `progress` wherever it
+        // stopped, while every timer and the counter itself are null. Through the Alpine
+        // handle that is indistinguishable from "started, then stalled" — and telling those
+        // two apart is exactly what a reader needs when a counter is sitting on zero. It
+        // cost two rounds of cross-repo measurement: a caller re-mounting this subtree saw
+        // `_started: true` with nothing armed and reasonably read it as a stalled run, when
+        // the component had in fact been destroyed 100ms after being initialized.
+        //
+        // `_destroyed` is the positive signal; resetting `_started` removes the misleading
+        // one. Neither changes behavior — after teardown `replay()` already returns on the
+        // null `_runCounter` above.
+        this._started = false;
+        this._destroyed = true;
     },
 });

@@ -24,7 +24,11 @@
 
     // The visible heading IS the group's accessible name (via aria-labelledby) —
     // not a duplicate aria-label, which would double-announce the title.
-    $titleId = 'usage-meter-panel-'.Str::random(6).'-title';
+    // STABLE across re-renders, which the old `Str::random(6)` was not: the group's
+    // aria-labelledby and the heading's id are the two halves of one pairing, and a usage
+    // panel is a natural wire:poll surface — the very place a fresh id per render costs the
+    // group its accessible name on every tick.
+    $titleId = \Pushery\WireKit\Support\DomId::unique(null, 'usage-meter-panel-').'-title';
 
     // Token-driven gap; the grid collapses to a single column on small screens
     // so each meter keeps a readable width (mobile-first).

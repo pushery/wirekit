@@ -83,7 +83,17 @@
     //   https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
     // Key behavior: user types to filter options, uses arrow keys to navigate
     // the filtered list, Enter to select, Escape to close.
-    $comboId = $id ?? ($name ? 'wk-combobox-' . $name : 'wk-combobox-' . Str::random(6));
+    // STABLE across re-renders, which the old `Str::random(6)` was not. The listbox
+    // teleports to #wk-overlay-root, so it sits OUTSIDE the subtree Livewire morphs:
+    // a fresh id per render updates the input's aria-controls while the panel still in
+    // the document carries the id from the render before it. combobox.js compounds it —
+    // it freezes _listId/_inputId at init and resolves them with getElementById, so after
+    // one round trip _place() resolves null and positions nothing. Same defect, same
+    // reason, same fix as `dropdown`; its comment carries the full reasoning.
+    $comboId = \Pushery\WireKit\Support\DomId::unique(
+        $id ?? ($name ? 'wk-combobox-'.$name : null),
+        'wk-combobox-'
+    );
     $listId = $comboId . '-list';
     $errorId = $comboId . '-error';
 

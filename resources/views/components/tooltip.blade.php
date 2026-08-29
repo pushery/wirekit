@@ -43,7 +43,11 @@
     WireKit::warnUnknownProps('tooltip', $attributes->getAttributes());
 
     // Generate unique ID for ARIA association between trigger and tooltip
-    $tooltipId = 'wk-tooltip-' . \Illuminate\Support\Str::random(12);
+    // STABLE across re-renders, which the old `Str::random(12)` was not. The trigger's
+    // aria-describedby and the bubble's id are the two halves of one pairing; a fresh id
+    // per render leaves them naming different things, and both stay well-formed so
+    // nothing in the markup looks wrong. A screen reader simply stops announcing the tip.
+    $tooltipId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-tooltip-');
 
     // Tooltip panel classes — inverted colors, small rounded box
     // w-max ensures the tooltip sizes to its content (not the trigger width)

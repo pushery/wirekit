@@ -10,6 +10,39 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.38.1] — 2026-08-28
+
+Patch. Three fixes, no new API. The largest is an accessibility one that had been shipping
+quietly: seven components minted a fresh DOM id on every render, so after any partial
+re-render the attribute pointing at an element and the element's own id named different
+things — both well-formed, and a screen reader simply stopped announcing the control.
+
+### Fixed
+
+- **A restarted or re-rendered component no longer loses the link between a control and the
+  thing it points at.** `combobox`, `editor`, `message`, `progress`, `tooltip`, `accordion`
+  and `usage-meter` derived their internal ids from a random value, which is stable only while
+  the whole page renders in one pass. As soon as one part of it is refreshed on its own,
+  `aria-controls`, `aria-labelledby`, `aria-describedby` and `label[for]` were left naming an
+  id from the render before, while the element itself had moved on to a new one. Nothing
+  looks wrong in the markup — that is why it survived — and the only witness is somebody using
+  a screen reader. The ids are now counted rather than randomized, so they survive a re-render.
+  Passing your own `id` or `name` behaved correctly before and is unchanged. See
+  [Combobox](https://docs.wirekit.app/components/combobox),
+  [Editor](https://docs.wirekit.app/components/editor) and
+  [Tooltip](https://docs.wirekit.app/components/tooltip).
+- **A date range fits a narrow container.** `<x-wirekit::date-picker range>` renders two native
+  date inputs side by side, and neither could shrink below the width its own text and picker
+  button need. In anything under roughly 330px the pair spilled out of its container, and where
+  that container does not scroll the second field was clipped away entirely — unreachable on a
+  phone. Both fields may now shrink and share the row. See
+  [Date picker](https://docs.wirekit.app/components/date-picker).
+- **A torn-down animated stat no longer reports itself as still running.** `<x-wirekit::stat
+  animate>` left its started flag set after teardown while every timer was already released, so
+  code inspecting the component could not tell a destroyed counter from one that had stalled
+  mid-count. It now says which it is. No behavior changes; the counter animated correctly in
+  both cases. See [Stat](https://docs.wirekit.app/components/stat).
+
 ## [2.38.0] — 2026-08-28
 
 Minor. The overlay work of the last two releases reached the drawer: its geometry ships in the

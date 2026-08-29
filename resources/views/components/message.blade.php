@@ -185,7 +185,14 @@
         ? $statusText.' '.__('at').' '.$statusTimeText
         : $statusText;
 
-    $messageId = 'message-' . md5($authorName . ($timestamp ?? uniqid()));
+    // STABLE across re-renders. With a $timestamp the hash is deterministic and always
+    // was; without one the old `uniqid()` made it fresh on every render — and a message
+    // list is typically inside a polled thread, so that is the common path rather than
+    // the rare one. `aria-labelledby` and the header's id then name different things
+    // every tick, both well-formed, and the article loses its accessible name.
+    $messageId = $timestamp !== null
+        ? 'message-'.md5($authorName.$timestamp)
+        : \Pushery\WireKit\Support\DomId::unique(null, 'message-');
 @endphp
 
 <article
