@@ -146,6 +146,10 @@ class CspAuditCommand extends Command
 
         $found = $this->collectExpressions($paths);
 
+        // A placement question, not an expression one: collected here so it is reported even
+        // when every expression in the tree parses cleanly, which is the ordinary case.
+        $inScript = $this->collectEncoderInScript($paths);
+
         // A run that measured nothing must never look like a clean run.
         //
         // This is the failure that makes an audit worse than no audit: it reports
@@ -226,12 +230,14 @@ class CspAuditCommand extends Command
                 'warnings' => $warnings,
                 'unresolved' => count($unresolved),
                 'unresolved_expressions' => $unresolved,
+                'encoder_in_script' => count($inScript),
+                'encoder_in_script_hits' => $inScript,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG));
 
-            return $offenders === [] ? self::SUCCESS : self::FAILURE;
+            return $offenders === [] && $inScript === [] ? self::SUCCESS : self::FAILURE;
         }
 
-        return $this->report($found, $offenders, $unchecked, $warnings, $unresolved);
+        return $this->report($found, $offenders, $unchecked, $warnings, $unresolved, $inScript);
     }
 
     /**
@@ -250,6 +256,87 @@ class CspAuditCommand extends Command
         $viewPaths = (array) config('view.paths', []);
 
         return array_values(array_filter($viewPaths, 'is_dir'));
+    }
+
+    /**
+     * Where a package encoder sits inside a `<script>` block.
+     *
+     * `AlpinePayload::from()` is for a directive ATTRIBUTE, and its docblock says so. In a
+     * script context HTML escaping does not apply, so a payload containing the closing-tag
+     * sequence ends the block and turns everything after it into markup. The docblock is a
+     * true statement that only reaches whoever reads it; this reaches the build.
+     *
+     * ⚠️ This is the arm rather than the flag, and the difference is reach. Escaping every
+     * slash in the output defuses ONE vector of a context the encoder was never meant for —
+     * it makes the placement less harmful without making it right, and it costs every
+     * developer a source full of escaped slashes for a mistake most of them never make. A
+     * static check says "this is in the wrong place", at build time, whichever vector
+     * happens to matter. Decided 2026-08-28; the reasoning is in the ticket this came from.
+     *
+     * This library holds its own views to the same rule, and has since the encoder shipped —
+     * a build here fails if a payload appears inside a script block anywhere in the package.
+     * What is new is that a developer can now run the check over theirs.
+     *
+     * @param  array<int, string>  $paths
+     * @return array<int, array{file: string, line: int, encoder: string}>
+     */
+    private function collectEncoderInScript(array $paths): array
+    {
+        $found = [];
+
+        foreach ($paths as $path) {
+            /** @var \RecursiveIteratorIterator<\RecursiveDirectoryIterator> $files */
+            $files = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($path, \RecursiveDirectoryIterator::SKIP_DOTS)
+            );
+
+            foreach ($files as $file) {
+                if (! $file->isFile() || ! str_ends_with($file->getFilename(), '.blade.php')) {
+                    continue;
+                }
+
+                $contents = (string) file_get_contents($file->getPathname());
+
+                foreach (self::encoderInScriptHits($contents) as $hit) {
+                    $found[] = ['file' => $file->getPathname()] + $hit;
+                }
+            }
+        }
+
+        return $found;
+    }
+
+    /**
+     * The detector, kept separate so a test can drive it without a filesystem.
+     *
+     * @return array<int, array{line: int, encoder: string}>
+     */
+    public static function encoderInScriptHits(string $source): array
+    {
+        $hits = [];
+
+        // Non-greedy to the first closing tag: a page with two script blocks must be two
+        // spans, not one span swallowing the markup between them.
+        if (! preg_match_all('/<script\b.*?<\/script>/is', $source, $matches, PREG_OFFSET_CAPTURE)) {
+            return $hits;
+        }
+
+        foreach ($matches[0] as [$block, $offset]) {
+            foreach (['AlpinePayload'] as $encoder) {
+                $at = strpos($block, $encoder);
+
+                if ($at === false) {
+                    continue;
+                }
+
+                $hits[] = [
+                    'line' => substr_count($source, "\n", 0, $offset + $at) + 1,
+                    'encoder' => $encoder,
+                ];
+            }
+        }
+
+        return $hits;
     }
 
     /**
@@ -652,8 +739,9 @@ class CspAuditCommand extends Command
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, error: string}>  $unchecked
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, warning: string}>  $warnings
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, unresolved: string|null}>  $unresolved
+     * @param  array<int, array{file: string, line: int, encoder: string}>  $inScript
      */
-    private function report(array $found, array $offenders, array $unchecked, array $warnings = [], array $unresolved = []): int
+    private function report(array $found, array $offenders, array $unchecked, array $warnings = [], array $unresolved = [], array $inScript = []): int
     {
         // Named rather than implied. "Scanned" reads as "checked, and it works", and
         // the difference between what this measures and what a reader hears is the
@@ -792,6 +880,41 @@ class CspAuditCommand extends Command
             $this->line("  Alpine.data('reload', () => ({ reload() { window.location.reload() } }))");
             $this->line('  <div x-data="reload" x-on:locale-changed.window="reload">');
             $this->line('');
+        }
+
+        // A placement finding, printed before the verdict for the same reason the unchecked
+        // ones are: the verdict must be the last thing on screen and must not be readable
+        // without this qualifying it.
+        if ($inScript !== []) {
+            $this->line('');
+            $this->error(sprintf(
+                '%d Alpine payload(s) sit inside a <script> block, where HTML escaping does not reach:',
+                count($inScript),
+            ));
+            $this->line('');
+
+            foreach (array_slice($inScript, 0, 10) as $entry) {
+                $this->line(sprintf('  %s:%d  %s', $entry['file'], $entry['line'], $entry['encoder']));
+            }
+
+            if (count($inScript) > 10) {
+                $this->line(sprintf('  …and %d more.', count($inScript) - 10));
+            }
+
+            $this->line('');
+            $this->line('A payload containing the closing-tag sequence ends the block there, and every');
+            $this->line('character after it is parsed as markup rather than as data. Nothing escapes it in');
+            $this->line('this context — that is what a script context means.');
+            $this->line('');
+            $this->line('AlpinePayload is the encoder for a directive ATTRIBUTE. Inside a script block the');
+            $this->line('right one is Laravel\'s Js::from, which escapes the angle brackets as well. In an');
+            $this->line('attribute Js::from is wrong for the opposite reason, so this is a placement');
+            $this->line('question rather than a preference.');
+            $this->line('');
+        }
+
+        if ($offenders === [] && $inScript !== []) {
+            return self::FAILURE;
         }
 
         if ($offenders === []) {

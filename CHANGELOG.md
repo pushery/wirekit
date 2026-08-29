@@ -10,6 +10,48 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.39.0] — 2026-08-29
+
+Minor. One new primitive, one new check in the CSP audit, and a font-loading fix that moved
+long-form text 35px on every first paint.
+
+### Added
+
+- **`<x-wirekit::band>` — the strip between two areas of a window.** Padding, and one rule on
+  one edge: the search field under a toolbar, the composer under a message list, the action row
+  along the bottom. It was hand-rolled in two dozen places across the blueprint catalog because
+  nothing covered it. `edge` takes `top`, `bottom`, `both` or `none`; `padding` and `surface`
+  sit on the token scales. It renders a plain element with no ARIA role, deliberately — a band
+  is chrome, and `role="toolbar"` would promise arrow-key navigation between controls that
+  nothing implements. Use `as="header"` or `as="footer"` where the strip genuinely is a
+  landmark. See [Band](https://docs.wirekit.app/components/band).
+- **`wirekit:csp-audit` now reports an Alpine payload placed inside a `<script>` block.** HTML
+  escaping does not apply in a script context, so a payload containing the closing-tag sequence
+  ends the block and everything after it is parsed as markup. The encoder's documentation has
+  always said it belongs in a directive attribute; the audit now says so at build time, over
+  your templates rather than only ours. See
+  [CLI reference](https://docs.wirekit.app/cli-reference).
+
+### Fixed
+
+- **Text measured in `ch` no longer reflows when the web font arrives.** A `ch` is the advance
+  width of the digit zero in whichever face is rendering, so with `font-display: swap` every
+  box sized in it resized mid-load. The metric-matched fallback did not prevent this: it
+  corrects a frequency-weighted average across many characters, which is what keeps a paragraph
+  the same overall length, while `ch` reads one glyph. For the default sans face the two
+  differed by about five per cent — roughly 35px on a 65-character measure, visible as
+  long-form text jumping on the first visit to every page. The shipped font stylesheets now
+  carry the measured value and the affected tokens use it. Nothing changes for a developer
+  using their own faces. See [Theming](https://docs.wirekit.app/theming).
+
+### Documentation
+
+- **[Events](https://docs.wirekit.app/events) — the complete inventory of what WireKit
+  dispatches**, split by direction: the events you listen for, and the ones you dispatch to
+  drive a component. It also settles the naming convention for new events
+  (`wirekit:<component>-<happening>`) and marks which existing names sit on older forms.
+  Nothing is renamed — every current name keeps working for the whole of v2.
+
 ## [2.38.1] — 2026-08-28
 
 Patch. Three fixes, no new API. The largest is an accessibility one that had been shipping

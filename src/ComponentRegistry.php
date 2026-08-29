@@ -63,6 +63,7 @@ class ComponentRegistry
             'logo-cloud' => ['category' => 'Marketing', 'description' => 'Partner / customer logo wall, exposed as a labeled list'],
             'main' => ['category' => 'Layout', 'description' => 'Primary content area in app-shell layouts'],
             'resizable' => ['category' => 'Layout', 'description' => 'Resizable panel layout'],
+            'band' => ['category' => 'Layout', 'description' => 'Edge-to-edge strip with padding and one rule'],
             'row' => ['category' => 'Layout', 'description' => 'Horizontal flex container'],
             'section' => ['category' => 'Layout', 'description' => 'Full-width page section with background and padding'],
             'spacer' => ['category' => 'Layout', 'description' => 'Flexible space filler in flex layouts'],

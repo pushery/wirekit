@@ -51,4 +51,16 @@
     descent-override: 27.64%;
     line-gap-override: 0.0%;
 }
+
+/*
+ * The advance of the digit zero in Open Sans, in em. `ch` is defined as exactly
+ * this, so a box measured in `ch` changes width when the swap happens -- and
+ * size-adjust above does NOT prevent it, because it corrects a different ratio:
+ * a frequency-weighted mean over 27 characters, which is what keeps a paragraph
+ * the same length. A token that wants a stable `ch` measure multiplies by this
+ * rather than using `ch` directly.
+ */
+:root {
+    --ch-wk-sans: 0.571777em;
+}
 /* --- end WireKit fallback face --- */

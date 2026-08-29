@@ -165,6 +165,20 @@
             "code": "<x-wirekit::row gap=\"xs\" :wrap=\"true\">\n    <x-wirekit::badge intent=\"primary\">Primary</x-wirekit::badge>\n    <x-wirekit::badge intent=\"success\">Success</x-wirekit::badge>\n    <x-wirekit::badge intent=\"warning\">Warning</x-wirekit::badge>\n    <x-wirekit::badge intent=\"danger\">Danger</x-wirekit::badge>\n    <x-wirekit::badge intent=\"neutral\">Neutral</x-wirekit::badge>\n</x-wirekit::row>"
         }
     ],
+    "band": [
+        {
+            "title": "A band under a header",
+            "code": "<x-wirekit::stack gap=\"none\">\n    <x-wirekit::band edge=\"bottom\">\n        <x-wirekit::row justify=\"between\" align=\"center\">\n            <x-wirekit::text weight=\"medium\">Inbox</x-wirekit::text>\n            <x-wirekit::badge>24</x-wirekit::badge>\n        </x-wirekit::row>\n    </x-wirekit::band>\n    <x-wirekit::band edge=\"none\" padding=\"md\">\n        <x-wirekit::text>Message list goes here.</x-wirekit::text>\n    </x-wirekit::band>\n</x-wirekit::stack>"
+        },
+        {
+            "title": "Top, bottom and both",
+            "code": "<x-wirekit::stack gap=\"none\">\n    <x-wirekit::band edge=\"bottom\"><x-wirekit::text size=\"sm\">edge=\"bottom\"</x-wirekit::text></x-wirekit::band>\n    <x-wirekit::band edge=\"none\" padding=\"md\"><x-wirekit::text size=\"sm\" variant=\"muted\">content between two bands</x-wirekit::text></x-wirekit::band>\n    <x-wirekit::band edge=\"top\"><x-wirekit::text size=\"sm\">edge=\"top\"</x-wirekit::text></x-wirekit::band>\n</x-wirekit::stack>"
+        },
+        {
+            "title": "A footer band on a subtle surface",
+            "code": "<x-wirekit::stack gap=\"none\">\n    <x-wirekit::band edge=\"none\" padding=\"md\">\n        <x-wirekit::text>Draft saved a moment ago.</x-wirekit::text>\n    </x-wirekit::band>\n    <x-wirekit::band edge=\"top\" padding=\"md\" surface=\"subtle\">\n        <x-wirekit::row justify=\"end\" gap=\"sm\">\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Discard</x-wirekit::button>\n            <x-wirekit::button size=\"sm\">Send</x-wirekit::button>\n        </x-wirekit::row>\n    </x-wirekit::band>\n</x-wirekit::stack>"
+        }
+    ],
     "bento-grid": [
         {
             "title": "Bento grid with mixed spans",
