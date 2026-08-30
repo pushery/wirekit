@@ -54,6 +54,23 @@ export default function wirekitCommandPalette(config = {}) {
             this._showHandler = () => this.show();
             window.addEventListener('wirekit-command-palette-show', this._showHandler);
 
+            /*
+             * And the closing half of the pair.
+             *
+             * ⚠️ ONLY `-show` WAS REGISTERED, while `docs/components/command-palette.md` ships a
+             * two-button block whose second button dispatches `wirekit-command-palette-close`.
+             * A developer copied the pair, wired "Close" into their UI, and it silently did
+             * nothing — beside a sibling button that worked, which reads as an Alpine scoping
+             * problem in their own application rather than a missing listener here.
+             *
+             * `docs/overlays/events.md` described the component as show-only, so the two pages
+             * contradicted each other. This resolves it toward the family rather than away from
+             * it: modal, drawer and alert-dialog all carry `-show` / `-close`, and that same
+             * page names "`-show` / `-close` everywhere" as the standard verb scheme.
+             */
+            this._closeHandler = () => this._forceClose();
+            window.addEventListener('wirekit-command-palette-close', this._closeHandler);
+
             // SPA cleanup
             this._navCleanup = () => this._forceClose();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
@@ -67,6 +84,12 @@ export default function wirekitCommandPalette(config = {}) {
             if (this._showHandler) {
                 window.removeEventListener('wirekit-command-palette-show', this._showHandler);
                 this._showHandler = null;
+            }
+            // Removed by the SAME reference it was added with; a re-bound arrow would make the
+            // removal a silent no-op and leak a listener on every Livewire morph.
+            if (this._closeHandler) {
+                window.removeEventListener('wirekit-command-palette-close', this._closeHandler);
+                this._closeHandler = null;
             }
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);

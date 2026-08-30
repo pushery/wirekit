@@ -115,10 +115,24 @@
     $callerStyle = trim((string) $attributes->get('style', ''), '; ');
     $internalStyle = $delayValue ? "animation-delay: {$delayValue}" : '';
     $mergedStyle = trim(implode('; ', array_filter([$callerStyle, $internalStyle], fn ($s) => $s !== '')));
+
+    /*
+     * The one base class, routed through the resolver so `scope` is not a decoration.
+     *
+     * ⚠️ `scope` HAS BEEN A DECLARED, DOCUMENTED PROP THAT DID NOTHING. This component made no
+     * `resolveClasses()` call at all, so a registered `WireKit::scope('marketing', ['reveal' =>
+     * …])` could never be consulted — and because the prop IS declared, `warnUnknownProps` is
+     * silent too. A developer got total silence: no effect, no warning, and `docs/customization.md`
+     * presenting scoped personalization as one of four supported levels.
+     *
+     * Proven before and after by registering one scope carrying an override for `reveal` and a
+     * sibling component, then rendering both: only the sibling picked it up.
+     */
+    $baseClasses = WireKit::resolveClasses('reveal', 'base', 'w-full', $scope);
 @endphp
 
 <div
-    {{ $attributes->except('style')->merge(['data-replayable' => 'true', 'class' => 'w-full']) }}
+    {{ $attributes->except('style')->merge(['data-replayable' => 'true', 'class' => $baseClasses]) }}
     x-data="wirekitAnimate({{ \Pushery\WireKit\Support\AlpinePayload::string($validatedPreset) }}, {{ $optionsJson }})"
     @if($mergedStyle !== '') style="{{ $mergedStyle }}" @endif
 >

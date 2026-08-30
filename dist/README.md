@@ -6,12 +6,12 @@ runtime / loader story.
 | File | Format | Contents | Size (gzip ≈) | When to load |
 |---|---|---|---|---|
 | `wirekit.css` | CSS | Design tokens (`--color-wk-*`, `--radius-wk-*`, …), shared utility classes, global keyframes | 80 KB gzip (270 KB raw) | Always — every developer needs this |
-| `wirekit.js` | IIFE | Every WireKit Alpine component (chart, dropdown, tooltip, modal, drawer, toast, …) registered as plugins. **Does NOT bundle Alpine itself.** | 68 KB gzip (237 KB raw) | When your app already runs Alpine and you register WireKit plugins yourself (Laravel-Livewire setups, sample-app) |
+| `wirekit.js` | IIFE | Every WireKit Alpine component (chart, dropdown, tooltip, modal, drawer, toast, …) registered as plugins. **Does NOT bundle Alpine itself.** | 68 KB gzip (240 KB raw) | When your app already runs Alpine and you register WireKit plugins yourself (Laravel-Livewire setups, sample-app) |
 | `wirekit.core.js` | IIFE | Chart component only — no overlay deps, no Floating-UI / focus-trap | 4 KB gzip (13 KB raw) | When you only need `<x-wirekit::chart>` and want the smallest possible bundle |
 | `wirekit-apex.js` | IIFE | ApexCharts adapter glue — does **NOT** contain ApexCharts itself (developer's separate npm install) | 7 KB gzip (21 KB raw) | When using `<x-wirekit::chart>` with `'charts.library' => 'apexcharts'` config |
 | `wirekit-tiptap.js` | IIFE | Tiptap editor adapter glue (`wirekitEditor` factory) — does **NOT** contain Tiptap itself (developer's separate npm install) | 3 KB gzip (7 KB raw) | When using `<x-wirekit::editor>` alongside `wirekit.core.js` (the full bundle already includes the editor) |
 | `wirekit-optimistic.js` | IIFE | Optimistic UI factory (`wirekitOptimistic`) — shows an action's result before the server has confirmed it, then confirms or rolls back | 3 KB gzip (8 KB raw) | When you want optimistic updates. **Deliberately not in any other bundle**: loading this file is how you opt into its announcement behavior, so apps that don't use it pay nothing. Load it alongside whichever bundle you already picked |
-| `wirekit-alpine.js` | IIFE | Alpine.js core + every WireKit Alpine plugin + auto-`Alpine.start()`. **Self-contained drop-in.** | 86 KB gzip (290 KB raw) | When you want one bundle that gives you Alpine + every WireKit primitive in a single tag (docs site iframe srcdoc, isolated preview surfaces, sample landing pages) |
+| `wirekit-alpine.js` | IIFE | Alpine.js core + every WireKit Alpine plugin + auto-`Alpine.start()`. **Self-contained drop-in.** | 87 KB gzip (293 KB raw) | When you want one bundle that gives you Alpine + every WireKit primitive in a single tag (docs site iframe srcdoc, isolated preview surfaces, sample landing pages) |
 
 ## Pick exactly one of `wirekit.js` OR `wirekit-alpine.js`
 

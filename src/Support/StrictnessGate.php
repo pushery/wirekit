@@ -47,6 +47,21 @@ final class StrictnessGate
      *
      * @var list<string>
      */
+    /**
+     * The directives whose loss is a disconnection rather than a degradation.
+     *
+     * Each of these severs everything downstream from the object it was written against: an
+     * `x-init` beside a discarded `x-data`, a `@click` inside it. A duplicate `class` is
+     * merged by Blade and a duplicate `aria-*` reads as an intended override — those are not
+     * this, which is why the list is short and closed.
+     *
+     * One list, read by the predicate and by the reader of the component's own template, so
+     * the two cannot come to disagree about which directives the rule covers.
+     *
+     * @var list<string>
+     */
+    private const SCOPE_DIRECTIVES = ['x-data', 'x-init', 'x-modelable'];
+
     public const HTML_GLOBAL_ATTRIBUTES = [
         'id', 'class', 'style', 'title', 'lang', 'dir', 'hidden', 'inert',
         'tabindex', 'accesskey', 'draggable', 'translate', 'contenteditable',
@@ -341,13 +356,51 @@ final class StrictnessGate
      */
     private static function warnScopeDirectiveCollisions(string $context, array $actual): void
     {
+        foreach (self::discardedScopeDirectives($context, $actual) as $directive) {
+            logger()->warning(sprintf(
+                'WireKit [%s]: your `%s` is DISCARDED — the component sets its own on the same '.
+                'element, and HTML keeps the first of two identical attributes. Your scope never '.
+                'exists, so anything written against it resolves against the component\'s data '.
+                'instead. Wrap the component in your own element, or use the methods the '.
+                'component already exposes.',
+                $context,
+                $directive
+            ));
+        }
+    }
+
+    /**
+     * The scope directives in `$actual` that this component will DISCARD. The VERDICT, with
+     * no logging and no environment gate.
+     *
+     * Split out of `warnScopeDirectiveCollisions()` for the same reason `unknownPropNames()`
+     * was split out of `warnUnknownProps()`, and the docblock there states it in a sentence
+     * that applies here word for word: the warner "only logs, so nothing can fail on it, and
+     * it returns early outside `app.debug` — so in production the signal does not exist at
+     * all." A consuming project can therefore not assert on it, and one of them was carrying
+     * a second, weaker implementation of this question over 4422 component tags: weaker
+     * because it had to re-derive the occupied directives from the Blade source itself, with
+     * no way to tell an unconditional `x-data` from one inside an `@if`. That distinction is
+     * the whole point of `scopeDirectivesSetBy()`, and it was not available to them.
+     *
+     * The two share this one implementation so the rule cannot drift between the warning a
+     * developer sees at runtime and the answer a test asserts on.
+     *
+     * Reported from a consuming project re-checking its upstream-gap register.
+     *
+     * @param  string  $context  the component name, as `ComponentRegistry` knows it
+     * @param  array<string, mixed>  $actual  attribute name => value
+     * @return list<string> the passed directives this component discards, in encounter order
+     */
+    public static function discardedScopeDirectives(string $context, array $actual): array
+    {
         $passed = array_values(array_filter(
             array_keys($actual),
-            static fn (string $name): bool => in_array($name, ['x-data', 'x-init', 'x-modelable'], true)
+            static fn (string $name): bool => in_array($name, self::SCOPE_DIRECTIVES, true)
         ));
 
         if ($passed === []) {
-            return;
+            return [];
         }
 
         // The component's own template, read once per component per request. Only reached
@@ -360,21 +413,10 @@ final class StrictnessGate
 
         $occupied = $occupiedCache[$context];
 
-        foreach ($passed as $directive) {
-            if (! in_array($directive, $occupied, true)) {
-                continue;
-            }
-
-            logger()->warning(sprintf(
-                'WireKit [%s]: your `%s` is DISCARDED — the component sets its own on the same '.
-                'element, and HTML keeps the first of two identical attributes. Your scope never '.
-                'exists, so anything written against it resolves against the component\'s data '.
-                'instead. Wrap the component in your own element, or use the methods the '.
-                'component already exposes.',
-                $context,
-                $directive
-            ));
-        }
+        return array_values(array_filter(
+            $passed,
+            static fn (string $directive): bool => in_array($directive, $occupied, true)
+        ));
     }
 
     /**
@@ -415,7 +457,7 @@ final class StrictnessGate
         // 17 set it both ways. The second group still warns, which is the point of asking about
         // the unconditional case rather than simply exempting anything conditional.
         return array_values(array_filter(
-            ['x-data', 'x-init', 'x-modelable'],
+            self::SCOPE_DIRECTIVES,
             static fn (string $directive): bool => BladeParser::setsAttributeUnconditionally($source, $directive)
         ));
     }

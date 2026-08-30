@@ -82,6 +82,13 @@ export default function wirekitEditor(config = {}) {
                 content: this._initialContent(),
                 editable: this._editable,
                 extensions: config.extensions || [],
+                // ⚠️ `placeholder` REACHED THIS FILE AND STOPPED HERE. The Blade puts it in the
+                // Alpine config, the props table documents it, and the integration snippet the
+                // docs tell developers to paste reads `config.placeholder` on the object handed
+                // to their factory — an object this call builds, and which did not carry it. So
+                // `Placeholder.configure({ placeholder: config.placeholder ?? 'Write something…' })`
+                // always resolved to its own fallback, for everyone.
+                placeholder: config.placeholder ?? null,
                 editorProps: {
                     attributes: {
                         // The editable surface is a multiline textbox (WAI-ARIA textbox pattern).

@@ -131,6 +131,30 @@ final class BladeParser
             }
         }
 
+        /*
+         * Second optionality signal: `$name ??`.
+         *
+         * `{{ $bulkActions ?? '' }}` says "optional" as plainly as `@isset` does — it names a
+         * default for the case where the slot is absent. Read as a bare reference alone, it
+         * came out MANDATORY, and that is what shipped to components.json and the MCP
+         * catalog: three slots a developer was told to supply, one of which (`swap`'s `off`)
+         * falls back to the default slot by design.
+         *
+         * ⚠️ THIS SIGNAL ONLY DOWNGRADES; it never introduces a name, and that is the whole
+         * design rather than caution. Measured across the 179 component templates before
+         * building it: 153 names occur ONLY inside a `??` and are never referenced bare —
+         * props and locals, not one of them a slot. Collecting them the way `isset` names are
+         * collected would have invented 153 optional slots. `isset($x)` on a template is
+         * almost always a slot-presence check; `??` is ordinary expression punctuation.
+         */
+        $coalescedNames = [];
+
+        if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9]*)\s*\?\?/', $contents, $coalesced)) {
+            foreach ($coalesced[1] as $name) {
+                $coalescedNames[$name] = null;
+            }
+        }
+
         // Bare references: `{{ $name }}`, `{!! $name !!}`, `$name->method()`,
         // `$name->isEmpty()`. These signal a hard dependency — if the
         // developer doesn't supply the slot, the component errors.
@@ -163,8 +187,9 @@ final class BladeParser
         // the next name gets added twice instead of once.
         $reserved = ['loop', 'attributes', 'errors', 'this', 'message'];
         $phpLocals = self::extractPhpLocalsFromSource($contents);
+        $loopLocals = self::extractLoopVariablesFromSource($contents);
 
-        $exclude = array_unique(array_merge($propNames, $reserved, $phpLocals, $additionalExcludes));
+        $exclude = array_unique(array_merge($propNames, $reserved, $phpLocals, $loopLocals, $additionalExcludes));
 
         // Build the merged slot set:
         //   - Every isset-checked name → OPTIONAL.
@@ -182,13 +207,134 @@ final class BladeParser
                 continue;
             }
             // A name that ALSO appears in isset stays optional — the
-            // explicit guard wins. Otherwise it's required.
+            // explicit guard wins. A `??` beside it is the same statement in
+            // another spelling, so it wins too. Otherwise it's required.
             if (! isset($records[$name])) {
-                $records[$name] = ['name' => $name, 'required' => true];
+                $records[$name] = [
+                    'name' => $name,
+                    'required' => ! array_key_exists($name, $coalescedNames),
+                ];
             }
         }
 
         return array_values($records);
+    }
+
+    /**
+     * The parenthesized head of each named Blade directive, read with balanced parentheses.
+     *
+     * @param  list<string>  $directives
+     * @return list<string>
+     */
+    private static function directiveHeads(string $contents, array $directives): array
+    {
+        $heads = [];
+        $names = implode('|', array_map(fn (string $d): string => preg_quote($d, '/'), $directives));
+
+        if (! preg_match_all('/@(?:'.$names.')\s*\(/', $contents, $starts, PREG_OFFSET_CAPTURE)) {
+            return $heads;
+        }
+
+        foreach ($starts[0] as [$match, $offset]) {
+            $i = $offset + strlen($match);   // first character inside the opening paren
+            $depth = 1;
+            $length = strlen($contents);
+
+            while ($i < $length && $depth > 0) {
+                $char = $contents[$i];
+
+                if ($char === '(') {
+                    $depth++;
+                } elseif ($char === ')') {
+                    $depth--;
+                }
+
+                $i++;
+            }
+
+            // An unbalanced head means the file is malformed; take nothing rather than
+            // the rest of the file, which would bind every variable after it.
+            if ($depth === 0) {
+                $heads[] = substr($contents, $offset + strlen($match), $i - 1 - ($offset + strlen($match)));
+            }
+        }
+
+        return $heads;
+    }
+
+    /**
+     * Variables a Blade LOOP binds, which are not slots and never were.
+     *
+     * The exclusion list already dropped props, reserved names and `@php` locals. It did not
+     * know about loop bindings, so every `@for($i = …)` and `@foreach($xs as $x)` left its
+     * variable behind as a "required slot" — and because a bare `{{ $i }}` is exactly the
+     * shape that marks a slot REQUIRED, they came out as hard dependencies.
+     *
+     * WHAT THAT COST, measured before the fix: `otp-input` reported its only slot as `i`,
+     * `rating` the same, `range-slider` reported `tickPercent`, and `select` reported
+     * `optionValue` and `subValue`. Those are not internal — `slotsOf()` feeds
+     * `ExportJsonCommand` (the publicly served components.json / api-map.json) and
+     * `McpCatalog` (what an AI assistant reads). So an assistant asking what
+     * `<x-wirekit::otp-input>` accepts was told it takes a slot called `i`.
+     *
+     * Four directives bind, and all four are matched rather than only the common two: a
+     * `@forelse` that went unhandled would reintroduce the bug for exactly the components
+     * that render an empty state.
+     *
+     * @return list<string>
+     */
+    private static function extractLoopVariablesFromSource(string $contents): array
+    {
+        $names = [];
+
+        /*
+         * `@foreach($xs as $k => $v)` and `@foreach($xs as $v)`, plus @forelse which has
+         * the same head. Both sides of a `=>` are bound, and taking only the value half is
+         * how `optionValue` survived a first pass at this.
+         *
+         * ⚠️ THE HEAD IS READ WITH BALANCED PARENTHESES, not to the first `)`. A non-greedy
+         * `\((.*?)\)` stops inside the collection expression the moment it contains one --
+         * a cast or a method call is enough:
+         *
+         *     @foreach((array) $shortcut as $key)                  → head cut to `(array`
+         *     @foreach($p->linkCollection()->slice(1, -1) as $link) → head cut to `$p->linkCollection`
+         *
+         * Neither cut half contains ` as `, so nothing was bound and the loop variable
+         * survived into the slot list as a REQUIRED slot. Measured over the catalog: 3 of 35
+         * heads were being truncated, producing `pagination::link`, `menubar.item::key` and
+         * `command-palette.item::key`.
+         *
+         * Of those three, exactly ONE reached a published artifact -- `pagination::link`, in
+         * components.json and the MCP catalog. The other two sit on SUB-components, and both
+         * readers ask `slotsOf()` for registry names only while describing sub-components
+         * through a separate call that carries no slots at all. Stated precisely because the
+         * first draft of this comment claimed all three shipped, which would have been a
+         * comment overstating its own fix.
+         */
+        foreach (self::directiveHeads($contents, ['foreach', 'forelse']) as $head) {
+            if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9_]*)/', (string) strstr($head, ' as ') ?: '', $bound)) {
+                foreach ($bound[1] as $name) {
+                    $names[] = $name;
+                }
+            }
+        }
+
+        // `@for($i = 0; $i < $n; $i++)` — the initializer binds; the condition and the step
+        // only read, so the first clause is the one to scan.
+        if (preg_match_all('/@for\s*\((.*?);/s', $contents, $inits)) {
+            foreach ($inits[1] as $init) {
+                self::collectAssignmentsFrom($init, $names);
+            }
+        }
+
+        // `@while($row = next($rows))` — an assignment in the condition binds too.
+        if (preg_match_all('/@while\s*\((.*?)\)/s', $contents, $conds)) {
+            foreach ($conds[1] as $cond) {
+                self::collectAssignmentsFrom($cond, $names);
+            }
+        }
+
+        return array_values(array_unique($names));
     }
 
     /**
@@ -224,10 +370,22 @@ final class BladeParser
     }
 
     /**
-     * Scan a PHP-source string for `$name = ...` assignments and
-     * append each captured name to the `$locals` accumulator. Catches
-     * the common `$foo = ...;` shape; nested-array / destructuring
-     * shapes fall through silently.
+     * Scan a PHP-source string for assignments and append each captured name to the
+     * `$locals` accumulator.
+     *
+     * Three shapes, and the third was added after it was measured rather than guessed at.
+     * `$foo = …` is the common one; `foreach (… as $item)` binds a name the same way; and
+     * LIST DESTRUCTURING — `[$a, $b, $c] = match (…)` or `list($a, $b) = …` — binds several
+     * at once. This docblock used to say destructuring "falls through silently", which was
+     * true and cost more than it sounds: every name bound that way was reported as a
+     * REQUIRED SLOT, and that answer ships. Measured across the catalog before the fix: 5
+     * components, 13 names — `stat` alone advertised `trendColor`, `trendIcon` and
+     * `trendLabel` as slots a developer must fill, in `components.json`, in the api-map and
+     * in the MCP catalog a coding assistant reads.
+     *
+     * Nested destructuring (`[[$a, $b], $c] = …`) and keyed destructuring
+     * (`['x' => $a] = …`) are still not covered. Neither shape occurs in this catalog today
+     * — measured, not assumed — and a pattern for them would be guesswork against no case.
      *
      * @param  list<string>  $locals
      */
@@ -243,6 +401,18 @@ final class BladeParser
         if (preg_match_all('/foreach\s*\(\s*[^\s]+\s+as\s+\$([a-zA-Z][a-zA-Z0-9]*)/', $body, $foreachMatches)) {
             foreach ($foreachMatches[1] as $name) {
                 $locals[] = $name;
+            }
+        }
+
+        // List destructuring binds several names in one statement: `[$a, $b] = …` and the
+        // older `list($a, $b) = …`. The single-assignment pattern above cannot see them —
+        // it anchors on a `$name` immediately followed by `=`, and here the `=` sits after
+        // the closing bracket.
+        if (preg_match_all('/(?:\blist\s*\(|\[)\s*((?:\$[a-zA-Z][a-zA-Z0-9]*\s*,\s*)*\$[a-zA-Z][a-zA-Z0-9]*)\s*(?:\)|\])\s*=(?!=)/', $body, $listMatches)) {
+            foreach ($listMatches[1] as $group) {
+                foreach (explode(',', $group) as $variable) {
+                    $locals[] = ltrim(trim($variable), '$');
+                }
             }
         }
     }

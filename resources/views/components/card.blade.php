@@ -7,6 +7,17 @@
     // Optional reveal animation when card scrolls into view. One of 11 base presets
     // (or any -in / -out variant). Null = no animation (default, v1.5.0-identical).
     'animateIn' => null,
+    // What the card does with a child that reaches past its box. The default clips,
+    // which is what makes the rounded corners cut the content inside them — but it
+    // also clips a badge pinned to a corner, an avatar that scales on hover, or a
+    // focus ring that extends past the edge. `visible` releases all of it.
+    //
+    // A prop rather than an !important utility override on the base class, because that
+    // override is not the same thing: it removes the corner clipping for EVERY
+    // child, and nothing says so until someone drops a full-bleed image or a table
+    // into that card. Reported from a consuming project that was carrying exactly
+    // that override, on two elements.
+    'overflow' => 'hidden',
     'scope' => null,
 ])
 
@@ -20,12 +31,24 @@
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'card');
 
+    // Written out in full rather than built as "overflow-{$overflow}". Tailwind
+    // scans for COMPLETE literal class names and generates nothing for a name it
+    // never sees spelled out — an interpolated one produces a class with no rule
+    // behind it, and the failure is silent because the attribute is present and
+    // simply does nothing.
+    $overflowClass = match ($overflow) {
+        'visible' => 'overflow-visible',
+        'auto' => 'overflow-auto',
+        'clip' => 'overflow-clip',
+        default => 'overflow-hidden',
+    };
+
     // Base classes: radius, overflow, transition for interactive cards
     $baseClasses = WireKit::resolveClasses('card', 'base', implode(' ', [
         'bg-[var(--color-wk-bg-elevated)]',
         'text-[color:var(--color-wk-text)]',
         'rounded-[var(--radius-wk-lg)]',
-        'overflow-hidden',
+        $overflowClass,
         'transition-shadow',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',

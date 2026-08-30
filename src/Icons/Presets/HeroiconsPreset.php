@@ -280,7 +280,10 @@ final class HeroiconsPreset implements IconPreset
             // which is why the right-hand sides differ.
             //
             // Deliberately NOT taken, and the reasons are worth keeping:
-            //   a11y, cursor-arrow-rays, paint-brush — no genuine cognate in all three.
+            //   a11y — no genuine cognate in all three.
+            //   cursor-arrow-rays — the SPELLING stays out, and the concept came in as
+            //     `click` below. A family's name for its own drawing is not a word the
+            //     vocabulary can share; the concept behind it is.
             //   ai, sparkle, cube-transparent — a spelling variant of a word that is
             //     already here, not a second concept. `sparkle` beside `sparkles`, or
             //     `cube-transparent` beside `cube`, gives the vocabulary two ways to ask
@@ -308,6 +311,12 @@ final class HeroiconsPreset implements IconPreset
             // diagonal arrow. Heroicons ships the true cognate, so the word means one thing.
             'arrow-up-right' => 'heroicon-m-arrow-up-right',
             'chart-pie' => 'heroicon-m-chart-pie',
+            // Promoted out of the marketing extension under the CONCEPT name. The
+            // extension spells it `cursor-arrow-rays`, which is heroicons' name for its
+            // own picture rather than a word anybody would reach for; that spelling stays
+            // there as the older name and is not removed. All four sets draw a pointer
+            // with an action mark, checked against the svg files in vendor/ per set.
+            'click' => 'heroicon-m-cursor-arrow-rays',
             'code-bracket' => 'heroicon-m-code-bracket',
             'cog-6-tooth' => 'heroicon-m-cog-6-tooth',
             // Promoted out of the marketing extension: every set draws the same isometric
@@ -330,6 +339,11 @@ final class HeroiconsPreset implements IconPreset
             'live' => 'heroicon-m-signal',
             'lock-closed' => 'heroicon-m-lock-closed',
             'open-source' => 'heroicon-m-code-bracket',
+            // Promoted out of the marketing extension: every set ships a real brush.
+            // The paragraph above listed this word as having no cognate in all three,
+            // which the svg trees refute — tabler draws it as `brush`, and taking the
+            // concept rather than one family's spelling is exactly the rule here.
+            'paint-brush' => 'heroicon-m-paint-brush',
             'puzzle-piece' => 'heroicon-m-puzzle-piece',
             'security' => 'heroicon-m-lock-closed',
             'speed' => 'heroicon-m-bolt',

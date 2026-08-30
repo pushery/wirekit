@@ -29,8 +29,19 @@
     // `mode` controls whether multiple panels can be open at once:
     //   - 'single'   → opening one closes the others (like radio buttons)
     //   - 'multiple' → any combination of panels can be open (like checkboxes)
-    // The mode is exposed to Alpine via data-wk-accordion-mode so that
-    // the accordion.item sub-component can read it at click-time.
+    // The mode reaches the behavior through the `x-data` payload below, and ONLY through it.
+    //
+    // ⚠️ THIS COMMENT USED TO SAY the mode is exposed via `data-wk-accordion-mode` "so that the
+    // accordion.item sub-component can read it at click-time". It does not and never did:
+    // nothing in `resources/js` reads that attribute, in either the literal or the
+    // `dataset.wkAccordionMode` spelling. Measured against the real factory — given the
+    // attribute and no config the component behaved as `single`; given the config and no
+    // attribute it behaved as `multiple`.
+    //
+    // The attribute itself is harmless and stays: the suite pins it and it is a usable hook for
+    // a developer's own CSS. The sentence was the damage. A maintainer trimming the `x-data`
+    // payload because "the attribute already carries the mode" would have broken the component
+    // while reading a comment that told them it was safe.
     //
     // Container classes are variant-driven. `bordered` keeps the original card
     // look; `flush` strips the chrome to just row dividers; `separated` turns

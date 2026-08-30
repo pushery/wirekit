@@ -37,6 +37,10 @@
         {
             "title": "Delete Confirmation",
             "code": "<div x-data>\n<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'delete-project' })\">Delete Project</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"delete-project\" :dismissible=\"true\">\n    <x-wirekit::alert-dialog.title>Delete Project</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        This will permanently delete the project and all associated data. This action cannot be undone.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::button intent=\"danger\" size=\"sm\">Delete Project</x-wirekit::button>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>\n</div>"
+        },
+        {
+            "title": "Type to Confirm",
+            "code": "<div x-data>\n<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'drop-environment' })\">Delete Environment</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"drop-environment\" :dismissible=\"true\" confirmation-phrase=\"delete production\">\n    <x-wirekit::alert-dialog.title>Delete this environment?</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        Every deployment, secret and log line in it goes with it. There is no undo.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.confirmation />\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::alert-dialog.confirm>\n            <x-wirekit::button intent=\"danger\" size=\"sm\">Delete Environment</x-wirekit::button>\n        </x-wirekit::alert-dialog.confirm>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>\n</div>"
         }
     ],
     "alert": [
@@ -2139,6 +2143,16 @@
         {
             "title": "Icon button with hidden label",
             "code": "<x-wirekit::row gap=\"sm\">\n    <x-wirekit::button intent=\"neutral\" surface=\"ghost\">\n        <x-wirekit::icon name=\"edit\" class=\"h-5 w-5\" />\n        <x-wirekit::visually-hidden>Edit</x-wirekit::visually-hidden>\n    </x-wirekit::button>\n    <x-wirekit::button intent=\"neutral\" surface=\"ghost\">\n        <x-wirekit::icon name=\"info\" class=\"h-5 w-5\" />\n        <x-wirekit::visually-hidden>Help</x-wirekit::visually-hidden>\n    </x-wirekit::button>\n</x-wirekit::row>"
+        }
+    ],
+    "wizard": [
+        {
+            "title": "Three Step Flow",
+            "code": "<x-wirekit::wizard :steps=\"['Details', 'Payment', 'Review']\">\n    <x-wirekit::wizard.step :index=\"1\">\n        <x-wirekit::stack gap=\"sm\">\n            <x-wirekit::text weight=\"semibold\">Your details</x-wirekit::text>\n            <x-wirekit::input label=\"Full name\" placeholder=\"Ada Lovelace\" />\n        </x-wirekit::stack>\n    </x-wirekit::wizard.step>\n    <x-wirekit::wizard.step :index=\"2\">\n        <x-wirekit::stack gap=\"sm\">\n            <x-wirekit::text weight=\"semibold\">Payment</x-wirekit::text>\n            <x-wirekit::input label=\"Card number\" placeholder=\"4242 4242 4242 4242\" />\n        </x-wirekit::stack>\n    </x-wirekit::wizard.step>\n    <x-wirekit::wizard.step :index=\"3\">\n        <x-wirekit::stack gap=\"sm\">\n            <x-wirekit::text weight=\"semibold\">Review</x-wirekit::text>\n            <x-wirekit::text variant=\"muted\">Everything looks right.</x-wirekit::text>\n        </x-wirekit::stack>\n    </x-wirekit::wizard.step>\n</x-wirekit::wizard>"
+        },
+        {
+            "title": "Gated Step",
+            "code": "<x-wirekit::wizard :steps=\"['Terms', 'Done']\">\n    <x-wirekit::wizard.step :index=\"1\" :complete=\"false\">\n        <x-wirekit::stack gap=\"sm\">\n            <x-wirekit::text weight=\"semibold\">Accept the terms</x-wirekit::text>\n            <x-wirekit::text variant=\"muted\" size=\"sm\">Next is held back while this step is incomplete.</x-wirekit::text>\n        </x-wirekit::stack>\n    </x-wirekit::wizard.step>\n    <x-wirekit::wizard.step :index=\"2\">\n        <x-wirekit::text>You would not get here.</x-wirekit::text>\n    </x-wirekit::wizard.step>\n</x-wirekit::wizard>"
         }
     ]
 }

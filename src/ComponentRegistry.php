@@ -105,6 +105,7 @@ class ComponentRegistry
             'scope-switcher' => ['category' => 'Navigation', 'description' => 'Searchable switcher for the team, server or site a page is about'],
             'sidebar' => ['category' => 'Navigation', 'description' => 'Vertical sidebar navigation'],
             'stepper' => ['category' => 'Navigation', 'description' => 'Step indicator for multi-step flows'],
+            'wizard' => ['category' => 'Navigation', 'description' => 'Multi-step flow container — holds the step, gates advancing, announces the change'],
             'tabs' => ['category' => 'Navigation', 'description' => 'Tabbed content navigation'],
 
             // ── Overlay ──

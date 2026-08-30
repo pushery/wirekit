@@ -56,7 +56,14 @@ final class HeroiconsMarketingPreset implements IconPreset
             'cube-transparent' => 'heroicon-m-cube-transparent',
 
             // Branding & creative
-            'paint-brush' => 'heroicon-m-paint-brush',
+            // `paint-brush` promoted to the base presets and removed here, the same way
+            // `bolt`, `shield` and `users` went. Leaving it declared in both is not an
+            // option: `marketing preset has zero alias overlap with base preset` forbids
+            // it. The word does not leave the vocabulary — it moves into `base`, where
+            // the vocabulary baseline still carries it, so every documented configuration
+            // still resolves it and this is additive rather than breaking.
+            // `cursor-arrow-rays` stays below: that is heroicons' spelling of its own
+            // glyph, and the concept went up as `click` instead.
 
             // Trust & security
             // `shield` / `shield-check` promoted to the base presets in v2.12.0 —

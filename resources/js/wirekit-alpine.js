@@ -49,6 +49,8 @@ import wirekitSidebarDisclosure from './components/sidebar-disclosure.js';
 import wirekitAppRail from './components/app-rail.js';
 import wirekitAppShell from './components/app-shell.js';
 import wirekitSidebarRail from './components/sidebar-rail.js';
+import wirekitSidebarListbox from './components/sidebar-listbox.js';
+import wirekitWizard from './components/wizard.js';
 import wirekitClipboardButton from './components/clipboard-button.js';
 import wirekitReplayButton from './components/replay-button.js';
 import wirekitAccordion from './components/accordion.js';
@@ -230,6 +232,8 @@ if (hostAlpine) {
     target.data('wirekitAppRail', wirekitAppRail);
     target.data('wirekitAppShell', wirekitAppShell);
     target.data('wirekitSidebarRail', wirekitSidebarRail);
+    target.data('wirekitSidebarListbox', wirekitSidebarListbox);
+    target.data('wirekitWizard', wirekitWizard);
     target.data('wirekitClipboardButton', wirekitClipboardButton);
     target.data('wirekitReplayButton', wirekitReplayButton);
     target.data('wirekitAccordion', wirekitAccordion);

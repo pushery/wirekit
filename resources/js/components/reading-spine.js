@@ -24,8 +24,13 @@
  * global @media block. The plugin itself never animates anything in JS.
  */
 import { prefersReducedMotion } from '../utils/motion.js';
+import { accessibleText } from '../utils/accessible-text.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
+    // A selector for subtrees whose headings are NOT this page's structure — an embedded
+    // demo, a sidebar of related links. `null` keeps every existing call site rendering
+    // exactly what it renders now.
+    exclude: options.exclude || null,
     levels: Array.isArray(options.levels) ? options.levels : [2, 3],
     offset: typeof options.offset === 'number' ? options.offset : 96,
     numbered: options.numbered === true,
@@ -184,9 +189,23 @@ export default (options = {}) => ({
             return [];
         }
         const sel = this.levels.map((l) => `h${l}`).join(', ');
-        return Array.from(container.querySelectorAll(sel)).map((el, idx) => ({
+        const found = Array.from(container.querySelectorAll(sel));
+
+        // A page can hold headings that are not its own structure — a demo embedded in the
+        // prose brings an accordion's panel titles, a carousel's product names. Measured on
+        // the documentation site: one page listed 41 entries of which 23 came from demos,
+        // and 36 pages carried 183 such entries between them. `target` cannot help, because
+        // the demos sit INSIDE the article that holds the real sections.
+        //
+        // `closest` rather than a descendant test, so naming the wrapper is enough and the
+        // caller does not have to enumerate what is inside it.
+        const kept = this.exclude
+            ? found.filter((el) => !el.closest(this.exclude))
+            : found;
+
+        return kept.map((el, idx) => ({
             id: el.id || '',
-            text: (el.textContent || '').trim(),
+            text: accessibleText(el),
             level: parseInt(el.tagName.slice(1), 10),
             label: '', // populated by computeNumbering when numbered=true
             fill: 0,   // populated by updateSectionFills when fillSections=true

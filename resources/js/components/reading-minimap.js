@@ -1,4 +1,5 @@
 import { sanitizeMinimapHtml } from '../utils/sanitize-minimap-html.js';
+import { accessibleText } from '../utils/accessible-text.js';
 import { prefersReducedMotion } from '../utils/motion.js';
 
 /**
@@ -209,7 +210,7 @@ export default (options = {}) => ({
             const rect = el.getBoundingClientRect();
             const hostRect = this._scrollHost.getBoundingClientRect();
             const top = rect.top - hostRect.top + this._scrollHost.scrollTop;
-            const label = el.dataset?.minimapLabel || (el.textContent || '').trim().slice(0, 80);
+            const label = el.dataset?.minimapLabel || accessibleText(el).slice(0, 80);
             // heightFraction — only used in stripe-mode `itemStyle="block"`.
             // The Blade template reads it inline to render each stripe as a
             // skeleton-style rectangle whose height matches the source
@@ -835,7 +836,7 @@ export default (options = {}) => ({
                 if (!collapsed) lastPx = px;
                 return {
                     id: h.id,
-                    label: (h.textContent || '').trim().slice(0, 18) + ((h.textContent || '').trim().length > 18 ? '…' : ''),
+                    label: accessibleText(h).slice(0, 18) + (accessibleText(h).length > 18 ? '…' : ''),
                     fraction,
                     collapsed,
                 };

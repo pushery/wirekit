@@ -10,6 +10,17 @@
     // stays visible in the collapsed rail.
     'badge' => null,
     'scope' => null,
+    // The identity of this row when the parent sidebar is in `selection` mode. Ignored
+    // in the default navigation mode, where `href` is the identity.
+    'value' => null,
+])
+
+{{-- Inherited from the parent <x-wirekit::sidebar>. A row cannot know on its own which
+     ARIA contract it is part of, and asking the caller to repeat the mode on every row is
+     the kind of duplication that goes wrong on row nine. --}}
+@aware([
+    'mode' => 'navigation',
+    'selected' => null,
 ])
 
 @php
@@ -24,6 +35,36 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
+    $selectionMode = $mode === 'selection';
+
+    // WHICH attribute marks "this is the one", and it is not cosmetic which one.
+    //
+    // The three variants below exist because the muted rule and the active rule have
+    // EQUAL specificity and Tailwind emits the muted one last — see the block comment on
+    // the first of them. In `selection` mode no row carries `aria-current` at all, so a
+    // variant keyed on it matches EVERY row, and the chosen one renders muted along with
+    // the rest. The mechanism is right; only the attribute it watches has to follow the
+    // contract the column is actually under.
+    // ⚠️ BOTH SETS ARE WRITTEN OUT IN FULL, and that is not verbosity.
+    //
+    // The first attempt interpolated the attribute — `"not-[".$marker."]:text-…"` — which
+    // reads well and is silently wrong twice over. Tailwind scans SOURCE for complete
+    // class names, so a name assembled at runtime is a name it never sees: the rules were
+    // simply not generated, and every row would have rendered unstyled in the direction
+    // the variant exists to control. The drift guard caught it as forward drift; nothing
+    // in the markup or the ARIA would have looked wrong.
+    $notCurrentClasses = $selectionMode
+        ? [
+            'not-[[aria-selected=true]]:text-[color:var(--color-wk-text-muted)]',
+            'not-[[aria-selected=true]]:hover:bg-[var(--color-wk-bg-muted)]',
+            'not-[[aria-selected=true]]:hover:text-[color:var(--color-wk-text)]',
+        ]
+        : [
+            'not-[[aria-current]]:text-[color:var(--color-wk-text-muted)]',
+            'not-[[aria-current]]:hover:bg-[var(--color-wk-bg-muted)]',
+            'not-[[aria-current]]:hover:text-[color:var(--color-wk-text)]',
+        ];
+
     $active = BooleanProp::from($active, false);
     $submenu = BooleanProp::from($submenu, false);
 
@@ -84,15 +125,13 @@
         // Worse than a no-op: a developer retinting the active state with their own
         // (0,1,0) utility loses to this one too, so the escape hatch was `!important`.
         // Do not "simplify" the variant off — equal specificity is the whole problem.
-        'not-[[aria-current]]:text-[color:var(--color-wk-text-muted)]',
+        ...$notCurrentClasses,
         // Hover is scoped to NON-active items via `:not([aria-current])`. An active item
         // already carries `aria-current="page"`, and an UNSCOPED `hover:bg` here (specificity
         // 0,2,0) would override a retinted active block (a developer's 0,1,0 utilities) the
         // instant the pointer arrives — the pill would snap back to muted mid-hover, forcing
         // the developer to reach for `!important`. Scoping matches the common expectation too:
         // the current page does not react to hover, it is already the target state.
-        'not-[[aria-current]]:hover:bg-[var(--color-wk-bg-muted)]',
-        'not-[[aria-current]]:hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-none',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
@@ -136,12 +175,57 @@
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
+@php
+    // Server-rendered selection, so the column is correct before Alpine boots. Alpine
+    // then owns it: `x-bind` below wins over this literal the moment it initializes.
+    $isSelected = $selectionMode && $value !== null && (string) $value === (string) $selected;
+
+    // A stable id, because `aria-activedescendant` points at one and a random id per
+    // render would break the pointer on every Livewire morph — the marker would name an
+    // element that no longer exists, and the announcement would simply stop.
+    $optionId = $selectionMode
+        ? \Pushery\WireKit\Support\DomId::unique(
+            $value !== null ? 'wk-sidebar-option-'.\Illuminate\Support\Str::slug((string) $value) : null,
+            'wk-sidebar-option-'
+        )
+        : null;
+
+    // `href` is refused rather than ignored. A link inside a listbox is not a smaller
+    // problem than a missing role: the row would be in the tab order, Enter would
+    // navigate instead of choosing, and the one-tab-stop promise of the pattern would be
+    // broken by a row the caller thought was decorative.
+    // `$href` rather than the attribute bag: `href` is a declared prop, so Blade has
+    // already lifted it out of the bag and `$attributes->has('href')` is false for every
+    // caller — the check would have been dead in exactly the case it exists for.
+    if ($selectionMode && $href !== '#' && $href !== null && config('app.debug')) {
+        $hrefInOptionWarning = '[wirekit] sidebar.item: `href` is ignored inside a '
+            .'`mode="selection"` sidebar. A listbox option is a choice, not a destination — '
+            .'a link here would put the row in the tab order and make Enter navigate instead '
+            .'of select. Use `value` and your own click handler.';
+    }
+@endphp
+
+@if($selectionMode)
+    <div
+        role="option"
+        id="{{ $optionId }}"
+        @if($value !== null) data-wk-option-value="{{ $value }}" @endif
+        aria-selected="{{ $isSelected ? 'true' : 'false' }}"
+        x-bind:aria-selected="isSelected({{ \Pushery\WireKit\Support\AlpinePayload::from($value === null ? null : (string) $value) }}) ? 'true' : 'false'"
+        x-on:click="selectOption($el)"
+        {{-- No `aria-current`, and that is the point of the mode rather than an omission.
+             A page you are on and a value you have picked are two different claims; a row
+             that made both would be wrong about one of them. --}}
+        {{ $attributes->except(['rel', 'href'])->class([$classes, $activeClasses => $isSelected]) }}
+    >
+@else
 <a
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{ $attributes->except('rel')->class([$classes, $activeClasses => $active]) }}
 >
+@endif
     @if($icon)
         {{-- Icon — decorative; the label is the accessible name. A bare name
              string ("cube") resolves via the WireKit icon system, consistent
@@ -201,4 +285,12 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
         </svg>
     @endif
+@if($selectionMode)
+    </div>
+@else
 </a>
+@endif
+
+@if(isset($hrefInOptionWarning))
+    <div x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from($hrefInOptionWarning) }} })" hidden></div>
+@endif

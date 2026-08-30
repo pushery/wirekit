@@ -14,6 +14,16 @@
     // dialog falls back to the nearest ancestor of the trigger that survived.
     'focusReturnTo' => null,
     'scope' => null,
+    // The exact string a developer must type before `alert-dialog.confirm` will fire —
+    // the brake in front of an action nobody can undo. Unset (the default), nothing about
+    // this component changes: no field renders and the confirm control is never held back.
+    //
+    // The comparison is documented rather than guessed at, because a brake whose rule is
+    // invisible is a brake people learn to resent: surrounding whitespace is trimmed,
+    // everything else is compared EXACTLY. Case, punctuation and inner spacing all count.
+    // Trimming is the one concession, and only because a trailing space arrives from a
+    // copy-paste rather than from a decision.
+    'confirmationPhrase' => null,
     // An explicit accessible name, for an alert-dialog composed WITHOUT
     // `alert-dialog.title`. Same reasoning as `drawer`: `aria-labelledby` points at an id
     // the title would have bound at runtime, and a caller `aria-label` never reaches the
@@ -79,7 +89,7 @@
 @endphp
 
 <div
-    x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }} })"
+    x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }}, confirmationPhrase: {{ \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase) }} })"
     {{ $attributes }}
 >
     {{-- Trigger slot — clicking opens the alert dialog --}}

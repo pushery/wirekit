@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use BaconQrCode\Renderer\ImageRenderer;
+use Composer\InstalledVersions;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
+use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\DirectoryHash;
 use Pushery\WireKit\Support\TailwindVersion;
 use Pushery\WireKit\WireKit;
@@ -106,6 +108,7 @@ class VerifyInstallationCommand extends Command
             $this->checkAiManifestStaleness();
             $this->checkFontAssets();
             $this->checkCssImportAntiPattern();
+            $this->checkIconPresetPackages();
             $this->checkOptionalDependencies();
             $this->checkChartUsageWithoutAdapter();
             $this->checkChartJsRegistration();
@@ -122,6 +125,7 @@ class VerifyInstallationCommand extends Command
         // get only these without the package-tier noise.
         if ($tier === null || $tier === 'environment') {
             $this->checkCompiledViewsFreshness();
+            $this->checkInstalledPackageMatchesLock();
             $this->checkSilentValidationTypos();
         }
 
@@ -1381,6 +1385,157 @@ class VerifyInstallationCommand extends Command
      * editor / map front-end peer dependencies (Tiptap, MapLibre GL / Leaflet).
      * These are INFO-level only — not required for core functionality.
      */
+    /**
+     * Does every CONFIGURED icon preset have its composer package installed?
+     *
+     * The published config carries a commented line offering the stacked shape:
+     *
+     *     // 'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
+     *
+     * Uncommenting it on a phosphor, lucide or tabler installation trades a missing
+     * alias for a RESOLVING alias onto a glyph that is not installed — and that
+     * throws when the page renders rather than degrading to the inert placeholder.
+     * The failure therefore lands on a visitor's page, in whichever view happened to
+     * use the word, and says nothing about the config line that caused it.
+     *
+     * A WARNING rather than a failure, and rather than a boot-time abort. An abort
+     * would be a behavior change on a shipped configuration; this is purely additive
+     * and moves the discovery to a command a developer chose to run. The stricter
+     * form stays available afterwards if it turns out somebody needs it — the reverse
+     * is not as easy.
+     */
+    /**
+     * Is the WireKit in `vendor/` the one this app's lockfile names?
+     *
+     * A developer checking whether an upstream capability has landed reads the source in
+     * `vendor/`, and that tree can be OLDER than the lockfile beside it while agreeing with
+     * it about the version. It happens when something updates the lock — a sync action, a
+     * merged dependency pull request, a colleague's commit — and `composer install` has not
+     * run locally since. Reading the vendor source then says a prop does not exist when it
+     * shipped days ago, and nothing in the repository looks wrong.
+     *
+     * Reported from a consuming project on 2026-08-29, which lost time to exactly that and
+     * said so even though it was not asking for anything.
+     *
+     * ⚠️ IT COMPARES `source.reference`, NEVER `dist.reference`, and that is the difference
+     * between a useful check and a permanent false alarm. A path repository — which is how
+     * this package's own sample app installs it — has no `source` key at all and a
+     * `dist.reference` that is a CONTENT HASH, not a commit. Comparing that against the
+     * installed reference reports a mismatch on every healthy run. Measured before building:
+     * the sample's entry has `"dist": {"type": "path"}` and no source, while 151 other
+     * packages in the same lockfile do carry `source.reference`.
+     *
+     * So a path install is reported as NOT MEASURED rather than as clean. An answer nobody
+     * could give and an all-clear must not print the same way.
+     */
+    private function checkInstalledPackageMatchesLock(): void
+    {
+        if (! class_exists(InstalledVersions::class)) {
+            $this->line('  <fg=cyan>i</> Installed-vs-locked check skipped (Composer runtime API unavailable)');
+
+            return;
+        }
+
+        $lockPath = base_path('composer.lock');
+
+        if (! is_file($lockPath)) {
+            $this->line('  <fg=cyan>i</> No composer.lock beside the app — nothing to compare the installed package against');
+
+            return;
+        }
+
+        $lock = json_decode((string) file_get_contents($lockPath), true);
+
+        if (! is_array($lock)) {
+            $this->reportWarn('composer.lock could not be read as JSON, so the installed WireKit was not compared against it.');
+
+            return;
+        }
+
+        $locked = null;
+
+        foreach ([...($lock['packages'] ?? []), ...($lock['packages-dev'] ?? [])] as $package) {
+            if (($package['name'] ?? null) === 'pushery/wirekit') {
+                $locked = $package;
+                break;
+            }
+        }
+
+        if ($locked === null) {
+            $this->line('  <fg=cyan>i</> pushery/wirekit is not in composer.lock — installed some other way, nothing to compare');
+
+            return;
+        }
+
+        $lockedReference = $locked['source']['reference'] ?? null;
+
+        if (! is_string($lockedReference) || $lockedReference === '') {
+            // A path repository, and the ordinary case for this package's own sample app.
+            $this->line('  <fg=cyan>i</> WireKit is installed from a path repository, so there is no commit to compare — installed-vs-locked NOT measured');
+
+            return;
+        }
+
+        $installedReference = InstalledVersions::getReference('pushery/wirekit');
+
+        if (! is_string($installedReference) || $installedReference === '') {
+            $this->line('  <fg=cyan>i</> Composer reports no reference for the installed WireKit — installed-vs-locked NOT measured');
+
+            return;
+        }
+
+        if ($installedReference === $lockedReference) {
+            $this->reportPass('The installed WireKit is the commit composer.lock names');
+
+            return;
+        }
+
+        $this->reportWarn(sprintf(
+            'The WireKit in vendor/ is not the commit composer.lock names — locked %s, installed %s. '
+            .'The lockfile moved and `composer install` has not run since, so reading the vendor source '
+            .'will describe an older package than your project depends on. Run: composer install',
+            substr($lockedReference, 0, 12),
+            substr($installedReference, 0, 12)
+        ));
+    }
+
+    private function checkIconPresetPackages(): void
+    {
+        if (! class_exists(InstalledVersions::class)) {
+            // Composer's runtime API is how the ecosystem answers this. Without it the
+            // honest answer is that nothing was measured — which is NOT the same as
+            // "everything is installed", and must not print like it.
+            $this->line('  <fg=cyan>i</> Icon preset packages not checked (Composer runtime API unavailable)');
+
+            return;
+        }
+
+        $missing = [];
+
+        foreach (app(IconResolver::class)->requiredPackages() as $preset => $package) {
+            if (! InstalledVersions::isInstalled($package)) {
+                $missing[$preset] = $package;
+            }
+        }
+
+        if ($missing === []) {
+            $this->reportPass('Every configured icon preset has its package installed');
+
+            return;
+        }
+
+        foreach ($missing as $preset => $package) {
+            $this->reportWarn(sprintf(
+                "Icon preset '%s' needs %s, which is not installed — its aliases resolve to "
+                .'identifiers that are absent, so they throw when a page renders instead of '
+                .'degrading. Run: composer require %s',
+                $preset,
+                $package,
+                $package
+            ));
+        }
+    }
+
     private function checkOptionalDependencies(): void
     {
         $chartConfig = config('wirekit.charts.library');
