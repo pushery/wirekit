@@ -20,6 +20,7 @@
  * Bundle cost: ~1 KB raw / ~450 B gzip.
  */
 import { prefersReducedMotion } from '../utils/motion.js';
+import { accessibleText } from '../utils/accessible-text.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
     levels: Array.isArray(options.levels) ? options.levels : [2],
@@ -71,7 +72,7 @@ export default (options = {}) => ({
         const sel = this.levels.map((l) => `h${l}`).join(', ');
         return Array.from(container.querySelectorAll(sel)).map((el, idx) => ({
             id: el.id || '',
-            text: (el.textContent || '').trim(),
+            text: accessibleText(el),
             level: parseInt(el.tagName.slice(1), 10),
             el,
             index: idx,

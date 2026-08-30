@@ -18,6 +18,22 @@
     // independent: a rounded panel with no border reads as a rendering fault, and
     // a full-bleed column with a radius shows a sliver of the page at each corner.
     // Default stays `card` so no existing sidebar changes.
+    // Which ARIA contract this column carries, and the two are not interchangeable.
+    //
+    // `navigation` (the default, and byte-identical to every sidebar that exists today)
+    // is a list of LINKS: each row is in the tab order, Enter follows it, and the row for
+    // the page you are on is marked `aria-current`.
+    //
+    // `selection` is one CONTROL holding many choices: the container is in the tab order
+    // once, the arrows move an `aria-activedescendant` marker without moving focus, and
+    // the chosen row is marked `aria-selected`. It emits no `aria-current` at all, which
+    // is the whole point — announcing a page you are on AND a value you have picked are
+    // two different claims, and a column that made both would be lying about one.
+    'mode' => 'navigation',
+    // The chosen value, in `selection` mode. Matched against each row's `value`, so the
+    // column can render already-selected on the server rather than waiting for Alpine —
+    // a listbox whose selection appears one frame late reads as a flicker.
+    'selected' => null,
     'variant' => 'card',
     // The surface tone, on the same `--color-wk-rail-*` roles the module rail reads —
     // minus `accent`, for the reason spelled out where the value is validated. `default` is every sidebar that
@@ -192,6 +208,23 @@
 
     $toggle = in_array($toggle, ['start', 'end', 'none'], true) ? $toggle : 'end';
 
+    $mode = in_array($mode, ['navigation', 'selection'], true) ? $mode : 'navigation';
+
+    // Selection mode and the collapse-to-icon rail do not compose, and the refusal is
+    // explicit rather than a half-working hybrid. A collapsed rail hides every label, and
+    // a listbox whose options have no visible names is a control nobody can use — while
+    // `aria-selected` would still be announced, so it would READ as usable to a screen
+    // reader and be unusable on screen. Navigation survives collapsing because an icon
+    // plus an accessible name is still a link; a choice needs its label.
+    $selectionMode = $mode === 'selection' && ! $collapsible;
+
+    if ($mode === 'selection' && $collapsible && config('app.debug')) {
+        $collapsibleSelectionWarning = '[wirekit] sidebar: `mode="selection"` is ignored while '
+            .'`collapsible` is set. A collapsed rail hides the labels a listbox option needs, so '
+            .'the column would announce a selection nobody can read. Drop `collapsible`, or keep '
+            .'the navigation contract.';
+    }
+
     // Collapse toggle button — only rendered (and only styled) for a collapsible
     // sidebar. Resolvable rather than a local variable: as a local it could not be
     // themed, moved or replaced, so the only way to restyle the one chrome control
@@ -239,7 +272,43 @@
     $scrollShadows = BooleanProp::from($scrollShadows, true);
 @endphp
 
-@if($collapsible)
+@if(isset($collapsibleSelectionWarning))
+    {{-- Dev-only, and it renders BEFORE the column so it is visible even when the sidebar
+         itself is what looks wrong. Silent in production, like every other dev warning
+         here — it uses the same Alpine helper because naming `console` throws while
+         BUILDING a component under Alpine's CSP build. --}}
+    <div x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from($collapsibleSelectionWarning) }} })" hidden></div>
+@endif
+
+@if($selectionMode)
+    {{-- SELECTION MODE — the WAI-ARIA listbox contract.
+
+         Not a `<nav>`, deliberately. A landmark announces "navigation" and invites a
+         screen-reader user to jump into it as a set of destinations; this column is one
+         control holding choices, and the two are different promises. The accessible name
+         still comes from the same `$navLabelAttrs`, so a caller's own `aria-label` wins
+         exactly as it does for the navigating column.
+
+         `tabindex="0"` on the CONTAINER and nothing focusable inside it is the whole
+         pattern: one tab stop, and the arrows move a marker rather than focus. That is
+         also why the rows below carry ids — `aria-activedescendant` points at one. --}}
+    <div
+        x-data="wirekitSidebarListbox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selected) }} })"
+        x-init="initListbox()"
+        role="listbox"
+        tabindex="0"
+        x-bind:aria-activedescendant="activeId"
+        x-on:keydown.down.prevent="moveActive(1)"
+        x-on:keydown.up.prevent="moveActive(-1)"
+        x-on:keydown.home.prevent="moveToFirst()"
+        x-on:keydown.end.prevent="moveToLast()"
+        x-on:keydown.enter.prevent="selectActive()"
+        x-on:keydown.space.prevent="selectActive()"
+        {{ $attributes->class([$classes, 'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]'])->merge($navLabelAttrs) }}
+    >
+        @include('wirekit::components.partials.sidebar-zones')
+    </div>
+@elseif($collapsible)
     {{-- Collapsible rail. The `collapsed` state lives here; `group/wk-sidebar` +
          the `data-collapsed` marker let descendant labels/indicators react via
          pure CSS (`group-data-[collapsed]/wk-sidebar:*`) — no per-item Alpine.

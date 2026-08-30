@@ -96,7 +96,7 @@ A wide catalog of components organized by category. Browse, search, and try ever
 | **Display** | badge, card, avatar, alert, callout, countdown, image, image-gallery, image-compare, kanban, stage-card, activity-row, reveal, stream, … |
 | **Data Display** | table, data-table, status-matrix, status-tiles, notification-center, pagination, stat, stats, progress, radial-progress, usage-meter, skeleton, spinner, timeline, tree-view, ticker, price, … |
 | **Overlays** | dropdown, tooltip, modal, drawer, popover, hover-card, lightbox, command-palette, alert-dialog, … |
-| **Navigation** | tabs, breadcrumb, scope-switcher, accordion, collapsible, sidebar, app-rail, navbar, brand-bar, menubar, navigation-menu, stepper, … |
+| **Navigation** | tabs, breadcrumb, scope-switcher, accordion, collapsible, sidebar, app-rail, navbar, brand-bar, menubar, navigation-menu, stepper, wizard, … |
 | **Layout** | app-shell, shell-bar, header, main, footer, container, stack, grid, section, divider, sticky-panel, skip-link, spine-aware, … |
 | **Typography** | heading, text, link, code, code-block, kbd, list, blockquote, mark, … |
 | **Marketing** | hero, feature-grid, feature, cta |

@@ -24,6 +24,8 @@ const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabi
  *   receive focus instead of Cancel
  * @param {string} [config.focusReturnTo] - CSS selector for where focus should land
  *   when the dialog closes and its own trigger no longer exists
+ * @param {string} [config.confirmationPhrase] - Exact string the developer must type
+ *   before `alert-dialog.confirm` will fire. Absent, nothing is held back.
  */
 export default function wirekitAlertDialog(config = {}) {
     const overlay = createOverlay({
@@ -80,6 +82,53 @@ export default function wirekitAlertDialog(config = {}) {
 
     return {
         ...overlay,
+
+        /**
+         * The phrase a developer must type before the confirm control will fire,
+         * and what they have typed so far.
+         *
+         * Null when the caller did not ask for a brake, which is the default and
+         * leaves every other behavior of this component untouched.
+         */
+        confirmationPhrase: typeof config.confirmationPhrase === 'string' && config.confirmationPhrase !== ''
+            ? config.confirmationPhrase
+            : null,
+        typed: '',
+
+        /**
+         * May the destructive action fire?
+         *
+         * True whenever no phrase was asked for — a dialog without a brake must
+         * behave exactly as it did before this existed.
+         *
+         * The comparison trims the ends and is otherwise EXACT. Trimming is the one
+         * concession, and it is there because a trailing space arrives from a
+         * copy-paste rather than from a decision; case-folding or collapsing inner
+         * whitespace would quietly widen what counts as "typed it", which is the
+         * opposite of what a brake is for.
+         */
+        get confirmAllowed() {
+            if (this.confirmationPhrase === null) return true;
+
+            return this.typed.trim() === this.confirmationPhrase.trim();
+        },
+
+        /**
+         * Refuse an activation of the confirm control while the phrase is unmet.
+         *
+         * This BLOCKS rather than merely describing itself as blocked. A control held
+         * back only by `aria-disabled` stays clickable, so a stray Enter — or an Alpine
+         * boot that never ran — fires the irreversible action while the dialog still
+         * looks guarded. `disabled` alone is not the answer either: a disabled button is
+         * not focusable, so the reason it is held back is never announced to anybody who
+         * would need to hear it. Both halves are needed, and this is the half that bites.
+         */
+        blockUnlessConfirmed(event) {
+            if (this.confirmAllowed) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+        },
 
         init() {
             this.initOverlay();

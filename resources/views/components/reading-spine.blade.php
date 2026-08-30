@@ -3,6 +3,12 @@
      nothing to anticipate and nothing to roll back. --}}
 @props([
     'target' => null,
+    // A selector for subtrees whose headings are NOT this page's structure. Reported from
+    // the documentation site: a page embedding live component demos listed 41 entries of
+    // which 23 were demo content — an accordion's panel titles, a carousel's product names —
+    // and `target` could not help, because the demos sit INSIDE the article that holds the
+    // real sections. Unset (the default) changes nothing about an existing call site.
+    'exclude' => null,
     'levels' => '2,3',
     'position' => 'right',
     'expand' => 'hover',
@@ -159,6 +165,7 @@
     // Plugin options as JSON for the x-data initializer. Keep keys terse.
     $alpineOptions = json_encode([
         'target' => $resolvedTarget,
+        'exclude' => $exclude,
         'levels' => $levelsArray,
         'offset' => $offsetPx,
         'numbered' => filter_var($numbered, FILTER_VALIDATE_BOOL),

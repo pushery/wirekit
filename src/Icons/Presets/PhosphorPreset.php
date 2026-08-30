@@ -282,7 +282,10 @@ final class PhosphorPreset implements IconPreset
             // which is why the right-hand sides differ.
             //
             // Deliberately NOT taken, and the reasons are worth keeping:
-            //   a11y, cursor-arrow-rays, paint-brush — no genuine cognate in all three.
+            //   a11y — no genuine cognate in all three.
+            //   cursor-arrow-rays — the SPELLING stays out, and the concept came in as
+            //     `click` below. A family's name for its own drawing is not a word the
+            //     vocabulary can share; the concept behind it is.
             //   ai, sparkle, cube-transparent — a spelling variant of a word that is
             //     already here, not a second concept. `sparkle` beside `sparkles`, or
             //     `cube-transparent` beside `cube`, gives the vocabulary two ways to ask
@@ -305,6 +308,12 @@ final class PhosphorPreset implements IconPreset
             'arrow-up' => 'phosphor-arrow-up',
             'arrow-up-right' => 'phosphor-arrow-up-right',
             'chart-pie' => 'phosphor-chart-pie',
+            // Promoted out of the marketing extension under the CONCEPT name. The
+            // extension spells it `cursor-arrow-rays`, which is heroicons' name for its
+            // own picture rather than a word anybody would reach for; that spelling stays
+            // there as the older name and is not removed. All four sets draw a pointer
+            // with an action mark, checked against the svg files in vendor/ per set.
+            'click' => 'phosphor-cursor-click',
             'code-bracket' => 'phosphor-code',
             'cog-6-tooth' => 'phosphor-gear',
             'cube' => 'phosphor-cube',
@@ -319,6 +328,11 @@ final class PhosphorPreset implements IconPreset
             'live' => 'phosphor-radio',
             'lock-closed' => 'phosphor-lock',
             'open-source' => 'phosphor-git-branch',
+            // Promoted out of the marketing extension: every set ships a real brush.
+            // The paragraph above listed this word as having no cognate in all three,
+            // which the svg trees refute — tabler draws it as `brush`, and taking the
+            // concept rather than one family's spelling is exactly the rule here.
+            'paint-brush' => 'phosphor-paint-brush',
             'puzzle-piece' => 'phosphor-puzzle-piece',
             'security' => 'phosphor-shield',
             'speed' => 'phosphor-gauge',

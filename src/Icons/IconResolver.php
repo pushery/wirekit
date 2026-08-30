@@ -76,6 +76,52 @@ final class IconResolver
     }
 
     /**
+     * The composer package each CONFIGURED preset needs, keyed by the configured entry.
+     *
+     * Exists for `wirekit:doctor`, and the shape is deliberately narrow: it answers
+     * "what does this installation's icon configuration depend on" without handing out
+     * the preset objects or the built-in map. A stacked extension preset resolves an
+     * alias onto an identifier of ITS family, so a config that names one whose package
+     * is absent fails at RENDER time, in whichever page happened to use the word —
+     * blade-icons throws rather than degrading. Asking here moves that from a page a
+     * visitor loads to a command a developer runs.
+     *
+     * Keyed by the configured entry rather than by package: two presets can share a
+     * package (`heroicons` and `heroicons-marketing` both need blade-heroicons), and
+     * the developer needs to be told which line of their config is the problem.
+     *
+     * @return array<string, string> configured entry => composer package
+     */
+    public function requiredPackages(): array
+    {
+        $packages = [];
+
+        foreach ($this->getPresets() as $index => $preset) {
+            $configured = $this->configuredEntries()[$index] ?? $preset::class;
+
+            $packages[is_string($configured) ? $configured : $preset::class] = $preset->requires();
+        }
+
+        return $packages;
+    }
+
+    /**
+     * The raw config entries, in the same order `getPresets()` returns instances.
+     *
+     * @return list<mixed>
+     */
+    private function configuredEntries(): array
+    {
+        $multi = config('wirekit.icons.presets');
+
+        if (is_array($multi) && $multi !== []) {
+            return array_values($multi);
+        }
+
+        return [config('wirekit.icons.preset', 'heroicons')];
+    }
+
+    /**
      * Internal lookup: developer aliases -> preset chain (later wins) -> exception.
      */
     private function lookup(string $alias): string

@@ -10,6 +10,121 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.41.0] — 2026-08-30
+
+Minor. Four new capabilities — a multi-step container, a selectable sidebar, type-to-confirm on
+the alert dialog, and an overflow opt-out on the card — alongside a run of repairs to surfaces
+that were documented and did nothing.
+
+Classified MINOR because the additions are additive: every new prop defaults to the behavior
+that shipped before it, so an application that upgrades and changes nothing renders exactly as
+it did.
+
+The theme of the fixes is worth stating, because it explains why so many of them are
+documentation: a prop that reaches nothing, a token that does not exist, and an example that
+names a slot the component discards all fail the same way — the page looks authored, the code
+runs, and the developer gets a hole with no error to report.
+
+### Added
+
+- **`<x-wirekit::wizard>` — a container for multi-step flows.** The step indicator was purely
+  presentational, so every application rebuilt the state machine and the navigation around it.
+  The wizard uses the existing stepper rather than replacing it, and owns the part that was
+  being rewritten each time: which step is current, what may be entered, and how focus moves
+  when it changes. See [Wizard](https://docs.wirekit.app/components/wizard).
+
+- **`<x-wirekit::sidebar mode="selection">` — a column that CHOOSES rather than navigates.**
+  The two are different ARIA contracts, not a styling difference: a navigating column emits
+  `aria-current="page"`, while a selection column is a `role="listbox"` with a single tab stop,
+  `role="option"` rows, `aria-selected`, and arrow keys that move `aria-activedescendant`
+  without moving focus. Passing `mode="selection"` gets the second contract whole. The default
+  is unchanged. See [Sidebar](https://docs.wirekit.app/components/sidebar).
+
+- **`<x-wirekit::alert-dialog>` can require the operator to type a confirmation.** The usual
+  brake before a consequential action was missing, so applications either shipped without one
+  or built it beside the dialog. A mismatched entry is REFUSED rather than styled as refused —
+  the confirming action stays disabled and says why, instead of looking available and failing.
+  See [Alert Dialog](https://docs.wirekit.app/components/alert-dialog).
+
+- **`<x-wirekit::card overflow="visible|auto|clip">`.** A child meant to lift out of the card —
+  a dropdown panel, a popover — was clipped by the card's own `overflow-hidden`, and the only
+  way out was an `!important` override in application CSS. The prop names the four values
+  directly; the default is the previous behavior. See
+  [Card](https://docs.wirekit.app/components/card).
+
+- **`<x-wirekit::command-palette>` answers `wirekit-command-palette-close`.** The documentation
+  shipped a two-button block whose second button dispatched that event, and only the `-show`
+  half had a listener. A developer who copied the pair got a Close button that did nothing,
+  beside a sibling that worked — which reads as a scoping problem in their own application.
+  Both halves are registered, and both are dropped on `destroy()`. See
+  [Overlay events](https://docs.wirekit.app/overlays/events).
+
+- **`wirekit:doctor` reports two things it could not before.** It names a configured icon preset
+  whose composer package is not installed — previously a missing glyph at render time with no
+  hint about the cause — and it says when the WireKit in `vendor/` is not the commit
+  `composer.lock` names. The second matters when reading vendor source to decide whether a
+  capability has landed: that tree can be older than the lockfile beside it while agreeing
+  about the version. A path install is reported as NOT measured rather than as clean.
+  See [CLI reference](https://docs.wirekit.app/cli-reference).
+
+- **`StrictnessGate::discardedScopeDirectives()` is a public seam.** The gate already detected a
+  scope-directive collision and warned about it; the detection was private, so a consuming
+  application could not ask the same question in its own test. The predicate is now callable
+  and returns the discarded directives rather than only writing a warning.
+
+- **Two icon aliases promoted to the base preset**, `paint-brush` and `click`, so a page naming
+  them resolves on the configuration WireKit ships rather than only under an extension preset.
+  See [Icon](https://docs.wirekit.app/components/icon).
+
+### Fixed
+
+- **`--watch` was parsed and never watched — and the one thing it did do was corrupt `dist/`.**
+  The flag existed only as `minify: !watch`, so `just watch` performed a single UNMINIFIED build
+  and exited. Because `dist/` is committed and shipped as-is, that build left the unminified
+  bundles in the tree for anyone who ran it: 76,170 inserted lines across eight files. The flag
+  now opens a real watch context, and a build without it minifies as before.
+
+- **Four design tokens were documented across 31 files and do not exist.**
+  `--color-wk-bg-active`, `--color-wk-primary`, `--color-wk-reading-spine-active` and
+  `--font-wk-display` appeared in theming and component pages as though they could be
+  overridden. Setting one changed nothing, silently. The pages now name the tokens that exist.
+  See [Theming](https://docs.wirekit.app/theming).
+
+- **Two documented props reached nothing.** `<x-wirekit::context-menu.item href="…">` promised a
+  real link and rendered a `<button>`; `<x-wirekit::reveal scope="…">` was declared, documented
+  and never passed to class resolution. Both now do what their documentation says, and a
+  `target="_blank"` link carries `rel="noopener noreferrer"`.
+
+- **The catalog described slots that are not slots, and slots that are not required.** Three
+  separate causes with one effect on `components.json`, `api-map.json` and the MCP catalog an
+  AI assistant reads: a variable bound by a Blade loop, a variable bound by list destructuring,
+  and a slot given a default with `??` — the first two surfaced as REQUIRED slots that do not
+  exist, the third made an optional slot look mandatory. `<x-wirekit::pagination>` no longer
+  advertises a slot named `link`, and `<x-wirekit::swap>`'s `on` / `off` are optional, which is
+  what the component was always built for.
+
+- **Five documentation examples named a slot the component discards.** Blade drops an unmatched
+  `<x-slot:name>` without a word, so the affected blocks rendered without the part they were
+  demonstrating — including an accessibility example whose whole point was the text alternative
+  it was silently dropping.
+
+- **`<x-wirekit::reading-spine>` reads a heading's accessible text and can skip a subtree.** A
+  heading containing an icon or a badge contributed that markup to the table of contents, and a
+  demo region inside an article had no way to stay out of it.
+
+- **`dist/README.md` documented the self-contained Alpine bundle three kilobytes under its
+  actual size.** The per-bundle decision table is what a developer reads to choose one; the
+  figures are re-measured.
+
+### Documentation
+
+- **`<x-wirekit::calendar>` documents the width it needs** — 306px, measured, not the 322 a
+  report was built on. See [Calendar](https://docs.wirekit.app/components/calendar).
+
+- **The data-bearing pages answer the text-alternative question.** Chart, sparkline and the
+  other pages that draw data documented keyboard access and left the question a screen-reader
+  user actually has — what does this chart say — to a cross-reference.
+
 ## [2.40.0] — 2026-08-29
 
 Minor. Two silent-failure repairs — a rail that renders the wrong state on a server that

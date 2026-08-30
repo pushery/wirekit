@@ -3,6 +3,16 @@
 @props([
     'danger' => false,
     'disabled' => false,
+    // Renders an `<a>` instead of a `<button>`. The docs promised this prop for a long time
+    // while the component declared only the four below and hard-coded `<button>` — so `href`
+    // fell into the attribute bag and was emitted onto the button, where HTML ignores it.
+    // Left-click did nothing and cmd-click, middle-click, "open in new tab" and "copy link
+    // address" were all dead, with no warning: a declared-looking prop on a real element.
+    //
+    // The shape mirrors `dropdown.item`, which has carried it all along — including the
+    // `target="_blank"` handling, because a menu item that opens a new tab without
+    // `rel="noopener"` hands the opened page a reference back to this one.
+    'href' => null,
     'icon' => null,
     'scope' => null,
 ])
@@ -51,15 +61,29 @@
     $disabledClasses = $disabled
         ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none'
         : '';
+
+    // `<a>` when a destination is given, `<button>` otherwise — the same rule dropdown.item
+    // uses, so a developer moving between the two menus meets one behavior.
+    $tag = $href ? 'a' : 'button';
+
+    $targetAttr = $attributes->get('target', '');
+    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $relAttr = $attributes->get('rel', '');
+    $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr.' noopener noreferrer')
+        : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
-<button
-    type="button"
+<{{ $tag }}
+    @if($href) href="{{ $href }}" @endif
+    @if($tag === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
     role="menuitem"
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
+    @if($computedRel) rel="{{ $computedRel }}" @endif
     x-on:click="close()"
-    {{ $attributes->class([$classes, $colorClasses, $disabledClasses]) }}
+    {{ $attributes->except(['rel', 'type'])->class([$classes, $colorClasses, $disabledClasses]) }}
 >
     @if($icon)
         <span class="shrink-0 w-5 h-5" aria-hidden="true">
@@ -70,4 +94,4 @@
     @endif
 
     {{ $slot }}
-</button>
+</{{ $tag }}>

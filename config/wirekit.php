@@ -351,6 +351,7 @@ return [
         'sidebar.group' => [],
         'sidebar.item' => [],
         'stepper' => ['orientation' => 'horizontal'],
+        'wizard' => ['orientation' => 'horizontal'],
 
         // Advanced form components
         // No 'format' key: date-picker renders a native <input type="date">, whose
@@ -489,6 +490,13 @@ return [
         // Stack extra presets. The one below is heroicons-based and needs
         // blade-heroicons installed — see the note in the comment block above
         // before stacking it onto lucide, phosphor or tabler.
+        //
+        // `php artisan wirekit:doctor` now answers this for your installation: it
+        // names any configured preset whose package is absent, and it names the
+        // config entry rather than the package, because two presets can need the
+        // same one. Worth running after changing the line below — a preset whose
+        // package is missing does not degrade to a placeholder, it throws when a
+        // page renders.
         // 'presets' => ['heroicons', 'heroicons-marketing'],
 
         // Override individual aliases (optional).

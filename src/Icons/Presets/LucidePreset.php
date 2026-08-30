@@ -256,7 +256,10 @@ final class LucidePreset implements IconPreset
             // which is why the right-hand sides differ.
             //
             // Deliberately NOT taken, and the reasons are worth keeping:
-            //   a11y, cursor-arrow-rays, paint-brush — no genuine cognate in all three.
+            //   a11y — no genuine cognate in all three.
+            //   cursor-arrow-rays — the SPELLING stays out, and the concept came in as
+            //     `click` below. A family's name for its own drawing is not a word the
+            //     vocabulary can share; the concept behind it is.
             //   ai, sparkle, cube-transparent — a spelling variant of a word that is
             //     already here, not a second concept. `sparkle` beside `sparkles`, or
             //     `cube-transparent` beside `cube`, gives the vocabulary two ways to ask
@@ -279,6 +282,12 @@ final class LucidePreset implements IconPreset
             'arrow-up' => 'lucide-arrow-up',
             'arrow-up-right' => 'lucide-arrow-up-right',
             'chart-pie' => 'lucide-chart-pie',
+            // Promoted out of the marketing extension under the CONCEPT name. The
+            // extension spells it `cursor-arrow-rays`, which is heroicons' name for its
+            // own picture rather than a word anybody would reach for; that spelling stays
+            // there as the older name and is not removed. All four sets draw a pointer
+            // with an action mark, checked against the svg files in vendor/ per set.
+            'click' => 'lucide-mouse-pointer-click',
             'code-bracket' => 'lucide-code',
             'cog-6-tooth' => 'lucide-settings',
             'cube' => 'lucide-box',
@@ -292,6 +301,11 @@ final class LucidePreset implements IconPreset
             'live' => 'lucide-radio',
             'lock-closed' => 'lucide-lock',
             'open-source' => 'lucide-git-branch',
+            // Promoted out of the marketing extension: every set ships a real brush.
+            // The paragraph above listed this word as having no cognate in all three,
+            // which the svg trees refute — tabler draws it as `brush`, and taking the
+            // concept rather than one family's spelling is exactly the rule here.
+            'paint-brush' => 'lucide-paintbrush',
             'puzzle-piece' => 'lucide-puzzle',
             'security' => 'lucide-shield',
             'speed' => 'lucide-gauge',
