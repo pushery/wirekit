@@ -69,7 +69,16 @@
 
     @if(trim((string) $slot) === '')
         <x-wirekit::button intent="danger" surface="filled">{{ __('Confirm') }}</x-wirekit::button>
-    @elseif(str_contains((string) $slot, '<x-wirekit'))
+    @elseif(preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) === 1)
+        {{-- The caller supplied their own control. Matched on the RENDERED markup,
+             because that is what a slot holds: by the time it is cast to a string
+             Blade has already compiled `<x-wirekit::button>` into `<button>`, so a
+             test for the tag NAME never matched and every caller fell through to the
+             branch below -- which wrapped their finished button in a second one.
+             Nested buttons are invalid HTML, and a browser repairing them tears the
+             surrounding structure apart: the control rendered as an empty box beside
+             its own label, and on the documentation page every heading after it
+             stopped being a heading. --}}
         {{-- Caller supplied a full WireKit component — use it verbatim, the way
              alert-dialog.cancel does. --}}
         {{ $slot }}

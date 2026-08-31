@@ -37,7 +37,13 @@
     $current = max(1, min($total, (int) $current));
 
     $classes = WireKit::resolveClasses('wizard', 'base', implode(' ', [
-        'flex flex-col gap-[var(--padding-wk-y-lg)]',
+        // w-full because the stepper inside already carries it, and a percentage
+        // resolves against a parent that has to have a width of its own. Without it
+        // the wizard is a flex column with no width, so it takes the intrinsic width
+        // of whichever step is showing -- and the step indicator, which should be a
+        // stable frame around the flow, changed size as the reader moved through it.
+        // On a short step it shrank far enough that a two-word label wrapped mid-word.
+        'flex flex-col w-full gap-[var(--padding-wk-y-lg)]',
     ]), $scope);
 
     $panelClasses = WireKit::resolveClasses('wizard', 'panel', '', $scope);

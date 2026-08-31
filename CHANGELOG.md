@@ -10,6 +10,31 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.41.1] — 2026-08-31
+
+Patch. Three defects with one root between two of them: a slot was asked about Blade syntax
+it can no longer contain by the time the question is asked.
+
+### Fixed
+
+- **`<x-wirekit::alert-dialog.cancel>` and `.confirm` wrapped your button in a second
+  button.** Both let the caller supply their own control instead of the default one, and both
+  decided which case they were in by looking for `<x-wirekit` in the slot. A slot holds
+  RENDERED markup, so by then Blade has already compiled that tag into `<button>` — the test
+  never matched, and every caller who passed a button got it wrapped. Nested buttons are
+  invalid HTML, and a browser repairing them splits the nesting: the control rendered as an
+  empty box with its label stranded beside it, and on a page where one appeared, every
+  heading after it stopped being a heading. Detection now reads the rendered markup. See
+  [Alert Dialog](https://docs.wirekit.app/components/alert-dialog).
+
+- **`<x-wirekit::wizard>` had no width of its own, so it shrank onto the step being shown.**
+  It rendered as a flex column with no width, which takes the intrinsic width of its content
+  — in any container that sizes to its content, the wizard became as wide as the current
+  step. The step indicator inside it asks for the full width and faithfully filled a box that
+  had already collapsed, so the frame around the flow changed size as the reader moved
+  through it, and on a short step a two-word label wrapped mid-word. See
+  [Wizard](https://docs.wirekit.app/components/wizard).
+
 ## [2.41.0] — 2026-08-30
 
 Minor. Four new capabilities — a multi-step container, a selectable sidebar, type-to-confirm on
