@@ -10,6 +10,98 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.42.0] — 2026-08-31
+
+A minor release: seven components gained an opt-in prop or attribute, and a sweep of
+accessibility and pointer fixes went through the catalog. Everything here is additive — an
+unset prop resolves to what it resolved to before, so an upgrade from 2.41.x changes no
+rendering you did not ask it to change.
+
+### Added
+
+- **`sidebar` takes `persist-driver="cookie"`, so the server can render the collapsed state it
+  will keep.** `persist` was a localStorage key, and no server reads localStorage: a column that
+  remembered being collapsed rendered at its seed width and the client corrected it a frame
+  later. See [sidebar](https://docs.wirekit.app/components/sidebar).
+- **`sidebar.collapsible` and `sidebar.group` announce themselves.** The collapsible root now
+  carries `role="group"` and a name taken from its label, its trigger carries `aria-controls`,
+  and the disclosed region carries the matching `id`. Both read the role and the label through
+  the attribute bag, so a caller can still override either.
+- **`profile` takes `as="div"` or `as="button"`.** A control that synthesized its own keyboard
+  model out of a `div` is the shape the native element exists for. The default is unchanged.
+  See [profile](https://docs.wirekit.app/components/profile).
+- **`dropdown.item` takes `active`**, which sets `aria-current` — `page` on a link, `true` on an
+  action — and marks the entry by weight and color. A menu whose most common use is navigation
+  had no way to say which page you are on. See
+  [dropdown](https://docs.wirekit.app/components/dropdown).
+- **A `select` option can declare the language of its own label.** The per-option array form now
+  accepts `lang`. A language picker lists endonyms, so most of its labels are words in a
+  language the document is not in, and a screen reader read all of them in the page's voice
+  (WCAG 2.1 AA 3.1.2). Both the flat and the grouped form. See
+  [select](https://docs.wirekit.app/components/select).
+- **`hideLabel` reaches `theme-controller`, `toggle`, `number-input` and `password-input`.** The
+  label stays for assistive technology and leaves the layout. It matters most on
+  `theme-controller`: the `select` variant is the only shape that can offer the third "System"
+  state, and it was the only one that could not hide its label. See
+  [theme-controller](https://docs.wirekit.app/components/theme-controller).
+
+### Changed
+
+- **`dropdown.item` marks the keyboard caret with `focus-visible` and a ring, not a filled
+  background.** The menu focuses its first item on open, and a filled row reads as a selection
+  rather than as a caret position — on a twelve-entry menu it looked like you were already on
+  that page. Keyboard users keep the mark; a click no longer produces one.
+- **`sidebar`'s `collapsed` prop is nullable.** With `false` as the default, "not set" and
+  "explicitly expanded" were one value, and a server seeding from a cookie would override the
+  call site rather than fill in for it. An unset prop still resolves to `false`.
+
+### Fixed
+
+- **The table's trailing scroll hint switches off at the end of the scroll.** Its sentinels had
+  no width, so at full scroll the trailing one sat exactly on the scrollport edge, where an
+  IntersectionObserver has no dependable verdict — the hint could stay lit over the end of the
+  table, which is the one moment it promises to go away. Each sentinel now carries a pixel,
+  taken straight back with a negative logical margin, so a non-overflowing table is no wider
+  than before and the behavior flips correctly in a right-to-left table.
+- **`link` rendered as a button shows a pointer.** Tailwind v4's preflight sets
+  `cursor: default` on `button`, reversing the v3 default, so an underlined link whose action
+  had to be a POST or a Livewire call left the underline as its only affordance.
+- **Ten more buttons across four components** — `reading-bookmark`, `reading-spine`,
+  `color-picker`, and `app-rail.item` under `as="button"` — carry a pointer for the same reason.
+- **`checkbox` carries its own touch target.** The visible box is 20px and the input is 1x1, so
+  conformance rested on nothing being placed beside it — a property of the page rather than of
+  the component, and dense lists are where that room runs out. Default variant only: in `card`
+  the label already is the target.
+- **`sidebar`'s collapse toggle has a name before Alpine boots**, as do the `carousel`
+  play control, the `app-rail` expand toggle and the `tour.step` close button. All four were
+  named only by a binding, so the server-rendered markup carried no accessible name at all.
+- **`wirekit:doctor` no longer reports a seam this package maintains.**
+  `wirekit.components.*.classes` is a supported override point, and every correct use of it was
+  reported as an option this version no longer offers — a red gate over working code for any
+  project running `--fail-on=warning`.
+- **The late-registration guard no longer reports an error about a page that is working.** A
+  Livewire redirect-navigate re-evaluates the bundle's head script, and the guard read its own
+  fresh module scope as a missing registration. Fixed per bundle rather than globally, so a
+  genuine diagnostic still fires for every other bundle on the page.
+- **The strictness gate sees all five scope directives.** `x-effect` and `x-model` were missing,
+  and a discarded `x-model` is a two-way binding that silently never binds — visible only as a
+  field that does not change.
+- **Two component descriptions named prop values the validator rejects.** `app-rail` said
+  `caption` where the value is `below`, and `swap` said `crossfade` where it is `fade`. With
+  `APP_DEBUG` off the gate returns the first allowed value instead of throwing, so the invalid
+  value rendered the wrong mode rather than failing.
+
+### Documentation
+
+- The [console-shell blueprint](https://docs.wirekit.app/blueprints/application-shells/console-shell)
+  states its scroll model: `viewport` pins the root, and only `main` and the two navigation
+  columns scroll. Reaching for `position: sticky` there produces no error, no warning and no
+  visible change, which reads in a diff like somebody's decision.
+- `dist/README.md` describes `wirekit.min.css`, which is what `@wirekitStyles` has emitted since
+  2.35.0 — its only CSS figure previously described the readable copy, 81 KB gzip against 13 KB.
+- The public CSS API page states when a scroll sentinel needs its pixel taken back and when it
+  does not.
+
 ## [2.41.1] — 2026-08-31
 
 Patch. Three defects with one root between two of them: a slot was asked about Blade syntax

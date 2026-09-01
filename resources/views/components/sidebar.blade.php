@@ -6,8 +6,14 @@
     // icon-only rail: an auto-rendered toggle flips the state, item/group labels
     // become sr-only (accessible names preserved), and only icons stay visible.
     'collapsible' => false,
-    // Initial collapsed state (only meaningful with `collapsible`).
-    'collapsed' => false,
+    // Initial collapsed state (only meaningful with `collapsible`). Left unset, the
+    // cookie driver below is allowed to answer it instead — which is the whole point
+    // of that driver, so an explicit value here wins and turns the seeding off.
+    //
+    // Null rather than false so those two cases stay APART. Once the boolean cast has
+    // run they are the same value, and a server that cannot tell "not set" from
+    // "explicitly collapsed=false" would override a developer who asked for expanded.
+    'collapsed' => null,
     // Surface shape. `card` (default) is the self-contained panel: background,
     // border on all four sides, rounded, meant to sit inside a padded column.
     // `flush` is the full-bleed navigation COLUMN of the common admin layout —
@@ -53,8 +59,22 @@
     // An outside trigger reaches this sidebar through the `wirekit:sidebar:toggle`
     // window event instead; see the docs page.
     'toggle' => 'end',
-    // Optional localStorage key — persists the collapsed state across reloads.
+    // Optional storage key — persists the collapsed state across reloads.
     'persist' => null,
+    // WHERE that choice is remembered: 'local' (default) or 'cookie'.
+    //
+    // No server can read localStorage, so a column that remembers being collapsed
+    // renders at its seed width and corrects itself after the first paint. An adopting
+    // application measured that on the rail next door at 0.1097 CLS against a budget of
+    // 0.1 — the content column moving 187px, 53ms in. The usual answer, a blocking
+    // inline script in the head, is unavailable under a strict `script-src 'self'`
+    // policy without a nonce.
+    //
+    // A cookie is the only store Blade and Alpine both read, so this driver mirrors the
+    // flag there and the first render is already right. Opt-in on purpose: writing a
+    // cookie where a developer asked for localStorage is a behavior change, and a cookie
+    // is something an application has to be able to account for.
+    'persistDriver' => 'local',
     // Accessible name for the navigation landmark. Defaults to "Sidebar" so
     // assistive tech can tell it apart from the main <nav>; override it when the
     // page carries more than one navigation landmark. Passing aria-label OR
@@ -94,6 +114,40 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $collapsible = BooleanProp::from($collapsible, false);
     $zoneInset = BooleanProp::from($zoneInset, true);
+
+    $persistDriver = WireKit::validateProp('sidebar', 'persistDriver', $persistDriver, ['local', 'cookie']);
+
+    // The server half of the cookie driver, and it runs BEFORE the boolean cast on purpose:
+    // the cast turns null into false, and after that "not set" and "explicitly expanded" are
+    // one value. Seeding then would override the developer instead of filling in for them.
+    //
+    // The REQUEST is asked first and the superglobal only as a fallback, and that order is
+    // the fix rather than a detail. PHP fills `$_COOKIE` once per PROCESS, not once per
+    // request. Under `fpm-fcgi` those coincide — a process serves one request and dies — which
+    // is why reading it alone looks correct for as long as it does. Every server that keeps a
+    // worker alive across requests (Octane, FrankenPHP, RoadRunner) fills it at boot, when
+    // there is no request, and never again; the column then renders the other state and
+    // nothing throws.
+    //
+    // The superglobal stays as a FALLBACK because dropping it would be a regression. The
+    // cookie is written by JavaScript, so it arrives as plaintext, and Laravel's
+    // `EncryptCookies` nulls a plaintext cookie it cannot decrypt unless the name is excepted.
+    // An application on FPM that never added that exception is served by `$_COOKIE` today and
+    // must keep working. The fallback can fail to answer but cannot answer WRONGLY: on a
+    // long-lived server nothing writes `$_COOKIE` per request, so it is empty rather than
+    // another visitor's value, and the result is only ever compared as a boolean.
+    if ($collapsed === null && $persistDriver === 'cookie' && $persist !== null) {
+        $stored = request()->cookie($persist);
+
+        if (! is_string($stored)) {
+            $stored = isset($_COOKIE[$persist]) && is_string($_COOKIE[$persist]) ? $_COOKIE[$persist] : null;
+        }
+
+        if ($stored !== null) {
+            $collapsed = $stored === '1';
+        }
+    }
+
     $collapsed = BooleanProp::from($collapsed, false);
 
     // Landmark accessible name. Only emit our default `aria-label` when the
@@ -327,7 +381,14 @@
              a strict policy. The key is emitted as a JSON literal rather than
              through {{ \Pushery\WireKit\Support\AlpinePayload::from() }}, because {{ \Pushery\WireKit\Support\AlpinePayload::from() }} renders a non-empty payload as
              JSON.parse(…) and JSON is a global the CSP evaluator cannot resolve. --}}
-        x-data="wirekitSidebarRail({ collapsed: {{ $collapsed ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
+        x-data="wirekitSidebarRail({ collapsed: {{ $collapsed ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }}, persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::from($persistDriver) }} })"
+        {{-- Emitted STATICALLY as well as bound, for the same reason the width below is.
+             Until Alpine boots, `:data-collapsed` has not run — and roughly 25 descendant
+             rules key off `group-data-[collapsed]/wk-sidebar:*`. Without this a column that
+             was asked to start collapsed renders at the right WIDTH with its contents laid
+             out for the wrong one, until the first frame. Alpine's binding then owns the
+             attribute: it sets '' or null on every toggle, so the two never disagree. --}}
+        @if($collapsed) data-collapsed @endif
         :data-collapsed="collapsed ? '' : null"
         {{-- Read by exactly the rules that hide TEXT, and by nothing else. While the column
              is widening back the names stay out of the layout, so they are never set at a
@@ -361,6 +422,16 @@
         <button
             type="button"
             x-on:click="toggle()"
+            {{-- Emitted STATICALLY as well as bound, for the same reason `data-collapsed`
+                 above is. Until Alpine boots, `:aria-label` has not run — so the only
+                 content of this button is a decorative <svg>, and it reaches a screen
+                 reader as a bare "button". A server-side accessibility check never gets
+                 past that point at all, so for one it is nameless permanently.
+                 Alpine owns both attributes after init and rewrites them on every toggle,
+                 so the static pair can never disagree with the bound one. Same __() keys,
+                 so the translation is maintained once. --}}
+            aria-expanded="{{ $collapsed ? 'false' : 'true' }}"
+            aria-label="{{ $collapsed ? __('Expand sidebar') : __('Collapse sidebar') }}"
             :aria-expanded="collapsed ? 'false' : 'true'"
             :aria-label="collapsed ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Expand sidebar')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Collapse sidebar')) }}"
             class="{{ $collapseBtnClasses }}"

@@ -65,13 +65,17 @@ export default function wirekitSidebarRail(config = {}) {
         ready: false,
 
         _persistKey: config.persist || null,
+        // 'local' or 'cookie'. The helper defaults the same way, but naming it here keeps a
+        // factory built by a test — which passes no config at all — on the documented store
+        // rather than on whatever the helper's signature happens to say today.
+        _persistDriver: config.persistDriver || 'local',
         _readyFrame: null,
         _onExternalToggle: null,
         _onWidthSettled: null,
         _settleFallback: null,
 
         init() {
-            this.collapsed = readPersistedFlag(this._persistKey, this.collapsed);
+            this.collapsed = readPersistedFlag(this._persistKey, this.collapsed, this._persistDriver);
 
             // One frame, then the width may animate. `requestAnimationFrame` is guarded
             // because a plain unit harness has no browser globals — the same reason `$el` is
@@ -189,7 +193,7 @@ export default function wirekitSidebarRail(config = {}) {
                 }, longest + 80);
             }
 
-            writePersistedFlag(this._persistKey, this.collapsed);
+            writePersistedFlag(this._persistKey, this.collapsed, this._persistDriver);
             this._announce();
         },
 

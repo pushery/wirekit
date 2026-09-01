@@ -20,6 +20,12 @@
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
     'announceError' => null,
     'label' => null,
+    // Render the label sr-only (kept as the control's accessible name) — for a
+    // toggle in a table column or a toolbar whose surrounding chrome already
+    // names it. The <label> WRAPS the control, so the name is associated with the
+    // element rather than with the visible text and survives being taken off the
+    // screen. Mirrors input / select / textarea / combobox / checkbox `hideLabel`.
+    'hideLabel' => false,
     'hint' => null,
     'error' => null,
     'size' => config('wirekit.components.toggle.size', 'md'),
@@ -50,6 +56,10 @@
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+
+    // Same trap one level in: an UNBOUND `hideLabel="false"` reaches here as the
+    // truthy string 'false' and would hide the label the call site asked to show.
+    $hideLabel = BooleanProp::from($hideLabel, false);
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -187,7 +197,7 @@
         </span>
 
         @if($label)
-            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none">{{ $label }}</span>
+            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
         @endif
     </label>
 

@@ -34,6 +34,11 @@
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
     'announceError' => null,
     'label' => null,
+    // Render the label sr-only (kept as the field's accessible name) — for a
+    // compact field in a toolbar or header, where the stacked visible label costs
+    // a second line the layout does not have. The real <label for="…"> stays in
+    // the DOM, so the name survives. Mirrors input / select / textarea / combobox.
+    'hideLabel' => false,
     'hint' => null,
     'error' => null,
     'size' => config('wirekit.components.password-input.size', 'md'),
@@ -52,6 +57,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $toggle = BooleanProp::from($toggle, true);
     $strengthMeter = BooleanProp::from($strengthMeter, false);
+    $hideLabel = BooleanProp::from($hideLabel, false);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -189,7 +195,7 @@
     <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
     @if($label)
-        <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$id" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 
     <div class="relative">

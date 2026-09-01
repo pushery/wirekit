@@ -58,9 +58,18 @@ final class StrictnessGate
      * One list, read by the predicate and by the reader of the component's own template, so
      * the two cannot come to disagree about which directives the rule covers.
      *
+     * `x-effect` and `x-model` were added after a consuming application reported that its own
+     * copy of this guard had needed them, and its reasoning holds here. `x-effect` is what a
+     * caller reaches for when a component's own `x-init` cannot follow a change — that is, the
+     * very tool the first instance of this defect calls for, so repairing one collision runs
+     * straight into the next. And a discarded `x-model` is a two-way binding that silently
+     * never binds, which is the quietest failure of the five: a discarded `x-data` is visible
+     * because nothing happens at all, while a discarded `x-model` looks like a field that just
+     * does not change.
+     *
      * @var list<string>
      */
-    private const SCOPE_DIRECTIVES = ['x-data', 'x-init', 'x-modelable'];
+    private const SCOPE_DIRECTIVES = ['x-data', 'x-init', 'x-effect', 'x-model', 'x-modelable'];
 
     public const HTML_GLOBAL_ATTRIBUTES = [
         'id', 'class', 'style', 'title', 'lang', 'dir', 'hidden', 'inert',

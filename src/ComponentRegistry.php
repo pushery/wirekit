@@ -52,7 +52,7 @@ class ComponentRegistry
             'toggle-button' => ['category' => 'Display', 'description' => 'Single two-state button that stays pressed (aria-pressed) — the bold/italic/mute shape'],
 
             // ── Layout ──
-            'app-rail' => ['category' => 'Navigation', 'description' => 'Full-height module rail with tooltip, caption, or inline labels'],
+            'app-rail' => ['category' => 'Navigation', 'description' => 'Full-height module rail with tooltip, below (captions under the icons), or inline labels'],
             'app-shell' => ['category' => 'Layout', 'description' => 'App shell with header, sidebar, and main content'],
             'aspect-ratio' => ['category' => 'Layout', 'description' => 'Constrained aspect ratio wrapper'],
             'center' => ['category' => 'Layout', 'description' => 'Center content horizontally and vertically'],
@@ -191,7 +191,7 @@ class ComponentRegistry
             'status-matrix' => ['category' => 'Display', 'description' => '2D grid of typed status cells (tristate / toggle / status / heat) with sticky headers'],
             'status-tiles' => ['category' => 'Display', 'description' => 'N entities as colored status tiles, one glance — a fleet light with optional legend and colorblind-safe status icons'],
             'stream' => ['category' => 'Display', 'description' => 'Streaming text output (SSE) with correct live-region a11y, reduced-motion buffering, and defined abort / error states'],
-            'swap' => ['category' => 'Display', 'description' => 'Two-state icon primitive — crossfade, rotate or flip between two children'],
+            'swap' => ['category' => 'Display', 'description' => 'Two-state icon primitive — fade (crossfade), rotate or flip between two children'],
             'table' => ['category' => 'Display', 'description' => 'Data table with sorting and styling options'],
             'ticker' => ['category' => 'Display', 'description' => 'Compact label + value + delta widget for dashboards'],
             'testimonial' => ['category' => 'Marketing', 'description' => 'Cited customer quote — figure/blockquote semantics, author, role, logo, optional rating'],

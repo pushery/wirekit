@@ -127,6 +127,26 @@
     // to peer-checked / peer-focus-visible / peer-disabled via sibling selectors.
     $boxClasses = WireKit::resolveClasses('checkbox', 'base', implode(' ', [
         'relative inline-flex items-center justify-center shrink-0',
+        // A 2.75rem hit area centered on the box, which is 20px in the default size. The
+        // library already ships this primitive and the theme-controller already consumes it;
+        // the checkbox simply never asked for it.
+        //
+        // ON THE BOX, not on the <label>, and that placement is the whole decision. The
+        // default label is the box PLUS its text — 155x20 in one measured case — so a hit area
+        // centered there would sit over the words rather than over the control.
+        //
+        // DEFAULT VARIANT ONLY, which is the counter-check this needs. In `card` the <label>
+        // IS the target: a bordered, full-width, already-tall clickable card. Hanging an
+        // absolutely-positioned 44px area off the box inside it would push roughly 12px past
+        // the card's own edge, so taps in the gap BETWEEN two cards would land on the upper
+        // card's checkbox. The card variant needs no reserve and must not grow one.
+        //
+        // Note this does not make the checkbox newly conformant: axe reports no `target-size`
+        // violation today, because 2.5.8's spacing exception counts the free room around the
+        // control. That is the point — conformance rested on nothing being placed beside it,
+        // and in a dense list (ten call sites in one adopting application, several of them
+        // dense) that room is exactly what runs out.
+        $variantValue === 'card' ? '' : 'wk-touch-target',
         $sizing,
         'rounded-[var(--radius-wk-sm)]',
         'border-[length:var(--border-wk-width)]',

@@ -59,6 +59,59 @@
         'duration-[var(--transition-wk-duration)]',
         'cursor-pointer',
     ]), $scope);
+
+    // Read THROUGH the bag rather than written before it. A hardcoded attribute followed
+    // by the bag's own emits the attribute twice and the FIRST one wins, so a developer's
+    // own name was present in the markup and still never reached the reader — the shape
+    // sidebar.toggle was corrected to, which this component had not caught up with.
+    $groupLabel = $attributes->has('aria-labelledby')
+        ? null
+        : ($attributes->get('aria-label') ?: ((string) $label !== '' ? $label : null));
+
+    // The role stays UNCONDITIONAL here, and that is a divergence from bento-grid and
+    // accordion — both of which emit `role="group"` only when something can name it,
+    // each holding that decision with its own case ("a role=group with no accessible
+    // name is noise: it announces a boundary and then cannot say what the boundary is
+    // for"). This component is the outlier, and `sidebar.collapsible` follows the
+    // majority rather than this file.
+    //
+    // Not reconciled here because reconciling it means REMOVING a role from every
+    // unlabeled group already shipped — a subtractive change no ticket asked for, and
+    // one an existing case ("renders group without label") states on purpose. Which of
+    // the two rules is the house rule is a maintainer call, not a side effect of an
+    // aria-controls fix.
+    $groupRole = $attributes->get('role', 'group');
+
+    // The disclosed region's id, so the trigger's `aria-controls` can name it. Seeded
+    // rather than randomized: a per-render id makes Livewire's morph replace the live
+    // region with a clone, which replays the collapse transition.
+    // Suffixed because the bag emits a caller-supplied `id` on the ROOT, and two
+    // elements sharing one id is a defect of its own.
+    // Only the collapsible branch has a region to name, so a static group computes
+    // nothing — the id would be a value nothing reads.
+    //
+    // The seed falls back PAST the label, because an unlabeled collapsible group is a
+    // shipped shape here rather than an edge case: the trigger below carries a generic
+    // name for exactly it. `stableId` with no seed returns a random suffix, so seeding
+    // from the label alone would re-randomize that shape's id on every render and hand
+    // it the morph churn this seeding exists to prevent. `persist` comes next because
+    // two unlabeled groups that both persist their fold state must already carry
+    // distinct keys to keep distinct state.
+    //
+    // The constant is last, and it DOES collide: two unlabeled, unpersisted collapsible
+    // groups on one page share a panel id. That is the deliberate trade — the collision
+    // needs two anonymous groups on one page, while the random id was wrong on every
+    // render of every one of them. `sidebar.collapsible` keeps a random fallback for its
+    // own anonymous case on purpose, and says so there; the shapes differ because that
+    // one has an icon to seed from and this one has nothing.
+    $panelId = $collapsible
+        ? ($attributes->get('id') ?: WireKit::stableId(
+            'wk-sidebar-group',
+            (string) $label !== ''
+                ? (string) $label
+                : (is_string($persist) && $persist !== '' ? $persist : 'section')
+        )).'-panel'
+        : null;
 @endphp
 
 @if($collapsible)
@@ -67,10 +120,10 @@
          container keeps role="group" + aria-label so AT still announces the labeled
          group; the button carries the expand/collapse role. --}}
     <div
-        role="group"
-        @if($label) aria-label="{{ $label }}" @endif
+        @if($groupRole) role="{{ $groupRole }}" @endif
+        @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif
         x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
-        {{ $attributes->class([$groupClasses]) }}
+        {{ $attributes->except(['role', 'aria-label'])->class([$groupClasses]) }}
     >
         {{-- The trigger and the section's own control sit side by side. The wrapper is
              only emitted when there IS an action, so a group without one keeps the exact
@@ -80,6 +133,7 @@
             type="button"
             x-on:click="toggle()"
             :aria-expanded="open ? 'true' : 'false'"
+            aria-controls="{{ $panelId }}"
             {{-- No visible label to name the button? fall back to a generic name so the
                  disclosure control is never nameless (WCAG 4.1.2). --}}
             @unless($label) aria-label="{{ __('Section') }}" @endunless
@@ -106,12 +160,12 @@
              the static sidebar.group + sidebar.collapsible. The `typeof collapsed`
              guard avoids a ReferenceError when the group sits in a non-collapsible
              sidebar (no `collapsed` in Alpine scope). --}}
-        <div x-show="childrenVisible()" x-collapse x-cloak class="flex flex-col gap-[2px]">
+        <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse x-cloak class="flex flex-col gap-[2px]">
             {{ $slot }}
         </div>
     </div>
 @else
-    <div role="group" @if($label) aria-label="{{ $label }}" @endif {{ $attributes->class([$groupClasses]) }}>
+    <div @if($groupRole) role="{{ $groupRole }}" @endif @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif {{ $attributes->except(['role', 'aria-label'])->class([$groupClasses]) }}>
         {{-- The `action` slot is the small control that belongs TO the section — the
              "add a team" plus beside a Teams heading. It is a SIBLING of the label, and
              in the collapsible branch a sibling of the disclosure BUTTON, because an

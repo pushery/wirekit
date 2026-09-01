@@ -6,6 +6,15 @@
     'disabled' => false,
     'icon' => null,
     'shortcut' => null, // keyboard-shortcut hint shown at the inline-end (e.g. "⌘K")
+    // "This is the page you are on." A navigation menu's most common state, and until now
+    // there was no way to say it — so the only mark on screen was the focus ring the menu
+    // puts on its first item when it opens, which reads as a selection to everyone who did
+    // not put it there.
+    //
+    // Deliberately NOT painted as a background. Hover and focus already use the subtle
+    // surface, and a third thing that looks like those two would not tell them apart. The
+    // current entry is marked by weight and text color, which survives beside either.
+    'active' => false,
     'scope' => null,
 ])
 
@@ -23,6 +32,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $danger = BooleanProp::from($danger, false);
     $disabled = BooleanProp::from($disabled, false);
+    $active = BooleanProp::from($active, false);
 
     // Base item classes — full-width flex row with hover state
     $classes = WireKit::resolveClasses('dropdown.item', 'base', implode(' ', [
@@ -35,7 +45,23 @@
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         'focus:outline-none',
-        'focus:bg-[var(--color-wk-bg-subtle)]',
+        // `focus-visible`, not `focus`, and a RING rather than only a surface.
+        //
+        // The menu focuses its first item on open so keyboard users land inside it. With a
+        // plain `focus:` background that meant every mouse-opened menu painted its first entry
+        // the moment it appeared — and a filled row reads as "you are here", not as "the
+        // caret is here". Reported by a user sitting on a page that was not in the menu at
+        // all: "why is that highlighted when I am not even on that page?"
+        //
+        // `focus-visible` is the heuristic the browser already maintains: it matches after a
+        // programmatic focus when the last interaction was the keyboard, and does not after a
+        // click. So the keyboard user keeps the mark and the mouse user, who never asked for
+        // it, no longer gets one. The ring is what separates focus from the `active` state
+        // below, which is a weight-and-color change and can sit under it without conflict.
+        'focus-visible:bg-[var(--color-wk-bg-subtle)]',
+        'focus-visible:ring-[length:var(--ring-wk-width)]',
+        'focus-visible:ring-inset',
+        'focus-visible:ring-[var(--color-wk-ring)]',
         'cursor-pointer',
     ]), $scope);
 
@@ -48,6 +74,14 @@
     $disabledClasses = $disabled
         ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none'
         : '';
+
+    // The current entry. Weight and color only: hover and focus own the surface, and a third
+    // background would be indistinguishable from them at exactly the moment it matters. This
+    // stays legible while an item is hovered AND while it holds focus, which a surface cannot.
+    // `danger` keeps its own color — an active destructive item is still destructive.
+    $activeClasses = $active && ! $danger
+        ? 'font-medium text-[color:var(--color-wk-accent-text)]'
+        : ($active ? 'font-medium' : '');
 
     // Render as <a> when href is provided, otherwise <button>
     $tag = $href ? 'a' : 'button';
@@ -76,8 +110,13 @@
     role="menuitem"
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
+    {{-- The state said out loud, not only drawn. `page` when the item navigates, `true` when it
+         does not — an item without an href is an action, and "page" would be a claim about a
+         document that is not being visited. A caller who set `aria-current` themselves keeps
+         theirs: this fills a gap rather than overriding an author. --}}
+    @if($active && ! $attributes->has('aria-current')) aria-current="{{ $href ? 'page' : 'true' }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except(['rel', 'type'])->class([$classes, $colorClasses, $disabledClasses]) }}
+    {{ $attributes->except(['rel', 'type'])->class([$classes, $colorClasses, $activeClasses, $disabledClasses]) }}
 >
     {{-- Optional icon (resolved via WireKit icon system) --}}
     @if($icon)

@@ -161,11 +161,27 @@
     role="region"
     aria-label="{{ $tableLabel ?? __('Scrollable table') }}"
 >
-{{-- Zero inline size: as flex items these now sit IN the row, so a `w-px` each
-     would widen every non-overflowing table by two pixels — a layout change paid by
-     everyone to detect a condition that is not present. `w-0` still has a box for
-     the observer to watch. --}}
-<div x-ref="startSentinel" aria-hidden="true" class="w-0 shrink-0 self-stretch"></div>
+{{-- One real pixel each, canceled by a negative margin on the side facing the table.
+
+     The pixel is what the observer needs. A zero-AREA target sitting exactly on the
+     scrollport edge is not dependably "intersecting", so at full scroll the trailing
+     hint had no determinate off-state and could stay lit over the end of the table —
+     the one moment the component promises it goes away. A zero inline size was
+     chosen originally to spare every non-overflowing table two pixels of width —
+     spelled out here in words rather than as the class, because Tailwind scans
+     Blade comments too and would compile a utility nothing renders, which the
+     reverse drift diff then reports as an untraceable selector. The sidebar zones
+     and the
+     scope-switcher list pay that same cost off with `-mb-px` / `-mt-px`, and the
+     arithmetic carries over: 1px of width plus -1px of margin is zero net
+     contribution on a `shrink-0` flex item. The observer gets its pixel and the
+     reader none.
+
+     The margin is logical, not physical. It has to land on the side facing the table
+     so the pixel sits INSIDE the scroll content instead of protruding past its edge,
+     and in a right-to-left table that side is the other one — which `-me-` / `-ms-`
+     follow and `-mr-` / `-ml-` would not. --}}
+<div x-ref="startSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -me-px"></div>
 @endif
     <table
         {{ $attributes->class([$classes]) }}
@@ -189,7 +205,10 @@
         {{ $slot }}
     </table>
 @if($responsive)
-<div x-ref="endSentinel" aria-hidden="true" class="w-0 shrink-0 self-stretch"></div>
+{{-- `-ms-px` mirrors the start sentinel: the canceling margin faces the table, so
+     this pixel is the LAST pixel of the scroll content rather than one past it, and
+     a scroller at maximum scroll therefore has it fully in view. --}}
+<div x-ref="endSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -ms-px"></div>
 </div>
 {{-- aria-hidden: the shadow is an affordance for the eye. A screen reader is told about
      the scroll region by the role and label on the scroller itself. --}}

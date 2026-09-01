@@ -217,7 +217,16 @@
     // the drawer panel had.
     $buttonReset = $railTag === 'button' ? 'wk-rail-item-button' : '';
 
-    $linkAttributes = $attributes->except('rel')->class([$classes, $activeClasses => $active, $buttonReset => $railTag === 'button']);
+    // The pointer rides the same condition but stays a utility rather than joining
+    // that reset rule. Tailwind v4's preflight sets `cursor: default` on `button`,
+    // reversing v3, so every button in this package puts the affordance back through
+    // its own class list — the rail item is the one that would spell it somewhere
+    // else, and a cursor is an affordance rather than a piece of the UA-chrome reset
+    // the rule above undoes. The `<a>` branch gets none: an anchor with an href
+    // already carries the pointer, and one without should not claim it.
+    $buttonCursor = $railTag === 'button' ? 'cursor-pointer' : '';
+
+    $linkAttributes = $attributes->except('rel')->class([$classes, $activeClasses => $active, $buttonReset => $railTag === 'button', $buttonCursor => $railTag === 'button']);
 @endphp
 
 {{-- THREE literal branches, and the shape is forced rather than chosen.

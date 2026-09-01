@@ -141,10 +141,16 @@
     {{ $attributes->class([$rootClass]) }}
 >
     <span class="wk-reading-bookmark__label">Resume reading where you left off?</span>
+    {{-- Both controls spell out `cursor-pointer` because nothing else supplies
+         it: Tailwind v4's preflight sets `cursor: default` on `button` (v3
+         inherited the user agent's pointer), and `.wk-reading-bookmark__resume`
+         and `__dismiss` carry no declarations in dist/wirekit.css — the class
+         names are hooks for a developer, not styles. Without it the prompt
+         reads as static text. --}}
     <button
         type="button"
         @click="resume()"
-        class="wk-reading-bookmark__resume inline-flex items-center px-3 py-1 rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-[length:var(--text-wk-xs)] font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
+        class="wk-reading-bookmark__resume inline-flex items-center cursor-pointer px-3 py-1 rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-[length:var(--text-wk-xs)] font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
     >
         Resume
     </button>
@@ -152,7 +158,7 @@
         type="button"
         @click="dismiss()"
         aria-label="{{ __('Dismiss') }}"
-        class="wk-reading-bookmark__dismiss inline-flex items-center justify-center w-6 h-6 rounded-full text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+        class="wk-reading-bookmark__dismiss inline-flex items-center justify-center cursor-pointer w-6 h-6 rounded-full text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
     >
         <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
             <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 10-1.06-1.06L10 8.94 6.28 5.22z" />
