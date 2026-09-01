@@ -229,6 +229,18 @@
             <button
                 type="button"
                 x-on:click="toggle()"
+                {{-- Static as well as bound. Before Alpine runs, both <svg> children are
+                     decorative and the bindings have not evaluated, so the control is a
+                     nameless, stateless "button" — and to a server-side accessibility
+                     check it stays one.
+
+                     The static pair says NOT PLAYING, which is what the markup actually
+                     represents: the factory seeds `playing: false` and only calls play()
+                     from init(). It is also the state that SURVIVES for a reader who asked
+                     for less motion — autoplay never starts for them, so "Play" is not a
+                     transient value there but the final one. --}}
+                aria-pressed="true"
+                aria-label="{{ __('Play carousel') }}"
                 :aria-pressed="playing ? 'false' : 'true'"
                 {{-- Resolved server-side: a literal here would be untranslatable AND invisible to every __() extractor. --}}
                 :aria-label="playing ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Pause carousel')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Play carousel')) }}"

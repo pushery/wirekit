@@ -39,6 +39,14 @@
 
     $classes = WireKit::resolveClasses('link', 'base', implode(' ', [
         'font-[family-name:var(--font-wk-sans)]',
+        // Unconditional, and NOT narrowed to the non-anchor branch. A link is defined by what
+        // it does rather than by the tag it happens to render, and this component renders a
+        // `<button>` whenever the action has to be a POST or a Livewire call — which is exactly
+        // what `as="button"` is for. On an anchor this repeats what the user-agent stylesheet
+        // already says and costs nothing; on a button it replaces the `cursor: default` that
+        // Tailwind v4's preflight sets, which is where the pointer went missing. Reported from
+        // three auth screens where the only affordance left was the underline.
+        'cursor-pointer',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',

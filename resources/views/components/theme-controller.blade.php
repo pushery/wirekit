@@ -17,6 +17,14 @@
     // Accessible name. The control has no visible text in the button variant, so
     // without this it announces as "button" and nothing else.
     'label' => __('Dark mode'),
+    // Render the switch/select label sr-only (kept as the control's accessible
+    // name) — for a header or toolbar where the surrounding chrome already says
+    // what the control is. The <label> WRAPS the control here, so the name is
+    // associated with the element rather than with the visible text and survives
+    // being taken off the screen. No-op on the button variant, which has no
+    // visible text at all. Mirrors input / select / textarea / combobox /
+    // checkbox `hideLabel`.
+    'hideLabel' => false,
     // Wording for the select variant's three options. Translated by default;
     // pass your own to change the WORDS rather than just the language — an app
     // may want "Automatic / Day / Night", which no locale file can express.
@@ -25,6 +33,7 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -35,6 +44,10 @@
     $variant = WireKit::validateProp('theme-controller', 'variant', $variant, ['button', 'switch', 'select']);
     $size = WireKit::validateProp('theme-controller', 'size', $size, ['sm', 'md']);
     $surface = WireKit::validateProp('theme-controller', 'surface', $surface, ['filled', 'ghost']);
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy, so
+    // `hideLabel="false"` would mean the opposite of what the call site reads as.
+    $hideLabel = BooleanProp::from($hideLabel, false);
 
     // Control (button-variant) chrome. Full literal class strings so the Tailwind
     // scanner sees them. The inner <button> routes through resolveClasses with its
@@ -152,7 +165,7 @@
             >
                 <span class="wk-theme-switch-knob absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)] transition-transform duration-[var(--transition-wk-duration)]"></span>
             </span>
-            <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
+            <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
         </label>
     @else
         {{-- The only shape that can say "system". A two-state control cannot: it
@@ -160,7 +173,7 @@
              it, and then their machine going dark at sunset leaves this page
              behind. --}}
         <label class="inline-flex items-center gap-[var(--gap-wk-sm)]">
-            <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
+            <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
             <select
                 x-model="theme"
                 x-on:change="select($event.target.value)"

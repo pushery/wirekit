@@ -83,7 +83,14 @@
                 x-on:click="next()"
                 class="p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-accent-hover)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 x-text="currentStep === totalSteps - 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Finish')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Next')) }}"
-            ></button>
+            {{-- A literal opening label, because x-text is the button's ONLY content: until
+                 Alpine evaluates it the element is empty, so the control has no accessible
+                 name at all — and a server-side accessibility check sees nothing else, ever.
+                 x-text overwrites this text node on its first evaluation.
+                 "Next" rather than "Finish": which one is right depends on the step index,
+                 which lives in Alpine and not on the server, and every step but the last
+                 opens on "Next". --}}
+            >{{ __('Next') }}</button>
         </div>
     </div>
 </div>

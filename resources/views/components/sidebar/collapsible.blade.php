@@ -31,6 +31,48 @@
 
     $variant = WireKit::validateProp('sidebar.collapsible', 'variant', $variant, ['default', 'heading']);
 
+    // The `label` names the trigger BUTTON — it is that button's accessible name and
+    // nothing else. So a section of four links reached assistive tech as a button
+    // followed by four links, with nothing binding them together. These two values are
+    // what binds them.
+    //
+    // Read THROUGH the bag rather than written before it. A hardcoded attribute followed
+    // by the bag's own emits the attribute twice and the FIRST one wins, so a developer's
+    // own name would be present in the markup and still never reach the reader — the
+    // shape sidebar.toggle was corrected to for exactly that reason. A caller supplying
+    // aria-labelledby gets no aria-label from us, so the two never compete for one name.
+    $groupLabel = $attributes->has('aria-labelledby')
+        ? null
+        : ($attributes->get('aria-label') ?: ((string) $label !== '' ? $label : null));
+
+    // The role is coupled to the NAME instead of being emitted unconditionally. A
+    // role="group" nothing can name announces a boundary and then cannot say what the
+    // boundary is for — noise in the accessibility tree of every page that uses one.
+    // bento-grid and accordion already decided this, each held by its own red-proof.
+    $groupRole = $attributes->get(
+        'role',
+        $groupLabel !== null || $attributes->has('aria-labelledby') ? 'group' : null
+    );
+
+    // The disclosed region needs an id so the trigger's `aria-controls` can name it —
+    // the wiring the standalone <x-wirekit::collapsible> already carries.
+    //
+    // Seeded from the label, falling back to a bare icon name, because a per-render
+    // random id makes Livewire's morph treat the region as a NEW node on every round
+    // trip: it replaces the live node with a clone, and x-collapse replays its height
+    // transition instead of holding the open height. With neither a label nor an icon
+    // there is nothing stable to derive from, and the random suffix remains on purpose —
+    // a collision between two anonymous widgets on one page is worse than a re-render.
+    //
+    // Suffixed rather than reused: the bag emits a caller-supplied `id` on the ROOT, and
+    // two elements sharing one id is a defect of its own.
+    $panelId = ($attributes->get('id') ?: WireKit::stableId(
+        'wk-sidebar-collapsible',
+        (string) $label !== ''
+            ? (string) $label
+            : (is_string($icon) && ! str_contains($icon, '<') ? $icon : null)
+    )).'-panel';
+
     // Collapsible sidebar group — a disclosure widget that toggles child items.
     // The default trigger looks like a sidebar item but acts as an expand/collapse
     // toggle. Uses aria-expanded for AT, and indents child content by one level.
@@ -101,7 +143,9 @@
 
 <div
     x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
-    {{ $attributes }}
+    @if($groupRole) role="{{ $groupRole }}" @endif
+    @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif
+    {{ $attributes->except(['role', 'aria-label']) }}
 >
     {{-- Trigger button — toggles the child items. aria-expanded announces
          the current state to screen readers. --}}
@@ -113,6 +157,14 @@
         type="button"
         x-on:click="toggle()"
         :aria-expanded="open ? 'true' : 'false'"
+        aria-controls="{{ $panelId }}"
+        {{-- With no label the trigger's only contents are the aria-hidden icon and the
+             aria-hidden chevron, so it reaches a screen reader as a bare "button"
+             (WCAG 4.1.2) — the same class as the sidebar's own collapse toggle. Fall
+             back to a generic name, exactly as sidebar.group does for its twin.
+             A caller's `aria-label` cannot serve here: it is read through the bag above
+             and names the ROOT, not this button. --}}
+        @if((string) $label === '') aria-label="{{ __('Section') }}" @endif
         class="{{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
     >
         @if($icon)
@@ -167,7 +219,7 @@
          guard is mandatory — a sidebar.collapsible used inside a NON-collapsible
          <x-wirekit::sidebar> has no `collapsed` in Alpine scope, so a bare
          `open || collapsed` would throw a ReferenceError there. --}}
-    <div x-show="childrenVisible()" x-collapse x-cloak class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:ms-0 group-data-[collapsed]/wk-sidebar:ps-0 group-data-[collapsed]/wk-sidebar:border-s-0">
+    <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse x-cloak class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:ms-0 group-data-[collapsed]/wk-sidebar:ps-0 group-data-[collapsed]/wk-sidebar:border-s-0">
         {{ $slot }}
     </div>
 </div>

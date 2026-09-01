@@ -370,6 +370,14 @@
                     <button
                         type="button"
                         x-on:click="toggle()"
+                        {{-- Static as well as bound: before Alpine runs, this button holds
+                             nothing but a decorative <svg>, so a screen reader — and any
+                             server-side accessibility check, permanently — meets a nameless
+                             control. `$expanded` is the same normalized value the factory is
+                             seeded with a few lines up, so the two states agree, and Alpine
+                             owns both attributes from init onward. --}}
+                        aria-expanded="{{ $expanded ? 'true' : 'false' }}"
+                        aria-label="{{ $expanded ? __('Collapse rail') : __('Expand rail') }}"
                         :aria-expanded="expanded ? 'true' : 'false'"
                         :aria-label="expanded ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Collapse rail')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Expand rail')) }}"
                         class="{{ $toggleClasses }}"

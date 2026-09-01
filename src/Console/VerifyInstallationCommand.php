@@ -480,7 +480,68 @@ class VerifyInstallationCommand extends Command
     private const OPAQUE_CONFIG_MAPS = [
         'icons.aliases',
         'fonts.fallbacks',
+        // The class seam. `WireKit::resolveClasses()` reads
+        // `wirekit.components.<name>.classes.<block>`, and the block names are the
+        // component's own — `base`, `segment-selected`, and so on for every component in
+        // the catalog. The stub cannot list them: it would have to carry a `classes` entry
+        // for all 264 components times each of their blocks, and the entry is a full class
+        // string a developer replaces rather than a default they tweak.
+        //
+        // So every correct use of a supported seam was reported as an option that had been
+        // removed. Measured in a consuming project: eleven `<x-wirekit::link>` and one
+        // `<x-wirekit::segmented-control>` carrying the house colors, reported as residue.
+        // With `--fail-on=warning`, which the shared CI lane runs, that is a red gate, and
+        // the three ways out are all bad — throw away working styling, run red forever, or
+        // stop reading the lane.
+        //
+        // A `*` matches exactly one path segment. That precision is the point: it exempts
+        // `components.button.classes.base` and leaves `components.button.legacyRounding`
+        // reportable, which is the case the counter-check next door pins.
+        'components.*.classes',
     ];
+
+    /**
+     * Whether a flattened config path sits under one of the developer-keyed nodes.
+     *
+     * A `*` in a pattern matches exactly one segment, never a run of them, so a pattern
+     * cannot quietly widen into its neighbors as the config grows.
+     */
+    private static function isOpaqueConfigPath(string $path): bool
+    {
+        foreach (self::OPAQUE_CONFIG_MAPS as $pattern) {
+            if (! str_contains($pattern, '*')) {
+                if ($path === $pattern || str_starts_with($path, $pattern.'.')) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            $patternSegments = explode('.', $pattern);
+            $pathSegments = explode('.', $path);
+
+            // The path has to reach the node before it can be inside it.
+            if (count($pathSegments) < count($patternSegments)) {
+                continue;
+            }
+
+            $matches = true;
+
+            foreach ($patternSegments as $i => $segment) {
+                if ($segment !== '*' && $segment !== $pathSegments[$i]) {
+                    $matches = false;
+
+                    break;
+                }
+            }
+
+            if ($matches) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private function checkConfigDrift(): void
     {
@@ -558,10 +619,8 @@ class VerifyInstallationCommand extends Command
                 // `fonts.fallbacks.*`, a feature that SHIPPED IN THE SAME RELEASE as
                 // this check, whose stub value is `[]` so that no correct use can
                 // ever match.
-                foreach (self::OPAQUE_CONFIG_MAPS as $prefix) {
-                    if ($path === $prefix || str_starts_with($path, $prefix.'.')) {
-                        return false;
-                    }
+                if (self::isOpaqueConfigPath($path)) {
+                    return false;
                 }
 
                 // LEAF HERE, BRANCH THERE. `components.checkbox => []` in the

@@ -311,10 +311,15 @@
             {{-- Back-to-top pill — fixed at the spine bottom, scrolls
                  to top on click. Reduced-motion respected via the same
                  matchMedia check as scrollTo. Visible only when expanded
-                 OR when scrollY > 0 (you're past the top). --}}
+                 OR when scrollY > 0 (you're past the top).
+
+                 `cursor-pointer` is spelled out because nothing else supplies
+                 it: Tailwind v4's preflight sets `cursor: default` on `button`,
+                 and `.wk-reading-spine__back-to-top` has no declarations in
+                 dist/wirekit.css — it is a styling hook, not a style. --}}
             <button
                 type="button"
-                class="wk-reading-spine__back-to-top mt-2 ml-2 inline-flex items-center justify-center w-8 h-8 rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-reading-spine__back-to-top mt-2 ml-2 inline-flex items-center justify-center cursor-pointer w-8 h-8 rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 aria-label="{{ __('Back to top') }}"
                 @click="scrollToTop()"
             >

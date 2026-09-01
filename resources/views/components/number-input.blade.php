@@ -28,6 +28,12 @@
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
     'announceError' => null,
     'label' => null,
+    // Render the label sr-only (kept as the field's accessible name) — for a
+    // compact stepper in a toolbar or a table cell, where the stacked visible
+    // label costs a second line the layout does not have. The real <label for="…">
+    // stays in the DOM, so the name survives. Mirrors input / select / textarea /
+    // combobox.
+    'hideLabel' => false,
     'hint' => null,
     'error' => null,
     'size' => config('wirekit.components.number-input.size', 'md'),
@@ -63,6 +69,10 @@
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+
+    // Same trap one level in: an UNBOUND `hideLabel="false"` reaches here as the
+    // truthy string 'false' and would hide the label the call site asked to show.
+    $hideLabel = BooleanProp::from($hideLabel, false);
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -204,7 +214,7 @@
     <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
     @if($label)
-        <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$id" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 
     <div class="flex items-center">

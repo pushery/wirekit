@@ -416,12 +416,19 @@
                 </div>
             @endif
 
-            {{-- Format toggle + editable value field. --}}
+            {{-- Format toggle + editable value field.
+
+                 Every control in the panel below spells out `cursor-pointer`.
+                 Tailwind v4's preflight sets `cursor: default` on `button`, and
+                 the panel's buttons are styled entirely by these literal utility
+                 strings — only the trigger and the swatch get a pointer from
+                 elsewhere ($swatchClasses), which is what made the file look
+                 covered while six controls were not. --}}
             <div class="flex items-center gap-2">
                 <button
                     type="button"
                     @click="cycleFormat()"
-                    class="shrink-0 rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     aria-label="{{ __('Cycle color format') }}"
                     x-text="format"
                 ></button>
@@ -440,7 +447,7 @@
                         type="button"
                         x-show="hasEyeDropper"
                         @click="eyedropper()"
-                        class="shrink-0 rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                         aria-label="{{ __('Pick a color from the screen') }}"
                     >
                         {{-- A recognizable PIPETTE silhouette (angled dropper barrel + tip).
@@ -452,7 +459,7 @@
                 <button
                     type="button"
                     @click="copy()"
-                    class="shrink-0 rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copy color value')) }}"
                 >
                     {{-- Canonical clipboard glyph (matches <x-wirekit::clipboard-button>);
@@ -469,7 +476,7 @@
                     <button
                         type="button"
                         @click="clear()"
-                        class="shrink-0 rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                         aria-label="{{ __('Clear color') }}"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
@@ -485,7 +492,7 @@
                         <button
                             type="button"
                             @click="pickColor({{ \Pushery\WireKit\Support\AlpinePayload::from($preset) }})"
-                            class="h-6 w-6 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                            class="h-6 w-6 cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             style="background-color: {{ $preset }};"
                             aria-label="{{ __('Use :color', ['color' => $preset]) }}"
                         ></button>
@@ -500,7 +507,7 @@
                         <button
                             type="button"
                             @click="pickColor(recent)"
-                            class="h-6 w-6 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                            class="h-6 w-6 cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             :style="recentStyle(recent)"
                             :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Use :color')) }}.replace(':color', recent)"
                         ></button>

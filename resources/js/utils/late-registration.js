@@ -38,6 +38,44 @@ export function reportLateRegistration(bundle, wasEarly) {
         return;
     }
 
+    /*
+     * A SECOND evaluation of the same bundle can never be the thing this guard reports, and
+     * before this check it always reported it.
+     *
+     * The flag `wasEarly()` reads lives in the bundle's module scope. Evaluate the file again
+     * while Alpine is already running — which a Livewire redirect-navigate does, by executing the
+     * replaced head script — and that flag is a fresh `false` in a fresh closure. `alpine:init`
+     * has long since fired and does not fire again, so it can never become true; `readyState` is
+     * already "complete", so the check runs immediately rather than on `load`; and the theme
+     * controller every page carries satisfies the markup test. Every gate passes and the console
+     * gets an error about a page that is working.
+     *
+     * The message then sends the reader somewhere there is nothing: it names `async`, a runtime
+     * injection and a bundler that dropped `defer`, and in this branch the tag is present, it is
+     * `defer`, and registration just happened one expression earlier.
+     *
+     * Measured from a consuming application against a live site under its real CSP: 3/3 runs on a
+     * locale switch produced it, while three ordinary `wire:navigate` jumps between the same pages
+     * produced none.
+     *
+     * Keyed per bundle rather than globally: `wirekit.js` and `wirekit.core.js` can both be on a
+     * page, and one having been seen says nothing about the other. Held on `window` because that
+     * is the only scope a second evaluation shares with the first — which is the whole defect,
+     * stated as the fix.
+     *
+     * The real case still reports. A bundle genuinely loaded late — `async` instead of `defer` —
+     * is a FIRST evaluation, so nothing is recorded yet and the guard arms exactly as before.
+     */
+    if (typeof window !== 'undefined') {
+        const seen = window.__wirekitBundlesEvaluated || (window.__wirekitBundlesEvaluated = {});
+
+        if (seen[bundle]) {
+            return;
+        }
+
+        seen[bundle] = true;
+    }
+
     const check = () => {
         /*
          * `alpine:init` having reached us means we were early after all, and the

@@ -216,10 +216,23 @@
                 Options accept three shapes (mix freely):
                   - Flat:            ['de' => 'Germany']                       → <option>
                   - Per-option attrs:['de' => ['label' => 'Germany',
-                                               'disabled' => true]]            → disabled <option>
+                                               'disabled' => true,
+                                               'lang' => 'de']]                → disabled <option>
                   - Grouped:         ['Europe' => ['de' => 'Germany', ...]]    → <optgroup>
                 A group is an array value WITHOUT a 'label' key; a single option
                 with attributes is an array value WITH a 'label' key.
+
+                `lang` exists for one control and that control is common: a language picker
+                lists endonyms, so `Deutsch`, `Español` and `Français` are words in a language
+                the document is not in. Without it a screen reader says all of them in the
+                page's voice — WCAG 2.1 AA 3.1.2, whose proper-name exception does not apply,
+                because an endonym is not a borrowed word. It is the one control that exists
+                FOR readers of those languages, so it is the one place their language must not
+                be mispronounced.
+
+                No automated run catches its absence. axe's `valid-lang` rule carries the
+                wcag312 tag but only validates a lang attribute that is PRESENT; with none
+                there are no nodes to judge, and the scan reports zero violations.
             --}}
             @foreach($options as $optionValue => $optionLabel)
                 @if(is_array($optionLabel) && ! array_key_exists('label', $optionLabel))
@@ -228,16 +241,18 @@
                             @php
                                 $sLabel = is_array($subLabel) ? ($subLabel['label'] ?? $subValue) : $subLabel;
                                 $sDisabled = is_array($subLabel) && ! empty($subLabel['disabled']);
+                                $sLang = is_array($subLabel) && isset($subLabel['lang']) ? (string) $subLabel['lang'] : null;
                             @endphp
-                            <option value="{{ $subValue }}"{{ $sDisabled ? ' disabled' : '' }}{{ $isSelected($subValue) ? ' selected' : '' }}>{{ $sLabel }}</option>
+                            <option value="{{ $subValue }}"@if($sLang !== '' && $sLang !== null) lang="{{ $sLang }}"@endif{{ $sDisabled ? ' disabled' : '' }}{{ $isSelected($subValue) ? ' selected' : '' }}>{{ $sLabel }}</option>
                         @endforeach
                     </optgroup>
                 @else
                     @php
                         $oLabel = is_array($optionLabel) ? ($optionLabel['label'] ?? $optionValue) : $optionLabel;
                         $oDisabled = is_array($optionLabel) && ! empty($optionLabel['disabled']);
+                        $oLang = is_array($optionLabel) && isset($optionLabel['lang']) ? (string) $optionLabel['lang'] : null;
                     @endphp
-                    <option value="{{ $optionValue }}"{{ $oDisabled ? ' disabled' : '' }}{{ $isSelected($optionValue) ? ' selected' : '' }}>{{ $oLabel }}</option>
+                    <option value="{{ $optionValue }}"@if($oLang !== '' && $oLang !== null) lang="{{ $oLang }}"@endif{{ $oDisabled ? ' disabled' : '' }}{{ $isSelected($optionValue) ? ' selected' : '' }}>{{ $oLabel }}</option>
                 @endif
             @endforeach
             {{ $slot }}
