@@ -6,6 +6,24 @@
     'compact' => config('wirekit.components.table.compact', false),
     'responsive' => config('wirekit.components.table.responsive', true),
     'stickyHeader' => false,
+    // How tall the scroll-confined body may get before it scrolls. `stickyHeader` needs a
+    // bounded height to mean anything at all — the wrapper already carries `overflow-x: auto`,
+    // which makes it a scroll container on BOTH axes, so a `sticky` heading measures itself
+    // against a box that never scrolls vertically and therefore never sticks. The height is
+    // the CONDITION, not the decoration.
+    //
+    // It was a fixed `24rem` until a reader with a five-row table reported the obvious
+    // consequence: a box that reserves 24rem, never scrolls, and is visibly worse than the
+    // plain table it replaced. The default stays `24rem` so nothing that renders today moves;
+    // a viewport-relative value like `70vh` is what a table of unknown length wants, because
+    // the limit then simply never applies to the short case.
+    //
+    // Any CSS length, taken exactly as written. The value reaches the element as an inline
+    // max-height rather than as a utility class, so it is not confined to the lengths a build
+    // has already seen — `calc(100vh - 4rem)` arrives with its spaces intact. A length the
+    // browser cannot parse is dropped like any other bad declaration, so an unusable value
+    // leaves no max-height rather than a wrong one. The reasoning is with the code below.
+    'stickyHeaderMax' => config('wirekit.components.table.sticky-header-max', '24rem'),
     'stickyColumn' => false, // freeze the FIRST column while the rest scroll horizontally
     'alpineSort' => false, // enable client-side Alpine sorting (no Livewire needed)
     // WCAG 2.1.1 (Keyboard) — when stickyHeader makes the table body
@@ -28,6 +46,24 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $stickyHeader = BooleanProp::from($stickyHeader, false);
+
+    // The value reaches the element as an inline max-height rather than as a Tailwind class,
+    // and that is the whole design of this prop rather than a shortcut. Two reasons, and
+    // neither of them is a preference.
+    //
+    // Tailwind can only generate a utility for a value it has SEEN, and it sees source text.
+    // A caller-supplied length exists in the caller's own Blade, so their build would generate
+    // it — but this package's build cannot, and a class this package emits with no rule behind
+    // it is a silently absent max-height. Worse, writing the utility with a variable inside its
+    // brackets makes the scanner read the expression itself as a class name; both the compiled
+    // stylesheet and the drift diff picked that up, twice, once from the attribute and once
+    // from a comment describing it.
+    //
+    // An inline height has none of that: it needs no scanner, no safelist entry, and it takes
+    // any CSS length exactly as written — `calc(100vh - 4rem)` included, with no escaping.
+    $stickyHeaderStyle = $stickyHeader
+        ? 'max-height: '.trim((string) $stickyHeaderMax).';'
+        : null;
     $stickyColumn = BooleanProp::from($stickyColumn, false);
     $alpineSort = BooleanProp::from($alpineSort, false);
 
@@ -156,7 +192,8 @@
          sitting at its inline edges — an IntersectionObserver watching them therefore
          answered a vertical question, and the trailing-edge hint only appeared once
          something had already scrolled. Which is after the moment it exists for. --}}
-    class="flex w-full min-w-0 overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'max-h-96 overflow-y-auto' : '' }}"
+    class="flex w-full min-w-0 overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'overflow-y-auto' : '' }}"
+    @if($stickyHeaderStyle) style="{{ $stickyHeaderStyle }}" @endif
     tabindex="0"
     role="region"
     aria-label="{{ $tableLabel ?? __('Scrollable table') }}"

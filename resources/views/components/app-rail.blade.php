@@ -26,8 +26,15 @@
     // No server can read localStorage, so a rail that remembers being expanded renders
     // collapsed and widens itself after the first paint. An adopting application measured
     // that at 0.1097 CLS against a budget of 0.1 — the content column moving 187px, 53ms in.
-    // The usual fix is a blocking inline script in the head, which a strict
-    // `script-src 'self'` policy without a nonce simply blocks.
+    // Reported again on 2026-09-01 from several production applications, as the navigation
+    // being briefly collapsed and then snapping open.
+    // A small nonced script after the column closes that gap now — it reads the stored flag
+    // while the parser is still working and swaps the width class before anything is painted.
+    // This comment used to end here saying the usual fix is an inline script "which a strict
+    // `script-src 'self'` policy without a nonce simply blocks", and that was an argument
+    // against an UNNONCED script: `fonts.blade.php` had already answered the same objection
+    // for its inline <style> by emitting `WireKit::cspNonce()`. Where a policy refuses it
+    // anyway, the column falls back to exactly the behavior described above.
     //
     // A cookie is the only store Blade and Alpine both read, so this driver mirrors the
     // flag there and the first render is already right. Opt-in on purpose: writing a cookie
@@ -121,12 +128,12 @@
     // place a rail width is decided and the column follows it — including while the
     // expand transition is mid-flight.
     //
-    // Every one of them carries `--wk-rail-gutter`, which is 0 everywhere except beside an
-    // inset content panel. There the shell's gap belongs to this column rather than sitting
-    // between the two: the column's horizontal rules have to REACH the panel, or the shell's
-    // one line arrives at the seam and stops eight pixels short of it. Adding the gap to the
-    // width is what carries the rule across; the matching trailing inset below puts the
-    // modules back exactly where they were, so nothing moves and only the line grows.
+    // The width is the token and nothing else, including beside an inset content panel. The
+    // column used to add the shell's gap to itself there, so that its horizontal rules would
+    // REACH the panel instead of stopping short of the seam. The rules still have to reach it
+    // — but a wider column puts every glyph in the stack off the column's own center, which
+    // is what that bought and what was reported. So the RULES overflow the column now, and
+    // the column keeps the one width every other rail has. See dist/wirekit.css.
     $restingWidth = match ($labels) {
         'below' => 'w-[calc(var(--size-wk-rail-labeled,4.75rem)_+_var(--wk-rail-gutter,0px))]',
         'inline' => 'w-[calc(var(--size-wk-rail-expanded,15rem)_+_var(--wk-rail-gutter,0px))]',
@@ -391,3 +398,20 @@
         </div>
     @endif
 </nav>
+
+{{-- Immediately after the column, so `document.currentScript.previousElementSibling` is this
+     rail and nothing else. Only for the `local` driver: the cookie driver has already been
+     answered by the server above, and re-answering it here would be a second source for one
+     value. Only when the state was not pinned by the caller either — an explicit `expanded`
+     turns the seeding off by design, and storage must not override it. --}}
+@if($persist !== null && $persistDriver === 'local' && $expandable)
+    @include('wirekit::components.partials.nav-persist-seed', [
+        'seedKey' => $persist,
+        'seedOn' => $expanded,
+        'seedClassOn' => $expandedWidth,
+        'seedClassOff' => $restingWidth,
+        // The rail only expands above the shell's own breakpoint, and the factory gates on
+        // exactly this. Ungated, a phone would widen for one frame and narrow again.
+        'seedMinWidth' => '64rem',
+    ])
+@endif

@@ -128,6 +128,20 @@
       bg-[color-mix(in_srgb,var(--color-wk-danger)_12%,var(--color-wk-bg))]
       bg-[var(--color-wk-bg-muted)]
 
+    Hovers — the same expression at a higher share, so no new token is needed and
+    both modes follow the theme through --color-wk-bg:
+      hover:bg-[color-mix(in_srgb,var(--color-wk-accent)_18%,var(--color-wk-bg))]
+      hover:bg-[color-mix(in_srgb,var(--color-wk-success)_18%,var(--color-wk-bg))]
+      hover:bg-[color-mix(in_srgb,var(--color-wk-warning)_18%,var(--color-wk-bg))]
+      hover:bg-[color-mix(in_srgb,var(--color-wk-danger)_18%,var(--color-wk-bg))]
+
+    Neutral has no tint token, and it is deliberately NOT the filled() pairing of
+    muted → subtle: measured against a real theme that is L=0.972 → L=0.985 in
+    light mode, so the hover gets brighter by 1.3 points — at the threshold of
+    perception and pointing the way a reader parses as fading out. Mixing toward
+    the TEXT color is right in both modes by construction.
+      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
+
     (text color classes shared with outline() above)
 
     ────────────────────────────────────────────────────────────────────────

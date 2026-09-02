@@ -65,7 +65,24 @@ function renderUnifiedTooltip({ series, seriesIndex, dataPointIndex, w }) {
     let xLabel = '';
     if (hoveredPoint && typeof hoveredPoint === 'object' && !Array.isArray(hoveredPoint) && 'x' in hoveredPoint) {
         xLabel = hoveredPoint.x;
-    } else if (g.labels && g.labels[dataPointIndex] !== undefined) {
+    } else if (
+        g.labels && g.labels[dataPointIndex] !== undefined
+        // …EXCEPT when ApexCharts has rewritten the axis under us, which it does for a
+        // line or area chart given `xaxis.categories`: it empties `categories`, sets
+        // `type: 'numeric'` and `isXNumeric: true`, moves the strings to
+        // `globals.categoryLabels`, and leaves `globals.labels` holding the numeric
+        // POSITIONS. Reading `labels` first then puts the data-point index in the header
+        // where the date belongs — `15` instead of `08/18/2026`.
+        //
+        // Decided on the VALUE rather than on `isXNumeric` or the chart type, because the
+        // rewrite is the thing that matters and nothing guarantees it stays tied to one
+        // type: a number here with a string at the same index of `categoryLabels` means it
+        // happened, whatever the chart is called. A chart whose labels really are numbers
+        // has no string there and keeps taking this branch.
+        && !(typeof g.labels[dataPointIndex] === 'number'
+            && g.categoryLabels
+            && typeof g.categoryLabels[dataPointIndex] === 'string')
+    ) {
         xLabel = g.labels[dataPointIndex];
     } else if (g.categoryLabels && g.categoryLabels[dataPointIndex] !== undefined) {
         xLabel = g.categoryLabels[dataPointIndex];

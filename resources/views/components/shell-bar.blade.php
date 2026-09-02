@@ -211,8 +211,17 @@
              A hamburger, a back arrow or a workspace mark has to stay put — put one in the
              default slot and it scrolls away with the tabs the moment the bar overflows,
              which on a phone is immediately. `shrink-0` for the same reason the trailing
-             cluster has it: the thing that gives way under pressure is the middle. --}}
-        <div class="flex shrink-0 items-center gap-[var(--gap-wk-sm,0.5rem)]">
+             cluster has it: the thing that gives way under pressure is the middle.
+
+             The slot's own attributes land on THIS wrapper, and that is what lets a caller
+             write `<x-slot:start class="lg:hidden">`. Without it the only place to hang a
+             responsive class was the control inside, and a control that is `display: none`
+             leaves its wrapper behind as a zero-width flex item — which still takes the bar's
+             `gap` on both sides of it. The heading beside it then carries a phantom indent
+             that nothing in the markup accounts for: measured at 1728px on the sidebar-shell
+             blueprint, whose start slot holds a toggle hidden above `lg`, the title sat 12px
+             — one `--gap-wk-md` — to the right of the text beneath it. --}}
+        <div {{ \Pushery\WireKit\Support\SlotAttributes::of($start)->class('flex shrink-0 items-center gap-[var(--gap-wk-sm,0.5rem)]') }}>
             {{ $start }}
         </div>
     @endisset
@@ -249,8 +258,9 @@
         {{-- The trailing cluster. `shrink-0` so actions keep their size and the
              title gives way first — the opposite is a bar whose buttons squash
              into unreadable slivers while a heading nobody needs in full stays
-             intact. --}}
-        <div class="flex shrink-0 items-center gap-[var(--gap-wk-sm,0.5rem)]">
+             intact. Its attributes reach the wrapper for the same reason the leading
+             cluster's do — the two halves of one bar should not answer differently. --}}
+        <div {{ \Pushery\WireKit\Support\SlotAttributes::of($end)->class('flex shrink-0 items-center gap-[var(--gap-wk-sm,0.5rem)]') }}>
             {{ $end }}
         </div>
     @endisset

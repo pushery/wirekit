@@ -64,7 +64,9 @@
     // WHERE that choice is remembered: 'local' (default) or 'cookie'.
     //
     // No server can read localStorage, so a column that remembers being collapsed
-    // renders at its seed width and corrects itself after the first paint. An adopting
+    // renders at its seed width and corrects itself after the first paint. A nonced
+    // script after the column closes that gap — see the partial it includes — but the driver
+    // below remains the only way the FIRST render is right without any script at all. An adopting
     // application measured that on the rail next door at 0.1097 CLS against a budget of
     // 0.1 — the content column moving 187px, 53ms in. The usual answer, a blocking
     // inline script in the head, is unavailable under a strict `script-src 'self'`
@@ -413,8 +415,10 @@
              width at all — it lays out at content width and snaps to its real one a frame
              later, which is the flicker reported from three shells. Alpine's `:class` swaps
              the two widths, so exactly one width utility is ever in the list and the
-             equal-specificity conflict never arises. A persisted rail can still move once:
-             the stored choice lives in the reader's browser and only Alpine can read it. --}}
+             equal-specificity conflict never arises. The stored choice lives in the reader's
+             browser, so this static class is the SEED rather than the memory — the nonced
+             script emitted after this column reconciles the two before the first paint, which
+             is where the "briefly collapsed, then open" report came from. --}}
         {{ $attributes->class([$classes, $collapsed ? 'w-[var(--size-wk-rail,3.25rem)]' : 'w-[var(--wk-sidebar-w,16rem)]', 'group/wk-sidebar gap-[var(--space-wk-nav-gap)] data-[wk-ready]:transition-[width] data-[wk-ready]:duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
     >
         @include('wirekit::components.partials.sidebar-zones')
@@ -442,6 +446,21 @@
         </button>
         @endif
     </nav>
+    {{-- Immediately after the column, so `document.currentScript.previousElementSibling` is
+         this sidebar and nothing else. Only for the `local` driver: the cookie driver was
+         already answered by the server above, and re-answering it here would be a second
+         source for one value. --}}
+    @if($persist !== null && $persistDriver === 'local')
+        @include('wirekit::components.partials.nav-persist-seed', [
+            'seedKey' => $persist,
+            'seedOn' => $collapsed,
+            'seedClassOn' => 'w-[var(--size-wk-rail,3.25rem)]',
+            'seedClassOff' => 'w-[var(--wk-sidebar-w,16rem)]',
+            // No gate: unlike the rail, this factory does not re-decide on viewport, so a
+            // gate here would disagree with it for a frame.
+            'seedMinWidth' => null,
+        ])
+    @endif
 @else
     {{-- <nav> carries a default aria-label so AT distinguishes it from the main
          nav; a developer-supplied aria-label / aria-labelledby / `label` prop overrides it. --}}

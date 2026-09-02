@@ -196,7 +196,7 @@ class ComponentRegistry
             'ticker' => ['category' => 'Display', 'description' => 'Compact label + value + delta widget for dashboards'],
             'testimonial' => ['category' => 'Marketing', 'description' => 'Cited customer quote — figure/blockquote semantics, author, role, logo, optional rating'],
             'testimonial-grid' => ['category' => 'Marketing', 'description' => 'Responsive grid of testimonials, exposed as a labeled list'],
-            'theme-controller' => ['category' => 'Layout', 'description' => 'Drop-in dark-mode control — button, switch or system/light/dark select'],
+            'theme-controller' => ['category' => 'Layout', 'description' => 'Drop-in dark-mode control — button, switch, menu or system/light/dark select'],
             'timeline' => ['category' => 'Display', 'description' => 'Vertical timeline of events'],
             'tree-view' => ['category' => 'Display', 'description' => 'Hierarchical tree view'],
 

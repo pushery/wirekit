@@ -267,7 +267,7 @@ return [
         'card.header' => [],
         'card.body' => [],
         'card.footer' => [],
-        'avatar' => ['size' => 'md', 'shape' => 'circle'],
+        'avatar' => ['size' => 'md', 'shape' => 'circle', 'status-variant' => 'dot'],
         'avatar.group' => [],
         'alert' => ['variant' => 'info'],
         'toggle' => ['size' => 'md'],
@@ -278,16 +278,27 @@ return [
         'field.legend' => [],
 
         // Data display components
-        'table' => ['striped' => false, 'hoverable' => false, 'compact' => false, 'responsive' => true],
+        // A sub-component's own options live NESTED, not under its flat dotted name.
+        // `config()` walks the segments, so a leaf under the literal key `'table.head'` is
+        // never reached — it reads as declared and resolves to the caller's default forever.
+        // The flat entries below stay as the catalog of sub-components; the values go here.
+        'table' => [
+            'striped' => false,
+            'hoverable' => false,
+            'compact' => false,
+            'responsive' => true,
+            'sticky-header-max' => '24rem',
+            'head' => ['variant' => 'filled'],
+        ],
         'table.head' => [],
         'table.body' => [],
         'table.foot' => [],
         'table.row' => [],
         'table.th' => [],
         'table.td' => [],
-        'pagination' => ['variant' => 'full'],
+        'pagination' => ['variant' => 'full', 'justify' => 'between'],
         'empty-state' => ['variant' => 'default'],
-        'progress' => ['variant' => 'accent', 'size' => 'md'],
+        'progress' => ['variant' => 'accent', 'size' => 'md', 'circle-size' => 'md'],
         'usage-meter' => ['warn' => 0.8, 'danger' => 1.0],
         'filter-builder' => ['searchable' => false, 'search-placeholder' => 'Search…', 'add-label' => 'Add filter'],
         'status-matrix' => ['cell-type' => 'status', 'legend' => true],
@@ -320,7 +331,7 @@ return [
         // Region labels — the accessible name of each group. Null keeps the
         // translated default (via __()); set one here to name the region once
         // app-wide instead of repeating `label` on every instance.
-        'faq' => ['label' => null],
+        'faq' => ['label' => null, 'size' => 'lg', 'variant' => 'flush'],
         'pricing-table' => ['label' => null],
         'testimonial-grid' => ['label' => null],
         'attachment-group' => ['label' => null],
@@ -332,8 +343,8 @@ return [
         'shimmer' => ['active' => true, 'duration' => null],
 
         // Overlay components
-        'dropdown' => ['placement' => 'bottom-start', 'offset' => 8],
-        'dropdown.panel' => ['width' => 'auto'],
+        'dropdown' => ['placement' => 'bottom-start', 'offset' => 8, 'panel' => ['width' => 'auto']],
+        'dropdown.panel' => [],
         'dropdown.item' => [],
         'dropdown.checkbox-item' => [],
         'dropdown.radio-item' => [],
@@ -368,7 +379,7 @@ return [
         'time-picker' => ['size' => 'md'],
 
         // Additional components
-        'navbar' => ['variant' => 'default'],
+        'navbar' => ['variant' => 'default', 'max' => 'xl'],
         'rating' => ['size' => 'md'],
         'callout' => ['variant' => 'info'],
         'data-list' => ['layout' => 'horizontal'],
@@ -410,6 +421,7 @@ return [
             'duration' => 'normal',
             'once' => true,
             'threshold' => 0.4,
+            'delay' => null,
         ],
     ],
 

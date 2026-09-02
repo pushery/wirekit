@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.42.0 — MIT License
+ * WireKit CSS v2.43.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -1729,6 +1729,21 @@
         padding-block-start: var(--space-wk-sm, 0.5rem);
     }
 
+    /* ⚠️ THIS BLOCK WAS REMOVED ON 2026-09-01 AND PUT BACK THE SAME DAY, and the round trip is
+       worth recording, because the report that prompted the removal was real.
+
+       It was taken out to answer "the column reads too wide and its glyphs sit off center".
+       Measured at 1728px, the glyphs were indeed 2.5px left of the visible middle — and
+       taking the gap back was the wrong repair for it. Two guards went red within the hour:
+       the shell's one horizontal line stopped short of the seam again, and the panel's even
+       four-sided inset became a wedge at 8/8/8/14. Both of those were themselves written
+       from earlier reports of exactly those two things.
+
+       The 2.5px were never about the column's width. In the icon-only mode the module is
+       WIDER than the glyph it holds and the glyph is leading-aligned inside it, so it sits
+       off the module's own center wherever the column's edges happen to be. The module was
+       symmetric the whole time; nothing had ever measured the glyph. The repair is in the
+       item's `justify-*` rule, and `RailGlyphsShareOneAxisTest` is the measurement. */
     /* AND THE MODULES CENTER ON WHAT THE READER SEES, not on the column's own box.
        The panel is inset from the chrome, and that gap is chrome-colored — so it reads as
        part of the rail. A module inset by the same amount on both sides therefore LOOKS
@@ -1787,6 +1802,7 @@
         margin-inline-start: 0;
     }
 }
+
 
 /* ─── Beside an inset panel, a column draws no edge of its own ─── */
 /* An `<x-wirekit::app-shell panel>` lifts its content column off the chrome with a real gap.
@@ -5446,7 +5462,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     appearance: none;
     border: 0;
     background: transparent;
-    padding: 0;
+    /* NO `padding: 0` here, and its absence is the fix rather than an omission.
+       The item's own class list always carries `px-[var(--padding-wk-x-sm)]` and
+       `py-[var(--padding-wk-y-sm)]` on both axes, so the UA button padding is overridden
+       before this rule says anything. What `padding: 0` did instead was beat those two
+       utilities: this stylesheet is unlayered and Tailwind's utilities live in a layer, so a
+       bare declaration here wins against the component's own classes no matter what the
+       specificity looks like.
+       The visible result was a rail module rendered `as="button"` standing 10px to the left
+       of every module beside it — measured on the console shell, where the avatar's glyph sat
+       at x=18 and the search glyph above it at x=28. It reads as one crooked icon in an
+       otherwise straight stack, which is exactly how it was reported. */
     text-align: start;
     font: inherit;
     color: inherit;

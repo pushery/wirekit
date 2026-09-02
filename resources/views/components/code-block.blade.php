@@ -5,6 +5,17 @@
     'language' => null,
     'filename' => null,
     'copy' => false,
+    // The name of the scroll region, overriding the language-derived default.
+    //
+    // The default is right for a page with one or two blocks and wrong for a page with
+    // twenty: `role="region"` plus a name is a LANDMARK, and twenty landmarks called "PHP
+    // code" are twenty indistinguishable entries in a screen reader's rotor — axe reports it
+    // as `landmark-unique`. Reported from an audit log rendering one diff per table row, where
+    // the language is identical on every row and so cannot tell them apart.
+    //
+    // Name it after the row, not after the language: "Change 4471" locates the block; "PHP
+    // code" only says what everything on the page already is.
+    'label' => null,
     'scope' => null,
 ])
 
@@ -123,12 +134,27 @@
          at all (WCAG 2.1.1, Level A). The annotation is the generic-scroll-region shape
          this library prescribes for itself, the same one scroll-area uses; the name carries the
          language when one was declared, because "PHP code" locates the region far better
-         in a rotor list than a page full of identical "Code" entries. --}}
+         in a rotor list than a page full of identical "Code" entries.
+
+         ⚠️ THAT DEFAULT STOPS HELPING THE MOMENT THE PAGE CARRIES MANY BLOCKS OF ONE
+         LANGUAGE, and the file predicted the problem without predicting the case: in a table
+         with a diff per row, every row's language is the same, so the name that was meant to
+         tell regions apart is what makes them identical. `label` is the way out — see the
+         prop, and the docs page for what to name them.
+
+         The fallback is chosen on FILLED rather than on null, and the difference is the whole
+         point of the attribute. `??` only steps in for null, so `label=""` would reach the
+         element as `aria-label=""` — and a `role="region"` with an empty name is not exposed as
+         a landmark at all, leaving a focusable region a screen-reader user cannot identify or
+         jump to. That is not a hypothetical spelling: the documented use is an interpolated
+         caller value (`:label="__('Change :id', ['id' => $change->id])"`), and the same shape
+         with an empty title produces exactly it. A blank name is no name, so it takes the
+         default instead. --}}
     <pre @class([$preClasses])><code
         @class([$codeClasses])
         tabindex="0"
         role="region"
-        aria-label="{{ $language ? __(':language code', ['language' => $language]) : __('Code') }}"
+        aria-label="{{ filled($label) ? $label : ($language ? __(':language code', ['language' => $language]) : __('Code')) }}"
         @if($language) data-language="{{ $language }}" @endif
     >{{ $slot }}</code></pre>
 </div>

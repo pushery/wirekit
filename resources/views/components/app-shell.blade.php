@@ -241,6 +241,61 @@
     // The counted fallback is unique by construction, so two shells on one page still get
     // two ids — which was the reason the random version looked right.
     $drawerId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-shell-nav-');
+
+    // WHAT THE DRAWER BINDINGS FALL BACK TO WHILE THE PANEL IS NOT A DIALOG.
+    //
+    // `null` is the obvious answer and it is a destructive one. Alpine does not read a null
+    // binding as "leave the attribute as the server wrote it" — `bindAttribute` tests the
+    // value against `[null, undefined, false]` and calls `removeAttribute`, and the only
+    // names it spares are `aria-pressed`, `aria-checked`, `aria-expanded` and
+    // `aria-selected`.
+    //
+    // On the single-column shell those bindings and the slot's own attribute bag land on the
+    // SAME aside. So `x-slot:sidebar role="complementary" aria-label="Section navigation"` was
+    // written correctly by the server and then deleted the moment Alpine initialized — above
+    // the breakpoint always, below it whenever the drawer was closed. Markup that is right
+    // in view-source and gone by the first paint is the worst version of this: the seam
+    // looks like it works, and the only reader who finds out is the one using it.
+    //
+    // The console branch does NOT have the defect and must not be changed to match: there
+    // the bindings sit on the drawer GROUP and the bags on the two aside elements inside it,
+    // so the two never write the same attribute.
+    //
+    // Resolved into the expression as a literal rather than seeded as a scope key, because
+    // both routes into that scope are closed. The factory returns a fixed object and drops
+    // any key it does not name, so an unknown one leaves the identifier undefined and the
+    // binding throws where it should have fallen back. And an `x-data` of its own on the
+    // aside would make IT the closest root — which is where `x-ref` registers, while `$refs`
+    // walks upward only — so `$refs.drawer` would go undefined in the factory and the focus
+    // trap would silently never arm.
+    //
+    // `role` and `aria-label` only. `aria-modal` and `tabindex` keep their null fallback on
+    // purpose: both describe the dialog state itself rather than the column, and an authored
+    // `tabindex` on a layout column is a tab stop that leads nowhere.
+    $sidebarSlotAttributes = \Pushery\WireKit\Support\SlotAttributes::of($sidebar ?? null);
+
+    // Read through the helper, never as `$sidebar->attributes`. A slot does not always
+    // arrive as an object carrying a bag — that is the whole reason `SlotAttributes` exists,
+    // and where it does not, the direct property read is a fatal rather than an empty value.
+    // The three call sites further down already go through it for the same reason.
+    $sidebarAuthoredRole = $sidebarSlotAttributes->get('role');
+    $sidebarAuthoredLabel = $sidebarSlotAttributes->get('aria-label');
+
+    // Anything that is not a non-empty string keeps the literal `null` the binding resolved
+    // to before — a valueless `role` arrives as `true` and is not a role name, and a bound
+    // `:role="null"` never reaches the markup either.
+    //
+    // Through `AlpinePayload::string()` with NO quotes around it. This is a caller-supplied
+    // value entering an expression Alpine evaluates as JavaScript, which is the one position
+    // where hand-quoting it is an injection hole rather than a style choice: `{{ }}` escapes
+    // the quote and the browser decodes it back before Alpine ever reads the attribute.
+    $sidebarDrawerRoleFallback = is_string($sidebarAuthoredRole) && $sidebarAuthoredRole !== ''
+        ? \Pushery\WireKit\Support\AlpinePayload::string($sidebarAuthoredRole)
+        : 'null';
+
+    $sidebarDrawerLabelFallback = is_string($sidebarAuthoredLabel) && $sidebarAuthoredLabel !== ''
+        ? \Pushery\WireKit\Support\AlpinePayload::string($sidebarAuthoredLabel)
+        : 'null';
 @endphp
 
 <div
@@ -371,7 +426,23 @@
                 :tabindex="isDrawer && sidebarOpen ? '-1' : null"
                 x-cloak
             >
-                <aside class="wk-app-shell-rail flex shrink-0">
+                {{-- `role="presentation"` by DEFAULT, and the slot's own attributes can take it
+                     back. Both of these columns are layout: the landmark is the `<nav>` inside
+                     them, which already carries its own name. Left as bare `<aside>` elements
+                     they are two implicit `complementary` regions with no accessible name, and
+                     axe reports `landmark-unique` on any application that follows the console
+                     blueprint — not on a misuse of it, on the documented composition.
+
+                     A default LABEL was the other candidate and is worse: it satisfies the rule
+                     by turning one redundant landmark into two named redundant landmarks, and a
+                     screen-reader user then has two more regions to skip past that describe
+                     nothing but the layout.
+
+                     The attribute bag is what makes this a seam rather than a decision imposed
+                     on every application: `<x-slot:rail role="complementary" aria-label="…">`
+                     restores a real landmark where one is genuinely wanted. Before this the bag
+                     was dropped, so that call site did nothing at all. --}}
+                <aside {{ \Pushery\WireKit\Support\SlotAttributes::of($rail)->merge(['role' => 'presentation'])->class(['wk-app-shell-rail flex shrink-0']) }}>
                     {{ $rail }}
                 </aside>
                 @isset($sidebar)
@@ -383,7 +454,7 @@
                          deliberately as tall as its content and rounded, which is right for
                          a padded column and reads as a floating sheet dropped on the page
                          when it slides in over one. --}}
-                    <aside class="wk-app-shell-aside max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none w-64 shrink-0">
+                    <aside {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->merge(['role' => 'presentation'])->class(['wk-app-shell-aside max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none w-64 shrink-0']) }}>
                         {{ $sidebar }}
                     </aside>
                 @endisset
@@ -435,9 +506,25 @@
                      element that does not exist. The factory still carries the same value
                      so the toggle can read it from scope. --}}
                 id="{{ $drawerId }}"
-                :role="isDrawer && sidebarOpen ? 'dialog' : null"
+                {{-- THE FALLBACK IS THE SLOT'S OWN VALUE, not `null`, and that is the whole
+                     difference between a seam and a seam that survives to the first paint.
+                     This element carries the drawer bindings AND the slot's attribute bag, so
+                     a null here does not leave what the server wrote — Alpine removes the
+                     attribute outright. `<x-slot:sidebar role="complementary" aria-label="…">`
+                     rendered correctly and was deleted at init, above the breakpoint and with
+                     the drawer closed alike.
+                     The drawer's own semantics still win while it is open: what covers the
+                     page is a dialog, whatever the column beside the content was called. The
+                     rest of the time the call site's landmark is what stands.
+                     Both fallbacks are resolved in the PHP block at the top of this file, which
+                     is also where the reason they are literals rather than scope keys is
+                     written down. (Named in prose rather than by its directive on purpose:
+                     Blade pairs the opening and closing words of that block across everything
+                     between them, so either one written loose in a comment can swallow the
+                     markup below it into a raw block.) --}}
+                :role="isDrawer && sidebarOpen ? 'dialog' : {{ $sidebarDrawerRoleFallback }}"
                 :aria-modal="isDrawer && sidebarOpen ? 'true' : null"
-                :aria-label="isDrawer && sidebarOpen ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Navigation')) }} : null"
+                :aria-label="isDrawer && sidebarOpen ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Navigation')) }} : {{ $sidebarDrawerLabelFallback }}"
                 {{-- `tabindex="-1"` while it is a dialog, and it is not decoration: it is what
                      lets the panel RECEIVE focus. `focus-trap` looks for a tabbable element at
                      activation and falls back to the container when it finds none — and a
@@ -484,7 +571,13 @@
                      because the shell is what decides the column becomes an
                      overlay — the sidebar cannot know. It sits under the card
                      variant's own surface, so that case renders identically. --}}
-                class="wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-64 transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] {{ $asideInset }}"
+                {{-- The slot's own attributes reach this column too, so naming it or re-roling
+                     it works the same way it does in the console branch above. What this one
+                     does NOT get is a `presentation` default: there is only one column here, so
+                     nothing collides, and a lone complementary region beside the content is a
+                     reasonable thing for an application to have. Changing that silently would
+                     take a landmark away from every sidebar-only shell that ships today. --}}
+                {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->class(['wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-64 transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] '.$asideInset]) }}
                 x-cloak
             >
                 {{ $sidebar }}
