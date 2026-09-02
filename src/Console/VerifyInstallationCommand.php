@@ -38,6 +38,36 @@ class VerifyInstallationCommand extends Command
     protected $description = 'Verify WireKit integration (assets, directives, Tailwind @source, optional deps)';
 
     /**
+     * The ApexCharts majors WireKit's adapter is TESTED against — not the ones it is
+     * guessed to work with.
+     *
+     * WireKit ships adapter glue, never the chart library, so the developer picks the
+     * version and nothing in the package pins it. That leaves a question the developer
+     * cannot answer for themselves, and the failure mode is the reason it matters: a
+     * chart that breaks on a new major breaks SILENTLY — the server renders 200, the
+     * markup carries the chart tag, and only a real browser shows the empty box.
+     *
+     * Measured 2026-09-01 by running the sample's own chart suite against each major in
+     * turn — 12 files, 83 browser cases, green on all three:
+     *
+     *   5.16.0 · 6.10.0 · 7.1.0
+     *
+     * The control that makes those three runs a COMPARISON rather than the same run
+     * three times was reading the loaded library's own statics from the page, and they
+     * are distinct in every one: 5 exposes none, 6 adds `_crossfilterFactory` and
+     * `_crossfilterGet`, and 7 drops both again while its prototype grows from 61 names
+     * to 69. So the bundle demonstrably changed under the suite. The adapter references
+     * neither removed name, which is why 7 costs it nothing.
+     *
+     * Keep this in lockstep with the supported-versions sentence in
+     * `docs/components/chart.md`; `ApexTestedMajorsAreInLockstepTest` fails the build
+     * when the two disagree.
+     *
+     * @var list<int>
+     */
+    public const APEXCHARTS_TESTED_MAJORS = [5, 6, 7];
+
+    /**
      * Register the `wirekit:doctor` alias on the SAME Symfony command
      * instance. v2.0.0 shipped a separate DoctorCommand subclass which
      * appeared as TWO entries in `php artisan list wirekit`; v2.1.0
@@ -109,6 +139,7 @@ class VerifyInstallationCommand extends Command
             $this->checkFontAssets();
             $this->checkCssImportAntiPattern();
             $this->checkIconPresetPackages();
+            $this->checkTranslationKeyCollisions();
             $this->checkOptionalDependencies();
             $this->checkChartUsageWithoutAdapter();
             $this->checkChartJsRegistration();
@@ -577,10 +608,43 @@ class VerifyInstallationCommand extends Command
         // a section the file already declares was invisible to the old comparison,
         // and that is the common case: sections are added rarely, options within
         // them every release.
-        $missingLeaves = array_diff(
-            array_keys(self::flattenConfig($package)),
-            array_keys(self::flattenConfig($published))
-        );
+        //
+        // ⚠️ THE SAME THREE FILTERS AS THE OTHER DIRECTION, AND THIS SIDE HAD NONE.
+        // Reported from a consuming project whose release gate this made impassable: a
+        // configuration with four working `icons.aliases` was told the option was MISSING,
+        // and the printed remedy — `vendor:publish --force` — would have overwritten the
+        // aliases it was complaining about. Reproduced by that report as a positive control:
+        // with the aliases filled, 31 passed / 2 warnings; with `aliases => []`, 32 passed /
+        // 1 warning. Using the feature is what turned a green check red.
+        //
+        // The mechanism is the leaf/branch case below, mirrored. The stub carries
+        // `icons.aliases => []`, a LEAF. A project that uses the feature carries
+        // `icons.aliases.slack`, `.discord`, …, a BRANCH. Flattened, the package name exists
+        // and the project's does not, so a plain diff calls it missing.
+        $publishedKeys = array_keys(self::flattenConfig($published));
+
+        $missingLeaves = array_values(array_filter(
+            array_diff(array_keys(self::flattenConfig($package)), $publishedKeys),
+            static function (string $path) use ($publishedKeys): bool {
+                if (preg_match('/(^|\.)\d+(\.|$)/', $path) === 1) {
+                    return false;
+                }
+
+                if (self::isOpaqueConfigPath($path)) {
+                    return false;
+                }
+
+                // Leaf here, branch there — the mirror of the case below. A package leaf the
+                // project has gone DEEPER on is not missing; it is in use.
+                foreach ($publishedKeys as $publishedKey) {
+                    if (str_starts_with($publishedKey, $path.'.')) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        ));
 
         // The other direction: a key the published file still carries and the package
         // no longer offers. Nothing breaks — the merge simply keeps it — so it is
@@ -1558,6 +1622,142 @@ class VerifyInstallationCommand extends Command
         ));
     }
 
+    /**
+     * Shared translation keys whose meaning diverges between the app and WireKit.
+     *
+     * The catalog is one FLAT JSON namespace and the loader puts the app on top, deliberately —
+     * a translation someone wrote on purpose should win. That rule cannot resolve one case: an
+     * ordinary English word with more than one meaning. An app using "Map" as a verb and WireKit
+     * using it as a noun collide, the app wins, and it wins INSIDE a WireKit component — which
+     * then shows a word that is wrong in its own context. Nothing errors; only the text is wrong.
+     *
+     * Reported from a consuming application with four real collisions, one of them on a component
+     * rendered across 173 surfaces. The other three were harmless only because those components
+     * were not in use yet — they would have landed on first use, with nothing turning red.
+     *
+     * ⚠️ This does NOT resolve the design question (a namespaced catalog, `wirekit::Map`). It
+     * removes the part every consuming application was paying separately: each one had to build
+     * this detection itself to find out.
+     */
+    private function checkTranslationKeyCollisions(): void
+    {
+        $packageLang = dirname(__DIR__, 2).'/lang';
+        $appLang = function_exists('lang_path') ? lang_path() : base_path('lang');
+
+        if (! is_dir($packageLang) || ! is_dir($appLang)) {
+            $this->line('  <fg=cyan>i</> Translation collisions not checked (no published language directory)');
+
+            return;
+        }
+
+        /** @var array<string, list<string>> $collisions key => locales it diverges in */
+        $collisions = [];
+
+        foreach ((array) glob($packageLang.'/*.json') as $ours) {
+            $locale = basename((string) $ours, '.json');
+            $theirs = $appLang.'/'.$locale.'.json';
+
+            if (! is_file($theirs)) {
+                continue;
+            }
+
+            $mine = json_decode((string) file_get_contents((string) $ours), true);
+            $app = json_decode((string) file_get_contents($theirs), true);
+
+            if (! is_array($mine) || ! is_array($app)) {
+                continue;
+            }
+
+            foreach ($mine as $key => $value) {
+                if (array_key_exists($key, $app) && $app[$key] !== $value) {
+                    $collisions[(string) $key][] = $locale;
+                }
+            }
+        }
+
+        if ($collisions === []) {
+            $this->reportPass('No translation key means something different in your catalog than in WireKit');
+
+            return;
+        }
+
+        // A divergence only bites where a COMPONENT renders the key — that is the difference
+        // between "you translated a word differently" (fine, and the whole point of app-wins)
+        // and "a WireKit component now shows your wording in its context" (the defect).
+        $rendered = $this->componentsRenderingTranslationKeys(array_keys($collisions));
+
+        $reportable = array_intersect_key($collisions, $rendered);
+
+        if ($reportable === []) {
+            $this->reportPass(sprintf(
+                'Your catalog re-words %d shared key(s), none of them rendered by a WireKit component',
+                count($collisions)
+            ));
+
+            return;
+        }
+
+        foreach ($reportable as $key => $locales) {
+            $this->reportWarn(sprintf(
+                "Translation key '%s' means something different in your catalog than in WireKit (%s), "
+                .'and %s renders it — so that component will show your wording in a context it was not '
+                .'written for. Rename YOUR key to something unambiguous; the flat catalog cannot hold '
+                .'two meanings of one word.',
+                $key,
+                implode(', ', $locales),
+                $rendered[$key]
+            ));
+        }
+    }
+
+    /**
+     * Which shipped component renders each of the given translation keys.
+     *
+     * @param  list<string>  $keys
+     * @return array<string, string> key => the component that renders it
+     */
+    private function componentsRenderingTranslationKeys(array $keys): array
+    {
+        $root = dirname(__DIR__, 2).'/resources/views/components';
+
+        if (! is_dir($root) || $keys === []) {
+            return [];
+        }
+
+        $found = [];
+
+        $files = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS)
+        );
+
+        foreach ($files as $file) {
+            if (! $file->isFile() || ! str_ends_with($file->getFilename(), '.blade.php')) {
+                continue;
+            }
+
+            $body = (string) file_get_contents($file->getPathname());
+
+            foreach ($keys as $key) {
+                if (isset($found[$key])) {
+                    continue;
+                }
+
+                // A regex rather than two str_contains calls, for two reasons that happen to
+                // point the same way. It tolerates whitespace after the call and matches either
+                // quoting in one pass — the catalog holds keys containing apostrophes. And the
+                // pattern spells the call with an escaped parenthesis, so this file never
+                // contains the literal sequence a translation-key scanner looks for: written
+                // inline, the needle reads to TranslationKeyDriftTest as this command emitting
+                // a key of its own.
+                if (preg_match('/__\(\s*([\'"])'.preg_quote($key, '/').'\1/', $body) === 1) {
+                    $found[$key] = str_replace($root.'/', '', $file->getPathname());
+                }
+            }
+        }
+
+        return $found;
+    }
+
     private function checkIconPresetPackages(): void
     {
         if (! class_exists(InstalledVersions::class)) {
@@ -1711,6 +1911,74 @@ class VerifyInstallationCommand extends Command
      *   3. Adapter-bundle presence — confirm dist/wirekit-apex.js was published
      *      to the public/vendor folder. WARN on absence with a republish hint.
      */
+    /**
+     * Name the ApexCharts major in play, and say whether the adapter has been tested against it.
+     *
+     * The presence check above proves the package can be resolved. It says nothing about WHICH
+     * major, and that is the half a developer cannot answer from the outside: WireKit ships no
+     * `package.json` in its vendor directory, so there are no `peerDependencies` to read, and a
+     * chart that breaks on a new major breaks silently — 200, correct markup, empty box.
+     *
+     * The INSTALLED version is preferred over the declared range because they disagree routinely:
+     * `^6.4.0` in a manifest resolves to whatever the lockfile pinned. The range is the fallback
+     * for a tree with no `node_modules`, and it is read as its lower bound, which is the only
+     * major a caret range is guaranteed to permit.
+     *
+     * An untested major is a WARN and deliberately not a FAIL. WireKit cannot know that the next
+     * major breaks anything — only that nobody has looked. A FAIL would turn every app red on the
+     * day ApexCharts ships a version this package has not caught up with, which punishes the
+     * developer for our release cadence.
+     */
+    private function checkApexChartsMajor(string $declaredRange): void
+    {
+        $tested = self::APEXCHARTS_TESTED_MAJORS;
+        $range = implode(' / ', array_map(static fn (int $m): string => $m.'.x', $tested));
+
+        $installedPath = base_path('node_modules/apexcharts/package.json');
+        $installed = null;
+        if (file_exists($installedPath)) {
+            $manifest = json_decode((string) file_get_contents($installedPath), true);
+            if (is_array($manifest) && isset($manifest['version']) && is_string($manifest['version'])) {
+                $installed = $manifest['version'];
+            }
+        }
+
+        $source = $installed !== null ? 'installed' : 'declared';
+        $subject = $installed ?? $declaredRange;
+
+        // The leading integer is the major in both shapes — "7.1.0" and "^6.4.0" alike. A range
+        // with no digits at all ("latest", a git URL, a workspace link) yields no major, and that
+        // is reported as unknown rather than silently treated as passing.
+        $major = preg_match('/(\d+)/', $subject, $m) === 1 ? (int) $m[1] : null;
+
+        if ($major === null) {
+            $this->reportWarn(sprintf(
+                'apexcharts version could not be read from the %s value "%s" — WireKit\'s adapter is tested against %s',
+                $source,
+                $subject,
+                $range,
+            ));
+
+            return;
+        }
+
+        if (in_array($major, $tested, true)) {
+            $this->reportPass(sprintf('apexcharts %s (%s) is within the tested range %s', $subject, $source, $range));
+
+            return;
+        }
+
+        $this->reportWarn(sprintf(
+            'apexcharts %s (%s) is OUTSIDE the range WireKit\'s adapter is tested against (%s). '
+            .'It may work — nobody has measured it. A chart that breaks on a new major breaks '
+            .'silently: the page renders, the markup is correct, and only a browser shows the '
+            .'empty box. Check your charts visually, and report what you find.',
+            $subject,
+            $source,
+            $range,
+        ));
+    }
+
     private function checkApexChartsAdapter(): void
     {
         $this->reportPass('ApexCharts adapter configured');
@@ -1735,6 +2003,7 @@ class VerifyInstallationCommand extends Command
                 );
             } else {
                 $this->reportPass('apexcharts npm package installed');
+                $this->checkApexChartsMajor((string) $deps['apexcharts']);
             }
         } else {
             $this->line('  <fg=cyan>i</> package.json not found — skipping apexcharts npm presence check');

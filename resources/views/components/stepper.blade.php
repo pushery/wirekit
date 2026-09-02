@@ -1,7 +1,8 @@
-{{-- optimistic-ui: n/a — presentational
-     Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+{{-- optimistic-ui: n/a — navigation
+     A completed step may carry `href` or `wire:click`, so this file CAN render an interactive
+     element. What it never renders is an action with a result to show early: the step either
+     navigates or hands the click to the application, and the stepper's own state comes from
+     `current` on the next render. --}}
 @props([
     'steps' => [],
     'current' => 1,
@@ -94,8 +95,23 @@
             $description = is_array($step) ? ($step['description'] ?? null) : null;
             $stepNumber = $i + 1;
 
+            // A step may carry a destination or a Livewire action. Both are third keys on a
+            // shape that already takes `label` and `description`, which is why this is the
+            // small variant: no new concept, and a plain string step keeps working untouched.
+            $stepHref = is_array($step) ? ($step['href'] ?? null) : null;
+            $stepAction = is_array($step) ? ($step['wire:click'] ?? $step['action'] ?? null) : null;
+
             $isCompleted = $stepNumber < $current;
             $isCurrent = $stepNumber === $current;
+
+            // ONLY a completed step becomes operable, and the restriction is the point rather
+            // than caution. A stepper looks like the way back, so a finished step that does not
+            // answer a click costs the reader a click and a guess about the state of the page.
+            // A FUTURE step is the opposite case: making it operable would offer a jump the
+            // application never said was allowed, and the component cannot know whether it is.
+            // The current step is already where the reader is.
+            $stepIsOperable = $isCompleted && ($stepHref !== null || $stepAction !== null);
+            $stepTag = ! $stepIsOperable ? 'div' : ($stepHref !== null ? 'a' : 'button');
             $isLast = $i === array_key_last($steps);
 
             // Visual treatment per state. Completed: filled accent. Current:
@@ -117,14 +133,43 @@
                 <span class="{{ $connectorClasses }}" aria-hidden="true"></span>
             @endunless
 
-            <div class="flex {{ $isVertical ? 'flex-row items-start gap-[var(--padding-wk-x-sm)]' : 'flex-col items-center' }} relative">
+            {{-- The tag is chosen above, and it is a PLAIN HTML tag rather than a component, so
+                 building it from a variable is safe here — Blade's component scanner is what
+                 cannot cope with that, and there is no component in this line.
+
+                 The interactive element wraps the circle AND the label, so its accessible name
+                 is computed from everything inside it — which is more than the label. The
+                 circle contributes the visually hidden "Completed:" (the check is aria-hidden,
+                 and the number never appears here at all, since only a completed step is ever
+                 operable), then the label, then the description when the step carries one. A
+                 completed "Details" step described as "Sent yesterday" is therefore announced
+                 as "Completed: Details Sent yesterday", not as "Details". That reads well as
+                 long as the description is written to be heard: on an operable step it is part
+                 of the link's name rather than a caption beside it.
+                 `cursor-pointer` because Tailwind v4 sets `cursor: default` on `<button>` — the
+                 reverse of v3 — so every button in this package puts the affordance back. --}}
+            <{{ $stepTag }}
+                @if($stepTag === 'a') href="{{ $stepHref }}" @endif
+                @if($stepTag === 'button') type="button" wire:click="{{ $stepAction }}" @endif
+                @class([
+                    'flex relative',
+                    $isVertical ? 'flex-row items-start gap-[var(--padding-wk-x-sm)]' : 'flex-col items-center',
+                    'cursor-pointer text-start' => $stepIsOperable,
+                    'rounded-[var(--radius-wk-md)]' => $stepIsOperable,
+                    'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' => $stepIsOperable,
+                    'transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-80' => $stepIsOperable,
+                ])
+            >
                 <div class="{{ $circleBase }} {{ $stateClasses }}">
                     @if($isCompleted)
                         {{-- Check mark — decorative; state is communicated via aria-current / visually-hidden text. --}}
                         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                             <path fill-rule="evenodd" d="M16.704 5.29a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 01-1.06 0l-3.5-3.5a.75.75 0 111.06-1.06L8.674 12.23l6.97-6.94a.75.75 0 011.06 0z" clip-rule="evenodd"/>
                         </svg>
-                        <span class="sr-only">Completed:</span>
+                        {{-- The colon stays outside `__()`, the way alert prefixes its variant
+                             word: the catalog keys a plain label, and the punctuation that
+                             joins it to what follows belongs to this template. --}}
+                        <span class="sr-only">{{ __('Completed') }}:</span>
                     @else
                         <span aria-hidden="true">{{ $stepNumber }}</span>
                     @endif
@@ -136,7 +181,7 @@
                         <div class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</div>
                     @endif
                 </div>
-            </div>
+            </{{ $stepTag }}>
         </li>
     @endforeach
 </ol>

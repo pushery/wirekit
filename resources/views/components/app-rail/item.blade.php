@@ -94,10 +94,23 @@
         // paddings plus the border. Centering there had nothing left to center.
         //
         // Where it stops being identical is the panel shell, which widens the column by the
-        // gap to the panel and insets the contents by it. Centering then averaged that gap
-        // in and moved the icon 2.5px sideways on every expand, while the expanded row —
-        // `justify-start` since it has a label beside the glyph — did not move. Two
-        // alignments on one row is what produced the shift; there is one now.
+        // gap to the panel and insets the contents by it. The module is then WIDER than the
+        // glyph it holds — measured beside a panel: a 45px module around a 20px glyph with
+        // 10px of padding either side, so 5px of surplus — and a leading-aligned glyph sits
+        // 2.5px off the module's own center. Reported on 2026-09-01 from three pages at once.
+        //
+        // ⚠️ CENTERING WAS TRIED THE SAME DAY AND TAKEN BACK, and a guard is the reason rather
+        // than a preference. `CollapsibleNoShiftTest` holds that a folding column must not move
+        // its icon sideways — from a report on 2026-08-25 measuring −1.5px, +4px and −1.5px
+        // across three previews. Centering the icon-only mode alone reintroduces exactly that:
+        // the expanded row carries a label beside its glyph and has to stay leading-aligned, so
+        // the glyph moves by half the surplus on every fold.
+        //
+        // The surplus is where the two reports meet, and it exists ONLY beside an inset panel —
+        // measured 0 on the multi-column shell against 5 there. Removing it satisfies both, and
+        // it cannot be removed without moving one of two further guarded edges: the panel's
+        // even four-sided inset, or the module's symmetric visible chrome. Three requirements,
+        // satisfiable in pairs and not together, which makes it a decision rather than a defect.
         'justify-start',
         // …except with a caption UNDER the icon, where the row is `flex-col` and the main
         // axis is vertical. There `justify-center` centers the pair in the row's height,

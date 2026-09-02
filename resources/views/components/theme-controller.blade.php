@@ -5,9 +5,14 @@
     // How the control looks.
     //   'button' — an icon button that flips light/dark (the compact default)
     //   'switch' — a labeled switch, for a settings row
-    //   'select' — System / Light / Dark, the only shape that can say "system"
+    //   'select' — System / Light / Dark in a native control
+    //   'menu'   — a trigger naming the mode that is on, with a menu of all three
+    // `select` and `menu` are the three-valued shapes: only they can say "system". A
+    // two-state control cannot, and that is not a gap to fill — it has to freeze the reader
+    // onto an explicit choice the moment they touch it, and then their machine going dark at
+    // sunset leaves this page behind.
     'variant' => config('wirekit.components.theme-controller.variant', 'button'),
-    // Button-variant chrome (ignored by switch/select).
+    // Button-variant chrome (ignored by switch/select/menu).
     //   size:    'sm' (32px) | 'md' (36px, default) — matches the button size scale
     //   surface: 'filled' (bordered, elevated — the default) | 'ghost' (borderless,
     //            transparent, muted) so the toggle sits flush next to
@@ -24,8 +29,15 @@
     // being taken off the screen. No-op on the button variant, which has no
     // visible text at all. Mirrors input / select / textarea / combobox /
     // checkbox `hideLabel`.
+    //
+    // On `menu` it hides something else, and the difference is worth knowing: there is no
+    // <label> and no `label` prop in play at all. What it takes off the screen is the mode
+    // NAME beside the trigger's glyph, leaving the icon alone — for a bar where the word is
+    // a line too wide. The trigger keeps its accessible name either way, because the name
+    // is that same word rendered sr-only rather than removed.
     'hideLabel' => false,
-    // Wording for the select variant's three options. Translated by default;
+    // Wording for the three modes, used by the `select` and `menu` variants. Translated by
+    // default;
     // pass your own to change the WORDS rather than just the language — an app
     // may want "Automatic / Day / Night", which no locale file can express.
     'options' => null,
@@ -41,7 +53,7 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('theme-controller', $attributes->getAttributes());
 
-    $variant = WireKit::validateProp('theme-controller', 'variant', $variant, ['button', 'switch', 'select']);
+    $variant = WireKit::validateProp('theme-controller', 'variant', $variant, ['button', 'switch', 'select', 'menu']);
     $size = WireKit::validateProp('theme-controller', 'size', $size, ['sm', 'md']);
     $surface = WireKit::validateProp('theme-controller', 'surface', $surface, ['filled', 'ghost']);
 
@@ -167,11 +179,14 @@
             </span>
             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
         </label>
-    @else
-        {{-- The only shape that can say "system". A two-state control cannot: it
-             has to freeze the reader onto an explicit choice the moment they touch
-             it, and then their machine going dark at sunset leaves this page
-             behind. --}}
+    @elseif($variant === 'select')
+        {{-- Three-valued, so it can say "system" — the `menu` variant below is the other
+             one. A two-state control cannot: it has to freeze the reader onto an explicit
+             choice the moment they touch it, and then their machine going dark at sunset
+             leaves this page behind.
+             What this shape cannot do is carry an icon, because a native <option> takes no
+             markup. That is the browser rather than an omission, and it is why `menu`
+             exists beside it rather than instead of it. --}}
         <label class="inline-flex items-center gap-[var(--gap-wk-sm)]">
             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
             <select
@@ -193,5 +208,67 @@
                 @endforeach
             </select>
         </label>
+    @elseif($variant === 'menu')
+        {{-- The fourth shape, and it exists because the other three each answer only part of
+             one question: what mode is on RIGHT NOW.
+
+               button   carries an icon and cannot say "system" — and a lone sun glyph is
+                        ambiguous anyway: it may mean the current state or the one a click
+                        would produce, which are opposites.
+               switch   says which of two, and cannot say "system" either.
+               select   is the only three-valued one and a native <option> takes no markup,
+                        so it can never carry an icon. That is the browser, not an omission.
+
+             So this is a real button with a real menu: the trigger names the active mode AND
+             shows its glyph, and all three modes are listed with theirs. The dropdown brings
+             the keyboard model, the focus trap and the escape handling with it rather than
+             this file rebuilding them.
+
+             THREE SPANS RATHER THAN ONE EXPRESSION. `x-show` per mode keeps every string in
+             the markup where a translator and a CSP evaluator can both see it; building the
+             label from `theme` would put copy inside an Alpine expression, which the CSP
+             build cannot evaluate and no locale file can reach. --}}
+        <x-wirekit::dropdown placement="bottom-start">
+            <x-slot:trigger>
+                <x-wirekit::button intent="neutral" surface="outline" size="sm" data-wk-theme-toggle>
+                    @foreach(['light' => 'sun', 'dark' => 'moon', 'system' => 'system'] as $modeValue => $modeIcon)
+                        <span x-show="theme === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }}" x-cloak class="inline-flex items-center gap-[var(--gap-wk-sm)]">
+                            <x-wirekit::icon :name="$modeIcon" class="h-4 w-4" />
+                            <span @class(['sr-only' => $hideLabel])>{{ $optionLabels[$modeValue] ?? $modeValue }}</span>
+                        </span>
+                    @endforeach
+                </x-wirekit::button>
+            </x-slot:trigger>
+
+            @foreach(['light' => 'sun', 'dark' => 'moon', 'system' => 'system'] as $modeValue => $modeIcon)
+                {{-- BOTH HALVES OF THE STATE ARE BOUND, and for one reason: the stored mode lives
+                     in the reader's browser, so the server does not know which of the three is on.
+                     Same reason the trigger's label is bound.
+
+                     That is also why `dropdown.item`'s own `active` prop cannot carry this. It is
+                     a server-side boolean, evaluated at render time, and there is no true value to
+                     give it here — every row would be handed `false` and the item's `$activeClasses`
+                     would resolve to the empty string for all three. So the item's active pair is
+                     reproduced as an Alpine binding instead.
+
+                     `aria-current` cannot hold this on its own, and the reason is worth writing
+                     down so the class binding does not get deleted as redundant: the only
+                     `[aria-current]` rules the package ships are scoped to the reading spine and
+                     the table of contents. On a menu row the attribute paints nothing at all — it
+                     is announced, and it is invisible. Both lines stay, one per audience.
+
+                     The class pair is copied verbatim from `dropdown.item`'s non-danger `$activeClasses`
+                     — weight and text color, never a background, because hover and focus already own
+                     the surface and a third one would be indistinguishable from them at exactly the
+                     moment it matters. Keep the two in step: if that pair changes there, it changes
+                     here. Written literally rather than assembled so the Tailwind scanner sees it. --}}
+                <x-wirekit::dropdown.item
+                    :icon="$modeIcon"
+                    x-on:click="select({{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }})"
+                    x-bind:aria-current="theme === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'true' : null"
+                    x-bind:class="theme === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'font-medium text-[color:var(--color-wk-accent-text)]' : ''"
+                >{{ $optionLabels[$modeValue] ?? $modeValue }}</x-wirekit::dropdown.item>
+            @endforeach
+        </x-wirekit::dropdown>
     @endif
 </div>
