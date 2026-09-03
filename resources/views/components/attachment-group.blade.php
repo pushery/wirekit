@@ -2,7 +2,7 @@
      A keyboard-reachable scroll region. Scrolling never reaches the server; the tabindex is there for WCAG 2.1.1, not for an action. --}}
 @props([
     // Accessible name for the group (e.g. "3 attachments").
-    'label' => config('wirekit.components.attachment-group.label') ?? __('Attachments'),
+    'label' => config('wirekit.components.attachment-group.label') ?? __('wirekit::Attachments'),
     // 'row' scroll-snaps horizontally (chat bubbles, tight rows);
     // 'stack' lists them vertically (mail, detail panels).
     'orientation' => 'stack',

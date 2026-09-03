@@ -250,8 +250,8 @@
         // arrives last — network timing, which is both wrong and untestable.
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'reverted' => __('Could not save. Change undone.'),
+            'pending' => __('wirekit::Saving'),
+            'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
     ]);
 @endphp
@@ -334,7 +334,7 @@
                  the absence of a choice; null is a choice. --}}
             @click.stop="{{ $optimisticConfig ? 'run(null)' : 'clearSelection()' }}"
             class="absolute right-8 top-1/2 -translate-y-1/2 inline-flex items-center justify-center min-w-[24px] min-h-[24px] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
-            aria-label="{{ __('Clear selection') }}"
+            aria-label="{{ __('wirekit::Clear selection') }}"
         >
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
@@ -423,7 +423,7 @@
              The flat keyboard model is untouched — selection + highlight key off
              opt._idx (each option's index into the flat `filtered` list). --}}
         <template x-for="grp in filteredGroups" :key="groupKey(grp)">
-            <li role="group" :aria-label="grp.label || {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Options')) }}" style="list-style: none;">
+            <li role="group" :aria-label="grp.label || {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Options')) }}" style="list-style: none;">
                 <template x-if="grp.label">
                     <div aria-hidden="true" class="px-[var(--padding-wk-x-md)] pt-[var(--padding-wk-y-sm)] pb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] uppercase tracking-wider text-[color:var(--color-wk-text-muted)]" x-text="grp.label"></div>
                 </template>
@@ -492,7 +492,7 @@
         x-show="open && filtered.length === 0 && query !== ''"
         x-cloak
     >
-        <p class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]">{{ __('No results') }}</p>
+        <p class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No results') }}</p>
     </div>
     </template>
 

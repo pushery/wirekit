@@ -102,7 +102,15 @@ class WireKitServiceProvider extends ServiceProvider
         if (! $this->app->resolved('translator')) {
             $this->app->extend(
                 'translation.loader',
-                static fn (Loader $loader): BaseLocaleJsonLoader => new BaseLocaleJsonLoader($loader, __DIR__.'/../lang'),
+                // The bridge flag is read HERE and passed in, never inside `load()`. This runs
+                // in register(), where a config cache is not a safe assumption yet, and a
+                // loader that calls `config()` on every lookup would read it hundreds of times
+                // per request to get the same answer.
+                fn (Loader $loader): BaseLocaleJsonLoader => new BaseLocaleJsonLoader(
+                    $loader,
+                    __DIR__.'/../lang',
+                    (bool) ($this->app['config']->get('wirekit.translations.legacy_key_bridge', true)),
+                ),
             );
         }
     }
@@ -669,7 +677,7 @@ class WireKitServiceProvider extends ServiceProvider
      */
     public static function overlayLabelAttribute(): string
     {
-        return ' data-wk-overlay-label="'.e(__('Overlays')).'"';
+        return ' data-wk-overlay-label="'.e(__('wirekit::Overlays')).'"';
     }
 
     /**

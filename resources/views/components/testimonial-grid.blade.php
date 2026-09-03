@@ -4,7 +4,7 @@
      any file that renders one. --}}
 @props([
     // Accessible name for the set of quotes.
-    'label' => config('wirekit.components.testimonial-grid.label') ?? __('Testimonials'),
+    'label' => config('wirekit.components.testimonial-grid.label') ?? __('wirekit::Testimonials'),
     'scope' => null,
 ])
 

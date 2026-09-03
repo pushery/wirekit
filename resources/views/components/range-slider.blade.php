@@ -226,8 +226,8 @@
         // untestable.
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'reverted' => __('Could not save. Change undone.'),
+            'pending' => __('wirekit::Saving'),
+            'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
     ]);
 @endphp
@@ -467,7 +467,7 @@
             <span>{{ $rangeValueTextMap[(string) $max] ?? $max }}</span>
         </div>
         <div class="sr-only" aria-live="polite">
-            <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Range: :from to :to')) }}.replace(':from', valueTextFor(minVal)).replace(':to', valueTextFor(maxVal))">Range: {{ $initialMin }} to {{ $initialMax }}</span>
+            <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Range: :from to :to')) }}.replace(':from', valueTextFor(minVal)).replace(':to', valueTextFor(maxVal))">Range: {{ $initialMin }} to {{ $initialMax }}</span>
         </div>
 
         @if($optimisticConfig)

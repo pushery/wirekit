@@ -138,18 +138,18 @@
     // is idempotent on already-absolute URLs.
     $abs = static fn (?string $u): ?string => $u === null ? null : url()->to($u);
 
-    // The nav's accessible name. __('Pagination') is intended as a JSON string key, but
+    // The nav's accessible name. __('wirekit::Pagination') is intended as a JSON string key, but
     // on a case-insensitive filesystem it ALSO matches Laravel's own pagination.php GROUP
     // lang file and resolves to that ARRAY — so guard it, or a bare (untranslated) render
     // echoes an array into aria-label and crashes. A real JSON translation still wins
     // (the translator checks JSON before the group), so localization is unaffected.
-    $navLabel = __('Pagination');
+    $navLabel = __('wirekit::Pagination');
     $navLabel = is_string($navLabel) ? $navLabel : 'Pagination';
 
     // Resolved once. `?:` rather than `??` on purpose: an empty string is a caller asking
     // for nothing, and rendering an unlabelled arrow would be worse than the default.
-    $previousText = $previousLabel ?: __('Previous');
-    $nextText = $nextLabel ?: __('Next');
+    $previousText = $previousLabel ?: __('wirekit::Previous');
+    $nextText = $nextLabel ?: __('wirekit::Next');
 @endphp
 
 <nav role="navigation" aria-label="{{ $navLabel }}" {{ $attributes->class([$navClasses]) }}>
@@ -166,7 +166,7 @@
         @if($variant === 'simple')
             {{-- Centered "Page X of Y" label — hidden on mini variant for tighter footprint --}}
             <span class="text-[color:var(--color-wk-text-muted)]">
-                {{ __('Page :current of :last', [
+                {{ __('wirekit::Page :current of :last', [
                     'current' => $paginator->currentPage(),
                     'last' => $paginator->lastPage(),
                 ]) }}
@@ -209,7 +209,7 @@
             // number styling. All-caps sentinels are immune: ucfirst and
             // strtoupper both leave them unchanged, whichever case the
             // translation uses.
-            $summary = __('Showing :first to :last of :total results', [
+            $summary = __('wirekit::Showing :first to :last of :total results', [
                 'first' => 'WKPAGEFIRST',
                 'last' => 'WKPAGELAST',
                 'total' => 'WKPAGETOTAL',
@@ -256,7 +256,7 @@
                 @elseif($link['active'])
                     <span class="{{ $buttonActive }}" aria-current="page">{!! $link['label'] !!}</span>
                 @else
-                    <a href="{{ $abs($link['url']) }}" class="{{ $buttonBase }}" aria-label="{{ __('Go to page :page', ['page' => $link['label']]) }}">{!! $link['label'] !!}</a>
+                    <a href="{{ $abs($link['url']) }}" class="{{ $buttonBase }}" aria-label="{{ __('wirekit::Go to page :page', ['page' => $link['label']]) }}">{!! $link['label'] !!}</a>
                 @endif
             @endforeach
 

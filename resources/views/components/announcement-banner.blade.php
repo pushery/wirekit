@@ -19,7 +19,7 @@
     // brings the bar back instead of reading a stored "dismissed" flag.
     'persist' => true,
     // Accessible name for the region.
-    'label' => __('Announcement'),
+    'label' => __('wirekit::Announcement'),
     'scope' => null,
 ])
 
@@ -119,7 +119,7 @@
             type="button"
             @click="dismiss()"
             data-wk-announcement-dismiss
-            aria-label="{{ __('Dismiss') }} {{ $label }}"
+            aria-label="{{ __('wirekit::Dismiss') }} {{ $label }}"
             class="ms-auto shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--padding-wk-x-xs)] opacity-70 transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-wk-ring)]"
         >
             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">

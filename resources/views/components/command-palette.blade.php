@@ -3,7 +3,7 @@
      nothing to anticipate and nothing to roll back. --}}
 @props([
     'hotkey' => 'cmd+k',
-    'placeholder' => __('Search commands...'),
+    'placeholder' => __('wirekit::Search commands...'),
     // When true (default) the overlay teleports out of the document flow so it sits above
     // every other stacking context. Set to false to render the overlay inline
     // inside the parent element — useful for docs previews or when embedding
@@ -154,7 +154,7 @@
                     x-transition:leave-end="opacity-0 scale-95"
                     role="dialog"
                     aria-modal="true"
-                    aria-label="{{ __('Command palette') }}"
+                    aria-label="{{ __('wirekit::Command palette') }}"
                     class="{{ $panelClasses }}"
                     x-on:click.stop
                     @keydown="handleKeydown"
@@ -180,7 +180,7 @@
                             {{-- The palette's own input is the control the caller means; without a
                                  name it is announced as an unlabeled combobox. The placeholder is
                                  NOT a name — it disappears the moment the user types. --}}
-                            aria-label="{{ $callerLabel ?: __('Search commands') }}"
+                            aria-label="{{ $callerLabel ?: __('wirekit::Search commands') }}"
                             aria-expanded="true"
                             aria-controls="wk-command-list"
                             :aria-activedescendant="activeDescendant"

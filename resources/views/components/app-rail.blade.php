@@ -63,7 +63,7 @@
     // cannot tell them apart unless each says what it is. Passing aria-label or
     // aria-labelledby directly wins over this default and suppresses it, so the
     // element never carries two conflicting names.
-    'label' => __('Modules'),
+    'label' => __('wirekit::Modules'),
     'scope' => null,
 ])
 
@@ -384,9 +384,9 @@
                              seeded with a few lines up, so the two states agree, and Alpine
                              owns both attributes from init onward. --}}
                         aria-expanded="{{ $expanded ? 'true' : 'false' }}"
-                        aria-label="{{ $expanded ? __('Collapse rail') : __('Expand rail') }}"
+                        aria-label="{{ $expanded ? __('wirekit::Collapse rail') : __('wirekit::Expand rail') }}"
                         :aria-expanded="expanded ? 'true' : 'false'"
-                        :aria-label="expanded ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Collapse rail')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Expand rail')) }}"
+                        :aria-label="expanded ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse rail')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand rail')) }}"
                         class="{{ $toggleClasses }}"
                     >
                         <svg class="h-4 w-4 transition-transform duration-[var(--transition-wk-duration)]" :class="expanded ? '' : 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">

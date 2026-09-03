@@ -320,7 +320,7 @@
             <button
                 type="button"
                 class="wk-reading-spine__back-to-top mt-2 ml-2 inline-flex items-center justify-center cursor-pointer w-8 h-8 rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                aria-label="{{ __('Back to top') }}"
+                aria-label="{{ __('wirekit::Back to top') }}"
                 @click="scrollToTop()"
             >
                 <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">

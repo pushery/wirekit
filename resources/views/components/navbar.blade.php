@@ -111,7 +111,7 @@
 
 <nav
     x-data="{ mobileOpen: false }"
-    aria-label="{{ __('Main navigation') }}"
+    aria-label="{{ __('wirekit::Main navigation') }}"
     {{ $attributes->class([$navClasses, $variantClasses, $stickyClasses]) }}
 >
     <div class="{{ $containerClasses }}">
@@ -150,7 +150,7 @@
             x-on:click="mobileOpen = !mobileOpen"
             :aria-expanded="mobileOpen ? 'true' : 'false'"
             aria-controls="wk-navbar-mobile"
-            aria-label="{{ __('Toggle navigation') }}"
+            aria-label="{{ __('wirekit::Toggle navigation') }}"
             class="{{ $hamburgerClasses }} p-2 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
         >
             {{-- Hamburger icon (open state) --}}

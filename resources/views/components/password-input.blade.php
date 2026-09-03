@@ -167,11 +167,11 @@
         // untestable.
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
+            'pending' => __('wirekit::Saving'),
             // Names no value, and that is load-bearing here rather than a
             // stylistic choice: this is the one field where quoting what was
             // typed would be a disclosure.
-            'kept' => __('Could not save. Your entry is still here.'),
+            'kept' => __('wirekit::Could not save. Your entry is still here.'),
         ],
         'errorRegion' => '#'.$id.'-error',
     ]);
@@ -224,8 +224,8 @@
                 @click="showPassword = !showPassword"
                 {{-- Static aria-label guards pre-Alpine render (axe scans DOM
                      before hydration may complete). :aria-label overrides live. --}}
-                aria-label="{{ __('Show password') }}"
-                :aria-label="showPassword ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Hide password')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Show password')) }}"
+                aria-label="{{ __('wirekit::Show password') }}"
+                :aria-label="showPassword ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Hide password')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Show password')) }}"
             >
                 {{-- Eye icon (show) --}}
                 <svg x-show="!showPassword" aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">

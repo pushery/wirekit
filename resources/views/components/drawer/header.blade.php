@@ -86,7 +86,7 @@
             type="button"
             x-show="dismissible"
             x-on:click="close()"
-            aria-label="{{ __('Close') }}"
+            aria-label="{{ __('wirekit::Close') }}"
             class="{{ $closeClasses }}"
         >
             {{-- h-4 w-4: standard Tailwind SVG sizing — not a design token candidate --}}

@@ -88,8 +88,8 @@
         // arrives last — network timing, which is both wrong and untestable.
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'reverted' => __('Could not save. Change undone.'),
+            'pending' => __('wirekit::Saving'),
+            'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
     ]);
 

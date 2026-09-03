@@ -411,7 +411,7 @@
                 id="{{ $drawerId }}"
                 :role="isDrawer && sidebarOpen ? 'dialog' : null"
                 :aria-modal="isDrawer && sidebarOpen ? 'true' : null"
-                :aria-label="isDrawer && sidebarOpen ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Navigation')) }} : null"
+                :aria-label="isDrawer && sidebarOpen ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Navigation')) }} : null"
                 {{-- `tabindex="-1"` while it is a dialog, and it is not decoration: it is what
                      lets the panel RECEIVE focus. `focus-trap` looks for a tabbable element at
                      activation and falls back to the container when it finds none — and a
@@ -524,7 +524,7 @@
                      markup below it into a raw block.) --}}
                 :role="isDrawer && sidebarOpen ? 'dialog' : {{ $sidebarDrawerRoleFallback }}"
                 :aria-modal="isDrawer && sidebarOpen ? 'true' : null"
-                :aria-label="isDrawer && sidebarOpen ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Navigation')) }} : {{ $sidebarDrawerLabelFallback }}"
+                :aria-label="isDrawer && sidebarOpen ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Navigation')) }} : {{ $sidebarDrawerLabelFallback }}"
                 {{-- `tabindex="-1"` while it is a dialog, and it is not decoration: it is what
                      lets the panel RECEIVE focus. `focus-trap` looks for a tabbable element at
                      activation and falls back to the container when it finds none — and a

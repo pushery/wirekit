@@ -21,7 +21,7 @@
     'surface' => config('wirekit.components.theme-controller.surface', 'filled'),
     // Accessible name. The control has no visible text in the button variant, so
     // without this it announces as "button" and nothing else.
-    'label' => __('Dark mode'),
+    'label' => __('wirekit::Dark mode'),
     // Render the switch/select label sr-only (kept as the control's accessible
     // name) — for a header or toolbar where the surrounding chrome already says
     // what the control is. The <label> WRAPS the control here, so the name is
@@ -100,7 +100,7 @@
     // Caller wording wins per key, so overriding one option does not silently
     // drop the other two.
     $optionLabels = array_merge(
-        ['system' => __('System'), 'light' => __('Light'), 'dark' => __('Dark')],
+        ['system' => __('wirekit::System'), 'light' => __('wirekit::Light'), 'dark' => __('wirekit::Dark')],
         is_array($options) ? $options : [],
     );
 

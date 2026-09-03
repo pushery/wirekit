@@ -102,12 +102,12 @@
 
     // Accessible variant label for screen readers (prefix the alert content)
     $variantLabel = match ($variantValue) {
-        'success' => __('Success'),
-        'warning' => __('Warning'),
-        'danger' => __('Error'),
-        'primary', 'info' => __('Information'),
-        'neutral' => __('Notice'),
-        default => __('Notice'),
+        'success' => __('wirekit::Success'),
+        'warning' => __('wirekit::Warning'),
+        'danger' => __('wirekit::Error'),
+        'primary', 'info' => __('wirekit::Information'),
+        'neutral' => __('wirekit::Notice'),
+        default => __('wirekit::Notice'),
     };
 
     // Default inline SVG icons per variant (avoids blade-icons dependency)
@@ -170,7 +170,7 @@
         <button
             type="button"
             @click="dismiss()"
-            aria-label="{{ __('Dismiss') }}"
+            aria-label="{{ __('wirekit::Dismiss') }}"
             class="shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
         >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">

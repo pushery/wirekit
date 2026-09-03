@@ -52,8 +52,8 @@
     // be translatable — a sentence assembled from fragments in JavaScript cannot be, and
     // word order is not the same in every language.
     $announcementTemplate = $stepNames !== [] && trim($stepNames[0] ?? '') !== ''
-        ? __('Step :current of :total: :label')
-        : __('Step :current of :total');
+        ? __('wirekit::Step :current of :total: :label')
+        : __('wirekit::Step :current of :total');
 @endphp
 
 <div
@@ -106,7 +106,7 @@
                 x-on:click="prev()"
                 x-bind:aria-disabled="isFirst ? 'true' : null"
                 x-bind:hidden="isFirst ? true : null"
-            >{{ __('Back') }}</x-wirekit::button>
+            >{{ __('wirekit::Back') }}</x-wirekit::button>
 
             <x-wirekit::button
                 intent="primary"
@@ -114,7 +114,7 @@
                 x-on:click="next()"
                 x-bind:aria-disabled="canAdvance ? null : 'true'"
                 x-bind:hidden="isLast ? true : null"
-            >{{ __('Next') }}</x-wirekit::button>
+            >{{ __('wirekit::Next') }}</x-wirekit::button>
         </x-wirekit::row>
     @endisset
 </div>

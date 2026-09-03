@@ -159,7 +159,7 @@
     x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, scope: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventScope) }} })"
     {{ $attributes->merge(['style' => $offsetStyle])->class([$containerClasses, $positionClasses]) }}
     role="region"
-    aria-label="{{ __('Notifications') }}"
+    aria-label="{{ __('wirekit::Notifications') }}"
 >
     {{-- The announcement, separated from the toast that caused it.
 
@@ -270,7 +270,7 @@
             <button
                 type="button"
                 @click="remove(toast.id)"
-                aria-label="{{ __('Dismiss notification') }}"
+                aria-label="{{ __('wirekit::Dismiss notification') }}"
                 class="shrink-0 p-1 -m-1 cursor-pointer rounded-[var(--radius-wk-sm)] {{ $filled ? 'text-[color:var(--color-wk-accent-fg)] hover:opacity-80' : 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]' }} focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">

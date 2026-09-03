@@ -239,7 +239,7 @@
     @if (filter_var($headingAnchors, FILTER_VALIDATE_BOOL))
         <nav
             class="wk-reading-minimap__anchors"
-            aria-label="{{ __('Page sections') }}"
+            aria-label="{{ __('wirekit::Page sections') }}"
             data-test="reading-minimap-anchors"
         >
             <template x-for="(anchor, idx) in headingAnchorsList" :key="anchor.id">

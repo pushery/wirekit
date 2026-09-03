@@ -171,7 +171,7 @@
         // correct — one string, two writes, and only one of them was translated.
         // `Str::headline($name)` stays untranslated on purpose: it is derived from a
         // developer-supplied name, not a string this package ships.
-        'ariaLabel' => $label ? null : ($name ? Str::headline((string) $name) : __('Rich text editor')),
+        'ariaLabel' => $label ? null : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor')),
         'ariaDescribedby' => $describedBy !== '' ? $describedBy : null,
         'ariaInvalid' => (bool) $hasError,
         // Plumbed to the Tiptap path too (not just the textarea fallback's
@@ -202,8 +202,8 @@
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'kept' => __('Could not save. Your text is still here.'),
+            'pending' => __('wirekit::Saving'),
+            'kept' => __('wirekit::Could not save. Your text is still here.'),
         ],
     ]);
 
@@ -278,7 +278,7 @@
                 {{-- The caller's own name first. This is the control a reader without the
                      editor engine actually types into, so a name that stops at the
                      wrapper never reaches them. --}}
-                aria-label="{{ $label ?? $callerLabel ?? ($name ? Str::headline((string) $name) : __('Rich text editor')) }}"
+                aria-label="{{ $label ?? $callerLabel ?? ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor')) }}"
                 @if($autofocus) data-autofocus @endif
                 {{-- Mirror the maxHeight cap on the fallback textarea so the absent-Tiptap
                      path scrolls at the same ceiling (a textarea scrolls natively). --}}

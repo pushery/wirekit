@@ -110,21 +110,21 @@
         // inside the plugin as bare English literals — a string that never passes
         // through __() cannot be localized by any developer, and these are the
         // only thing a screen-reader user hears about the stream's state.
-        'startMessage' => $startMessage ?? __('Generating response…'),
-        'readyMessage' => $readyMessage ?? __('Response ready'),
-        'stoppedMessage' => $stoppedMessage ?? __('Response stopped'),
+        'startMessage' => $startMessage ?? __('wirekit::Generating response…'),
+        'readyMessage' => $readyMessage ?? __('wirekit::Response ready'),
+        'stoppedMessage' => $stoppedMessage ?? __('wirekit::Response stopped'),
         // The failure half, which had no route out of the plugin at all. `:message`
         // is a placeholder rather than a concatenation because the clause order is
         // not the same in every language.
-        'failedMessage' => $failedMessage ?? __('Response failed: :message'),
+        'failedMessage' => $failedMessage ?? __('wirekit::Response failed: :message'),
         // The five reasons a stream can fail. Each is what the reader is told went
         // wrong, so each has to be sayable in their language — they were literals.
         'failMessages' => [
-            'open' => __('Stream failed to open'),
-            'lost' => __('Connection lost'),
-            'http' => __('Stream failed: HTTP :status'),
-            'unreadable' => __('Stream failed: response is not readable'),
-            'generic' => __('Stream failed'),
+            'open' => __('wirekit::Stream failed to open'),
+            'lost' => __('wirekit::Connection lost'),
+            'http' => __('wirekit::Stream failed: HTTP :status'),
+            'unreadable' => __('wirekit::Stream failed: response is not readable'),
+            'generic' => __('wirekit::Stream failed'),
         ],
     ], fn ($v) => $v !== null);
     // autoStart is a bool the filter would drop when false — re-assert it.

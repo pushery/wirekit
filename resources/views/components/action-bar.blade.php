@@ -66,7 +66,7 @@
 
 <div
     role="toolbar"
-    aria-label="{{ __('Bulk actions') }}"
+    aria-label="{{ __('wirekit::Bulk actions') }}"
     {{ $attributes->merge(!$visible ? ['style' => 'display: none;'] : [])->class([$classes]) }}
 >
     {{-- Live region announces bar appearance --}}

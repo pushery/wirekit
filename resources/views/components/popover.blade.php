@@ -99,7 +99,7 @@
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
         role="dialog"
-        aria-label="{{ $label ?? __('Popover') }}"
+        aria-label="{{ $label ?? __('wirekit::Popover') }}"
         class="{{ $panelClasses }} {{ $paddingClasses }}"
         x-cloak
     >

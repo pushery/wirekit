@@ -197,11 +197,11 @@
         // untestable.
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
+            'pending' => __('wirekit::Saving'),
             // Not the `reverted` string, because nothing was reverted. The
             // reassurance is the point: the first thing a person needs to know
             // is whether their text survived.
-            'kept' => __('Could not save. Your text is still here.'),
+            'kept' => __('wirekit::Could not save. Your text is still here.'),
         ],
         'errorRegion' => '#'.$id.'-error',
     ]);

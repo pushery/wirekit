@@ -50,9 +50,9 @@
         : WireKit::validateProp('assistant-message', 'announce', $announce, ['sentence', 'all', 'off']);
 
     $speaker = $name ?? match ($roleValue) {
-        'user' => __('You'),
-        'system' => __('System'),
-        default => __('Assistant'),
+        'user' => __('wirekit::You'),
+        'system' => __('wirekit::System'),
+        default => __('wirekit::Assistant'),
     };
 
     // Layout per role. Full literal class strings via match so the drift auditor
@@ -120,7 +120,7 @@
         {{-- Reasoning disclosure — collapsed by default; the answer is the point. --}}
         @isset($reasoning)
             <div data-wk-assistant-reasoning>
-                <x-wirekit::collapsible :trigger="__('Reasoning')">
+                <x-wirekit::collapsible :trigger="__('wirekit::Reasoning')">
                     {{ $reasoning }}
                 </x-wirekit::collapsible>
             </div>

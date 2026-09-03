@@ -182,8 +182,8 @@
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'reverted' => __('Could not save. Change undone.'),
+            'pending' => __('wirekit::Saving'),
+            'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
         'errorRegion' => '#'.$id.'-error',
     ]);

@@ -26,9 +26,12 @@
     'stickyHeaderMax' => config('wirekit.components.table.sticky-header-max', '24rem'),
     'stickyColumn' => false, // freeze the FIRST column while the rest scroll horizontally
     'alpineSort' => false, // enable client-side Alpine sorting (no Livewire needed)
-    // WCAG 2.1.1 (Keyboard) — when stickyHeader makes the table body
-    // scroll-confined, the wrapper becomes a focusable scrollable region
-    // and gets a name so screen-reader users can recognize it.
+    // Accessible name for the responsive scroll wrapper, and the switch that makes it a
+    // LANDMARK. The wrapper is keyboard-reachable either way (WCAG 2.1.1 — `tabindex="0"` is
+    // unconditional); the role only joins it once there is a name worth navigating to. It used
+    // to fall back to "Scrollable table", which made every table on a page answer to the same
+    // rotor entry — axe reports that as `landmark-unique`. Name it after the DATA
+    // ("Customer list"), never after the widget.
     'tableLabel' => null,
     'scope' => null,
 ])
@@ -194,9 +197,11 @@
          something had already scrolled. Which is after the moment it exists for. --}}
     class="flex w-full min-w-0 overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'overflow-y-auto' : '' }}"
     @if($stickyHeaderStyle) style="{{ $stickyHeaderStyle }}" @endif
+    {{-- Reachability is unconditional; the landmark is opt-in. `filled()` rather than `??`,
+         because `role="region"` with an empty name is not exposed as a landmark at all — an
+         interpolated caller value over a record with no title yields exactly that. --}}
     tabindex="0"
-    role="region"
-    aria-label="{{ $tableLabel ?? __('Scrollable table') }}"
+    @if(filled($tableLabel)) role="region" aria-label="{{ $tableLabel }}" @endif
 >
 {{-- One real pixel each, canceled by a negative margin on the side facing the table.
 

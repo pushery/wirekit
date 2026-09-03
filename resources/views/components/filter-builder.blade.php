@@ -118,7 +118,7 @@
                     type="button"
                     @click="openEdit(i)"
                     {{-- :name is substituted client-side because chipText() is only known there. --}}
-                    :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Edit filter: :name')) }}.replace(':name', chipText(filter))"
+                    :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Edit filter: :name')) }}.replace(':name', chipText(filter))"
                     class="cursor-pointer focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]"
                 >
                     <span x-text="chipText(filter)"></span>
@@ -127,7 +127,7 @@
                 <button
                     type="button"
                     @click="remove(i)"
-                    :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Remove filter: :name')) }}.replace(':name', chipText(filter))"
+                    :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove filter: :name')) }}.replace(':name', chipText(filter))"
                     class="p-0.5 rounded-[var(--radius-wk-full)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                 >
                     <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
@@ -165,7 +165,7 @@
                 class="fixed z-[var(--z-wk-dropdown)] w-[18rem] max-w-[calc(100vw-2rem)] p-[var(--padding-wk-x-md)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] space-y-[var(--space-wk-sm)]"
             >
                 <p id="{{ $popoverTitleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]"
-                   x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from($addLabel) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Edit filter')) }}"></p>
+                   x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from($addLabel) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Edit filter')) }}"></p>
 
                 {{-- Field --}}
                 <label class="block">
@@ -242,8 +242,8 @@
 
                 {{-- Actions --}}
                 <div class="flex items-center justify-end gap-[var(--gap-wk-sm)] pt-1">
-                    <button type="button" @click="close(true)" class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('Cancel') }}</button>
-                    <button type="button" @click="apply()" :disabled="!canApply()" class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-inverse)] bg-[var(--color-wk-accent)] rounded-[var(--radius-wk-md)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Add')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Apply')) }}"></button>
+                    <button type="button" @click="close(true)" class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Cancel') }}</button>
+                    <button type="button" @click="apply()" :disabled="!canApply()" class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-inverse)] bg-[var(--color-wk-accent)] rounded-[var(--radius-wk-md)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Add')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Apply')) }}"></button>
                 </div>
             </div>
             </template>

@@ -21,7 +21,10 @@
     'hideBelow' => 'md',
     // Below the breakpoint: 'inline' (un-stick, render in flow) or 'hide' (display:none).
     'mobileBehavior' => 'inline',
-    // Accessible name for the scrollable body region (role="region" needs a name).
+    // Accessible name for the panel AND for its scrollable body — and the switch that makes
+    // that body a LANDMARK. It fell back to "Panel content", so two panels on one page were two
+    // rotor entries with the same name (axe: `landmark-unique`). Unnamed, the body keeps
+    // `tabindex="0"` and no role: reachable per WCAG 2.1.1, deliberately not a destination.
     'label' => null,
     // Show top/bottom overflow shadows on the body. They render as OVERLAYS above
     // the content (.wk-scroll-shadow-top/-bottom + an IntersectionObserver over
@@ -140,9 +143,12 @@
             <div class="relative flex flex-col flex-1 min-h-0" x-data="wirekitStickyPanelShadows()">
                 <div
                     x-ref="scroller"
+                    {{-- Reachability unconditional, landmark opt-in — and BOTH branches of this
+                         `@if($scrollShadow)` carry the same shape. Changing one would have
+                         left `:scroll-shadow="false"` on the old behavior, which is the branch
+                         nobody looks at again. --}}
                     tabindex="0"
-                    role="region"
-                    aria-label="{{ $label ?? 'Panel content' }}"
+                    @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
                     class="flex-1 min-h-0 overflow-y-auto overscroll-contain wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset"
                 >
                     <div x-ref="topSentinel" aria-hidden="true" class="h-px"></div>
@@ -156,8 +162,7 @@
             {{-- Scrollable body, no shadow affordance (:scrollShadow="false"). --}}
             <div
                 tabindex="0"
-                role="region"
-                aria-label="{{ $label ?? 'Panel content' }}"
+                @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
                 class="flex-1 min-h-0 overflow-y-auto overscroll-contain wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset"
             >
                 {{ $slot }}

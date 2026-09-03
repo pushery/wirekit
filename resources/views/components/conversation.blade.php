@@ -2,7 +2,7 @@
      Scroll anchoring for a message list. --}}
 @props([
     // Accessible name for the transcript log region.
-    'label' => __('Conversation'),
+    'label' => __('wirekit::Conversation'),
     // Height cap of the scroll viewport. A transcript needs a bounded height —
     // without one there is nothing to scroll and follow-output is meaningless.
     'maxHeight' => config('wirekit.components.conversation.max-height', '24rem'),
@@ -31,8 +31,8 @@
     $alpineConfig = json_encode((object) array_filter(
         [
             'threshold' => $threshold !== null ? (int) $threshold : null,
-            'jumpLabel' => __('Jump to latest'),
-            'jumpLabelCount' => __('Jump to latest, :count new'),
+            'jumpLabel' => __('wirekit::Jump to latest'),
+            'jumpLabelCount' => __('wirekit::Jump to latest, :count new'),
         ],
         static fn ($v): bool => $v !== null,
     ), JSON_THROW_ON_ERROR);

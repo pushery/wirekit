@@ -205,8 +205,8 @@
     $hasValue = trim((string) $resolvedDisplay) !== '';
 
     $triggerLabel = $context !== null && $context !== ''
-        ? __('Edit :field of :context', ['field' => $label ?? $name, 'context' => $context])
-        : __('Edit :field', ['field' => $label ?? $name]);
+        ? __('wirekit::Edit :field of :context', ['field' => $label ?? $name, 'context' => $context])
+        : __('wirekit::Edit :field', ['field' => $label ?? $name]);
 
     $rootClasses = WireKit::resolveClasses('inline-edit', 'root', implode(' ', [
         'group/inline-edit',
@@ -241,7 +241,7 @@
     // failed would invite a second edit over a value that was already stored.
     // "Not confirmed" is the honest report, and it names what to do about it.
     $resolvedUnknownMessage = $unknownMessage
-        ?? __('Still not confirmed. Your text is kept here — reload to see whether it was saved.');
+        ?? __('wirekit::Still not confirmed. Your text is kept here — reload to see whether it was saved.');
 
     $actionClasses = 'wk-touch-target inline-flex shrink-0 items-center justify-center rounded-[var(--radius-wk-sm)] '
         .'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer';
@@ -303,7 +303,7 @@
                 <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]">{{ $resolvedDisplay }}</span>
             @else
                 <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text-muted)] italic">
-                    {{ $emptyText ?? __('Not set') }}
+                    {{ $emptyText ?? __('wirekit::Not set') }}
                 </span>
             @endif
         </div>

@@ -114,7 +114,7 @@
             @mouseleave="mouseleave()"
             @keydown.escape.prevent="close()"
             role="dialog"
-            aria-label="{{ __('Hover card') }}"
+            aria-label="{{ __('wirekit::Hover card') }}"
             class="{{ $panelClasses }}"
             x-cloak
         >

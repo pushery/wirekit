@@ -8,8 +8,14 @@
     'styleUrl' => null,             // tile/style URL (provider-specific)
     'attribution' => null,          // tile attribution HTML, e.g. '© OpenStreetMap contributors' — shown by Leaflet's attribution control; required by some tile sources (OSM)
     'height' => '24rem',            // map canvas height (CSS length)
-    'ariaLabel' => __('Map'),
-    'listLabel' => __('Locations'),
+    'ariaLabel' => __('wirekit::Map'),
+    // Heading above the marker list — and the switch that makes that list a LANDMARK.
+    //
+    // The visible heading is ALWAYS rendered, so the fallback survives as a resolved variable;
+    // only the `role="region"` waits for a caller-supplied name. Unnamed it fell back to
+    // "Locations", which made every map on a store-locator page the same rotor entry (axe:
+    // `landmark-unique`).
+    'listLabel' => null,
     // Show the marker-list sidebar. Set list="false" for a map-only surface — the
     // list stays in the DOM as an sr-only accessible companion (a map is opaque to
     // assistive tech, so the locations must remain reachable), only the visual
@@ -45,6 +51,10 @@
     // Map-only mode: hide the visual sidebar but keep the list in the DOM (sr-only)
     // so assistive tech can still reach the locations.
     $showList = filter_var($list, FILTER_VALIDATE_BOOLEAN);
+
+    // The DISPLAY heading, resolved once. The raw `$listLabel` stays the record of whether the
+    // caller supplied one — that is what the list's landmark role is gated on.
+    $listLabelResolved = filled($listLabel) ? $listLabel : __('wirekit::Locations');
 
     $centerArr = array_values((array) $center);
     $markersArr = $markers instanceof \Illuminate\Support\Collection ? $markers->values()->all() : array_values((array) $markers);
@@ -138,7 +148,7 @@
              height, so `h-full` resolves there. The explicit min-height keeps
              clientHeight ≥ the wrapper height under EITHER computed position AND
              EITHER flex direction, so MapLibre never hits the 300px fallback. --}}
-        <div x-ref="canvas" class="absolute inset-0 h-full w-full" style="min-height: {{ $height }};" role="application" aria-label="{{ __(':label (interactive)', ['label' => $ariaLabel]) }}" tabindex="0"></div>
+        <div x-ref="canvas" class="absolute inset-0 h-full w-full" style="min-height: {{ $height }};" role="application" aria-label="{{ __('wirekit:::label (interactive)', ['label' => $ariaLabel]) }}" tabindex="0"></div>
         <div x-show="!available" x-cloak class="absolute inset-0 flex flex-col items-center justify-center gap-1 p-[var(--padding-wk-x-md)] text-center pointer-events-none">
             <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.5 2.5V6L9 3.5m0 16.5l6 2.5m-6-2.5V3.5m6 19l5.5-2.5V2.5L15 5m0 17.5V5m0 0L9 3.5"/><circle cx="12" cy="9" r="2.5"/></svg>
             <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">Interactive map needs a map library — the locations are listed alongside.</p>
@@ -148,9 +158,20 @@
     {{-- Marker list — the accessible companion (the screen-reader path). Always
          present; selecting an item pans the map (when available) and emits
          marker-click. --}}
-    <div role="region" aria-label="{{ $listLabel }}" @if($showList)tabindex="0"@endif class="{{ $showList ? 'w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only' }}">
+    {{-- ⚠️ THE TABINDEX IS UNCONDITIONAL AND ITS VALUE CARRIES THE CONDITION, which is not the
+         same thing as the Blade conditional around the attribute that it replaces. The
+         scroll-region guard strips conditionals before it reads the wiring, so this element
+         used to pass on the strength of its `role` alone — the keyboard model it appeared to
+         have was invisible to the one check that asks for it, and making the role opt-in would
+         have turned that arm red for a real reason.
+
+         `-1` rather than dropping the attribute: with `list="false"` the element collapses to
+         the sr-only companion, which does not scroll. A tab stop there would put keyboard focus
+         on something nobody can see (WCAG 2.4.7), so it stays out of the tab order while the
+         wiring stays readable. --}}
+    <div @if(filled($listLabel)) role="region" aria-label="{{ $listLabel }}" @endif tabindex="{{ $showList ? '0' : '-1' }}" class="{{ $showList ? 'w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only' }}">
         <p class="sticky top-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
-            {{ $listLabel }} (<span x-text="markerCount"></span>)
+            {{ $listLabelResolved }} (<span x-text="markerCount"></span>)
         </p>
         <ul class="list-none divide-y divide-[var(--color-wk-border)]" style="list-style: none; margin: 0; padding: 0;">
             <template x-for="m in markers" :key="m.id">
@@ -158,7 +179,7 @@
                     <button
                         type="button"
                         @click="selectMarker(m.id)"
-                        :aria-label="m.label + (m.body ? ', ' + m.body : '') + {{ \Pushery\WireKit\Support\AlpinePayload::from(__(', latitude :lat, longitude :lng')) }}.replace(':lat', m.lat).replace(':lng', m.lng)"
+                        :aria-label="m.label + (m.body ? ', ' + m.body : '') + {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::, latitude :lat, longitude :lng')) }}.replace(':lat', m.lat).replace(':lng', m.lng)"
                         :aria-current="selectedId === m.id ? 'true' : null"
                         :class="selectedId === m.id ? {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedClasses) }} : ''"
                         class="w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset cursor-pointer transition-colors"

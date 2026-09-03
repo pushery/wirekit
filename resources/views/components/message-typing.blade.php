@@ -49,8 +49,8 @@
     ]), $scope);
 
     $announcement = $hasAuthor
-        ? __(':author is typing…', ['author' => $author])
-        : __('Typing…');
+        ? __('wirekit:::author is typing…', ['author' => $author])
+        : __('wirekit::Typing…');
 @endphp
 
 <div

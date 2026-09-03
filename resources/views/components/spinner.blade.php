@@ -11,7 +11,7 @@
     // colored indicator.
     'intent' => config('wirekit.components.spinner.intent', null),
     // Screen-reader accessible name announced via the role="status" live region.
-    'label' => __('Loading'),
+    'label' => __('wirekit::Loading'),
     'scope' => null,
 ])
 
