@@ -164,7 +164,7 @@
              back to a generic name, exactly as sidebar.group does for its twin.
              A caller's `aria-label` cannot serve here: it is read through the bag above
              and names the ROOT, not this button. --}}
-        @if((string) $label === '') aria-label="{{ __('Section') }}" @endif
+        @if((string) $label === '') aria-label="{{ __('wirekit::Section') }}" @endif
         class="{{ $triggerClasses }} group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
     >
         @if($icon)

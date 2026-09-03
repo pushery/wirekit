@@ -34,9 +34,9 @@
     if ($format !== null) {
         $label = $carbonDate->format($format);
     } elseif ($carbonDate->isSameDay($reference)) {
-        $label = __('Today');
+        $label = __('wirekit::Today');
     } elseif ($carbonDate->isSameDay($reference->copy()->subDay())) {
-        $label = __('Yesterday');
+        $label = __('wirekit::Yesterday');
     } elseif ($carbonDate->diffInDays($reference) < 7) {
         $label = $carbonDate->translatedFormat('l');
     } else {

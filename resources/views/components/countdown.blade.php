@@ -69,7 +69,7 @@
     $targetIso = ($target ?? Carbon::now())->toIso8601String();
     $humanDeadline = ($target ?? Carbon::now())->isoFormat('LLL');
 
-    $expiredLabel = $expiredText ?? __('Overdue');
+    $expiredLabel = $expiredText ?? __('wirekit::Overdue');
     $warnSeconds = $warnThreshold !== null ? (int) $warnThreshold : null;
 
     // Resolve the active units, in largest-to-smallest order. 'auto' shows the
@@ -94,8 +94,8 @@
     // Localized unit labels for the SEGMENTS variant — a standalone caption under
     // a big number, where the plural noun is the convention regardless of value.
     $unitLabels = [
-        'years' => __('Years'), 'days' => __('Days'), 'hours' => __('Hours'),
-        'minutes' => __('Minutes'), 'seconds' => __('Seconds'),
+        'years' => __('wirekit::Years'), 'days' => __('wirekit::Days'), 'hours' => __('wirekit::Hours'),
+        'minutes' => __('wirekit::Minutes'), 'seconds' => __('wirekit::Seconds'),
     ];
 
     // Number-agreeing phrases for the SCREEN-READER text, which reads as a
@@ -128,11 +128,11 @@
     // written out literally: one reachable only through a variable is invisible
     // to `lang:extract` and to the drift guard that keeps lang/en.json honest.
     $unitPhrases = [
-        'years' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count year|[2,*] :count years'),
-        'days' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count day|[2,*] :count days'),
-        'hours' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count hour|[2,*] :count hours'),
-        'minutes' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count minute|[2,*] :count minutes'),
-        'seconds' => \Pushery\WireKit\Support\PluralPhrases::from('{1} :count second|[2,*] :count seconds'),
+        'years' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count year|[2,*] :count years'),
+        'days' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count day|[2,*] :count days'),
+        'hours' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count hour|[2,*] :count hours'),
+        'minutes' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count minute|[2,*] :count minutes'),
+        'seconds' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count second|[2,*] :count seconds'),
     ];
     // ONE key, carrying both intentions: the prop is honored, and whatever it
     // resolves to is normalized to a language tag.
@@ -207,7 +207,7 @@
         locale: {{ \Pushery\WireKit\Support\AlpinePayload::from($countdownLocale) }},
     })"
     role="timer"
-    aria-label="{{ __('Deadline') }}: {{ $humanDeadline }}"
+    aria-label="{{ __('wirekit::Deadline') }}: {{ $humanDeadline }}"
     :class="expired
         ? 'text-[color:var(--color-wk-danger-text)]'
         : (urgent ? 'text-[color:var(--color-wk-warning-text)]' : 'text-[color:var(--color-wk-text)]')"

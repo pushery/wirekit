@@ -3,7 +3,14 @@
 @props([
     'items' => [],                  // [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
     'groupBy' => config('wirekit.components.notification-center.group-by', 'none'), // none | time | type ('time' groups by each item's `group` label)
-    'title' => __('Notifications'),
+    // Panel heading, bell name — and the switch that makes the list a LANDMARK.
+    //
+    // Four elements read this and only one of them is gated on it. The trigger, the panel and
+    // the heading are ALWAYS named, so the fallback below survives for them; the scrolling list
+    // becomes `role="region"` only when the caller supplied a title, because the derived
+    // "Notifications list" was identical on every unnamed center on a page (axe:
+    // `landmark-unique`).
+    'title' => null,
     'filters' => config('wirekit.components.notification-center.filters', false), // show type-filter tabs
     'realtimeEvent' => null,        // window event name to listen for new items
     'open' => false,                // start with the panel open (inline embeds / demos)
@@ -42,6 +49,11 @@
 
     $titleId = $id.'-title';
 
+    // The DISPLAY title, resolved once. The raw `$title` stays the record of whether the caller
+    // supplied one — that is what the list's landmark role is gated on — while everything that
+    // must always carry a name renders this.
+    $titleResolved = filled($title) ? $title : __('wirekit::Notifications');
+
     $base = WireKit::resolveClasses('notification-center', 'base', 'relative inline-block font-[family-name:var(--font-wk-sans)]', $scope);
 
     $tab = 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
@@ -57,7 +69,7 @@
     {{-- State-mutating demo (open/close, mark-read, realtime): opt into the docs
          replay affordance so a "used-up" preview can be reset (mirrors alert/badge). --}}
     data-replayable="true"
-    x-data="wirekitNotificationCenter({ items: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemsArr) }}, latestLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('unread. Latest:')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
+    x-data="wirekitNotificationCenter({ items: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemsArr) }}, latestLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::unread. Latest:')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
          escape stays here (window-scoped, teleport-agnostic). --}}
     x-on:keydown.escape.window="open && close(true)"
@@ -88,9 +100,9 @@
         @click="toggle()"
         :aria-expanded="open"
         aria-haspopup="dialog"
-        aria-label="{{ $title }}"
+        aria-label="{{ $titleResolved }}"
         {{-- Only :count is unknown server-side, so only :count is substituted here. --}}
-        :aria-label="unreadCount > 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__(':title, :count unread', ['title' => $title])) }}.replace(':count', unreadCount) : {{ \Pushery\WireKit\Support\AlpinePayload::from(__(':title, none unread', ['title' => $title])) }}"
+        :aria-label="unreadCount > 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, :count unread', ['title' => $titleResolved])) }}.replace(':count', unreadCount) : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, none unread', ['title' => $titleResolved])) }}"
         class="wk-touch-target relative inline-flex items-center justify-center h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
     >
         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
@@ -133,7 +145,7 @@
     >
         {{-- Header --}}
         <div class="flex items-center justify-between gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
-            <p id="{{ $titleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $title }}</p>
+            <p id="{{ $titleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $titleResolved }}</p>
             <button
                 type="button"
                 x-show="unreadCount > 0"
@@ -151,7 +163,7 @@
                  filter one list in place and own no tabpanels, so radio semantics
                  (aria-checked + roving tabindex + arrows move-and-select, wrapping)
                  are the honest contract. --}}
-            <div x-show="types.length > 0" x-cloak role="radiogroup" aria-label="{{ __('Filter notifications') }}"
+            <div x-show="types.length > 0" x-cloak role="radiogroup" aria-label="{{ __('wirekit::Filter notifications') }}"
                 @keydown.arrow-right.prevent="filterMove(1)"
                 @keydown.arrow-down.prevent="filterMove(1)"
                 @keydown.arrow-left.prevent="filterMove(-1)"
@@ -165,7 +177,9 @@
         @endif
 
         {{-- List — a labeled, keyboard-reachable scroll region (WCAG 2.1.1). --}}
-        <div role="region" aria-label="{{ __(':title list', ['title' => $title]) }}" tabindex="0" class="max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+        {{-- Reachability unconditional (WCAG 2.1.1), landmark only when the caller named the
+             center: the derived name was the same on every unnamed one. --}}
+        <div @if(filled($title)) role="region" aria-label="{{ __('wirekit:::title list', ['title' => $title]) }}" @endif tabindex="0" class="max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
             {{-- Empty state --}}
             <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
                 <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
@@ -189,7 +203,7 @@
                                 <a
                                     :href="item.href"
                                     @click="activate(item)"
-                                    :aria-label="(item.read ? '' : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Unread.')) }} + ' ') + item.title + (item.actionLabel ? ', ' + item.actionLabel : '')"
+                                    :aria-label="(item.read ? '' : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Unread.')) }} + ' ') + item.title + (item.actionLabel ? ', ' + item.actionLabel : '')"
                                     class="{{ $row }}"
                                 >
                                     {{-- Unread dot — paired with the "Unread." prefix in aria-label (not color alone). --}}
@@ -206,7 +220,7 @@
                                 <button
                                     type="button"
                                     @click="activate(item)"
-                                    :aria-label="(item.read ? '' : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Unread.')) }} + ' ') + item.title + (item.actionLabel ? ', ' + item.actionLabel : '')"
+                                    :aria-label="(item.read ? '' : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Unread.')) }} + ' ') + item.title + (item.actionLabel ? ', ' + item.actionLabel : '')"
                                     class="{{ $row }}"
                                 >
                                     {{-- Unread dot — paired with the "Unread." prefix in aria-label (not color alone). --}}

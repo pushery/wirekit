@@ -242,8 +242,8 @@
             // and untestable.
             'mode' => 'reject',
             'messages' => [
-                'pending' => __('Saving'),
-                'kept' => __('Could not save. Your color is still here.'),
+                'pending' => __('wirekit::Saving'),
+                'kept' => __('wirekit::Could not save. Your color is still here.'),
             ],
         ]);
     @endphp
@@ -319,7 +319,7 @@
                 @click="open = ! open"
                 :aria-expanded="open ? 'true' : 'false'"
                 aria-haspopup="dialog"
-                aria-label="{{ $name ? __(':name color', ['name' => Str::headline((string) $name)]) : __('Color picker') }}"
+                aria-label="{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}"
                 @if($disabled) disabled @endif
                 class="{{ $swatchClasses }} disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
                 style="{{ $checker }}"
@@ -349,7 +349,7 @@
             x-transition.opacity
             @click.outside="open = false"
             role="dialog"
-            aria-label="{{ __('Color picker') }}"
+            aria-label="{{ __('wirekit::Color picker') }}"
             class="fixed z-[var(--z-wk-dropdown,50)] w-[18rem] space-y-3 rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] p-[var(--padding-wk-x-md)] shadow-[var(--shadow-wk-lg)]"
         >
             {{-- Saturation / value plane. The hue tints the base; white→transparent
@@ -360,8 +360,8 @@
                 @pointerdown="startPlane($event)"
                 role="slider"
                 tabindex="0"
-                aria-label="{{ __('Saturation and brightness') }}"
-                :aria-valuetext="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('saturation :saturation%, brightness :brightness%')) }}.replace(':saturation', s).replace(':brightness', v)"
+                aria-label="{{ __('wirekit::Saturation and brightness') }}"
+                :aria-valuetext="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::saturation :saturation%, brightness :brightness%')) }}.replace(':saturation', s).replace(':brightness', v)"
                 @keydown.arrow-left.prevent="nudgePlane(-1, 0)"
                 @keydown.arrow-right.prevent="nudgePlane(1, 0)"
                 @keydown.arrow-up.prevent="nudgePlane(0, 1)"
@@ -383,7 +383,7 @@
                 @pointerdown="startHue($event)"
                 role="slider"
                 tabindex="0"
-                aria-label="{{ __('Hue') }}"
+                aria-label="{{ __('wirekit::Hue') }}"
                 :aria-valuenow="h"
                 aria-valuemin="0"
                 aria-valuemax="360"
@@ -402,7 +402,7 @@
                     @pointerdown="startAlpha($event)"
                     role="slider"
                     tabindex="0"
-                    aria-label="{{ __('Opacity') }}"
+                    aria-label="{{ __('wirekit::Opacity') }}"
                     :aria-valuenow="alphaPercent()"
                     aria-valuemin="0"
                     aria-valuemax="100"
@@ -429,14 +429,14 @@
                     type="button"
                     @click="cycleFormat()"
                     class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                    aria-label="{{ __('Cycle color format') }}"
+                    aria-label="{{ __('wirekit::Cycle color format') }}"
                     x-text="format"
                 ></button>
                 <input
                     type="text"
                     :value="{{ $withClear ? 'popoverValue' : 'formattedValue' }}"
                     @change="onInput($event.target.value)"
-                    aria-label="{{ __('Color value') }}"
+                    aria-label="{{ __('wirekit::Color value') }}"
                     :aria-invalid="invalidInput ? 'true' : 'false'"
                     spellcheck="false"
                     class="wk-field w-full rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] bg-[var(--color-wk-bg-input)] px-[var(--padding-wk-x-sm)] py-1 font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
@@ -448,7 +448,7 @@
                         x-show="hasEyeDropper"
                         @click="eyedropper()"
                         class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                        aria-label="{{ __('Pick a color from the screen') }}"
+                        aria-label="{{ __('wirekit::Pick a color from the screen') }}"
                     >
                         {{-- A recognizable PIPETTE silhouette (angled dropper barrel + tip).
                              The previous glyph was a pencil path — read as "edit", never as
@@ -460,7 +460,7 @@
                     type="button"
                     @click="copy()"
                     class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                    :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copy color value')) }}"
+                    :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy color value')) }}"
                 >
                     {{-- Canonical clipboard glyph (matches <x-wirekit::clipboard-button>);
                          stroke-width 2 on a clean single shape renders crisp at 16px —
@@ -468,7 +468,7 @@
                     <svg x-show="!copied" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9.75a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
                     {{-- Copied confirmation — a success-colored checkmark. --}}
                     <svg x-show="copied" x-cloak class="h-4 w-4 text-[color:var(--color-wk-success)]" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
-                    <span class="sr-only" aria-live="polite" x-text="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied to clipboard')) }} : ''"></span>
+                    <span class="sr-only" aria-live="polite" x-text="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : ''"></span>
                 </button>
                 @if($withClear)
                     {{-- Clear to "no color": empties the bound form value (popover
@@ -477,24 +477,24 @@
                         type="button"
                         @click="clear()"
                         class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                        aria-label="{{ __('Clear color') }}"
+                        aria-label="{{ __('wirekit::Clear color') }}"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
-                        <span class="sr-only" aria-live="polite" x-text="cleared ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Color cleared')) }} : ''"></span>
+                        <span class="sr-only" aria-live="polite" x-text="cleared ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Color cleared')) }} : ''"></span>
                     </button>
                 @endif
             </div>
 
             @if(! empty($presets))
                 {{-- Developer preset swatches. --}}
-                <div class="flex flex-wrap gap-1.5" role="group" aria-label="{{ __('Preset colors') }}">
+                <div class="flex flex-wrap gap-1.5" role="group" aria-label="{{ __('wirekit::Preset colors') }}">
                     @foreach($presets as $preset)
                         <button
                             type="button"
                             @click="pickColor({{ \Pushery\WireKit\Support\AlpinePayload::from($preset) }})"
                             class="h-6 w-6 cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             style="background-color: {{ $preset }};"
-                            aria-label="{{ __('Use :color', ['color' => $preset]) }}"
+                            aria-label="{{ __('wirekit::Use :color', ['color' => $preset]) }}"
                         ></button>
                     @endforeach
                 </div>
@@ -502,14 +502,14 @@
 
             @if($withRecents)
                 {{-- Recent colors (localStorage, capped at 8). --}}
-                <div x-show="recents.length" class="flex flex-wrap gap-1.5" role="group" aria-label="{{ __('Recent colors') }}">
+                <div x-show="recents.length" class="flex flex-wrap gap-1.5" role="group" aria-label="{{ __('wirekit::Recent colors') }}">
                     <template x-for="recent in recents" :key="recent">
                         <button
                             type="button"
                             @click="pickColor(recent)"
                             class="h-6 w-6 cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             :style="recentStyle(recent)"
-                            :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Use :color')) }}.replace(':color', recent)"
+                            :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Use :color')) }}.replace(':color', recent)"
                         ></button>
                     </template>
                 </div>

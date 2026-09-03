@@ -2,7 +2,7 @@
      Tiles that link somewhere. They navigate. --}}
 @props([
     // The fleet: a list of entities to render as status tiles. Each entry:
-    //   ['key' => 'app-1', 'label' => __('shop.example'), 'intent' => 'danger', 'href' => '…', 'meta' => '2 issues']
+    //   ['key' => 'app-1', 'label' => __('wirekit::shop.example'), 'intent' => 'danger', 'href' => '…', 'meta' => '2 issues']
     // intent ∈ success | warning | danger | info | neutral (anything else → neutral).
     // 'href' makes the tile a keyboard-operable link; 'meta' is an optional caption.
     'items' => [],
@@ -84,11 +84,11 @@
 
     // The spoken status word (screen readers + legend). Translatable.
     $intentWord = fn (string $intent): string => match ($intent) {
-        'success' => __('OK'),
-        'warning' => __('Warning'),
-        'danger' => __('Critical'),
-        'info' => __('Info'),
-        default => __('Unknown'),
+        'success' => __('wirekit::OK'),
+        'warning' => __('wirekit::Warning'),
+        'danger' => __('wirekit::Critical'),
+        'info' => __('wirekit::Info'),
+        default => __('wirekit::Unknown'),
     };
 
     // Shared tile-box classes; link tiles additionally get hover elevation + a focus ring.
@@ -147,7 +147,7 @@
             // NB the space before $intentSurface: without it the last $tileBase class
             // (py-1) glued onto the first surface class (bg-…), silently killing the
             // tile's vertical padding — the real cause of the "no padding" bug.
-            'statusText' => __('Status: :status', ['status' => $statusWord]),
+            'statusText' => __('wirekit::Status: :status', ['status' => $statusWord]),
             // The blank status word (no "Status:" prefix) for the visible caption.
             'statusWord' => $statusWord,
             'class' => $tileBase.' '.$intentSurface($intent).($href !== null ? $tileLink : ''),
@@ -194,7 +194,7 @@
                                 <span class="{{ $metaClamp }} text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
                             @endif
                             @if($showStatus)
-                                <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('Status:') }}</span>{{ $tile['statusWord'] }}</span>
+                                <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('wirekit::Status:') }}</span>{{ $tile['statusWord'] }}</span>
                             @else
                                 <span class="sr-only">{{ $tile['statusText'] }}</span>
                             @endif
@@ -211,7 +211,7 @@
                                 <span class="{{ $metaClamp }} text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
                             @endif
                             @if($showStatus)
-                                <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('Status:') }}</span>{{ $tile['statusWord'] }}</span>
+                                <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('wirekit::Status:') }}</span>{{ $tile['statusWord'] }}</span>
                             @else
                                 <span class="sr-only">{{ $tile['statusText'] }}</span>
                             @endif

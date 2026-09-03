@@ -734,4 +734,26 @@ return [
         'middleware' => [],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Translations
+    |--------------------------------------------------------------------------
+    |
+    | WireKit ships its own strings under the `wirekit::` key prefix, so an
+    | application translating a common English word for its own purposes can no
+    | longer change what a WireKit component says. "Map" as a verb in your app
+    | and "Map" as a noun in a component are two strings now, not one.
+    |
+    | `legacy_key_bridge` keeps a translation you wrote BEFORE that prefix
+    | existed working. If your catalog has `"Close"` and nothing says
+    | `"wirekit::Close"`, your wording still applies. Turn it off to get the
+    | package's own wording everywhere and opt into the namespaced keys at your
+    | own pace. It is removed in the next major version.
+    |
+    */
+
+    'translations' => [
+        'legacy_key_bridge' => env('WIREKIT_LEGACY_TRANSLATION_KEYS', true),
+    ],
+
 ];

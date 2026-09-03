@@ -47,7 +47,7 @@
              lang/en.json carried "Cancel" and lang/de.json carried "Abbrechen" — so a German
              app rendered a fully translated dialog with an English cancel button, and the
              catalog that could have fixed it was already installed. --}}
-        <x-wirekit::button intent="neutral" surface="filled">{{ __('Cancel') }}</x-wirekit::button>
+        <x-wirekit::button intent="neutral" surface="filled">{{ __('wirekit::Cancel') }}</x-wirekit::button>
     @elseif(preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) === 1)
         {{-- The caller supplied their own control. Matched on the RENDERED markup,
              because that is what a slot holds: by the time it is cast to a string

@@ -187,8 +187,8 @@
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'kept' => __('Could not save. Your entry is still here.'),
+            'pending' => __('wirekit::Saving'),
+            'kept' => __('wirekit::Could not save. Your entry is still here.'),
         ],
         'errorRegion' => '#'.$id.'-error',
     ]);
@@ -227,7 +227,7 @@
         <button
             type="button"
             class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusLeft }} {{ $sizeClasses }}"
-            aria-label="{{ __('Decrease') }}"
+            aria-label="{{ __('wirekit::Decrease') }}"
             :disabled="atMin"
             :aria-disabled="atMin"
             @click="decrease()"
@@ -263,7 +263,7 @@
         <button
             type="button"
             class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusRight }} {{ $sizeClasses }}"
-            aria-label="{{ __('Increase') }}"
+            aria-label="{{ __('wirekit::Increase') }}"
             :disabled="atMax"
             :aria-disabled="atMax"
             @click="increase()"

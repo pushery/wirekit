@@ -70,6 +70,6 @@
          opens, which is worse than saying nothing: it is a claim made only to the
          people who cannot check it. --}}
     @if($railTag === 'a' && $opensNewTab)
-        <span class="sr-only">{{ __('(opens in new tab)') }}</span>
+        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
     @endif
 </{{ $railTag }}>

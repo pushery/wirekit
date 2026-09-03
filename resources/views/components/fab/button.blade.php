@@ -53,7 +53,7 @@
     $slotText = trim(strip_tags((string) $slot));
     $ariaLabel = match (true) {
         // No words of its own — the canonical icon FAB. The label is the name.
-        $slotText === '' => $label ?? __('Action'),
+        $slotText === '' => $label ?? __('wirekit::Action'),
         // Words plus a label that CONTAINS them: allowed by 2.5.3 and useful,
         // since the name may add context as long as it starts from what is written.
         $label !== null && str_contains($label, $slotText) => $label,

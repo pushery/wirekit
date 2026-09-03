@@ -46,10 +46,10 @@
 
     $id = DomId::unique($name, 'scope-switcher-');
 
-    $labelText = $label !== '' ? $label : __('Scope');
-    $dialogLabel = __('Switch :label', ['label' => $labelText]);
-    $searchLabel = $searchPlaceholder ?? __('Search :label…', ['label' => $labelText]);
-    $emptyLabel = $emptyText ?? __('No results.');
+    $labelText = $label !== '' ? $label : __('wirekit::Scope');
+    $dialogLabel = __('wirekit::Switch :label', ['label' => $labelText]);
+    $searchLabel = $searchPlaceholder ?? __('wirekit::Search :label…', ['label' => $labelText]);
+    $emptyLabel = $emptyText ?? __('wirekit::No results.');
 
     // Fold accents ONCE, on the server, so a reader typing `munchen` finds `München`.
     // Per keystroke in the browser this would be the same work repeated for every character
@@ -166,10 +166,10 @@
     ];
 
     $statusLabels = [
-        'success' => __('Healthy'),
-        'warning' => __('Needs attention'),
-        'danger' => __('Failing'),
-        'neutral' => __('Inactive'),
+        'success' => __('wirekit::Healthy'),
+        'warning' => __('wirekit::Needs attention'),
+        'danger' => __('wirekit::Failing'),
+        'neutral' => __('wirekit::Inactive'),
     ];
 
     $itemClasses = WireKit::resolveClasses('scope-switcher', 'item', implode(' ', [
@@ -384,7 +384,7 @@
         {{-- The count, for a reader who cannot see the list shrink. Throttled in the plugin
              so a fast typist is not read out letter by letter. --}}
         <x-wirekit::visually-hidden role="status" aria-live="polite">
-            <span x-text="announcement === 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::string(__('1 result')) }} : announcement + {{ \Pushery\WireKit\Support\AlpinePayload::string(__('results')) }}"></span>
+            <span x-text="announcement === 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::1 result')) }} : announcement + {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::results')) }}"></span>
         </x-wirekit::visually-hidden>
 
         @if($create)

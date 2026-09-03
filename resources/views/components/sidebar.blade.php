@@ -82,7 +82,7 @@
     // page carries more than one navigation landmark. Passing aria-label OR
     // aria-labelledby directly on the component also wins over this default
     // (and suppresses it, so the <nav> never gets a duplicate/conflicting name).
-    'label' => __('Sidebar'),
+    'label' => __('wirekit::Sidebar'),
     // The edge shadows on the scrolling middle. On by default, because a
     // scrollbar alone is easy to miss on a track that fades when idle.
     //
@@ -435,9 +435,9 @@
                  so the static pair can never disagree with the bound one. Same __() keys,
                  so the translation is maintained once. --}}
             aria-expanded="{{ $collapsed ? 'false' : 'true' }}"
-            aria-label="{{ $collapsed ? __('Expand sidebar') : __('Collapse sidebar') }}"
+            aria-label="{{ $collapsed ? __('wirekit::Expand sidebar') : __('wirekit::Collapse sidebar') }}"
             :aria-expanded="collapsed ? 'false' : 'true'"
-            :aria-label="collapsed ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Expand sidebar')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Collapse sidebar')) }}"
+            :aria-label="collapsed ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand sidebar')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse sidebar')) }}"
             class="{{ $collapseBtnClasses }}"
         >
             <svg class="h-5 w-5 transition-transform duration-[var(--transition-wk-duration)]" :class="collapsed ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">

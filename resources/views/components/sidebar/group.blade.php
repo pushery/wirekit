@@ -136,7 +136,7 @@
             aria-controls="{{ $panelId }}"
             {{-- No visible label to name the button? fall back to a generic name so the
                  disclosure control is never nameless (WCAG 4.1.2). --}}
-            @unless($label) aria-label="{{ __('Section') }}" @endunless
+            @unless($label) aria-label="{{ __('wirekit::Section') }}" @endunless
             {{-- In the collapsed icon rail the button is `hidden` (not sr-only): the group
                  has no icon to show at rail width and its children are hidden too, so a
                  focusable-but-invisible sr-only control would be a keyboard focus trap with

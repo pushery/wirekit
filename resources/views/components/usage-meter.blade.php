@@ -61,10 +61,10 @@
 
     // Reset hint: explicit resetAt wins; else derive from the period cadence.
     $resetNote = $resetAt ?: match ($period) {
-        'day' => __('Resets daily'),
-        'week' => __('Resets weekly'),
-        'month' => __('Resets monthly'),
-        'year' => __('Resets yearly'),
+        'day' => __('wirekit::Resets daily'),
+        'week' => __('wirekit::Resets weekly'),
+        'month' => __('wirekit::Resets monthly'),
+        'year' => __('wirekit::Resets yearly'),
         default => null,
     };
 
@@ -75,7 +75,7 @@
     // generic "Usage"). Computed here — NOT as inline @if inside the
     // <x-wirekit::progress> tag, which the component-tag compiler can't parse.
     $barLabelledby = $label ? $labelId : null;
-    $barAriaLabel = $label ? null : __('Usage');
+    $barAriaLabel = $label ? null : __('wirekit::Usage');
 
     $classes = WireKit::resolveClasses('usage-meter', 'base',
         'w-full font-[family-name:var(--font-wk-sans)]',
@@ -99,7 +99,7 @@
                         {{-- Translated by default. A caller passes the prop when the word is
                              the NAME of a tier rather than a quantity, and must stay identical
                              in every language — a thing the translator cannot know. --}}
-                        <span class="text-[color:var(--color-wk-text-subtle)]">· {{ $unlimitedLabel ?? __('Unlimited') }}</span>
+                        <span class="text-[color:var(--color-wk-text-subtle)]">· {{ $unlimitedLabel ?? __('wirekit::Unlimited') }}</span>
                     @else
                         {{ $fmt($usedNum) }} / {{ $fmt($limitNum) }}@if($unit) {{ $unit }}@endif
                         @if($rawPercent !== null)
@@ -130,14 +130,14 @@
         <div class="mt-1 flex items-center justify-between gap-2 text-[length:var(--text-wk-xs)]">
             <span>
                 @if($isOver)
-                    <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-danger-text)]">{{ __('Over limit') }}</span>
+                    <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-danger-text)]">{{ __('wirekit::Over limit') }}</span>
                 @elseif($isDanger)
                     {{-- Danger band [danger, 1.0): the red bar gets matching red TEXT so
                          the band is never conveyed by color alone. More urgent wording
                          than the warning band's "Approaching limit". --}}
-                    <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-danger-text)]">{{ __('Near limit') }}</span>
+                    <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-danger-text)]">{{ __('wirekit::Near limit') }}</span>
                 @elseif($isWarn)
-                    <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-warning-text)]">{{ __('Approaching limit') }}</span>
+                    <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-warning-text)]">{{ __('wirekit::Approaching limit') }}</span>
                 @endif
             </span>
             @if($resetNote)

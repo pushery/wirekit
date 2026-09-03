@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.43.0 — MIT License
+ * WireKit CSS v2.44.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -1800,6 +1800,46 @@
 
     [data-wk-panel][data-wk-nav-gutter] [data-wk-content-panel] {
         margin-inline-start: 0;
+    }
+
+    /* ─── The module absorbs the leftover, so its glyph lands on the column's axis ─── */
+    /* `--size-wk-rail` budgets 2x `--padding-wk-y-sm` of scroller inset plus one border --
+       thirteen pixels. Beside a panel the shell spends eight of them (inset 0.5rem a side,
+       border removed by the block below), and the remaining five fall INSIDE the module: it
+       ends up 45px wide around 40px of glyph-plus-padding. The glyph is leading-aligned, so it
+       sits at one end of that surplus and lands 2.5px off the column's center. Away from a
+       panel the budget is spent exactly and the surplus is zero, which is why the offset only
+       ever appeared here.
+
+       ⚠️ IT IS NOT THE GUTTER, and that is worth stating because the gutter is the obvious
+       suspect: it adds 8px of width AND 8px of inset, so it nets to zero. Removing
+       `data-wk-nav-gutter` in a live page returns the column to 53px and leaves the module at
+       45px with the same 5px and the same 2.5px. The surplus is unspent BUDGET, not extra
+       width.
+
+       Taking it in the module's own `padding-inline` rather than in the scroller's inset is
+       what makes this the only fix that costs nothing. The module's border box does not move,
+       and every guard in this family measures that box: the panel gap stays 8px on all four
+       sides (`ConsoleShellGeometryTest`), the module keeps equal chrome either side
+       (`RailSpineTest`), and because a centered glyph and a leading-aligned one now land on the
+       SAME pixel, folding the rail moves nothing (`CollapsibleNoShiftTest`). Widening the
+       scroller inset instead would have centered the glyph too, at the price of a 10.5px gap
+       beside a panel whose other three sides stay at 8px.
+
+       Derived, never a literal 12.5px: half of what the module has left once its glyph is
+       accounted for. A token that moves takes this with it.
+
+       `below` is excluded because it deliberately runs on the xs padding tier -- its label sits
+       under the glyph, so the row is a different shape and its own rule owns the inline axis. */
+    [data-wk-panel][data-wk-nav-gutter] .wk-rail:not([data-labels="below"]) {
+        --wk-rail-item-pad: calc(
+            (
+                var(--size-wk-rail) + var(--wk-rail-gutter, 0px)
+                - var(--wk-rail-inset-start, var(--padding-wk-y-sm))
+                - var(--wk-rail-inset-end, var(--padding-wk-y-sm))
+                - var(--size-wk-rail-icon)
+            ) / 2
+        );
     }
 }
 

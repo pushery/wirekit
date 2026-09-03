@@ -3,7 +3,7 @@
      nothing to anticipate and nothing to roll back. --}}
 @props([
     'value' => '',
-    'copiedText' => __('Copied!'),
+    'copiedText' => __('wirekit::Copied!'),
     'duration' => 2000,
     // Bare icon button — no border / bg / label, just the copy glyph (muted,
     // pops green on copy). For compact action rows (a message's copy control).
@@ -122,5 +122,5 @@
     @endunless
 
     {{-- Screen reader announcement --}}
-    <span x-show="copied" class="sr-only" role="status" aria-live="polite">{{ __('Copied to clipboard') }}</span>
+    <span x-show="copied" class="sr-only" role="status" aria-live="polite">{{ __('wirekit::Copied to clipboard') }}</span>
 </button>

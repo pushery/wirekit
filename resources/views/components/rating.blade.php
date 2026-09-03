@@ -142,8 +142,8 @@
         // arrives last — network timing, which is both wrong and untestable.
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'reverted' => __('Could not save. Change undone.'),
+            'pending' => __('wirekit::Saving'),
+            'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
     ]);
 @endphp
@@ -224,10 +224,10 @@
                  as "Average rating — 4.2 out of 5 stars".
 
                  An explicit aria-label still wins: the caller knows their page. --}}
-            aria-label="{{ $attributes->get('aria-label') ?? __(':value out of :max stars', ['value' => $announcedValue, 'max' => $max]) }}"
+            aria-label="{{ $attributes->get('aria-label') ?? __('wirekit:::value out of :max stars', ['value' => $announcedValue, 'max' => $max]) }}"
         @else
             role="radiogroup"
-            aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('Rating') }}"
+            aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::Rating') }}"
             {{-- On the GROUP, not on each star: the message is about the rating, and
                  repeating it on five buttons would read it out five times. --}}
             @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
@@ -295,7 +295,7 @@
                          embeds the current value, where server-side
                          pluralization is exactly what blocks an optimistic
                          update from being announced correctly. --}}
-                    aria-label="{{ trans_choice(':count star|:count stars', $i) }}"
+                    aria-label="{{ trans_choice('wirekit:::count star|:count stars', $i) }}"
                     @if($optimisticConfig)
                         {{-- run() writes through the binding, announces, and
                              fires the Livewire method; select() would write the

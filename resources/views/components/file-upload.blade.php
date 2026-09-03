@@ -11,11 +11,11 @@
     'accept' => config('wirekit.components.file-upload.accept', null),
     'size' => config('wirekit.components.file-upload.size', 'md'),
     'disabled' => false,
-    'label' => __('Drop files here or click to browse'),
+    'label' => __('wirekit::Drop files here or click to browse'),
     // Accessible name for each file's remove button. The `:name` placeholder is
     // replaced with the file name at runtime, so translators control word order
     // (some languages put the object before the verb). Overridable per call site.
-    'removeLabel' => __('Remove :name'),
+    'removeLabel' => __('wirekit::Remove :name'),
     'hint' => null,
     'error' => null,
     'scope' => null,

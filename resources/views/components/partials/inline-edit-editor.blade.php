@@ -136,7 +136,7 @@
         :aria-disabled="saving"
         :aria-busy="saving"
         class="{{ $actionClasses }} text-[color:var(--color-wk-success-text)]"
-        aria-label="{{ __('Confirm') }}"
+        aria-label="{{ __('wirekit::Confirm') }}"
     >
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
@@ -148,7 +148,7 @@
         x-on:click="cancel()"
         :aria-disabled="saving"
         class="{{ $actionClasses }} text-[color:var(--color-wk-text-muted)]"
-        aria-label="{{ __('Cancel') }}"
+        aria-label="{{ __('wirekit::Cancel') }}"
     >
         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />

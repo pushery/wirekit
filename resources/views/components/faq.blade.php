@@ -4,7 +4,7 @@
      any file that renders one. --}}
 @props([
     // Accessible name for the question list.
-    'label' => config('wirekit.components.faq.label') ?? __('Frequently asked questions'),
+    'label' => config('wirekit.components.faq.label') ?? __('wirekit::Frequently asked questions'),
     // Visual treatment, passed through to the underlying accordion. 'flush' is
     // the default here (not 'bordered'): an FAQ almost always sits inline in
     // page content, where outer chrome only competes with the section around it.

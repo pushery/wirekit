@@ -135,7 +135,7 @@
                          the price itself announces "was X, N% off" (see price), so this
                          carries no meaning a screen-reader user would miss without it. --}}
                     <span data-wk-product-card-sale>
-                        <x-wirekit::badge intent="danger" surface="solid" size="sm">{{ __('Sale') }}</x-wirekit::badge>
+                        <x-wirekit::badge intent="danger" surface="solid" size="sm">{{ __('wirekit::Sale') }}</x-wirekit::badge>
                     </span>
                 @endif
 
@@ -149,11 +149,11 @@
             {{-- Not a tint over the image: a reader who cannot resolve the wash
                  sees a normal product. The word is the signal. --}}
             <span data-wk-product-card-stock class="absolute end-[var(--padding-wk-x-sm)] top-[var(--padding-wk-y-sm)] z-10">
-                <x-wirekit::badge intent="neutral" surface="solid" size="sm">{{ __('Out of stock') }}</x-wirekit::badge>
+                <x-wirekit::badge intent="neutral" surface="solid" size="sm">{{ __('wirekit::Out of stock') }}</x-wirekit::badge>
             </span>
         @elseif($availability === 'low-stock')
             <span data-wk-product-card-stock class="absolute end-[var(--padding-wk-x-sm)] top-[var(--padding-wk-y-sm)] z-10">
-                <x-wirekit::badge intent="warning" surface="solid" size="sm">{{ __('Low stock') }}</x-wirekit::badge>
+                <x-wirekit::badge intent="warning" surface="solid" size="sm">{{ __('wirekit::Low stock') }}</x-wirekit::badge>
             </span>
         @endif
     </div>
@@ -189,7 +189,7 @@
                     {{-- The count says what the stars are worth. "4.5 stars" from
                          two people and from two thousand are different claims. --}}
                     <span data-wk-product-card-reviews class="text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
-                        {{ trans_choice('{1} :count review|[2,*] :count reviews', (int) $reviewCount, ['count' => $reviewCount]) }}
+                        {{ trans_choice('wirekit::{1} :count review|[2,*] :count reviews', (int) $reviewCount, ['count' => $reviewCount]) }}
                     </span>
                 @endif
             </span>
@@ -220,10 +220,10 @@
                     intent="primary"
                     class="w-full"
                     :disabled="$isOut"
-                    :aria-label="$isOut ? __('Out of stock: :name', ['name' => $name]) : __('Add :name to cart', ['name' => $name])"
+                    :aria-label="$isOut ? __('wirekit::Out of stock: :name', ['name' => $name]) : __('wirekit::Add :name to cart', ['name' => $name])"
                     data-wk-product-card-cta
                 >
-                    {{ $isOut ? __('Out of stock') : __('Add to cart') }}
+                    {{ $isOut ? __('wirekit::Out of stock') : __('wirekit::Add to cart') }}
                 </x-wirekit::button>
             @endif
         </div>

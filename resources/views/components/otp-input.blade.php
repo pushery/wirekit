@@ -205,10 +205,10 @@
         // untestable.
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
+            'pending' => __('wirekit::Saving'),
             // Names no value. It never should for any field, and here the value
             // is a credential.
-            'kept' => __('Could not save. Your entry is still here.'),
+            'kept' => __('wirekit::Could not save. Your entry is still here.'),
         ],
         'errorRegion' => '#'.$id.'-error',
     ]);
@@ -245,7 +245,7 @@
              their designed size; shrinking them would make the digits unreadable. --}}
         class="flex flex-wrap gap-2"
         role="group"
-        aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('One-time code') }}"
+        aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::One-time code') }}"
     >
         @for($i = 0; $i < $length; $i++)
             <input
@@ -275,7 +275,7 @@
                 id="{{ $id }}-digit-{{ $i }}"
                 {{-- Placeholders rather than concatenation: a language that orders
                      the words differently cannot be served by a fixed word order. --}}
-                aria-label="{{ __('Digit :position of :total', ['position' => $i + 1, 'total' => $length]) }}"
+                aria-label="{{ __('wirekit::Digit :position of :total', ['position' => $i + 1, 'total' => $length]) }}"
                 @if($hasError) aria-invalid="true" @endif
                 @if($i === 0 && $describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 {{-- Every box reports the pending state: the code is one value,

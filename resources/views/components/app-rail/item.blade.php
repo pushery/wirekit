@@ -87,7 +87,13 @@
         // Derived from the container rather than fixed: a rounded column re-points this for
         // its own subtree so the two arcs stay concentric. See dist/wirekit.css.
         'rounded-[var(--radius-wk-nav-item)]',
-        'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
+        // The inline padding reads a token so the BRAND can read the same one. Beside an
+        // inset panel `--size-wk-rail`'s inset-and-border budget is underspent and the
+        // leftover lands inside this module, so the column re-points this token there and the
+        // glyph ends up on the column's axis instead of 2.5px beside it. Everywhere else the
+        // fallback is the tier this always used. See the `[data-wk-nav-gutter]` block in
+        // dist/wirekit.css for the derivation.
+        'px-[var(--wk-rail-item-pad,var(--padding-wk-x-sm))] py-[var(--padding-wk-y-sm)]',
         'gap-[var(--padding-wk-x-sm)]',
         // Leading-aligned, NOT centered — and in the icon-only mode that looks identical,
         // because `--size-wk-rail` is derived from exactly this content: the icon plus these

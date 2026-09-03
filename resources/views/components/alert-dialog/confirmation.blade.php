@@ -57,7 +57,7 @@
              a doubled letter or a trailing space has to be readable character by character.
              `x-text` rather than a Blade echo — the value lives in the dialog's Alpine
              state, which is the one copy of it. --}}
-        <span class="{{ $labelClasses }}">{{ __('To continue, type:') }}</span>
+        <span class="{{ $labelClasses }}">{{ __('wirekit::To continue, type:') }}</span>
         <span class="{{ $phraseClasses }}" x-text="confirmationPhrase"></span>
 
         {{-- The field owns its own label and its own page-unique id (Support\DomId). A
@@ -66,7 +66,7 @@
              sr-only because the two lines above already say the same thing on screen —
              repeating it visibly would read as a stutter. --}}
         <x-wirekit::input
-            :label="__('Confirmation phrase')"
+            :label="__('wirekit::Confirmation phrase')"
             hide-label
             x-model="typed"
             autocomplete="off"

@@ -83,15 +83,18 @@
     @endif
 
     {{-- Column body (card items) — focusable scroll region (WCAG 2.1.1).
-         Generic scroll container with no composite-widget role, so we
-         annotate it directly: tabindex="0" lets keyboard users scroll
-         the column when the cards inside have no other focusable
-         element; role="region" + aria-label exposes the scroll region
-         in landmark navigation under the column's own label. --}}
+         Generic scroll container with no composite-widget role, so we annotate it directly:
+         tabindex="0" lets keyboard users scroll the column when the cards inside have no other
+         focusable element. That half is unconditional.
+
+         The LANDMARK half is not. It fell back to "Column items", so a six-column board was six
+         rotor entries with one name — axe reports that as `landmark-unique`, and the name meant
+         to tell the columns apart was what made them identical. A named column exposes its
+         body under its OWN label; an unnamed one stays reachable and simply is not a
+         destination. --}}
     <div
         tabindex="0"
-        role="region"
-        aria-label="{{ $label ?? 'Column items' }}"
+        @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
         class="wk-scrollbar flex flex-col gap-[var(--space-wk-sm,0.5rem)] px-[var(--space-wk-sm,0.5rem)] pb-[var(--space-wk-sm,0.5rem)] overflow-y-auto min-h-[120px] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
         @if($sortable)
             data-sortable-items

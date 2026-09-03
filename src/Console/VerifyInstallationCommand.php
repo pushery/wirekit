@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\File;
 use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\BaseLocaleJsonLoader;
 use Pushery\WireKit\Support\DirectoryHash;
 use Pushery\WireKit\Support\TailwindVersion;
 use Pushery\WireKit\WireKit;
@@ -1650,8 +1651,11 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
-        /** @var array<string, list<string>> $collisions key => locales it diverges in */
+        /** @var array<string, list<string>> $collisions namespaced key => locales it diverges in */
         $collisions = [];
+
+        /** @var array<string, list<string>> $ambiguous namespaced key => locales holding BOTH spellings */
+        $ambiguous = [];
 
         foreach ((array) glob($packageLang.'/*.json') as $ours) {
             $locale = basename((string) $ours, '.json');
@@ -1669,11 +1673,39 @@ class VerifyInstallationCommand extends Command
             }
 
             foreach ($mine as $key => $value) {
-                if (array_key_exists($key, $app) && $app[$key] !== $value) {
+                // THE PREFIX COMES OFF BEFORE THE COMPARISON, and this line is the whole check.
+                //
+                // Our keys are `wirekit::Dismiss`; an application that predates the prefix wrote
+                // `Dismiss`. Comparing the two as stored finds nothing in common, so the check
+                // would report a clean bill of health over precisely the collision it exists to
+                // name — and it is the flat-namespace problem itself that makes that silence
+                // expensive, because the legacy-key bridge keeps that application's wording
+                // flowing into the component exactly as it did before.
+                $plain = str_starts_with((string) $key, BaseLocaleJsonLoader::NAMESPACE)
+                    ? substr((string) $key, strlen(BaseLocaleJsonLoader::NAMESPACE))
+                    : (string) $key;
+
+                $hasPlain = array_key_exists($plain, $app);
+                $hasNamespaced = $plain !== $key && array_key_exists($key, $app);
+
+                // BOTH spellings in one catalog. Not a collision — a fork. The namespaced entry
+                // is the one the bridge steps aside for, so the plain one has quietly stopped
+                // reaching WireKit while still looking like it governs the component. Whoever
+                // adopted the new key almost certainly meant to retire the old one, and nothing
+                // else in the system will ever mention that they did not.
+                if ($hasPlain && $hasNamespaced) {
+                    $ambiguous[(string) $key][] = $locale;
+
+                    continue;
+                }
+
+                if ($hasPlain && $app[$plain] !== $value) {
                     $collisions[(string) $key][] = $locale;
                 }
             }
         }
+
+        $this->reportTranslationKeyForks($ambiguous);
 
         if ($collisions === []) {
             $this->reportPass('No translation key means something different in your catalog than in WireKit');
@@ -1698,14 +1730,50 @@ class VerifyInstallationCommand extends Command
         }
 
         foreach ($reportable as $key => $locales) {
+            $plain = substr((string) $key, strlen(BaseLocaleJsonLoader::NAMESPACE));
+
             $this->reportWarn(sprintf(
                 "Translation key '%s' means something different in your catalog than in WireKit (%s), "
                 .'and %s renders it — so that component will show your wording in a context it was not '
-                .'written for. Rename YOUR key to something unambiguous; the flat catalog cannot hold '
-                .'two meanings of one word.',
+                ."written for. WireKit now ships this string as '%s': translate THAT key to give the "
+                ."component its own wording back, and keep '%s' for your own use. Renaming your key "
+                .'works too. Until you do one of them, the legacy-key bridge keeps applying your '
+                .'wording inside the component, exactly as before.',
+                $plain,
+                implode(', ', $locales),
+                $rendered[$key],
+                $key,
+                $plain
+            ));
+        }
+    }
+
+    /**
+     * Report a catalog that carries BOTH spellings of the same string.
+     *
+     * Its own reporter rather than a branch inside the collision report, because it is a
+     * different finding with a different remedy — and it is NOT gated on whether a component
+     * renders the key. A fork is worth naming wherever it sits: the plain entry has stopped
+     * governing WireKit, so the next reader who edits it to change a component's wording
+     * changes nothing, and nothing tells them why.
+     *
+     * @param  array<string, list<string>>  $ambiguous  namespaced key => locales holding both
+     */
+    private function reportTranslationKeyForks(array $ambiguous): void
+    {
+        foreach ($ambiguous as $key => $locales) {
+            $plain = substr((string) $key, strlen(BaseLocaleJsonLoader::NAMESPACE));
+
+            $this->reportWarn(sprintf(
+                "Your catalog holds both '%s' and '%s' (%s). Only the second one reaches WireKit: "
+                ."the legacy-key bridge steps aside as soon as you have adopted '%s', so '%s' now "
+                .'applies to your own strings alone. If that is what you meant, nothing is broken — '
+                .'if you were still maintaining both as one string, they have quietly become two.',
+                $plain,
                 $key,
                 implode(', ', $locales),
-                $rendered[$key]
+                $key,
+                $plain
             ));
         }
     }
@@ -1713,7 +1781,12 @@ class VerifyInstallationCommand extends Command
     /**
      * Which shipped component renders each of the given translation keys.
      *
-     * @param  list<string>  $keys
+     * The keys arrive NAMESPACED (`wirekit::Dismiss`), because that is what the call sites
+     * contain — the prefix is part of the literal a component passes to `__()`, not a
+     * decoration on top of it. Handing this the plain key would match nothing and report
+     * that no component renders any of them, which reads as the good news.
+     *
+     * @param  list<string>  $keys  namespaced keys, as they appear at the call site
      * @return array<string, string> key => the component that renders it
      */
     private function componentsRenderingTranslationKeys(array $keys): array
@@ -1742,14 +1815,22 @@ class VerifyInstallationCommand extends Command
                     continue;
                 }
 
-                // A regex rather than two str_contains calls, for two reasons that happen to
-                // point the same way. It tolerates whitespace after the call and matches either
-                // quoting in one pass — the catalog holds keys containing apostrophes. And the
-                // pattern spells the call with an escaped parenthesis, so this file never
-                // contains the literal sequence a translation-key scanner looks for: written
-                // inline, the needle reads to TranslationKeyDriftTest as this command emitting
-                // a key of its own.
-                if (preg_match('/__\(\s*([\'"])'.preg_quote($key, '/').'\1/', $body) === 1) {
+                // A regex rather than a handful of str_contains calls, for two reasons that
+                // happen to point the same way. It tolerates whitespace after the call and
+                // matches either quoting in one pass — the catalog holds keys containing
+                // apostrophes. And the pattern spells each call with an escaped parenthesis, so
+                // this file never contains the literal sequence a translation-key scanner looks
+                // for: written inline, the needle reads to TranslationKeyDriftTest as this
+                // command emitting a key of its own.
+                //
+                // ALL THREE call forms, because a key reachable by only one of the other two
+                // would be reported as rendered by nothing — and this check's quiet answer is
+                // the one that reads as good news. `trans_choice()` and `PluralPhrases::from()`
+                // carry the plural strings, which are ordinary catalog keys and collide the
+                // same way.
+                $call = '(?:__|trans_choice|PluralPhrases::from)';
+
+                if (preg_match('/'.$call.'\(\s*([\'"])'.preg_quote($key, '/').'\1/', $body) === 1) {
                     $found[$key] = str_replace($root.'/', '', $file->getPathname());
                 }
             }

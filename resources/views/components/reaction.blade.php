@@ -48,13 +48,13 @@
     // replaced by the client's the moment Alpine runs, and only when this
     // component is optimistic — a reaction that cannot change has no reason to
     // compute its own name.
-    $ariaLabel = $emoji . ', ' . trans_choice('{0} no reactions|{1} :count person reacted|[2,*] :count people reacted', $count, ['count' => $count]);
+    $ariaLabel = $emoji . ', ' . trans_choice('wirekit::{0} no reactions|{1} :count person reacted|[2,*] :count people reacted', $count, ['count' => $count]);
 
     $reactionOptimistic = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'active' => (bool) $active,
         'count' => (int) $count,
         'emoji' => $emoji,
-        'phrases' => \Pushery\WireKit\Support\PluralPhrases::from('{0} no reactions|{1} :count person reacted|[2,*] :count people reacted'),
+        'phrases' => \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{0} no reactions|{1} :count person reacted|[2,*] :count people reacted'),
         'locale' => str_replace('_', '-', app()->getLocale()),
     ]);
 
@@ -65,8 +65,8 @@
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'reverted' => __('Could not save. Change undone.'),
+            'pending' => __('wirekit::Saving'),
+            'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
     ]);
 

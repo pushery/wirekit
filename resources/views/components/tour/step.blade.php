@@ -54,7 +54,7 @@
     data-wk-target="{{ $target }}"
     data-wk-placement="{{ $placement }}"
     role="dialog"
-    aria-label="{{ __('Tour step :number', ['number' => $resolvedIndex + 1]) }}"
+    aria-label="{{ __('wirekit::Tour step :number', ['number' => $resolvedIndex + 1]) }}"
     {{ $attributes->class([$panelClasses]) }}
     x-cloak
 >
@@ -77,12 +77,12 @@
                 x-show="currentStep > 0"
                 x-on:click="prev()"
                 class="p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-sm)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-            >{{ __('Back') }}</button>
+            >{{ __('wirekit::Back') }}</button>
             <button
                 type="button"
                 x-on:click="next()"
                 class="p-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] cursor-pointer bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-accent-hover)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                x-text="currentStep === totalSteps - 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Finish')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Next')) }}"
+                x-text="currentStep === totalSteps - 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Finish')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Next')) }}"
             {{-- A literal opening label, because x-text is the button's ONLY content: until
                  Alpine evaluates it the element is empty, so the control has no accessible
                  name at all — and a server-side accessibility check sees nothing else, ever.
@@ -90,7 +90,7 @@
                  "Next" rather than "Finish": which one is right depends on the step index,
                  which lives in Alpine and not on the server, and every step but the last
                  opens on "Next". --}}
-            >{{ __('Next') }}</button>
+            >{{ __('wirekit::Next') }}</button>
         </div>
     </div>
 </div>

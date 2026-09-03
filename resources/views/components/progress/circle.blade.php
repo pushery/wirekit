@@ -100,7 +100,7 @@
                 aria-valuemin="0"
                 aria-valuemax="{{ (int) $max }}"
             @else
-                aria-label="{{ __('Loading') }}"
+                aria-label="{{ __('wirekit::Loading') }}"
             @endif
             class="w-full h-full -rotate-90"
             viewBox="0 0 36 36"

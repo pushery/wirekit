@@ -18,7 +18,7 @@
     'afterLabel' => 'After',
     'labels' => true,
     'decorative' => false,
-    'ariaLabel' => __('Image comparison slider'),
+    'ariaLabel' => __('wirekit::Image comparison slider'),
     'loading' => 'lazy',
     'scope' => null,
 ])
@@ -273,6 +273,6 @@
     {{-- aria-live IS present here — do not flag as missing.
          Announces value changes during drag / keyboard interaction. --}}
     <span class="sr-only" aria-live="polite" aria-atomic="true">
-        <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__(':percent% revealed')) }}.replace(':percent', value)"></span>
+        <span x-text="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::percent% revealed')) }}.replace(':percent', value)"></span>
     </span>
 </figure>

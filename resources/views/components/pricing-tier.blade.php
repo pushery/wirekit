@@ -25,7 +25,7 @@
     // alone (WCAG 1.4.1).
     'featured' => false,
     // Text for the featured badge.
-    'featuredLabel' => __('Most popular'),
+    'featuredLabel' => __('wirekit::Most popular'),
     // Shown instead of an amount ("Let's talk") for a contact-us tier.
     'priceLabel' => null,
     // Forwarded to the inner price component so a tier can render minor-unit

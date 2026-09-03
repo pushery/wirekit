@@ -82,7 +82,7 @@
                         type="button"
                         x-on:click="openAt({{ $i }})"
                         aria-haspopup="dialog"
-                        aria-label="{{ __('View image :n', ['n' => $i + 1]) }}{{ $item['alt'] !== '' ? ': '.$item['alt'] : '' }}"
+                        aria-label="{{ __('wirekit::View image :n', ['n' => $i + 1]) }}{{ $item['alt'] !== '' ? ': '.$item['alt'] : '' }}"
                         class="group block w-full cursor-zoom-in appearance-none border-0 bg-transparent p-0 rounded-[var(--radius-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
                         <x-wirekit::image :src="$item['src']" :alt="$item['alt']" :ratio="$ratio" :fit="$fit" rounded />

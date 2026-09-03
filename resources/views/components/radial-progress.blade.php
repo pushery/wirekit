@@ -123,7 +123,7 @@
          not the name. `label` is the intended source, but it defaults to null, so
          a developer who omits it used to ship a nameless progressbar. Fall back to
          a translatable generic name so the role is never anonymous. --}}
-    aria-label="{{ $label ?? __('Progress') }}"
+    aria-label="{{ $label ?? __('wirekit::Progress') }}"
     {{-- Opt the animated ring INTO the docs.wirekit.app replay button so the sweep
          can be re-watched — a re-mount re-fires @starting-style. No-op in a
          developer app (no such button); it only adds the attribute. --}}

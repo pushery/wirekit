@@ -48,7 +48,7 @@
 <div
     role="status"
     aria-live="polite"
-    aria-label="{{ __('Loading') }}"
+    aria-label="{{ __('wirekit::Loading') }}"
     aria-busy="true"
     {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: auto '.($intrinsicHeight).';'])->class([$wrapperClasses]) }}
 >

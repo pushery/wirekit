@@ -31,7 +31,7 @@
     'error' => null,
     'value' => [],
     'maxTags' => null,
-    'placeholder' => __('Add a tag...'),
+    'placeholder' => __('wirekit::Add a tag...'),
     'scope' => null,
 ])
 
@@ -140,8 +140,8 @@
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'kept' => __('Could not save. Your entry is still here.'),
+            'pending' => __('wirekit::Saving'),
+            'kept' => __('wirekit::Could not save. Your entry is still here.'),
         ],
         'errorRegion' => '#'.$id.'-error',
     ]);
@@ -186,7 +186,7 @@
                     <button
                         type="button"
                         @click="removeTag(i)"
-                        :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Remove :name')) }}.replace(':name', tag)"
+                        :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', tag)"
                         class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                     >
                         <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>

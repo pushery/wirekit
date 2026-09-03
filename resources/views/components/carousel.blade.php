@@ -12,7 +12,7 @@
     'perView' => 1,
     // What this carousel is FOR. A carousel of testimonials is not an image
     // carousel, and the name is the first thing a screen reader reads.
-    'label' => __('Carousel'),
+    'label' => __('wirekit::Carousel'),
     'scope' => null,
 ])
 
@@ -156,7 +156,7 @@
         x-ref="viewport"
         tabindex="0"
         role="group"
-        aria-label="{{ __(':label slides', ['label' => $label]) }}"
+        aria-label="{{ __('wirekit:::label slides', ['label' => $label]) }}"
         data-wk-carousel-viewport
         data-wk-carousel-per-view="{{ $perViewValue }}"
         class="{{ $viewportClasses }}"
@@ -169,7 +169,7 @@
         x-on:click="prev()"
         :disabled="!loop && current === 0"
         class="{{ $buttonClasses }} {{ $prevPosClass }}"
-        aria-label="{{ __('Previous slide') }}"
+        aria-label="{{ __('wirekit::Previous slide') }}"
         data-wk-carousel-prev
     >
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
@@ -182,7 +182,7 @@
         x-on:click="next()"
         :disabled="!loop && current === total - 1"
         class="{{ $buttonClasses }} {{ $nextPosClass }}"
-        aria-label="{{ __('Next slide') }}"
+        aria-label="{{ __('wirekit::Next slide') }}"
         data-wk-carousel-next
     >
         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
@@ -195,13 +195,13 @@
          scroll the track, they do not select a panel — and with perView > 1 there
          is no single selected panel to point at. aria-current says which slide
          leads the view. --}}
-    <div class="{{ $indicatorClasses }}" role="group" aria-label="{{ __('Choose slide') }}">
+    <div class="{{ $indicatorClasses }}" role="group" aria-label="{{ __('wirekit::Choose slide') }}">
         <template x-for="(_, i) in total" :key="i">
             <button
                 type="button"
                 x-on:click="goTo(i)"
                 :aria-current="current === i ? 'true' : 'false'"
-                :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('Go to slide :number')) }}.replace(':number', i + 1)"
+                :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Go to slide :number')) }}.replace(':number', i + 1)"
                 data-wk-carousel-dot
                 {{-- SPACING, not an expander. The 44px `wk-touch-target` ::before was tried
                      first and was worse than the problem: at a 14px pitch the expanders
@@ -240,10 +240,10 @@
                      for less motion — autoplay never starts for them, so "Play" is not a
                      transient value there but the final one. --}}
                 aria-pressed="true"
-                aria-label="{{ __('Play carousel') }}"
+                aria-label="{{ __('wirekit::Play carousel') }}"
                 :aria-pressed="playing ? 'false' : 'true'"
                 {{-- Resolved server-side: a literal here would be untranslatable AND invisible to every __() extractor. --}}
-                :aria-label="playing ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Pause carousel')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Play carousel')) }}"
+                :aria-label="playing ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Pause carousel')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Play carousel')) }}"
                 data-wk-carousel-playpause
                 class="ms-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >

@@ -92,9 +92,9 @@
 
     // The state is never color-only: each carries its own text/icon.
     [$stateText, $stateIntent] = match ($stateValue) {
-        'uploading' => [__('Uploading'), 'info'],
-        'done' => [__('Uploaded'), 'success'],
-        'error' => [__('Upload failed'), 'danger'],
+        'uploading' => [__('wirekit::Uploading'), 'info'],
+        'done' => [__('wirekit::Uploaded'), 'success'],
+        'error' => [__('wirekit::Upload failed'), 'danger'],
         default => [null, null],
     };
 
@@ -174,7 +174,7 @@
                 size="sm"
                 :animation="$animate ? 'shimmer' : 'none'"
                 class="mt-[var(--space-wk-xs)]"
-                aria-label="{{ __('Uploading :name', ['name' => $name]) }}"
+                aria-label="{{ __('wirekit::Uploading :name', ['name' => $name]) }}"
             />
         @endif
     </span>

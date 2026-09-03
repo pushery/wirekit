@@ -58,6 +58,6 @@
 >
     {{ $slot }}
     @if($opensNewTab)
-        <span class="sr-only">{{ __('(opens in new tab)') }}</span>
+        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
     @endif
 </a>

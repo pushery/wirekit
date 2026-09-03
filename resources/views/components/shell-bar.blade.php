@@ -234,7 +234,7 @@
              dropped, because a region with no name is announced as "group" and tells
              a screen-reader user nothing. --}}
         role="group"
-        aria-label="{{ $label ?: __('Toolbar') }}"
+        aria-label="{{ $label ?: __('wirekit::Toolbar') }}"
         tabindex="0"
         @class([
             'wk-shell-bar-strip flex min-w-0 items-center gap-[var(--gap-wk-sm,0.5rem)] overflow-x-auto',

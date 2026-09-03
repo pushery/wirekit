@@ -7,7 +7,14 @@
     'cellType' => config('wirekit.components.status-matrix.cell-type', 'status'), // tristate | toggle | status | heat
     'editable' => false,            // tristate / toggle become interactive
     'cornerLabel' => '',            // top-left header cell label (the row-axis name)
-    'ariaLabel' => __('Status matrix'), // accessible name for the grid
+    // Accessible name for the grid, and the switch that makes the scroll wrapper a LANDMARK.
+    //
+    // Two elements read this prop, and they treat it differently on purpose. The inner
+    // `role="grid"` is ALWAYS named — a grid with no accessible name is a worse outcome than a
+    // duplicated region, so the fallback below survives for it. The outer scroll wrapper only
+    // becomes `role="region"` when the CALLER named it: unnamed, three matrices on one page
+    // were three rotor entries called "Status matrix" (axe: `landmark-unique`).
+    'ariaLabel' => null,
     'name' => null,                 // hidden-input name for form submission (editable)
     // Heat scale endpoints — a cold→hot ramp. Defaults map to the existing
     // state tokens (warning = amber "cold-warm" → danger = red "hot"), so the
@@ -33,6 +40,11 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('status-matrix', $attributes->getAttributes());
+
+    // The DISPLAY name, resolved once. The raw `$ariaLabel` stays the record of whether the
+    // caller supplied one, which is what the region's role is gated on below; this variable is
+    // what every element that must always be named actually renders.
+    $ariaLabelResolved = filled($ariaLabel) ? $ariaLabel : __('wirekit::Status matrix');
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
@@ -142,15 +154,15 @@
         <input type="hidden" x-ref="model" @if($name) name="{{ $name }}" @endif {{ $attributes->whereStartsWith('wire:model') }} value="{{ json_encode((object) $flatCells, JSON_THROW_ON_ERROR) }}" :value="cellsJson()" />
     @endif
 
-    {{-- Scroll region — keyboard-reachable per WCAG 2.1.1 (region + tabindex +
-         label + focus ring). The inner table is the role=grid composite. --}}
+    {{-- Scroll region — keyboard-reachable per WCAG 2.1.1 (tabindex + focus ring, both
+         unconditional). It becomes a LANDMARK only when the caller named the matrix; the inner
+         table is the role=grid composite and keeps its name either way. --}}
     <div
-        role="region"
-        aria-label="{{ $ariaLabel }}"
+        @if(filled($ariaLabel)) role="region" aria-label="{{ $ariaLabel }}" @endif
         tabindex="0"
         class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
     >
-        <table role="grid" class="w-full border-collapse" aria-label="{{ $ariaLabel }}">
+        <table role="grid" class="w-full border-collapse" aria-label="{{ $ariaLabelResolved }}">
             <thead>
                 <tr>
                     {{-- Top-left corner: the row-axis label — left-aligned to match
@@ -212,7 +224,7 @@
                                                 @keydown.enter.prevent="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                                 @keydown.space.prevent="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                             @endif
-                                            :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($row['label'].', '.$col['label'].': ') }} + (toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('On')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Off')) }})"
+                                            :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($row['label'].', '.$col['label'].': ') }} + (toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::On')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Off')) }})"
                                             class="{{ $cellButton }}"
                                         >
                                             <span x-show="toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})" x-cloak class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span>
@@ -269,8 +281,8 @@
                     <span>{{ $heatMax }}{{ $heatUnit }}</span>
                     @break
                 @case('toggle')
-                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span> {{ __('On') }}</span>
-                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></span> {{ __('Off') }}</span>
+                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full bg-[var(--color-wk-success)]"></span> {{ __('wirekit::On') }}</span>
+                    <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></span> {{ __('wirekit::Off') }}</span>
                     @break
             @endswitch
             @if($isEditable && $cellType === 'tristate')

@@ -154,8 +154,8 @@
         // untestable.
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'reverted' => __('Could not save. Change undone.'),
+            'pending' => __('wirekit::Saving'),
+            'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
         // The field's own error region. Where it carries a message, this layer
         // stays silent on failure: "Email is required" is actionable, "could

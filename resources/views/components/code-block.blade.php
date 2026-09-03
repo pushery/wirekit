@@ -5,13 +5,17 @@
     'language' => null,
     'filename' => null,
     'copy' => false,
-    // The name of the scroll region, overriding the language-derived default.
+    // The name of the scroll region, and the switch that makes it a LANDMARK at all.
     //
-    // The default is right for a page with one or two blocks and wrong for a page with
-    // twenty: `role="region"` plus a name is a LANDMARK, and twenty landmarks called "PHP
-    // code" are twenty indistinguishable entries in a screen reader's rotor — axe reports it
-    // as `landmark-unique`. Reported from an audit log rendering one diff per table row, where
-    // the language is identical on every row and so cannot tell them apart.
+    // `role="region"` plus a name is a landmark, and twenty landmarks called "PHP code" are
+    // twenty indistinguishable entries in a screen reader's rotor — axe reports it as
+    // `landmark-unique`. Reported from an audit log rendering one diff per table row, where the
+    // language is identical on every row and so cannot tell them apart.
+    //
+    // The language-derived name used to fill this in, which meant the duplicate-landmark case
+    // was the DEFAULT one and naming was the escape. That is now the other way round: with no
+    // label the block is `tabindex="0"` and nothing else — still keyboard-reachable
+    // (WCAG 2.1.1), deliberately not a destination.
     //
     // Name it after the row, not after the language: "Change 4471" locates the block; "PHP
     // code" only says what everything on the page already is.
@@ -79,7 +83,7 @@
                  promise, because the outcome is announced in a live region and
                  announcing a success that did not happen is worse than a moment's
                  delay. --}}
-            @if($copy) x-data="wirekitCodeBlock({ copiedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Code copied to clipboard')) }}, failedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copy failed')) }} })" @endif
+            @if($copy) x-data="wirekitCodeBlock({ copiedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Code copied to clipboard')) }}, failedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy failed')) }} })" @endif
         >
             @if($filename)
                 {{-- Filename header truncates from the START (leading ellipsis) on narrow
@@ -107,8 +111,8 @@
                     type="button"
                     x-on:click="copy()"
                     class="wk-touch-target shrink-0 cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors p-1"
-                    aria-label="{{ __('Copy to clipboard') }}"
-                    :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copy to clipboard')) }}"
+                    aria-label="{{ __('wirekit::Copy to clipboard') }}"
+                    :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy to clipboard')) }}"
                 >
                     <template x-if="!copied">
                         <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
@@ -132,29 +136,31 @@
          longer than the container scrolls HERE. Without this wiring that scroll happens
          by pointer only, so a keyboard-only or switch user cannot reach the hidden text
          at all (WCAG 2.1.1, Level A). The annotation is the generic-scroll-region shape
-         this library prescribes for itself, the same one scroll-area uses; the name carries the
-         language when one was declared, because "PHP code" locates the region far better
-         in a rotor list than a page full of identical "Code" entries.
+         this library prescribes for itself, the same one scroll-area uses.
 
-         ⚠️ THAT DEFAULT STOPS HELPING THE MOMENT THE PAGE CARRIES MANY BLOCKS OF ONE
-         LANGUAGE, and the file predicted the problem without predicting the case: in a table
-         with a diff per row, every row's language is the same, so the name that was meant to
-         tell regions apart is what makes them identical. `label` is the way out — see the
-         prop, and the docs page for what to name them.
+         ⚠️ THE TWO HALVES ARE SPLIT, AND THE SPLIT IS THE POINT. `tabindex` is what WCAG 2.1.1
+         and axe's `scrollable-region-focusable` ask for, and it is unconditional. The role is
+         what makes the element a LANDMARK, and a landmark is only worth having when its name
+         tells it apart from its neighbors. The language-derived name could not: in a table
+         with a diff per row every row's language is the same, so the name meant to distinguish
+         the regions is what made them identical — twenty rotor entries called "PHP code", which
+         axe reports as `landmark-unique`.
 
-         The fallback is chosen on FILLED rather than on null, and the difference is the whole
-         point of the attribute. `??` only steps in for null, so `label=""` would reach the
-         element as `aria-label=""` — and a `role="region"` with an empty name is not exposed as
-         a landmark at all, leaving a focusable region a screen-reader user cannot identify or
-         jump to. That is not a hypothetical spelling: the documented use is an interpolated
-         caller value (`:label="__('Change :id', ['id' => $change->id])"`), and the same shape
-         with an empty title produces exactly it. A blank name is no name, so it takes the
-         default instead. --}}
+         So a block the caller has not named renders `tabindex="0"` and no role. Nothing is lost
+         that a reader could use: an unnamed landmark in a list of twenty was never a way to
+         find anything.
+
+         `filled()` rather than `??`, and the difference is the whole point of the attribute.
+         `??` only steps in for null, so `label=""` would reach the element as `aria-label=""` —
+         and a `role="region"` with an empty name is not exposed as a landmark at all, leaving a
+         focusable region a screen-reader user cannot identify or jump to. Not a hypothetical
+         spelling: the documented use is an interpolated caller value
+         (`:label="__('Change :id', ['id' => $change->id])"`), and the same shape over a record
+         with no title produces exactly it. A blank name is no name. --}}
     <pre @class([$preClasses])><code
         @class([$codeClasses])
         tabindex="0"
-        role="region"
-        aria-label="{{ filled($label) ? $label : ($language ? __(':language code', ['language' => $language]) : __('Code')) }}"
+        @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
         @if($language) data-language="{{ $language }}" @endif
     >{{ $slot }}</code></pre>
 </div>

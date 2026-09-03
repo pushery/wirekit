@@ -32,7 +32,7 @@
     // wins — and is emitted exactly once. Rendering the default AND letting the
     // attribute bag add the caller's value produced two aria-label attributes,
     // the hardcoded English one winning.
-    $ariaLabel = $attributes->get('aria-label', __('Toggle sidebar'));
+    $ariaLabel = $attributes->get('aria-label', __('wirekit::Toggle sidebar'));
 @endphp
 
 <button

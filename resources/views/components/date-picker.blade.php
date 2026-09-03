@@ -166,8 +166,8 @@
         // arrives last — network timing, which is both wrong and untestable.
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'reverted' => __('Could not save. Change undone.'),
+            'pending' => __('wirekit::Saving'),
+            'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
         'errorRegion' => '#'.$errorId,
     ]);
@@ -216,7 +216,7 @@
                 @if($required) required aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-                @unless($label) aria-label="{{ __(':label start', ['label' => $fallbackLabel]) }}" @endunless
+                @unless($label) aria-label="{{ __('wirekit:::label start', ['label' => $fallbackLabel]) }}" @endunless
                 class="wk-field min-w-0 flex-1 {{ $inputClasses }}"
             />
             <span aria-hidden="true" class="shrink-0 text-[color:var(--color-wk-text-muted)]">&ndash;</span>
@@ -232,7 +232,7 @@
                 @if($required) required aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-                aria-label="{{ __(':label end', ['label' => $label ?: $fallbackLabel]) }}"
+                aria-label="{{ __('wirekit:::label end', ['label' => $label ?: $fallbackLabel]) }}"
                 class="wk-field min-w-0 flex-1 {{ $inputClasses }}"
             />
         </div>

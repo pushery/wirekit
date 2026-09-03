@@ -2,14 +2,14 @@
      The monthly/yearly switch changes which prices are shown, all locally. --}}
 @props([
     // Accessible name for the group of plans.
-    'label' => config('wirekit.components.pricing-table.label') ?? __('Pricing plans'),
+    'label' => config('wirekit.components.pricing-table.label') ?? __('wirekit::Pricing plans'),
     // Billing intervals, as key => label, e.g.
     // :intervals="['monthly' => 'Monthly', 'annual' => 'Annual']". Given, the table
     // renders a toggle above the plans and the tiers switch their interval-keyed
     // `prices`. Omitted (the default), nothing changes and no toggle renders.
     'intervals' => null,
     // Accessible name for the interval toggle.
-    'intervalLabel' => __('Billing interval'),
+    'intervalLabel' => __('wirekit::Billing interval'),
     // How many plans sit side by side at the widest breakpoint. Default keeps the
     // historical 1 / 2 / 3 ladder; a 2-plan table would otherwise render a gappy
     // three-column grid.

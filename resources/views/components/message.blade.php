@@ -139,11 +139,11 @@
             : WireKit::validateProp('message', 'status', $status, ['sending', 'sent', 'delivered', 'read', 'failed']));
 
     $statusText = match ($statusValue) {
-        'sending' => __('Sending'),
-        'sent' => __('Sent'),
-        'delivered' => __('Delivered'),
-        'read' => __('Read'),
-        'failed' => __('Failed to send'),
+        'sending' => __('wirekit::Sending'),
+        'sent' => __('wirekit::Sent'),
+        'delivered' => __('wirekit::Delivered'),
+        'read' => __('wirekit::Read'),
+        'failed' => __('wirekit::Failed to send'),
         default => null,
     };
 
@@ -182,7 +182,7 @@
     $statusHasTime = $statusTimeText !== '';
     // "Read at 9:15 AM" when a time is present, else just "Read".
     $statusFullText = $statusHasTime && $statusText !== null
-        ? $statusText.' '.__('at').' '.$statusTimeText
+        ? $statusText.' '.__('wirekit::at').' '.$statusTimeText
         : $statusText;
 
     // STABLE across re-renders. With a $timestamp the hash is deterministic and always
@@ -230,7 +230,7 @@
                 </time>
             @endif
             @if($edited)
-                <span class="text-[color:var(--color-wk-text-muted)] italic">{{ __('(edited)') }}</span>
+                <span class="text-[color:var(--color-wk-text-muted)] italic">{{ __('wirekit::(edited)') }}</span>
             @endif
         </span>
 

@@ -276,7 +276,7 @@
             group-data-[collapsed]/wk-sidebar:w-2"><span class="group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $badge }}</span></span>
     @endif
     @if($opensNewTab)
-        <span class="sr-only">{{ __('(opens in new tab)') }}</span>
+        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
     @endif
     @if($submenu)
         {{-- Submenu indicator — signals a flyout or sub-navigation exists.

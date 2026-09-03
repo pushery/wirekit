@@ -266,8 +266,8 @@
         'debug' => (bool) config('app.debug'),
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'kept' => __('Could not save. Your entry is still here.'),
+            'pending' => __('wirekit::Saving'),
+            'kept' => __('wirekit::Could not save. Your entry is still here.'),
         ],
         'errorRegion' => '#'.$id.'-error',
     ]);
@@ -380,8 +380,8 @@
                     type="button"
                     @click="copy()"
                     @if($disabled) disabled @endif
-                    aria-label="{{ __('Copy to clipboard') }}"
-                    :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copy to clipboard')) }}"
+                    aria-label="{{ __('wirekit::Copy to clipboard') }}"
+                    :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy to clipboard')) }}"
                     class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                 >
                     <svg x-show="! copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -403,7 +403,7 @@
                     x-cloak
                     @click="clear()"
                     @if($disabled) disabled @endif
-                    aria-label="{{ __('Clear input') }}"
+                    aria-label="{{ __('wirekit::Clear input') }}"
                     class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                 >
                     <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -415,7 +415,7 @@
             @if($hasAffordances)
                 {{-- Polite live region announces the copy success to screen readers. --}}
                 {{-- The only feedback a screen-reader user gets after copying — nothing changes visually. --}}
-                <span aria-live="polite" aria-atomic="true" class="sr-only" x-text="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('Copied to clipboard')) }} : ''"></span>
+                <span aria-live="polite" aria-atomic="true" class="sr-only" x-text="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : ''"></span>
             @endif
         </div>
     @else

@@ -176,8 +176,8 @@
         // arrives last — network timing, which is both wrong and untestable.
         'mode' => 'reject',
         'messages' => [
-            'pending' => __('Saving'),
-            'reverted' => __('Could not save. Change undone.'),
+            'pending' => __('wirekit::Saving'),
+            'reverted' => __('wirekit::Could not save. Change undone.'),
         ],
     ]);
 @endphp
@@ -207,7 +207,7 @@
 
     {{-- Month navigation header --}}
     <div class="{{ $headerClasses }}">
-        <button type="button" x-on:click="prevMonth()" class="{{ $navBtnClasses }}" aria-label="{{ __('Previous month') }}">
+        <button type="button" x-on:click="prevMonth()" class="{{ $navBtnClasses }}" aria-label="{{ __('wirekit::Previous month') }}">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
             </svg>
@@ -218,9 +218,9 @@
                  bound straight to the view state so changing them re-renders the
                  grid(s). aria-live mirror keeps the change announced. --}}
             <div class="flex items-center gap-[var(--padding-wk-x-sm)]">
-                <label class="sr-only" for="{{ $name }}-month">{{ __('Month') }}</label>
+                <label class="sr-only" for="{{ $name }}-month">{{ __('wirekit::Month') }}</label>
                 <div class="relative">
-                    <select id="{{ $name }}-month" x-model.number="viewMonth" aria-label="{{ __('Month') }}" class="wk-field {{ $headerSelectClasses }}">
+                    <select id="{{ $name }}-month" x-model.number="viewMonth" aria-label="{{ __('wirekit::Month') }}" class="wk-field {{ $headerSelectClasses }}">
                         @foreach(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as $i => $monthName)
                             <option value="{{ $i }}">{{ $monthName }}</option>
                         @endforeach
@@ -232,9 +232,9 @@
                         </svg>
                     </div>
                 </div>
-                <label class="sr-only" for="{{ $name }}-year">{{ __('Year') }}</label>
+                <label class="sr-only" for="{{ $name }}-year">{{ __('wirekit::Year') }}</label>
                 <div class="relative">
-                    <select id="{{ $name }}-year" x-model.number="viewYear" aria-label="{{ __('Year') }}" class="wk-field {{ $headerSelectClasses }}">
+                    <select id="{{ $name }}-year" x-model.number="viewYear" aria-label="{{ __('wirekit::Year') }}" class="wk-field {{ $headerSelectClasses }}">
                         <template x-for="y in yearRange" :key="y">
                             <option :value="y" x-text="y"></option>
                         </template>
@@ -251,7 +251,7 @@
             <span class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-md)]" x-text="monthLabel" aria-live="polite"></span>
         @endif
 
-        <button type="button" x-on:click="nextMonth()" class="{{ $navBtnClasses }}" aria-label="{{ __('Next month') }}">
+        <button type="button" x-on:click="nextMonth()" class="{{ $navBtnClasses }}" aria-label="{{ __('wirekit::Next month') }}">
             <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
             </svg>

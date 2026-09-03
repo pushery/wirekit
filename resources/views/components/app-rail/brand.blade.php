@@ -55,7 +55,14 @@
         // The subtraction assumes a mark the size the component ships with. That assumption is
         // held by a browser guard that compares the two CENTERS rather than the two edges, so
         // a change to either size fails loudly instead of drifting six pixels at a time.
-        'group-data-[labels=inline]/wk-rail:ps-[calc(var(--padding-wk-x-sm)-((var(--size-wk-sm,2rem)-1.25rem)/2))]',
+        //
+        // ⚠️ IT READS THE MODULE'S OWN PADDING TOKEN, not the tier directly, and that is what
+        // keeps this true beside an inset panel. There the modules take a wider inline padding
+        // so their glyphs land on the column's axis; a mark subtracting from the fixed tier
+        // would have stayed put while the glyphs moved, and the two would part by exactly the
+        // amount the modules gained. Reading the same token means the mark follows whatever
+        // the modules do, in every shell, with no second rule to keep in step.
+        'group-data-[labels=inline]/wk-rail:ps-[calc(var(--wk-rail-item-pad,var(--padding-wk-x-sm))-((var(--size-wk-sm,2rem)-1.25rem)/2))]',
         'group-data-[labels=inline]/wk-rail:pe-[var(--padding-wk-x-sm)]',
         'rounded-[var(--radius-wk-md)]',
         'text-[color:var(--color-wk-rail-text)]',
