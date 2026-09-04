@@ -226,15 +226,26 @@
         </div>
     @endisset
     <div
-        {{-- Unconditional, and that is the fix. This wiring used to sit behind
-             `@if($label)`, which tied a WCAG 2.1.1 obligation to a cosmetic prop:
-             the strip always carries `overflow-x-auto`, and 35 of the 41 documented
-             usages omit `label` — so the configuration that failed was the default
-             one. The name falls back to a translated generic rather than being
-             dropped, because a region with no name is announced as "group" and tells
-             a screen-reader user nothing. --}}
-        role="group"
-        aria-label="{{ $label ?: __('wirekit::Toolbar') }}"
+        {{-- The KEYBOARD half is unconditional, and that is the fix that mattered. This
+             wiring used to sit behind `@if($label)`, which tied a WCAG 2.1.1 obligation to
+             a cosmetic prop: the strip always carries `overflow-x-auto`, and 35 of the 41
+             documented usages omit `label` — so the configuration that failed was the
+             default one. `tabindex` and the focus ring below stay on every bar.
+
+             The ROLE and the NAME are a different thing and wait for the caller. A role
+             plus a name is a named container announced in its own right, and a built-in
+             default makes every bar in an application the same one — a reader tabbing
+             through a three-column shell heard "Toolbar, group" three times before
+             anything with content in it, which is the opposite of what a name is for. So
+             the strip is a plain focusable scroller until the caller names it, matching
+             every other scroll region in the catalog.
+
+             `filled()`, never `?:` — an interpolated caller value can arrive empty, and a
+             named container with an empty name is worth less than no role at all. --}}
+        @if(filled($label))
+            role="group"
+            aria-label="{{ $label }}"
+        @endif
         tabindex="0"
         @class([
             'wk-shell-bar-strip flex min-w-0 items-center gap-[var(--gap-wk-sm,0.5rem)] overflow-x-auto',
@@ -247,9 +258,15 @@
             // already pinned to the leading edge looks the same whether or not it grows, and
             // the trailing cluster is `shrink-0` either way.
             'flex-1' => $align !== 'center',
-            // Only when it is a tab stop: a focus a keyboard user cannot see is the other
-            // half of the same requirement.
-            'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-rail-ring,var(--color-wk-ring))]' => filled($label),
+            // A second ring color used to sit here, gated on `filled($label)`, reaching for
+            // `--color-wk-rail-ring` so a bar inside a toned rail rings in the rail's own
+            // color. Two arbitrary-value ring utilities on one element are the same
+            // specificity, so which one won came down to the order the developer's build
+            // emitted them in — a bar whose focus ring changes color between projects. It
+            // was also unnecessary: `.wk-rail` re-points `--color-wk-ring` to
+            // `--color-wk-rail-ring` for its whole subtree, so the single unconditional
+            // ring above already resolves to the rail's color inside a rail and to the page
+            // ring everywhere else.
         ])
     >
         {{ $slot }}

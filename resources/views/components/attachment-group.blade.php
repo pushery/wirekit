@@ -46,7 +46,14 @@
 <div
     role="group"
     aria-label="{{ $label }}"
-    @if($isRow) tabindex="0" @endif
+    {{-- The condition lives in the VALUE, not around the attribute. A `tabindex` behind
+         `@if` reads as a keyboard model and is not one: the guard that holds this contract
+         strips Blade conditionals before it looks at the wiring, so it was passing this
+         element through on its role alone — delete the line and nothing would have said so,
+         while a named `role="group"` with no `tabindex` is not keyboard-reachable at all,
+         which is the failure the guard exists for. `-1` for the stack, which does not
+         scroll: an element that scrolls nothing must not become an invisible tab stop. --}}
+    tabindex="{{ $isRow ? '0' : '-1' }}"
     data-wk-attachment-group
     data-orientation="{{ $orientationValue }}"
     {{ $attributes->class([$classes]) }}

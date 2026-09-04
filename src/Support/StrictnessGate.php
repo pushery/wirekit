@@ -58,7 +58,7 @@ final class StrictnessGate
      * One list, read by the predicate and by the reader of the component's own template, so
      * the two cannot come to disagree about which directives the rule covers.
      *
-     * `x-effect` and `x-model` were added after a consuming application reported that its own
+     * `x-effect` and `x-model` were added after an adopting application reported that its own
      * copy of this guard had needed them, and its reasoning holds here. `x-effect` is what a
      * caller reaches for when a component's own `x-init` cannot follow a change — that is, the
      * very tool the first instance of this defect calls for, so repairing one collision runs
@@ -237,7 +237,7 @@ final class StrictnessGate
     }
 
     /**
-     * warn on unknown prop KEYS in dev.
+     * Warns on unknown prop KEYS in dev.
      *
      * Pre-fix, Wirekit's prop validation only checked VALUES of declared
      * props — unknown keys (e.g. `<x-wirekit::button variant="ghost">`
@@ -386,7 +386,7 @@ final class StrictnessGate
      * was split out of `warnUnknownProps()`, and the docblock there states it in a sentence
      * that applies here word for word: the warner "only logs, so nothing can fail on it, and
      * it returns early outside `app.debug` — so in production the signal does not exist at
-     * all." A consuming project can therefore not assert on it, and one of them was carrying
+     * all." An adopting application can therefore not assert on it, and one of them was carrying
      * a second, weaker implementation of this question over 4422 component tags: weaker
      * because it had to re-derive the occupied directives from the Blade source itself, with
      * no way to tell an unconditional `x-data` from one inside an `@if`. That distinction is
@@ -395,7 +395,7 @@ final class StrictnessGate
      * The two share this one implementation so the rule cannot drift between the warning a
      * developer sees at runtime and the answer a test asserts on.
      *
-     * Reported from a consuming project re-checking its upstream-gap register.
+     * Reported from an adopting application re-checking its upstream-gap register.
      *
      * @param  string  $context  the component name, as `ComponentRegistry` knows it
      * @param  array<string, mixed>  $actual  attribute name => value

@@ -52,11 +52,26 @@ export default function wirekitTooltip(config = {}) {
          */
         mouseenter() {
             clearTimeout(this._hideTimer);
-            this._showTimer = setTimeout(() => this.show(), this._delayShow);
+
+            // Guarded on `open`, because this handler is bound to the PANEL as well as
+            // to the trigger — that pairing is what makes the tip hoverable, and WCAG
+            // 1.4.13 asks for it. Moving the pointer onto an already-open panel has to
+            // cancel the pending hide (the line above) and nothing else; arming a
+            // second show timer there would only fire into a `show()` that returns at
+            // its first line. Same shape as the hover card, for the same reason.
+            if (! this.open) {
+                this._showTimer = setTimeout(() => this.show(), this._delayShow);
+            }
         },
 
         /**
          * Desktop mouse leave — hide with delay.
+         *
+         * Bound to the trigger AND to the panel. The delay is what bridges the `offset`
+         * gap between the two: leaving the trigger towards the panel arms this timer,
+         * and the panel's own `mouseenter` clears it on the way in. Setting
+         * `delay-hide="0"` therefore switches the hoverable behavior off — the panel
+         * closes before the pointer can reach it.
          */
         mouseleave() {
             clearTimeout(this._showTimer);
@@ -113,6 +128,16 @@ export default function wirekitTooltip(config = {}) {
 
         /**
          * ESC key — immediately hide tooltip and clear all pending timers.
+         *
+         * Reached from a listener on the WINDOW, not on the component, because a
+         * tooltip is normally opened by a pointer and a pointer moves no focus: a
+         * key bound inside the component never saw the keystroke that was meant for
+         * it. WCAG 1.4.13 names Escape as the way hover-shown content is dismissed
+         * without moving the pointer or the focus.
+         *
+         * Clearing the timers is not housekeeping here — it is the point. A pending
+         * `delayShow` that survives Escape puts the panel on screen a moment AFTER
+         * the key that was meant to answer it.
          */
         keydownEscape() {
             this._clearAllTimers();
@@ -129,9 +154,9 @@ export default function wirekitTooltip(config = {}) {
          * whole design. A boolean passed into the factory would only ever answer
          * for the render that created it — but the case this exists for is a
          * tooltip that must go quiet when something else on the page changes,
-         * the sidebar collapsing being the one it was reported from. Reading the
-         * attribute at trigger time means `x-bind:data-wk-tooltip-disabled` from
-         * the call site works reactively with no further API at all.
+         * a collapsing sidebar being the concrete case. Reading the attribute
+         * at trigger time means `x-bind:data-wk-tooltip-disabled` from the
+         * call site works reactively with no further API at all.
          *
          * `pointer-events-none` on the root is NOT a way to do this, however
          * much it looks like one: `mouseenter` is delivered to every ancestor of

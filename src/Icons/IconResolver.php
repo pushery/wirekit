@@ -141,7 +141,7 @@ final class IconResolver
             }
         }
 
-        // 3. fallthrough to the
+        // 3. Fall through to the
         // underlying blade-icons identifier when the alias matches the
         // ICON name (no prefix) in the active preset family. This
         // catches the bug class where developers write

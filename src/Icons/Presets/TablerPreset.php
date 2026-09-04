@@ -7,7 +7,7 @@ namespace Pushery\WireKit\Icons\Presets;
 use Pushery\WireKit\Contracts\IconPreset;
 
 /**
- * Tabler preset — outline style, 5700+ icons.
+ * Tabler preset — outline style.
  *
  * @see https://tabler.io/icons
  */
@@ -48,7 +48,7 @@ final class TablerPreset implements IconPreset
             'filter' => 'tabler-filter',
             'external-link' => 'tabler-external-link',
 
-            // common dashboard icons.
+            // The common dashboard icons.
             'home' => 'tabler-home',
             'moon' => 'tabler-moon',
             'sun' => 'tabler-sun',
@@ -80,6 +80,15 @@ final class TablerPreset implements IconPreset
             'gift' => 'tabler-gift',
             'list-bullets' => 'tabler-list',
             'list-checks' => 'tabler-list-check',
+
+            // The text-formatting marks a composer toolbar is built from — see
+            // `HeroiconsPreset` for why the group was closed and how the targets were
+            // verified. Tabler names all five the way the concepts are named here.
+            'bold' => 'tabler-bold',
+            'italic' => 'tabler-italic',
+            'strikethrough' => 'tabler-strikethrough',
+            'underline' => 'tabler-underline',
+            'list-numbers' => 'tabler-list-numbers',
             'lock-key' => 'tabler-lock',
             'map-pin' => 'tabler-map-pin',
             'percent' => 'tabler-percentage',
@@ -178,7 +187,7 @@ final class TablerPreset implements IconPreset
             // check — see IconPresetTargetTest.
             'stack' => 'tabler-stack-2',
 
-            // ─── The overflow affordance, and five words a consuming project
+            // ─── The overflow affordance, and five words an adopting application
             // reached for and did not find.
             //
             // EVERY ONE OF THESE IS A TRUE COGNATE IN ALL FOUR INTERCHANGEABLE

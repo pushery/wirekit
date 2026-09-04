@@ -263,7 +263,15 @@
 <div
     x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ \Pushery\WireKit\Support\AlpinePayload::from($normalized) }}, listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }} })"
     @click.outside="open = false"
-    {{-- The roleless wrapper carries ONLY layout — every caller attribute
+    {{-- The chosen option, exposed by name so a binding on the component tag reaches
+         the SELECTION. It used to reach the search field instead -- the bag below is
+         routed to the role="combobox" input, which already carries `x-model="query"`,
+         so `wire:model` bound the typed text and the server received three letters
+         rather than the option behind them. `wire:model` compiles to `x-model`, and
+         `x-modelable` is what lets a non-input element answer it. --}}
+    x-modelable="selected"
+    {{ $attributes->whereStartsWith('wire:model') }}
+    {{-- The roleless wrapper otherwise carries ONLY layout — every caller attribute
          (aria-describedby, data-*, autocomplete, required, …) is routed to the
          role="combobox" input below, never left stranded on this <div>. --}}
     {{ $attributes->only(['style'])->class(['relative w-full']) }}
@@ -319,7 +327,10 @@
         @if(! $label && $resolvedAriaLabel) aria-label="{{ $resolvedAriaLabel }}" @endif
         {{-- Every OTHER caller attribute (data-*, autocomplete, required, readonly …)
              reaches the actual control here, not the wrapper. --}}
-        {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby']) }}
+        {{-- `wire:model*` is excluded here and rendered on the Alpine root above: on
+             this element it would be a second model binding beside `x-model="query"`,
+             pointed at the search text. --}}
+        {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby'])->whereDoesntStartWith('wire:model') }}
         class="wk-field {{ $inputClasses }}"
     />
 
@@ -487,6 +498,15 @@
              any reason to promise. --}}
         wire:key="wk-combobox-empty"
         id="{{ $listId }}-empty"
+        {{-- "No results" is the outcome of what the reader just typed, and an
+             outcome that only appears on screen reaches nobody using a screen
+             reader: the input goes on saying aria-expanded="true" with no active
+             option, which reads as an open list that happens to have nothing
+             highlighted. `role="status"` is an implicit polite, atomic live
+             region, and this node is teleported once and then only toggled, so
+             the text arrives INTO a region that was already there — which is the
+             condition for it being spoken at all. --}}
+        role="status"
         class="{{ $listClasses }}"
         x-ref="cbxEmpty"
         x-show="open && filtered.length === 0 && query !== ''"

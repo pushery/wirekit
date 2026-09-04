@@ -69,8 +69,8 @@ final class SuggestSimilar
      * Same as byLevenshtein() but returns the full (name, distance) shape
      * so callers can weight or filter on the score.
      *
-     * Extension Suggestion #1: exposed for MCP-server-style developers
-     * that want recently-used-component bias on top of pure-distance ranking.
+     * Exposed for MCP-server-style developers that want recently-used-component
+     * bias on top of pure-distance ranking.
      *
      * @param  list<string>  $haystack
      * @return list<array{name: string, distance: int}>

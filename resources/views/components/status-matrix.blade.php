@@ -10,7 +10,7 @@
     // Accessible name for the grid, and the switch that makes the scroll wrapper a LANDMARK.
     //
     // Two elements read this prop, and they treat it differently on purpose. The inner
-    // `role="grid"` is ALWAYS named — a grid with no accessible name is a worse outcome than a
+    // `<table>` is ALWAYS named — a table with no accessible name is a worse outcome than a
     // duplicated region, so the fallback below survives for it. The outer scroll wrapper only
     // becomes `role="region"` when the CALLER named it: unnamed, three matrices on one page
     // were three rotor entries called "Status matrix" (axe: `landmark-unique`).
@@ -53,6 +53,37 @@
 
     $cellType = WireKit::validateProp('status-matrix', 'cellType', $cellType, ['tristate', 'toggle', 'status', 'heat']);
     $isEditable = filter_var($editable, FILTER_VALIDATE_BOOLEAN) && in_array($cellType, ['tristate', 'toggle'], true);
+
+    // Is this matrix a COMPOSITE WIDGET, or a data table?
+    //
+    // `role="grid"` is a promise of a keyboard model: exactly one tab stop inside
+    // the grid, from which the arrows navigate. Only the two interactive cell types
+    // render anything that can hold it — `tristate` and `toggle` emit a <button>
+    // with the roving tabindex and `moveFocus`. The `heat` cell is a <div> with a
+    // <span>, and the default `status` cell is a badge; neither is focusable.
+    //
+    // Declared unconditionally, the SHIPPED DEFAULT was therefore a grid with zero
+    // tab stops. A reader reaches the scroll region, hears "grid, N rows, M
+    // columns", and no key takes them in. Zero tab stops is not a reduced grid; it
+    // is a role announcing a navigation that does not exist — and `axe-core` has no
+    // rule for it, so both accessibility lanes ran green over it throughout.
+    //
+    // The role is withdrawn rather than the tab stop retrofitted, and that is the
+    // better outcome rather than the smaller change. `role="grid"` REPLACES the
+    // screen reader's own table-navigation mode — the one that announces the row
+    // and column header as you move — with an application-widget model. A read-only
+    // matrix IS a data table, so the native semantics are the right ones for it; and
+    // the alternative would have made every cell of a routinely 10x12 table a focus
+    // stop in exchange for reaching data the reader could already reach.
+    //
+    // Gated on the CELL TYPE, not on `$isEditable`: a read-only tristate matrix
+    // still navigates by arrow key, so it is still a grid. That is exactly what the
+    // note on the tristate cell below argues, and it stays true where it was written.
+    //
+    // WCAG 2.1.1 is unaffected — the scroll wrapper carries an unconditional
+    // `tabindex="0"` and a focus ring, which is the house shape for a generic
+    // scroller. The grid role was never what made this region reachable.
+    $isCompositeGrid = in_array($cellType, ['tristate', 'toggle'], true);
 
     // Seeded from `name`, not re-randomized per render: Livewire's morph matches on the
     // id, so a fresh one each render means destroy-and-rebuild — and the Alpine-only
@@ -162,7 +193,10 @@
         tabindex="0"
         class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
     >
-        <table role="grid" class="w-full border-collapse" aria-label="{{ $ariaLabelResolved }}">
+        {{-- The role is a promise of a keyboard model — see `$isCompositeGrid` above.
+             Named either way: `aria-label` names a plain <table> exactly as it named
+             the grid, so nothing is lost by dropping to the native semantics. --}}
+        <table @if($isCompositeGrid) role="grid" @endif class="w-full border-collapse" aria-label="{{ $ariaLabelResolved }}">
             <thead>
                 <tr>
                     {{-- Top-left corner: the row-axis label — left-aligned to match
@@ -185,16 +219,25 @@
                                 // Single tab stop into the grid (roving entry); arrows navigate.
                                 $tabindex = ($ri === 0 && $ci === 0) ? '0' : '-1';
                             @endphp
-                            <td role="gridcell" class="{{ $cellBox }}">
+                            {{-- `gridcell` only inside a grid: the role is defined as a cell
+                                 of one, and a <td> outside a grid is already a cell. --}}
+                            <td @if($isCompositeGrid) role="gridcell" @endif class="{{ $cellBox }}">
                                 @switch($cellType)
                                     @case('tristate')
                                         <button
                                             type="button"
                                             data-r="{{ $ri }}" data-c="{{ $ci }}"
                                             tabindex="{{ $tabindex }}"
+                                            {{-- Navigation is unconditional and activation is not. A read-only
+                                                 matrix still puts a focusable cell inside a role="grid", and a
+                                                 grid whose arrows do nothing is a dead tab stop that promises
+                                                 movement. `aria-disabled` rather than `disabled`: the cell must
+                                                 stay focusable to be read and navigated from, which a disabled
+                                                 button is not. --}}
+                                            @keydown="moveFocus($event, {{ $ri }}, {{ $ci }})"
+                                            @unless($isEditable) aria-disabled="true" @endunless
                                             @if($isEditable)
                                                 @click="activate({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
-                                                @keydown="moveFocus($event, {{ $ri }}, {{ $ci }})"
                                                 @keydown.enter.prevent="activate({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                                 @keydown.space.prevent="activate({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                             @endif
@@ -218,9 +261,13 @@
                                             tabindex="{{ $tabindex }}"
                                             role="switch"
                                             :aria-checked="toggleOn({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }}) ? 'true' : 'false'"
+                                            {{-- See the tristate cell above: navigation is unconditional, and a
+                                                 non-editable switch says so instead of accepting an Enter that
+                                                 changes nothing. --}}
+                                            @keydown="moveFocus($event, {{ $ri }}, {{ $ci }})"
+                                            @unless($isEditable) aria-disabled="true" @endunless
                                             @if($isEditable)
                                                 @click="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
-                                                @keydown="moveFocus($event, {{ $ri }}, {{ $ci }})"
                                                 @keydown.enter.prevent="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                                 @keydown.space.prevent="toggleCell({{ \Pushery\WireKit\Support\AlpinePayload::string($rk) }}, {{ \Pushery\WireKit\Support\AlpinePayload::string($ck) }})"
                                             @endif

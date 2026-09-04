@@ -66,7 +66,15 @@
         'font-[family-name:var(--font-wk-sans)]',
         'rounded-[var(--radius-wk-sm)]',
         'shadow-[var(--shadow-wk-md)]',
-        'pointer-events-none',
+        // There is deliberately no `pointer-events-none` here, and the absence is the
+        // rule rather than an omission. WCAG 1.4.13 requires content shown on hover to
+        // be HOVERABLE: the pointer must be able to travel onto it without it
+        // disappearing, which is what lets somebody reading a long tip at high zoom, or
+        // with an unsteady hand, finish reading it at all. A panel that cannot receive
+        // `mouseenter` also cannot cancel the hide the trigger's `mouseleave` just
+        // armed, so it vanished the moment the pointer set off towards it.
+        // The panel binds `mouseenter`/`mouseleave` below; the `offset` gap between
+        // trigger and panel is crossed well inside `delayHide`.
     ]), $scope);
 @endphp
 
@@ -86,7 +94,19 @@
     x-on:pointerdown="pointerdown($event)"
     x-on:pointerup="pointerup($event)"
     x-on:pointerleave="pointerleave($event)"
-    x-on:keydown.escape="keydownEscape()"
+    {{-- Escape listens on the WINDOW, and it has to.
+         A tooltip is opened by POINTING at its trigger, and a pointer moves no focus —
+         so a handler bound here only ever fired once something inside had already been
+         tabbed to, which is the one case that needed it least. WCAG 1.4.13 requires
+         content shown on hover or focus to be dismissible without moving the pointer or
+         the focus, and Escape is the mechanism it names.
+         Deliberately NOT guarded on `open`, unlike the hover card's counterpart: a
+         tooltip opens on a `delayShow` timer, so the key regularly arrives while the
+         panel is still pending, and a guard on `open` would let it appear a moment
+         after the Escape that was meant to answer it. `keydownEscape()` clears the
+         pending show as well as the open panel, and on a tooltip with nothing to
+         dismiss it costs four no-op `clearTimeout` calls. --}}
+    x-on:keydown.escape.window="keydownEscape()"
     {{ $attributes->class(['relative inline-block']) }}
 >
     {{-- Trigger element — linked to tooltip via aria-describedby --}}
@@ -146,6 +166,13 @@
              reason: `aria-describedby` on the trigger has to name THIS panel. --}}
         wire:key="wk-tooltip-panel"
         x-ref="tooltip"
+        {{-- The panel holds itself open while the pointer rests on it — the "Hoverable"
+             half of WCAG 1.4.13. The trigger's `mouseleave` arms a hide on the
+             `delayHide` timer; arriving here cancels it, leaving here arms it again.
+             Both handlers are the component's own, shared with the trigger, so there is
+             one hide timer for the pair rather than two racing each other. --}}
+        x-on:mouseenter="mouseenter()"
+        x-on:mouseleave="mouseleave()"
         x-show="open"
         x-transition:enter="transition ease-out duration-100"
         x-transition:enter-start="opacity-0"

@@ -96,9 +96,40 @@
     // (measured: CheckboxToggleShiftTest). align-top positions the label by its TOP
     // edge instead, independent of the changing baseline, so the row stays put. The
     // card variant is block-level `flex` (no line-box baseline) and is unaffected.
-    $labelClasses = $variantValue === 'card'
+    //
+    // ROUTED THROUGH THE CLASS SEAM, like the box below, and that is the whole point of
+    // the two `resolveClasses` calls here. The default label is `inline-flex`, so it is as
+    // wide as its own content: a `flex-1` in the slot has nothing to stretch against and a
+    // right-aligned second element lands behind the first instead of at the row's edge. The
+    // commonest list form an application builds — control, name on the left, code or count
+    // on the right edge — was therefore not buildable with this component, and there was no
+    // seam to change it either: the box was the ONLY surface that went through
+    // `resolveClasses`, and the label wrapper and its text stood in the template as literals.
+    //
+    // Passing `class="flex w-full"` on the tag is not a way around it: the attribute bag is
+    // spread onto the `<input>`, not onto this `<label>`, so it never reaches the element
+    // whose display mode is in question.
+    //
+    // Both variants share one block, matching how `base` below serves both — an override
+    // that wants to touch only one reads `$variantValue` from a closure, or scopes itself.
+    $labelClasses = WireKit::resolveClasses('checkbox', 'label', $variantValue === 'card'
         ? 'group flex items-start gap-3 cursor-pointer relative w-full rounded-[var(--radius-wk-lg)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors duration-[var(--transition-wk-duration)] has-[:checked]:border-[var(--color-wk-accent)] has-[:checked]:bg-[var(--color-wk-bg-subtle)] has-[:focus-visible]:ring-[length:var(--ring-wk-width)] has-[:focus-visible]:ring-[var(--color-wk-ring)]'
-        : 'group inline-flex items-start gap-2 cursor-pointer relative align-top';
+        : 'group inline-flex items-start gap-2 cursor-pointer relative align-top', $scope);
+
+    // The visible label text. Its size was fixed at `--text-wk-md` regardless of the `size`
+    // prop, which sizes only the box — routing it through the seam is what makes that
+    // adjustable, and it is the surface a row layout needs (`min-w-0 flex-1` on this span is
+    // what gives a trailing element the edge to sit against).
+    //
+    // `sr-only` for `hideLabel` is appended OUTSIDE the seam on purpose: an override replaces
+    // the whole block, and folding the visibility switch into it would let a personalization
+    // silently unhide a label that a call site asked to hide.
+    $textClasses = WireKit::resolveClasses(
+        'checkbox',
+        'text',
+        'text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5',
+        $scope,
+    );
 
     // Resolve a page-unique DOM id. Array-style names ("tags[]") dedup on their
     // base, plain duplicate names get a -2/-3 suffix, and the first occurrence keeps
@@ -245,9 +276,9 @@
 
         @if($slot->isNotEmpty())
             {{-- Slot-based label: supports rich HTML (links, formatting) for use cases like GDPR consent --}}
-            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5{{ $hideLabel ? ' sr-only' : '' }}">{{ $slot }}</span>
+            <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $slot }}</span>
         @elseif($label)
-            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
+            <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
         @endif
     </label>
 

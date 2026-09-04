@@ -12,8 +12,9 @@ import { prefersReducedMotion } from '../utils/motion.js';
  * + label + value). Per-chart-type renderers ship with inconsistent
  * roles (range-bar puts series-name as header; scatter puts x-value
  * as header; pie has no header). The unified renderer locks the
- * scatter-bubble layout — which the user signaled as canonical —
- * onto every apex demo without touching ApexCharts' visual styling.
+ * scatter-bubble layout — the one shape that reads correctly for
+ * every type — onto every apex demo without touching ApexCharts'
+ * visual styling.
  *
  * The PHP adapter ships a `WIREKIT_DEFAULT_TOOLTIP` sentinel under
  * `tooltip.custom`; the Alpine factory swaps it for THIS function
@@ -243,6 +244,11 @@ export default function wirekitApexChart(config) {
         // reading the teardown knows to look for.
         _hiddenTabStopRaf: null,
         _hiddenTabStopObserver: null,
+        // The frame the cell-shape tooltip anchor waits on before the tooltip
+        // element exists. It is held here for the same reason as the two above:
+        // the wait is a chain of up to 31 frames, and a chain nobody can cancel
+        // outlives the component it belongs to.
+        _tooltipAnchorRaf: null,
         _manualColorIndices: new Set(),
         // Focus-guard for the aria-hidden mount (see _setupFocusGuard).
 
@@ -382,7 +388,7 @@ window.ApexCharts = ApexCharts;</pre>
                 // every other ApexCharts type) are now subsumed by the
                 // unified `renderUnifiedTooltip` swap above — single
                 // tooltip layout across every demo, matched to the
-                // scatter-bubble canonical look the user signaled.
+                // scatter-bubble shape described at the top of this file.
 
                 // Honor reduced-motion at chart-construction time: disable
                 // animations entirely when the OS preference is set, so the
@@ -544,13 +550,29 @@ window.ApexCharts = ApexCharts;</pre>
                     };
 
                     const waitForTooltip = (attempts) => {
+                        // The chart is nulled by destroy(), and this chain is a
+                        // queued frame the teardown cannot reach into. Without
+                        // this line the wait kept running on a torn-down
+                        // component and — if ApexCharts' DOM was still around —
+                        // went on to attach six listeners and assign
+                        // `_cellShapeTooltipCleanup` AFTER destroy() had already
+                        // looked at it, so the cleanup was never called by
+                        // anyone.
+                        if (!this.chart) {
+                            this._tooltipAnchorRaf = null;
+                            return;
+                        }
+
                         const baseEl = cellChart?.w?.globals?.dom?.baseEl;
                         const tooltipEl = cellChart?.w?.globals?.dom?.elTooltip
                             || baseEl?.querySelector('.apexcharts-tooltip');
                         if (!baseEl || !tooltipEl) {
-                            if (attempts > 0) requestAnimationFrame(() => waitForTooltip(attempts - 1));
+                            this._tooltipAnchorRaf = attempts > 0
+                                ? requestAnimationFrame(() => waitForTooltip(attempts - 1))
+                                : null;
                             return;
                         }
+                        this._tooltipAnchorRaf = null;
                         setupNativeAnchor(baseEl, tooltipEl);
                     };
 
@@ -746,7 +768,7 @@ window.ApexCharts = ApexCharts;</pre>
                             baseEl.removeEventListener('mouseleave', handlePointerLeave);
                         };
                     };
-                    requestAnimationFrame(() => waitForTooltip(30));
+                    this._tooltipAnchorRaf = requestAnimationFrame(() => waitForTooltip(30));
                 }
 
                 // Pause-on-hover for streaming charts. When the cursor enters
@@ -902,9 +924,8 @@ window.ApexCharts = ApexCharts;</pre>
                 // ApexCharts interprets as "interpolate every existing
                 // position's Y-value to the NEW series' Y-value at that
                 // position". Each X-position then morphs into the value
-                // shifted from its right neighbor — visually the entire
-                // chart "wobbles upside-down" on every tick (reported as
-                // "all three lines reverse direction on every data tick").
+                // shifted from its right neighbor — visually every line in
+                // the chart reverses direction on every data tick.
                 // `appendData` doesn't have this property: existing
                 // points stay anchored, only the new one animates in.
                 //
@@ -1147,6 +1168,10 @@ window.ApexCharts = ApexCharts;</pre>
             if (this._hiddenTabStopObserver) {
                 this._hiddenTabStopObserver.disconnect();
                 this._hiddenTabStopObserver = null;
+            }
+            if (this._tooltipAnchorRaf) {
+                cancelAnimationFrame(this._tooltipAnchorRaf);
+                this._tooltipAnchorRaf = null;
             }
             clearTimeout(this._darkModeDebounce);
             if (this._detachRaf) {

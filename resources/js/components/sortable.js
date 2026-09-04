@@ -28,11 +28,57 @@
  * usable for a list the server can address positionally. The event carries ids,
  * never elements.
  *
+ * THE KEYBOARD PATH HAS TO SPEAK. Lifting an item, moving it and dropping it
+ * are three actions whose whole outcome is a position, and a position that only
+ * exists as pixels reaches nobody using a screen reader: the item was grabbed,
+ * three arrow presses happened, and every one of them was silent. WCAG 4.1.3
+ * asks for the outcome of an action to be reported without focus moving, which
+ * is what the live region below is. It says the position rather than naming the
+ * item, because focus is already on the item and the reader has just heard it —
+ * repeating a whole card back on every arrow press is noise, not information.
+ *
+ * THE SENTENCES ARE TEMPLATES FROM THE SERVER. ":position of :total" is not the
+ * word order every language uses, so the numbers are substituted after the
+ * translation rather than before it — the same shape carousel uses for its slide
+ * announcement. The English fallbacks here are for a developer who mounts the
+ * factory by hand; the component passes the catalog string.
+ *
  * @param {Object} config
  * @param {string} config.itemSelector  which children are sortable
+ * @param {string} [config.roleDescription]  what one item is called, translated
+ * @param {Object} [config.messages]  { grabbed, moved, dropped, canceled } —
+ *                                    already translated, with `:position` and
+ *                                    `:total` placeholders
  */
 export default function wirekitSortable(config = {}) {
     return {
+        /**
+         * The live-region sentence. Exposed as state so a host that renders its
+         * own `x-text` region gets it too, and written into the region below
+         * either way.
+         */
+        announcement: '',
+
+        /**
+         * Fallback wording, used verbatim when the call site passes none.
+         *
+         * A blank catalog entry — which happens while a language is being
+         * translated — falls back here rather than announcing nothing, because
+         * an empty live region is indistinguishable from a list that never moved.
+         */
+        _messages: {
+            grabbed: config.messages?.grabbed || 'Grabbed. Position :position of :total. Use the arrow keys to move it.',
+            moved: config.messages?.moved || 'Position :position of :total.',
+            dropped: config.messages?.dropped || 'Dropped at position :position of :total.',
+            canceled: config.messages?.canceled || 'Reorder canceled. Back at position :position of :total.',
+        },
+
+        /** What one item is called, translated by the call site. */
+        _roleDescription: config.roleDescription || 'Sortable item',
+
+        /** The node the sentences are written into. Resolved once, at init. */
+        _announcer: null,
+
         /** The item currently lifted by keyboard, if any. */
         _lifted: null,
 
@@ -52,6 +98,7 @@ export default function wirekitSortable(config = {}) {
         _itemSelector: config.itemSelector || ':scope > *',
 
         init() {
+            this._announcer = this._resolveAnnouncer();
             this._wire();
 
             // Items arrive and leave — a card is added, a filter is applied, a
@@ -65,11 +112,85 @@ export default function wirekitSortable(config = {}) {
 
         destroy() {
             this._observer?.disconnect();
+
+            // Only the one this factory made: a region the call site rendered is
+            // the call site's to remove, and taking it away here would delete
+            // markup that Alpine did not create.
+            if (this._announcer && this._announcer.hasAttribute('data-wk-sortable-owned')) {
+                this._announcer.remove();
+            }
+
+            this._announcer = null;
         },
 
-        /** The sortable children, in document order. */
+        /**
+         * The sortable children, in document order.
+         *
+         * The live region is a child of the same root, and the default selector
+         * is "every direct child" — so without this filter the region would be
+         * offered as something to reorder, tab to and drop cards onto.
+         */
         _items() {
-            return Array.from(this.$root.querySelectorAll(this._itemSelector));
+            return Array.from(this.$root.querySelectorAll(this._itemSelector))
+                .filter((el) => ! el.hasAttribute('data-wk-sortable-announcer'));
+        },
+
+        /**
+         * The node the announcements are written into.
+         *
+         * A live region has to EXIST before the text arrives — one that appears
+         * together with its first sentence is a new node, and nothing is spoken
+         * at all. So it is created at init, empty, and only ever written to.
+         *
+         * The call site may supply its own by marking it, which is how a host
+         * that wants the region somewhere specific keeps ONE of them; otherwise
+         * this factory owns it, because a list mounted with `x-data` alone has
+         * no markup of its own to carry it.
+         *
+         * The hiding is inline rather than the `sr-only` utility class: this node
+         * is created in JavaScript, so the class never passes under the CSS
+         * build's scanner and may simply not exist in the application's
+         * stylesheet — which would put the sentence on screen.
+         */
+        _resolveAnnouncer() {
+            const existing = this.$root.querySelector('[data-wk-sortable-announcer]');
+
+            if (existing) {
+                return existing;
+            }
+
+            const node = document.createElement('div');
+
+            node.setAttribute('data-wk-sortable-announcer', '');
+            node.setAttribute('data-wk-sortable-owned', '');
+            node.setAttribute('aria-live', 'polite');
+            node.setAttribute('aria-atomic', 'true');
+            node.style.cssText = 'position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0';
+
+            this.$root.appendChild(node);
+
+            return node;
+        },
+
+        /**
+         * Say where the item is now.
+         *
+         * `position` is 1-based, because it is read by a person rather than used
+         * as an index.
+         */
+        _say(template, position, total) {
+            this.announcement = template
+                .replace(':position', String(position))
+                .replace(':total', String(total));
+
+            // A morph can replace the subtree this region sits in, and a
+            // detached node speaks to nobody — so the reference is checked
+            // rather than trusted, and re-made when it has gone.
+            if (! this._announcer || ! this._announcer.isConnected) {
+                this._announcer = this._resolveAnnouncer();
+            }
+
+            this._announcer.textContent = this.announcement;
         },
 
         /**
@@ -122,8 +243,12 @@ export default function wirekitSortable(config = {}) {
                 // that browsers implement, so the visible state is carried by a
                 // data attribute the stylesheet can reach and the announcement
                 // does the rest.
+                //
+                // The wording comes from the call site: it is read aloud, so an
+                // English literal here would be the one thing about this item a
+                // German page could not translate.
                 if (! item.hasAttribute('aria-roledescription')) {
-                    item.setAttribute('aria-roledescription', 'Sortable item');
+                    item.setAttribute('aria-roledescription', this._roleDescription);
                 }
             }
         },
@@ -240,8 +365,12 @@ export default function wirekitSortable(config = {}) {
 
             if (key === 'Escape' && this._lifted === item) {
                 event.preventDefault();
-                this._moveTo(item, this._liftedFrom);
+
+                const back = this._liftedFrom;
+
+                this._moveTo(item, back);
                 this._release(item);
+                this._say(this._messages.canceled, back + 1, this._items().length);
 
                 return;
             }
@@ -261,6 +390,13 @@ export default function wirekitSortable(config = {}) {
             event.preventDefault();
             this._moveTo(item, this._items().indexOf(item) + delta);
 
+            // Said on every arrow press, including the one that hit the end of
+            // the list and moved nothing: "position 3 of 3" is the answer to
+            // "did that work", and silence is not.
+            const items = this._items();
+
+            this._say(this._messages.moved, items.indexOf(item) + 1, items.length);
+
             // Focus follows the element, which the move did not disturb — but a
             // browser can drop focus when a focused node is re-inserted, and a
             // list that loses focus mid-reorder is unusable by keyboard.
@@ -268,16 +404,21 @@ export default function wirekitSortable(config = {}) {
         },
 
         _lift(item) {
+            const items = this._items();
+
             this._lifted = item;
-            this._liftedFrom = this._items().indexOf(item);
+            this._liftedFrom = items.indexOf(item);
             item.setAttribute('data-sortable-lifted', 'true');
+            this._say(this._messages.grabbed, this._liftedFrom + 1, items.length);
         },
 
         _drop(item) {
-            const to = this._items().indexOf(item);
+            const items = this._items();
+            const to = items.indexOf(item);
             const from = this._liftedFrom;
 
             this._release(item);
+            this._say(this._messages.dropped, to + 1, items.length);
 
             if (to !== from) {
                 this._announceOrder(item.getAttribute('data-sortable-id'), from, to);

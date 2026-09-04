@@ -167,8 +167,8 @@
     // The block-mode counterpart doesn't need the same treatment — `<div>` is
     // already `display: block` by default, so omitting the inline-style for
     // that branch is intentional. Same reasoning as the chart-wrapper width
-    // fix in commit 669d978: utility classes for decoration, inline style for
-    // load-bearing layout primitives.
+    // fix: utility classes for decoration, inline style for load-bearing
+    // layout primitives.
     // Block-mode wrapper carries `min-width: 0; overflow: hidden` so the
     // sparkline never imposes the ApexCharts canvas's fixed intrinsic width
     // (~300px) as the min-content floor of a surrounding CSS-grid track. Without

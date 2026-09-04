@@ -55,6 +55,12 @@
         }
     }
 
+    // Translated on the server and handed to the factory as a TEMPLATE. A sentence
+    // assembled from fragments in JavaScript cannot be translated, and "of" is not a
+    // word every language puts in the middle — the same route the carousel's position
+    // announcement takes.
+    $positionTemplate = __('wirekit::Slide :current of :total');
+
     $lightboxId = $name ?: 'wk-lightbox-'.Str::random(6);
     $count = count($slides);
     $backdrop = $overlay ?: 'var(--color-wk-overlay)';
@@ -63,7 +69,7 @@
 @endphp
 
 <div
-    x-data="wirekitLightbox({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from($lightboxId) }}, count: {{ $count }}, loop: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $loop) }}, slides: {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }} })"
+    x-data="wirekitLightbox({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from($lightboxId) }}, count: {{ $count }}, loop: {{ \Pushery\WireKit\Support\AlpinePayload::from((bool) $loop) }}, slides: {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}, announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($positionTemplate) }} })"
     {{ $attributes->class([$wrapperClasses]) }}
 >
     {{-- Optional trigger content (thumbnails / buttons). Anything here can call
@@ -165,21 +171,34 @@
                 </figure>
 
                 @if($count > 1)
+                    {{-- `aria-disabled`, not the native attribute, and the difference is
+                         where the reader ends up. With `loop="false"` the control the
+                         reader is standing on is the one that turns unavailable — step to
+                         the first slide and Prev disables itself under the focus it is
+                         holding. A disabled button leaves the tab order, so focus falls
+                         out of the controls and back to the trap's fallback, inside a
+                         modal where there is nothing on screen to say so. `aria-disabled`
+                         announces the same state and keeps the button where it is; the
+                         clamp in prev() is what actually refuses the step. --}}
                     <button
                         type="button"
                         x-on:click="prev()"
-                        :disabled="! hasPrev"
+                        :aria-disabled="hasPrev ? null : 'true'"
+                        :class="hasPrev ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
                         aria-label="{{ __('wirekit::Previous') }}"
-                        class="absolute left-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center cursor-pointer rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
+                        class="absolute left-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
                         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M12.5 4L7 10l5.5 6"/></svg>
                     </button>
+                    {{-- Same reason as Prev above: the end of the set must not take the
+                         focused control out of the tab order with it. --}}
                     <button
                         type="button"
                         x-on:click="next()"
-                        :disabled="! hasNext"
+                        :aria-disabled="hasNext ? null : 'true'"
+                        :class="hasNext ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
                         aria-label="{{ __('wirekit::Next') }}"
-                        class="absolute right-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center cursor-pointer rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
+                        class="absolute right-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
                         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 4L13 10l-5.5 6"/></svg>
                     </button>
@@ -193,6 +212,17 @@
                 >
                     <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>
+
+                {{-- Which slide is showing, announced politely on every change. Stepping
+                     with Next or the arrow keys swaps the media under a reader who cannot
+                     see it and leaves focus on the control that did it, so without this
+                     the gallery is fully navigable and says nothing about where it now
+                     is. Its own always-present region rather than a marker on the slides:
+                     a live region added to the page at the moment it has something to say
+                     is frequently never announced at all. --}}
+                <div aria-live="polite" aria-atomic="true" class="sr-only">
+                    <span x-text="announcement"></span>
+                </div>
             </div>
         </template>
     @endif

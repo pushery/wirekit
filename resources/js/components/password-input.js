@@ -14,8 +14,11 @@
  * hand" — and nobody did. The audit now substitutes the control flow and parses
  * the result, so this class cannot come back as a manual chore again.
  *
- * @param {Object}  config
- * @param {boolean} config.strengthMeter  whether the meter is rendered at all
+ * @param {Object}    config
+ * @param {boolean}   config.strengthMeter    whether the meter is rendered at all
+ * @param {string[]}  [config.strengthLabels] the four rungs, weakest first, already
+ *                                            translated — the template resolves them,
+ *                                            because this file has no locale
  */
 export default function wirekitPasswordInput(config = {}) {
     return {
@@ -33,6 +36,16 @@ export default function wirekitPasswordInput(config = {}) {
         password: '',
 
         strengthMeter: config.strengthMeter === true,
+
+        /**
+         * The four rung names, weakest first.
+         *
+         * Always declared, even with the meter off, for the same reason
+         * `password` is: a property that appears and disappears with a prop makes
+         * a stray reference read as an undefined variable instead of as an empty
+         * value. An empty array simply yields an empty label.
+         */
+        strengthLabels: Array.isArray(config.strengthLabels) ? config.strengthLabels : [],
 
         /**
          * 0–4, by count of satisfied criteria.
@@ -56,6 +69,57 @@ export default function wirekitPasswordInput(config = {}) {
             if (/[^a-zA-Z0-9]/.test(pw)) score++;
 
             return score;
+        },
+
+        /**
+         * What the score says, in words — the meter's `aria-valuetext` and the
+         * whole content of the polite region beside it.
+         *
+         * Empty while the field is empty, deliberately: a reader who tabs into an
+         * untouched field should hear the label and the hint, not a verdict on a
+         * password nobody has typed yet.
+         *
+         * Scores 0 and 1 share the weakest rung, matching what `barColor` does —
+         * four bars, four names, and a score of 0 on a non-empty entry is the same
+         * verdict as a score of 1 rather than a fifth one.
+         */
+        get strengthLabel() {
+            if (! this.password) {
+                return '';
+            }
+
+            return this.strengthLabels[Math.max(this.strength - 1, 0)] ?? '';
+        },
+
+        /**
+         * The same verdict, for the meter's `aria-valuetext` — `false` where the
+         * label is empty, so the attribute is ABSENT rather than empty.
+         *
+         * Two getters for one string, because the two surfaces need opposite
+         * things out of "there is nothing to say yet". The polite region beside
+         * the meter is `x-text`, and `x-text` on `false` writes the word "false"
+         * into it; the meter is `x-bind`, and Alpine removes a bound attribute
+         * only for `null`, `undefined` or `false` — an empty string it SETS.
+         * Binding the label directly therefore shipped `aria-valuetext=""` on
+         * every untouched field.
+         *
+         * That is worth a getter because of what the attribute means here. On a
+         * `role="meter"`, `aria-valuetext` replaces the number in the
+         * announcement, so an empty one is the case implementations split on:
+         * fall back to `aria-valuenow="0"`, or announce nothing whatever. It is
+         * also invisible — in the DOM an empty attribute is indistinguishable
+         * from a considered one — and it makes the hydrated document disagree
+         * with the pre-hydration one, which renders no `aria-valuetext` at all.
+         *
+         * `false` rather than `undefined`, which removes just as well but cannot
+         * be written in a directive: Alpine's CSP evaluator resolves identifiers
+         * against the Alpine scope with no `window` fallback, so `undefined` is
+         * an unresolvable name that takes the whole `x-data` down with it. The
+         * getter sidesteps that anyway by keeping the expression to one
+         * identifier, which is the shape this component's directives all take.
+         */
+        get strengthValueText() {
+            return this.strengthLabel || false;
         },
 
         /**

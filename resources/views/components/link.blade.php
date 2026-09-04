@@ -3,6 +3,23 @@
 @props([
     'href' => null,
     'variant' => 'default',
+    // Font size, in `text`'s vocabulary — `xs`, `sm`, `base`, `lg`, `xl`.
+    //
+    // `null` inherits, which is what this component has always done and the
+    // right default: a link sits inside a sentence far more often than it
+    // stands alone, and naming a size here would resize every link that lives
+    // in body copy. So the default emits no class at all rather than a `base`
+    // that happens to match today.
+    //
+    // Without the axis, a footer or a preferences row had to hand-build the
+    // anchor to get `--text-wk-sm` — reported as six such anchors in one
+    // repository that used this component correctly eight times elsewhere,
+    // wherever the inherited size happened to fit.
+    //
+    // Deliberately `text`'s rung names, `base` and not `md`: two vocabularies
+    // for one ladder is the near-miss that makes a rename sweep silently
+    // re-size a page.
+    'size' => null,
     'external' => false,
     'underline' => 'always',
     'as' => 'a',
@@ -30,6 +47,18 @@
         default => WireKit::validateProp('link', 'variant', $variant, ['default', 'subtle', 'muted']),
     };
 
+    // Mirrors `text`'s map rung for rung, including its `var()` fallbacks, so
+    // the two cannot drift into disagreeing about what a rung is worth.
+    $sizeClasses = match ($size) {
+        null => '',
+        'xs' => 'text-[length:var(--text-wk-xs,0.75rem)]',
+        'sm' => 'text-[length:var(--text-wk-sm)]',
+        'base' => 'text-[length:var(--text-wk-md)]',
+        'lg' => 'text-[length:var(--text-wk-lg)]',
+        'xl' => 'text-[length:var(--text-wk-xl,1.25rem)]',
+        default => WireKit::validateProp('link', 'size', (string) $size, ['xs', 'sm', 'base', 'lg', 'xl']),
+    };
+
     $underlineClasses = match ($underline) {
         'always' => 'underline underline-offset-2',
         'hover' => 'hover:underline underline-offset-2',
@@ -37,7 +66,11 @@
         default => WireKit::validateProp('link', 'underline', $underline, ['always', 'hover', 'none']),
     };
 
-    $classes = WireKit::resolveClasses('link', 'base', implode(' ', [
+    // `array_filter` because `size` defaults to no class at all: an empty entry
+    // inside the implode would put a double space into every link this package
+    // has ever rendered, which is a change to the default output and therefore
+    // exactly what an additive prop may not do.
+    $classes = WireKit::resolveClasses('link', 'base', implode(' ', array_filter([
         'font-[family-name:var(--font-wk-sans)]',
         // Unconditional, and NOT narrowed to the non-anchor branch. A link is defined by what
         // it does rather than by the tag it happens to render, and this component renders a
@@ -51,9 +84,10 @@
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         'hover:opacity-80',
+        $sizeClasses,
         $variantClasses,
         $underlineClasses,
-    ]), $scope);
+    ])), $scope);
 
     // Auto-detect new-tab behavior from either the $external prop OR an
     // attribute-passed target="_blank". Both paths converge to the same

@@ -2,16 +2,16 @@
      Pass `optimistic="method"` and the text is sent when you leave the field,
      shown as saving while it goes.
 
-     **It uses the FOURTH exit** (§8): a refusal does NOT put the old text back.
+     **It uses the `keep` failure exit**: a refusal does NOT put the old text back.
      For a free-text field the previous value is the server's and the new one is
      your work, so an undo would delete what you just wrote because a save
      failed. Instead the text stays, the state becomes `rejected`, and the
      announcement says both — that it did not save AND that the text is still
      there, which is the question a user actually has.
 
-     This component is where §8 came from: it was enabled, then taken back once
-     the rollback was looked at, and it is enabled again now that the exit it
-     needed exists. --}}
+     This component is where that exit came from: it was enabled, then taken
+     back once the rollback was looked at, and it is enabled again now that the
+     exit it needed exists. --}}
 @props([
     // The Livewire method this component should call, when it should show the
     // new value before the server has agreed to it. A refusal keeps your text —
@@ -92,9 +92,12 @@
     // Auto-generate ID from name attribute, or generate random if neither provided
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'textarea-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
-    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
-    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
-    $attributes = $attributes->except('id');
+    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // below, so leaving either in the bag emits a second, conflicting attribute on the
+    // same element. `id` was stripped from the start; `name` was not, and a caller that
+    // passed one got two name attributes on one control — invalid HTML the browser
+    // accepts silently by keeping the first, which is why nothing ever went red over it.
+    $attributes = $attributes->except(['id', 'name']);
 
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
@@ -223,8 +226,8 @@
             x-ref="control"
             x-bind:aria-busy="isPending"
             {{-- `change`, not `input`: the field fires input on every keystroke,
-                 and the commit boundary for typing is leaving the field (§10 —
-                 the event that ends the input, never a timer). --}}
+                 and the commit boundary for typing is leaving the field — the
+                 event that ends the input, never a timer. --}}
             x-on:change="commitFromControl()"
         @endif
         {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}

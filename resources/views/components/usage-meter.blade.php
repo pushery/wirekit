@@ -18,9 +18,9 @@
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
     use Pushery\WireKit\Support\LocalizedNumber;
-    use Illuminate\Support\Str;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -68,7 +68,13 @@
         default => null,
     };
 
-    $labelId = 'usage-meter-'.Str::random(6).'-label';
+    // STABLE across re-renders, which a random id is not: the bar's aria-labelledby and
+    // this heading's id are the two halves of one pairing, and a usage meter is a natural
+    // wire:poll surface — quotas tick. A fresh id on every tick costs the bar its
+    // accessible name each time, and Livewire resolves a node's morph identity through its
+    // id, so the label span is REPLACED rather than patched. The sibling panel carries the
+    // same reasoning for its heading.
+    $labelId = DomId::unique($attributes->get('id'), 'usage-meter-').'-label';
     $fmt = fn ($n) => LocalizedNumber::format((float) $n);
 
     // Precompute the bar's accessible name (a visible label wins; else a

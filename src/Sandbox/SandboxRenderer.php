@@ -7,7 +7,7 @@ namespace Pushery\WireKit\Sandbox;
 use Illuminate\Support\Facades\Blade;
 
 /**
- * render a sandboxed component invocation.
+ * Renders a sandboxed component invocation.
  *
  * Pipeline:
  *   1. ComponentAllowlist::allows($name) — reject unknown / unschema'd

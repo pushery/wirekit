@@ -13,7 +13,10 @@
  * A `_baseline` snapshot powers the `isChanged` diff highlight (role-matrix).
  *
  * Keyboard grid navigation: arrow keys move focus between interactive cells
- * (roving focus via data-r / data-c coordinates); Enter / Space activates.
+ * (roving focus via data-r / data-c coordinates), Home / End jump to the first
+ * and last cell of the row and Ctrl+Home / Ctrl+End to the first and last of the
+ * grid; Enter / Space activates. Navigation works in a read-only matrix too —
+ * only activation is gated on `editable`.
  *
  * Lifecycle resources held on `this`: NONE. No observers, timers, rAF loops, or
  * document-scoped listeners — only reactive state + Alpine-managed @keydown
@@ -118,16 +121,44 @@ export default function wirekitStatusMatrix(config = {}) {
         },
 
         // ── Keyboard grid navigation (roving focus) ──────────────────────
+        // Home / End are part of the grid pattern, not an extra: with a single
+        // tab stop into the matrix, arrows are the ONLY way across, so a wide
+        // permission matrix costs one keypress per column to cross and there is
+        // no way back to the row label but to hold the key down. Ctrl+Home /
+        // Ctrl+End are the whole-grid pair, same as in a spreadsheet.
+        //
+        // The handler is bound whether or not the matrix is editable. Reading a
+        // frozen grid is a legitimate use, and a role="grid" that promises
+        // navigation and delivers none is worse than a plain table.
         moveFocus(e, r, c) {
             const deltas = {
                 ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1],
             };
+
+            // Declared without a seed: every branch below either assigns both or
+            // returns, so a seed would be a value no statement can read — and one
+            // that quietly suggests "unchanged" is a reachable outcome here.
+            let nr;
+            let nc;
+
             if (e.key in deltas) {
-                e.preventDefault();
-                const nr = Math.max(0, Math.min(this.rowCount - 1, r + deltas[e.key][0]));
-                const nc = Math.max(0, Math.min(this.colCount - 1, c + deltas[e.key][1]));
-                this.$root.querySelector(`[data-r="${nr}"][data-c="${nc}"]`)?.focus();
+                nr = r + deltas[e.key][0];
+                nc = c + deltas[e.key][1];
+            } else if (e.key === 'Home') {
+                // Ctrl+Home is the first cell of the grid; bare Home the first of the row.
+                nr = e.ctrlKey || e.metaKey ? 0 : r;
+                nc = 0;
+            } else if (e.key === 'End') {
+                nr = e.ctrlKey || e.metaKey ? this.rowCount - 1 : r;
+                nc = this.colCount - 1;
+            } else {
+                return;
             }
+
+            e.preventDefault();
+            nr = Math.max(0, Math.min(this.rowCount - 1, nr));
+            nc = Math.max(0, Math.min(this.colCount - 1, nc));
+            this.$root.querySelector(`[data-r="${nr}"][data-c="${nc}"]`)?.focus();
         },
 
         _emit() {

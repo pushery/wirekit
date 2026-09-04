@@ -47,7 +47,7 @@
 {{-- Alpine dropdown component with Floating UI positioning.
      Auto-close on item click: event delegation catches bubbled clicks on any
      `[role="menuitem"]` descendant and closes the dropdown. This matches the
-     standard WAI-ARIA menu pattern (GitHub, Linear, every OS menu) — activating
+     standard WAI-ARIA menu pattern, which every OS menu follows — activating
      a menu item dismisses the menu. User @click handlers on items run first
      (event target phase), then this wrapper handler runs (bubble phase), so the
      user's action is already applied when close() fires. Disabled items are

@@ -592,7 +592,7 @@
         },
         {
             "title": "Selectable rows with a bulk-action bar",
-            "code": "<x-wirekit::data-table\n    selectable\n    caption=\"Subscribers\"\n    :columns=\"[\n        ['key' => 'name', 'label' => 'Name'],\n        ['key' => 'email', 'label' => 'Email'],\n        ['key' => 'status', 'label' => 'Status', 'cellType' => 'badge'],\n    ]\"\n    :rows=\"[\n        ['id' => 1, 'name' => 'Dana Lee', 'email' => 'dana@example.com', 'status' => 'active'],\n        ['id' => 2, 'name' => 'Sam Ray', 'email' => 'sam@example.com', 'status' => 'active'],\n        ['id' => 3, 'name' => 'Kim Vo', 'email' => 'kim@example.com', 'status' => 'inactive'],\n    ]\"\n>\n    <x-slot:bulkActions>\n        <x-wirekit::button intent=\"danger\" surface=\"outline\" size=\"sm\">Delete</x-wirekit::button>\n    </x-slot:bulkActions>\n</x-wirekit::data-table>"
+            "code": "<x-wirekit::data-table\n    selectable\n    caption=\"Subscribers\"\n    bulk-actions-label=\"Subscriber bulk actions\"\n    :columns=\"[\n        ['key' => 'name', 'label' => 'Name'],\n        ['key' => 'email', 'label' => 'Email'],\n        ['key' => 'status', 'label' => 'Status', 'cellType' => 'badge'],\n    ]\"\n    :rows=\"[\n        ['id' => 1, 'name' => 'Dana Lee', 'email' => 'dana@example.com', 'status' => 'active'],\n        ['id' => 2, 'name' => 'Sam Ray', 'email' => 'sam@example.com', 'status' => 'active'],\n        ['id' => 3, 'name' => 'Kim Vo', 'email' => 'kim@example.com', 'status' => 'inactive'],\n    ]\"\n>\n    <x-slot:bulkActions>\n        <x-wirekit::button intent=\"danger\" surface=\"outline\" size=\"sm\">Delete</x-wirekit::button>\n    </x-slot:bulkActions>\n</x-wirekit::data-table>"
         }
     ],
     "date-picker": [
@@ -750,7 +750,7 @@
     "field": [
         {
             "title": "Field with input",
-            "code": "<x-wirekit::field label=\"Email address\" name=\"email\" hint=\"We will never share your email.\">\n    <x-wirekit::input name=\"email\" type=\"email\" placeholder=\"Your email address\" />\n</x-wirekit::field>"
+            "code": "<x-wirekit::field label=\"Email address\" name=\"email\">\n    <x-wirekit::input name=\"email\" type=\"email\" hint=\"We will never share your email.\" placeholder=\"Your email address\" />\n</x-wirekit::field>"
         },
         {
             "title": "Required indicator",
@@ -758,7 +758,7 @@
         },
         {
             "title": "Field with an explicit error message",
-            "code": "<x-wirekit::field label=\"Email\" name=\"field-error-demo\" error=\"That email is already taken.\">\n    <x-wirekit::input name=\"field-error-demo\" type=\"email\" placeholder=\"Your email address\" />\n</x-wirekit::field>"
+            "code": "<x-wirekit::field label=\"Email\" for=\"field-error-demo\">\n    <x-wirekit::input name=\"field-error-demo\" type=\"email\" error=\"That email is already taken.\" placeholder=\"Your email address\" />\n</x-wirekit::field>"
         }
     ],
     "file-upload": [
@@ -1455,8 +1455,8 @@
             "code": "<x-wirekit::rating label=\"Product rating\" name=\"product\" :value=\"3\" />"
         },
         {
-            "title": "10-Star Scale",
-            "code": "<x-wirekit::rating label=\"Score\" name=\"score\" :max=\"10\" :value=\"7\" />"
+            "title": "Clearable Rating",
+            "code": "<x-wirekit::rating label=\"Minimum rating\" name=\"min-rating\" :value=\"3\" clearable />"
         }
     ],
     "reaction": [
@@ -1480,7 +1480,7 @@
         },
         {
             "title": "Bar (default)",
-            "code": "<x-wirekit::reading-progress />\n<x-wirekit::prose>\n    <article style=\"padding: 1rem;\">\n        <h2>Watch the bar fill as the page scrolls</h2>\n        <p>The reading-progress bar pins to the very top of the iframe (its <code>position: fixed</code> anchors to the iframe's viewport, not the outer page). Scroll inside this preview frame — the bar's fill grows from 0% to 100% as the scroll position moves from 0 to the bottom.</p>\n        <p>The fill animation uses <code>transform: scaleX</code> — a compositor-only property, so the bar fills smoothly even on low-powered devices without triggering layout or paint. Under <code>prefers-reduced-motion: reduce</code> the transition collapses to 0.01ms; the value still updates on scroll, only the interpolation is removed.</p>\n        <p>Default height is 3px (<code>height=\"md\"</code>). Pass <code>height=\"sm\"</code> for a 2px hairline or <code>height=\"lg\"</code> for a 5px chunky bar. The color is the accent token by default; pass <code>variant=\"success\"</code> / <code>variant=\"warning\"</code> / <code>variant=\"danger\"</code> for semantic states.</p>\n        <p>The bar starts hidden until the reader has scrolled past <code>showAfter</code> pixels (default 0). Set a higher value (e.g. <code>:showAfter=\"100\"</code>) if you want the bar to appear only after the reader has committed to reading past the article header.</p>\n        <p>Pass <code>:milestones=\"true\"</code> to fire <code>wirekit:reading-progress:milestone</code> events at 25%, 50%, 75%, and 100%. Useful for analytics or for triggering a \"you're halfway through\" prompt where it makes sense.</p>\n        <p>The progress bar lives in its own DOM node and never interferes with the document flow — even when nested inside other components, it takes itself out of layout via <code>position: fixed</code> the moment it mounts.</p>\n        <p>If your page has a fixed header above the article, set <code>position=\"bottom\"</code> to pin the bar to the viewport bottom instead. Both positions share the same Alpine state machine; only the rendered DOM differs.</p>\n        <p>For embedded contexts like browser extensions or iframes-within-iframes where the bar should match surrounding text color, pass <code>variant=\"auto\"</code>. The fill resolves to <code>currentColor</code>, so the bar inherits whatever color the surrounding context provides.</p>\n        <p>Keep scrolling — the more text you scroll past, the more visible the bar's fill becomes. By the end of this preview block the bar should be at or near 100%.</p>\n        <p>The progress bar is the lightest of the reading-* primitives — pure CSS plus a single rAF-throttled scroll listener. No IntersectionObserver, no localStorage, no DOM scanning of headings.</p>\n    </article>\n</x-wirekit::prose>"
+            "code": "<x-wirekit::reading-progress />\n<x-wirekit::prose>\n    <article style=\"padding: 1rem;\">\n        <h2>Watch the bar fill as the page scrolls</h2>\n        <p>The reading-progress bar pins to the very top of the iframe (its <code>position: fixed</code> anchors to the iframe's viewport, not the outer page). Scroll inside this preview frame — the bar's fill grows from 0% to 100% as the scroll position moves from 0 to the bottom.</p>\n        <p>The fill animation uses <code>transform: scaleX</code> — a compositor-only property, so the bar fills smoothly even on low-powered devices without triggering layout or paint. Under <code>prefers-reduced-motion: reduce</code> the transition collapses to 1ms; the value still updates on scroll, only the interpolation is removed.</p>\n        <p>Default height is 3px (<code>height=\"md\"</code>). Pass <code>height=\"sm\"</code> for a 2px hairline or <code>height=\"lg\"</code> for a 5px chunky bar. The color is the accent token by default; pass <code>variant=\"success\"</code> / <code>variant=\"warning\"</code> / <code>variant=\"danger\"</code> for semantic states.</p>\n        <p>The bar starts hidden until the reader has scrolled past <code>showAfter</code> pixels (default 0). Set a higher value (e.g. <code>:showAfter=\"100\"</code>) if you want the bar to appear only after the reader has committed to reading past the article header.</p>\n        <p>Pass <code>:milestones=\"true\"</code> to fire <code>wirekit:reading-progress:milestone</code> events at 25%, 50%, 75%, and 100%. Useful for analytics or for triggering a \"you're halfway through\" prompt where it makes sense.</p>\n        <p>The progress bar lives in its own DOM node and never interferes with the document flow — even when nested inside other components, it takes itself out of layout via <code>position: fixed</code> the moment it mounts.</p>\n        <p>If your page has a fixed header above the article, set <code>position=\"bottom\"</code> to pin the bar to the viewport bottom instead. Both positions share the same Alpine state machine; only the rendered DOM differs.</p>\n        <p>For embedded contexts like browser extensions or iframes-within-iframes where the bar should match surrounding text color, pass <code>variant=\"auto\"</code>. The fill resolves to <code>currentColor</code>, so the bar inherits whatever color the surrounding context provides.</p>\n        <p>Keep scrolling — the more text you scroll past, the more visible the bar's fill becomes. By the end of this preview block the bar should be at or near 100%.</p>\n        <p>The progress bar is the lightest of the reading-* primitives — pure CSS plus a single rAF-throttled scroll listener. No IntersectionObserver, no localStorage, no DOM scanning of headings.</p>\n    </article>\n</x-wirekit::prose>"
         },
         {
             "title": "Dot indicator",

@@ -144,15 +144,15 @@ export default (options = {}) => ({
      *     viewport-top would land BEHIND the strip; we have to push
      *     the target down by the TOC's own bottom edge.
      *   - A 24px breathing buffer between the TOC bottom and the
-     *     heading's top edge. Smaller values (8-16px) felt cramped
-     *     in user testing — the heading visually fused with the
+     *     heading's top edge. Smaller values (8-16px) read as cramped
+     *     — the heading visually fused with the
      *     strip's bottom border. 24px gives the heading typographic
      *     breathing room without scrolling past the section start.
      *
      * Earlier versions used `... - this.offset + 8` (overshoot — the
      * heading landed 8px ABOVE the viewport-top line) and ignored the
-     * TOC's own height entirely. Both reported as "scrolls too far and
-     * ignores the TOC bar as an offset".
+     * TOC's own height entirely. Both scrolled too far and left the
+     * target heading hidden behind the strip.
      */
     /**
      * The element that actually scrolls, or null when the window does.

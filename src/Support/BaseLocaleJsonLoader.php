@@ -212,8 +212,8 @@ final class BaseLocaleJsonLoader implements Loader
      * loader's result is merged last. After the rename our key is `wirekit::Close`, which their
      * catalog says nothing about — so without this step every existing override would stop
      * working in the release that renamed the keys, silently, with no test going red and no
-     * error anywhere. That is precisely the failure mode the ticket behind this change reports,
-     * and shipping it as the fix would have been the worst possible answer to it.
+     * error anywhere. That is precisely the failure mode the rename was reported for, and
+     * shipping it as the fix would have been the worst possible answer to it.
      *
      * ⚠️ THE PRICE IS NAMED RATHER THAN HIDDEN: for an application that has the collision, the
      * bridge PRESERVES it. If their `Map` means "to map" and ours means "a map", the bridge

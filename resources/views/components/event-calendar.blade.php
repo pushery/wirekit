@@ -162,7 +162,7 @@
                         {{-- Day-marker band: full-width label at the top of the cell, above
                              the event pills. blocked → muted + hatch + sr-only "unavailable". --}}
                         <template x-for="(m, mi) in day.markers" :key="day.date.toISOString()+'-m'+mi">
-                            <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" :data-wk-tip="m.label" class="mt-0.5 block w-full truncate rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span><span x-show="m.blocked" class="sr-only"> (unavailable)</span></div>
+                            <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" :data-wk-tip="m.label" class="mt-0.5 block w-full truncate rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span><span x-show="m.blocked" class="sr-only"> ({{ __('wirekit::unavailable') }})</span></div>
                         </template>
                         <div class="mt-0.5 space-y-0.5">
                             <template x-for="ev in day.visibleEvents" :key="ev.id">
@@ -208,7 +208,7 @@
                     <div class="min-h-[1.75rem] p-0.5 space-y-0.5 border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                         {{-- Day markers first (day-level context), then all-day events. --}}
                         <template x-for="(m, mi) in day.markers" :key="'m-'+day.date.toISOString()+mi">
-                            <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" :data-wk-tip="m.label" class="block w-full truncate rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span><span x-show="m.blocked" class="sr-only"> (unavailable)</span></div>
+                            <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" :data-wk-tip="m.label" class="block w-full truncate rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)]"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span><span x-show="m.blocked" class="sr-only"> ({{ __('wirekit::unavailable') }})</span></div>
                         </template>
                         <template x-for="ev in day.allDay" :key="ev.id">
                             <button type="button" @click="selectEvent(ev)" :aria-label="eventLabel(ev)" :data-wk-tip="ev.title" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventClasses) }}[ev.intent || 'accent']" class="block w-full truncate text-left px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-sm)] text-[length:var(--text-wk-xs)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="ev.title"></button>
@@ -257,7 +257,7 @@
                     <template x-for="b in day.blocks" :key="b.event.id">
                         {{-- min-h floor guarantees a block is tall enough for title+time
                              even for sub-30-min events, which previously clipped under
-                             overflow-hidden (#5/#6). Height/floor history: a full-2.5rem
+                             overflow-hidden. Height/floor history: a full-2.5rem
                              floor made a 1-hour block snap to the full row height (4px too
                              tall); 2.25rem (row − 4px gutter) fixed most of it but left the
                              1-hour block 1px too tall at the bottom — the `% height` calc
@@ -286,7 +286,14 @@
     </div>
 
     {{-- ── Agenda view ─────────────────────────────────────────────── --}}
-    <div x-show="view === 'agenda'" x-cloak aria-label="{{ __('wirekit::Agenda') }}" x-effect="measureAgendaOnChange()" class="relative overflow-hidden border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] divide-y divide-[var(--color-wk-border)]">
+    {{-- role="group" carries the name, and without it the name is not carried at all: a
+         <div> with no role maps to `generic`, and `generic` PROHIBITS aria-label — a
+         conforming screen reader drops it rather than reading it, so the agenda list had
+         no boundary anybody could identify. `group` rather than `region` for the same
+         reason the week grid stays a non-landmark unless the developer names it: two
+         calendars on a page would otherwise put two identically-named entries in the
+         landmark rotor. It matches the root, which is `role="group"` as well. --}}
+    <div x-show="view === 'agenda'" x-cloak role="group" aria-label="{{ __('wirekit::Agenda') }}" x-effect="measureAgendaOnChange()" class="relative overflow-hidden border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] divide-y divide-[var(--color-wk-border)]">
         {{-- No vertical spine: each day's events stack cleanly under their day
              heading, so a continuous rule between the time column and the titles
              read as visual noise. The time column is still measured
@@ -295,13 +302,14 @@
         <template x-for="day in agendaDays" :key="day.date.toISOString()">
             <div class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]">
                 <p class="mb-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? 'text-[color:var(--color-wk-accent-text)]' : 'text-[color:var(--color-wk-text)]'" x-text="day.label"></p>
-                {{-- Day markers as their own labeled line (R2's "Holiday: …" pattern).
+                {{-- Day markers as their own labeled line, shaped like the holiday
+                     marker: the label leads and the type follows in parentheses.
                      The type is shown as text; blocked adds an sr-only "unavailable". --}}
                 <template x-for="(m, mi) in day.markers" :key="'am-'+day.date.toISOString()+mi">
                     <div :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerBlocked) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from($markerClasses) }}[m.type]" :data-wk-tip="m.label" class="mb-1 flex items-center gap-[var(--space-wk-sm)] rounded-[var(--radius-wk-md)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)]">
                         <span class="min-w-0 flex-1 truncate"><span :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="m.label"></span></span>
                         <span class="shrink-0 text-[length:var(--text-wk-xs)]" :class="m.blocked ? {{ \Pushery\WireKit\Support\AlpinePayload::from($markerChip) }} : ''" x-text="'(' + m.type + ')'"></span>
-                        <span x-show="m.blocked" class="sr-only">unavailable</span>
+                        <span x-show="m.blocked" class="sr-only">{{ __('wirekit::unavailable') }}</span>
                     </div>
                 </template>
                 <div class="space-y-1">
@@ -323,8 +331,19 @@
                 </div>
             </div>
         </template>
-        <div x-show="agendaEmpty" x-cloak class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">No events in this range</div>
+        <div x-show="agendaEmpty" x-cloak class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No events in this range') }}</div>
     </div>
+
+    {{-- Stepping to the next fortnight changes what is on screen without focus moving,
+         which is a status message in the WCAG 4.1.3 sense — and until this existed a
+         reader could page into an empty range and hear nothing at all.
+
+         It sits OUTSIDE the agenda block and carries its own text rather than the
+         `role="status"` going on the empty div itself. A live region announces a CONTENT
+         change; moving an element between `display: none` and visible is not a content
+         change every screen reader reports, and the sentence in there never changes
+         anyway. The text swap here is what makes the announcement happen. --}}
+    <p class="sr-only" role="status" aria-live="polite" x-text="view === 'agenda' && agendaEmpty ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No events in this range')) }} : ''"></p>
 
     {{-- Shared truncated-title tooltip — ONE bubble for every [data-wk-tip] pill /
          chip / row / marker, shown on hover/focus only when the text is actually

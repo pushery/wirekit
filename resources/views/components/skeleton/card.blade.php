@@ -40,7 +40,15 @@
     role="status"
     aria-live="polite"
     aria-label="{{ __('wirekit::Loading') }}"
-    aria-busy="true"
+    {{-- No aria-busy here, deliberately. This element IS the live region, and
+         WAI-ARIA defines aria-busy on a live region as "wait before exposing
+         this to the user" — set to true and never flipped back, it tells
+         assistive technology to withhold the very announcement the region
+         exists to make, and the skeleton is removed from the page rather than
+         marked done, so the flip never comes. The busy signal belongs on the
+         container whose content is still missing, which is the developer's
+         element; leaving the attribute off is also what lets them put it there
+         and have the shimmer's own pause rule see it. --}}
     {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: auto 200px;'])->class([$wrapperClasses]) }}
 >
     <div class="space-y-3">

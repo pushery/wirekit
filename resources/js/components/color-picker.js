@@ -8,6 +8,7 @@
  */
 import { hsvToRgb, rgbToHsv, rgbToHex, parseColor, formatColor } from '../utils/color.js';
 import { position } from '../utils/floating.js';
+import { createFocusTrap } from '../utils/focus-trap.js';
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
@@ -29,6 +30,11 @@ export default function wirekitColorPicker(config = {}) {
         // fixed panel anchored to the swatch on scroll/resize without leaking
         // listeners (every teardown path must call stop()).
         _stopAutoUpdate: null,
+        // Focus trap over the teleported panel — created when the panel opens,
+        // released in EVERY close path (close / _closeFromTrap / destroy). The
+        // panel carries role="dialog", so a trap plus a focus return to the
+        // trigger is the contract, not a nicety.
+        _trap: null,
         // Inline copy feedback: copy() flips this true for ~1.5s so the button
         // can swap its icon to a checkmark and announce "Copied" — self-contained,
         // unlike the wirekit-toast dispatch which needs an external toast listener.
@@ -87,12 +93,15 @@ export default function wirekitColorPicker(config = {}) {
             // HSV-rounded value (±1 per channel), drifting an untouched form field.
             // We sync only once the user actually changes the color.
 
-            // Anchor the teleported panel whenever it opens (any trigger path:
-            // swatch click, programmatic). The panel teleports to <body>, so it
-            // needs Floating UI to position it relative to the swatch.
+            // Anchor AND focus the teleported panel whenever it opens (any trigger
+            // path: swatch click, programmatic). The panel teleports to <body>, so
+            // it needs Floating UI to position it relative to the swatch — and for
+            // the same reason it needs the focus handling below: in the document it
+            // sits LAST, so a reader who activated the swatch would otherwise tab
+            // through the whole rest of the page to reach the sliders.
             this.$watch('open', (isOpen) => {
                 if (isOpen) {
-                    this.$nextTick(() => this._anchor());
+                    this.$nextTick(() => this._openPanel());
                 } else {
                     this._stopAutoUpdate?.();
                     this._stopAutoUpdate = null;
@@ -102,6 +111,128 @@ export default function wirekitColorPicker(config = {}) {
 
         destroy() {
             this._endDrag();
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
+            // The copy confirmation runs for 1.5s after the click, which is long
+            // enough for a Livewire morph to take this element away underneath it.
+            // The callback only clears a flag today, so the write lands on a torn
+            // down scope and nothing visible happens — but a timer that outlives
+            // its component is the null-callback class whatever it writes, and the
+            // next edit to that callback is the one that turns it into an error.
+            clearTimeout(this._copyTimer);
+            this._copyTimer = null;
+            // returnFocus false: the element is going away, and the trigger it
+            // would hand focus back to is going away with it.
+            this._trap?.deactivate({ returnFocus: false });
+            this._trap = null;
+        },
+
+        // ── Open / close ──────────────────────────────────────────────
+
+        /** Trigger toggle. Closing goes through close() so focus is handed back. */
+        toggle() {
+            if (this.open) {
+                this.close();
+
+                return;
+            }
+
+            this.open = true;
+        },
+
+        /**
+         * Position the panel and take focus into it.
+         *
+         * Runs from the `open` watcher rather than from the trigger handler, so a
+         * programmatic `open = true` gets the same treatment as a click.
+         */
+        async _openPanel() {
+            if (! this.open) {
+                return;
+            }
+
+            await this._anchor();
+
+            const panel = this.$refs.panel;
+            if (! panel) {
+                return;
+            }
+
+            // A previous trap can still be standing if `open` was flipped off and on
+            // again within one tick; releasing it first keeps the stack to one.
+            this._trap?.deactivate({ returnFocus: false });
+
+            this._trap = createFocusTrap(panel, {
+                escapeDeactivates: true,
+                onDeactivate: () => this._closeFromTrap(),
+                // Let a click on the trigger (and on anything else outside) through:
+                // the trigger's own toggle and the panel's click.outside handler are
+                // what close the panel, and a trap that swallowed those would leave
+                // the reader with a panel that only Escape can dismiss.
+                allowOutsideClick: true,
+                // The saturation/value plane, not the panel wrapper: it is the first
+                // control and it announces itself, while the wrapper is a plain div
+                // that would be a stop saying nothing.
+                initialFocus: () => this.$refs.plane ?? panel,
+                // WHERE FOCUS GOES WHEN THE TRAP LETS GO, named explicitly. The trap
+                // otherwise returns focus to whatever held it at activation, and the
+                // panel is teleported out of this subtree — measured on the sibling
+                // popover, that left focus on <body>, which drops a keyboard reader
+                // back to the top of the page (WCAG 2.4.3).
+                setReturnFocus: () => this.$refs.trigger ?? false,
+            });
+            this._trap.activate();
+        },
+
+        /**
+         * Close the panel and hand focus back to the swatch.
+         *
+         * Reached from the trigger toggle, from the panel's click.outside, and from
+         * the window-level Escape handler in the template.
+         */
+        close() {
+            if (! this.open) {
+                return;
+            }
+
+            // WAS THE READER INSIDE THE PANEL? Asked BEFORE anything hides, because
+            // it decides whether focus is ours to move at all. Programmatic closes
+            // and closes that arrive while focus sits elsewhere leave it alone —
+            // taking focus from somebody who never had it in the panel would be a
+            // jump they did not ask for.
+            const panel = this.$refs.panel;
+            const hadFocus = panel ? panel.contains(document.activeElement) : false;
+
+            // Release the trap BEFORE moving focus and before the hide. While a trap
+            // is active it pulls any outside focus straight back in, so a focus()
+            // call made first would simply bounce; and hiding the subtree that holds
+            // focus makes the browser drop it on <body>, after which our call would
+            // have accomplished nothing.
+            if (this._trap) {
+                this._trap.deactivate({ returnFocus: hadFocus });
+                this._trap = null;
+            } else if (hadFocus) {
+                this.$refs.trigger?.focus({ preventScroll: true });
+            }
+
+            this.open = false;
+            this._stopAutoUpdate?.();
+            this._stopAutoUpdate = null;
+        },
+
+        /**
+         * Close triggered by the trap deactivating itself (Escape).
+         *
+         * Deliberately does NOT call deactivate() again — this runs from inside it.
+         * The focus return is the trap's own, through `setReturnFocus` above.
+         */
+        _closeFromTrap() {
+            if (! this.open) {
+                return;
+            }
+
+            this._trap = null;
+            this.open = false;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
         },
@@ -266,6 +397,15 @@ export default function wirekitColorPicker(config = {}) {
         nudgeHue(d) { this.h = clamp(this.h + d, 0, 360); this._sync(); },
         nudgeAlpha(d) { this.a = +clamp(this.a + d, 0, 1).toFixed(2); this._sync(); },
 
+        // Home / End on a slider jump to the ends of its range — part of the
+        // pattern the `role="slider"` on these strips announces, so a reader who
+        // follows it and gets no response has been told something untrue. They
+        // live here rather than as an inline `h = 0; _sync()` so the template
+        // keeps handing Alpine one call per binding, which is the only shape the
+        // CSP build evaluates.
+        setHue(v) { this.h = clamp(v, 0, 360); this._sync(); },
+        setAlpha(v) { this.a = +clamp(v, 0, 1).toFixed(2); this._sync(); },
+
         // ── Text field + format toggle ────────────────────────────────
 
         onInput(value) {
@@ -358,7 +498,7 @@ export default function wirekitColorPicker(config = {}) {
         },
 
         /**
-         * §10 — the commit boundary, and this method already WAS one before any of
+         * The commit boundary, and this method already WAS one before any of
          * this existed. It is called from exactly the four places where a color is
          * SETTLED rather than moving: the end of a drag, the eyedropper, a swatch
          * or recent, and `_sync(true)` for a typed value or an arrow-key nudge.

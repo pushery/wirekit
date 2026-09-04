@@ -11,7 +11,11 @@ use Pushery\WireKit\WireKit;
 
 class MakeCommand extends Command
 {
-    protected $signature = 'wirekit:make {template : Template to scaffold — page:dashboard|page:settings|page:login OR recipe:<name> (see `wirekit:list --category=Marketing` or docs.wirekit.app/recipes for the catalog)}';
+    // `docs.wirekit.app/blueprints/recipes`, not `/recipes`: there has never been a
+    // `docs/recipes` directory, and the shipped stubs have always carried the longer
+    // path. Only the two strings this command printed were short, and both of them
+    // landed a developer on a 404 at the end of a successful scaffold.
+    protected $signature = 'wirekit:make {template : Template to scaffold — page:dashboard|page:settings|page:login OR recipe:<name> (see `wirekit:list --category=Marketing` or docs.wirekit.app/blueprints/recipes for the catalog)}';
 
     protected $description = 'Scaffold a page or recipe using WireKit components';
 
@@ -37,6 +41,12 @@ class MakeCommand extends Command
      * Each scaffold generates a Livewire class + Blade view; the developer
      * adapts the recipe to their data shape.
      *
+     * The list and the published recipe catalog are one-to-one in BOTH directions, and
+     * only one of them used to be checked. A published page with no stub is a
+     * `recipe:<name>` a developer reads about, runs, and is told is unknown — which is
+     * what `on-page-toc` and `reading-sidebar` were while the reference page claimed
+     * every recipe mirrors a scaffold.
+     *
      * @var list<string>
      */
     private const RECIPES = [
@@ -47,6 +57,8 @@ class MakeCommand extends Command
         'long-form-article',
         'marketing-landing-page',
         'marketing-landing-toc',
+        'on-page-toc',
+        'reading-sidebar',
         'stat-with-sparkline',
         'toolbar-filter-bar',
     ];
@@ -251,7 +263,7 @@ class MakeCommand extends Command
 
         $this->info("Created: {$livewireClassPath}");
         $this->info("Created: {$viewPath}");
-        $this->line('  Recipe reference: '.WireKit::DOCS_URL."/recipes/{$recipe}");
+        $this->line('  Recipe reference: '.WireKit::DOCS_URL."/blueprints/recipes/{$recipe}");
 
         return self::SUCCESS;
     }

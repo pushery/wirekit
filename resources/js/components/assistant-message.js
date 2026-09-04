@@ -73,6 +73,15 @@ export default function wirekitAssistantMessage(config = {}) {
             }
         },
 
+        /**
+         * The body text as ONE line: every run of whitespace becomes a single space.
+         *
+         * Streamed markup arrives with the line breaks and indentation of whatever
+         * rendered it, and none of that is speech. Collapsing here means every reader
+         * below works on one shape — which is also why the terminators those readers
+         * look for are followed by a SPACE and never by a newline: after this call
+         * there are no newlines left to find.
+         */
         _text() {
             return (this._body?.textContent ?? '').replace(/\s+/g, ' ');
         },
@@ -94,11 +103,18 @@ export default function wirekitAssistantMessage(config = {}) {
 
             // Announce only through the LAST sentence terminator, so a
             // half-written clause is never read out.
+            //
+            // Every terminator here is one _text() can actually leave behind. A period
+            // followed by a newline used to be listed as a fifth candidate, and it could
+            // never match: _text() has already turned that newline into a space, so the
+            // paragraph break arrives as ". " and the first candidate finds it. The line
+            // read as coverage of the line-break case while contributing nothing to it,
+            // which is the kind of branch that survives a rewrite of the very code that
+            // made it unreachable.
             const lastEnd = Math.max(
                 pending.lastIndexOf('. '),
                 pending.lastIndexOf('! '),
                 pending.lastIndexOf('? '),
-                pending.lastIndexOf('.\n'),
                 pending.lastIndexOf('。'),
             );
 

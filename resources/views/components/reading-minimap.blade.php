@@ -146,9 +146,21 @@
     $autoFadeFlag = filter_var($autoFadeIdle, FILTER_VALIDATE_BOOL) ? 'true' : 'false';
 @endphp
 
+{{-- The root deliberately carries NO `aria-hidden`. Every purely visual part
+     of the minimap — the rendered-canvas container, the stripe column, the
+     viewport rectangle, the bookmark marker, the tooltip and the hover
+     preview — is marked `aria-hidden="true"` individually instead.
+     The heading-anchor <nav> is the one part with real semantics (a named
+     landmark holding focusable links), and it has to live INSIDE this element
+     because it reads its list and its click handler from this Alpine scope.
+     `aria-hidden` on the root swallowed it: a keyboard user could still tab
+     onto those links while assistive technology could neither name nor
+     announce them — the pairing axe reports as `aria-hidden-focus`, and the
+     one shape of aria-hidden that is always wrong. Marking the visual parts
+     one by one keeps the noise out of the accessibility tree without hiding
+     an interactive control that a mouse user can reach. --}}
 <div
     x-data="wirekitReadingMinimap({{ $alpineOptions }})"
-    aria-hidden="true"
     data-side="{{ $sideValue }}"
     data-mode="{{ $modeValue }}"
     data-item-style="{{ $itemStyleValue }}"
@@ -176,6 +188,7 @@
         <div
             class="wk-reading-minimap__rendered"
             x-ref="renderedContainer"
+            aria-hidden="true"
             data-test="reading-minimap-rendered"
         ></div>
     @endif
@@ -186,7 +199,7 @@
          Kept in the DOM because the stripe state machine (active index,
          tooltip) still runs and may be re-enabled at runtime via a
          debug toggle from the host application. --}}
-    <ol class="wk-reading-minimap__stripes relative h-full p-0 m-0 list-none" style="list-style: none; margin: 0; padding: 0;">
+    <ol class="wk-reading-minimap__stripes relative h-full p-0 m-0 list-none" aria-hidden="true" style="list-style: none; margin: 0; padding: 0;">
         <template x-for="(item, idx) in items" :key="idx">
             <li
                 class="wk-reading-minimap__stripe absolute left-0 right-0 cursor-pointer"
@@ -212,6 +225,7 @@
          the iframe (z-index: 1 in CSS) so it stays visible in rendered mode. --}}
     <div
         class="wk-reading-minimap__viewport absolute left-0 right-0 pointer-events-auto"
+        aria-hidden="true"
         :style="viewportStyle()"
         @if (filter_var($draggable, FILTER_VALIDATE_BOOL))
             @pointerdown="startDrag($event)"
@@ -227,6 +241,7 @@
     @if (filter_var($showBookmarks, FILTER_VALIDATE_BOOL))
         <div
             class="wk-reading-minimap__bookmark-marker"
+            aria-hidden="true"
             x-show="bookmarkPct !== null"
             x-cloak
             :style="bookmarkStyle()"
@@ -234,8 +249,9 @@
         ></div>
     @endif
 
-    {{-- Extension E3 — heading anchors. Real <a> elements inside a sibling
-         <nav> with an accessible name; survives the wrapper's aria-hidden. --}}
+    {{-- Extension E3 — heading anchors. Real <a> elements in a named <nav>:
+         the only part of the minimap that reaches assistive technology, which
+         is why the wrapper above no longer hides its whole subtree. --}}
     @if (filter_var($headingAnchors, FILTER_VALIDATE_BOOL))
         <nav
             class="wk-reading-minimap__anchors"
@@ -248,6 +264,19 @@
                     :href="anchorHref(anchor)"
                     :style="anchorStyle(anchor)"
                     :data-collapsed="anchor.collapsed ? 'true' : 'false'"
+                    {{-- A collapsed anchor is painted at `opacity: 0` until the
+                         minimap is hovered, so leaving it in the tab order puts
+                         focus on something invisible with nothing to show for it
+                         (WCAG 2.4.7 / 2.4.11). The condition lives in the
+                         attribute's VALUE rather than around the attribute, the
+                         same shape `map.blade.php` uses for its non-scrolling
+                         variant. Nothing is lost: an anchor collapses only when
+                         it would land within 16 px of the anchor before it, that
+                         neighbor stays focusable and scrolls to the same band,
+                         and every heading remains reachable in the document
+                         itself — the minimap is a pointer-side shortcut over
+                         content that is already there. --}}
+                    :tabindex="anchor.collapsed ? '-1' : '0'"
                     x-text="anchor.label"
                     @click="scrollToAnchor(anchor, $event)"
                 ></a>
@@ -264,6 +293,7 @@
          there's no literal arrow. --}}
     <div
         class="wk-reading-minimap__tooltip absolute pointer-events-none px-2 py-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-tooltip-bg)] text-[color:var(--color-wk-tooltip-text)] truncate max-w-[16rem]"
+        aria-hidden="true"
         :class="tooltipText ? '' : 'hidden'"
         :style="tooltipStyle()"
         x-text="tooltipText"

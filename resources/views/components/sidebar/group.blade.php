@@ -68,19 +68,19 @@
         ? null
         : ($attributes->get('aria-label') ?: ((string) $label !== '' ? $label : null));
 
-    // The role stays UNCONDITIONAL here, and that is a divergence from bento-grid and
-    // accordion — both of which emit `role="group"` only when something can name it,
-    // each holding that decision with its own case ("a role=group with no accessible
-    // name is noise: it announces a boundary and then cannot say what the boundary is
-    // for"). This component is the outlier, and `sidebar.collapsible` follows the
-    // majority rather than this file.
+    // The role is coupled to the NAME, which is the house rule rather than a preference:
+    // a role that names a boundary and then cannot say what the boundary is for is noise
+    // in the accessibility tree of every page that uses one, and it is repeated once per
+    // group. bento-grid, accordion and `sidebar.collapsible` each decided this with their
+    // own red-proof; this file was the last one emitting the role unconditionally, so the
+    // same markup announced a group here and nothing there.
     //
-    // Not reconciled here because reconciling it means REMOVING a role from every
-    // unlabeled group already shipped — a subtractive change no ticket asked for, and
-    // one an existing case ("renders group without label") states on purpose. Which of
-    // the two rules is the house rule is a maintainer call, not a side effect of an
-    // aria-controls fix.
-    $groupRole = $attributes->get('role', 'group');
+    // A caller who wants a role anyway still gets it — the bag is read first, so an
+    // explicit `role` on the tag wins over both branches.
+    $groupRole = $attributes->get(
+        'role',
+        $groupLabel !== null || $attributes->has('aria-labelledby') ? 'group' : null
+    );
 
     // The disclosed region's id, so the trigger's `aria-controls` can name it. Seeded
     // rather than randomized: a per-render id makes Livewire's morph replace the live

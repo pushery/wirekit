@@ -9,9 +9,9 @@
        two arrow keys    → one input+change pair EACH, no coalescing
        blur afterwards   → nothing further
 
-     So `change` is the boundary for both input modes at once, and it matches
-     §10 without a special case: it fires once at the end of a drag, and once per
-     keypress because one press is already a finished decision.
+     So `change` is the boundary for both input modes at once, and it needs no
+     special case: it fires once at the end of a drag, and once per keypress
+     because one press is already a finished decision.
 
      The mirror moves DURING the gesture (`@input="current = ..."`), so this
      marks the gesture's start — otherwise the baseline would already be the
@@ -403,7 +403,7 @@
                 x-bind:aria-busy="isPending"
                 {{-- MEASURED, not assumed (see the note at the top): `change`
                      fires once at the end of a drag and once per keypress, which
-                     is exactly §10's boundary for both input modes. --}}
+                     is exactly the commit boundary for both input modes. --}}
                 x-on:change="run($event.target.value)"
                 {{-- The gesture begins here, before the mirror moves. A drag
                      writes `current` on every frame via @input above, so a

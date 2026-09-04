@@ -13,12 +13,23 @@
     'searchPlaceholder' => 'Search…',
     'emptyText' => __('wirekit::No results'),
     'caption' => null,              // accessible table caption / name
+    // Accessible name for the bulk-action bar, and the switch that makes it a LANDMARK.
+    //
+    // Same rule as `caption` below the table: `role="region"` plus a name is a landmark,
+    // and several tables on one page each emitted a bar called "Bulk actions" — one name
+    // across N rotor entries, which is what axe reports as `landmark-unique`. So the role
+    // waits for a name the CALLER chose. Nothing is lost without it: the bar is not a
+    // scroll region (no `overflow-*`, no `max-h-*`), so it needs no `tabindex` for WCAG
+    // 2.1.1, its controls are in the tab order on their own, and the selection count is
+    // announced through the `aria-live` span rather than through the landmark.
+    'bulkActionsLabel' => null,
     'name' => null,                 // hidden-input name mirroring the selected ids
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
     use Illuminate\Support\Str;
 
@@ -79,13 +90,21 @@
     $base = WireKit::resolveClasses('data-table', 'base', 'w-full font-[family-name:var(--font-wk-sans)] space-y-[var(--space-wk-sm)]', $scope);
 
     $checkboxClass = 'h-4 w-4 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] accent-[var(--color-wk-accent)] cursor-pointer focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]';
+    // The column popover names itself through its own trigger, so the pairing needs two
+    // ids that survive a re-render. Counted, never random: the table is a natural
+    // wire:poll surface, and a fresh id per render leaves `aria-controls` and
+    // `aria-labelledby` pointing at the value from the render before — both halves
+    // well-formed, each naming something the other no longer has.
+    $columnsPanelId = DomId::unique(null, 'wk-data-table-columns-');
+    $columnsButtonId = $columnsPanelId.'-button';
+
     $iconBtn = 'inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer';
 @endphp
 
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitDataTable({ rows: {{ \Pushery\WireKit\Support\AlpinePayload::from($rowsArr) }}, columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }} })"
+    x-data="wirekitDataTable({ rows: {{ \Pushery\WireKit\Support\AlpinePayload::from($rowsArr) }}, columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }} })"
     {{ $attributes->only('class')->class([$base]) }}
 >
     @if($selectable && $name)
@@ -132,12 +151,31 @@
                          Neither the method shorthand nor the x-init arrow
                          parsed under Alpine's CSP build, so the whole nested
                          scope failed to build and the button toggled nothing. --}}
+                    {{-- A DISCLOSURE, and it says so.
+
+                         The panel used to announce itself as `aria-haspopup="menu"` +
+                         `role="menu"`, and it is neither: its children are checkboxes, not
+                         `menuitem`s, and nothing here implements a menu's keyboard model.
+                         A reader was told "Columns, menu button", expected arrow keys and
+                         menu items, and got an unnamed box of checkboxes — and `role="menu"`
+                         without `menuitem` children fails ARIA's required-children rule
+                         anyway. `aria-haspopup="true"` would not have helped: ARIA maps the
+                         bare `true` onto `menu`, so it makes the same wrong promise.
+
+                         What it really is: a button that discloses a group of checkboxes.
+                         `aria-expanded` + `aria-controls` on the trigger, `role="group"` on
+                         the panel, named by the trigger's own visible text rather than by an
+                         invented label — the name a reader hears is then the word they read.
+                         `group` is not a landmark, so a built-in name costs nothing here
+                         (a landmark would make every table on the page the same region).
+                         The scroll region keeps a keyboard model through that group role and
+                         its focusable checkboxes, which the factory focuses on open. --}}
                     <div x-data="wirekitDataTableColumnMenu()" @click.outside="open = false" @keydown.escape="open = false" class="relative">
-                        <button type="button" x-ref="colBtn" @click="open = !open" :aria-expanded="open" aria-haspopup="menu" class="{{ $iconBtn }}">
+                        <button type="button" id="{{ $columnsButtonId }}" x-ref="colBtn" @click="open = !open" :aria-expanded="open" aria-controls="{{ $columnsPanelId }}" class="{{ $iconBtn }}">
                             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
                             Columns
                         </button>
-                        <div x-show="open" x-cloak x-ref="colMenu" role="menu" class="fixed z-[var(--z-wk-dropdown)] w-[12rem] max-h-[70vh] overflow-y-auto p-[var(--padding-wk-x-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]">
+                        <div x-show="open" x-cloak x-ref="colMenu" id="{{ $columnsPanelId }}" role="group" aria-labelledby="{{ $columnsButtonId }}" class="fixed z-[var(--z-wk-dropdown)] w-[12rem] max-h-[70vh] overflow-y-auto p-[var(--padding-wk-x-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]">
                             <template x-for="col in columns" :key="col.key">
                                 <label class="flex items-center gap-2 px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-sm)] hover:bg-[var(--color-wk-bg-muted)] cursor-pointer">
                                     <input type="checkbox" :checked="isColumnVisible(col.key)" @change="toggleColumn(col.key)" class="{{ $checkboxClass }}" />
@@ -151,9 +189,15 @@
         </div>
     @endif
 
-    {{-- Bulk-action bar — appears when rows are selected. --}}
+    {{-- Bulk-action bar — appears when rows are selected.
+
+         The LANDMARK is opt-in and its switch is `bulkActionsLabel`, exactly as the table's
+         own region below is switched by `caption`. `filled()` rather than `??`: an
+         interpolated caller value can arrive empty, and `role="region"` with an empty
+         accessible name is not exposed as a landmark at all — the worst of the three
+         outcomes, since it reads as named to the markup and as nothing to the reader. --}}
     @if($selectable)
-        <div x-show="selectedCount > 0" x-cloak role="region" aria-label="{{ __('wirekit::Bulk actions') }}" class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-muted)] rounded-[var(--radius-wk-md)]">
+        <div x-show="selectedCount > 0" x-cloak @if(filled($bulkActionsLabel)) role="region" aria-label="{{ $bulkActionsLabel }}" @endif class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-muted)] rounded-[var(--radius-wk-md)]">
             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" aria-live="polite"><span x-text="selectedCount"></span> selected</span>
             <div class="flex items-center gap-[var(--space-wk-sm)]">
                 {{ $bulkActions ?? '' }}
@@ -288,5 +332,23 @@
                 <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
             @endisset
         </div>
+
+        {{-- The result-set live region.
+
+             Searching a table changes what is on screen without focus moving, which is a
+             status message in the WCAG 4.1.3 sense — and until this existed the only thing
+             this table ever announced was the selection count. A reader could type a query
+             that matched nothing and hear silence.
+
+             It sits OUTSIDE the empty block and carries its own text rather than the
+             `role="status"` going on the block itself. A live region announces a CONTENT
+             change; moving an element between `display: none` and visible is not a content
+             change every screen reader reports, and the sentence in there never changes
+             anyway. The text swap here is what makes the announcement happen.
+
+             It also stays out of the `empty` slot's way: a slot holding a whole
+             `<x-wirekit::empty-state>` would otherwise have its heading, its illustration
+             and its call to action read out as one status message. --}}
+        <p class="sr-only" role="status" aria-live="polite" x-text="emptyAnnouncement"></p>
     </div>
 </div>

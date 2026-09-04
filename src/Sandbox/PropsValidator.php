@@ -195,9 +195,9 @@ final class PropsValidator
     /**
      * Is this URL's scheme one a rendered attribute may carry?
      *
-     * The sandbox threat model (section 6) makes a whitelist mandatory for any URL prop:
-     * either a strict `allowed_values` enum or "a custom URL validator that whitelists
-     * scheme + host". An enum is the wrong half for a PREVIEW sandbox — a link demo whose
+     * A URL prop reaching a rendered attribute needs a whitelist, and there are only
+     * two shapes of one: a strict `allowed_values` enum, or a validator that whitelists
+     * the scheme. An enum is the wrong half for a PREVIEW sandbox — a link demo whose
      * href may only be three fixed strings previews nothing — so this is the other half.
      *
      * It is written against what a BROWSER reads, not against what looks like a URL.

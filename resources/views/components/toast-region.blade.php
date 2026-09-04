@@ -5,6 +5,17 @@
     'duration' => config('wirekit.components.toast-region.duration', 5000),
     'max' => config('wirekit.components.toast-region.max', 5),
     'name' => null, // scoped name — when set, listens on 'wirekit-toast-{name}' instead of global
+    // Accessible name for the stack, and the switch that makes it a LANDMARK.
+    //
+    // `role="region"` plus a name is a landmark, and this component is designed to be
+    // mounted several times on one page — one per corner, or one per section through
+    // `eventScope`. With a built-in name every one of them was the same rotor entry
+    // called "Notifications", which is what axe reports as `landmark-unique`: the name
+    // meant to tell them apart is exactly what made them identical. So the role waits
+    // for a name the CALLER chose, never one the component can invent. Nothing is lost
+    // without it — the two live regions below are the announcement path, and they do
+    // not depend on the landmark. Name it after the surface ("Form notifications").
+    'label' => null,
     'filled' => false, // when true, toast uses full variant background color (like callout)
     'scope' => null, // class-personalization scope — passed to WireKit::resolveClasses
     'eventScope' => null, // CSS selector for DOM-containment event filtering
@@ -158,8 +169,17 @@
 <div
     x-data="wirekitToast({ max: {{ $max }}, duration: {{ $duration }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, scope: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventScope) }} })"
     {{ $attributes->merge(['style' => $offsetStyle])->class([$containerClasses, $positionClasses]) }}
-    role="region"
-    aria-label="{{ __('wirekit::Notifications') }}"
+    {{-- `filled()` rather than `??`: an interpolated caller value can arrive empty,
+         and `role="region"` with an empty accessible name is not exposed as a
+         landmark at all — which would leave the worst of the three outcomes.
+         (The helper and this component's `$filled` prop share a spelling and
+         nothing else — PHP keeps function and variable names apart.) --}}
+    @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
+    {{-- Where the reader came FROM. Dismissing the last toast empties the stack,
+         and without this focus would drop to <body> — the page's top, not the
+         place the reader left. `focusin` bubbles, so one listener on the region
+         covers every card in it. --}}
+    @focusin="noteFocusOrigin($event)"
 >
     {{-- The announcement, separated from the toast that caused it.
 
@@ -203,6 +223,11 @@
                  select it by, which is how two browser tests came to look for an
                  element that no longer existed. --}}
             data-wk-toast
+            {{-- The id as well as the flag: dismissing a toast removes the button
+                 that was pressed, and `remove()` has to be able to tell WHICH card
+                 the focus it is about to strand was sitting in. The valueless
+                 attribute above stays what everything selects on. --}}
+            :data-wk-toast-id="toast.id"
             @mouseenter="pause(toast.id)"
             @mouseleave="resume(toast.id)"
             @focusin="pause(toast.id)"

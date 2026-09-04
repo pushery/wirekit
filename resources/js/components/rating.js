@@ -16,15 +16,32 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  * value change that leaves focus behind strands the user on an element that is
  * no longer the one they selected.
  *
+ * ── Clearing, and why it is opt-in ──
+ *
+ * A radiogroup has no way back to "nothing chosen": a native radio cannot be
+ * deselected from the keyboard, and this component follows that model on
+ * purpose. But a rating is used as a filter facet and as an optional form field
+ * far more often than a radiogroup is, and in both of those "no opinion" has to
+ * survive a mis-click — otherwise the server receives a score nobody meant to
+ * give, and the reader has no way to take it back.
+ *
+ * `clearable` reconciles the two by staying off. With it off, every path below
+ * behaves exactly as it always has. With it on, the zero state the template
+ * already renders becomes reachable again by the two routes a reader would try:
+ * clicking the star that is already chosen, and stepping down past the first
+ * one.
+ *
  * @param {Object} config
- * @param {number} config.value  the initial rating
- * @param {number} config.max    the highest selectable rating
+ * @param {number} config.value      the initial rating
+ * @param {number} config.max        the highest selectable rating
+ * @param {boolean} config.clearable whether picking the current score again returns to 0
  */
 export default function wirekitRating(config = {}) {
     return {
         rating: Number(config.value) || 0,
         hovered: 0,
         _max: Number(config.max) || 5,
+        clearable: Boolean(config.clearable),
 
         init() {
             // Seed from the server attribute when the caller passed none.
@@ -89,8 +106,28 @@ export default function wirekitRating(config = {}) {
          * dispatch a plain form silently submits the value the page loaded with.
          */
         select(value) {
-            this.rating = value;
+            this.rating = this.clearTarget(value);
             this._notify();
+        },
+
+        /**
+         * What picking `value` should set the rating to.
+         *
+         * Split out of `select()` because the optimistic path cannot use
+         * `select()`: it writes through the optimistic layer's `run()`, which
+         * takes the value it should show while the request is in flight. That
+         * layer lives in a nested Alpine scope and knows nothing about
+         * clearing, so the template calls `run(clearTarget(N))` and the decision
+         * stays here — one implementation, two entry points, rather than a
+         * toggle spelled out once per star in the markup.
+         *
+         * Picking the star that is already chosen is the clear gesture. It is
+         * the one a reader tries unprompted, it needs no extra control on the
+         * page, and it costs nothing when `clearable` is off: the assignment is
+         * a no-op that was already happening.
+         */
+        clearTarget(value) {
+            return this.clearable && this.rating === value ? 0 : value;
         },
 
         /** Raise by one and follow with focus, unless already at the top. */
@@ -104,9 +141,21 @@ export default function wirekitRating(config = {}) {
             this._focus(this.$el.nextElementSibling);
         },
 
-        /** Lower by one and follow with focus, unless already at the bottom. */
+        /**
+         * Lower by one and follow with focus, unless already at the bottom.
+         *
+         * Where the bottom is depends on `clearable`. Off, it is 1 and the
+         * radiogroup model holds. On, it is 0 — the state the control renders
+         * before anyone has touched it, so stepping down from one star lands
+         * back in a state the markup already had rather than in a new one.
+         *
+         * Focus does not move on that last step: star 1 has no previous
+         * sibling, so `_focus` declines, and the roving tabindex puts the tab
+         * stop back on star 1 at a rating of 0. The reader keeps the element
+         * they were on, which is the only outcome that does not strand them.
+         */
         stepDown() {
-            if (this.rating <= 1) {
+            if (this.rating <= (this.clearable ? 0 : 1)) {
                 return;
             }
 

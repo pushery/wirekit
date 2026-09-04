@@ -68,9 +68,9 @@
         ? 'text-[color:var(--color-wk-text)]'
         : 'text-[color:var(--color-wk-text-muted)] whitespace-nowrap';
 
-    // In sort-action mode the padding MOVES to the <button> instead of sitting on
-    // the cell (see the button below). Measured at a coarse pointer, the button was
-    // 20px tall inside a 36px cell whose padding this mode deliberately leaves
+    // Whenever a sort <button> renders, the padding MOVES onto it instead of sitting
+    // on the cell (see both buttons below). Measured at a coarse pointer, the button
+    // was 20px tall inside a 36px cell whose padding this mode deliberately leaves
     // inert — under the 24px WCAG 2.5.8 (AA) minimum, with 16px of dead cell
     // around the only clickable thing.
     //
@@ -78,17 +78,18 @@
     // `py` + a matching negative `my` reads like it should keep the row height, and
     // it does NOT. An inline-flex child grows the line box, so the cell's own
     // padding lands on top of the taller box — measured 52px where 36 was expected.
-    // Moving the padding keeps the cell exactly as tall as before AND makes the
-    // whole cell clickable, which is what the Alpine-sort mode always did.
+    // Moving the padding keeps the cell exactly as tall as before AND keeps the whole
+    // cell clickable, which is what the Alpine-sort mode did before it had a button.
     //
-    // `$column === null` is load-bearing, not defensive. The button only renders in the
-    // `@elseif($sortable)` branch below, and `@if($sortable && $column)` wins before it — so
-    // in Alpine-sort mode the padding is REMOVED FROM THE CELL WITH NOTHING TO RECEIVE IT.
-    // Measured on the combination: the header collapsed from 35.5px to 19.5px, under the 24px
-    // WCAG 2.5.8 floor this change exists to reach, and the compact override went with it.
-    // The docblock above calls `sortAction` "ignored in Alpine-sort mode"; a prop documented
-    // as inert must not be able to break the cell.
-    $padOnButton = $sortable && $column === null && $sortAction !== null;
+    // The gate is "does a button render", not "which sort mode is this": both modes
+    // render one now (Alpine-sort binds `@click`, Livewire-sort binds `wire:click`), so
+    // the relocated padding always has something to land on. That is not a formality —
+    // while the Alpine branch still emitted a bare <span>, this gate read
+    // `$sortable && $sortAction !== null` and a header given BOTH props had its padding
+    // removed with nothing to receive it: the header collapsed from 35.5px to 19.5px,
+    // under the very 24px floor the relocation exists to reach, and the compact-density
+    // override went with it.
+    $padOnButton = $sortable && ($column !== null || $sortAction !== null);
     $cellPadding = $padOnButton
         ? ''
         : 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]';
@@ -110,16 +111,13 @@
         '[table[data-wk-sticky-column]_&:first-child]:left-0',
         '[table[data-wk-sticky-column]_&:first-child]:z-20',
         '[table[data-wk-sticky-column]_&:first-child]:bg-[var(--color-wk-bg-subtle)]',
-        // Sortable headers get pointer cursor + hover color. EXCEPT in sort-action
-        // mode: there the <button> below is the click target (it carries its own
-        // cursor-pointer), so advertising cursor-pointer on the whole cell would be a
-        // dead zone — the cell padding shows a pointer but is not clickable.
-        // `$padOnButton` rather than `$sortAction` alone: the cursor belongs on the cell
-        // whenever the cell is what you click. With a button present the button is the target,
-        // so advertising a pointer on the whole cell would be a lie — but in Alpine-sort mode
-        // there is no button and the cell IS clickable, and gating on `$sortAction` alone took
-        // the pointer away there too. Same promise as the padding above: a prop documented as
-        // ignored may not change this cell.
+        // Sortable headers get the hover color; the pointer cursor goes wherever the
+        // click target actually is. `$padOnButton` rather than `$sortAction` alone: with a
+        // button present the button is the target and carries its own cursor-pointer, and
+        // it fills the cell, so repeating the pointer on the <th> would either duplicate it
+        // or — where the button did not reach the cell edges — advertise a pointer over a
+        // dead zone. A sortable header with NO button (Livewire-sort without `sortAction`,
+        // where the developer supplies the control) keeps the pointer on the cell.
         $sortable ? ($padOnButton ? 'select-none hover:text-[color:var(--color-wk-text)]' : 'cursor-pointer select-none hover:text-[color:var(--color-wk-text)]') : '',
     ]), $scope);
 
@@ -136,8 +134,10 @@
     data-wk-table-th
     @if($column) data-wk-sort-column="{{ $column }}" @endif
     @if($sortable && $column)
-        {{-- Alpine sort mode: bind click + aria-sort to parent wirekitTableSort state --}}
-        @click="sortBy({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})"
+        {{-- Alpine sort mode: bind aria-sort to parent wirekitTableSort state. The click
+             lives on the <button> below, not here — a cursor-pointer cell with an @click
+             is mouse-only, and this cell ANNOUNCES its sort state, so a keyboard or switch
+             user could hear the order and never be able to change it (WCAG 2.1.1). --}}
         :aria-sort="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc' ? 'ascending' : getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc' ? 'descending' : 'none'"
     @elseif($ariaSort)
         aria-sort="{{ $ariaSort }}"
@@ -145,13 +145,26 @@
     {{ $attributes->class([$classes]) }}
 >
     @if($sortable && $column)
-        {{-- Alpine sort mode: dynamic direction indicator via x-show --}}
-        <span class="inline-flex items-center gap-1">
+        {{-- Alpine sort mode. The click sits on a real <button>, the same shape the
+             Livewire-sort branch below uses, so the sort is operable by keyboard and by
+             switch — a native button activates on Enter and Space with no key handler of
+             our own, which is why this is a button rather than a tabindex + @keydown on
+             the cell. It carries the cell's relocated padding so its box IS the cell (the
+             24px AA target on both axes, no inert cell area); `w-full` plus a justify
+             matching the column alignment keeps the label exactly where the text-align
+             put it; and the focus ring is inset because the table's scroll wrapper
+             (`overflow-x-auto`, which computes `overflow-y: auto`) would clip an outset
+             ring on the header row. The direction indicator stays reactive via x-show. --}}
+        <button
+            type="button"
+            @click="sortBy({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})"
+            class="flex w-full items-center gap-1 {{ $justifyClass }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
+        >
             {{ $slot }}
             <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L2 8h8L6 3z"/></svg>
             <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L2 4h8L6 9z"/></svg>
             <svg x-show="!getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})" aria-hidden="true" class="h-3 w-3 opacity-40" viewBox="0 0 12 12" fill="currentColor"><path d="M6 2L3 5h6L6 2zM6 10L3 7h6L6 10z"/></svg>
-        </span>
+        </button>
     @elseif($sortable)
         {{-- Livewire sort mode. With `sortAction`, the label + indicator sit in a
              keyboard-operable <button wire:click> (WCAG 2.1.1 — the cursor-pointer

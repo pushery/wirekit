@@ -103,7 +103,7 @@ class ExportJsonCommand extends Command
                 'name' => $name,
                 'tag' => ComponentRegistry::tag($name),
             ];
-            // for class-based
+            // For class-based
             // components whose canonical tag uses the single-hyphen
             // form (`<x-wirekit-chart>`), also emit the double-colon
             // alias (`<x-wirekit::chart>`) so tool integrators that
@@ -117,8 +117,8 @@ class ExportJsonCommand extends Command
             $entry['description'] = $meta['description'];
             $entry['docs_url'] = $docsUrl;
             $entry['props'] = $props;
-            // v2.4.0 Extension 4 — slot kind disambiguation. Downstream
-            // LLM / IDE-extension tooling needs to know how a component
+            // Slot-kind disambiguation, since v2.4.0. Downstream LLM and
+            // IDE-extension tooling needs to know how a component
             // exposes its API: anonymous Blade components carry props
             // via @props([...]) blocks AND can accept named template
             // slots; class-based components carry props via constructor

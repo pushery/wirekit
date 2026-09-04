@@ -14,9 +14,9 @@ use Pushery\WireKit\Theming\ThemePresetRegistry;
 use Pushery\WireKit\WireKit;
 
 /**
- * emit a hierarchical AI-friendly site sitemap covering
+ * Emits a hierarchical AI-friendly site sitemap covering
  * components, tokens, fonts, icon presets, layouts, blueprints, and CLI
- * commands. Superset of `/components.json` ( F2) — designed for
+ * commands. Superset of `/components.json` — designed for
  * MCP servers, Claude Code, ChatGPT Codex, Cursor, Aider, and other AI
  * tooling that needs a single entry point to enumerate every WireKit surface.
  *
@@ -272,19 +272,18 @@ class ExportApiMapCommand extends Command
         // blueprints — they are composition fragments and short how-tos, and each
         // already has a group of its own here.
         //
-        // Without the exclusion this group described nothing it claimed to.
-        // Measured on the public export: `blueprints` held 19 items, all of them
-        // 8 partials and 11 recipes, and NOT ONE blueprint — every real blueprint
-        // page is admin-staged, so the filter removed exactly the entries the
-        // group is named after and left the ones that were only passing through.
-        // The eleven recipes then appeared TWICE, once under each name.
+        // Without the exclusion this group describes nothing it claims to.
+        // Every partial and every recipe already has a group of its own above,
+        // so leaving them here lists each of them TWICE — and when an export
+        // carries no blueprint page in its own right, `blueprints` is left
+        // holding nothing but entries that were passing through on their way
+        // to a different group.
         //
-        // A tool reading this manifest would have found no blueprints under
-        // "blueprints" and counted every recipe twice, and nothing said so: both
-        // numbers were plausible, and the group was never empty enough to look
-        // wrong. `blocks` had the same directory and drew the line correctly —
-        // this brings the two manifests to one definition of the word, which is
-        // the reconciliation the finding asked for.
+        // A tool reading the manifest then counts every recipe twice and finds
+        // nothing under the name it looked up, and nothing says so: both
+        // numbers are plausible, and the group is never empty enough to look
+        // wrong. `blocks` scans the same directory and already draws the line
+        // this way — the two manifests now share one definition of the word.
         $group = $this->scanDocsDir($packageRoot, 'blueprints');
 
         $group['items'] = array_values(array_filter(
@@ -480,6 +479,7 @@ class ExportApiMapCommand extends Command
         'wirekit:doctor:props' => '#wirekitdoctorprops',
         'wirekit:editor-preset' => '#wirekiteditor-preset-preset',
         'wirekit:export-api-map' => '#wirekitexport-api-map',
+        'wirekit:export-blocks' => '#wirekitexport-blocks',
         'wirekit:export-json' => '#wirekitexport-json',
         'wirekit:fonts' => '#wirekitfonts',
         'wirekit:glass' => '#wirekitglass-install',
@@ -524,6 +524,17 @@ class ExportApiMapCommand extends Command
                 }
 
                 if (! str_starts_with($command::class, 'Pushery\\WireKit\\')) {
+                    continue;
+                }
+
+                // A hidden command is not part of the public CLI contract — that is
+                // what the flag means, and the CLI reference is written on that basis:
+                // a hidden command is exempt from needing a heading, so it also has no
+                // anchor to link to. Advertising one in the PUBLIC map therefore points
+                // an agent at a command the reference deliberately does not document,
+                // with a URL that lands on the top of the page. The full map keeps it:
+                // there it is inventory, not an advertisement.
+                if ($this->option('public') && $command->isHidden()) {
                     continue;
                 }
 

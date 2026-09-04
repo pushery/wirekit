@@ -108,12 +108,12 @@
         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
         {{-- Unread count pill (decorative — the count is in the bell's aria-label).
 
-             INTENTIONALLY hand-rolled, NOT <x-wirekit::indicator> + <x-wirekit::badge>
-             (maintainer decision 2026-07-18): a bell count wants a compact pill
-             anchored at the BUTTON corner. The indicator would anchor at the icon
-             corner (~10px inward) and badge's smallest size is a step taller — both
-             are visible changes we deliberately declined. Do NOT "dedupe" this into
-             the indicator; the compact custom pill is the choice.
+             INTENTIONALLY hand-rolled, NOT <x-wirekit::indicator> + <x-wirekit::badge>:
+             a bell count wants a compact pill anchored at the BUTTON corner. The
+             indicator would anchor at the icon corner (~10px inward) and badge's
+             smallest size is a step taller — both are visible changes, so neither
+             is used here. Do NOT "dedupe" this into the indicator; the compact
+             custom pill is the choice.
 
              (No literal Tailwind class names in this comment on purpose — Tailwind's
              @source scans comments as text and would compile any class named here.) --}}
@@ -203,10 +203,18 @@
                                 <a
                                     :href="item.href"
                                     @click="activate(item)"
-                                    :aria-label="(item.read ? '' : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Unread.')) }} + ' ') + item.title + (item.actionLabel ? ', ' + item.actionLabel : '')"
                                     class="{{ $row }}"
                                 >
-                                    {{-- Unread dot — paired with the "Unread." prefix in aria-label (not color alone). --}}
+                                    {{-- NO aria-label on the row. An aria-label REPLACES the name
+                                         computed from the content, so a row labeled with title +
+                                         actionLabel announced the headline and silently dropped the
+                                         body and the time — the substance of the notification and
+                                         the thing a reader triages by. The name is computed from
+                                         the content instead, which reads in visual order: unread
+                                         prefix, title, body, time, action. --}}
+                                    {{-- Unread dot — paired with the visually hidden "Unread."
+                                         prefix below, so the state is never color alone. --}}
+                                    <span class="sr-only" x-show="!item.read" x-cloak>{{ __('wirekit::Unread.') }}</span>
                                     <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'bg-[var(--color-wk-accent)]'"></span>
                                     <span class="min-w-0 flex-1">
                                         <span class="block leading-snug text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" :class="item.read ? '' : 'font-[number:var(--font-wk-heading-weight)]'" x-text="item.title"></span>
@@ -220,10 +228,12 @@
                                 <button
                                     type="button"
                                     @click="activate(item)"
-                                    :aria-label="(item.read ? '' : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Unread.')) }} + ' ') + item.title + (item.actionLabel ? ', ' + item.actionLabel : '')"
                                     class="{{ $row }}"
                                 >
-                                    {{-- Unread dot — paired with the "Unread." prefix in aria-label (not color alone). --}}
+                                    {{-- No aria-label here either — same reason as the link row. --}}
+                                    {{-- Unread dot — paired with the visually hidden "Unread."
+                                         prefix below, so the state is never color alone. --}}
+                                    <span class="sr-only" x-show="!item.read" x-cloak>{{ __('wirekit::Unread.') }}</span>
                                     <span class="mt-1.5 shrink-0 h-2 w-2 rounded-full" :class="item.read ? 'bg-transparent' : 'bg-[var(--color-wk-accent)]'"></span>
                                     <span class="min-w-0 flex-1">
                                         {{-- leading-snug tightens the title's line-box so the

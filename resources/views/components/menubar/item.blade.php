@@ -64,7 +64,11 @@
     role="menuitem"
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
-    x-on:click="closeAll()"
+    {{-- Activating an item closes the menu AND hands focus back to the trigger it came
+         from. Plain closeAll() left the reader on <body> — the panel that held the focus
+         was hidden out from under it — so the next Tab restarted at the top of the
+         document instead of continuing from the menubar. --}}
+    x-on:click="closeAndFocusTrigger()"
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{ $attributes->except('rel')->class([$classes, $colorClasses, $disabledClasses]) }}
 >

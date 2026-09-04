@@ -125,7 +125,7 @@ export function overlayRoot() {
     root.id = OVERLAY_ROOT_ID;
     root.setAttribute('role', 'region');
 
-    // Named, because an unlabelled region is its own axe finding — and a landmark a screen
+    // Named, because an unlabeled region is its own axe finding — and a landmark a screen
     // reader announces without saying what it is helps nobody.
     root.setAttribute('aria-label', overlayRootLabel());
 

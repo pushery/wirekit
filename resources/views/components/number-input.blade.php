@@ -4,7 +4,7 @@
      discrete mutation and the previous number is the server's. The field is not
      — a number typed into it is the reader's work.
 
-     Both take §8's FOURTH exit, `failure: 'keep'`, and that is a deliberate
+     Both take the `failure: 'keep'` exit, and that is a deliberate
      decision rather than a shortcut. Splitting them was the obvious idea and the
      wrong one: a value typed while a stepper's request is in flight would be
      overwritten by that request's rollback, so a per-trigger exit makes safety
@@ -82,9 +82,12 @@
     // Auto-generate ID from name attribute
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'number-input-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
-    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
-    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
-    $attributes = $attributes->except('id');
+    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // below, so leaving either in the bag emits a second, conflicting attribute on the
+    // same element. `id` was stripped from the start; `name` was not, and a caller that
+    // passed one got two name attributes on one control — invalid HTML the browser
+    // accepts silently by keeping the first, which is why nothing ever went red over it.
+    $attributes = $attributes->except(['id', 'name']);
 
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
@@ -173,6 +176,29 @@
 
     // Build aria-describedby from hint + error
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+
+    // Stepper accessible names — scoped to the field whenever it has a label.
+    //
+    // Taking the buttons out of the tab order (below) does not take them out of
+    // the accessibility tree: a screen reader reading the page in browse mode
+    // still meets every one of them. An order form with three quantity fields
+    // therefore offered six controls called "Decrease" and "Increase", six names
+    // that say nothing about which number they move. The label the caller already
+    // passes is the only thing that tells them apart, so it becomes part of the
+    // name. Voice control reads the same string, and "Decrease Quantity" is what
+    // a person would say out loud.
+    //
+    // A parameterized key rather than concatenation, because the word order is
+    // not the same in every language the catalog ships: German and Dutch put the
+    // field first. Without a label there is nothing to scope to, and the bare
+    // wording stands.
+    $stepperField = is_string($label) ? trim($label) : '';
+    $decreaseLabel = $stepperField !== ''
+        ? __('wirekit::Decrease :field', ['field' => $stepperField])
+        : __('wirekit::Decrease');
+    $increaseLabel = $stepperField !== ''
+        ? __('wirekit::Increase :field', ['field' => $stepperField])
+        : __('wirekit::Increase');
     // `bind` rather than `value`: the property already exists on the component
     // this layer nests inside — number-input is the case the factory's own
     // comment names, where declaring `value` here would shadow the parent's.
@@ -223,11 +249,22 @@
             <span class="shrink-0 pr-[var(--padding-wk-x-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">{{ $prefix }}</span>
         @endif
 
-        {{-- Decrease button — disabled at min boundary --}}
+        {{-- Decrease button — disabled at min boundary.
+
+             `tabindex="-1"` on both steppers is the native model, not an
+             omission. The browser's own spinner arrows — which this component
+             hides and replaces a few lines up — are not tab stops either, and
+             ArrowUp / ArrowDown on the field step to the same grid points these
+             buttons do. Leaving them focusable cost a form of N quantity fields
+             2N extra stops that duplicate a key the field already handles, and
+             a stepper click while focus sits ON the button announces nothing:
+             the value changes inside the spinbutton the reader has just left. --}}
         <button
             type="button"
+            tabindex="-1"
             class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusLeft }} {{ $sizeClasses }}"
-            aria-label="{{ __('wirekit::Decrease') }}"
+            aria-label="{{ $decreaseLabel }}"
+            aria-controls="{{ $id }}"
             :disabled="atMin"
             :aria-disabled="atMin"
             @click="decrease()"
@@ -245,7 +282,7 @@
             @if($optimisticConfig)
                 x-bind:aria-busy="isPending"
                 {{-- `change`, not `input`: typing fires input per keystroke, and
-                     the event that ends the input is leaving the field (§10). The
+                     the event that ends the input is leaving the field. The
                      steppers commit on their own, from the factory — one click is
                      already a finished decision. --}}
                 x-on:change="run($event.target.value)"
@@ -262,8 +299,10 @@
         {{-- Increase button — disabled at max boundary --}}
         <button
             type="button"
+            tabindex="-1"
             class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusRight }} {{ $sizeClasses }}"
-            aria-label="{{ __('wirekit::Increase') }}"
+            aria-label="{{ $increaseLabel }}"
+            aria-controls="{{ $id }}"
             :disabled="atMax"
             :aria-disabled="atMax"
             @click="increase()"

@@ -40,7 +40,28 @@
         default => 'border-t-[var(--color-wk-border)]',
     };
 
-    $columnId = 'kanban-column-' . md5($label ?? uniqid());
+    // Counted per request, not derived from the label. `md5($label)` gave two columns with
+    // the same name the SAME id, and `aria-labelledby` resolves to the first match — so a
+    // board with two "Blocked" columns named the second one after the first one's header.
+    // A random id would have been unique and worse: it changes on every render, so a
+    // Livewire morph replaces the node instead of patching it.
+    $columnId = \Pushery\WireKit\Support\DomId::unique(null, 'kanban-column-');
+
+    // The name of a list item has to come from something that EXISTS.
+    //
+    // `aria-labelledby` was emitted unconditionally while the element carrying that id
+    // lives only in the DEFAULT header — so every column using the `header` slot pointed
+    // at nothing and was announced as an unnamed item. An empty name is the silent kind of
+    // failure: the markup is well-formed, the attribute is present, and the reader simply
+    // hears "list item".
+    //
+    // Two shapes, picked by which header renders. The default header owns a real label
+    // element, so it is referenced. A custom header is the caller's own markup and carries
+    // no id of ours, so the column names itself from its `label` prop instead. Neither is
+    // emitted without a label — an attribute that claims a name and delivers a blank one
+    // is worse than no attribute at all.
+    $hasCustomHeader = isset($header);
+    $isNamed = filled($label);
 
     $baseClasses = WireKit::resolveClasses('kanban-column', 'base', implode(' ', [
         'flex flex-col',
@@ -57,12 +78,20 @@
 
 <section
     role="listitem"
-    aria-labelledby="{{ $columnId }}-label"
+    @if($isNamed)
+        @if($hasCustomHeader)
+            aria-label="{{ $label }}"
+        @else
+            aria-labelledby="{{ $columnId }}-label"
+        @endif
+    @endif
     @if($sortable) data-sortable-column @endif
     {{ $attributes->class([$baseClasses]) }}
 >
-    {{-- Column header --}}
-    @if(isset($header))
+    {{-- Column header. Same flag the naming above branches on, so the two can never
+         disagree about which header rendered — which is precisely how the reference and
+         the element carrying its id came apart. --}}
+    @if($hasCustomHeader)
         {{ $header }}
     @else
         <div class="flex items-center justify-between px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)]">

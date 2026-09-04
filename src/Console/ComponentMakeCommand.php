@@ -16,7 +16,7 @@ use Pushery\WireKit\WireKit;
  * Copies the base component's Blade file to
  * `resources/views/components/custom/{name}.blade.php` so the developer can
  * override classes, variants, slots without publishing the whole package
- * vendor:publish --tag=wirekit-views (which would copy ~109 files).
+ * vendor:publish --tag=wirekit-views (which would copy the entire view tree).
  *
  * `--base` defaults:
  *   1. Explicit --base= wins (today's behavior).
@@ -39,9 +39,14 @@ use Pushery\WireKit\WireKit;
  */
 class ComponentMakeCommand extends Command
 {
+    // NO BRACES INSIDE A DESCRIPTION. Laravel's signature parser closes an option at the
+    // first `}` it meets, so `{name}` written inside the `--base` text ended the definition
+    // mid-sentence: `--help` printed "…the rightmost dash-segment of {name" and dropped the
+    // example and the Levenshtein fallback — the two things a developer needs in order to
+    // use the flag. Nothing fails; the help is simply cut off, so name the argument in prose.
     protected $signature = 'wirekit:component
         {name : Component slug for the new file (kebab-case)}
-        {--base= : Source component to copy from. Defaults to the rightmost dash-segment of {name} (e.g. "my-button" → "button"). Falls back to a Levenshtein suggestion when no real component matches.}
+        {--base= : Source component to copy from. Defaults to the rightmost dash-segment of the name, e.g. "my-button" derives "button". Falls back to a Levenshtein suggestion when no real component matches.}
         {--force : Overwrite an existing custom component}
         {--interactive : Prompt for --base from the component catalog when derivation has no clear match (defaults to on in a TTY).}';
 
@@ -168,7 +173,9 @@ class ComponentMakeCommand extends Command
         // but doesn't forward real stdin. On a TTY-equipped local `vendor/bin/pest`
         // run, Symfony's QuestionHelper falls through to a blocking
         // `fgets(STDIN)` here. Mirrors the same guard in
-        // InstallCommand::maybeRunInteractivePrompts (line 666).
+        // InstallCommand::maybeRunInteractivePrompts(). The method name is the pointer;
+        // a line number stops being one at the first edit to that file, and this one
+        // had drifted 46 lines into a different method.
         if ($isInteractive && $suggestions !== [] && ! app()->runningUnitTests()) {
             $picked = $this->choice(
                 "No --base provided and '{$name}' does not derive cleanly. Pick a base component:",

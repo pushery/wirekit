@@ -7,23 +7,25 @@
  * When to use this bundle vs. wirekit.js / wirekit.core.js:
  *
  *   wirekit.js          — your app already runs Alpine and registers
- *                         WireKit components yourself (current sample-app,
- *                         Laravel-Livewire setups). BYO Alpine.
+ *                         WireKit components yourself (Laravel + Livewire
+ *                         setups). BYO Alpine.
  *
  *   wirekit-alpine.js   — you want a self-contained drop that gives
  *                         you Alpine + every WireKit primitive in one
  *                         tag (docs site iframe srcdoc, isolated preview
- *                         surfaces, sample landing pages).
+ *                         surfaces, standalone landing pages).
  *
  *   wirekit.core.js     — you only need the chart component, no overlays.
  *
- * The two bundles are mutually compatible (loading both is a no-op once
- * Alpine is detected) but developers should pick exactly one. Loading
- * wirekit-alpine.js when Alpine is already on the page produces a console
- * warning and skips the second registration.
+ * Pick exactly one — but loading this bundle onto a page that already has an
+ * Alpine does not leave it inert. It registers every WireKit component on the
+ * Alpine that is ALREADY RUNNING and does not start a second one, then
+ * logs a console warning naming that choice; see the `hostAlpine` block below
+ * for why skipping the registrations instead was the defect this replaced.
  *
- * Bundle size budget: Alpine core (~12KB gzip) + WireKit components
- * (~8KB gzip) ≈ ~20KB gzip.
+ * The measured gzip size of every artifact lives in one place — the size table
+ * in `dist/README.md`, which is checked against the real bytes. A second copy
+ * here would have no measurement behind it and would drift on the next build.
  */
 
 import Alpine from 'alpinejs';
@@ -116,9 +118,12 @@ import wirekitStream from './components/stream.js';
 
 /**
  * Detect a pre-existing Alpine instance. Loading wirekit-alpine.js when
- * the developer's app ALSO loaded its own Alpine produces a "double
- * Alpine" runtime warning that's hard to debug — better to log a clean
- * console hint and skip our registration in that case.
+ * the developer's app ALSO loaded its own Alpine means two Alpines would
+ * walk the same DOM, which produces a runtime warning that is hard to
+ * debug — so this bundle does not start its own. It registers every
+ * component on the Alpine that is already running and says so in the
+ * console; the `hostAlpine` block below carries why skipping the
+ * registrations instead was the defect that reading replaced.
  */
 function alreadyHasAlpine() {
     return typeof window !== 'undefined'

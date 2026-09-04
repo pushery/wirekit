@@ -29,6 +29,18 @@ export default function wirekitCommandPalette(config = {}) {
         _navCleanup: null,
         _hotkeyHandler: null,
         _showHandler: null,
+        // The body's own inline `overflow` as it stood the moment this palette
+        // locked it — null while the palette holds no lock at all.
+        //
+        // The close paths used to write the empty string unconditionally, which
+        // is only correct when nothing else was already holding the page still.
+        // The hotkey is registered on `document`, so the palette opens from
+        // inside an open modal or drawer as readily as from the page: closing it
+        // then handed the empty string to a body that a still-open dialog had
+        // set to `hidden`, and the page scrolled behind that dialog. With
+        // `lockScroll: false` it was worse — the palette released a lock it had
+        // never taken.
+        _bodyOverflow: null,
 
         init() {
             // Parse hotkey (e.g. 'cmd+k') and register global listener
@@ -127,7 +139,11 @@ export default function wirekitCommandPalette(config = {}) {
             // Lock body scroll (standard modal behavior). Skipped when the palette
             // is embedded inside a scoped container where global body-scroll lock
             // would be disruptive — see `lockScroll` prop on the Blade component.
+            //
+            // Snapshot first, restore on close: the value being replaced may be a
+            // lock somebody else is still holding. See `_bodyOverflow` above.
             if (lockScroll) {
+                this._bodyOverflow = document.body.style.overflow;
                 document.body.style.overflow = 'hidden';
             }
 
@@ -155,7 +171,31 @@ export default function wirekitCommandPalette(config = {}) {
             if (!this.open) return;
             this.open = false;
             this._trap = null;
-            document.body.style.overflow = '';
+            this._releaseScroll();
+        },
+
+        /**
+         * Hand the body's `overflow` back exactly as it was found.
+         *
+         * Doing nothing when this palette never locked is the load-bearing half:
+         * a release that runs unconditionally is indistinguishable from one that
+         * releases somebody else's lock, and the second is what the page behind
+         * an open dialog notices.
+         */
+        _releaseScroll() {
+            if (this._bodyOverflow === null) return;
+
+            // …and the other half: hand back only a lock this palette is still the
+            // one holding. A dialog underneath can close FIRST and release its own
+            // lock while the palette is open, and the snapshot taken at open time
+            // then says `hidden` about a page nothing covers any more — writing it
+            // back would leave the reader unable to scroll with no dialog in sight.
+            // Anything other than the value written here belongs to somebody else.
+            if (document.body.style.overflow === 'hidden') {
+                document.body.style.overflow = this._bodyOverflow;
+            }
+
+            this._bodyOverflow = null;
         },
 
         /**
@@ -170,7 +210,7 @@ export default function wirekitCommandPalette(config = {}) {
                 this._trap = null;
             }
 
-            document.body.style.overflow = '';
+            this._releaseScroll();
         },
 
         /**
@@ -184,7 +224,7 @@ export default function wirekitCommandPalette(config = {}) {
                 this._trap = null;
             }
 
-            document.body.style.overflow = '';
+            this._releaseScroll();
         },
 
         /**
@@ -200,6 +240,28 @@ export default function wirekitCommandPalette(config = {}) {
          * Handle keyboard navigation in the command list.
          */
         handleKeydown(event) {
+            // Escape belongs to whichever overlay is on top, and while the palette
+            // stands open that is the palette.
+            //
+            // Modal, drawer and alert-dialog listen for Escape on `window` and gate
+            // themselves on being topmost — a flag they can only lower for an overlay
+            // that announced itself. The palette does not, and its hotkey is bound to
+            // `document`, so it opens from inside an open dialog: one Escape then
+            // closed the palette AND the dialog underneath it, because the dialog
+            // never learned anything had opened above it.
+            //
+            // Stopping the event here is the same guarantee the stack gives, made
+            // where the palette can make it. The trap has usually deactivated by now
+            // (it listens on `document` in the capture phase, so it runs before this
+            // bubble handler), which is why `close()` is the fallback for a palette
+            // whose trap never activated rather than a second close.
+            if (event.key === 'Escape') {
+                event.stopPropagation();
+                this.close();
+
+                return;
+            }
+
             const items = this._getItems();
             if (!items.length) return;
 

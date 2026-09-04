@@ -1,11 +1,11 @@
 {{-- optimistic-ui: supported
-     Uses §8's fourth exit — a refusal KEEPS the code and says only that it was
-     not accepted. That is not a preference here, it is the whole reason this
+     Uses the `keep` failure exit — a refusal KEEPS the code and says only that
+     it was not accepted. That is not a preference here, it is the whole reason this
      component was blocked: clearing the boxes on a refusal would make the reader
      re-enter a one-time code that may well have expired in the meantime.
 
-     The commit boundary is the code being COMPLETE, not any single keystroke
-     (§10). The field syncs on every character, so anything hung on that would
+     The commit boundary is the code being COMPLETE, not any single keystroke.
+     The field syncs on every character, so anything hung on that would
      fire once per box; `wirekit:otp-complete` fires once, when the last box is
      filled, and again after a correction — which is exactly the moment a
      one-time code is normally submitted. --}}
@@ -40,6 +40,22 @@
     // Before this prop existed, such a code could not be entered here at all:
     // every keystroke was discarded and the boxes stayed empty with no message.
     'alphabet' => '0123456789',
+    // Focus the first box on load.
+    //
+    // A one-time-code screen is single-purpose: the reader arrived from a
+    // redirect whose status region has already said the code was sent, and the
+    // boxes are the only thing on the page they came to operate. Every sibling
+    // screen in that flow focuses its field; this one could not, because an
+    // `autofocus` written at the call site landed in the attribute bag and was
+    // dropped with it — measured as `document.activeElement === body`, one
+    // extra Tab for a keyboard reader and a pre-filled email field read out
+    // first for a screen-reader reader.
+    //
+    // Default false, because an OTP field is not always alone on its page and
+    // moving focus on a page somebody is already reading takes them somewhere
+    // they did not ask to go. WCAG forbids neither; the call site knows which
+    // of the two screens it is building.
+    'autofocus' => false,
 ])
 
 @aware(['announceErrors' => null])
@@ -51,6 +67,7 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $masked = BooleanProp::from($masked, false);
+    $autofocus = BooleanProp::from($autofocus, false);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -185,7 +202,7 @@
 
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
 
-    // `failure: 'keep'` — §8's fourth exit, and the case it matters most in. A
+    // `failure: 'keep'` — the keep-on-refusal exit, and where it matters most. A
     // rollback would clear the boxes, and a one-time code cannot simply be
     // retyped: it may have expired while the request was in flight.
     //
@@ -277,6 +294,14 @@
                      the words differently cannot be served by a fixed word order. --}}
                 aria-label="{{ __('wirekit::Digit :position of :total', ['position' => $i + 1, 'total' => $length]) }}"
                 @if($hasError) aria-invalid="true" @endif
+                {{-- Digit 0 only. `autofocus` is honored on the FIRST element in
+                     the document carrying it and silently ignored on the rest, so
+                     emitting it per box would look like six requests and behave
+                     like one — and the one it behaved like would be right only by
+                     accident of source order. The plain HTML attribute rather
+                     than a scripted focus: it works before Alpine boots and under
+                     a Content-Security-Policy that stops it booting at all. --}}
+                @if($i === 0 && $autofocus) autofocus @endif
                 @if($i === 0 && $describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 {{-- Every box reports the pending state: the code is one value,
                      and which box happens to be focused when the answer arrives

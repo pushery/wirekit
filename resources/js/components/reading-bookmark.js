@@ -34,6 +34,7 @@
  * @param {number} config.threshold      fraction of the article that must pass before a re-save
  * @param {boolean} config.promptEnabled whether a stored position offers a resume
  * @param {number} config.minDwell       seconds on the page before a stored position is worth offering
+ * @param {string} config.promptMessage  the offer, already translated, for the live region to speak
  */
 import { prefersReducedMotion } from '../utils/motion.js';
 
@@ -47,12 +48,36 @@ export default function wirekitReadingBookmark(config = {}) {
         _threshold: Number(config.threshold || 0),
         _promptEnabled: Boolean(config.promptEnabled),
         _minDwell: Number(config.minDwell || 0),
+        // The offer, already translated. It is assembled on the server, because a
+        // sentence built here would be untranslatable and invisible to every
+        // extractor — the same route the dismiss control's name takes.
+        _promptMessage: typeof config.promptMessage === 'string' ? config.promptMessage : '',
 
         _saveTimer: null,
         _enterAt: 0,
         _lastSavedTop: 0,
         _onScroll: null,
         _onStorage: null,
+
+        /**
+         * What the live region says, which is nothing until there is an offer.
+         *
+         * The prompt used to BE the region: the pill carried role="status" and was
+         * toggled with x-show, so the region and its text arrived together. A region
+         * that appears already holding its sentence is a new node rather than a
+         * changed one, and assistive technology watches for the change — so the one
+         * output this component has for a screen-reader user was the one output
+         * likely never to be spoken, on a control pinned to a corner that a reader
+         * moving linearly reaches last.
+         *
+         * Derived rather than assigned so the two can never disagree: every path
+         * that takes the prompt down (resume, dismiss, clear, a sibling tab
+         * clearing the key) already writes `showPrompt`, and each would otherwise
+         * have to remember to empty the region as well.
+         */
+        get promptAnnouncement() {
+            return this.showPrompt ? this._promptMessage : '';
+        },
 
         init() {
             this._enterAt = Date.now();

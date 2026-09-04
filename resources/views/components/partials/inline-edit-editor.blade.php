@@ -79,12 +79,19 @@
         class="w-full"
     />
 @elseif($control === 'select')
+    {{-- `onBlur()` is the only path by which an editor hears that the reader left, and it
+         carries the close-and-discard as well as the commit decision. Its own first line
+         excludes a select from COMMITTING on blur — which is about saving, not about
+         closing, and is the sentence that made this omission read as deliberate. Without
+         the binding a click anywhere else left the editor open with an uncommitted draft;
+         in a table of inline-edit cells, several of them at once. --}}
     <x-wirekit::select
         :id="$id"
         :size="$size"
         x-ref="control"
         x-model="draft"
         x-on:keydown="onKeydown($event)"
+        x-on:blur="onBlur()"
         :aria-label="$ariaLabel ?? null"
         :aria-describedby="$describedBy"
         :aria-invalid="$hasError ? 'true' : null"
@@ -130,9 +137,20 @@
     {{-- aria-disabled rather than disabled: a disabled button drops out of the
          tab order mid-interaction, so a keyboard user loses their place exactly
          while waiting to find out whether the save worked. --}}
+
+    {{-- WHY THE BUTTONS WATCH FOR A DEPARTURE TOO:
+         the handler asks whether focus is still somewhere inside the component,
+         so tabbing from the control onto Confirm no longer counts as leaving —
+         which is the whole reason these buttons are reachable at all. But that
+         alone would make them a place a draft can sit forever: tab past Cancel
+         and nothing is left watching, so the editor would stay open behind the
+         reader with an uncommitted value. Asking the same question from here
+         keeps the documented rule whole — leaving really does close and
+         discard, whichever element the reader left from. --}}
     <button
         type="button"
         x-on:click="commit()"
+        x-on:blur="onBlur()"
         :aria-disabled="saving"
         :aria-busy="saving"
         class="{{ $actionClasses }} text-[color:var(--color-wk-success-text)]"
@@ -146,6 +164,7 @@
     <button
         type="button"
         x-on:click="cancel()"
+        x-on:blur="onBlur()"
         :aria-disabled="saving"
         class="{{ $actionClasses }} text-[color:var(--color-wk-text-muted)]"
         aria-label="{{ __('wirekit::Cancel') }}"

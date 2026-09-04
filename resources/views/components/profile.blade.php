@@ -21,6 +21,23 @@
     // profile is often a passive summary inside something else that is already the
     // control, and nesting a button inside one would be invalid.
     'as' => 'div',
+    // Corner rounding, on the control branch — the branch that has a background
+    // and a focus ring for a radius to describe.
+    //
+    // Baked as `sm` before this prop existed, and that is one row's worth of
+    // difference in the place this component is most often used: the account
+    // trigger at the foot of a sidebar, sitting directly under navigation
+    // entries that round on `--radius-wk-nav-item`. One control rounded unlike
+    // every neighbor is exactly the mismatch that stops a repository from
+    // adopting the component and keeps its hand-built row instead.
+    //
+    // `nav-item` is on the list for that reason and is not a rung: the shell
+    // redefines it per surface (it derives from the panel radius minus the
+    // padding), so no fixed rung can stand in for it.
+    'radius' => 'sm',
+    // Space between the avatar and the name. Reads the `--gap-wk-*` ladder —
+    // the tighter of the two, and the one this component already stood on.
+    'gap' => 'sm',
 ])
 
 @php
@@ -47,10 +64,35 @@
     // synthesizes what the tag already provides.
     $control = $interactive || $tag === 'button';
 
+    // Both maps emit nothing for `none`, which is what the layout primitives
+    // already do — `gap-0` and an empty string render the same, and one spelling
+    // across the kit is worth more than the shorter one here.
+    $gapClasses = match ($gap) {
+        'none' => '',
+        'xs' => 'gap-[var(--gap-wk-xs)]',
+        'sm' => 'gap-[var(--gap-wk-sm)]',
+        'md' => 'gap-[var(--gap-wk-md)]',
+        'lg' => 'gap-[var(--gap-wk-lg)]',
+        'xl' => 'gap-[var(--gap-wk-xl)]',
+        '2xl' => 'gap-[var(--gap-wk-2xl)]',
+        default => WireKit::validateProp('profile', 'gap', (string) $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
+    };
+
+    $radiusClasses = match ($radius) {
+        'none' => '',
+        'sm' => 'rounded-[var(--radius-wk-sm)]',
+        'md' => 'rounded-[var(--radius-wk-md)]',
+        'lg' => 'rounded-[var(--radius-wk-lg)]',
+        'xl' => 'rounded-[var(--radius-wk-xl)]',
+        'full' => 'rounded-[var(--radius-wk-full)]',
+        'nav-item' => 'rounded-[var(--radius-wk-nav-item)]',
+        default => WireKit::validateProp('profile', 'radius', (string) $radius, ['none', 'sm', 'md', 'lg', 'xl', 'full', 'nav-item']),
+    };
+
     // Profile — avatar + name display for header areas.
     $classes = WireKit::resolveClasses('profile', 'base', implode(' ', [
         'flex items-center',
-        'gap-[var(--gap-wk-sm)]',
+        $gapClasses,
         // Add focus-visible ring when this is a control — same shape as the
         // canonical button focus state (matches the button component).
         // `cursor-pointer` is not decoration on the button branch: Tailwind v4's
@@ -58,7 +100,22 @@
         // would otherwise go missing. The rest of the UA chrome — the border, the
         // background, the button's own font — that same preflight already removes,
         // and Tailwind v4 is a hard requirement of this package.
-        $control ? 'cursor-pointer focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[var(--color-wk-ring-offset)] rounded-[var(--radius-wk-sm)]' : '',
+        // An interactive row answers the pointer, not only the keyboard.
+        //
+        // This branch has always carried `cursor-pointer` and a focus ring, so a keyboard
+        // reader saw the row react and a mouse reader saw nothing at all — while the
+        // navigation entries directly above it in a sidebar footer light up on hover. The
+        // same two tokens they use, so the footer row belongs to the same list it sits at
+        // the bottom of.
+        // An interactive row answers the pointer, not only the keyboard.
+        //
+        // This branch has always carried `cursor-pointer` and a focus ring, so a keyboard
+        // reader saw the row react and a mouse reader saw nothing at all — while the
+        // navigation entries directly above it in a sidebar footer light up on hover. The
+        // same two tokens they use, so the footer row belongs to the same list it sits at
+        // the bottom of.
+        $control ? 'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] transition-colors duration-[var(--transition-wk-duration)] ' : '',
+        $control ? 'cursor-pointer focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[var(--color-wk-ring-offset)] '.$radiusClasses : '',
     ]), $scope);
 
     // accept either a string URL
@@ -98,7 +155,16 @@
         >{{ $avatarInitials }}</span>
     @endif
     @if($name)
-        <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)]">{{ $name }}</span>
+        {{-- In a collapsed sidebar rail the name becomes sr-only, exactly as a
+             `sidebar.item` label does — visually gone, still the accessible name.
+             Without this the name stays and WRAPS: measured at 43px, "Dana Ortiz"
+             broke across two lines inside a column built for a 32px avatar, which is
+             how a footer row ends up taller than the rail it sits in.
+
+             `group-data-[settling]` as well as `group-data-[collapsed]`, because the
+             collapse animates: hiding only at the end of it lets the name reflow once
+             on the way there. --}}
+        <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)] group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $name }}</span>
     @endif
     {{ $slot }}
 </{{ $tag }}>

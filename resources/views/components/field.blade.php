@@ -1,7 +1,6 @@
 {{-- optimistic-ui: n/a — presentational
-     Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+     Renders no interactive element of its own — the control arrives in the slot —
+     so there is no action here whose result could be shown early. --}}
 @props([
     'label' => null,
     'name' => null,
@@ -71,7 +70,12 @@
     $hasError = $error || ($name && ($errors ?? null)?->has($name));
     $errorMessage = $error ?? ($name ? ($errors ?? null)?->first($name) : null);
 
-    // Stable IDs for hint/error paragraphs so we can wire up aria-describedby
+    // Stable IDs on the hint/error paragraphs, so a caller can point an
+    // `aria-describedby` at them. They are an OFFER, not a wiring: a Blade slot is
+    // opaque, so this wrapper cannot add an attribute to the control it was handed.
+    // A WireKit form control links its OWN `hint`/`error` and never sees these — put
+    // the message on the control to get the link for free, or reference the id by
+    // hand when the slot holds markup the caller wrote.
     $hintId = $targetId ? "{$targetId}-hint" : null;
     $errorId = $targetId ? "{$targetId}-error" : null;
 
@@ -117,8 +121,10 @@
         @endif
 
         {{-- The actual input/select/textarea/checkbox — passed in as default slot.
-             The child component is expected to read its own $errors bag and set aria-* itself,
-             but the wrapper still renders its own error/hint messages with stable IDs. --}}
+             The child component reads its own $errors bag and sets its own aria-*; the
+             wrapper renders its own error/hint messages with stable IDs for a caller to
+             reference. The two are alternatives, not halves of one wiring — see the note
+             on $hintId above. --}}
         {{ $slot }}
 
         {{-- Error takes precedence over hint — show one, not both --}}

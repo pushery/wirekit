@@ -109,8 +109,18 @@
     // target=null resolves to the family default 'main, article' (first-match
     // wins). Same convention as reading-spine + reading-meta.
     $resolvedTarget = $target ?? 'main, article';
+
+    // Resolved once and used twice — printed into the pill, and handed to the
+    // factory for the live region to speak. One source so the two cannot drift,
+    // and translated for the same reason the dismiss control's name is: a
+    // sentence built inside the Alpine factory could not be.
+    $resumePrompt = __('wirekit::Resume reading where you left off?');
 @endphp
 
+{{-- A wrapper with no box of its own: it holds nothing but the Alpine scope, so the
+     live region below can sit OUTSIDE the pill while still reading the pill's state.
+     It takes no classes and is not positioned, so the pill's `fixed` / `absolute`
+     resolves against exactly what it did before. --}}
 <div
     {{-- Bookmark key exposed as a data attribute so sibling primitives
          (reading-minimap E2) can wire to the same localStorage payload
@@ -127,41 +137,50 @@
         threshold: {{ \Pushery\WireKit\Support\AlpinePayload::from($thresholdFloat) }},
         promptEnabled: {{ \Pushery\WireKit\Support\AlpinePayload::from($promptEnabled) }},
         minDwell: {{ \Pushery\WireKit\Support\AlpinePayload::from($minDwell) }},
+        promptMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from($resumePrompt) }},
     })"
-    x-show="showPrompt"
-    x-cloak
-    x-transition:enter="transition ease-out duration-200"
-    x-transition:enter-start="opacity-0 translate-y-2"
-    x-transition:enter-end="opacity-100 translate-y-0"
-    x-transition:leave="transition ease-in duration-150"
-    x-transition:leave-start="opacity-100 translate-y-0"
-    x-transition:leave-end="opacity-0 translate-y-2"
-    role="status"
-    aria-live="polite"
-    {{ $attributes->class([$rootClass]) }}
 >
-    <span class="wk-reading-bookmark__label">Resume reading where you left off?</span>
-    {{-- Both controls spell out `cursor-pointer` because nothing else supplies
-         it: Tailwind v4's preflight sets `cursor: default` on `button` (v3
-         inherited the user agent's pointer), and `.wk-reading-bookmark__resume`
-         and `__dismiss` carry no declarations in dist/wirekit.css — the class
-         names are hooks for a developer, not styles. Without it the prompt
-         reads as static text. --}}
-    <button
-        type="button"
-        @click="resume()"
-        class="wk-reading-bookmark__resume inline-flex items-center cursor-pointer px-3 py-1 rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-[length:var(--text-wk-xs)] font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
+    {{-- Rendered unconditionally and starting empty: a live region that arrives
+         together with its text is a new node, and nothing is announced at all. The
+         pill itself used to carry role="status" while being toggled with x-show,
+         which is that exact shape — so the one thing this component says to a
+         screen-reader user was the thing least likely to be heard. --}}
+    <div class="sr-only" role="status" aria-live="polite" aria-atomic="true" x-text="promptAnnouncement"></div>
+
+    <div
+        x-show="showPrompt"
+        x-cloak
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="opacity-0 translate-y-2"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-2"
+        {{ $attributes->class([$rootClass]) }}
     >
-        Resume
-    </button>
-    <button
-        type="button"
-        @click="dismiss()"
-        aria-label="{{ __('wirekit::Dismiss') }}"
-        class="wk-reading-bookmark__dismiss inline-flex items-center justify-center cursor-pointer w-6 h-6 rounded-full text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-    >
-        <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 10-1.06-1.06L10 8.94 6.28 5.22z" />
-        </svg>
-    </button>
+        <span class="wk-reading-bookmark__label">{{ $resumePrompt }}</span>
+        {{-- Both controls spell out `cursor-pointer` because nothing else supplies
+             it: Tailwind v4's preflight sets `cursor: default` on `button` (v3
+             inherited the user agent's pointer), and `.wk-reading-bookmark__resume`
+             and `__dismiss` carry no declarations in dist/wirekit.css — the class
+             names are hooks for a developer, not styles. Without it the prompt
+             reads as static text. --}}
+        <button
+            type="button"
+            @click="resume()"
+            class="wk-reading-bookmark__resume inline-flex items-center cursor-pointer px-3 py-1 rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-[length:var(--text-wk-xs)] font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
+        >
+            Resume
+        </button>
+        <button
+            type="button"
+            @click="dismiss()"
+            aria-label="{{ __('wirekit::Dismiss') }}"
+            class="wk-reading-bookmark__dismiss inline-flex items-center justify-center cursor-pointer w-6 h-6 rounded-full text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+        >
+            <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 10-1.06-1.06L10 8.94 6.28 5.22z" />
+            </svg>
+        </button>
+    </div>
 </div>

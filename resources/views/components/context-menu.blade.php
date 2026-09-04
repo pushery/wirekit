@@ -55,6 +55,20 @@
 <div
     x-data="wirekitContextMenu()"
     x-on:keydown="handleKeydown"
+    {{-- Escape is ALSO bound on the window, and not only through handleKeydown.
+
+         handleKeydown only ever sees a keypress that bubbles through this wrapper or
+         through the panel, and there are states where the keypress does neither: a menu
+         whose items are all disabled focuses nothing on open, and a click on the panel's
+         own padding drops focus back to the document. In those states the menu is open,
+         visible, and Escape reached nothing — a mouse user who right-clicked had no way
+         to dismiss it (WCAG 2.1.1).
+
+         `open &&` keeps it inert while closed, so a page full of context menus does not
+         answer every Escape on the page. It cannot double-close either: when focus IS on
+         an item the panel handler runs first and flips `open`, and this guard then reads
+         false. Same binding, same reason, as dropdown.blade.php. --}}
+    x-on:keydown.escape.window="open && close()"
     {{ $attributes->class([$wrapperClasses]) }}
 >
     {{-- Trigger — the area that responds to right-click (desktop) and to a
@@ -89,6 +103,22 @@
         <div
             x-ref="panel"
             x-show="open"
+            {{-- The menu keyboard model is bound HERE too, not only on the wrapper.
+
+                 `x-teleport` MOVES this element to `#wk-overlay-root`; it does not re-route
+                 the events it fires. So the moment focus sits on a menu item, a keydown
+                 bubbles from here to the overlay root and on to the document, and never
+                 passes through the wrapper — where `x-on:keydown="handleKeydown"` was the
+                 only binding. Arrow keys, Home and End did nothing, in every teleported
+                 context menu, which is the default. The wrapper binding is kept because it
+                 is what serves a keypress made while focus is still on the trigger.
+
+                 Alpine preserves the `x-data` scope across the teleport, so `handleKeydown`
+                 resolves to the same component instance; and a node outside the wrapper
+                 cannot bubble through it, so the two bindings cannot both fire for one
+                 keypress. The identical fix, for the identical reason, is on
+                 dropdown/panel.blade.php and menubar/menu.blade.php. --}}
+            x-on:keydown="handleKeydown"
             x-on:click.outside="close()"
             x-transition:enter="transition ease-out duration-100"
             x-transition:enter-start="opacity-0 scale-95"

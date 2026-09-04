@@ -125,7 +125,7 @@ final class ApexChartsAdapter implements ChartAdapter
             ],
             // Tooltip — uniform BEHAVIOR + STYLING across every apex demo,
             // modeled on the /components/charts-apex/scatter-bubble Basic
-            // Example which the user signaled as canonical.
+            // Example, the one shape that reads correctly for every type.
             //
             // `shared: false` + `intersect: true`: tooltip fires when the
             // cursor is ON a data element (bar / bubble / line point / pie
@@ -182,14 +182,16 @@ final class ApexChartsAdapter implements ChartAdapter
         return [
             // Direct mappings — types where ApexCharts and Chart.js use the same vocabulary.
             'bar', 'line', 'area', 'pie', 'doughnut', 'radar', 'polarArea', 'scatter', 'bubble',
-            // ApexCharts-only types (Section 6.2)
+            // ApexCharts-only types.
             'candlestick', 'boxplot', 'range-bar', 'range-area', 'heatmap', 'treemap',
             'funnel', 'radial-bar', 'sparkline',
             // ApexCharts has no native 'column' type — vertical bars are `bar` with
             // plotOptions.bar.horizontal: false (the default). Accept `column` on
             // input as a synonym for vertical bars and rely on mapType() to translate.
             'column',
-            // Promoted-extension types (Section 12)
+            // Composite types with no ApexCharts base type of their own — both
+            // map to `line` and are distinguished by their series / annotation
+            // configuration rather than by the chart type ApexCharts is given.
             'mixed',
             'annotated',
         ];

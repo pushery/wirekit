@@ -98,8 +98,8 @@ export default function wirekitEventCalendar(config = {}) {
             // month + year. The end side ALWAYS formats month+day+year: a
             // day+year-only option set is an invalid ICU combination that real
             // browsers render as fallback garbage ("2026 (day: 14)") even though
-            // Node's ICU happens to produce something sane — caught by the
-            // EventCalendarWeekColumnsTest screenshot.
+            // Node's ICU happens to produce something sane. Only a real browser
+            // shows it, which is why the header formatting is asserted there.
             if (this.view === 'month') {
                 return this.focus.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
             }

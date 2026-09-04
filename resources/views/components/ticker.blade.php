@@ -67,16 +67,41 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // Delta aria label for screen readers
-    $deltaAriaLabel = $delta !== null
-        ? 'Change: ' . ($delta > 0 ? 'up' : ($delta < 0 ? 'down' : 'unchanged')) . ' ' . abs($delta) . ($deltaFormat === 'percent' ? ' percent' : '')
+    // Delta aria label for screen readers.
+    //
+    // Through the catalog rather than built from English words: this string lives
+    // in PHP, so the guard that catches an untranslated literal in a template never
+    // looked at it, and a fully German dashboard announced "Change: up 12 percent".
+    // One key per direction instead of a sentence assembled from fragments — word
+    // order is not the same in every language, and "up" alone cannot be translated
+    // correctly without knowing what follows it.
+    //
+    // The magnitude carries its own unit sign, which every screen reader expands in
+    // the reader's own language ("8.4%" → "8,4 Prozent"), so the unit does not need
+    // a key of its own and the number matches the one on screen.
+    $deltaMagnitude = $delta !== null
+        ? abs(is_numeric($delta) ? $delta : (float) ltrim((string) $delta, '+')).($deltaFormat === 'percent' ? '%' : '')
         : null;
 
-    $tickerId = 'ticker-' . md5($label ?? 'default');
+    $deltaAriaLabel = match (true) {
+        $delta === null => null,
+        $delta > 0 => __('wirekit::Change: up :value', ['value' => $deltaMagnitude]),
+        $delta < 0 => __('wirekit::Change: down :value', ['value' => $deltaMagnitude]),
+        default => __('wirekit::Change: unchanged'),
+    };
+
+    // Page-unique, and NOT derived from the label. `md5($label)` gave every ticker
+    // with the same heading the same id — two "Revenue" cards on one dashboard, or
+    // any two tickers with no label at all, and the second `<article>` was named by
+    // the first one's label while axe reported a duplicate id. See Support\DomId.
+    $tickerId = \Pushery\WireKit\Support\DomId::unique($attributes->get('id'), 'ticker-');
 @endphp
 
+{{-- `aria-labelledby` only when there is a label to point at: an <article> whose
+     name resolves to an empty element is worse than an unnamed one, because
+     assistive technology announces the landmark and then has nothing to say. --}}
 <article
-    aria-labelledby="{{ $tickerId }}-label"
+    @if(filled($label)) aria-labelledby="{{ $tickerId }}-label" @endif
     {{ $attributes->class([$baseClasses]) }}
 >
     {{-- Label --}}
@@ -93,9 +118,15 @@
             {{ $value }}
         </span>
         @if($formattedDelta !== null)
+            {{-- `role="img"` because the name below has to survive: `aria-label` is
+                 prohibited on the implicit `generic` role of a bare <span>, so screen
+                 readers were free to drop it — and mostly did, leaving "+8.4%" with
+                 no direction and the documented announcement never happening. A span
+                 with an image role is the same shape the sparkline below uses: the
+                 visible glyph stays, and the name says what it means. --}}
             <span
+                @if($deltaAriaLabel) role="img" aria-label="{{ $deltaAriaLabel }}" @endif
                 class="{{ $deltaClasses }} text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] tabular-nums"
-                @if($deltaAriaLabel) aria-label="{{ $deltaAriaLabel }}" @endif
             >
                 {{ $formattedDelta }}
             </span>

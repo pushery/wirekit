@@ -129,7 +129,20 @@
     @if($tag === 'a') href="{{ $href }}" @endif
     data-wk-attachment
     data-state="{{ $stateValue }}"
-    @unless($splitLink) aria-label="{{ $accessibleName }}" @endunless
+    {{-- WAI-ARIA 1.2 forbids author naming on an element with an implicit
+         role="generic", so the composed name ("contract.pdf, PDF, 2.4 MB,
+         Uploaded") was not reliably exposed whenever the card was NOT a link —
+         the anchor branch carries its own role, the div branch carried none and
+         axe reports aria-prohibited-attr on it. `role="group"` names the card
+         without promoting it to a landmark; it rides with the label rather than
+         being emitted on its own, because a group with no accessible name is
+         noise in the tree instead of structure. Same shape as accordion. --}}
+    @unless($splitLink)
+        @if(filled($accessibleName))
+            @if($tag === 'div') role="group" @endif
+            aria-label="{{ $accessibleName }}"
+        @endif
+    @endunless
     {{ $attributes->class([$rootClasses]) }}
 >
     {{-- Link over the media+name only when there are also actions, so the action

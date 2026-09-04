@@ -7,7 +7,7 @@ namespace Pushery\WireKit\Icons\Presets;
 use Pushery\WireKit\Contracts\IconPreset;
 
 /**
- * Phosphor preset — regular weight, 1500+ icons in 6 styles.
+ * Phosphor preset — regular weight, one of the six styles the set ships.
  *
  * Uses the regular weight (no suffix) for all aliases.
  *
@@ -50,7 +50,7 @@ final class PhosphorPreset implements IconPreset
             'filter' => 'phosphor-funnel',
             'external-link' => 'phosphor-arrow-square-out',
 
-            // common dashboard icons.
+            // The common dashboard icons.
             'home' => 'phosphor-house',
             'moon' => 'phosphor-moon',
             'sun' => 'phosphor-sun',
@@ -82,6 +82,16 @@ final class PhosphorPreset implements IconPreset
             'gift' => 'phosphor-gift',
             'list-bullets' => 'phosphor-list-bullets',
             'list-checks' => 'phosphor-list-checks',
+
+            // The text-formatting marks a composer toolbar is built from — see
+            // `HeroiconsPreset` for why the group was closed and how the targets were
+            // verified. Phosphor spells the first four `text-*`, and its bold mark is
+            // `text-b`, the bold letterform rather than a heavier stroke weight.
+            'bold' => 'phosphor-text-b',
+            'italic' => 'phosphor-text-italic',
+            'strikethrough' => 'phosphor-text-strikethrough',
+            'underline' => 'phosphor-text-underline',
+            'list-numbers' => 'phosphor-list-numbers',
             'lock-key' => 'phosphor-lock-key',
             'map-pin' => 'phosphor-map-pin',
             'percent' => 'phosphor-percent',
@@ -144,7 +154,7 @@ final class PhosphorPreset implements IconPreset
             // phosphor `arrow-counter-clockwise`, heroicons `arrow-uturn-left` — four real
             // undo glyphs, not four things that look roughly alike.
             // FIVE NAMES WERE PROPOSED FOR THIS VOCABULARY AND ARE DELIBERATELY ABSENT.
-            // Written here rather than left to a ticket, because the next person to see the
+            // Written here rather than somewhere else, because the next person to see the
             // gap will see it in this file:
             //
             //   `arrow-counter-clockwise` — literally the TARGET of the alias below. Adding
@@ -199,7 +209,7 @@ final class PhosphorPreset implements IconPreset
             // settings/gear, book/book-open and billing/credit-card.
             'stack' => 'phosphor-stack',
 
-            // ─── The overflow affordance, and five words a consuming project
+            // ─── The overflow affordance, and five words an adopting application
             // reached for and did not find.
             //
             // EVERY ONE OF THESE IS A TRUE COGNATE IN ALL FOUR INTERCHANGEABLE

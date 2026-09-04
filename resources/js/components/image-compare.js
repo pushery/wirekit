@@ -20,6 +20,15 @@ export default function wirekitImageCompare(config = {}) {
 
         // Internal state ─────────────────────────────────────────────
         _dragging: false,
+        // The document-level drag listeners, held under `_` names rather than in
+        // the closure that created them. Two reasons, and the second is the one
+        // that made the change worth making: a drag that is torn down mid-gesture
+        // (a Livewire morph, a conditional render flipping) never reaches its own
+        // pointerup, so a closure-held pair stays on `document` with a dead scope
+        // behind it — and the cleanup tooling greps for `this._`, so listeners
+        // without such a name are invisible to it even when they are correct.
+        _moveHandler: null,
+        _upHandler: null,
         _wireModel: config.wireModel ?? null,
         _wireLive: config.wireLive === true,
 
@@ -68,6 +77,26 @@ export default function wirekitImageCompare(config = {}) {
         // leaves the component bounds.
         startDrag(event) {
             event.preventDefault();
+
+            // Canceling pointerdown also cancels the FOCUS it would have moved to the
+            // pressed control — that move is part of the default action, and this component
+            // had no other route to it: there was no focus call in the file at all. Without
+            // this line the handle the reader just grabbed is not the focused element, so
+            // the focus ring never appears and the ArrowRight pressed to fine-tune scrolls
+            // the page instead of moving the divider. That pointer-then-keyboard sequence is
+            // how a compare slider is used, not an edge case. Measured in Chromium before
+            // the fix: `document.activeElement` was still `body` after a real click on the
+            // handle. Same defect, same fix, as the sibling range-slider.
+            //
+            // `preventScroll` because the control is already under the pointer — there is
+            // nothing to bring into view, and scrolling here would pull the track out from
+            // under the gesture that is starting.
+            this._sliderHandle(event)?.focus?.({ preventScroll: true });
+
+            // A second pointerdown without an intervening pointerup would otherwise
+            // overwrite the handles below and strand the previous pair on document.
+            this._releaseDragListeners();
+
             this._dragging = true;
 
             // Cache the track's rect ONCE per drag — it's stationary while dragging,
@@ -75,25 +104,88 @@ export default function wirekitImageCompare(config = {}) {
             // would force a needless layout read per frame. The click path keeps
             // reading fresh (the track may have shifted since the last drag).
             const dragRect = this.$refs.track ? this.$refs.track.getBoundingClientRect() : null;
-            const onMove = (e) => this._setFromPointer(e, dragRect);
-            const onUp = () => {
+
+            this._moveHandler = (e) => this._setFromPointer(e, dragRect);
+            this._upHandler = () => {
+                this._releaseDragListeners();
                 // Defer clearing the drag flag by a microtask so the trailing
                 // click event (from the same pointer sequence) still sees
                 // _dragging === true and is ignored by onTrackClick.
                 queueMicrotask(() => {
                     this._dragging = false;
                 });
-                document.removeEventListener('pointermove', onMove);
-                document.removeEventListener('pointerup', onUp);
-                document.removeEventListener('pointercancel', onUp);
             };
 
-            // Passive — onMove only reads pointer coords + sets the divider
-            // position; it never calls preventDefault (the pointerdown does,
-            // to suppress native drag), so it must not block scroll.
-            document.addEventListener('pointermove', onMove, { passive: true });
-            document.addEventListener('pointerup', onUp);
-            document.addEventListener('pointercancel', onUp);
+            // Passive — the move handler only reads pointer coords + sets the
+            // divider position; it never calls preventDefault (the pointerdown
+            // does, to suppress native drag), so it must not block scroll.
+            document.addEventListener('pointermove', this._moveHandler, { passive: true });
+            document.addEventListener('pointerup', this._upHandler);
+            // pointercancel ends a drag too, and NO pointerup follows it — the
+            // browser fires it when it takes the pointer away (a touch that turns
+            // into a scroll, a system gesture).
+            document.addEventListener('pointercancel', this._upHandler);
+        },
+
+        /**
+         * The element that must end up focused, which is NOT always the one pressed.
+         *
+         * `startDrag` is bound on two elements: the handle, which carries `role="slider"`
+         * and every keyboard binding, and the track behind it, which starts a drag when the
+         * reader presses empty space. So `event.currentTarget` — the obvious answer, and the
+         * one the sibling range-slider can use because its binding sits on the thumb alone —
+         * is the track on one of the two paths. Focusing the track would be worse than
+         * focusing nothing: it is `aria-hidden` with `tabindex="-1"`, so it announces nothing
+         * AND leaves the arrow keys, which are bound on the handle, still unreachable.
+         *
+         * Resolved by role rather than by a ref: the role is the property that matters here,
+         * it is already in the markup for assistive technology, and it cannot drift out of
+         * step with the element the keyboard bindings sit on the way a second ref could.
+         *
+         * Fully optional-chained because the ESM factory tests construct this component
+         * against a deliberately barren stub with no `$root` and a bare `Event`.
+         */
+        _sliderHandle(event) {
+            const pressed = event?.currentTarget;
+
+            if (pressed?.matches?.('[role="slider"]')) {
+                return pressed;
+            }
+
+            return this.$root?.querySelector?.('[role="slider"]') ?? null;
+        },
+
+        /**
+         * Take the drag listeners back off `document`.
+         *
+         * Guarded on `_moveHandler` so calling it when no drag is running removes
+         * nothing — which is what lets both the pointerup path and destroy() go
+         * through the same method without either having to know about the other.
+         */
+        _releaseDragListeners() {
+            if (! this._moveHandler) {
+                return;
+            }
+
+            document.removeEventListener('pointermove', this._moveHandler);
+            document.removeEventListener('pointerup', this._upHandler);
+            document.removeEventListener('pointercancel', this._upHandler);
+            this._moveHandler = null;
+            this._upHandler = null;
+        },
+
+        /**
+         * Alpine tears the component down — a Livewire morph, a conditional render
+         * flipping, an SPA navigation — and a drag in flight ends with it.
+         *
+         * Without this the pointermove listener outlives the element it was moving:
+         * it holds the scope (and through `$refs` the removed node) for as long as
+         * the page lives, and every frame of the reader's next unrelated drag runs
+         * a handler for a component that is gone.
+         */
+        destroy() {
+            this._releaseDragListeners();
+            this._dragging = false;
         },
 
         _setFromPointer(event, cachedRect = null) {

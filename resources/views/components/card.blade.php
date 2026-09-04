@@ -29,6 +29,15 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('card', $attributes->getAttributes());
 
+    // `$as` ends up interpolated into the opening tag below (through `$tag`), and Blade's
+    // escaping does not make that safe: `e()` escapes neither a space nor an `=`, so
+    // `as="div onmouseover=alert(1)"` would arrive as a working event handler. `tagName()`
+    // checks the SHAPE rather than an allowlist — an enum has to guess which elements a
+    // developer legitimately wants, and `article` is exactly the kind a guess omits.
+    // Validated here rather than beside `$tag`, because the interactive-affordance check
+    // further down reads `$as` too and both must see the same sanitized value.
+    $as = WireKit::tagName('card', (string) $as);
+
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'card');
 
     // Written out in full rather than built as "overflow-{$overflow}". Tailwind
@@ -83,10 +92,50 @@
         default => WireKit::validateProp('card', 'variant', $variant, ['outlined', 'elevated', 'flat']),
     };
 
-    // Hover shadow only when rendered as a link (interactive)
-    $interactiveClasses = $href
-        ? 'hover:shadow-[var(--shadow-wk-lg)] cursor-pointer block'
-        : '';
+    // The interactive treatment is keyed on whether the card DOES something when it is
+    // clicked, not on whether it happens to render an `<a>`. The condition used to read
+    // `$href ? …`, and its comment said "when rendered as a link (interactive)" — which
+    // equated link with interactive. That stopped being true the moment `as` arrived:
+    // `as="button"` got the card frame and no affordance at all, so a card that acts on
+    // click looked exactly like a card that does nothing. Same class as the
+    // `surface="soft"` hover state added in v2.43.0 — an element that does not answer
+    // the pointer reads as not clickable. Reported from a consuming project that was
+    // hand-rolling clickable cards out of a raw `<button>` plus tokens plus its own
+    // `cursor-pointer`, because the component would not look clickable.
+    $hasClickBinding = false;
+    foreach ($attributes->getAttributes() as $attributeKey => $_) {
+        if (! is_string($attributeKey)) {
+            continue;
+        }
+
+        // Both Alpine spellings, because Blade keeps `@click` verbatim in the bag (its
+        // component-tag attribute pattern admits `@`) and never rewrites it to `x-on:` —
+        // checking one spelling would silently miss half the callers. `str_starts_with`
+        // rather than equality so modifiers ride along: `wire:click.prevent`,
+        // `@click.stop`, `x-on:click.away`.
+        if (str_starts_with($attributeKey, 'wire:click')
+            || str_starts_with($attributeKey, '@click')
+            || str_starts_with($attributeKey, 'x-on:click')
+            || $attributeKey === 'onclick') {
+            $hasClickBinding = true;
+            break;
+        }
+    }
+
+    $isInteractive = (bool) $href
+        || (string) $as === 'button'
+        || $attributes->get('role') === 'button'
+        || $hasClickBinding;
+
+    // `block` stays with the anchor and is deliberately NOT part of the interactive set:
+    // an `<a>` is inline and needs it to fill the card's box, which makes it a display
+    // fix rather than an affordance. Putting it on the interactive branch would change
+    // the width of every card that already renders as a `<button>` (inline-block by
+    // default) — a layout change nobody asked for, in a release that may not break.
+    $interactiveClasses = trim(
+        ($isInteractive ? 'hover:shadow-[var(--shadow-wk-lg)] cursor-pointer ' : '')
+        .($href ? 'block' : '')
+    );
 
     // Render as <a> when href given, otherwise use $as tag (default: div)
     $tag = $href ? 'a' : $as;

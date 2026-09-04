@@ -1,9 +1,8 @@
 {{-- optimistic-ui: supported
-     The second component through the gate, and the first whose value this layer
-     does NOT own — the shape twenty-six of the remaining candidates have. The
-     optimistic scope nests INSIDE this component and binds to `rating`; the
-     direction is not interchangeable, because a nested Alpine component reads
-     and writes its parent's properties and never the reverse.
+     This layer does NOT own the value it shows. The optimistic scope nests INSIDE
+     this component and binds to `rating`; the direction is not interchangeable,
+     because a nested Alpine component reads and writes its parent's properties
+     and never the reverse.
 
      Its labels were never in the way: the per-star label names the button's
      POSITION, so building it on the server is correct and does not block the
@@ -29,6 +28,26 @@
     'value' => 0,
     'max' => 5,
     'icon' => 'star',
+    // Let the reader take the score back.
+    //
+    // This control implements the ARIA radiogroup model, and a radiogroup has
+    // no way back to "nothing chosen" — a native radio cannot be deselected
+    // from the keyboard either. By that measure the old behavior was correct,
+    // which is why this is a prop and not a fix: lowering the floor for
+    // everybody would change a documented model for every existing call site.
+    //
+    // It is opt-in because the two places a rating is most often used are not
+    // radiogroups in spirit. A filter facet and an optional form field both
+    // need "no opinion" to survive a mis-click; without it the server receives
+    // a score nobody meant to give, and the zero state this component renders
+    // and documents is reachable only until the first interaction.
+    //
+    // The gesture is picking the chosen star again, plus stepping down past the
+    // first one. A separate clear control was the alternative and was not
+    // taken: it puts a permanent extra element and an extra tab stop on every
+    // rating on the page — including the majority that never clear — and it
+    // needs a label and a position that only the call site knows.
+    'clearable' => false,
     'readonly' => false,
     'size' => config('wirekit.components.rating.size', 'md'),
     'scope' => null,
@@ -41,6 +60,13 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $readonly = BooleanProp::from($readonly, false);
+    $clearable = BooleanProp::from($clearable, false);
+
+    // The seed stays byte-identical when the feature is off. It is an attribute
+    // a Livewire morph rewrites, and Alpine re-initializes on the change — so a
+    // key added unconditionally is a key added to every render of every rating
+    // in the fleet, for a feature almost none of them asked for.
+    $ratingSeed = '{ max: '.$max.($clearable ? ', clearable: true' : '').' }';
 
     use Pushery\WireKit\WireKit;
     use Pushery\WireKit\Support\LocalizedNumber;
@@ -58,9 +84,12 @@
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'rating-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
-    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
-    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
-    $attributes = $attributes->except('id');
+    // Strip the caller's `id` AND `name` from the bag: the deduped $id is rendered
+    // explicitly as id="{{ $id }}", so leaving it in the bag would emit a second,
+    // conflicting id attribute. `name` belongs on the hidden input below, which renders
+    // it explicitly — left in the bag it also lands on the wrapper, where `name` is not
+    // a valid attribute at all and does nothing but fail a validator.
+    $attributes = $attributes->except(['id', 'name']);
 
     $wrapperClasses = WireKit::resolveClasses('rating', 'base', implode(' ', [
         'inline-flex flex-col gap-1',
@@ -160,7 +189,7 @@
              byte-identical across renders leaves the scope alone, so
              `data-wk-server-value` + observeServerValue is the one update path.
              The factory reads that same attribute at init. --}}
-    x-data="wirekitRating({ max: {{ $max }} })"
+    x-data="wirekitRating({{ $ratingSeed }})"
 >
     @if($label)
         @if($readonly)
@@ -287,8 +316,27 @@
                 <button
                     type="button"
                     role="radio"
+                    {{-- EQUALITY, not the fill threshold — and both attributes have
+                         to agree on that.
+
+                         The readonly branch above records why: a radiogroup is
+                         single-select, so marking every star up to the score
+                         announces "4 stars, selected, 3 stars, selected, …" and
+                         leaves the reader unable to tell which score is chosen.
+                         That was corrected in the static markup and in the
+                         readonly path, and the reactive binding kept the old
+                         `>=` shape — so the defect simply reappeared the moment
+                         Alpine booted, on the one path a pre-hydration scan
+                         cannot see.
+
+                         The FILL is a different question and legitimately keeps
+                         `>=`: three lit stars are how a score of three looks.
+                         That threshold lives in the SVG `:class` below, where it
+                         says something about paint rather than about state. The
+                         roving `:tabindex` further down already compares for
+                         equality, for the same single-select reason. --}}
                     aria-checked="{{ (int) $value === $i ? 'true' : 'false' }}"
-                    :aria-checked="rating >= {{ $i }} ? 'true' : 'false'"
+                    :aria-checked="rating === {{ $i }} ? 'true' : 'false'"
                     {{-- Translated, like every other label on this component. And
                          built on the SERVER on purpose: this names the button's
                          POSITION, which never changes — unlike a label that
@@ -299,8 +347,17 @@
                     @if($optimisticConfig)
                         {{-- run() writes through the binding, announces, and
                              fires the Livewire method; select() would write the
-                             value directly and skip the snapshot. --}}
-                        @click="run({{ $i }})"
+                             value directly and skip the snapshot.
+
+                             `clearTarget()` rather than a ternary spelled out
+                             here: run() takes the value to show while the
+                             request is in flight, and whether picking this star
+                             means "set it" or "take it back" is the rating
+                             factory's decision — the same one select() makes on
+                             the non-optimistic path. A nested call parses under
+                             Alpine's CSP grammar; verified against Alpine's own
+                             parser, not assumed. --}}
+                        @click="run(clearTarget({{ $i }}))"
                         x-bind:aria-busy="isPending"
                     @else
                         @click="select({{ $i }})"

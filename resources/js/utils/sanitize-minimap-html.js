@@ -36,7 +36,7 @@
  *  authenticated cookie state to a third-party server. We strip
  *  inline <style> on the way in; developer CSS arrives in the iframe
  *  via explicit <link rel="stylesheet"> injection of the parent's
- *  same-origin stylesheets (see reading-minimap.js _buildIframe()).
+ *  same-origin stylesheets (see reading-minimap.js _positionHoverPreview()).
  *
  *  Why this is NOT a general-purpose sanitizer:
  *  It's tuned for the specific use case of "scaled-down decorative

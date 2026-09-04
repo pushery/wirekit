@@ -123,12 +123,15 @@
         $statusRingStyle = "box-shadow: 0 0 0 {$gap}px var(--color-wk-bg-elevated), 0 0 0 {$total}px {$ringColor}";
     }
 
-    // Status dot accessibility labels (for screen readers)
+    // Status dot accessibility labels (for screen readers). Through the catalog,
+    // like every other label WireKit renders on the developer's behalf — these
+    // four were the only presence strings still typed in English, so a fully
+    // translated application announced its own avatars in a second language.
     $statusLabel = match ($status) {
-        'online' => 'Online',
-        'busy' => 'Busy',
-        'away' => 'Away',
-        'offline' => 'Offline',
+        'online' => __('wirekit::Online'),
+        'busy' => __('wirekit::Busy'),
+        'away' => __('wirekit::Away'),
+        'offline' => __('wirekit::Offline'),
         default => null,
     };
 @endphp
@@ -163,8 +166,15 @@
     @endif
 
     @if($statusColor && $statusVariant === 'dot')
+        {{-- role="img", not role="status". The dot is a standing fact about the
+             person, not something that just happened: role="status" makes it a
+             live region, and an empty live region carrying only an aria-label is
+             not reliably read in browse mode — so the presence state reached a
+             screen reader as color alone. An icon that carries information is an
+             image with a name, and a name on it is announced wherever the avatar
+             is read, in browse mode as well as in focus mode. --}}
         <span
-            role="status"
+            role="img"
             aria-label="{{ $statusLabel }}"
             @class([
                 'absolute bottom-0 right-0',
@@ -177,6 +187,10 @@
     @endif
 
     @if($status && $statusVariant === 'ring' && $statusLabel)
-        <span role="status" aria-label="{{ $statusLabel }}" class="sr-only"></span>
+        {{-- The ring variant has no dot to name, so the label is real text in an
+             sr-only span rather than an aria-label on an empty element. Text
+             content is read in every mode; an aria-label on an empty span with a
+             live-region role is read in almost none. --}}
+        <span class="sr-only">{{ $statusLabel }}</span>
     @endif
 </span>

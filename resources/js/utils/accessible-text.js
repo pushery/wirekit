@@ -6,8 +6,8 @@
  * label from a heading — a table of contents, a spine, a minimap — is exactly the kind of
  * reader that should honor it.
  *
- * WHAT THIS FIXES, reported from the documentation site on 2026-08-29. Every automatic
- * anchor tool puts the permalink marker inside the heading as a real text node:
+ * WHAT THIS FIXES. Every automatic anchor tool puts the permalink marker inside the
+ * heading as a real text node:
  *
  *     <h2 id="basic-usage">
  *       <a href="#basic-usage" class="heading-permalink">
@@ -18,7 +18,8 @@
  * So every entry rendered as "#Basic Usage". It is invisible on screen (the span is
  * transparent until hover) and invisible to assistive technology (the `aria-hidden` does
  * its job), which is what made it easy to ship: nothing counts wrong, no test that measures
- * entry COUNTS notices, and the panel simply reads badly. It was found in a screenshot.
+ * entry COUNTS notices, and the panel simply reads badly — it is only ever visible to a
+ * person looking at the rendered panel.
  *
  * WHY A CLONE. Removing the nodes in place would mutate the page — the marker would
  * disappear from the heading itself. Cloning costs one shallow tree copy per heading, and

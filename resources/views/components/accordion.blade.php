@@ -14,6 +14,16 @@
     // Row density. 'md' is the default trigger/panel padding; 'lg' is roomier
     // (larger padding + trigger text) for marketing / spacious layouts.
     'size' => config('wirekit.components.accordion.size', 'md'),
+    // Heading level each item's trigger is wrapped in (1–6). Defaults to 3, which
+    // is what every accordion shipped before this prop existed. The ARIA authoring
+    // practices require the level to be "appropriate for the information
+    // architecture of the page", and that is a property of the PAGE, not of the
+    // widget: an accordion sitting directly under the page <h1> wants level 2,
+    // one inside an <h2> section wants 3, and a fixed <h3> produces a skipped or
+    // flattened outline in every other position. Screen-reader heading navigation
+    // is where that shows up, so nothing on screen reports it. Items read this
+    // through @aware — the level belongs to the group, not to one row.
+    'level' => 3,
     'scope' => null,
 ])
 
@@ -80,6 +90,14 @@
          mode is a validated enum, so it goes in as a plain quoted literal
          rather than through {{ \Pushery\WireKit\Support\AlpinePayload::from() }}. --}}
     x-data="wirekitAccordion({ mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }} })"
+    {{-- Arrow keys, Home and End move focus between the headers — the model the
+         component's documented keyboard table promises. The handler sits on the
+         root rather than on each button because the headers are rendered by the
+         item sub-component, which cannot see its siblings; the keydown bubbles
+         here, where the whole list is one query away. It reads the headers from
+         the DOM on every press, so an item added or removed between two presses
+         cannot leave focus pointing into a list that no longer exists. --}}
+    x-on:keydown="handleKeydown($event)"
     data-wk-accordion-mode="{{ $mode }}"
     {{-- WAI-ARIA 1.2 forbids author naming on an element with an implicit
          role="generic": a bare <div> carrying aria-label is not reliably exposed

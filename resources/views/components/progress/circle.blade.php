@@ -87,20 +87,43 @@
     // apart on every tick. A progress indicator that polls is the normal case, not an
     // edge one.
     $labelId = \Pushery\WireKit\Support\DomId::unique(null, 'progress-circle-').'-label';
+
+    // Pull the caller's name off the wrapper so it can go on the element that
+    // carries the role. The ARIA contract lives on the `svg`, not on the `div`
+    // around it, and an `aria-label` left on the wrapper names nothing.
+    // Same extraction, same reason, as the linear progress one directory up.
+    $ariaLabelAttr = $attributes->get('aria-label');
+    $ariaLabelledbyAttr = $attributes->get('aria-labelledby');
+    $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 @endphp
 
 <div {{ $attributes->class([$wrapperClasses]) }}>
     {{-- SVG circular progress indicator --}}
     <div class="relative {{ $dimensions }}">
+        {{-- An accessible name is MANDATORY on anything carrying role="progressbar"
+             (axe-core's progressbar-name rule), and it used to depend on which branch
+             the value took: the name was attached beside the indeterminate arc, so a
+             determinate circle with no `label` — `value="40"` and nothing else, the
+             shortest call there is — rendered a progressbar nobody could announce. The
+             name is unconditional now and the value branch below carries only values.
+             Sourced in the same order as the linear progress:
+               1. `label` prop (visible under the circle)
+               2. `aria-labelledby` from the caller
+               3. `aria-label` from the caller
+               4. a generic fallback so the element always has SOME name — "Loading"
+                  while there is no value to read out, "Progress" once there is. --}}
         <svg
             role="progressbar"
-            @if($label) aria-labelledby="{{ $labelId }}" @endif
+            @if($label) aria-labelledby="{{ $labelId }}"
+            @elseif($ariaLabelledbyAttr) aria-labelledby="{{ $ariaLabelledbyAttr }}"
+            @elseif($ariaLabelAttr) aria-label="{{ $ariaLabelAttr }}"
+            @elseif($isIndeterminate) aria-label="{{ __('wirekit::Loading') }}"
+            @else aria-label="{{ __('wirekit::Progress') }}"
+            @endif
             @if(! $isIndeterminate)
                 aria-valuenow="{{ (int) $clamped }}"
                 aria-valuemin="0"
                 aria-valuemax="{{ (int) $max }}"
-            @else
-                aria-label="{{ __('wirekit::Loading') }}"
             @endif
             class="w-full h-full -rotate-90"
             viewBox="0 0 36 36"

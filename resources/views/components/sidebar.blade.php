@@ -59,6 +59,19 @@
     // An outside trigger reaches this sidebar through the `wirekit:sidebar:toggle`
     // window event instead; see the docs page.
     'toggle' => 'end',
+    // WHICH SIDE OF THE CONTENT this column stands on: 'start' (default) or 'end'.
+    //
+    // It decides two things a reader reads as one — where the separator is drawn, and which
+    // way the collapse chevron points. Both belong on the edge that FACES the content: a
+    // details panel on the trailing side draws its rule on its leading edge and closes to
+    // the right, and the mirror image of that is a rule on the page margin and a chevron
+    // pointing into the panel it is closing.
+    //
+    // ⚠️ NOT derivable from `toggle`, which was tried and measured wrong. `toggle` says
+    // where the CONTROL sits inside the column, not which side the column is on — the
+    // multi-column shell uses `toggle="start"` for a list on the left AND a details panel
+    // on the right, so the inference would have broken the list to fix the panel.
+    'side' => 'start',
     // Optional storage key — persists the collapsed state across reloads.
     'persist' => null,
     // WHERE that choice is remembered: 'local' (default) or 'cookie'.
@@ -219,9 +232,29 @@
     // than as a base with exceptions bolted on. `border-e` is the LOGICAL
     // inline-end edge, so a right-to-left document gets the separator on the side
     // that faces its content instead of the side that faces the page margin.
+    // The edge that faces the content, written out as two LITERAL class names.
+    //
+    // `'border-'.$edge.'-[length:…]'` reads better and is invisible to Tailwind: the scanner
+    // reads text, so a class assembled from fragments appears nowhere in this file and is
+    // emitted into no stylesheet. Both sides would have lost their separator entirely, and
+    // the drift guard caught exactly that. Both spellings stay whole here.
+    //
+    // LOGICAL edges, so a right-to-left document mirrors with the writing direction rather
+    // than against it.
+    $contentEdgeBorder = $side === 'end'
+        ? 'border-s-[length:var(--border-wk-width)]'
+        : 'border-e-[length:var(--border-wk-width)]';
+
+    // Computed here rather than assembled inside the attribute: a ternary built from string
+    // fragments in a Blade echo is one missing quote away from emitting `collapsed ?  :`,
+    // a JavaScript syntax error that only shows up in the reader's console.
+    $chevronFlip = $side === 'end'
+        ? "collapsed ? '' : 'rotate-180'"
+        : "collapsed ? 'rotate-180' : ''";
+
     $surface = $variant === 'flush'
         ? [
-            'border-e-[length:var(--border-wk-width)]',
+            $contentEdgeBorder,
             $toneBorder,
             // Fills its column. Only the browser showed why this is needed: the edge
             // is drawn on THIS element, so a nav sized to its content ends the
@@ -288,7 +321,10 @@
     // that depends on the vendor's child order and breaks the moment anything is
     // rendered before it.
     $collapseBtnClasses = WireKit::resolveClasses('sidebar', 'toggle', implode(' ', [
-        $toggle === 'start' ? 'self-start' : 'self-end',
+        // Column-scoped placement, and only while the button IS a column child. Inside the
+        // footer band these three say nothing, and `mt-auto` would fight the band's own
+        // vertical centering.
+        isset($footer) ? '' : ($toggle === 'start' ? 'self-start' : 'self-end'),
         // BOTTOM of the column, and never touching the row above it.
         //
         // It used to be the first child, which put it at the top — while the documentation
@@ -299,19 +335,43 @@
         // `mt-auto` claims the leftover height when the column is taller than its content;
         // with a short list it simply ends up last, which is the same thing to look at.
         //
-        // The spacing is not decoration and does NOT live here: two `mt-` utilities on one
-        // element fight, and the later one wins. The column carries a row gap instead — see
-        // the nav below — because that is what the space is: the distance between two rows,
-        // read from the same token the navigation rows already space themselves by.
-        'mt-auto',
+        // The spacing lives here now, and only one `mt-` utility may: two on one element
+        // fight and the later one wins.
+        //
+        // It used to be a row gap on the column instead. That gap could not be selective —
+        // it spaced EVERY zone boundary, so it also sat between the scroller's bottom
+        // shadow and the footer's rule, where the rule IS the boundary and wants nothing
+        // in front of it. Measured at 4px, in a place nobody asked for it.
+        //
+        // `mt-auto` still does the pushing; the gap token is added on top so the control
+        // keeps its distance from the last row of a short list.
+        // ⚠️ THE PUSH AND THE GAP USED TO SIT HERE TOGETHER, AND THE LINE ABOVE SAYS WHY THAT
+        // CANNOT WORK: an auto top margin and a tokened one are the same property, so the
+        // later one in the
+        // emitted stylesheet wins and the other is simply not applied. Measured in Chromium:
+        // the auto won, resolved to 0 in a column no taller than its content, and the
+        // control's hover surface shared an edge with the last navigation row — the exact
+        // state the guard beside this component was written to prevent. Both jobs now live
+        // ⚠️ AND THE NOTE ITSELF MUST NOT SPELL THE UTILITY: Tailwind scans this file as text,
+        // so an example class written in prose becomes a REAL rule in the compiled sheet with
+        // nothing in the markup behind it. One was emitted here and the reverse drift diff
+        // caught it, which is exactly what that check is for.
+        // on two different ELEMENTS now: the wrapper at the include site claims the leftover
+        // height, and the token margin stays here on the button. One `margin-top` each, so
+        // neither can silently drop the other.
+        isset($footer) ? '' : 'mt-[var(--space-wk-nav-gap)]',
         'inline-flex items-center justify-center shrink-0',
         'p-1 rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)] cursor-pointer',
+        // Riding on the footer band: out of flow, centered on it, at its trailing edge.
+        // Out of flow on purpose — in flow it would either stretch the band or shorten
+        // the row it sits beside, and the row is somebody's account name.
+        isset($footer) ? 'absolute top-1/2 -translate-y-1/2 end-[var(--padding-wk-x-sm)]' : '',
         // In the collapsed rail the button centers with the icons.
-        'group-data-[collapsed]/wk-sidebar:self-center',
+        isset($footer) ? '' : 'group-data-[collapsed]/wk-sidebar:self-center',
     ]), $scope);
 
     // Three zones — fixed head, scrolling middle, fixed foot — but ONLY when a
@@ -419,31 +479,22 @@
              browser, so this static class is the SEED rather than the memory — the nonced
              script emitted after this column reconciles the two before the first paint, which
              is where the "briefly collapsed, then open" report came from. --}}
-        {{ $attributes->class([$classes, $collapsed ? 'w-[var(--size-wk-rail,3.25rem)]' : 'w-[var(--wk-sidebar-w,16rem)]', 'group/wk-sidebar gap-[var(--space-wk-nav-gap)] data-[wk-ready]:transition-[width] data-[wk-ready]:duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
+        {{ $attributes->class([$classes, $collapsed ? 'w-[var(--size-wk-rail,3.25rem)]' : 'w-[var(--wk-sidebar-w,16rem)]', 'group/wk-sidebar data-[wk-ready]:transition-[width] data-[wk-ready]:duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs) }}
     >
         @include('wirekit::components.partials.sidebar-zones')
-        @if($toggle !== 'none')
-        <button
-            type="button"
-            x-on:click="toggle()"
-            {{-- Emitted STATICALLY as well as bound, for the same reason `data-collapsed`
-                 above is. Until Alpine boots, `:aria-label` has not run — so the only
-                 content of this button is a decorative <svg>, and it reaches a screen
-                 reader as a bare "button". A server-side accessibility check never gets
-                 past that point at all, so for one it is nameless permanently.
-                 Alpine owns both attributes after init and rewrites them on every toggle,
-                 so the static pair can never disagree with the bound one. Same __() keys,
-                 so the translation is maintained once. --}}
-            aria-expanded="{{ $collapsed ? 'false' : 'true' }}"
-            aria-label="{{ $collapsed ? __('wirekit::Expand sidebar') : __('wirekit::Collapse sidebar') }}"
-            :aria-expanded="collapsed ? 'false' : 'true'"
-            :aria-label="collapsed ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand sidebar')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse sidebar')) }}"
-            class="{{ $collapseBtnClasses }}"
-        >
-            <svg class="h-5 w-5 transition-transform duration-[var(--transition-wk-duration)]" :class="collapsed ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 4.5 11.25 12l7.5 7.5m-7.5-15L3.75 12l7.5 7.5" />
-            </svg>
-        </button>
+        {{-- Without a footer zone the control is still the column's last row. With one it
+             rides ON that band instead, rendered by `sidebar-zones` — a control that changes
+             the column's width was spending a whole navigation row on itself, which is the
+             most expensive way to present the least important thing in the column. The app
+             rail made this correction already; the sidebar had not. --}}
+        @if($toggle !== 'none' && ! isset($footer))
+            {{-- The wrapper claims the leftover height, the padding holds the distance. Two
+                 elements because the two jobs are the same CSS property on one — see the note
+                 in the class list above. The wrapper paints nothing, so the gap between the
+                 last row's hover surface and the button's is real and empty. --}}
+            <div class="mt-auto flex flex-col">
+                @include('wirekit::components.partials.sidebar-collapse-toggle')
+            </div>
         @endif
     </nav>
     {{-- Immediately after the column, so `document.currentScript.previousElementSibling` is

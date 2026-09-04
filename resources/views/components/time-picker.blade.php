@@ -20,8 +20,20 @@
     'label' => null,
     'hint' => null,
     'error' => null,
+    // Declared intent only. A native `<input type="time">` takes its 12-hour or
+    // 24-hour rendering from the browser and the operating system locale, and
+    // there is no HTML attribute that overrides it — so this prop cannot change
+    // what the reader sees. It stays declared because it is a documented part of
+    // the surface and because an undeclared `format` would land on the control as
+    // a stray HTML attribute instead of being absorbed here.
     'format' => '24h', // 24h | 12h
-    'step' => 15, // Minutes interval for quick-pick dropdown
+    // The native `step` attribute, in SECONDS, exactly as HTML defines it:
+    // 900 is a quarter of an hour, 60 is one minute, null leaves the browser's
+    // own default. It read as MINUTES here for a quick-pick list that was
+    // computed on every render and never emitted, and the value never reached the
+    // control at all — so a caller writing the documented `step="900"` got a
+    // field that still accepted 09:07, and the arrow keys still stepped by one.
+    'step' => null,
     'size' => config('wirekit.components.time-picker.size', 'md'),
     'scope' => null,
 ])
@@ -59,9 +71,12 @@
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'time-picker-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
-    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
-    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
-    $attributes = $attributes->except('id');
+    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // below, so leaving either in the bag emits a second, conflicting attribute on the
+    // same element. `id` was stripped from the start; `name` was not, and a caller that
+    // passed one got two name attributes on one control — invalid HTML the browser
+    // accepts silently by keeping the first, which is why nothing ever went red over it.
+    $attributes = $attributes->except(['id', 'name']);
 
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
@@ -116,30 +131,13 @@
 
     // Build aria-describedby
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
-
-    // Generate quick-pick time options based on step interval
-    $timeOptions = [];
-    $is12h = $format === '12h';
-    for ($minutes = 0; $minutes < 1440; $minutes += $step) {
-        $h = intdiv($minutes, 60);
-        $m = $minutes % 60;
-        $value24 = sprintf('%02d:%02d', $h, $m);
-        if ($is12h) {
-            $period = $h >= 12 ? 'PM' : 'AM';
-            $h12 = $h % 12 ?: 12;
-            $display = sprintf('%d:%02d %s', $h12, $m, $period);
-        } else {
-            $display = $value24;
-        }
-        $timeOptions[] = ['value' => $value24, 'display' => $display];
-    }
 @endphp
 
 @php
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
-        // `value` is NOT a declared prop here — it passes through the bag. I
-        // assumed the opposite and the browser said so: the layer mounted with
-        // an empty value and the first assertion caught it.
+        // `value` is NOT a declared prop here — it passes through the bag. Reading
+        // it as a prop mounts the layer with an empty value, which is what the
+        // first assertion catches.
         'value' => (string) ($attributes->get('value') ?? ''),
         'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
@@ -162,6 +160,10 @@
         type="time"
         id="{{ $id }}"
         name="{{ $name }}"
+        {{-- Seconds, per the HTML attribute. It also decides the arrow-key
+             increment, so a control documented as quarter-hourly steps by a
+             quarter of an hour rather than by one minute. --}}
+        @if($step !== null) step="{{ $step }}" @endif
         @if($hasError) aria-invalid="true" @endif
             @if($optimisticConfig)
                 x-ref="control"

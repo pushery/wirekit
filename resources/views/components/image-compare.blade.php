@@ -14,6 +14,11 @@
     // height of whatever box the developer provides (the original contract).
     'ratio' => null,
     'value' => 50,
+    // Form field name for the hidden input below. Declared as a prop rather than
+    // left to the attribute bag on purpose: the bag lands on the <figure>, where a
+    // `name` submits nothing, so a caller writing `name="reveal"` got a figure with
+    // a name attribute and a POST body without the field.
+    'name' => null,
     'beforeLabel' => 'Before',
     'afterLabel' => 'After',
     'labels' => true,
@@ -141,9 +146,13 @@
     })"
     x-on:slide="$dispatch('wirekit:image-compare-slide', $event.detail)"
 >
-    {{-- Hidden input so plain-HTML form submission works without Livewire.
-         The Alpine factory dispatches `input` events on this element so
-         wire:model-less developers still get form value updates. --}}
+    {{-- Hidden input so plain-HTML form submission works without Livewire — which
+         it does only once the field has a name, hence the `name` prop. An unnamed
+         input is not a successful control and is left out of the POST body
+         entirely, so the sentence above was true of the events and false of the
+         submission for as long as no name was rendered. The Alpine factory
+         dispatches `input` events on this element so wire:model-less developers
+         still get form value updates. --}}
     {{-- Static value as well as the bound one: the field is empty until Alpine
          boots, and a form submitted in that window sends nothing while the
          visible control already shows the value. Both come from the same PHP
@@ -151,6 +160,7 @@
     <input
         type="hidden"
         x-ref="hiddenInput"
+        @if($name !== null) name="{{ $name }}" @endif
         value="{{ $clampedValue }}"
         :value="value"
     />

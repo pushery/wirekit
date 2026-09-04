@@ -4,18 +4,18 @@ Thank you for your interest in contributing to WireKit!
 
 ## Setup
 
-Development setup — prerequisites, the local quality gate, and the architecture guide — lives in the
-project documentation at [docs.wirekit.app](https://docs.wirekit.app).
+Development happens in the project repository, not in the published package. This file ships inside
+the package, where the tooling a setup guide would name is absent: the test suite, the build
+scripts, the linter configuration and `package.json` are all stripped from the distributed tree. A
+command block here would resolve to nothing for every reader who has one, and the repository carries
+its own setup guide next to the tooling it describes — which is where it stays correct.
 
-The commands are not repeated here on purpose. This file ships inside the published package, where
-the tooling it would name is absent: the test suite, the build scripts, the linter configuration and
-`package.json` are all stripped from the distributed tree. A command block here would resolve to
-nothing for every reader who has one.
+Issues and pull requests go to [github.com/pushery/wirekit](https://github.com/pushery/wirekit).
 
 ## Before Committing
 
-Code style, the test suite and the Markdown lint must all pass. The exact invocations live in the
-development documentation, which is also where they stay correct when they change.
+Code style, the test suite and the Markdown lint must all pass. Their invocations live in the
+repository's own development guide, beside the configuration they run against.
 
 ## Component Conventions
 
@@ -57,9 +57,16 @@ development documentation, which is also where they stay correct when they chang
 ## JavaScript Conventions
 
 - Alpine components are registered as `wirekitComponentName` (camelCase with `wirekit` prefix)
-- Dependencies are bundled in `dist/wirekit.js` — users do NOT install them separately
+- The Alpine-side dependencies — Floating UI, focus-trap, `@alpinejs/collapse` — are bundled in
+  `dist/wirekit.js`, so a developer does not install them separately. The rendering engines behind
+  chart, editor and map are NOT bundled: they are peer installs the developer adds, and the
+  components say so at runtime when one is missing. Adding a bundled dependency means widening the
+  allowlist in `scripts/test-bundle-dependencies.mjs`, with the reason written beside it.
 - Event naming: `wirekit-{component}-{action}` (kebab-case), e.g. `wirekit-modal-show`
-- All Alpine components must implement `livewire:navigating` cleanup via `destroy()` lifecycle method
+- Every Alpine component that holds a listener, observer, timer or animation frame releases it in
+  `destroy()` — Alpine calls that hook when the element goes away. A component that keeps state
+  which must not survive an SPA navigation additionally listens for `livewire:navigating`, the way
+  the overlay helper closes an open overlay before the page changes underneath it
 - Several bundles ship, each for a different loading strategy — `dist/README.md` is the decision tree and it sits beside them
 
 ## Icon System
@@ -74,8 +81,10 @@ development documentation, which is also where they stay correct when they chang
 
 - Adapter pattern: implement `Pushery\WireKit\Contracts\ChartAdapter`
 - Charts are disabled by default (`charts.library = null`)
-- New adapters must implement: `scripts()`, `normalizeData()`, `defaultOptions()`, `alpineComponent()`
-- Built-in adapter: `ChartJsAdapter` for Chart.js
+- The interface is not optional in parts — an adapter implements all seven methods or PHP refuses to
+  instantiate it: `name()`, `scripts()`, `normalizeData()`, `defaultOptions()`, `alpineComponent()`,
+  `rendersTo()`, `supportedTypes()`
+- Two adapters ship: `ChartJsAdapter` for Chart.js and `ApexChartsAdapter` for ApexCharts
 
 ## Commit Messages
 

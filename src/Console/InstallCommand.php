@@ -821,7 +821,8 @@ class InstallCommand extends Command
         // Echo the License Notice once before mutating config/wirekit.php so
         // every developer who picks an apexcharts tier sees it AT LEAST ONCE.
         // The notice is also rendered on docs/components/chart.md and emitted
-        // by wirekit:doctor; see Decision Log row "License-acceptance flag".
+        // by wirekit:doctor, so a developer who skips the installer still meets
+        // it — the flag records acceptance, it does not gate the notice.
         $this->line('');
         $this->warn('ApexCharts License Notice');
         $this->line('  ApexCharts is not MIT-licensed.');

@@ -2,7 +2,7 @@
      Pass `optimistic="method"` and the value is sent when you leave the field,
      shown as saving while it goes.
 
-     **It uses the FOURTH exit** (§8): a refusal does NOT put the old value
+     **It uses the `keep` failure exit**: a refusal does NOT put the old value
      back. For a typed value the previous one belongs to the server and the new
      one is your work, so an undo would delete what you just wrote because a
      save failed. The value stays, the state becomes `rejected`, and the
@@ -124,9 +124,12 @@
     // Auto-generate ID from name attribute, or generate random if neither provided
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'input-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
-    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
-    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
-    $attributes = $attributes->except('id');
+    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // below, so leaving either in the bag emits a second, conflicting attribute on the
+    // same element. `id` was stripped from the start; `name` was not, and a caller that
+    // passed one got two name attributes on one control — invalid HTML the browser
+    // accepts silently by keeping the first, which is why nothing ever went red over it.
+    $attributes = $attributes->except(['id', 'name']);
 
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
@@ -243,7 +246,7 @@
 @endphp
 
 @php
-    // `failure: 'keep'` is what makes this component eligible at all — §8.
+    // `failure: 'keep'` is what makes this component eligible at all.
     //
     // No `x-ref="control"`: with affordances the field already carries
     // `x-ref="wkField"` and an element gets one ref. The commit reads
@@ -342,8 +345,8 @@
                 @if($optimisticConfig)
                     x-bind:aria-busy="isPending"
                     {{-- `change`, not `input`: typing fires input per keystroke,
-                         and the event that ends the input is leaving the field
-                         (§10). --}}
+                         and the event that ends the input is leaving the
+                         field. --}}
                     x-on:change="run($event.target.value)"
                 @endif
                 {{ $attributes->class([

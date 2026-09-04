@@ -32,6 +32,10 @@
     role="tree"
     x-data="wirekitTreeView()"
     {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }}
+    {{-- Roving tabindex: the factory's init seeds one tab stop, and this keeps it under
+         whichever row focus reached last — by arrow key, by mouse, or by a developer's own
+         .focus(). focusin bubbles, so one binding on the tree covers every node. --}}
+    @focusin="rove()"
     @keydown.arrow-down.prevent="focusNext()"
     @keydown.arrow-up.prevent="focusPrev()"
     @keydown.arrow-right.prevent="expandOrChild()"
@@ -40,6 +44,10 @@
     @keydown.end.prevent="focusLast()"
     @keydown.enter.prevent="selectFocused()"
     @keydown.space.prevent="selectFocused()"
+    {{-- Type-ahead, the last row of the documented keyboard table. Bound unfiltered
+         because the key it reacts to is "any printable one" — the factory drops
+         everything else, including the space this list has already claimed above. --}}
+    @keydown="typeAhead($event)"
 >
     {{ $slot }}
 </ul>

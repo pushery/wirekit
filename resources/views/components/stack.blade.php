@@ -6,6 +6,20 @@
     'gap' => config('wirekit.components.stack.gap', 'md'),
     'align' => 'stretch',
     'justify' => 'start',
+    // Which spacing ladder `gap` names a rung on. See `row` for the full
+    // reasoning; the two components share this axis because they share the
+    // prop, and a difference between them would be the worse of the two
+    // outcomes — a developer who learned it on one would be wrong on the other.
+    //
+    // Short form: WireKit defines two ladders with the same rung names and
+    // different values from `md` up (`--gap-wk-md` 0.75rem against
+    // `--space-wk-md` 1rem), and only one of them was reachable here. Default
+    // `space` keeps every existing call site exactly where it is.
+    //
+    // Both maps are written out rather than derived: Tailwind emits an
+    // arbitrary utility only when it can see the class as a literal in a
+    // scanned file.
+    'scale' => 'space',
     'wrap' => false,
     'as' => 'div',
     'scope' => null,
@@ -25,16 +39,31 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $wrap = BooleanProp::from($wrap, false);
 
-    $gapClasses = match ($gap) {
-        'none' => '',
-        'xs' => 'gap-[var(--space-wk-xs,0.25rem)]',
-        'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
-        'md' => 'gap-[var(--space-wk-md,1rem)]',
-        'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
-        'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
-        '2xl' => 'gap-[var(--space-wk-2xl,4rem)]',
-        default => WireKit::validateProp('stack', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
-    };
+    // Resolved before the rungs, so an unknown ladder name is reported as what
+    // it is rather than silently falling through to the historical one.
+    $scale = WireKit::validateProp('stack', 'scale', (string) $scale, ['space', 'gap']);
+
+    $gapClasses = $scale === 'gap'
+        ? match ($gap) {
+            'none' => '',
+            'xs' => 'gap-[var(--gap-wk-xs,0.25rem)]',
+            'sm' => 'gap-[var(--gap-wk-sm,0.5rem)]',
+            'md' => 'gap-[var(--gap-wk-md,0.75rem)]',
+            'lg' => 'gap-[var(--gap-wk-lg,1rem)]',
+            'xl' => 'gap-[var(--gap-wk-xl,1.5rem)]',
+            '2xl' => 'gap-[var(--gap-wk-2xl,2rem)]',
+            default => WireKit::validateProp('stack', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
+        }
+        : match ($gap) {
+            'none' => '',
+            'xs' => 'gap-[var(--space-wk-xs,0.25rem)]',
+            'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
+            'md' => 'gap-[var(--space-wk-md,1rem)]',
+            'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
+            'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
+            '2xl' => 'gap-[var(--space-wk-2xl,4rem)]',
+            default => WireKit::validateProp('stack', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
+        };
 
     $alignClasses = match ($align) {
         'start' => 'items-start',

@@ -285,7 +285,7 @@ class ComponentRegistry
     }
 
     /**
-     * expose the deprecated tag-form
+     * Exposes the deprecated tag-form
      * alias for class-based components so tool integrators can
      * verify both the canonical (single-hyphen) shape AND any
      * historical (double-colon) shape that documentation might have
@@ -306,14 +306,14 @@ class ComponentRegistry
      * Every sub-component the package ships, keyed `parent.child`.
      *
      * Derived from the filesystem rather than hand-listed. A hand-maintained
-     * list of 72 entries drifts the first time someone adds a file and forgets
+     * list this long drifts the first time someone adds a file and forgets
      * the array; deriving it means the catalog cannot disagree with what ships.
      *
      * Sub-components are deliberately NOT in `all()`. They are part of the public
      * API — AGENTS.md tells an agent to reach for `card.body`, and `table.th`
      * carries its own documented props — but they are not components in the sense
-     * every count in this project means by the word. Folding them in would turn
-     * "173 components" into "245" overnight without a single new component
+     * every count in this project means by the word. Folding them in would inflate
+     * the component count by close to half overnight without a single new component
      * shipping. They are a separate surface, discoverable on their own terms.
      *
      * `index.blade.php` is excluded: that file IS the parent (the directory-
@@ -386,7 +386,7 @@ class ComponentRegistry
      *
      * A sub-component inherits its parent's category (it belongs to the same part
      * of the library) and describes itself in terms of that parent, because that
-     * is the only honest description available without hand-writing 72 of them.
+     * is the only honest description available without hand-writing one apiece.
      *
      * @return array{category: string, description: string, parent?: string}|null
      */

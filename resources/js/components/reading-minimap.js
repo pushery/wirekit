@@ -420,7 +420,7 @@ export default (options = {}) => ({
         // `behavior: 'instant'` (CSSOM spec 2023+) overrides developer-side
         // CSS `scroll-behavior: smooth` on html/body — without the
         // override, modern browsers ease every imperative scroll over
-        // ~400 ms, which the user perceived as the drag "lag/delay".
+        // ~400 ms, which shows up as a drag that lags behind the pointer.
         // No synchronous viewportTop write here; the scroll handler
         // updates the overlay one frame later. The earlier sync-write
         // pattern produced a visible flicker (two writes per frame
@@ -860,7 +860,22 @@ export default (options = {}) => ({
         el.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
         // Update the URL fragment without pushing a history entry (back-
         // button still goes to the previous PAGE, not the previous heading).
-        history.replaceState(null, '', `#${anchor.id}`);
+        //
+        // Wrapped in try/catch because an iframe-srcdoc context has `origin: null`
+        // and rejects a replaceState against the parent page's URL with a
+        // SecurityError. That is the context a documentation preview renders in —
+        // this component builds srcdoc frames itself — so an unguarded call throws
+        // on every anchor click there and reddens any suite that asserts the console
+        // stayed clean. The scroll has already happened by this point, so swallowing
+        // the URL-sync failure is the correct degradation: the reader still travels,
+        // just without the hash mirror. The two sibling readers guard the identical
+        // call for the identical reason.
+        try {
+            history.replaceState(null, '', `#${anchor.id}`);
+        } catch {
+            // Cross-origin iframe-srcdoc — URL hash mirror unavailable,
+            // accept the scroll-only behavior.
+        }
     },
 
     /**

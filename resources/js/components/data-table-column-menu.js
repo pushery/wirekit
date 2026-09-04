@@ -24,9 +24,65 @@ export default function wirekitDataTableColumnMenu() {
             // moment `open` flips it still has no box to measure.
             this.$watch('open', (isOpen) => {
                 if (isOpen) {
-                    this.$nextTick(() => this.place());
+                    this.$nextTick(() => {
+                        this.place();
+                        this.focusFirstCheckbox();
+                    });
+
+                    return;
                 }
+
+                this.restoreFocus();
             });
+        },
+
+        /**
+         * Move focus into the panel on open.
+         *
+         * The panel is a disclosed GROUP of checkboxes, not a menu, so it owns no
+         * roving-focus model of its own — the checkboxes are ordinary tab stops and
+         * the browser scrolls them into view. What a group cannot do is put the
+         * reader anywhere near them: without this, focus stayed on the trigger and
+         * the only way into a panel that had just appeared was to tab past
+         * everything the trigger sits in front of.
+         *
+         * Focus is placed here rather than in the template because the CSP build of
+         * Alpine parses only a narrow expression grammar, and this whole factory
+         * exists because inline statements in this spot silently failed to build.
+         */
+        focusFirstCheckbox() {
+            const panel = this.$refs.colMenu;
+
+            if (! panel) {
+                return;
+            }
+
+            const first = panel.querySelector('input[type="checkbox"]');
+
+            if (first) {
+                first.focus();
+            }
+        },
+
+        /**
+         * Hand focus back to the trigger when the panel closes — but ONLY if it is
+         * still inside the panel.
+         *
+         * Escape and a second click on the trigger both close from within, and
+         * leaving focus on a hidden checkbox drops the reader at the top of the
+         * document. A click OUTSIDE also closes the panel, and there the user has
+         * already chosen where to go; pulling focus back to the trigger would undo
+         * their own click.
+         */
+        restoreFocus() {
+            const panel = this.$refs.colMenu;
+            const button = this.$refs.colBtn;
+
+            if (! panel || ! button || ! panel.contains(document.activeElement)) {
+                return;
+            }
+
+            button.focus();
         },
 
         place() {

@@ -37,6 +37,10 @@ export default function wirekitCombobox(config = {}) {
         // Cross-close channel — see utils/overlay-coordination.js.
         _coordination: null,
 
+        // Set by hoverOption() so the scroll that follows a highlight change is
+        // skipped for that one move. See _revealHighlight().
+        _movedByPointer: false,
+
         get filtered() {
             if (this.query === '') {
                 return this.allOptions;
@@ -110,7 +114,28 @@ export default function wirekitCombobox(config = {}) {
                 // clipping card; wirekitPosition carries the field width over
                 // and caps the height so a long list scrolls instead of running
                 // past the fold.
-                this.$nextTick(() => this._place());
+                this.$nextTick(() => {
+                    this._place();
+
+                    // Reopening does not change `highlight`, so the watcher
+                    // below stays quiet — and hiding the panel drops its scroll
+                    // offset, which would put the marked option back out of
+                    // view. Revealing on the open transition covers that.
+                    this._revealHighlight();
+                });
+            });
+
+            // Follow the highlight with the panel's scroll box. Every keyboard
+            // mover — both arrow keys, Home, End, a fresh filter — writes
+            // `highlight` and nothing else, so one watcher covers all of them
+            // and a mover added later cannot forget to scroll. A pointer move
+            // opts out at the other end; see hoverOption().
+            //
+            // $nextTick because the row for the new index may not exist yet:
+            // Home and End open the list and jump in the same keystroke, so the
+            // option is rendered by the same flush that moved the highlight.
+            this.$watch('highlight', () => {
+                this.$nextTick(() => this._revealHighlight());
             });
         },
 
@@ -179,6 +204,38 @@ export default function wirekitCombobox(config = {}) {
             }
         },
 
+        /**
+         * Bring the active option inside the panel's visible area.
+         *
+         * The list is a capped scroller and the active option is published
+         * through `aria-activedescendant`, so focus never moves into it — and a
+         * browser only auto-scrolls what it focuses. Without this the marker
+         * walks off the bottom after the first screenful and Enter chooses an
+         * option the reader cannot see. `block: 'nearest'` scrolls only when the
+         * row is actually outside, so a move that stays on screen costs nothing.
+         *
+         * By id rather than through `$refs`, for the reason spelled out in
+         * `_place()`: the panels are teleported, and a ref does not survive the
+         * move.
+         */
+        _revealHighlight() {
+            if (this._movedByPointer) {
+                this._movedByPointer = false;
+
+                return;
+            }
+
+            if (! this._listId || typeof document === 'undefined') {
+                return;
+            }
+
+            const option = document.getElementById(`${this._listId}-opt-${this.highlight}`);
+
+            if (option && typeof option.scrollIntoView === 'function') {
+                option.scrollIntoView({ block: 'nearest' });
+            }
+        },
+
         destroy() {
             this._coordination?.stop();
             this._coordination = null;
@@ -220,6 +277,12 @@ export default function wirekitCombobox(config = {}) {
         /** Hovering an enabled option previews it; a disabled one is inert. */
         hoverOption(option, index) {
             if (! option.disabled) {
+                // A hover is already looking at the row, so the scroll that
+                // follows a keyboard move would only pull the list out from
+                // under the pointer — the half-visible row at the panel edge is
+                // the case: revealing it shifts a different option beneath the
+                // cursor, and the next click lands on something else.
+                this._movedByPointer = true;
                 this.highlight = index;
             }
         },

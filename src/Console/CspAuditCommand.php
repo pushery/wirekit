@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\View;
 use Pushery\WireKit\Support\BladeParser;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
@@ -65,6 +66,7 @@ class CspAuditCommand extends Command
 {
     protected $signature = 'wirekit:csp-audit
         {--path=* : Directory to scan. Repeatable. Defaults to the application view paths.}
+        {--vendor : Also scan the view directories packages registered with loadViewsFrom.}
         {--json : Emit machine-readable JSON instead of a report.}';
 
     protected $description = 'Check every Alpine expression in your Blade views against Alpine\'s CSP grammar (needs node)';
@@ -144,6 +146,12 @@ class CspAuditCommand extends Command
             return self::FAILURE;
         }
 
+        // The surface question, answered before any verdict is formed: which registered view
+        // directories this run did NOT read. A report that cannot distinguish "clean" from
+        // "clean over part of the tree" is indistinguishable from a complete one, and that
+        // indistinguishability is the damage — not the missing option.
+        $unscanned = $this->unscannedNamespaces($paths);
+
         $found = $this->collectExpressions($paths);
 
         // A placement question, not an expression one: collected here so it is reported even
@@ -166,6 +174,15 @@ class CspAuditCommand extends Command
             $this->line('That is reported as a failure rather than a pass: an audit that measured');
             $this->line('nothing and said "clean" is worse than no audit, because you would stop looking.');
             $this->line('Check the path, or pass --path=… explicitly.');
+
+            if ($unscanned !== []) {
+                $this->line('');
+                $this->line(sprintf(
+                    '%d registered view namespace(s) sit outside this surface: %s. Run with --vendor to include them.',
+                    count($unscanned),
+                    implode(', ', array_slice(array_keys($unscanned), 0, 10)),
+                ));
+            }
 
             return self::FAILURE;
         }
@@ -222,6 +239,10 @@ class CspAuditCommand extends Command
         if ($this->option('json')) {
             $this->line((string) json_encode([
                 'scanned' => count($found),
+                // Additive, and the reason they are here rather than only on the report: a
+                // build step reading this payload has the same blind spot a reader does.
+                'surface' => array_values($paths),
+                'unscanned_namespaces' => $unscanned,
                 'failed' => count($offenders),
                 'offenders' => $offenders,
                 'unchecked' => count($unchecked),
@@ -237,7 +258,7 @@ class CspAuditCommand extends Command
             return $offenders === [] && $inScript === [] ? self::SUCCESS : self::FAILURE;
         }
 
-        return $this->report($found, $offenders, $unchecked, $warnings, $unresolved, $inScript);
+        return $this->report($found, $offenders, $unchecked, $warnings, $unresolved, $inScript, $paths, $unscanned);
     }
 
     /**
@@ -248,6 +269,10 @@ class CspAuditCommand extends Command
         /** @var array<int, string> $given */
         $given = (array) $this->option('path');
 
+        // An explicit `--path` names the surface outright, so `--vendor` does not widen it:
+        // the two would otherwise combine into a set the developer did not ask for. Nothing
+        // is hidden by that — the namespaces outside the surface are still reported, which is
+        // what makes the narrower reading safe rather than merely simpler.
         if ($given !== []) {
             return array_values(array_filter($given, 'is_dir'));
         }
@@ -255,7 +280,129 @@ class CspAuditCommand extends Command
         /** @var array<int, string> $viewPaths */
         $viewPaths = (array) config('view.paths', []);
 
-        return array_values(array_filter($viewPaths, 'is_dir'));
+        $paths = array_values(array_filter($viewPaths, 'is_dir'));
+
+        if ($this->option('vendor') !== true) {
+            return $paths;
+        }
+
+        foreach ($this->namespacedPaths() as $dirs) {
+            foreach ($dirs as $dir) {
+                if (! self::isCovered($dir, $paths)) {
+                    $paths[] = $dir;
+                }
+            }
+        }
+
+        return $paths;
+    }
+
+    /**
+     * The view directories a package registered under a namespace.
+     *
+     * `config('view.paths')` holds the APPLICATION's directories, and nothing else ever
+     * enters it: `loadViewsFrom` calls `View::addNamespace()`, which writes a hint on the
+     * finder instead. So the default surface of this audit — the application's own views —
+     * excludes every packaged template by construction, and a package that ships a CSP-unsafe
+     * directive is invisible to it.
+     *
+     * That is the failure shape this whole command exists against, at the one place it did
+     * not look. Measured in an adopting application: the default run reported PASS over 24
+     * expressions while a `--path` over one package's views rejected 23 of 60, in the same
+     * app in the same moment. The pages had been throwing for three weeks.
+     *
+     * `getHints()` is on `FileViewFinder`, NOT on `ViewFinderInterface` — an application may
+     * bind a finder of its own — so the call is guarded rather than assumed. An unreadable
+     * surface is reported as unknown, never as empty: those two must not print alike, which
+     * is the same rule the zero-expression branch in `handle()` is built on.
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function namespacedPaths(): array
+    {
+        $finder = View::getFinder();
+
+        if (! method_exists($finder, 'getHints')) {
+            return [];
+        }
+
+        $hints = [];
+
+        /** @var array<string, array<int, string>|string> $raw */
+        $raw = $finder->getHints();
+
+        foreach ($raw as $namespace => $dirs) {
+            $existing = array_values(array_filter((array) $dirs, 'is_dir'));
+
+            if ($existing !== []) {
+                $hints[$namespace] = $existing;
+            }
+        }
+
+        return $hints;
+    }
+
+    /**
+     * The registered namespaces whose directories the scan surface does not reach.
+     *
+     * Reported rather than scanned by default, and that split is deliberate: a defect in a
+     * package's views is not something the adopting application can fix, so failing its
+     * gate on one would make this command unusable there. Naming the gap costs nothing and
+     * is the whole difference between "clean" and "clean over part of the tree" — the two
+     * states this report was indistinguishable between.
+     *
+     * @param  array<int, string>  $paths
+     * @return array<string, array<int, string>>
+     */
+    private function unscannedNamespaces(array $paths): array
+    {
+        $unscanned = [];
+
+        foreach ($this->namespacedPaths() as $namespace => $dirs) {
+            $outside = array_values(array_filter(
+                $dirs,
+                static fn (string $dir): bool => ! self::isCovered($dir, $paths),
+            ));
+
+            if ($outside !== []) {
+                $unscanned[$namespace] = $outside;
+            }
+        }
+
+        return $unscanned;
+    }
+
+    /**
+     * Whether a directory already sits inside the scan surface.
+     *
+     * A published package namespace resolves to `resources/views/vendor/<namespace>`, which
+     * is UNDER an application view path and therefore already scanned — reporting it as a
+     * gap would send a developer to re-scan what they just scanned. The containment test is
+     * on the path with a trailing separator, so `…/views/vendor-x` is not read as a child of
+     * `…/views/vendor`.
+     *
+     * @param  array<int, string>  $paths
+     */
+    private static function isCovered(string $dir, array $paths): bool
+    {
+        $dir = self::normalizePath($dir);
+
+        foreach ($paths as $path) {
+            $path = self::normalizePath($path);
+
+            if ($dir === $path || str_starts_with($dir.DIRECTORY_SEPARATOR, $path.DIRECTORY_SEPARATOR)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function normalizePath(string $path): string
+    {
+        $real = realpath($path);
+
+        return rtrim($real !== false ? $real : $path, DIRECTORY_SEPARATOR);
     }
 
     /**
@@ -271,7 +418,7 @@ class CspAuditCommand extends Command
      * it makes the placement less harmful without making it right, and it costs every
      * developer a source full of escaped slashes for a mistake most of them never make. A
      * static check says "this is in the wrong place", at build time, whichever vector
-     * happens to matter. Decided 2026-08-28; the reasoning is in the ticket this came from.
+     * happens to matter.
      *
      * This library holds its own views to the same rule, and has since the encoder shipped —
      * a build here fails if a payload appears inside a script block anywhere in the package.
@@ -508,7 +655,33 @@ class CspAuditCommand extends Command
         // The lookbehind keeps `wire:model` out: without it the `:model` half matches
         // the bare-colon alternative and every Livewire binding is scanned as Alpine.
         $names = implode('|', array_map('preg_quote', self::EXPRESSION_ATTRIBUTES));
-        $pattern = '/(?<![\w:@.-])(?<attr>(?:'.$names.')(?::[\w.-]+)?|wire:[\w.-]+|@[\w.-]+|:[\w.-]+)\s*=\s*(?<q>["\'])(?<expr>.*?)(?<!\\\\)\g{q}/s';
+
+        // A directive NAME carries more structure than its base: any number of further
+        // `:segment` parts, and — on a bare base — `.modifier` parts. Both are repeatable,
+        // and the pattern allowed exactly ONE optional colon segment and no dot tail at all.
+        //
+        // That is not a cosmetic tightness. An event name may itself contain a colon —
+        // `x-on:visual-feedback:open.window` is how a package namespaces its events — and
+        // such an attribute matched no alternative here, so it was never collected, never
+        // parsed, and never counted. It did not read as a gap: the run reported a smaller
+        // `Scanned N` and a clean verdict, which is the one shape this command must never
+        // take. Measured in an adopting application, the two expressions that opened its
+        // widget were both written that way; under a policy without `unsafe-eval` neither
+        // could run, and the audit named 60 expressions without either of them.
+        //
+        // The same tightness had four more faces, each found by putting the SAME broken
+        // expression on a scanned sibling and on the unscanned form in one file:
+        // `@vf:open.window` (the `x-on` shorthand), `wire:vf:open` (which Livewire rewrites
+        // to exactly that), `:xlink:href` (the `x-bind` shorthand) and `x-model.live` /
+        // `x-intersect.once` (a dot modifier on a bare base). One rule, so there is one
+        // tightness to reason about rather than four.
+        //
+        // What stays OUT stays out by not being on the name list — `x-ref`, `x-cloak`,
+        // `x-teleport` and `x-transition:enter` take a name, a selector or a class list, and
+        // none of them is a prefix of a name here. The lookbehind still keeps `wire:model`
+        // from matching as a bare `:model`, which is what it was added for.
+        $segments = '(?::[\w.-]+)*';
+        $pattern = '/(?<![\w:@.-])(?<attr>(?:'.$names.')(?:[.:][\w.-]+)*|wire:[\w.-]+'.$segments.'|@[\w.-]+'.$segments.'|:[\w.-]+'.$segments.')\s*=\s*(?<q>["\'])(?<expr>.*?)(?<!\\\\)\g{q}/s';
 
         if (! preg_match_all($pattern, $region, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER)) {
             return [];
@@ -740,8 +913,10 @@ class CspAuditCommand extends Command
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, warning: string}>  $warnings
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, unresolved: string|null}>  $unresolved
      * @param  array<int, array{file: string, line: int, encoder: string}>  $inScript
+     * @param  array<int, string>  $paths
+     * @param  array<string, array<int, string>>  $unscanned
      */
-    private function report(array $found, array $offenders, array $unchecked, array $warnings = [], array $unresolved = [], array $inScript = []): int
+    private function report(array $found, array $offenders, array $unchecked, array $warnings = [], array $unresolved = [], array $inScript = [], array $paths = [], array $unscanned = []): int
     {
         // Named rather than implied. "Scanned" reads as "checked, and it works", and
         // the difference between what this measures and what a reader hears is the
@@ -750,6 +925,12 @@ class CspAuditCommand extends Command
         // well-founded confidence, and on the second round that confidence did not
         // hold.
         $this->line(sprintf('Scanned %d Alpine expression(s) for GRAMMAR and resolvability.', count($found)));
+
+        // WHERE, on the same footing as WHAT. The count is true of the directories that were
+        // read, and a reader cannot tell from it which those were.
+        if ($paths !== []) {
+            $this->line(sprintf('Surface: %s', implode(', ', $paths)));
+        }
 
         // ⚠️ AND THE ONE THING IT CANNOT DECIDE FROM THE SOURCE, NAMED IN THE SAME BREATH.
         //
@@ -913,6 +1094,41 @@ class CspAuditCommand extends Command
             $this->line('');
         }
 
+        // Last of the qualifiers, so it sits directly above the verdict it qualifies.
+        //
+        // This is a statement about the SURFACE rather than about any expression, which is
+        // why it is neither a violation nor a warning about the code: nothing was found
+        // here, because nothing here was read. It stays out of the exit code deliberately —
+        // a package's views are not the application's to repair, and reddening its gate on
+        // one would get this command removed from the build rather than fixed.
+        if ($unscanned !== []) {
+            $this->line('');
+            $this->warn(sprintf('%d registered view namespace(s) were NOT part of this run.', count($unscanned)));
+            $this->line('');
+            $this->line('A package registers its views with loadViewsFrom, which writes a namespace hint on');
+            $this->line('the view finder and never enters view.paths — so packaged templates are outside');
+            $this->line('the default surface of this audit. Their expressions run in the same page under');
+            $this->line('the same policy, and one outside the grammar is just as dead there.');
+            $this->line('');
+
+            foreach (array_slice($unscanned, 0, 10, true) as $namespace => $dirs) {
+                $this->line(sprintf('  %s::', $namespace));
+
+                foreach ($dirs as $dir) {
+                    $this->line(sprintf('    %s', $dir));
+                }
+            }
+
+            if (count($unscanned) > 10) {
+                $this->line(sprintf('  …and %d more.', count($unscanned) - 10));
+            }
+
+            $this->line('');
+            $this->line('Run with --vendor to include them, or --path=… to scan one on its own. This is');
+            $this->line('not counted as a failure: a defect in a package\'s views is not yours to fix, and');
+            $this->line('an audit that fails your build over one gets deleted rather than read.');
+        }
+
         if ($offenders === [] && $inScript !== []) {
             return self::FAILURE;
         }
@@ -922,11 +1138,25 @@ class CspAuditCommand extends Command
             // printed whenever nothing failed, which is how a developer read "resolves in
             // scope" off a run where the deciding text had been substituted away before the
             // parser ever saw it.
-            $this->info(match (true) {
+            $verdict = match (true) {
                 $unchecked === [] && $unresolved === [] => 'PASS — every expression parses under Alpine\'s CSP grammar and resolves in scope.',
                 $unchecked === [] => 'PASS — with '.count($unresolved).' expression(s) resting on a substitution (listed above).',
                 default => 'PASS — every expression this audit could check parses under Alpine\'s CSP grammar.',
-            });
+            };
+
+            // The verdict carries the surface, for the same reason it carries the substitution
+            // count: a developer who reads PASS stops looking, so everything that qualifies it
+            // has to be in the sentence they stop on. An unqualified PASS over an incomplete
+            // surface reads exactly like one over a complete surface — and that is how an
+            // application ran green for three weeks while its pages threw on every request.
+            if ($unscanned !== []) {
+                $verdict = rtrim($verdict, '.').sprintf(
+                    ' — over the scanned surface only, with %d registered namespace(s) outside it (listed above).',
+                    count($unscanned),
+                );
+            }
+
+            $this->info($verdict);
 
             return self::SUCCESS;
         }

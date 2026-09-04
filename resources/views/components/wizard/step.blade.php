@@ -13,6 +13,14 @@
     'scope' => null,
 ])
 
+{{-- Which step the flow starts on, read from the container rather than asked for a second
+     time at every panel. It decides what the FIRST PAINT looks like — see the render note
+     below. A panel used outside a wizard falls back to 1, which is the same answer the
+     container's own default gives. --}}
+@aware([
+    'current' => 1,
+])
+
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -30,6 +38,12 @@
 
     $classes = WireKit::resolveClasses('wizard.step', 'base', '', $scope);
 
+    // The step showing before any JavaScript has run. Clamped at the low end only: the
+    // container clamps the high end against the number of steps, which this panel cannot
+    // see, so a `current` past the end of the flow paints every panel closed for the one
+    // frame it takes Alpine to correct it — the same malformed input that clamp exists for.
+    $initiallyCurrent = max(1, (int) $current);
+
     if ($position < 1 && config('app.debug')) {
         $missingIndexWarning = '[wirekit] wizard.step: no `index`. The container finds a step by '
             .'its position, so a step without one can never be shown and never gates anything. '
@@ -44,10 +58,24 @@
 
      `hidden` follows the same state so the panel is out of the accessibility tree and out
      of the tab order while it is not showing — `x-show` alone leaves it discoverable to a
-     screen reader, which would read a flow of four steps as one long page. --}}
+     screen reader, which would read a flow of four steps as one long page.
+
+     That last sentence was only true from the moment Alpine ran. Both directives are
+     bindings, so the server sent every panel open and the browser painted the whole flow
+     as one page before hydration — and a reader whose screen reader starts on the markup,
+     or whose JavaScript never arrives, gets exactly the four-steps-at-once the pair above
+     is there to prevent. So the closed panels ship closed: `hidden` is written into the
+     markup for every step that is not the starting one, and the binding then keeps it in
+     step. The first paint and the Alpine state agree from the beginning.
+
+     `tabindex="-1"` makes the panel a focus target without putting it in the tab order.
+     The container moves focus here when the control that changed the step hid itself —
+     see `rescueFocus()` in the plugin for the loss that repairs. --}}
 <div
     data-wk-wizard-step="{{ $position }}"
     @if($isComplete !== null) data-wk-step-complete="{{ $isComplete ? 'true' : 'false' }}" @endif
+    @if($position !== $initiallyCurrent) hidden @endif
+    tabindex="-1"
     x-show="current === {{ $position }}"
     x-bind:hidden="current === {{ $position }} ? null : true"
     {{ $attributes->class([$classes]) }}

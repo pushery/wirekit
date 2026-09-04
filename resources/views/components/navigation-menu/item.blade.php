@@ -15,7 +15,27 @@
     use Pushery\WireKit\WireKit;
 
     // Navigation menu item — either a simple link or a trigger with flyout panel.
-    $name = \Illuminate\Support\Str::slug($trigger ?? 'nav-' . uniqid());
+    //
+    // $name is this item's identity twice over: the Alpine state key the whole
+    // open/close model compares against (activeItem === $name), and the base the
+    // panel's DOM id below is built from. With no trigger label to slug it is
+    // COUNTED, not randomized. A uniqid() fallback stood here, and it made both
+    // halves move on every render: `activeItem === $name` could no longer match an
+    // item after a morph, and the panel — which teleports out of the morphed
+    // subtree — kept the previous id while the trigger's aria-controls got a new
+    // one. DomId's counter is per request and per prefix, so stable markup order
+    // returns the same value; a label that slugs to nothing takes the same route.
+    $slug = \Illuminate\Support\Str::slug((string) $trigger);
+    $name = $slug !== '' ? $slug : \Pushery\WireKit\Support\DomId::unique(null, 'wk-nav-item-');
+
+    // The panel's DOM id, so the trigger's aria-controls has something to name.
+    // Derived from $name and deduped per request rather than randomized: the
+    // panel teleports out of the subtree Livewire morphs, so a fresh id per
+    // render would update the trigger's aria-controls while the panel already in
+    // the document still carried the previous one. Both halves stay well-formed
+    // and simply name different things — the same trap dropdown.blade.php
+    // documents.
+    $panelId = \Pushery\WireKit\Support\DomId::unique($name.'-panel', 'wk-nav-panel-');
 
     $triggerClasses = WireKit::resolveClasses('navigation-menu.item', 'trigger', implode(' ', [
         'inline-flex items-center gap-1',
@@ -94,7 +114,15 @@
             type="button"
             x-on:click="open({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
             :aria-expanded="activeItem === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} ? 'true' : 'false'"
-            aria-haspopup="dialog"
+            {{-- aria-expanded + aria-controls, and deliberately NO aria-haspopup.
+                 This is a disclosure navigation menu: the button reveals a
+                 region of links in place, it does not summon a menu or a dialog.
+                 The trigger carried aria-haspopup="dialog" while a role-less div
+                 opened, so a screen reader announced a dialog that never
+                 existed — and the a11y rules forbid a value that does not match
+                 what actually opens just as firmly as they forbid the generic
+                 "true". --}}
+            aria-controls="{{ $panelId }}"
             data-wk-nav-trigger="{{ $name }}"
             class="{{ $triggerClasses }}"
         >
@@ -122,6 +150,25 @@
              location. --}}
         <template x-teleport="#wk-overlay-root">
             <div
+                {{-- THE MORPH KEY, and writing the id above is what makes it necessary.
+                     Livewire resolves a node's identity as `wire:id`, then `wire:key`,
+                     then `el.id`. With neither of the first two present the id IS the
+                     key — and this id is deduped per request, so a re-render that
+                     mounts a different number of menus hands the morph a key that no
+                     longer matches the live node's. A key mismatch does not patch, it
+                     SWAPS: the incoming node is inserted as a native `cloneNode(true)`,
+                     which copies attributes and children and no Alpine expandos. The
+                     replacement arrives without `_x_dataStack`, so `x-show` resolves
+                     `activeItem` on the global object and every handler on it is bound
+                     to nothing.
+                     Derived from $name — the item's own identity, which `x-ref` and
+                     `data-wk-nav-panel` already key on and which the @php block above
+                     keeps stable across renders — so the key is both steady and
+                     distinct per item in a bar that holds several. Deliberately NOT
+                     $panelId: that one is deduped per request, so it is the single
+                     value here that cannot be relied on to agree across two renders. --}}
+                wire:key="wk-nav-panel-{{ $name }}"
+                id="{{ $panelId }}"
                 x-ref="panel-{{ $name }}"
                 x-show="activeItem === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}"
                 x-on:mouseenter="cancelClose()"
@@ -132,7 +179,13 @@
                 x-transition:leave="transition ease-in duration-150"
                 x-transition:leave-start="opacity-100 translate-y-0"
                 x-transition:leave-end="opacity-0 translate-y-1"
-                @keydown.escape.prevent="closeAll()"
+                {{-- The panel has teleported out of the nav, so its events bubble
+                     to <body> and never reach the bar's own keydown listener.
+                     Escape closes AND returns focus to the trigger (WCAG 2.4.3 —
+                     it used to fall to <body>), and the two Tab edges hand focus
+                     back to the bar instead of off the end of the document. --}}
+                x-on:keydown="handlePanelKeydown($event, {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
+                x-on:focusout="handlePanelFocusOut($event, {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
                 data-wk-nav-panel="{{ $name }}"
                 class="{{ $panelClasses }}"
                 x-cloak

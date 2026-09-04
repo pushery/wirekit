@@ -21,6 +21,10 @@
  * @param {Array}  config.hidden  - initially-hidden column keys
  * @param {string} config.density - 'comfortable' | 'compact'
  * @param {string} config.mode    - 'client' (sort/filter here) | 'server'
+ * @param {string} config.emptyText - the already-translated "no rows" sentence,
+ *   handed in rather than assembled here: a sentence built from fragments in
+ *   JavaScript cannot be translated, and word order is not the same in every
+ *   language. Same shape as the wizard's announcement template.
  */
 export default function wirekitDataTable(config = {}) {
     return {
@@ -44,6 +48,7 @@ export default function wirekitDataTable(config = {}) {
         selected: [],
         density: config.density || 'comfortable',
         hiddenKeys: Array.isArray(config.hidden) ? [...config.hidden] : [],
+        emptyText: typeof config.emptyText === 'string' ? config.emptyText : '',
 
         // ── Columns ──────────────────────────────────────────────────────
         get visibleColumns() {
@@ -140,6 +145,30 @@ export default function wirekitDataTable(config = {}) {
         },
         get isEmpty() {
             return this.displayRows.length === 0;
+        },
+
+        /**
+         * What the table's live region says right now.
+         *
+         * Searching a table is a status message in the WCAG 4.1.3 sense: the result
+         * set changes under the reader without focus moving, and until this existed
+         * the only announced state change in the whole table was the selection
+         * count. Typing a query that matches nothing left the empty sentence on
+         * screen and said nothing at all.
+         *
+         * It is bound to a live region's TEXT rather than to the visible empty
+         * block's visibility, and that is the load-bearing part: a live region
+         * announces a content change, and toggling an element between
+         * `display: none` and visible is not one that every screen reader reports.
+         * A text swap is.
+         *
+         * Non-empty returns the empty string on purpose. The alternative — a row
+         * count on every keystroke — turns a status region into a metronome, and
+         * the recovered case needs no announcement: the rows are back, and the
+         * reader meets them by moving through the table.
+         */
+        get emptyAnnouncement() {
+            return this.isEmpty ? this.emptyText : '';
         },
 
         // ── Cell helpers ─────────────────────────────────────────────────

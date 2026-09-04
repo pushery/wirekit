@@ -67,18 +67,18 @@
             : "{$sign}{$delta}";
     }
 
-    // Aria label combining all parts
-    $ariaLabel = $formattedAmount;
-    if ($formattedBase !== null) {
-        $ariaLabel .= ", was {$formattedBase}";
-    }
-    if ($formattedDelta !== null) {
-        $deltaLabel = $deltaFormat === 'percent' ? abs($delta) . ' percent' : abs($delta);
-        $ariaLabel .= $delta < 0 ? ", {$deltaLabel} off" : ", {$deltaLabel} more";
-    }
-    if ($formattedUnitPrice !== null) {
-        $ariaLabel .= ", {$formattedUnitPrice} per {$unitMeasure}";
-    }
+    // The whole accessible story used to live in one `aria-label` on the wrapper below,
+    // and the wrapper is a roleless <span>. ARIA prohibits `aria-label` on `generic`, so
+    // that name is not required to reach assistive tech at all — the same defect the
+    // modal comment names, one component over. Worse, the unit price was marked
+    // `aria-hidden` on the strength of it: a legally required figure (Price Indication
+    // Directive 98/6/EC, PAngV) hidden behind a name nothing guarantees is spoken.
+    //
+    // So the meaning is carried by CONTENT instead. The struck compare-at price gets a
+    // visually-hidden prefix, because <del> maps to `role="deletion"` and screen readers
+    // do not announce it by default; the unit price is simply read out, being visible
+    // text; and the delta keeps its own sign, which is exactly what tells a sighted
+    // reader the direction too.
 
     // Size classes for the primary amount
     $sizeClasses = match ($size) {
@@ -113,7 +113,7 @@
     };
 @endphp
 
-<span {{ $attributes->class([$baseClasses]) }} aria-label="{{ $ariaLabel }}">
+<span {{ $attributes->class([$baseClasses]) }}>
     {{-- Strike-through compare-at price (UVP / RRP / MSRP).
          Uses inline `text-decoration` to bypass Tailwind v4 class-ordering
          where `no-underline` could shadow `line-through` on the same element,
@@ -129,6 +129,11 @@
             class="text-[color:var(--color-wk-text-muted)] {{ $sizeClasses }}"
             style="text-decoration: line-through; text-decoration-color: var(--color-wk-text-muted); text-decoration-thickness: from-font;"
         >
+            {{-- The strike is the only thing that says "old price", and it says it to the
+                 eye alone: <del> exposes `role="deletion"`, which screen readers do not
+                 announce by default. This prefix is what makes the pair readable as a
+                 pair rather than as two unrelated amounts. --}}
+            <span class="sr-only">{{ __('wirekit::Previous price') }}</span>
             <bdi>{{ $formattedBase }}</bdi>
         </del>
     @endif
@@ -153,14 +158,13 @@
     @endif
 
     {{-- Unit price (Grundpreis) — formatted as "(€8.99 / L)" alongside the
-         main price. Marked aria-hidden because the same information is
-         already woven into the wrapper's aria-label, so screen readers
-         hear it once instead of twice. --}}
+         main price. It is read out like any other visible text. It used to
+         carry aria-hidden, on the grounds that the wrapper's aria-label
+         already said it — but that label sat on a roleless <span>, where
+         ARIA prohibits it, so the figure the Price Indication Directive
+         requires was hidden behind a name nothing guarantees is spoken. --}}
     @if($formattedUnitPrice !== null)
-        <span
-            class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]"
-            aria-hidden="true"
-        >
+        <span class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]">
             ({{ $formattedUnitPrice }} / {{ $unitMeasure }})
         </span>
     @endif

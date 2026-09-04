@@ -149,7 +149,14 @@
         <img src="{{ $logo }}" alt="" class="h-8 w-auto" aria-hidden="true" />
     @endif
     @if($name)
-        <span class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)]">{{ $name }}</span>
+        {{-- Same rule as the sidebar row and the profile row beside it: in a collapsed
+             rail the word goes sr-only rather than wrapping. Measured at 55px, "Acme
+             Console" broke across two lines and made the brand row the tallest thing in
+             a column of 32px icons.
+
+             It costs nothing outside a sidebar — the group selector only matches inside
+             one, so a brand in a header or a footer is untouched. --}}
+        <span class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $name }}</span>
     @endif
     @if(!$logo && !$name)
         {{ $slot }}

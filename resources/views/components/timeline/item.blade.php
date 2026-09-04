@@ -37,6 +37,29 @@
         'danger' => 'var(--color-wk-danger)',
         default => 'var(--color-wk-accent)',
     };
+
+    // The spoken outcome, for every intent that HAS one.
+    //
+    // The dot is the only thing that changes between a deployment that succeeded
+    // and a pipeline that failed, and the dot is `aria-hidden` — so without this
+    // the difference reaches neither a screen reader nor a reader who cannot
+    // separate the red from the green. WCAG 1.4.1 does not permit color to be
+    // the sole carrier, and this component's own documentation recommends the
+    // intent for exactly that job.
+    //
+    // Same wording as alert's variant label, deliberately: an item whose outcome
+    // is a failure should be announced with the word a developer already read on
+    // the alert that reported it.
+    //
+    // `default` yields null and emits nothing. A plain entry signals no outcome,
+    // and announcing one on every row of a long log is the noise that teaches a
+    // reader to skip past the row that matters.
+    $intentLabel = match ($effectiveIntent) {
+        'success' => __('wirekit::Success'),
+        'warning' => __('wirekit::Warning'),
+        'danger' => __('wirekit::Error'),
+        default => null,
+    };
 @endphp
 
 <li {{ $attributes->class([$classes]) }}>
@@ -77,6 +100,12 @@
          to `:nth-last-child(2)`. The CSS rule uses `:has()` to match
          both cases cleanly. --}}
     <div data-wk-timeline-item-content>
+        {{-- Ahead of the title, so the outcome is heard as a prefix to the event
+             rather than trailing after the body text. --}}
+        @if($intentLabel !== null)
+            <span class="sr-only">{{ __('wirekit::Status: :status', ['status' => $intentLabel]) }}</span>
+        @endif
+
         @if(isset($title))
             <div class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
                 {{ $title }}

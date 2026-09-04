@@ -428,10 +428,47 @@ class VerifyInstallationCommand extends Command
                 continue;
             }
 
-            if (str_contains($content, 'wirekit') && str_contains($content, '@source')) {
-                $hasSource = true;
+            // The DIRECTIVE, not two words that happen to share a file.
+            //
+            // This used to be `str_contains($content, 'wirekit') && str_contains($content,
+            // '@source')`, and the two were tested independently anywhere in the file. Every
+            // shape that defeats that is an ordinary one: a comment mentioning WireKit beside
+            // an unrelated `@source` line, a commented-out directive left behind after a
+            // migration, and — the shape this package's own sample carries — an EXCLUSION,
+            // `@source not '../../vendor/pushery/wirekit/tests/**';`, which contains both
+            // words while telling Tailwind to skip a WireKit path. Each of those turned the
+            // number-one integration failure (components render unstyled because Tailwind
+            // never scanned the package views) into the one sentence a developer stops
+            // investigating at.
+            //
+            // Comments are stripped first because a directive inside `/* … */` is text, not
+            // configuration, and `not` is excluded because an exclusion is the opposite of
+            // the thing being looked for. `views` anchors it to the templates the utilities
+            // are generated from, which is what the PASS line claims — a directive naming
+            // some other part of the package (`…/wirekit/dist/**`) generates none of them.
+            //
+            // ⚠️ `views`, NOT `resources/views`, and the difference is a whole class of
+            // correct installs. A Tailwind `@source` path is relative to the CSS file it
+            // sits in, so from `resources/css/app.css` the two canonical spellings are
+            // `../../vendor/pushery/wirekit/resources/views/**` and — once the views are
+            // published — `../views/vendor/wirekit/**`. The second one never contains the
+            // longer literal, so requiring it told a correctly configured developer their
+            // integration was missing, which is the same sentence pointed the other way.
+            //
+            // The two halves are checked inside ONE directive rather than across the file,
+            // and in either order: the published-views form says the same thing backwards.
+            $withoutComments = (string) preg_replace('~/\*.*?\*/~s', '', $content);
 
-                break;
+            preg_match_all('~@source\s+(?!not\b)([^;]*);~i', $withoutComments, $directives);
+
+            foreach ($directives[1] as $argument) {
+                $argument = strtolower($argument);
+
+                if (str_contains($argument, 'wirekit') && str_contains($argument, 'views')) {
+                    $hasSource = true;
+
+                    break 2;
+                }
             }
         }
 
@@ -478,11 +515,11 @@ class VerifyInstallationCommand extends Command
      *
      * It used to be top-level-only as well, with the same reasoning — that listing
      * every nested key would bury the signal. The reasoning was sound and the
-     * conclusion was not, because the check kept its PASS line: of 186 leaves in
-     * the shipped config it compared exactly TWO, and then told the developer
-     * their file "covers every option this version offers". Reconstructed against
-     * real tags: a config published at v2.20.0 and checked against v2.22.0 prints
-     * that line while `a11y.motion_attribute` is missing from the file.
+     * conclusion was not, because the check kept its PASS line: of the two hundred
+     * odd leaves in the shipped config it compared exactly TWO, and then told the
+     * developer their file "covers every option this version offers". Reconstructed
+     * against real tags: a config published at v2.20.0 and checked against v2.22.0
+     * prints that line while `a11y.motion_attribute` is missing from the file.
      *
      * The damage is pure invisibility — the runtime still resolves the missing
      * keys, since the merge is recursive — but an application cannot configure
@@ -490,9 +527,13 @@ class VerifyInstallationCommand extends Command
      * was nothing to see.
      *
      * So the comparison is now over flattened leaf paths, and the output is
-     * grouped by owning section so 184 findings read as a handful of lines
-     * instead of a wall. Burying the signal was the right fear; the answer is to
-     * summarize it, not to stop measuring.
+     * grouped by owning section so a config that predates most of them reads as a
+     * handful of lines instead of a wall. Burying the signal was the right fear;
+     * the answer is to summarize it, not to stop measuring.
+     *
+     * The two tallies this paragraph used to carry are gone on purpose. Both were
+     * measured against the config of the day and both were stale within a minor,
+     * which leaves a comment about a drift carrying one of its own.
      */
     /**
      * Config nodes whose KEYS belong to the developer, not to this package.
@@ -520,7 +561,7 @@ class VerifyInstallationCommand extends Command
         // string a developer replaces rather than a default they tweak.
         //
         // So every correct use of a supported seam was reported as an option that had been
-        // removed. Measured in a consuming project: eleven `<x-wirekit::link>` and one
+        // removed. Measured in an adopting application: eleven `<x-wirekit::link>` and one
         // `<x-wirekit::segmented-control>` carrying the house colors, reported as residue.
         // With `--fail-on=warning`, which the shared CI lane runs, that is a red gate, and
         // the three ways out are all bad — throw away working styling, run red forever, or
@@ -611,7 +652,7 @@ class VerifyInstallationCommand extends Command
         // them every release.
         //
         // ⚠️ THE SAME THREE FILTERS AS THE OTHER DIRECTION, AND THIS SIDE HAD NONE.
-        // Reported from a consuming project whose release gate this made impassable: a
+        // Reported from an adopting application whose release gate this made impassable: a
         // configuration with four working `icons.aliases` was told the option was MISSING,
         // and the printed remedy — `vendor:publish --force` — would have overwritten the
         // aliases it was complaining about. Reproduced by that report as a positive control:
@@ -676,7 +717,7 @@ class VerifyInstallationCommand extends Command
                 // correct use of the feature as a dead option — and then tells them
                 // to delete it.
                 //
-                // Measured from a consuming project: ten reported orphans, ten of
+                // Measured from an adopting application: ten reported orphans, ten of
                 // them wrong. Two were `icons.aliases.sun` / `.moon`, which drive the
                 // glyphs of the theme toggle that page renders; following the advice
                 // silently swaps the outline icon for the mini one — nothing throws,
@@ -743,10 +784,10 @@ class VerifyInstallationCommand extends Command
         // informational. A reader in a hurry files the summary under "config is old"
         // and walks past the decision.
         //
-        // The other situation is a config published long ago, or never: this package
-        // has 195 leaves, 168 of them under `components`, so naming each would bury
-        // the reader instead of informing them. That is why the grouping exists and it
-        // stays for that case.
+        // The other situation is a config published long ago, or never: the published
+        // file carries a couple of hundred leaves, the large majority of them under
+        // `components`, so naming each would bury the reader instead of informing them.
+        // That is why the grouping exists and it stays for that case.
         //
         // The default is printed alongside, because the command is holding it already —
         // it read the package's own config to compute the difference. Without it the
@@ -1142,7 +1183,7 @@ class VerifyInstallationCommand extends Command
      * does is end the flow of later improvements to that block — permanently, and
      * without a word. The personalization keeps looking like a decision somebody
      * made, which it is; that it has since swallowed three upstream changes is
-     * visible nowhere. A consuming application found this by reading the installed
+     * visible nowhere. An adopting application found this by reading the installed
      * package, not by being told.
      *
      * So this reports, and does not judge: a WARN that names the blocks, because
@@ -1538,7 +1579,7 @@ class VerifyInstallationCommand extends Command
      * run locally since. Reading the vendor source then says a prop does not exist when it
      * shipped days ago, and nothing in the repository looks wrong.
      *
-     * Reported from a consuming project on 2026-08-29, which lost time to exactly that and
+     * Reported from an adopting application on 2026-08-29, which lost time to exactly that and
      * said so even though it was not asking for anything.
      *
      * ⚠️ IT COMPARES `source.reference`, NEVER `dist.reference`, and that is the difference
@@ -1632,12 +1673,12 @@ class VerifyInstallationCommand extends Command
      * using it as a noun collide, the app wins, and it wins INSIDE a WireKit component — which
      * then shows a word that is wrong in its own context. Nothing errors; only the text is wrong.
      *
-     * Reported from a consuming application with four real collisions, one of them on a component
+     * Reported from an adopting application with four real collisions, one of them on a component
      * rendered across 173 surfaces. The other three were harmless only because those components
      * were not in use yet — they would have landed on first use, with nothing turning red.
      *
      * ⚠️ This does NOT resolve the design question (a namespaced catalog, `wirekit::Map`). It
-     * removes the part every consuming application was paying separately: each one had to build
+     * removes the part every adopting application was paying separately: each one had to build
      * this detection itself to find out.
      */
     private function checkTranslationKeyCollisions(): void
@@ -2450,11 +2491,24 @@ class VerifyInstallationCommand extends Command
                 continue;
             }
             $css = (string) file_get_contents($cssPath);
-            // Look for any --color-wk-* token reference. Aggressive minifiers
-            // could rename CSS custom properties in theory, but Tailwind v4
-            // preserves them; if even one is missing across every CSS bundle
-            // we flag the rebuild.
-            if (str_contains($css, '--color-wk-')) {
+
+            // A wk token inside a RULE, never merely somewhere in the bundle.
+            //
+            // This read `str_contains($css, '--color-wk-')`, and the most ordinary
+            // customization there is defeats it: `wirekit:theme` writes a `:root { … }`
+            // block of `--color-wk-*` declarations straight into the developer's own
+            // app.css, and the theming guide asks them to hand-write the same overrides.
+            // Tailwind copies those declarations into the bundle whether or not WireKit
+            // was ever scanned — so an install that had themed WireKit and then lost the
+            // @source line, or never rebuilt, produced a bundle full of `--color-wk-`
+            // and not one WireKit rule, under a PASS line promising utility rules.
+            //
+            // A declaration block whose selector is not the document root is the
+            // difference: a theme override lives on `:root` / `.dark`, while everything
+            // this check is looking for — the shipped `.wk-*` rules and the utilities
+            // Tailwind generates from the package's Blade templates — lives on a
+            // selector of its own.
+            if ($this->cssHasWireKitRuleOutsideThemeScope($css)) {
                 $this->reportPass('Built app CSS contains WireKit utility rules');
 
                 return;
@@ -2463,6 +2517,71 @@ class VerifyInstallationCommand extends Command
 
         $this->reportFail('Built app CSS does not reference WireKit utilities');
         $this->line('    Hint: run `npm run build` after adding the @source line for WireKit templates to app.css.');
+    }
+
+    /**
+     * Does this bundle carry a WireKit token inside a rule that is NOT a theme override?
+     *
+     * The blocks are read innermost-first: `[^{}]*` cannot cross a brace, so a nested
+     * at-rule contributes its inner selector rather than the `@media` wrapper, which is
+     * the level the question is asked at.
+     *
+     * A selector counts as theme scope only when EVERY comma-separated part of it does.
+     * `:root, .dark` is an override; `.dark .wk-field` is a rule. The list is short on
+     * purpose — a name not on it is a rule, so the check errs toward asking for a
+     * rebuild rather than toward a PASS nobody earned.
+     */
+    private function cssHasWireKitRuleOutsideThemeScope(string $css): bool
+    {
+        if (! str_contains($css, '--color-wk-')) {
+            return false;
+        }
+
+        // Comments go first, because everything between a block's `}` and the next `{`
+        // is read as that block's selector — so a banner or a `/* wirekit:theme start */`
+        // marker sitting above a `:root` override makes the override look like a rule,
+        // which is precisely the shape this check exists to reject.
+        $css = (string) preg_replace('~/\*.*?\*/~s', '', $css);
+
+        preg_match_all('/([^{}]*)\{([^{}]*)\}/', $css, $blocks, PREG_SET_ORDER);
+
+        foreach ($blocks as $block) {
+            if (! str_contains($block[2], '--color-wk-')) {
+                continue;
+            }
+
+            if (! $this->isThemeScopeSelector($block[1])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Is every part of this selector one of the document-root scopes a theme block uses?
+     */
+    private function isThemeScopeSelector(string $selector): bool
+    {
+        // The whole-selector prefix a nested at-rule leaves behind (`@media (…) {` never
+        // reaches here, but `@layer base` and friends can head a block of their own).
+        $selector = trim($selector);
+
+        if ($selector === '' || str_starts_with($selector, '@')) {
+            return true;
+        }
+
+        foreach (explode(',', $selector) as $part) {
+            $part = strtolower(trim($part));
+
+            // `:root`, `html`, `.dark`, `:host`, `*`, and the compounds a dark-mode
+            // block is written with (`:root.dark`, `html.dark`, `[data-theme='dark']`).
+            if (preg_match('/^(?::root|html|body|\*|:host|\.dark|\[[^\]]+\])+$/', $part) !== 1) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -2950,7 +3069,7 @@ class VerifyInstallationCommand extends Command
                 //     because the pattern only knew the negative and optional-chaining
                 //     spellings. That is the same check written the other way round,
                 //     and it usually does MORE (it nulls the reference afterwards).
-                //     Reported from a consuming app as a false positive, twice over.
+                //     Reported from an adopting application as a false positive, twice over.
                 //
                 //   • Teaching it the positive form file-wide would have been worse:
                 //     a component that guards correctly in destroy() and calls
@@ -3308,8 +3427,9 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * v2.4.0 Extension 3 — surface silent prop typos detected in the
-     * Laravel log. The StrictnessGate emits `local.ERROR: WireKit [...]`
+     * Surface silent prop typos detected in the Laravel log.
+     *
+     * The StrictnessGate emits `local.ERROR: WireKit [...]`
      * lines in HTTP dev mode when a developer passes an invalid prop
      * value (the gate logs + renders the fallback instead of throwing).
      * Without this scan a typo can sit in production code for weeks —
@@ -3330,8 +3450,12 @@ class VerifyInstallationCommand extends Command
      * The check NEVER returns FAIL — the doctor's overall exit code is
      * unaffected.
      *
-     * Opt-out: set `wirekit.doctor.scan_logs` to `false` in config OR
-     * pass `--no-scan-logs` flag on the command (registered separately).
+     * Opt-out: set `wirekit.doctor.scan_logs` to `false` in config.
+     *
+     * This line also offered a `--no-scan-logs` flag "registered separately", and no such
+     * option is declared on the command — Symfony rejects an unknown one, so the sentence
+     * handed a developer trying to quiet the check an error from the very command they
+     * were quieting. The config key is the whole opt-out.
      */
     private function checkSilentValidationTypos(): void
     {

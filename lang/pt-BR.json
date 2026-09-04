@@ -21,6 +21,7 @@
     "wirekit::Sending": "Enviando",
     "wirekit::Show password": "Mostrar senha",
     "wirekit::Showing :first to :last of :total results": "Exibindo :first a :last de :total resultados",
+    "wirekit::Slide :current of :total": "Slide :current de :total",
     "wirekit::Still not confirmed. Your text is kept here — reload to see whether it was saved.": "Ainda sem confirmação. Seu texto fica aqui — recarregue para ver se foi salvo.",
     "wirekit::Switch :label": "Trocar :label",
     "wirekit::Tabs": "Abas",

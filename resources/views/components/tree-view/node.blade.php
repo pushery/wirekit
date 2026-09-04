@@ -16,6 +16,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('tree-view.node', $attributes->getAttributes());
 
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
@@ -46,26 +47,51 @@
     ]);
 
     $hasChildren = $slot->isNotEmpty();
-    $nodeId = 'wk-tree-' . \Illuminate\Support\Str::random(6);
+
+    // A screen reader announces the role and state of the element that RECEIVES focus,
+    // and focus lands on the label row. With `role="treeitem"` one level up on the <li>,
+    // a reader heard the label text alone — no "tree item, collapsed", and no
+    // announcement when ArrowRight/ArrowLeft changed the expansion state. So the role,
+    // aria-expanded, aria-selected and the roving tabindex all live on the row itself,
+    // and the <li> steps out of the way with role="none" so the tree keeps owning
+    // treeitems directly rather than list items that merely contain them.
+    //
+    // The child group is a block BENEATH the row rather than inside it — the row is a
+    // flex line — so the DOM cannot express that the branch owns its children. aria-owns
+    // restores it, which is the same shape the ARIA authoring practices use for a tree
+    // whose rows are single elements.
+    //
+    // The id is COUNTED rather than random: a fresh id per render makes a Livewire morph
+    // replace the node instead of patching it, and leaves the aria-owns written on the
+    // previous render pointing at an element that no longer exists.
+    $groupId = $hasChildren ? DomId::unique(null, 'wk-tree-group-') : null;
 @endphp
 
 <li
-    role="treeitem"
-    @if($hasChildren) aria-expanded="{{ $expanded ? 'true' : 'false' }}" @endif
-    @if($selected) aria-selected="true" @endif
+    role="none"
     {{ $attributes->class([$nodeClasses]) }}
     {{-- The toggle lives in resources/js/components/tree-view-node.js: it flips
-         the flag AND writes aria-expanded onto the treeitem above the clicked
-         row, which is two statements — one more than Alpine's CSP build
+         the flag AND writes aria-expanded onto the treeitem row inside this
+         <li>, which is two statements — one more than Alpine's CSP build
          parses. --}}
     x-data="wirekitTreeViewNode({ expanded: {{ $expanded ? 'true' : 'false' }} })"
 >
     {{-- Label row — click toggles expansion for branch nodes.
          Leaf nodes use margin-left instead of an inline spacer so the
          hover background does not cover empty whitespace. --}}
+    {{-- Roving tabindex, the APG tree model: every row is `-1` and the container's
+         Alpine factory promotes exactly one of them to `0` so the tree is a single tab
+         stop. A `selected` row renders the `0` here as well, which is the hint the
+         factory reads to pick the entry point — a reader who marked a node expects to
+         land on it rather than on the first row. Left at a flat `-1`, the tree could
+         only be entered by clicking a row, and the whole arrow model below it was dead
+         for anyone using a keyboard. --}}
     <div
         class="{{ $labelClasses }}"
-        tabindex="-1"
+        role="treeitem"
+        @if($hasChildren) aria-expanded="{{ $expanded ? 'true' : 'false' }}" aria-owns="{{ $groupId }}" @endif
+        @if($selected) aria-selected="true" @endif
+        tabindex="{{ $selected ? '0' : '-1' }}"
         data-wk-tree-node
         @if(!$hasChildren) style="margin-left: 1.25rem;" @endif
         @if($hasChildren)
@@ -98,6 +124,7 @@
     @if($hasChildren)
         <ul
             role="group"
+            id="{{ $groupId }}"
             x-show="nodeExpanded"
             x-collapse
             class="list-none m-0 pl-4"

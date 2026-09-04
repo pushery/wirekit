@@ -130,6 +130,58 @@ export default function wirekitAlertDialog(config = {}) {
             event.stopPropagation();
         },
 
+        /**
+         * Put the blocked state on the CONTROL, not on the wrapper around it.
+         *
+         * `aria-disabled` and `aria-describedby` were bound on the wrapper element
+         * first, and neither reaches the button inside it: a generic element passes
+         * no state down, and a description is only read out when the element carrying
+         * it is the one with focus. So a screen-reader user focused "Delete forever",
+         * heard an ordinary enabled button, pressed Enter and got nothing and no
+         * reason — precisely the failure `blockUnlessConfirmed` exists to explain.
+         *
+         * The control is looked up rather than passed in because the caller may have
+         * slotted their own; the same lookup covers the default button, a caller's
+         * button and a link styled as one.
+         *
+         * @param {Element} wrapper the element carrying `data-wk-alert-confirm`
+         * @param {string}  reasonId id of the region holding the reason text
+         */
+        syncConfirmControlState(wrapper, reasonId) {
+            const control = wrapper?.querySelector?.('button, a[href], [role="button"]');
+
+            if (!control) return;
+
+            // A caller's control may already be described by something of their own, so
+            // the reason is ADDED to that rather than replacing it. The baseline is read
+            // once and kept on the element — this runs again on every keystroke, and
+            // reading the attribute back after the first write would capture our own id
+            // as though the caller had put it there. It is a plain expando rather than a
+            // data attribute so nothing of ours shows up in the caller's markup, and
+            // rather than component state so writing it cannot re-trigger the effect
+            // that called us.
+            if (control._wkConfirmDescribedBy === undefined) {
+                control._wkConfirmDescribedBy = control.getAttribute('aria-describedby') ?? '';
+            }
+
+            const base = control._wkConfirmDescribedBy;
+
+            if (this.confirmAllowed) {
+                control.removeAttribute('aria-disabled');
+
+                if (base === '') {
+                    control.removeAttribute('aria-describedby');
+                } else {
+                    control.setAttribute('aria-describedby', base);
+                }
+
+                return;
+            }
+
+            control.setAttribute('aria-disabled', 'true');
+            control.setAttribute('aria-describedby', base === '' ? reasonId : `${base} ${reasonId}`);
+        },
+
         init() {
             this.initOverlay();
         },

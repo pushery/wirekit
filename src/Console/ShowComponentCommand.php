@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Console;
 use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Support\BladeParser;
+use Pushery\WireKit\Support\DocsVisibility;
 use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\WireKit;
@@ -25,7 +26,7 @@ class ShowComponentCommand extends Command
         $name = $this->argument('name');
         $meta = ComponentRegistry::get($name);
 
-        // accept dotted sub-component
+        // Accepts dotted sub-component
         // names — `wirekit:show card.body` / `wirekit:show timeline.item`.
         // Pre-fix the dotted form returned "Unknown component" because
         // ComponentRegistry tracks only top-level components. We now
@@ -104,7 +105,7 @@ class ShowComponentCommand extends Command
         // Slots — named-slot quick forms (e.g. dropdown's <x-slot:trigger>) plus
         // the default slot. Uses the SAME source-of-truth extractor as
         // wirekit:export-json + the .wirekit-schema.json writer, so `show` no
-        // longer omits the slot contract a developer needs to discover (D1).
+        // longer omits the slot contract a developer needs to discover.
         $slots = $this->extractSlots($name);
         if ($slots !== []) {
             $this->line('  <fg=yellow>Slots:</>');
@@ -132,13 +133,43 @@ class ShowComponentCommand extends Command
             }
         }
 
-        $this->line('  <fg=yellow>Docs:</> '.WireKit::DOCS_URL."/components/{$name}");
+        $docsUrl = $this->docsUrlFor($name);
+
+        if ($docsUrl !== null) {
+            $this->line('  <fg=yellow>Docs:</> '.$docsUrl);
+        } else {
+            // The catalog index rather than a guess at a page. It resolves, and it is
+            // where a reader finds the parent this component is covered on.
+            $this->line('  <fg=yellow>Docs:</> '.WireKit::DOCS_URL.'/components  <fg=gray>(no published page of its own)</>');
+        }
 
         return self::SUCCESS;
     }
 
     /**
-     * Emit the structured schema for a component as JSON (Ext #2).
+     * The published documentation URL for a component, or null when there is none.
+     *
+     * Both surfaces of this command printed the URL unconditionally, and sixteen
+     * components have no page of their own — the sub-component pattern (toast-region,
+     * glass, the reading-* family, kanban-column …), which is documented on a parent
+     * page. So `wirekit:show glass` ended on a link to a 404 while `wirekit:export-json`
+     * and the MCP catalog, asked the same question about the same component in the same
+     * checkout, both answered null. Three surfaces, one fact, two answers.
+     *
+     * DocsVisibility is the oracle the exporters already route through, and routing this
+     * one through it too is what makes the three agree by construction rather than by
+     * everyone remembering. It answers correctly in an installed package as well, where
+     * `docs/` is absent and a filesystem check would say "no page" for every component.
+     */
+    private function docsUrlFor(string $name): ?string
+    {
+        return DocsVisibility::componentPageStatus($name) === DocsVisibility::STATUS_PUBLIC
+            ? WireKit::DOCS_URL."/components/{$name}"
+            : null;
+    }
+
+    /**
+     * Emit the structured schema for a component as JSON.
      *
      * Pure machine-readable output — no decoration, no `info()` lines.
      * Developers can pipe directly to `jq`. Same JSON-flags as
@@ -161,7 +192,7 @@ class ShowComponentCommand extends Command
             'tag' => ComponentRegistry::tag($name),
             'category' => $meta['category'],
             'description' => $meta['description'],
-            'docs_url' => WireKit::DOCS_URL."/components/{$name}",
+            'docs_url' => $this->docsUrlFor($name),
             'props' => $props,
             'slots' => $this->extractSlots($name),
             'sub_components' => $subComponents,
@@ -203,7 +234,7 @@ class ShowComponentCommand extends Command
 
     /**
      * Validate every `<x-wirekit::{name} attr="..." />` usage in a developer
-     * Blade file against the component's known prop set (Ext #3).
+     * Blade file against the component's known prop set.
      *
      * Heuristic: tag-by-tag attribute scan against the prop names
      * extracted by PropsParser. Unknown attributes that don't match a
@@ -324,7 +355,7 @@ class ShowComponentCommand extends Command
     }
 
     /**
-     * handle dotted sub-component
+     * Handles dotted sub-component
      * names like `card.body`, `timeline.item`, `alert-dialog.cancel`.
      *
      * Resolves the parent component, then reads the nested Blade file

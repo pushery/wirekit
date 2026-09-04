@@ -31,6 +31,17 @@ export default function wirekitSidebarListbox(config = {}) {
         /** The chosen value. Mirrors what the rows render as `aria-selected`. */
         selectedValue: typeof config.value === 'string' ? config.value : null,
 
+        /**
+         * Set by whichever route moves the marker WITH THE POINTER, and cleared by the one
+         * `markActive()` call that follows it.
+         *
+         * It sits here rather than at the call site because the thing being suppressed is a
+         * scroll, and the reason to suppress it is that the pointer is already looking at the
+         * row. Today only `selectOption()` sets it; a hover handler added later would have to
+         * set it too, which is why this says "the pointer" and not "the click".
+         */
+        _movedByPointer: false,
+
         initListbox() {
             const options = this.listboxOptions();
             if (options.length === 0) return;
@@ -93,6 +104,21 @@ export default function wirekitSidebarListbox(config = {}) {
 
             this.activeId = el.id || null;
 
+            // A pointer is already looking at the row it just chose, so the scroll below
+            // would only pull the list out from under it. The half-visible row at the
+            // column's edge is the case that bites: revealing it shifts a different row
+            // under the cursor, and the next click lands on something the reader never
+            // aimed at. Measured before this guard, on a capped column: a click on the
+            // half-visible last row moved scrollTop from 0 to 17.
+            //
+            // One call, then the flag is spent — `markActive()` is the shared path, and a
+            // flag left standing would silence the keyboard's next move as well.
+            if (this._movedByPointer) {
+                this._movedByPointer = false;
+
+                return;
+            }
+
             // Keep the marked row in view. Focus never moves in this pattern, so the
             // browser will not scroll for us — without this the marker walks off the
             // bottom of a scrolling column and the reader follows nothing.
@@ -117,10 +143,19 @@ export default function wirekitSidebarListbox(config = {}) {
             el.click();
         },
 
-        /** Pointer selection, so both routes end in the same state. */
+        /**
+         * Pointer selection, so both routes end in the same state.
+         *
+         * Still through `markActive()`, deliberately — see `selectActive()` above on why the
+         * two routes share one path. The flag is what makes sharing survivable: it says "the
+         * pointer got here", which is the one thing the shared path cannot work out for
+         * itself, rather than splitting off a second copy of the marking logic that would
+         * drift.
+         */
         selectOption(el) {
             if (!el) return;
 
+            this._movedByPointer = true;
             this.markActive(el);
             this.selectedValue = el.getAttribute('data-wk-option-value');
         },

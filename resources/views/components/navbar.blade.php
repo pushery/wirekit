@@ -69,13 +69,30 @@
     $isContainerWrapped = filter_var($container, FILTER_VALIDATE_BOOL);
     // No hardcoded fallback values — the `--size-wk-container-*` tokens
     // are the canonical source of truth and ship in dist/wirekit.css.
+    /*
+     * The cap grows by the padding it would otherwise swallow.
+     *
+     * This element carries `px-[var(--padding-wk-x-lg)]` AND the cap, and under
+     * `box-sizing: border-box` the cap eats that padding — so the visible content edge
+     * lands at (viewport - tier) / 2 + padding. `main`, `hero`, `cta` and `footer` all
+     * use the opposite shape (padding on the outer element, cap on an inner one), so
+     * their content edge is (viewport - tier) / 2. A container-wrapped navbar therefore
+     * sat exactly one `--padding-wk-x-lg` INSIDE the spine every other page-edge
+     * component sits on -- 16px, on every page that used it.
+     *
+     * Widening the cap by that padding puts the CONTENT box on the tier, which is what
+     * the prop is understood to mean. Measured on the stacked shell: brand at 240 became
+     * brand at 256, against a content column starting at 256.
+     *
+     * Tailwind arbitrary values take no spaces, hence `calc(a+2*b)` unspaced.
+     */
     $maxClass = $isContainerWrapped
         ? match ($max) {
-            'sm' => 'max-w-[var(--size-wk-container-sm)] mx-auto',
-            'md' => 'max-w-[var(--size-wk-container-md)] mx-auto',
-            'lg' => 'max-w-[var(--size-wk-container-lg)] mx-auto',
-            'xl' => 'max-w-[var(--size-wk-container-xl)] mx-auto',
-            '2xl' => 'max-w-[var(--size-wk-container-2xl)] mx-auto',
+            'sm' => 'max-w-[calc(var(--size-wk-container-sm)+2*var(--padding-wk-x-lg))] mx-auto',
+            'md' => 'max-w-[calc(var(--size-wk-container-md)+2*var(--padding-wk-x-lg))] mx-auto',
+            'lg' => 'max-w-[calc(var(--size-wk-container-lg)+2*var(--padding-wk-x-lg))] mx-auto',
+            'xl' => 'max-w-[calc(var(--size-wk-container-xl)+2*var(--padding-wk-x-lg))] mx-auto',
+            '2xl' => 'max-w-[calc(var(--size-wk-container-2xl)+2*var(--padding-wk-x-lg))] mx-auto',
             'full' => 'max-w-full',
             default => WireKit::validateProp('navbar', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full']),
         }
@@ -107,6 +124,25 @@
         : 'hidden md:flex md:items-center md:gap-[var(--gap-wk-sm)]';
     $hamburgerClasses = $forceMobile ? '' : 'md:hidden';
     $mobileMenuWrapperHide = $forceMobile ? '' : 'md:hidden';
+
+    // The disclosure's id, and the string the hamburger's `aria-controls` points at.
+    // Both were the literal `wk-navbar-mobile`, which is correct for exactly one navbar per
+    // page — and a page with two (a `forceMobile` demo beside a live bar, a marketing header
+    // above an app bar, several previews in one document) shipped duplicate ids, so every
+    // hamburger on it resolved to the FIRST menu and the second bar's button announced a
+    // disclosure it does not own.
+    //
+    // The base is passed to the shared registry rather than replaced by a generated id: the
+    // registry hands the FIRST sight of a base back verbatim and only appends `-2`, `-3`, …
+    // to the ones that follow. So a page with a single navbar renders byte-identically to
+    // before — which matters, because this string is a documented handle that developer CSS
+    // and page-level scripts are allowed to select on — and only the second navbar's markup
+    // changes, which is the case that was broken. A caller-supplied `id` derives the menu's
+    // id from it instead, so the pairing stays readable in their own markup.
+    $mobileId = \Pushery\WireKit\Support\DomId::unique(
+        ($navId = $attributes->get('id')) ? $navId.'-mobile' : 'wk-navbar-mobile',
+        'wk-navbar-mobile-'
+    );
 @endphp
 
 <nav
@@ -149,7 +185,7 @@
             type="button"
             x-on:click="mobileOpen = !mobileOpen"
             :aria-expanded="mobileOpen ? 'true' : 'false'"
-            aria-controls="wk-navbar-mobile"
+            aria-controls="{{ $mobileId }}"
             aria-label="{{ __('wirekit::Toggle navigation') }}"
             class="{{ $hamburgerClasses }} p-2 cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
         >
@@ -166,7 +202,7 @@
 
     {{-- Mobile menu (disclosure) --}}
     <div
-        id="wk-navbar-mobile"
+        id="{{ $mobileId }}"
         x-show="mobileOpen"
         x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 -translate-y-1"

@@ -137,7 +137,12 @@
     ]), $scope);
 
     // Build aria-describedby from hint + error ids conditionally.
-    $describedBy = trim(($hint ? $hintId : '') . ' ' . ($hasError ? $errorId : ''));
+    // The hint paragraph below renders only `@if($hint && ! $hasError)`, so an
+    // error state must not keep naming it: an idref whose element is not in the
+    // document is dropped silently by assistive technology, and the field is then
+    // described by less than the markup claims — or, with only a hint set, by
+    // nothing at all. Compose from what this render actually emits.
+    $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($hasError ? $errorId : ''));
 
     // Accessible-name fallback. WCAG 2.1 (4.1.2) requires every input to
     // have a programmatically-determinable name. When no visible `label`

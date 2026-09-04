@@ -62,7 +62,25 @@
         // would have stayed put while the glyphs moved, and the two would part by exactly the
         // amount the modules gained. Reading the same token means the mark follows whatever
         // the modules do, in every shell, with no second rule to keep in step.
-        'group-data-[labels=inline]/wk-rail:ps-[calc(var(--wk-rail-item-pad,var(--padding-wk-x-sm))-((var(--size-wk-sm,2rem)-1.25rem)/2))]',
+        //
+        // ⚠️ AND IT CARRIES THE RAIL'S OWN INSET, because the zone this lands in does not.
+        // A module's padding is measured from the START OF THE MODULE LIST, and the rail insets
+        // that list by `--wk-rail-inset-start`. The brand slot is rendered into a zone with no
+        // inline padding at all, so a mark placed straight into that slot began its measurement
+        // one inset earlier than every glyph below it — and the optical correction above, which
+        // is right, then pulled it a further half-mark to the left. Reported from an adopting
+        // application beside an inset panel: mark left 4, glyph left 18, the 14 being the 8px
+        // inset plus the 6px correction. Only the wide rail; centered modes never had it,
+        // because symmetric padding does not move a centered mark.
+        //
+        // The inset is taken from a variable rather than added outright, because there are TWO
+        // shapes and only one of them is short of it. Put inside a shell-bar — the shape the
+        // documentation teaches, so that the mark lines up with the heads of the columns beside
+        // it — the bar has already taken the inset for the whole row, and a mark adding it again
+        // would move by that amount in the shape that was correct. The stylesheet therefore
+        // zeroes `--wk-rail-brand-inset` on a bar inside a rail, and both shapes land on one
+        // line. A Blade template cannot see its own ancestors, which is why this half is CSS.
+        'group-data-[labels=inline]/wk-rail:ps-[calc(var(--wk-rail-brand-inset,var(--wk-rail-inset-start,var(--padding-wk-y-sm)))+var(--wk-rail-item-pad,var(--padding-wk-x-sm))-((var(--size-wk-sm,2rem)-1.25rem)/2))]',
         'group-data-[labels=inline]/wk-rail:pe-[var(--padding-wk-x-sm)]',
         'rounded-[var(--radius-wk-md)]',
         'text-[color:var(--color-wk-rail-text)]',

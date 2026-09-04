@@ -23,6 +23,20 @@
     ]), $scope);
 @endphp
 
-<div {{ $attributes->class([$classes]) }}>
+{{-- `role="status"` (an implicit polite live region), because the appearance of
+     this block IS the answer to the reader's search. Without it the palette said
+     nothing when a query matched nothing: the input keeps `aria-expanded="true"`
+     and reports no active descendant, which is also what an untouched list looks
+     like — so "no results" and "you have not typed yet" were the same
+     announcement, namely none.
+
+     Belongs in the palette's `empty` slot, NOT the default one: the default slot
+     is the inside of `role="listbox"`, whose children are options, and a roleless
+     line of prose sitting among them is what axe reports as
+     `aria-required-children`. See the slot in command-palette.blade.php.
+
+     Merged rather than written flat so a caller who has a better role for their
+     own empty state can still say so. --}}
+<div {{ $attributes->merge(['role' => 'status'])->class([$classes]) }}>
     {{ $slot }}
 </div>

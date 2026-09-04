@@ -99,8 +99,34 @@ export default function wirekitPopover(config = {}) {
                 this._trap = createFocusTrap(panel, {
                     escapeDeactivates: true,
                     onDeactivate: () => this._closeFromTrap(),
-                    // Allow clicking trigger to close without trap interference
-                    allowOutsideClick: true,
+                    // Allow clicking the trigger — or anything else — to close without trap
+                    // interference, and RELEASE THE TRAP ON THE PRESS rather than on the click.
+                    //
+                    // The timing is the whole point. Returning a bare `true` lets the click
+                    // through but leaves the trap armed, and the trap's `focusin` handler then
+                    // pulls focus straight back into the panel before the click that closes
+                    // this even fires. Measured in Chromium on one outside click, in order:
+                    //
+                    //   mousedown  target=outside control   active=<the panel's own input>
+                    //   focusout   target=<panel input>     active=BODY
+                    //   focusin    target=<panel input>     active=<panel input>   <- pulled back
+                    //   click      target=outside control   active=<panel input>   <- close() here
+                    //
+                    // So by the time close() looks, the DOM says focus is inside the panel —
+                    // identical to the Escape case, which wants the opposite answer. Reading
+                    // `activeElement` cannot separate the two, and hiding the panel from that
+                    // state drops focus on `<body>` (WCAG 2.4.3).
+                    //
+                    // focus-trap resolves this hook on `mousedown` in the capture phase, so
+                    // letting go here happens BEFORE the focusin steal — and `returnFocus:
+                    // false` is the library's own documented way to leave the outside click to
+                    // put focus where it naturally would. The reader ends up on the control
+                    // they pressed, which is the entire contract.
+                    allowOutsideClick: () => {
+                        this._trap?.deactivate({ returnFocus: false });
+
+                        return true;
+                    },
                     // WHERE FOCUS GOES WHEN THE TRAP LETS GO, named explicitly.
                     //
                     // The trap returns focus to whatever held it at activation, and that is
@@ -120,7 +146,11 @@ export default function wirekitPopover(config = {}) {
         },
 
         /**
-         * Close triggered by focus-trap deactivation (ESC key).
+         * Close triggered by the trap deactivating, which now happens two ways: Escape (the
+         * library's own `escapeDeactivates`) and a press outside the panel (the
+         * `allowOutsideClick` hook lets go there so focus can land where the reader pressed).
+         *
+         * Deliberately does NOT call deactivate() again — this runs from inside it.
          */
         _closeFromTrap() {
             if (!this.open) return;
@@ -145,29 +175,45 @@ export default function wirekitPopover(config = {}) {
             // Measured: that is exactly where it went. A click on some other control also
             // closes this, and there focus belongs where the reader just put it; stealing
             // it back would be worse than doing nothing.
+            //
+            // THE OUTSIDE-CLICK PATH DOES NOT REACH HERE ANY MORE: the trap releases itself on
+            // the press (see `allowOutsideClick` in show()), which closes this through
+            // `_closeFromTrap()`, so the `click.outside` binding then finds `open` already
+            // false and returns above. What is left for this method are the closes that happen
+            // with focus somewhere settled — from inside the panel, or programmatically — and
+            // for those `activeElement` is a truthful answer.
             const panel = this.$refs.panel;
-            const hadFocus = panel && panel.contains(document.activeElement);
+            const hadFocus = Boolean(panel && panel.contains(document.activeElement));
 
             this.open = false;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
 
             if (this._trap) {
-                this._trap.deactivate();
+                // THE DECISION IS HANDED OVER, not merely made. `utils/focus-trap.js` sets
+                // `returnFocusOnDeactivate: true` for every trap in this package, so a bare
+                // `deactivate()` answers this question by itself — and answers it the same
+                // way every time, which is the way that is wrong half the time. The guard
+                // below it could then only suppress our own second `focus()` call, never the
+                // trap's, and the reader clicking a filter or a text field still got yanked
+                // back onto a trigger they had left. Same shape as `color-picker.js`, which
+                // is the sibling that already passes it through.
+                this._trap.deactivate({ returnFocus: hadFocus });
                 this._trap = null;
+            } else if (hadFocus) {
+                // THE TRAP-LESS PATH, and it is a real one rather than defensive padding:
+                // `show()` builds a trap only when a trigger AND a panel both resolve, so a
+                // trigger slot holding nothing focusable never gets one. Nothing else would
+                // return focus there, and the panel is about to hide with focus inside it.
+                //
+                // The interactive descendant, not the wrapper: the wrapper is a plain div and
+                // focusing it would be a stop that announces nothing.
+                const trigger = this.$refs.trigger?.querySelector(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                );
+
+                trigger?.focus({ preventScroll: true });
             }
-
-            if (! hadFocus) {
-                return;
-            }
-
-            // The interactive descendant, not the wrapper: the wrapper is a plain div and
-            // focusing it would be a stop that announces nothing.
-            const trigger = this.$refs.trigger?.querySelector(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-
-            trigger?.focus({ preventScroll: true });
         },
 
         /**

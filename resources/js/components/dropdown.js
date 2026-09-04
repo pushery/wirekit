@@ -279,6 +279,37 @@ export default function wirekitDropdown(config = {}) {
                     this.close();
                     break;
 
+                case ' ':
+                    // SPACE ACTIVATES THE FOCUSED ROW, and it has to be its own case rather
+                    // than something the branch below leaves alone. A space is a printable
+                    // character one byte long, so it fell into the type-ahead guard beneath —
+                    // which calls preventDefault() and so suppressed the native keyup click a
+                    // <button> row activates on. The menu answered Space with nothing at all:
+                    // no activation, no close, no movement. Enter worked the whole time, which
+                    // is why it read as "works" to everyone who tried it that way, while the
+                    // menu pattern and this component's own keyboard table both promise both
+                    // keys.
+                    //
+                    // Activating EXPLICITLY rather than by removing the preventDefault, because
+                    // the rows are not all buttons: `dropdown.item` renders an <a> whenever it
+                    // is given an href, and a space on a focused link does not activate it — it
+                    // scrolls the page, behind an open menu. One synthetic click covers both
+                    // tags, and it is the same event a mouse click sends, so the wrapper's
+                    // delegated close() runs exactly as it does for Enter.
+                    //
+                    // Nothing focused inside the menu means nothing to activate: break WITHOUT
+                    // preventDefault so the key keeps whatever meaning it had. That is the case
+                    // when focus is still on the trigger — this handler sits on the wrapper the
+                    // trigger lives in, and swallowing Space there stopped the trigger's own
+                    // native toggle from closing the menu again.
+                    if (currentIndex < 0) {
+                        break;
+                    }
+
+                    e.preventDefault();
+                    items[currentIndex].click();
+                    break;
+
                 default:
                     // TYPE-AHEAD. It was documented for a long time before it existed, and
                     // the line was eventually removed from the docs rather than the behavior
@@ -289,6 +320,12 @@ export default function wirekitDropdown(config = {}) {
                     // Single printable characters only. A modifier means the reader is
                     // reaching for a browser or OS shortcut, and swallowing those is how a
                     // widget stops being a good citizen of the page.
+                    //
+                    // A space never arrives here — the case above claims it for activation, so
+                    // the buffer holds no spaces and a two-word label is reached by its first
+                    // word. That is the trade the menu pattern names: in a menu the key belongs
+                    // to activation, and a search that swallowed it would leave the row the
+                    // reader had just found unreachable.
                     if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) {
                         break;
                     }

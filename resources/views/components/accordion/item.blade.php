@@ -15,6 +15,11 @@
 @aware([
     'variant' => config('wirekit.components.accordion.variant', 'bordered'),
     'size' => config('wirekit.components.accordion.size', 'md'),
+    // The heading level the trigger is wrapped in. It comes from the CONTAINER
+    // because an outline is a property of the page, not of one row: every item in
+    // one accordion sits at the same depth, so letting rows disagree would only
+    // let a developer build a broken outline one item at a time.
+    'level' => 3,
 ])
 
 @php
@@ -28,7 +33,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['variant', 'size']);
+    $attributes = $attributes->except(['variant', 'size', 'level']);
 @endphp
 
 
@@ -106,12 +111,21 @@
     // wraps to multiple lines (without it, flexbox shrinks the SVG to a sliver
     // because <svg> has no min-width constraint).
     $chevronClasses = 'shrink-0 w-4 h-4 text-[color:var(--color-wk-text-subtle)] transition-transform duration-[var(--transition-wk-duration)]';
+
+    // Fall back to 3 rather than to validateProp's first allowed value: a bad
+    // `level` must never turn a row's trigger into the page's <h1>, which is a
+    // worse outline than the one the default gives. Same shape, and the same
+    // reason, as the empty-state title.
+    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
+    if ($levelValue !== (int) $level) {
+        WireKit::validateProp('accordion', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    }
 @endphp
 
 <div {{ $attributes->class([$wrapperClasses]) }}>
     {{-- Header button: delegates to toggle() defined on the parent accordion's x-data scope.
          Alpine resolves methods via scope chain — no $root prefix needed. --}}
-    <h3>
+    <h{{ $levelValue }}>
         <button
             type="button"
             id="{{ $buttonId }}"
@@ -135,7 +149,7 @@
                 <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd" />
             </svg>
         </button>
-    </h3>
+    </h{{ $levelValue }}>
 
     {{-- Panel: only rendered when open. x-show toggles display; role=region
          pairs with aria-labelledby so screen readers know which heading names it. --}}
