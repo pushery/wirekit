@@ -9,6 +9,68 @@
 export default function wirekitCalendar(config = {}) {
     const today = new Date();
 
+    // The APPLICATION's locale, not the browser's — the component receives it
+    // from Blade, the way countdown does. `undefined` is the deliberate
+    // fallback and not a placeholder: it is what `Intl` reads as "use the
+    // browser's own preference", so a calendar mounted by hand without the
+    // config still names its months in a language the reader chose, rather than
+    // in the one this file happens to be written in.
+    const locale = config.locale || undefined;
+
+    // Built once per instance rather than per read. Every string below depends
+    // only on the locale and on the first weekday, and neither changes for the
+    // life of the component — while `days` is re-read on every keystroke that
+    // moves focus, so a formatter constructed inside it would be constructed
+    // forty-two times for a grid that cannot have changed.
+    const monthYearFormat = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
+    const fullDateFormat = new Intl.DateTimeFormat(locale, {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+    });
+    const weekdayShortFormat = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+    const weekdayLongFormat = new Intl.DateTimeFormat(locale, { weekday: 'long' });
+    const monthNameFormat = new Intl.DateTimeFormat(locale, { month: 'long' });
+
+    // The word appended to today's cell label, translated on the PHP side —
+    // "today" is the one part of a date a formatter cannot produce.
+    const todayWord = config.todayLabel || '';
+
+    // Resolved once here because two things need it: the grid's leading pad and
+    // the column headers, and reading it from the reactive property would tie
+    // the headers to a value the reader can never change.
+    const weekStartsOn = Number.isInteger(config.weekStartsOn) ? config.weekStartsOn : 1;
+
+    // 1 January 2023 was a Sunday, which is what makes it usable as an index
+    // into the week: adding the weekday number lands on that weekday, whatever
+    // the locale calls it. A local (not UTC) date on purpose — `Intl` formats in
+    // the local zone, and a UTC midnight is the previous day west of Greenwich.
+    const weekAnchor = new Date(2023, 0, 1);
+
+    /** Column headers for one week, rotated to start on the configured first weekday. */
+    function weekdayHeadersFrom(weekStartsOn) {
+        const headers = [];
+
+        for (let i = 0; i < 7; i++) {
+            const day = new Date(2023, 0, weekAnchor.getDate() + ((weekStartsOn + i) % 7));
+            headers.push({ short: weekdayShortFormat.format(day), long: weekdayLongFormat.format(day) });
+        }
+
+        return headers;
+    }
+
+    /** The twelve month names, for the selectable header's `<select>`. */
+    function monthNamesIn() {
+        const names = [];
+
+        for (let m = 0; m < 12; m++) {
+            names.push(monthNameFormat.format(new Date(2023, m, 1)));
+        }
+
+        return names;
+    }
+
     // `YYYY-MM-DD/YYYY-MM-DD` is the range spelling, the same one `date-picker`
     // already reads and writes. Sharing it is the point: a value copied from one
     // to the other keeps meaning, and a form receives the same two fields either
@@ -20,9 +82,16 @@ export default function wirekitCalendar(config = {}) {
 
     const initial = startValue ? new Date(startValue + 'T00:00:00') : null;
 
+    // Every read of `initial` below branches on `initial` itself, never on the
+    // number a getter hands back. `getMonth()` is zero-based, so a January value
+    // yields 0 — and `0 || today.getMonth()` fell through to today, opening the
+    // grid on the current month while the form carried January. A seasonal
+    // defect: wrong for one month a year and correct the other eleven, which is
+    // why it survived. The question being asked is "was a value supplied?", so
+    // the test is on the value's presence and not on the digit it produced.
     return {
-        viewYear: initial?.getFullYear() || today.getFullYear(),
-        viewMonth: initial?.getMonth() || today.getMonth(),
+        viewYear: initial ? initial.getFullYear() : today.getFullYear(),
+        viewMonth: initial ? initial.getMonth() : today.getMonth(),
         selected: startValue,
 
         // ── Range mode ────────────────────────────────────────────────────────
@@ -35,7 +104,7 @@ export default function wirekitCalendar(config = {}) {
         // provisional shading and nothing else: a range that shows no in-between
         // until the second click makes the reader guess what they are choosing.
         hoverDate: null,
-        focusedDay: initial?.getDate() || today.getDate(),
+        focusedDay: initial ? initial.getDate() : today.getDate(),
         _name: config.name || 'date',
         // Multi-month display: render N consecutive months side by side (1 = the
         // classic single grid). Clamped 1..4. focusOffset tracks which displayed
@@ -45,7 +114,19 @@ export default function wirekitCalendar(config = {}) {
 
         // First day of the week: 0 (Sun) .. 1 (Mon, default) — matches the house
         // convention + <x-wirekit::event-calendar>.
-        weekStartsOn: Number.isInteger(config.weekStartsOn) ? config.weekStartsOn : 1,
+        weekStartsOn,
+
+        // Column headers, `{ short, long }` per column. The template prints the
+        // short form and hands the long one to the `<th abbr>` the WAI-ARIA
+        // date-picker example uses, so a reader navigating the grid by column
+        // hears "Sunday" rather than the two letters that fit in the cell.
+        weekdayHeaders: weekdayHeadersFrom(weekStartsOn),
+
+        // Month names for the selectable header. Built here rather than written
+        // out in the template because the template can only spell them in one
+        // language, and the label beside the `<select>` is already spelling them
+        // in the reader's.
+        monthNames: monthNamesIn(),
 
         /**
          * Get days array for current view month.
@@ -64,7 +145,7 @@ export default function wirekitCalendar(config = {}) {
                     offset: i,
                     year: base.getFullYear(),
                     month: base.getMonth(),
-                    label: base.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+                    label: monthYearFormat.format(base),
                     days: this._daysFor(base.getFullYear(), base.getMonth()),
                 });
             }
@@ -122,22 +203,26 @@ export default function wirekitCalendar(config = {}) {
             // Pad with previous month days
             const prevMonthLast = new Date(year, month, 0).getDate();
             for (let i = startPad - 1; i >= 0; i--) {
+                const padDate = new Date(year, month - 1, prevMonthLast - i);
                 result.push({
-                    date: this._formatDate(new Date(year, month - 1, prevMonthLast - i)),
+                    date: this._formatDate(padDate),
                     dayOfMonth: prevMonthLast - i,
+                    label: this._dayLabel(padDate, false),
                     isCurrentMonth: false,
                     isToday: false,
                     isSelected: false,
-                    ...this._rangeFlags(this._formatDate(new Date(year, month - 1, prevMonthLast - i))),
+                    ...this._rangeFlags(this._formatDate(padDate)),
                 });
             }
 
             // Current month days
             for (let d = 1; d <= daysInMonth; d++) {
-                const dateStr = this._formatDate(new Date(year, month, d));
+                const dayDate = new Date(year, month, d);
+                const dateStr = this._formatDate(dayDate);
                 result.push({
                     date: dateStr,
                     dayOfMonth: d,
+                    label: this._dayLabel(dayDate, dateStr === todayStr),
                     isCurrentMonth: true,
                     isToday: dateStr === todayStr,
                     isSelected: dateStr === this.selected || (this.range && dateStr === this.selectedEnd),
@@ -149,13 +234,15 @@ export default function wirekitCalendar(config = {}) {
             const remaining = 7 - (result.length % 7);
             if (remaining < 7) {
                 for (let d = 1; d <= remaining; d++) {
+                    const padDate = new Date(year, month + 1, d);
                     result.push({
-                        date: this._formatDate(new Date(year, month + 1, d)),
+                        date: this._formatDate(padDate),
                         dayOfMonth: d,
+                        label: this._dayLabel(padDate, false),
                         isCurrentMonth: false,
                         isToday: false,
                         isSelected: false,
-                        ...this._rangeFlags(this._formatDate(new Date(year, month + 1, d))),
+                        ...this._rangeFlags(this._formatDate(padDate)),
                     });
                 }
             }
@@ -167,8 +254,20 @@ export default function wirekitCalendar(config = {}) {
          * Get month/year display label.
          */
         get monthLabel() {
-            const d = new Date(this.viewYear, this.viewMonth, 1);
-            return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            return monthYearFormat.format(new Date(this.viewYear, this.viewMonth, 1));
+        },
+
+        /**
+         * The id of the heading that names one grid.
+         *
+         * Composed here rather than in the template because the base is the
+         * component's `name`, which is developer-supplied: interpolated into an
+         * Alpine expression it would be a quote away from ending the string it
+         * sits in, the same hazard the value literal at the top of the template
+         * is built to avoid.
+         */
+        monthLabelId(offset) {
+            return this._name + '-calendar-label-' + (offset || 0);
         },
 
         /**
@@ -266,7 +365,7 @@ export default function wirekitCalendar(config = {}) {
             //
             // So the provisional end fell between them and stayed blank — the
             // days on either side of the pointer shaded, and the one under it
-            // did not. Reported from the docs page, and the page's own prose is
+            // did not. The documented behavior is
             // what makes it a defect rather than a preference: it promises the
             // shading answers "what am I about to choose", and the day being
             // chosen was the one day it did not answer for.
@@ -508,6 +607,25 @@ export default function wirekitCalendar(config = {}) {
             const m = String(date.getMonth() + 1).padStart(2, '0');
             const d = String(date.getDate()).padStart(2, '0');
             return `${y}-${m}-${d}`;
+        },
+
+        /**
+         * The accessible name of one day cell.
+         *
+         * The visible text of a day button is the day number alone, and that is
+         * the whole of what a screen reader announced: "15, button", with the
+         * month, the year and the fact that it is today carried only by the
+         * heading above the grid and by a ring drawn around the cell. Neither
+         * survives the reader moving through the cells, which is the way the
+         * grid is meant to be read. The WAI-ARIA date-picker example this
+         * component follows names every cell with its full date, so this does
+         * too — and appends the translated word for today, the one part of a
+         * date no formatter can supply.
+         */
+        _dayLabel(date, isToday) {
+            const label = fullDateFormat.format(date);
+
+            return isToday && todayWord ? label + ', ' + todayWord : label;
         },
     };
 }

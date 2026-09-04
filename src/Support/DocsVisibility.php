@@ -42,10 +42,90 @@ final class DocsVisibility
     /**
      * Status of a component's dedicated docs page
      * (docs/components/{name}.md).
+     *
+     * `docs/` is export-ignored, so it is simply ABSENT from an installed
+     * package — and a status read against a directory that is not there
+     * answers MISSING for every component. That answer is right in a
+     * checkout and wrong everywhere the package actually runs: the
+     * project-root `.wirekit-schema.json` and every `wirekit:export-json`
+     * run in a real installation carried a null documentation URL for all
+     * of them, while the MCP catalog, which reads a baked list instead of
+     * the tree, answered correctly. Two shipped surfaces disagreed about
+     * one fact, and the one a developer commits into their own repository
+     * was the wrong one. It cannot be reproduced where it is developed,
+     * because there the tree is right here.
+     *
+     * So the tree stays authoritative wherever it exists, and the baked
+     * stem lists answer where it does not. They are extracted FROM that
+     * tree, and the two are held in lockstep by a test rather than by
+     * hand.
      */
     public static function componentPageStatus(string $name): string
     {
-        return self::pageStatus(dirname(__DIR__, 2)."/docs/components/{$name}.md");
+        $root = dirname(__DIR__, 2);
+
+        if (is_dir($root.'/docs/components')) {
+            return self::pageStatus($root."/docs/components/{$name}.md");
+        }
+
+        return self::bakedPageStatus($root, $name);
+    }
+
+    /**
+     * The installed-package answer: the baked stem lists in
+     * `resources/mcp/`, which ship because `docs/` does not.
+     *
+     * BOTH lists are consulted, and they are not the same question. A
+     * stem on the public list has a page to advertise. A stem on the
+     * non-public one has a page that is not publicly rendered, and a
+     * public manifest drops it entirely — the name alone would announce
+     * something unannounced. Everything else has no page of its own,
+     * which is the sub-component pattern documented on a parent page, and
+     * keeps its entry with a null URL. Collapsing those last two into one
+     * answer goes wrong in whichever direction it is collapsed: one way
+     * advertises a name that is not ready, the other deletes sixteen real
+     * components from the manifest they belong in.
+     *
+     * A list that is missing or unreadable contributes nothing rather
+     * than raising: a null documentation URL is a poor answer, and an
+     * exception from inside an export command is a worse one.
+     */
+    private static function bakedPageStatus(string $root, string $name): string
+    {
+        if (in_array($name, self::bakedStems($root.'/resources/mcp/public-pages.json'), true)) {
+            return self::STATUS_PUBLIC;
+        }
+
+        if (in_array($name, self::bakedStems($root.'/resources/mcp/staged-pages.json'), true)) {
+            return self::STATUS_STAGED;
+        }
+
+        return self::STATUS_MISSING;
+    }
+
+    /**
+     * One baked stem list, read once per file per process — an export
+     * walks the whole registry, so this is asked ~180 times per run.
+     *
+     * @return list<string>
+     */
+    private static function bakedStems(string $path): array
+    {
+        static $cache = [];
+
+        if (isset($cache[$path])) {
+            return $cache[$path];
+        }
+
+        if (! is_file($path)) {
+            return $cache[$path] = [];
+        }
+
+        $decoded = json_decode((string) file_get_contents($path), true);
+
+        return $cache[$path] = is_array($decoded)
+            ? array_values(array_filter($decoded, 'is_string'))
+            : [];
     }
 
     /**

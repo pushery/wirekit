@@ -171,15 +171,45 @@
     if ($forceLoading) {
         $declarativeLoading = true;
     }
+
+    $isDisabled = $disabled || $declarativeLoading;
+
+    // `disabled` is not a valid attribute on <a>, and `:disabled` never matches
+    // one — so on the link branch the `disabled:` variants in $baseClasses select
+    // nothing and the native attribute is inert. A `href` button rendered with
+    // `disabled` therefore stayed fully styled, Tab-reachable and navigable, and
+    // announced to a screen reader as an ordinary link.
+    //
+    // A link cannot be disabled natively, so the href is WITHHELD instead: without
+    // it the element is neither focusable nor navigable, and `role="link"` +
+    // `aria-disabled="true"` keep it announced as the disabled link it is rather
+    // than as anonymous text. The muted look is applied as plain utilities here
+    // because the `disabled:` variants cannot reach it — the same shape
+    // dropdown.item uses for the <a> branch of its own tag switch.
+    $linkDisabled = $tag === 'a' && $isDisabled;
+    $linkDisabledClasses = $linkDisabled
+        ? 'opacity-[var(--opacity-wk-disabled)] pointer-events-none'
+        : '';
 @endphp
 
 <{{ $tag }}
-    @if($href) href="{{ $href }}" @endif
+    @if($href && ! $linkDisabled) href="{{ $href }}" @endif
     @if($tag === 'button') type="{{ $type }}" @endif
-    @disabled($disabled || $declarativeLoading)
+    @if($linkDisabled) role="link" aria-disabled="true" @endif
+    @disabled($tag === 'button' && $isDisabled)
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$baseClasses, $variantClasses, $sizeClasses]) }}
-    @if($loading && ! $declarativeLoading) wire:loading.attr="disabled" @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif @endif
+    {{ $attributes->except('rel')->class([$baseClasses, $variantClasses, $sizeClasses, $linkDisabledClasses]) }}
+    {{-- ⚠️ `disabled` IS INERT ON AN ANCHOR, so the link branch gets the treatment
+         this component already uses for a disabled link instead. `wire:loading.attr`
+         adds a `disabled` attribute, which a browser honors on a button and ignores
+         on an <a> — the link stayed fully navigable for the whole request, which is
+         the one moment a second click does the most damage. Same classes as
+         $linkDisabledClasses above, so the two disabled states look identical and
+         `pointer-events-none` is what actually stops the click. --}}
+    @if($loading && ! $declarativeLoading)
+        @if($tag === 'button') wire:loading.attr="disabled" @else wire:loading.class="opacity-[var(--opacity-wk-disabled)] pointer-events-none" @endif
+        @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif
+    @endif
 >
     {{-- Loading spinner: declarative path renders always; wire:loading
          path renders only while a Livewire request is in flight. --}}

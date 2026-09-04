@@ -70,6 +70,14 @@
         @mouseleave="mouseleave()"
         @focusin="focusin()"
         @focusout="focusout()"
+        {{-- Tab steps INTO the open card. The panel is teleported to the end of
+             <body>, and sequential focus order follows the DOM rather than the
+             screen — so without this the reader tabs to the next control on the
+             page while the card sits in front of them, and its buttons are
+             reachable only after the whole rest of the document. Only when the
+             card actually holds something focusable; a read-only card keeps the
+             plain behavior. --}}
+        x-on:keydown.tab="tabFromTrigger($event)"
         x-init="initTriggerAria()"
     >
         {{ $trigger }}
@@ -112,7 +120,24 @@
             x-transition:leave-end="opacity-0 scale-95"
             @mouseenter="mouseenter()"
             @mouseleave="mouseleave()"
-            @keydown.escape.prevent="close()"
+            {{-- The keyboard counterpart of the two lines above, and it is what
+                 makes the card's own promise true: a hover card holds rich
+                 content (buttons, links), so a reader must be able to Tab into
+                 it and back out. Focus entering cancels the pending hide the
+                 trigger's blur just armed; focus leaving arms it again. Without
+                 the pair, the panel is reachable but not inhabitable — it hid
+                 itself one hide-delay after the focus arrived. --}}
+            @focusin="focusin()"
+            @focusout="focusout()"
+            {{-- The other two edges the teleport broke. Forwards off the last
+                 control the browser would leave the document; backwards off the
+                 first it would land on whatever precedes the overlay root. Both
+                 are somewhere else entirely on screen, so both are named. --}}
+            x-on:keydown.tab="tabWithinCard($event)"
+            {{-- Escape puts focus back on the trigger rather than dropping it on
+                 <body> with the panel — WCAG 2.4.3, and what the keyboard table
+                 on the component's page already promises. --}}
+            @keydown.escape.prevent="closeAndFocusTrigger()"
             role="dialog"
             aria-label="{{ __('wirekit::Hover card') }}"
             class="{{ $panelClasses }}"

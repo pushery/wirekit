@@ -1,13 +1,13 @@
 {{-- optimistic-ui: supported
      Rich-text content — the same shape as a text field, with more of the reader's
-     work in it, so it takes §8's fourth exit: a refusal keeps what was written
-     and says only that it was not saved.
+     work in it, so a refusal keeps what was written and says only that it was
+     not saved.
 
-     The commit boundary is BLUR (§10), not the change this component emits. That
+     The commit boundary is BLUR, not the change this component emits. That
      one rides a 200ms debounce, so committing on it would mean a request every
      fifth of a second while someone types — a timer wearing an event's name,
-     which is exactly what §10 forbids. Leaving the editor is the moment the
-     writing stopped. --}}
+     and the boundary has to be a real event. Leaving the editor is the moment
+     the writing stopped. --}}
 @props([
     // The Livewire method to call when you leave the editor. A refusal KEEPS
     // what you wrote — see the note above.

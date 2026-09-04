@@ -44,14 +44,35 @@
          nothing and is told nothing about why.
 
      Capture phase, deliberately: the caller's handler sits on the button INSIDE this
-     wrapper, so a bubbling listener here would run after it had already fired. --}}
+     wrapper, so a bubbling listener here would run after it had already fired.
+
+     THE STATE GOES ON THE CONTROL, and both of those attributes used to be bound here
+     instead. A generic element passes neither down: `aria-disabled` on an ancestor says
+     nothing about the button, and a description is announced only when the element
+     carrying it is the focused one. The result was a button that read as ordinary and
+     enabled, refused the activation anyway, and explained nothing — the exact experience
+     the two bullets above promise it prevents. `syncConfirmControlState` therefore
+     writes both onto whatever control is inside, the default one or the caller's. --}}
+{{-- `x-id` DECLARES the scope the two `$id('alert-confirm-reason')` calls below share, and
+     without it they are not the same id. Alpine caches a generated id per ELEMENT: with no
+     scope root to resolve against, each call site increments a global counter instead, so
+     the `x-effect` here got `alert-confirm-reason-1` and the span's `x-bind:id` got
+     `alert-confirm-reason-2`. The button was therefore described by an element that does
+     not exist — `getElementById` on the value returned null — and a screen reader announces
+     nothing at all for a dangling `aria-describedby`. That is the precise failure the
+     comment above claims this component prevents: the control was focusable and marked
+     `aria-disabled` exactly as intended, and still explained nothing.
+
+     Declaring the scope HERE, on the wrapper, is also what keeps two dialogs on one page
+     apart: each wrapper is its own root, so each gets its own id and neither points at the
+     other's reason. Measured on the Type-to-Confirm preview before and after. --}}
 <div
     data-wk-alert-confirm
+    x-id="['alert-confirm-reason']"
     x-on:click.capture="blockUnlessConfirmed($event)"
     x-on:keydown.enter.capture="blockUnlessConfirmed($event)"
     x-on:keydown.space.capture="blockUnlessConfirmed($event)"
-    x-bind:aria-disabled="confirmAllowed ? null : 'true'"
-    x-bind:aria-describedby="confirmAllowed ? null : $id('alert-confirm-reason')"
+    x-effect="syncConfirmControlState($el, $id('alert-confirm-reason'))"
     {{ $attributes->class([$classes]) }}
 >
     {{-- The reason, in a region that EXISTS from the first render and whose CONTENT

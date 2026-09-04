@@ -14,7 +14,7 @@ use Composer\InstalledVersions;
  *
  * Priority order:
  *
- *   1. Composer's `vendor/composer/installed.json` in the consuming app
+ *   1. Composer's `vendor/composer/installed.json` in the adopting application
  *      — the canonical source when WireKit is installed via Composer (the
  *      normal case on docs.wirekit.app and in any Laravel app that pulled
  *      the package via `composer require pushery/wirekit`). Returns the
@@ -72,7 +72,7 @@ final class VersionResolver
             }
         }
 
-        // Path 1 — the consuming app's installed.json, kept as the fallback for a load
+        // Path 1 — the adopting application's installed.json, kept as the fallback for a load
         // without Composer's runtime.
         if (function_exists('base_path')) {
             $installedPath = base_path('vendor/composer/installed.json');

@@ -113,8 +113,8 @@ final class ClassInventory
      * was the scanner's blind spot, not drift.
      *
      * The skip docblock above already prescribes the remedy ("REMOVE its prefix
-     * here in the same commit"). This is that, made file-granular so the other
-     * nineteen files in `src/Support/` keep their exemption.
+     * here in the same commit"). This is that, made file-granular so every other
+     * file in `src/Support/` keeps its exemption.
      *
      * @var list<string>
      */
@@ -317,8 +317,19 @@ final class ClassInventory
                 $contents = (string) file_get_contents($file->getPathname());
                 $relative = $this->relativePath($file->getPathname());
 
-                $this->harvestQuotedStringClasses($contents, $relative, $inventory, strict: true);
-                $this->harvestTemplateLiteralClasses($contents, $relative, $inventory);
+                /*
+                 * Strip comments first, for the same reason the Blade path does — and
+                 * the JS path is where it bites hardest, because a JS comment quotes
+                 * identifiers in backticks as a matter of house style. Four Alpine
+                 * directive names and a CSP keyword (`x-data`, `x-text`, `x-effect`,
+                 * `unsafe-eval`) reached the inventory as class candidates from prose
+                 * alone, and each one reported as forward drift: a class the source
+                 * emits and Tailwind never compiled. It never emitted them.
+                 */
+                $strippedContents = $this->stripComments($contents);
+
+                $this->harvestQuotedStringClasses($strippedContents, $relative, $inventory, strict: true);
+                $this->harvestTemplateLiteralClasses($strippedContents, $relative, $inventory);
             }
         }
 
@@ -359,7 +370,8 @@ final class ClassInventory
     }
 
     /**
-     * Strip block- and line-comments before scanning for token references.
+     * Strip block- and line-comments before scanning a source file — for class
+     * candidates as well as token references.
      * Without this, an example like `var(--color-wk-X)` inside a docblock
      * surfaces as a phantom reference and produces a false-positive
      * Tier-1 violation. Conservative — handles `/* … *\/`, `//…`, `<!-- … -->`,
@@ -368,7 +380,18 @@ final class ClassInventory
      */
     private function stripComments(string $contents): string
     {
-        $stripped = preg_replace('!/\*.*?\*/!s', '', $contents) ?? $contents;
+        /*
+         * Newlines survive every strip below.
+         *
+         * The inventory reports each candidate as `file:line`, and a multi-line
+         * comment removed outright shifts every line after it — so the ONE piece of
+         * information a reader uses to go and look would point at the wrong place, in
+         * exactly the files that carry the most prose. Replacing a comment with its own
+         * newlines costs nothing and keeps the report navigable.
+         */
+        $keepLines = fn (array $m): string => str_repeat("\n", substr_count($m[0], "\n"));
+
+        $stripped = preg_replace_callback('!/\*.*?\*/!s', $keepLines, $contents) ?? $contents;
         /*
          * Line-comment stripper: must NOT match `//` inside URL schemes
          * (`https://`, `http://`, protocol-relative `//cdn.example.com`).
@@ -381,8 +404,8 @@ final class ClassInventory
          * line-115 anchor (40+ classes) to surface as reverse-dead.
          */
         $stripped = preg_replace('~(?<![:/])//[^\n]*~', '', $stripped) ?? $stripped;
-        $stripped = preg_replace('/<!--.*?-->/s', '', $stripped) ?? $stripped;
-        $stripped = preg_replace('/\{\{--.*?--\}\}/s', '', $stripped) ?? $stripped;
+        $stripped = preg_replace_callback('/<!--.*?-->/s', $keepLines, $stripped) ?? $stripped;
+        $stripped = preg_replace_callback('/\{\{--.*?--\}\}/s', $keepLines, $stripped) ?? $stripped;
 
         return $stripped;
     }

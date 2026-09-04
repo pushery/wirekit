@@ -47,7 +47,16 @@
         type="button"
         x-on:click="toggleMenu({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
         x-on:mouseenter="openMenu({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
+        x-on:focus="markRovingTrigger({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
         :aria-expanded="activeMenu === {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} ? 'true' : 'false'"
+        {{-- ROVING TABINDEX — the bar is ONE tab stop, not one per menu. Without this
+             binding every trigger is a native <button> and therefore its own stop, so a
+             reader tabbing past a five-menu bar pressed Tab five times; the menubar
+             pattern moves between menus with the arrow keys instead, and the component's
+             own keyboard table has always said so. Bound rather than rendered because
+             which trigger holds the stop follows the reader; with JS off, the untouched
+             buttons stay individually reachable, which is the right degradation. --}}
+        x-bind:tabindex="tabindexFor({{ \Pushery\WireKit\Support\AlpinePayload::string($name) }})"
         aria-haspopup="menu"
         role="menuitem"
         data-wk-menubar-trigger="{{ $name }}"
@@ -90,6 +99,12 @@
             x-transition:leave-end="opacity-0 scale-95"
             data-wk-menubar-panel="{{ $name }}"
             role="menu"
+            {{-- The panel's accessible name is the menu's own label. A role="menu" with
+                 no name is announced as an unnamed menu, and a page with several of them
+                 open one at a time gives a screen-reader user nothing to tell them apart
+                 — the trigger that opened it is no longer where the reading cursor is,
+                 because the panel teleports out to the overlay root. --}}
+            aria-label="{{ $label }}"
             class="{{ $panelClasses }}"
             x-cloak
         >

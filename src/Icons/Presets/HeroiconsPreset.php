@@ -59,7 +59,7 @@ final class HeroiconsPreset implements IconPreset
             'filter' => 'heroicon-m-funnel',
             'external-link' => 'heroicon-m-arrow-top-right-on-square',
 
-            // common dashboard icons
+            // The common dashboard icons
             // every new integrator reaches for on first install:
             'home' => 'heroicon-m-home',
             'moon' => 'heroicon-m-moon',
@@ -92,6 +92,30 @@ final class HeroiconsPreset implements IconPreset
             'gift' => 'heroicon-m-gift',
             'list-bullets' => 'heroicon-m-list-bullet',
             'list-checks' => 'heroicon-m-clipboard-document-check',
+
+            // The text-formatting marks a composer toolbar is built from.
+            //
+            // The vocabulary already carried `code`, `link` and `list-bullets` — part of
+            // the same toolbar — so a formatting bar could name some of its buttons out of
+            // this set and had to draw the rest by hand, which puts two iconographies in
+            // one row of controls. These five close the group.
+            //
+            // Every target below was read out of the installed SVG trees under vendor/,
+            // per set, per name, rather than off a website. All four families draw a
+            // genuine cognate: the bold B, the slanted I, the struck and the underlined
+            // letterform, the numbered list. Phosphor spells four of them `text-*`, which
+            // is why the right-hand sides differ across the presets — the word is the
+            // CONCEPT, the picture is each family's own.
+            //
+            // `list-numbers` takes that spelling on purpose rather than Lucide's
+            // `list-ordered`: `list-bullets` and `list-checks` are already here under it,
+            // and a vocabulary offering `list-bullets` beside `list-ordered` leaves the
+            // reader guessing which half of the pair it speaks.
+            'bold' => 'heroicon-m-bold',
+            'italic' => 'heroicon-m-italic',
+            'strikethrough' => 'heroicon-m-strikethrough',
+            'underline' => 'heroicon-m-underline',
+            'list-numbers' => 'heroicon-m-numbered-list',
             'lock-key' => 'heroicon-m-lock-closed',
             'map-pin' => 'heroicon-m-map-pin',
             'percent' => 'heroicon-m-percent-badge',
@@ -191,7 +215,7 @@ final class HeroiconsPreset implements IconPreset
             // settings/gear, book/book-open and billing/credit-card.
             'stack' => 'heroicon-m-square-3-stack-3d',
 
-            // ─── The overflow affordance, and five words a consuming project
+            // ─── The overflow affordance, and five words an adopting application
             // reached for and did not find.
             //
             // EVERY ONE OF THESE IS A TRUE COGNATE IN ALL FOUR INTERCHANGEABLE

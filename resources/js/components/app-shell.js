@@ -41,6 +41,19 @@ export default function wirekitAppShell(config = {}) {
         _trap: null,
 
         /**
+         * The element focus was taken FROM, captured the instant `sidebarOpen` turns true.
+         *
+         * Not the same moment `focus-trap` captures its own, and that difference is the
+         * whole reason this property exists. The library records
+         * `nodeFocusedBeforeActivation` inside `activate()`, and this component
+         * deliberately defers `activate()` to the drawer's `transitionend` (or 350 ms) —
+         * see `_armTrap`. Whatever is focused a third of a second after the drawer opened
+         * is not "the element focus was taken from"; it is only what happened to survive
+         * the wait.
+         */
+        _opener: null,
+
+        /**
          * Whether the navigation is CURRENTLY a drawer.
          *
          * A reactive property and NOT a method, which matters more than it looks. The
@@ -76,7 +89,13 @@ export default function wirekitAppShell(config = {}) {
                 this._syncViewport();
 
                 if (! this.isDrawer) {
-                    this._releaseTrap();
+                    // Released WITHOUT returning focus. Nobody closed anything here — the
+                    // window got wider and the same element stopped being a dialog. The
+                    // toggle that opened it is `lg:hidden` at this width, and `.focus()`
+                    // on a `display: none` element is a silent no-op that leaves the
+                    // reader on `<body>`: the exact landing this whole path exists to
+                    // avoid. Focus stays where the reader put it.
+                    this._releaseTrap({ returnFocus: false });
                     this.sidebarOpen = false;
                 }
             };
@@ -100,7 +119,13 @@ export default function wirekitAppShell(config = {}) {
             // shell, and a trap still armed over a detached node keeps its document-level
             // keydown listener: every Tab on the NEXT page would be pulled back toward an
             // element that is no longer in it.
-            this._releaseTrap();
+            //
+            // No return focus, for the same reason as the viewport crossing above: the
+            // toggle this shell owns is being torn down with it, and the incoming page
+            // decides where focus belongs. Aiming at a detached node lands on `<body>`.
+            this._releaseTrap({ returnFocus: false });
+
+            this._opener = null;
 
             if (this._armTimer) {
                 clearTimeout(this._armTimer);
@@ -126,6 +151,11 @@ export default function wirekitAppShell(config = {}) {
                 return;
             }
 
+            // Captured HERE, synchronously on the state flip, for the reason spelled out on
+            // `_opener` above: by the time the trap activates the drawer has finished
+            // sliding in and the question "who opened this" can no longer be asked.
+            this._opener = typeof document !== 'undefined' ? document.activeElement : null;
+
             const trap = this._createTrap(panel, {
                 // Escape is the drawer's own close, so the trap's deactivation and the
                 // state have to agree — otherwise the panel slides away with `sidebarOpen`
@@ -148,6 +178,24 @@ export default function wirekitAppShell(config = {}) {
                 // The backdrop's own click handler closes the drawer, so outside clicks
                 // must reach it rather than tearing the trap down first.
                 allowOutsideClick: true,
+                // WHERE focus goes on the way OUT, named rather than inferred.
+                //
+                // `returnFocusOnDeactivate` is on in the wrapper, and on its own it sends
+                // focus to whatever `document.activeElement` was at ACTIVATION — which for
+                // this component is a third of a second after the drawer opened, and is
+                // `<body>` outright whenever the opening click left focus nowhere. WebKit
+                // is the ordinary case of that, not an exotic one: clicking a `<button>`
+                // there does not focus it, by platform convention. `focus-trap` then calls
+                // `document.body.focus()`, which is a no-op, and the reader is returned to
+                // the top of the document — every stop they had already tabbed past has to
+                // be walked again. Measured by an adopting application at v2.41.1, in
+                // Chromium and WebKit: drawer opens, focus enters correctly, Escape closes
+                // it, and `document.activeElement.tagName` is `BODY`.
+                //
+                // The sibling overlays already name a target this way (`overlay.js`,
+                // `popover.js`, `color-picker.js`, `tour.js`); the shell was the one that
+                // did not.
+                setReturnFocus: (previouslyFocused) => this._resolveReturnFocus(panel, previouslyFocused),
                 onDeactivate: () => {
                     this._trap = null;
                     this.sidebarOpen = false;
@@ -242,7 +290,62 @@ export default function wirekitAppShell(config = {}) {
             return createFocusTrap(panel, options);
         },
 
-        _releaseTrap() {
+        /**
+         * The element the drawer hands focus back to when it closes.
+         *
+         * Three candidates, in this order, and the order is the point:
+         *
+         * 1. The opener, when it is still in the document and still outside the panel. It
+         *    is the only candidate that is right for a developer who wires their own
+         *    control — the shell's documented contract is that SOMETHING writes
+         *    `sidebarOpen`, not that our button did.
+         * 2. The shell's own sidebar toggle, preferring the one whose `aria-controls`
+         *    names THIS drawer. This is what carries the WebKit case, where the opening
+         *    click left focus on `<body>` and candidate 1 is therefore worthless.
+         * 3. `undefined`, which hands the decision back to `focus-trap` unchanged. A shell
+         *    with no toggle and no usable opener is no worse off than before.
+         *
+         * `<body>` is rejected explicitly at step 1 rather than left to fall through:
+         * `body.focus()` succeeds as a no-op, so returning it would look like a decision
+         * and behave like the bug.
+         *
+         * Deliberately does NOT force a `tabindex` onto the candidate the way
+         * `overlay.js` does for a surviving container. A toggle is a control and is
+         * focusable on its own; writing `tabindex="-1"` onto a `<button>` would take it
+         * OUT of the tab order — repairing the return path by breaking the forward one.
+         *
+         * @param {Element} panel      the drawer, so an opener inside it can be rejected
+         * @param {Element} [previouslyFocused]  what `focus-trap` saw at activation
+         * @returns {Element|undefined}
+         */
+        _resolveReturnFocus(panel, previouslyFocused) {
+            const opener = this._opener ?? previouslyFocused;
+            const body = typeof document !== 'undefined' ? document.body : null;
+
+            if (opener && opener !== body && opener.isConnected && ! panel?.contains?.(opener)) {
+                return opener;
+            }
+
+            const toggles = this.$el?.querySelectorAll?.('[data-wk-sidebar-toggle]') ?? [];
+
+            let fallback;
+
+            for (const toggle of toggles) {
+                if (! toggle.isConnected) {
+                    continue;
+                }
+
+                if (this.drawerId && toggle.getAttribute?.('aria-controls') === this.drawerId) {
+                    return toggle;
+                }
+
+                fallback = fallback ?? toggle;
+            }
+
+            return fallback;
+        },
+
+        _releaseTrap(deactivateOptions = {}) {
             if (! this._trap) {
                 return;
             }
@@ -253,7 +356,16 @@ export default function wirekitAppShell(config = {}) {
             // to false and would arrive back here — and a second `deactivate()` on a torn
             // down trap is where this kind of code throws.
             this._trap = null;
-            trap.deactivate();
+            trap.deactivate(deactivateOptions);
+
+            // `_opener` is deliberately NOT cleared here, and that is load-bearing rather
+            // than an omission. `focus-trap` runs its whole return-focus step — resolving
+            // the node through `setReturnFocus` included — inside a `setTimeout(…, 0)`
+            // (`delayReturnFocus` defaults to true, verified in the installed 8.2.2
+            // source). Clearing the reference on this line would therefore delete the
+            // answer before the question is asked, and the resolver would fall through to
+            // the toggle in cases where it knew a better target. It is overwritten on the
+            // next open and dropped in `destroy()`.
         },
     };
 }

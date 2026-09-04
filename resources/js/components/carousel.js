@@ -29,6 +29,10 @@ export default function wirekitCarousel(config = {}) {
         _observer: null,
         _slides: [],
         _unwatchMotion: null,
+        // Was the rotation stopped BY the motion preference rather than by the reader?
+        // Only that case may be handed back when the preference is withdrawn — a reader
+        // who pressed pause did not ask for it to resume behind their back.
+        _motionPaused: false,
 
         init() {
             this._slides = Array.from(this.$el.querySelectorAll('[data-wk-carousel-slide]'));
@@ -40,8 +44,12 @@ export default function wirekitCarousel(config = {}) {
             // for someone who asked for less of it. This is a real runtime check,
             // not a CSS media query: the timer lives in JS, and a CSS-only guard
             // would leave it running invisibly.
-            if (this.autoplay && this.total > 1 && !this._prefersReducedMotion()) {
-                this.play();
+            if (this.autoplay && this.total > 1) {
+                if (this._prefersReducedMotion()) {
+                    this._motionPaused = true;
+                } else {
+                    this.play();
+                }
             }
 
             // ⚠️ THAT DECISION IS MADE ONCE, AND THE PREFERENCE CAN CHANGE WHILE THE PAGE IS
@@ -55,10 +63,19 @@ export default function wirekitCarousel(config = {}) {
             // Every other reducedMotion read in the catalog happens at the moment of use
             // and therefore picks a change up naturally. This one and stat-animate's are
             // the two that do not.
+            //
+            // ⚠️ IT STOPS THE ROTATION THROUGH pause(), NOT THROUGH _stopTimer(). Clearing
+            // the timer alone leaves `playing` true, and `playing` is the whole state the
+            // rest of the component reads: the control keeps saying "Pause carousel" while
+            // nothing moves, and resumeFromHover() and _restartTimer() are both free to
+            // start the interval again the moment a pointer leaves the box or an arrow is
+            // pressed — putting back exactly the motion the reader had just asked to stop.
             this._unwatchMotion = watchReducedMotion((reduced) => {
                 if (reduced) {
-                    this._stopTimer();
-                } else if (this.autoplay && this.total > 1) {
+                    this._motionPaused = this._motionPaused || this.playing;
+                    this.pause();
+                } else if (this._motionPaused && this.autoplay && this.total > 1) {
+                    this._motionPaused = false;
                     this.play();
                 }
             });
@@ -250,8 +267,26 @@ export default function wirekitCarousel(config = {}) {
             if (this.playing && !this._hoverPaused) this._startTimer();
         },
 
+        /**
+         * The one string a screen reader hears on every slide change.
+         *
+         * It arrives as a TEMPLATE that the server already translated, because a
+         * sentence assembled from fragments here cannot be — "of" is not a word every
+         * language puts in the middle, and a literal built in JavaScript is invisible to
+         * every extractor. The play/pause label next to it has taken that route since it
+         * shipped; this one had not, so a German page announced English positions.
+         *
+         * The English fallback covers a caller who constructs the factory by hand
+         * instead of through the Blade component.
+         */
         get announcement() {
-            return `Slide ${this.current + 1} of ${this.total}`;
+            const template = typeof config.announcement === 'string' && config.announcement !== ''
+                ? config.announcement
+                : 'Slide :current of :total';
+
+            return template
+                .replace(':current', String(this.current + 1))
+                .replace(':total', String(this.total));
         },
     };
 }

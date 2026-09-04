@@ -110,16 +110,51 @@
         {{-- Same alignment as the head, for the same reason: an account row is
              the bottom of the same column and belongs on the same vertical line
              as the items above it. --}}
+        {{-- `$collapsible`, and it has to be the gate rather than `isset($collapseBtnClasses)`.
+             The classes are resolved unconditionally at the top of `sidebar.blade.php`, so
+             that test is true for EVERY column and the control was rendered beside the footer
+             of a plain, non-collapsible sidebar too. Two things followed, and only one of them
+             is visible: the button does nothing, because there is no rail state to toggle —
+             and its three Alpine bindings (`:aria-expanded`, `:aria-label`, the chevron's
+             `:class`) all read `collapsed`, which only the collapsible branch's `x-data`
+             declares. Outside it every one of them throws `collapsed is not defined` on boot,
+             on a page that otherwise looks correct. Same condition the column-level call site
+             in `sidebar.blade.php` uses, read from the other side of the footer test. --}}
+        @php $footHostsToggle = ($collapsible ?? false) && ($toggle ?? 'none') !== 'none'; @endphp
         <div @class([
             'shrink-0',
+            // `wk-shell-foot` — the marker the shell's foot line reads. Both columns of a
+            // shell carry it, and it is what lets a page put their two rules on one line
+            // without either column knowing the other exists.
+            'wk-shell-foot',
+            // Containing block for the control below, which rides ON this band rather than
+            // taking a row of its own.
+            'relative' => $footHostsToggle,
+            // Trailing room for the control, on the row it stands beside.
+            //
+            // `nth-last-child(2)`, not `last-child`: the control is out of flow but still
+            // the last CHILD, so `last-child` pads the button itself — measured, it grew
+            // from 28px to 60px and pushed itself off its own anchor.
+            //
+            // Withdrawn when the column is a rail: there the control drops back onto its
+            // own line under the avatar, and the room is not owed.
+            '[&>*:nth-last-child(2)]:pe-[2.25rem]' => $footHostsToggle,
+            'group-data-[collapsed]/wk-sidebar:[&>*:nth-last-child(2)]:pe-0' => $footHostsToggle,
             'px-[var(--padding-wk-x-sm)]' => $zoneInset ?? true,
         ])>
             {{ $footer }}
+            @if($footHostsToggle)
+                @include('wirekit::components.partials.sidebar-collapse-toggle')
+            @endif
         </div>
     @endisset
 @else
     {{-- No zones: the slot used to inherit its row rhythm from the column's own flex
          gap. That gap is gone (it also spaced the zones, which is what pushed the
          first row down), so the rhythm is stated here instead of inherited. --}}
-    <div class="flex flex-col gap-[var(--space-wk-nav-gap)]">{{ $slot }}</div>
+    {{-- `flex-1` so the slot absorbs the column's free height and the collapse control
+         below it still lands at the bottom. It used to get there on `mt-auto` against the
+         column's own row gap; that gap is gone, and without this the control would sit
+         directly under the last item of a short list. --}}
+    <div class="flex flex-col flex-1 gap-[var(--space-wk-nav-gap)]">{{ $slot }}</div>
 @endif

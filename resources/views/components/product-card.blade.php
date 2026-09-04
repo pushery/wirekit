@@ -1,8 +1,9 @@
 {{-- optimistic-ui: n/a — navigation
-     Reclassified after reading the component instead of the idea of it. I marked
-     this a candidate on the reasoning that "a favorite or cart action on a card
-     is the mutation case" — but this card has no such action. Its only interactive
-     element is a link to the product page, and a link navigates.
+     Reclassified after reading the component instead of the idea of it. The
+     candidate classification rested on the reasoning that "a favorite or cart
+     action on a card is the mutation case" — but this card has no such action.
+     Its only interactive element is a link to the product page, and a link
+     navigates.
 
      It does have slots now (`media`, `badge`), and neither changes that: one holds
      a picture, the other a word. Put a mutating control in either and the
@@ -216,14 +217,21 @@
             @if(isset($action))
                 {{ $action }}
             @else
+                {{-- The product name is APPENDED to the visible label, not substituted into a
+                     replacement one. A grid of cards needs names that tell the buttons apart,
+                     but an aria-label of "Add Blue Shirt to cart" does not contain the words
+                     on the button, and a voice-control user who says "click Add to cart" is
+                     then talking to a control by a name it does not answer to (WCAG 2.5.3).
+                     Visible text first, name after, so the spoken label always matches — and it
+                     stays matching in every locale, because both halves come from the same
+                     translated string the button renders. --}}
                 <x-wirekit::button
                     intent="primary"
                     class="w-full"
                     :disabled="$isOut"
-                    :aria-label="$isOut ? __('wirekit::Out of stock: :name', ['name' => $name]) : __('wirekit::Add :name to cart', ['name' => $name])"
                     data-wk-product-card-cta
                 >
-                    {{ $isOut ? __('wirekit::Out of stock') : __('wirekit::Add to cart') }}
+                    {{ $isOut ? __('wirekit::Out of stock') : __('wirekit::Add to cart') }}<span class="sr-only">: {{ $name }}</span>
                 </x-wirekit::button>
             @endif
         </div>

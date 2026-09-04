@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.44.0 — MIT License
+ * WireKit CSS v2.45.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -704,7 +704,7 @@
        of the accent; in DARK the accent is near-white, so that tint makes the
        surface LIGHTER — toward this text, not away from it. Muted landed at
        4.45:1 there while measuring a comfortable 7.63:1 on the page background
-       the comment above cites. axe found it on four blueprint previews at once.
+       the comment above cites. axe reported it on four tinted-callout pages at once.
        74% gives 5.00:1 on the worst tinted surface and improves every other
        pairing. Guarded by TintedSurfaceTextContrastTest.
 
@@ -812,9 +812,9 @@
 /* and stretches to the height of the controls beside it.                          */
 /* ⚠️ ONE COLUMN FIRST, AND THAT IS NOT A PREFERENCE — IT IS WHAT A PHONE HAS ROOM FOR. */
 /* `grid-auto-flow: column` gives EVERY child its own track at EVERY width, and three     */
-/* fields on a 393px screen are three 63px columns. Measured by the mobile sweep on the   */
-/* docs preview this feature shipped with: "3-col, narrowest cell 63px" on an iPhone 14   */
-/* Pro. A control that narrow is not a degraded control; it is an unusable one.           */
+/* fields on a 393px screen are three 63px columns. Measured on an iPhone 14 Pro:         */
+/* at 393px it became "3-col, narrowest cell 63px". A control that narrow is not a        */
+/* degraded control; it is an unusable one.                                               */
 /*                                                                                        */
 /* So the row stacks below the breakpoint and becomes the shared-track grid above it.     */
 /* 48rem is the breakpoint this stylesheet already uses; a third one would be a new       */
@@ -1368,9 +1368,17 @@
 /* The app-shell's in-flow sidebar column (lg) must track the collapsible
    sidebar's width so the main content reflows when the rail collapses — the
    column otherwise stayed at a fixed w-64 (16rem) while the inner
-   <x-wirekit::sidebar collapsible> shrank to its 3.5rem icon rail, leaving a
-   ~12.5rem gap. Expanded width follows --wk-sidebar-w (the sidebar's own var,
-   16rem default); collapsed width matches the rail. lg only — on a phone the
+   <x-wirekit::sidebar collapsible> shrank to its icon rail, leaving a ~12.5rem
+   gap. Expanded width follows --wk-sidebar-w (the sidebar's own var, 16rem
+   default); collapsed width reads --size-wk-rail, the SAME declaration the
+   collapsed nav uses, so the wrapper cannot drift from what it wraps.
+
+   It did drift once, and the sentence you are reading is why it looked
+   deliberate. The rule held a literal 3.5rem while --size-wk-rail became a
+   derived 53px (icon + padding + the trailing border), so the column ran 3px
+   wider than the nav inside it — and the horizontal rule above them was broken
+   by exactly those 3px, in the collapsed state only. A number repeated in prose
+   is a number that stops being true somewhere else first. lg only — on a phone the
    aside is a fixed w-64 overlay. `aside.wk-app-shell-aside` (0,1,1) and the
    `:has(...[data-collapsed])` form out-specify the Tailwind `.w-64` utility
    (0,1,0) regardless of stylesheet load order. */
@@ -1380,7 +1388,7 @@
     }
 
     aside.wk-app-shell-aside:has(.group\/wk-sidebar[data-collapsed]) {
-        width: 3.5rem;
+        width: var(--size-wk-rail, 3.25rem);
     }
 }
 
@@ -1511,6 +1519,22 @@
 :where(.wk-rail) [data-wk-shell-bar] {
     padding-inline-start: var(--wk-rail-inset-start, var(--padding-wk-y-sm));
     padding-inline-end: var(--wk-rail-inset-end, var(--padding-wk-y-sm));
+
+    /* AND IT ANNOUNCES THAT IT HAS TAKEN THE INSET, for whatever sits inside it.
+       `app-rail.brand` carries the inset itself, because the brand ZONE has no inline
+       padding and a mark dropped straight into that slot would otherwise start its
+       measurement one inset before every glyph below it. Where a bar is in between, that
+       inset is already spent on this row — the two lines above are it — so the mark must
+       not spend it a second time. Zeroing the variable here says so once, on the element
+       that knows, instead of asking every mark to work out what it is nested in.
+
+       A separate name rather than zeroing `--wk-rail-inset-start` itself: that one is also
+       what the two declarations above read, so setting it here would cancel this rule
+       rather than qualify it. And it is deliberately not given a `:root` default — the
+       fallback chain has to resolve on the mark, where a panel shell's own
+       `--wk-rail-inset-start` is in scope; resolved at the root it would freeze at the
+       plain tier and the panel case would go back out of line by two pixels. */
+    --wk-rail-brand-inset: 0px;
 }
 
 /* ─── The brand row follows the rail's width ─── */
@@ -1605,9 +1629,18 @@
 /* With motion turned down there is no travel to wait for, so the name simply is or is not.
    Leaving the delay in place here would read as a name that arrives late for no reason. */
 @media (prefers-reduced-motion: reduce) {
-    :where(.wk-rail) [data-wk-rail-brand-label] {
+    :root:not([data-reduce-motion="no-preference"]) :where(.wk-rail) [data-wk-rail-brand-label] {
         transition: none;
     }
+}
+
+/* The forced twin. Same rules, keyed on the attribute alone — the application says
+   reduce and the OS does not, so no media condition above can carry them. Duplicated
+   rather than shared for the reason stated at the blanket rule: CSS cannot apply one
+   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   by rule, so one can no longer gain a selector the other never hears about. */
+:root[data-reduce-motion="reduce"] :where(.wk-rail) [data-wk-rail-brand-label] {
+    transition: none;
 }
 
 /* ─── App icons, when a theme asks for them to be square ─── */
@@ -1670,8 +1703,8 @@
    The bar used to solve that by ESCAPING — negative margins plus a width of `100% + 2 * the
    padding`. It worked, and it was the fragile shape this file warns about elsewhere: an element
    that overflows its parent is at the mercy of every ancestor, and one with `overflow: hidden`,
-   `contain: layout`, a transform or a filter clips it silently. The mobile sweep found it as a
-   6px overflow on a zone that happened not to clip.
+   `contain: layout`, a transform or a filter clips it silently. At phone width it showed up as
+   a 6px overflow on a zone that happened not to clip.
 
    So the containers stand aside instead. `:has()` is what makes that expressible at all — a
    parent reacting to a child — and it is inside the supported-browser baseline (Chrome 105 /
@@ -1917,7 +1950,7 @@
    flush means the host's background IS the column's. So the chrome shows through and the
    column's ordinary contents have to follow it. Without this they kept the page palette:
    axe measured 1.1:1 on a heading and 2.63:1 on the navigation items of exactly that
-   composition, in a preview this repository shipped.
+   composition, on a shipped example page.
    `[data-variant="flush"]` is what keeps a CARD out of it: a card brings its own surface,
    so remapping its contents would put chrome-colored text on a light panel — the same
    defect from the other side. */
@@ -2161,9 +2194,9 @@
 }
 
 /* ── The optimistic FAILURE states, made visible ────────────────────────────
-   §8 of the optimistic contract asks for this in as many words: "the state
-   becomes `rejected`, not `rolled-back` — a component's styling needs to tell
-   'put back' from 'still yours, not saved'". It was never built. The only
+   The optimistic contract asks for this in as many words: a refused write leaves
+   the state `rejected` rather than `rolled-back`, and a component's styling has to
+   tell "put back" from "still yours, not saved". It was never built. The only
    treatment in the library keys off `aria-busy`, which is the PENDING state
    alone, so a refusal cleared the dashed outline and left the control looking
    exactly like a success. The announcement went into an `sr-only` region, so the
@@ -2320,6 +2353,14 @@
     [data-wk-optimistic] .sr-only[aria-busy="true"] + * {
         animation: wk-optimistic-pending 1.4s ease-in-out infinite;
     }
+}
+
+/* The opt-in twin. Gated on the OS above, so a reader whose OS asks for less motion
+   never sees it — including the one who then set the attribute to say "not for this
+   application". Without this the middle state releases the clamps and starts nothing. */
+:root[data-reduce-motion="no-preference"] [data-wk-optimistic] [aria-busy="true"]:not(.sr-only),
+:root[data-reduce-motion="no-preference"] [data-wk-optimistic] .sr-only[aria-busy="true"] + * {
+    animation: wk-optimistic-pending 1.4s ease-in-out infinite;
 }
 
 @keyframes wk-optimistic-pending {
@@ -2710,7 +2751,7 @@
 
 /* Chrome-bar frames (browser / window / code) are a desktop-app shape — give them a
    realistic default width so the framed content shows at a sensible size instead of
-   collapsing to the width of a small snippet in the docs preview box. max-width: 100%
+   collapsing to the width of a small snippet inside a narrow container. max-width: 100%
    keeps it responsive; override via width / max-width on the element. */
 .wk-mockup[data-variant="browser"],
 .wk-mockup[data-variant="window"],
@@ -2863,10 +2904,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .wk-logo-cloud-muted img,
-    .wk-logo-cloud-muted svg {
+    :root:not([data-reduce-motion="no-preference"]) .wk-logo-cloud-muted img,
+    :root:not([data-reduce-motion="no-preference"]) .wk-logo-cloud-muted svg {
         transition: none;
     }
+}
+
+/* The forced twin. Same rules, keyed on the attribute alone — the application says
+   reduce and the OS does not, so no media condition above can carry them. Duplicated
+   rather than shared for the reason stated at the blanket rule: CSS cannot apply one
+   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   by rule, so one can no longer gain a selector the other never hears about. */
+:root[data-reduce-motion="reduce"] .wk-logo-cloud-muted img,
+:root[data-reduce-motion="reduce"] .wk-logo-cloud-muted svg {
+    transition: none;
 }
 
 /* ── FAB action labels ───────────────────────────────────────────────────────
@@ -3087,6 +3138,13 @@
     }
 }
 
+/* The opt-in twin. Gated on the OS above, so a reader whose OS asks for less motion
+   never sees it — including the one who then set the attribute to say "not for this
+   application". Without this the middle state releases the clamps and starts nothing. */
+:root[data-reduce-motion="no-preference"] .wk-radial-animate {
+    animation: wk-radial-sweep var(--motion-wk-duration-slow, 600ms) var(--motion-wk-easing-out, ease-out);
+}
+
 @keyframes wk-radial-sweep {
     from {
         --wk-radial-value: 0;
@@ -3123,9 +3181,18 @@
 
 /* The sweep is the only motion here, and nobody asked for it. */
 @media (prefers-reduced-motion: reduce) {
-    .wk-radial::before {
+    :root:not([data-reduce-motion="no-preference"]) .wk-radial::before {
         transition: none;
     }
+}
+
+/* The forced twin. Same rules, keyed on the attribute alone — the application says
+   reduce and the OS does not, so no media condition above can carry them. Duplicated
+   rather than shared for the reason stated at the blanket rule: CSS cannot apply one
+   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   by rule, so one can no longer gain a selector the other never hears about. */
+:root[data-reduce-motion="reduce"] .wk-radial::before {
+    transition: none;
 }
 
 /* ── The shell bar's scrolling strip ─────────────────────────────────────────
@@ -3321,11 +3388,22 @@
    traveling. Dropping the transform as well as the transition matters: a
    half-turn that snaps is still a half-turn the reader did not ask for. */
 @media (prefers-reduced-motion: reduce) {
-    .wk-swap > [data-wk-swap-on],
-    .wk-swap > [data-wk-swap-off] {
+    :root:not([data-reduce-motion="no-preference"]) .wk-swap > [data-wk-swap-on],
+    :root:not([data-reduce-motion="no-preference"]) .wk-swap > [data-wk-swap-off] {
         transition: none;
         transform: none;
     }
+}
+
+/* The forced twin. Same rules, keyed on the attribute alone — the application says
+   reduce and the OS does not, so no media condition above can carry them. Duplicated
+   rather than shared for the reason stated at the blanket rule: CSS cannot apply one
+   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   by rule, so one can no longer gain a selector the other never hears about. */
+:root[data-reduce-motion="reduce"] .wk-swap > [data-wk-swap-on],
+:root[data-reduce-motion="reduce"] .wk-swap > [data-wk-swap-off] {
+    transition: none;
+    transform: none;
 }
 
 /* ── Theme controller (switch variant) ───────────────────────────────────────
@@ -3341,9 +3419,18 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .wk-theme-switch-knob {
+    :root:not([data-reduce-motion="no-preference"]) .wk-theme-switch-knob {
         transition: none;
     }
+}
+
+/* The forced twin. Same rules, keyed on the attribute alone — the application says
+   reduce and the OS does not, so no media condition above can carry them. Duplicated
+   rather than shared for the reason stated at the blanket rule: CSS cannot apply one
+   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   by rule, so one can no longer gain a selector the other never hears about. */
+:root[data-reduce-motion="reduce"] .wk-theme-switch-knob {
+    transition: none;
 }
 
 /* ── Bottom navigation ───────────────────────────────────────────────────────
@@ -3482,10 +3569,20 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .wk-fab-icon {
+    :root:not([data-reduce-motion="no-preference"]) .wk-fab-icon {
         transition: none;
         transform: none;
     }
+}
+
+/* The forced twin. Same rules, keyed on the attribute alone — the application says
+   reduce and the OS does not, so no media condition above can carry them. Duplicated
+   rather than shared for the reason stated at the blanket rule: CSS cannot apply one
+   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   by rule, so one can no longer gain a selector the other never hears about. */
+:root[data-reduce-motion="reduce"] .wk-fab-icon {
+    transition: none;
+    transform: none;
 }
 
 /* ── Product card ────────────────────────────────────────────────────────────
@@ -3665,9 +3762,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .wk-progress-stripes { animation: none; }
-    .wk-progress-shimmer::after { content: none; }
+    :root:not([data-reduce-motion="no-preference"]) .wk-progress-stripes { animation: none; }
+    :root:not([data-reduce-motion="no-preference"]) .wk-progress-shimmer::after { content: none; }
 }
+
+/* The forced twin. Same rules, keyed on the attribute alone — the application says
+   reduce and the OS does not, so no media condition above can carry them. Duplicated
+   rather than shared for the reason stated at the blanket rule: CSS cannot apply one
+   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   by rule, so one can no longer gain a selector the other never hears about. */
+:root[data-reduce-motion="reduce"] .wk-progress-stripes { animation: none; }
+:root[data-reduce-motion="reduce"] .wk-progress-shimmer::after { content: none; }
 
 /* ─── Circular progress indeterminate ─────────────────────── */
 /* SVG circle that rotates when value is unknown.              */
@@ -3683,7 +3788,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    utility classes directly.
 
    The global prefers-reduced-motion: reduce block at the bottom of
-   this file snaps animation-duration to 0.01ms — these keyframes
+   this file snaps animation-duration to 1ms — these keyframes
    inherit that gate automatically.
 
    Easing: most presets use --motion-wk-easing-out for natural
@@ -4082,6 +4187,28 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 [data-wk-resizable] > [data-wk-resizable-handle][data-dragging="true"] > [data-wk-resizable-grip] {
     border-color: var(--color-wk-accent);
     background-color: var(--color-wk-bg-subtle);
+}
+
+/* Reduced motion. This component is reached by nothing else: its root is built from
+   arbitrary-value utilities, which the blanket clamp deliberately does not match, and the
+   handle and grip carry no class of their own — so both fades sit outside every motion
+   state unless their attributes are named here.
+
+   Both are color fades, which WCAG 2.3.3 does not count as motion animation, so this is not
+   a conformance repair. It is the promise `docs/theming.md` makes: every component, not a
+   selected few — the same standard by which the logo-cloud fade is already gated. */
+@media (prefers-reduced-motion: reduce) {
+    :root:not([data-reduce-motion="no-preference"]) [data-wk-resizable] > [data-wk-resizable-handle],
+    :root:not([data-reduce-motion="no-preference"]) [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-grip] {
+        transition: none;
+    }
+}
+
+/* The forced twin. Same rules, keyed on the attribute alone — the application says
+   reduce and the OS does not, so no media condition above can carry them. */
+:root[data-reduce-motion="reduce"] [data-wk-resizable] > [data-wk-resizable-handle],
+:root[data-reduce-motion="reduce"] [data-wk-resizable] > [data-wk-resizable-handle] > [data-wk-resizable-grip] {
+    transition: none;
 }
 
 /* ─── Slider (range input) styling ───────────────────────── */
@@ -4557,7 +4684,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 
 /* Generic responsive utilities for app-shell sidebars and secondary      */
 /* panes inside documentation preview blocks. Inline-style mockups can't   */
-/* express `@media`, so blueprint previews resort to fixed `width: 18rem;  */
+/* express `@media`, so such mockups resort to fixed `width: 18rem;        */
 /* flex-shrink: 0` aside elements that crush the main content on a phone.  */
 /* These classes give those mockups a tiny responsive vocabulary:          */
 /*                                                                        */
@@ -5017,6 +5144,17 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 .wk-reading-minimap__anchor:focus-visible {
     color: var(--reading-minimap-anchor-text-color-hover);
 }
+/* The focused state needs a SHAPE, not only a second color. Sharing the rule above with
+   `:hover` meant a keyboard reader saw exactly what a mouse reader sees when hovering, and
+   a reader who cannot separate the two shades saw nothing at all — a text-color swap has no
+   way to meet the size and contrast floor 2.4.13 puts under a focus indicator. The ring
+   tokens are the ones the rest of the library focuses with, so this reads as the same
+   library rather than as a local exception. */
+.wk-reading-minimap__anchor:focus-visible {
+    outline: var(--ring-wk-width) solid var(--color-wk-ring);
+    outline-offset: var(--ring-wk-offset);
+    border-radius: var(--radius-wk-sm);
+}
 .wk-reading-minimap__anchor[data-collapsed="true"] {
     opacity: 0;
     pointer-events: none;
@@ -5261,70 +5399,201 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     /* Stagger: collapse all per-child delays so children animate */
     /* simultaneously (which combined with wk-animate-* duration  */
     /* collapse below produces a no-motion snap-to-final).        */
-    .wk-stagger > * {
+    :root:not([data-reduce-motion="no-preference"]) .wk-stagger > * {
         animation-delay: 0ms !important;
     }
-    .wk-skeleton::after,
-    .wk-skeleton[data-pulse="true"],
-    .wk-progress-indeterminate,
-    .wk-progress-circle-indeterminate,
-    .wk-text-shimmer,
-    .wk-typing-dot {
+    :root:not([data-reduce-motion="no-preference"]) .wk-skeleton::after,
+    :root:not([data-reduce-motion="no-preference"]) .wk-skeleton[data-pulse="true"],
+    :root:not([data-reduce-motion="no-preference"]) .wk-progress-indeterminate,
+    :root:not([data-reduce-motion="no-preference"]) .wk-progress-circle-indeterminate,
+    :root:not([data-reduce-motion="no-preference"]) .wk-text-shimmer,
+    :root:not([data-reduce-motion="no-preference"]) .wk-typing-dot {
         animation: none;
     }
     /* Neutralize transition-* utilities used by WireKit overlays, tooltips,
-       accordions, and combobox dropdowns. Durations collapse to 0.01ms so
+       accordions, and combobox dropdowns. Durations collapse to 1ms so
        elements still appear/disappear, but without visible motion. */
-    [x-transition],
-    [x-transition\:enter],
-    [x-transition\:leave] {
-        transition-duration: 0.01ms !important;
-        animation-duration: 0.01ms !important;
+    :root:not([data-reduce-motion="no-preference"]) [x-transition],
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\:enter],
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\:leave] {
+        transition-duration: 1ms !important;
+        animation-duration: 1ms !important;
     }
     /* Image compare: neutralize every transition on the figure + children  */
     /* so dragging does not smooth-animate the clip-path reveal for users   */
     /* with vestibular sensitivities. Positioning is inline-style driven,   */
     /* so values still jump instantly when the user interacts.              */
-    [x-data*="wirekitImageCompare"],
-    [x-data*="wirekitImageCompare"] * {
+    :root:not([data-reduce-motion="no-preference"]) [x-data*="wirekitImageCompare"],
+    :root:not([data-reduce-motion="no-preference"]) [x-data*="wirekitImageCompare"] * {
         transition: none !important;
     }
     /* wk-animate-* utility classes (driven by the wirekitAnimate Alpine    */
     /* helper / <x-wirekit::reveal> wrapper). The 22 keyframe animations    */
     /* keep their classes applied so the final-state is visible (animation- */
-    /* fill-mode: both), but duration collapses to 0.01ms so users with     */
+    /* fill-mode: both), but duration collapses to 1ms so users with     */
     /* prefers-reduced-motion see an instant snap-to-final, no motion.     */
-    [class*='wk-animate-'] {
-        animation-duration: 0.01ms !important;
+    :root:not([data-reduce-motion="no-preference"]) [class*='wk-animate-'] {
+        animation-duration: 1ms !important;
         /* Also collapse any author-supplied --motion-wk-delay-* delay so the
            snap-to-final happens immediately instead of after the rhythm. */
         animation-delay: 0ms !important;
     }
     /* Reading-* family: every transition (bar fill scaleX, dot stroke-     */
     /* dashoffset, spine width / label opacity / tick color-fade,         */
-    /* bookmark pill fade-in) collapses to 0.01ms so users with             */
+    /* bookmark pill fade-in) collapses to 1ms so users with             */
     /* prefers-reduced-motion see an instant state change, no motion.      */
     /* Bar progress and dot stroke still UPDATE on scroll — only the inter-*/
     /* polating transition is removed; the value itself jumps to current.  */
-    .wk-reading-progress .wk-reading-progress__fill,
-    .wk-reading-progress--dot circle,
-    .wk-reading-spine,
-    .wk-reading-spine .wk-reading-spine__label,
-    .wk-reading-spine .wk-reading-spine__tick,
-    .wk-reading-bookmark,
-    .wk-reading-minimap,
-    .wk-reading-minimap__stripe,
-    .wk-reading-minimap__preview,
-    .wk-reading-minimap__anchor {
-        transition-duration: 0.01ms !important;
+    :root:not([data-reduce-motion="no-preference"]) .wk-reading-progress .wk-reading-progress__fill,
+    :root:not([data-reduce-motion="no-preference"]) .wk-reading-progress--dot circle,
+    :root:not([data-reduce-motion="no-preference"]) .wk-reading-spine,
+    :root:not([data-reduce-motion="no-preference"]) .wk-reading-spine .wk-reading-spine__label,
+    :root:not([data-reduce-motion="no-preference"]) .wk-reading-spine .wk-reading-spine__tick,
+    :root:not([data-reduce-motion="no-preference"]) .wk-reading-bookmark,
+    :root:not([data-reduce-motion="no-preference"]) .wk-reading-minimap,
+    :root:not([data-reduce-motion="no-preference"]) .wk-reading-minimap__stripe,
+    :root:not([data-reduce-motion="no-preference"]) .wk-reading-minimap__preview,
+    :root:not([data-reduce-motion="no-preference"]) .wk-reading-minimap__anchor {
+        transition-duration: 1ms !important;
     }
     /* Countdown change animations (box pulse + text flash): users who ask for
        less motion get an instant, motionless value update (the keyed node still
        re-mounts, but with no flash / pop / color change). */
-    .wk-countdown-pulse,
-    .wk-countdown-text-flash {
+    :root:not([data-reduce-motion="no-preference"]) .wk-countdown-pulse,
+    :root:not([data-reduce-motion="no-preference"]) .wk-countdown-text-flash {
         animation: none !important;
     }
+    /* Spinner — the last continuous keyframe animation in the library without
+       a line in this list, and the one that could not have one written the
+       usual way: the rotation is Tailwind's `animate-spin`, not a WireKit
+       keyframe, so there is no `wk-` animation name to switch off. It names
+       the element instead. `<x-wirekit::spinner>` puts `wk-spinner` on its
+       wrapper as the first class token for exactly this rule, and the glyph
+       is the SVG inside it.
+
+       The whole-surface clamp further up this file does already reach the
+       SVG as a descendant of that wrapper, and it is the right net for the
+       transitions it was written for — but it clamps a duration rather than
+       ending an animation, and it reaches this glyph only through a selector
+       shape that has been narrowed once already. Every other continuous
+       :root:not([data-reduce-motion="no-preference"]) indicator here carries its own line for the same reason: skeleton,
+       progress-indeterminate, text-shimmer, typing-dot, countdown. A spinner
+       is the same kind of thing, so it gets the same answer rather than a
+       second one.
+
+       Stopped, not slowed — and nothing is lost with the motion, because the
+       wrapper is `role="status"` with a visually-hidden name, so the loading
+       state is announced whether the glyph turns or not.
+
+       `!important` because the declaration it overrides comes from the
+       DEVELOPER's Tailwind build rather than from a class this file owns, and
+       an accessibility guarantee should not depend on how a particular setup
+       happens to order two same-specificity rules. */
+    :root:not([data-reduce-motion="no-preference"]) .wk-spinner svg {
+        animation: none !important;
+    }
+}
+
+/* The forced twin. Same rules, keyed on the attribute alone — the application says
+   reduce and the OS does not, so no media condition above can carry them. Duplicated
+   rather than shared for the reason stated at the blanket rule: CSS cannot apply one
+   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   by rule, so one can no longer gain a selector the other never hears about. */
+/* Stagger: collapse all per-child delays so children animate */
+/* simultaneously (which combined with wk-animate-* duration  */
+/* collapse below produces a no-motion snap-to-final).        */
+:root[data-reduce-motion="reduce"] .wk-stagger > * {
+    animation-delay: 0ms !important;
+}
+:root[data-reduce-motion="reduce"] .wk-skeleton::after,
+:root[data-reduce-motion="reduce"] .wk-skeleton[data-pulse="true"],
+:root[data-reduce-motion="reduce"] .wk-progress-indeterminate,
+:root[data-reduce-motion="reduce"] .wk-progress-circle-indeterminate,
+:root[data-reduce-motion="reduce"] .wk-text-shimmer,
+:root[data-reduce-motion="reduce"] .wk-typing-dot {
+    animation: none;
+}
+/* Neutralize transition-* utilities used by WireKit overlays, tooltips,
+   accordions, and combobox dropdowns. Durations collapse to 1ms so
+   elements still appear/disappear, but without visible motion. */
+:root[data-reduce-motion="reduce"] [x-transition],
+:root[data-reduce-motion="reduce"] [x-transition\:enter],
+:root[data-reduce-motion="reduce"] [x-transition\:leave] {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+}
+/* Image compare: neutralize every transition on the figure + children  */
+/* so dragging does not smooth-animate the clip-path reveal for users   */
+/* with vestibular sensitivities. Positioning is inline-style driven,   */
+/* so values still jump instantly when the user interacts.              */
+:root[data-reduce-motion="reduce"] [x-data*="wirekitImageCompare"],
+:root[data-reduce-motion="reduce"] [x-data*="wirekitImageCompare"] * {
+    transition: none !important;
+}
+/* wk-animate-* utility classes (driven by the wirekitAnimate Alpine    */
+/* helper / <x-wirekit::reveal> wrapper). The 22 keyframe animations    */
+/* keep their classes applied so the final-state is visible (animation- */
+/* fill-mode: both), but duration collapses to 1ms so users with     */
+/* prefers-reduced-motion see an instant snap-to-final, no motion.     */
+:root[data-reduce-motion="reduce"] [class*='wk-animate-'] {
+    animation-duration: 1ms !important;
+    /* Also collapse any author-supplied --motion-wk-delay-* delay so the
+       snap-to-final happens immediately instead of after the rhythm. */
+    animation-delay: 0ms !important;
+}
+/* Reading-* family: every transition (bar fill scaleX, dot stroke-     */
+/* dashoffset, spine width / label opacity / tick color-fade,         */
+/* bookmark pill fade-in) collapses to 1ms so users with             */
+/* prefers-reduced-motion see an instant state change, no motion.      */
+/* Bar progress and dot stroke still UPDATE on scroll — only the inter-*/
+/* polating transition is removed; the value itself jumps to current.  */
+:root[data-reduce-motion="reduce"] .wk-reading-progress .wk-reading-progress__fill,
+:root[data-reduce-motion="reduce"] .wk-reading-progress--dot circle,
+:root[data-reduce-motion="reduce"] .wk-reading-spine,
+:root[data-reduce-motion="reduce"] .wk-reading-spine .wk-reading-spine__label,
+:root[data-reduce-motion="reduce"] .wk-reading-spine .wk-reading-spine__tick,
+:root[data-reduce-motion="reduce"] .wk-reading-bookmark,
+:root[data-reduce-motion="reduce"] .wk-reading-minimap,
+:root[data-reduce-motion="reduce"] .wk-reading-minimap__stripe,
+:root[data-reduce-motion="reduce"] .wk-reading-minimap__preview,
+:root[data-reduce-motion="reduce"] .wk-reading-minimap__anchor {
+    transition-duration: 1ms !important;
+}
+/* Countdown change animations (box pulse + text flash): users who ask for
+   less motion get an instant, motionless value update (the keyed node still
+   re-mounts, but with no flash / pop / color change). */
+:root[data-reduce-motion="reduce"] .wk-countdown-pulse,
+:root[data-reduce-motion="reduce"] .wk-countdown-text-flash {
+    animation: none !important;
+}
+/* Spinner — the last continuous keyframe animation in the library without
+   a line in this list, and the one that could not have one written the
+   usual way: the rotation is Tailwind's `animate-spin`, not a WireKit
+   keyframe, so there is no `wk-` animation name to switch off. It names
+   the element instead. `<x-wirekit::spinner>` puts `wk-spinner` on its
+   wrapper as the first class token for exactly this rule, and the glyph
+   is the SVG inside it.
+
+   The whole-surface clamp further up this file does already reach the
+   SVG as a descendant of that wrapper, and it is the right net for the
+   transitions it was written for — but it clamps a duration rather than
+   ending an animation, and it reaches this glyph only through a selector
+   shape that has been narrowed once already. Every other continuous
+   :root[data-reduce-motion="reduce"] indicator here carries its own line for the same reason: skeleton,
+   progress-indeterminate, text-shimmer, typing-dot, countdown. A spinner
+   is the same kind of thing, so it gets the same answer rather than a
+   second one.
+
+   Stopped, not slowed — and nothing is lost with the motion, because the
+   wrapper is `role="status"` with a visually-hidden name, so the loading
+   state is announced whether the glyph turns or not.
+
+   `!important` because the declaration it overrides comes from the
+   DEVELOPER's Tailwind build rather than from a class this file owns, and
+   an accessibility guarantee should not depend on how a particular setup
+   happens to order two same-specificity rules. */
+:root[data-reduce-motion="reduce"] .wk-spinner svg {
+    animation: none !important;
 }
 
 /* ApexCharts tooltip — close the gap to the hovered data point.            */
@@ -5516,4 +5785,84 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     text-align: start;
     font: inherit;
     color: inherit;
+}
+
+/*
+ * A page footer inside a shell's main region.
+ *
+ * The footer draws its own top border, and inside a shell that border stops being an
+ * edge and becomes the LINE between the last piece of content and the page chrome. It
+ * was welded to whatever sat above it — measured at 0px of air — while carrying 48px
+ * beneath it, so the rule read as belonging to the card it touched rather than to the
+ * footer it opens, and the copyright line floated a long way below it.
+ *
+ * More above than below, deliberately: the gap above separates two regions, the gap
+ * below is one region's padding. Reported four times across four different shells.
+ *
+ * `:where()` keeps this at zero specificity, so any utility on the footer wins without
+ * an `!important`, and it is scoped to a footer INSIDE a main region — a standalone
+ * marketing footer, where the section padding is correct as it stands, is untouched.
+ */
+:where(.wk-main) :where(.wk-footer) {
+    margin-block-start: var(--space-wk-xl);
+    padding-block-start: var(--space-wk-lg);
+}
+
+/*
+ * `wk-rail-hide` — content that steps aside when the sidebar becomes an icon rail.
+ *
+ * The sidebar's own rows already do this: collapsed, the label goes screen-reader-only
+ * and the icon carries the column. A brand row, a workspace name, a mode switch built
+ * from the page's own markup has no way to join in — and what it did instead was wrap.
+ * Measured at 55px, "Acme Console" broke across two lines and made the brand row the
+ * tallest thing in a column of 32px icons.
+ *
+ * A named class rather than the internal `group/wk-sidebar` selector, because that name
+ * is an implementation detail of the component and this is something page markup is
+ * meant to reach for. Same visual result as `sr-only`: the words leave the layout and
+ * stay in the accessible name.
+ *
+ * `data-settling` as well as `data-collapsed`, because the column animates — hiding only
+ * once the transition ends lets the label reflow on the way there, which is the flicker
+ * this is trying to remove.
+ *
+ * The app rail is the third selector for the same idea, and one class rather than two on
+ * purpose: an expandable rail is a narrow column that widens, which is the sidebar's
+ * problem under another name. A brand row that says only "AI" while every item beside it
+ * has grown its label is the same defect read from the other end — the name was never
+ * written, because there was nothing to write it into.
+ */
+.wk-sidebar[data-collapsed] .wk-rail-hide,
+.wk-sidebar[data-settling] .wk-rail-hide,
+.wk-rail:not([data-expanded]) .wk-rail-hide {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/*
+ * `--wk-shell-foot-h` — one line under two columns.
+ *
+ * A shell is columns side by side, and the rule above each column's foot is meant to read
+ * as ONE line crossing the window. Each foot sizes itself to its own content, so two feet
+ * holding different things start at different heights: measured on the console shell, a
+ * rail foot of 81px (two stacked controls) beside a sidebar foot of 56px (one bar), and the
+ * line broke by the difference.
+ *
+ * CSS cannot take the maximum across two independent flex columns, and the mechanism that
+ * could — subgrid — sits ABOVE this project's browser baseline, where the fallback would be
+ * exactly the broken line this is meant to remove. So the shell states the height instead:
+ * one custom property, set once on the shell, read by every foot in it.
+ *
+ * Unset it and nothing changes — the floor is the shell-bar height, which is what a foot
+ * holding a single bar is anyway.
+ */
+.wk-shell-foot {
+    min-height: var(--wk-shell-foot-h, var(--size-wk-shell-bar, 3.5rem));
 }

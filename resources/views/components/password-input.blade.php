@@ -1,7 +1,7 @@
 {{-- optimistic-ui: supported
-     Uses §8's fourth exit — a refusal KEEPS what was typed and says so, because
-     for a typed value the previous one belongs to the server and the new one is
-     the user's work.
+     Uses the `keep` failure exit — a refusal KEEPS what was typed and says so,
+     because for a typed value the previous one belongs to the server and the
+     new one is the user's work.
 
      The component's own question was whether the announcement can read anything
      back, since a password field is the one place where that would be a
@@ -86,9 +86,12 @@
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'password-input-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
-    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
-    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
-    $attributes = $attributes->except('id');
+    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // below, so leaving either in the bag emits a second, conflicting attribute on the
+    // same element. `id` was stripped from the start; `name` was not, and a caller that
+    // passed one got two name attributes on one control — invalid HTML the browser
+    // accepts silently by keeping the first, which is why nothing ever went red over it.
+    $attributes = $attributes->except(['id', 'name']);
 
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
@@ -148,7 +151,29 @@
         . ($strengthMeter ? $id . '-strength' : '')
     );
 
-    // `failure: 'keep'` is what makes this component eligible at all — §8. A
+    // The four rungs of the meter, resolved server-side so they are translatable
+    // and visible to every `__()` extractor — a literal inside the x-data would be
+    // neither. Handed to the factory rather than read from it, for the same reason
+    // the toggle's labels are: the package has no locale at the moment its
+    // JavaScript is bundled.
+    //
+    // Each rung names the SUBJECT, not just the grade. A live region reads its text
+    // with no surrounding context, so a lone "Good" tells a reader nothing about
+    // what was good — and a one-word entry in a flat catalog is also the shape an
+    // application most easily re-words underneath us.
+    //
+    // Only emitted when the meter is on: four strings in the x-data of every
+    // password field that has no meter is markup nobody reads.
+    $strengthLabels = $strengthMeter
+        ? \Pushery\WireKit\Support\AlpinePayload::from([
+            __('wirekit::Weak password'),
+            __('wirekit::Fair password'),
+            __('wirekit::Good password'),
+            __('wirekit::Strong password'),
+        ])
+        : null;
+
+    // `failure: 'keep'` is what makes this component eligible at all. A
     // rollback here would delete a typed password, and re-typing one is the most
     // expensive re-entry any field can ask for.
     //
@@ -182,7 +207,7 @@
      getter and a method, and Alpine's CSP parser does not accept that as an
      expression — under a strict policy the element got an EMPTY scope, so the
      show/hide button and the whole meter were dead with no error to say why. --}}
-<div class="space-y-1.5" x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }} })">
+<div class="space-y-1.5" x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value, because a
          nested Alpine component reads and writes its parent's properties
@@ -209,7 +234,7 @@
             @if($optimisticConfig)
                 x-bind:aria-busy="isPending"
                 {{-- `change`, not `input`: typing fires input per keystroke, and
-                     the event that ends the input is leaving the field (§10). --}}
+                     the event that ends the input is leaving the field. --}}
                 x-on:change="run($event.target.value)"
             @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
@@ -220,11 +245,22 @@
         @if($toggle)
             <button
                 type="button"
-                class="absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] transition-colors duration-[var(--transition-wk-duration)]"
+                class="absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)]"
                 @click="showPassword = !showPassword"
-                {{-- Static aria-label guards pre-Alpine render (axe scans DOM
-                     before hydration may complete). :aria-label overrides live. --}}
+                {{-- Static aria-label and aria-pressed guard the pre-Alpine render
+                     (axe scans the DOM before hydration may complete); the bound
+                     pair below overrides both once the scope exists. `false` is the
+                     state the markup actually represents — the factory seeds
+                     `showPassword: false`, so the field ships masked.
+
+                     aria-pressed AND a swapped label, as the carousel's play/pause
+                     control does: the label says what the button will DO and the
+                     state says what it has already done, and a reader who lands on
+                     the button after someone else revealed the field learns that
+                     from the state alone. --}}
                 aria-label="{{ __('wirekit::Show password') }}"
+                aria-pressed="false"
+                :aria-pressed="showPassword ? 'true' : 'false'"
                 :aria-label="showPassword ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Hide password')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Show password')) }}"
             >
                 {{-- Eye icon (show) --}}
@@ -245,7 +281,31 @@
     {{-- Strength meter — 4 bars that fill based on password complexity score.
          Score: +1 for length≥8, +1 mixed case, +1 digit, +1 symbol. --}}
     @if($strengthMeter)
-        <div id="{{ $id }}-strength" role="status" aria-live="polite" class="flex gap-1">
+        {{-- role="meter" carries the value: four bars whose only difference is a
+             tint say nothing to a reader, and the region that used to sit here was
+             a live region with no text in it — so the field's own
+             `aria-describedby` pointed at an element that described nothing.
+
+             The static aria-valuenow is the same pre-hydration guard the toggle
+             uses: a meter without a value is an incomplete role, and a scan that
+             runs before Alpine has built the scope sees exactly that state.
+             aria-valuetext because "2 of 4" is a number nobody can act on. --}}
+        <div
+            role="meter"
+            aria-label="{{ __('wirekit::Password strength') }}"
+            aria-valuemin="0"
+            aria-valuemax="4"
+            aria-valuenow="0"
+            :aria-valuenow="strength"
+            {{-- Its own getter, not `strengthLabel`: the label is '' on an untouched
+                 field, and Alpine SETS an empty string rather than removing the
+                 attribute — so the meter used to ship `aria-valuetext=""`, which
+                 looks in the DOM exactly like an attribute somebody thought about.
+                 The getter returns false there, which is what Alpine removes on,
+                 and the hydrated meter then matches the static one above. --}}
+            :aria-valuetext="strengthValueText"
+            class="flex gap-1"
+        >
             <template x-for="i in 4" :key="i">
                 <div
                     class="h-1 flex-1 rounded-full transition-colors duration-[var(--transition-wk-duration)]"
@@ -253,6 +313,15 @@
                 ></div>
             </template>
         </div>
+
+        {{-- The described-by target, and the only thing a reader hears when the
+             score changes while the field has focus. It renders EMPTY and stays in
+             the DOM: a live region that arrives together with its text is a new
+             node, and a new node announces nothing.
+
+             Separate from the meter above rather than merged into it, because a
+             role="meter" is not a live region and an element cannot be both. --}}
+        <span id="{{ $id }}-strength" class="sr-only" role="status" aria-live="polite" x-text="strengthLabel"></span>
     @endif
 
     @if($hasError && $errorMessage)

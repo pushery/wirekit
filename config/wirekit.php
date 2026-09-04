@@ -427,33 +427,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Font Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configure which fonts WireKit should load. Fonts are only loaded when
-    | explicitly activated here. Set to null to use the system font stack
-    | (default — zero font files loaded).
-    |
-    | Available sans presets:
-    |   'roboto', 'open-sans', 'lato', 'inter', 'montserrat',
-    |   'ibm-plex-sans', 'noto-sans', 'nunito-sans', 'dm-sans',
-    |   'vt323'
-    |
-    | Available serif presets:
-    |   'playfair-display', 'lora', 'merriweather', 'ibm-plex-serif',
-    |   'noto-serif'
-    |
-    | Available mono presets:
-    |   'ibm-plex-mono', 'roboto-mono', 'source-code-pro',
-    |   'jetbrains-mono', 'space-mono', 'google-sans-code'
-    |
-    | All fonts are bundled locally (GDPR-compliant). No external requests.
-    | Run `php artisan vendor:publish --tag=wirekit-fonts` to publish fonts.
-    |
-    */
-
-    /*
-    |--------------------------------------------------------------------------
     | Icon Configuration
     |--------------------------------------------------------------------------
     |
@@ -524,8 +497,25 @@ return [
     | Fonts
     |--------------------------------------------------------------------------
     |
-    | Pick a bundled family per category, or null to keep the system stack.
-    | Run `php artisan wirekit:publish-fonts` after changing one.
+    | Pick a bundled family per category, or null to keep the system stack — the
+    | default, which loads zero font files. Every family is bundled locally
+    | (GDPR-compliant): nothing is ever fetched from an external host.
+    |
+    | Run `php artisan wirekit:publish-fonts` after changing one, and
+    | `php artisan wirekit:fonts` to print the families your installation has.
+    |
+    | Available sans families:
+    |   'roboto', 'open-sans', 'lato', 'inter', 'montserrat',
+    |   'ibm-plex-sans', 'noto-sans', 'nunito-sans', 'dm-sans',
+    |   'vt323'
+    |
+    | Available serif families:
+    |   'playfair-display', 'lora', 'merriweather', 'ibm-plex-serif',
+    |   'noto-serif'
+    |
+    | Available mono families:
+    |   'ibm-plex-mono', 'roboto-mono', 'source-code-pro',
+    |   'jetbrains-mono', 'space-mono', 'google-sans-code'
     |
     | 'display' is the `font-display` every bundled @font-face is served with.
     |
@@ -654,7 +644,7 @@ return [
     |
     | Choose which JavaScript bundle @wirekitScripts loads.
     |
-    | 'full' — All Alpine components including overlays (~65 KB gzip)
+    | 'full' — All Alpine components including overlays (~74 KB gzip)
     |          Includes Floating UI + focus-trap, bundled.
     |          Current measured sizes: docs.wirekit.app/dependencies.
     |
@@ -682,6 +672,20 @@ return [
     |          compiles them at runtime the same way. Livewire ships a CSP
     |          distribution for that — without it the page still needs
     |          'unsafe-eval', whichever WireKit bundle you load.
+    |
+    |          ⚠️ ON A LIVEWIRE PAGE THIS BUNDLE'S PARSER NEVER RUNS, and the
+    |          order is fixed by the tags rather than by the source: Livewire's
+    |          script carries no `defer` and executes while the document is
+    |          parsed, setting window.Alpine; this bundle is deferred and runs
+    |          after. It then finds an Alpine already there, registers its
+    |          components on THAT one, and never starts its own — the runtime
+    |          says so in a console warning. So the choice costs about 70 KB
+    |          more than 'full' and buys no CSP guarantee at all.
+    |
+    |          The lever on a Livewire page is Livewire's own: `csp_safe` in
+    |          `config/livewire.php`, with `bundle` left at 'full'. This bundle
+    |          is the answer for a page WITHOUT Livewire, where it really is the
+    |          Alpine that evaluates your expressions.
     |
     | An unrecognized value falls back to 'full' rather than to no script at all.
     |

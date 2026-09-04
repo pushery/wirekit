@@ -338,14 +338,20 @@
              keeps ONE separator line at the bottom instead of two. The block is emitted when
              either exists, so an expandable rail with no footer still has somewhere to put
              it, and a rail with neither has no empty band. --}}
-        <div class="shrink-0 relative border-t-[length:var(--border-wk-width)] border-[var(--color-wk-rail-border)] py-[var(--padding-wk-y-sm)] ps-[var(--wk-rail-inset-start,var(--padding-wk-y-sm))] pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))] flex flex-col gap-[var(--space-wk-nav-gap)]">
+        <div class="wk-shell-foot shrink-0 relative border-t-[length:var(--border-wk-width)] border-[var(--color-wk-rail-border)] py-[var(--padding-wk-y-sm)] ps-[var(--wk-rail-inset-start,var(--padding-wk-y-sm))] pe-[var(--wk-rail-inset-end,var(--padding-wk-y-sm))] flex flex-col gap-[var(--space-wk-nav-gap)]">
             @isset($footer)
                 {{-- The trailing inset only exists while the rail is wide AND the toggle has
                      moved onto this row — it is the room the toggle occupies, so the two
-                     belong to the same condition. --}}
+                     belong to the same condition.
+
+                     On the LAST row only. The inset sat on this whole column, so every
+                     footer row shrank to make space for a control that stands beside one
+                     of them: measured expanded, the menu entries ran 232px and all three
+                     footer rows 196px, which reads as a second, narrower list rather than
+                     as the same list with a button at the end. --}}
                 <div @class([
                     'flex flex-col gap-[var(--space-wk-nav-gap)]',
-                    'group-data-[expanded]/wk-rail:pe-[2.25rem]' => $expandable,
+                    '[&>*:last-child]:group-data-[expanded]/wk-rail:pe-[2.25rem]' => $expandable,
                 ])>
                     {{ $footer }}
                 </div>

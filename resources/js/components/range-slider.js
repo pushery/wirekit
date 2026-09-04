@@ -91,23 +91,100 @@ export default function wirekitRangeSlider(config = {}) {
         },
 
         /**
-         * Step the minimum value by direction (-1 or +1).
+         * The highest value the LOWER handle can hold — what it announces as
+         * `aria-valuemax`.
+         *
+         * Not the track's `_max`: `_setMin` clamps at `maxVal - _step`, and so
+         * does every path that reaches it (arrows, page keys, End, pointer drag).
+         * The two thumbs never meet, so the lower one stops one step short of the
+         * upper one, and a reader told otherwise hears a control that appears to
+         * hang at a value the announcement never acknowledges.
+         *
+         * The bound is EXACT rather than an upper estimate — the clamp is a
+         * `Math.min` against this very number, so the handle lands on it whether
+         * or not it sits on the step grid.
+         *
+         * Floored at `_min` because nothing clamps the initial values at mount:
+         * a `maxValue` set nearer the floor than one step would otherwise report
+         * a maximum below the minimum, which is an invalid slider rather than a
+         * merely inaccurate one.
+         *
+         * A getter rather than the arithmetic in the directive: Alpine's CSP
+         * build parses a restricted grammar, so the expressions this component
+         * binds are built here — the same reason the geometry above lives in JS.
+         */
+        get minThumbCeiling() {
+            return Math.max(this._min, this.maxVal - this._step);
+        },
+
+        /** The lowest value the UPPER handle can hold — the mirror of `minThumbCeiling`. */
+        get maxThumbFloor() {
+            return Math.min(this._max, this.minVal + this._step);
+        },
+
+        /**
+         * Step the minimum value by direction.
+         *
+         * `direction` is a MULTIPLIER on the step, not a sign: the arrow keys
+         * pass ±1 and the page keys pass ±10, so PageUp/PageDown reuse this path
+         * instead of introducing a second clamp that could drift from it.
          */
         stepMin(direction) {
+            this._setMin(this.minVal + (direction * this._step));
+        },
+
+        /**
+         * Step the maximum value by direction — the mirror of `stepMin`.
+         */
+        stepMax(direction) {
+            this._setMax(this.maxVal + (direction * this._step));
+        },
+
+        /**
+         * Jump the minimum handle to one end of ITS OWN travel (Home / End).
+         *
+         * The travel a handle owns is not the whole track. The lower handle's
+         * ceiling is the upper handle — one step below it, because the pair may
+         * never meet — which is the same bound `stepMin` clamps to, so End here
+         * lands exactly where holding ArrowRight would.
+         *
+         * `toUpperEnd` is true for End and false for Home. A boolean rather than
+         * two methods because both ends run the identical write path, and the
+         * single argument keeps the directive a plain call, which is what Alpine's
+         * CSP build can parse.
+         */
+        jumpMin(toUpperEnd) {
+            this._setMin(toUpperEnd ? this.maxVal - this._step : this._min);
+        },
+
+        /**
+         * Jump the maximum handle to one end of its own travel — the mirror of
+         * `jumpMin`. Home lands one step above the lower handle; End lands on the
+         * track maximum.
+         */
+        jumpMax(toUpperEnd) {
+            this._setMax(toUpperEnd ? this._max : this.minVal + this._step);
+        },
+
+        /**
+         * The one place `minVal` is written by a keyboard gesture.
+         *
+         * Every key path funnels through here so the clamp, the gesture mark, the
+         * hidden-input dispatch and the commit boundary are stated once. A key
+         * press IS a completed decision, so it commits immediately — unlike a
+         * drag, which commits at pointerup.
+         */
+        _setMin(value) {
             this._markGesture();
-            const newVal = this.minVal + (direction * this._step);
-            this.minVal = Math.max(this._min, Math.min(newVal, this.maxVal - this._step));
+            this.minVal = Math.max(this._min, Math.min(value, this.maxVal - this._step));
             this._dispatchInputEvent();
             this._commit();
         },
 
-        /**
-         * Step the maximum value by direction (-1 or +1).
-         */
-        stepMax(direction) {
+        /** The one place `maxVal` is written by a keyboard gesture. */
+        _setMax(value) {
             this._markGesture();
-            const newVal = this.maxVal + (direction * this._step);
-            this.maxVal = Math.min(this._max, Math.max(newVal, this.minVal + this._step));
+            this.maxVal = Math.min(this._max, Math.max(value, this.minVal + this._step));
             this._dispatchInputEvent();
             this._commit();
         },
@@ -134,7 +211,7 @@ export default function wirekitRangeSlider(config = {}) {
         /**
          * Hand the pair to the optimistic layer, if one is nested here.
          *
-         * §10 — the commit boundary. A keypress calls this at once, because one
+         * The commit boundary. A keypress calls this at once, because one
          * press IS a completed decision; a drag calls it only at pointerup, not
          * per frame. There is no timer either way.
          *
@@ -153,6 +230,22 @@ export default function wirekitRangeSlider(config = {}) {
          */
         startDrag(handle, event) {
             event.preventDefault();
+
+            // Canceling pointerdown also cancels the FOCUS it would have given
+            // this element — moving focus to the pressed control is part of that
+            // default action, and a `div[tabindex="0"]` has no other route to it.
+            // Without this line the thumb the reader just grabbed is not the
+            // focused element: the focus ring never appears, and the ArrowRight
+            // pressed to fine-tune the value scrolls the page instead of moving
+            // the handle, which is exactly the pointer-then-keyboard sequence the
+            // component documents. Measured in Chromium: `document.activeElement`
+            // stayed on `body` after a click on a thumb.
+            //
+            // `preventScroll` because the thumb is already under the pointer —
+            // there is nothing to scroll into view, and scrolling here would drag
+            // the track out from under the gesture that is starting.
+            event.currentTarget?.focus?.({ preventScroll: true });
+
             // The gesture starts at pointerdown, not at the pointerup that
             // commits it — the pair moves for every frame in between.
             this._markGesture();

@@ -148,8 +148,7 @@ export async function position(reference, floating, {
     //
     // Nothing renders wrong, and that is exactly why it matters: it is a console error,
     // and the developers most likely to meet it are the ones gating their browser suite
-    // on a clean console — which is how two of the defects in this release were reported
-    // in the first place. They would get a red run from our component with nothing they
+    // on a clean console. They would get a red run from our component with nothing they
     // could do about it.
     //
     // A frame's delay is invisible for a panel that is following its trigger, and it

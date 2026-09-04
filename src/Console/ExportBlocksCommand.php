@@ -9,7 +9,7 @@ use Pushery\WireKit\Support\VersionResolver;
 use Pushery\WireKit\WireKit;
 
 /**
- * emit a `/blocks.json` machine-readable manifest of every
+ * Emits a `/blocks.json` machine-readable manifest of every
  * layout + blueprint with its frontmatter metadata. Consumed by the docs site's
  * `/blocks` gallery UI for filterable browsing.
  *
@@ -38,15 +38,6 @@ class ExportBlocksCommand extends Command
         {--public : Emit the blocks docs.wirekit.app serves at its /blocks.json endpoint (the default emits all blocks).}';
 
     protected $description = 'Emit a machine-readable JSON manifest of every layout + blueprint';
-
-    /**
-     * Hidden from `php artisan list` and from the public CLI reference doc
-     * — the command itself works fine but its companion docs catalog is
-     * not part of the public CLI reference yet. Once it is, flip
-     * to `protected $hidden = false;` and add a `## wirekit:export-blocks`
-     * section to `docs/cli-reference.md`.
-     */
-    protected $hidden = true;
 
     public function handle(): int
     {
@@ -103,8 +94,8 @@ class ExportBlocksCommand extends Command
         // dropped HERE so the guarantee can't depend on a downstream serve
         // remembering to filter (an absolute project rule: a public artifact
         // never carries non-public content). Without the flag the full
-        // manifest (every block + its visibility field) stays available for
-        // the docs site's authenticated full-catalog gallery.
+        // manifest (every block + its visibility field) stays available as the
+        // documentation site's build input.
         if ($this->option('public')) {
             $blocks = array_values(array_filter(
                 $blocks,
@@ -211,9 +202,7 @@ class ExportBlocksCommand extends Command
                 'dependencies' => $frontmatter['dependencies'] ?? [],
                 'responsive' => $frontmatter['responsive'] ?? null,
                 'dark_compatible' => $frontmatter['dark_compatible'] ?? null,
-                // Surfaced so a gallery can filter by the visibility of the
-                // requesting session. This comment ships via Packagist, so it
-                // describes the mechanism without naming the tiers.
+                // Surfaced so a gallery can filter blocks by their visibility field.
                 'visibility' => $frontmatter['visibility'] ?? 'guest',
                 'draft' => $frontmatter['draft'] ?? false,
                 'preview_url' => WireKit::DOCS_URL.'/'.$slug,

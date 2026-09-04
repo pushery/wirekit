@@ -71,12 +71,15 @@ export default function wirekitTableSort(config = {}) {
          * Reads cell values from data-wk-sort-value attribute or textContent.
          */
         _reorderRows() {
-            // $root, NOT $el. sortBy() is reached via @click ON the <th>, so at
-            // call time Alpine binds $el to the clicked <th> — which has no
-            // <tbody> (and no <thead th> descendants), so $el.querySelector
-            // would return null and this method would early-return: the
-            // aria-sort indicator (a reactive binding) flipped but the rows
-            // never moved. $root is the x-data <table>, which owns both.
+            // $root, NOT $el. sortBy() is reached from an @click on the header's
+            // sort <button>, so at call time Alpine binds $el to that button —
+            // which has no <tbody> (and no <thead th> descendants), so
+            // $el.querySelector would return null and this method would
+            // early-return: the aria-sort indicator (a reactive binding) flipped
+            // but the rows never moved. $root is the x-data <table>, which owns
+            // both. The handler sat on the <th> itself when this was first hit;
+            // moving it into the button for keyboard operability changed which
+            // wrong element $el points at, not that it is the wrong element.
             const tbody = this.$root.querySelector('tbody');
             if (!tbody) return;
 

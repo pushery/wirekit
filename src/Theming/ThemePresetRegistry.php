@@ -31,7 +31,7 @@ use InvalidArgumentException;
  *  - `dark_vars` — `.dark` block overrides applied in dark mode (optional;
  *                  null when the preset does not differentiate dark mode).
  *
- * Extension #2: the `register()` static lets downstream packages (e.g.
+ * The `register()` static lets downstream packages (e.g.
  * a "FintechKit" preset bundle layered on top of WireKit) add their own
  * presets at runtime via a service-provider boot hook. Bundled presets
  * are loaded lazily; registered presets stack on top.
@@ -99,7 +99,7 @@ CSS,
             'material' => [
                 'label' => 'Material',
                 'vars' => <<<'CSS'
-    /* Material — Google Material Design 3 inspired */
+    /* Material — tight radii, an indigo accent and a decelerating ease */
     --radius-wk-sm: 0.25rem;
     --radius-wk-md: 0.5rem;
     --radius-wk-lg: 0.75rem;
@@ -145,7 +145,7 @@ CSS,
             'cupertino' => [
                 'label' => 'Cupertino',
                 'vars' => <<<'CSS'
-    /* Cupertino — Apple HIG inspired */
+    /* Cupertino — generous radii, a system-blue accent and a gentle ease */
     --radius-wk-sm: 0.375rem;
     --radius-wk-md: 0.625rem;
     --radius-wk-lg: 0.875rem;
@@ -331,7 +331,7 @@ CSS,
     }
 
     /**
-     * Extension #2 — Register a custom preset at runtime.
+     * Register a custom preset at runtime.
      *
      * Intended call shape from a downstream service provider's boot()
      * method, e.g. for a "FintechKit" package layered on top:

@@ -22,8 +22,19 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $visible = BooleanProp::from($visible, false);
 
-    // Action Bar — toolbar for bulk actions (shown when items are selected).
-    // Uses role="toolbar" + aria-live announcement for screen readers.
+    // Action Bar — the bar of bulk actions shown when items are selected.
+    // Uses role="group" + an aria-live announcement for screen readers.
+    //
+    // NOT role="toolbar", and the distinction is the whole reason this comment exists.
+    // The toolbar role is a composite-widget promise: one tab stop for the whole bar,
+    // Left/Right (or Up/Down) moving between the controls inside it, Home/End jumping
+    // to the ends. This component renders no keyboard model — it is a layout wrapper
+    // whose children are ordinary buttons, so Tab walks each of them and the arrows do
+    // nothing. Announcing "toolbar" told a screen-reader user to press keys that were
+    // never bound, and no automated check reports it: axe has no rule for a composite
+    // role without its keyboard model. `role="group"` says exactly what is true — a
+    // named set of related controls, each reached with Tab. The roving model stays
+    // where the catalog already puts it, in the dedicated toolbar component.
     //
     // Two layout modes:
     //   - 'floating' (default) — pinned to bottom-center of the viewport via
@@ -65,13 +76,24 @@
 @endphp
 
 <div
-    role="toolbar"
+    role="group"
     aria-label="{{ __('wirekit::Bulk actions') }}"
     {{ $attributes->merge(!$visible ? ['style' => 'display: none;'] : [])->class([$classes]) }}
 >
-    {{-- Live region announces bar appearance --}}
+    {{-- Live region announcing that the bar has appeared.
+         The text is translated for the same reason the label above it is: this is read
+         aloud to somebody, and a literal here is read aloud in English to everybody,
+         inside an interface that is otherwise in their language.
+
+         It announces on the SERVER-driven path — `:visible` flipping false → true in a
+         Livewire re-render swaps empty text for filled text inside a region that was
+         already in the accessibility tree, which is what a live region reacts to. Under
+         Alpine-controlled visibility (`x-show` with `:visible="true"`) the text is
+         present from first paint and never changes, so nothing is announced and the
+         announcement is the caller's to make; the docs page says so at the tip that
+         introduces that mode. --}}
     <div aria-live="polite" class="sr-only">
-        @if($visible) Bulk actions available @endif
+        @if($visible) {{ __('wirekit::Bulk actions available') }} @endif
     </div>
 
     {{ $slot }}

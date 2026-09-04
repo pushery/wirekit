@@ -8,7 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 
 /**
- * copy the package's `.cursor/rules/wirekit.mdc` file
+ * Copies the package's `.cursor/rules/wirekit.mdc` file
  * into the developer's `.cursor/rules/` directory so AI tooling running
  * inside the developer's project picks up WireKit's authoring conventions.
  *

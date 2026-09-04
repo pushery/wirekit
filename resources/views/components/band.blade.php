@@ -54,7 +54,8 @@
     // straight into the opening tag — `as="div onmouseover=alert(1)"` would arrive as an
     // attribute. `tagName()` checks the SHAPE rather than an allowlist, and the reason is in
     // its own test: an enum has to guess which elements a caller might legitimately want, and
-    // `article` is exactly the kind a guess omits. My first version here was that enum.
+    // `article` is exactly the kind a guess omits. An allowlist enum was this check's
+    // first shape.
     $as = \Pushery\WireKit\WireKit::tagName('band', (string) $as);
 
     $classes = WireKit::resolveClasses('band', 'base', trim(implode(' ', array_filter([

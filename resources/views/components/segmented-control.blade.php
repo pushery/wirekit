@@ -206,6 +206,14 @@
                     style="display: contents"
                     @if($disabled) aria-disabled="true" @endif
                     @if($label) aria-label="{{ $label }}" @endif
+                    {{-- The error/hint wiring moves in with the role, and it has to be
+                         listed here as well as on the container branch: the `@unless`
+                         above drops the whole block when the layer is present, so an
+                         optimistic control with an `error` set had a message rendered
+                         beneath it that nothing pointed at, and no `aria-invalid` at all.
+                         Same reasoning as the group above — one region for the choice,
+                         not one per segment. --}}
+                    @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
                 >
         @endif
 

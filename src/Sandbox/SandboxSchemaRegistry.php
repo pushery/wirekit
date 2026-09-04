@@ -25,12 +25,13 @@ namespace Pushery\WireKit\Sandbox;
  * Schemas are seeded by `SandboxSchemaRegistry::seed()` (called once at
  * boot time) — see `Pushery\WireKit\WireKitServiceProvider::boot()`.
  *
- * Initial coverage ( starter set):
+ * Initial coverage (starter set):
  *   - button, badge, callout, alert, card, code, code-block, kbd
  *   - heading, text, link
  *
- * Full coverage of all 109 components is deferred to a follow-up
- * plan; the renderer is functional with whatever schemas are seeded.
+ * The catalog is not covered end to end, and the renderer does not need it to
+ * be: it is functional with whatever schemas are seeded, and more can be added
+ * at any time.
  * Anti-drift test fails the build if a registered schema references
  * a prop not in the component's `@props([...])` block.
  */
@@ -212,9 +213,9 @@ final class SandboxSchemaRegistry
             'body' => ['type' => 'string', 'default' => 'Text body'],
         ]);
 
-        // `href` is a URL prop, and the threat model (section 6) makes a whitelist
-        // mandatory for one: an enum, or a validator that whitelists the scheme. An enum
-        // would make the link demo useless, so the scheme list is the one that applies.
+        // `href` is a URL prop, and one of those needs a whitelist: an enum, or a
+        // validator that whitelists the scheme. An enum would make the link demo
+        // useless, so the scheme list is the one that applies.
         // Without it `javascript:alert(document.domain)` reached the rendered href
         // verbatim through an endpoint that is documented as the boundary for untrusted
         // payloads and audit-logs the caller's IP.

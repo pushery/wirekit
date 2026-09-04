@@ -70,7 +70,7 @@ const RESERVED_NAMES = [
 
 export default function wirekitOptimistic(config = {}) {
     // A string names one property; an array names a TUPLE read and written as
-    // one value (§10 — a range is one value, not two). Anything else falls back
+    // one value (a range is one value, not two). Anything else falls back
     // to the default rather than arming against a name that is not a name.
     const bind = Array.isArray(config.bind) && config.bind.length > 0
         ? config.bind.slice()
@@ -111,7 +111,7 @@ export default function wirekitOptimistic(config = {}) {
         mode: config.mode === 'reject' ? 'reject' : 'queue',
         messages: config.messages || {},
         /**
-         * What a refusal does to the value: 'undo' (default) or 'keep' (§8).
+         * What a refusal does to the value: 'undo' (default) or 'keep'.
          *
          * Normalized to the two known words rather than passed through — an
          * unrecognized value must not silently disarm the rollback, which is
@@ -425,6 +425,14 @@ export default function wirekitOptimistic(config = {}) {
             this._baseline = null;
             this._marked = false;
             this._markBaseline = null;
+
+            // The surfaced-message timer runs for six seconds and reaches into a
+            // node it appended to `document.body` — outside this component, so a
+            // teardown does not take it with it. On a `wire:navigate` the element
+            // is gone long before it fires, and the callback then strips a marker
+            // off a region belonging to whatever the next page put there.
+            clearTimeout(this._surfaceTimer);
+            this._surfaceTimer = null;
         },
 
         /** True while the server has not answered — drives aria-busy. */
@@ -435,7 +443,7 @@ export default function wirekitOptimistic(config = {}) {
         /**
          * The gesture has STARTED, though its commit comes later.
          *
-         * §10 puts the commit at the end of a gesture, and for a control whose
+         * The commit belongs at the end of a gesture, and for a control whose
          * value MOVES during that gesture — a slider thumb following a finger,
          * an arrow key that steps before it commits — the two are not the same
          * moment. By the time `apply()` runs, the property already holds the new
@@ -536,7 +544,7 @@ export default function wirekitOptimistic(config = {}) {
         /**
          * The bound value — one property, or a TUPLE of them read as one value.
          *
-         * `bind` accepts an array because §10 says a range is one value, not
+         * `bind` accepts an array because a range is one value, not
          * two: snapshot the pair, restore the pair, and let an unchanged half be
          * a no-op. Per-half bookkeeping would create exactly the divergence it
          * was meant to prevent.
@@ -784,7 +792,7 @@ export default function wirekitOptimistic(config = {}) {
         },
 
         _settle(next) {
-            // `rejected` is the fourth exit (§8): the value STAYS. It is the
+            // `rejected` is the keep-on-refusal exit: the value STAYS. It is the
             // only failure state that does not write, because for a typed value
             // the previous one belongs to the server and the new one is the
             // user's work — restoring it would delete what they just wrote
@@ -812,7 +820,7 @@ export default function wirekitOptimistic(config = {}) {
             }
 
             if (next === 'rolled-back') {
-                // Arbitration lives HERE and not in _announce, because §2 is
+                // Arbitration lives HERE and not in _announce, because it is
                 // about the FAILURE case. At the optimistic flip there is no
                 // error message yet, so there is nothing to pre-empt and the
                 // hedge should be heard; at a rollback the field's own message
@@ -875,7 +883,7 @@ export default function wirekitOptimistic(config = {}) {
                 // `status`, not `alert`: the value is already back and nothing is
                 // being interrupted. The live region on the control has already
                 // spoken, so this one is aria-hidden — otherwise the same refusal
-                // is announced twice, which §1 of the contract forbids.
+                // is announced twice, and one change gets exactly one announcement.
                 region.setAttribute('role', 'status');
                 region.setAttribute('aria-hidden', 'true');
                 region.className = 'wk-optimistic-surfaced';
@@ -896,7 +904,7 @@ export default function wirekitOptimistic(config = {}) {
         /**
          * Put the state on the element, so styling can reach it.
          *
-         * §8 of the contract asks for exactly this and it was never built: "the
+         * The rejected state needs exactly this and it was never built: "the
          * state becomes `rejected`, not `rolled-back` — a component's styling
          * needs to tell 'put back' from 'still yours, not saved'". Nothing bound
          * to `state` in any of the twenty-three templates, and the only visible
@@ -1010,7 +1018,7 @@ export default function wirekitOptimistic(config = {}) {
             // is switched off still renders the message — same element, same id,
             // no aria-live — and then nothing is speaking it. Yielding there
             // would silence the only layer left, which is the opposite of what
-            // §2 is for: it protects a message that is being announced, not a
+            // arbitration is for: it protects a message that is being announced, not a
             // message that merely exists.
             return region.hasAttribute('aria-live') || region.getAttribute('role') === 'alert' || region.getAttribute('role') === 'status';
         },

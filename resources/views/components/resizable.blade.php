@@ -15,18 +15,23 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('resizable', $attributes->getAttributes());
 
-    // Resizable — pure-CSS split panel layout.
+    // Resizable — split panel layout, CSS for the pointer and Alpine for the rest.
     //
-    // The interactive resize is delegated to the browser's native CSS `resize`
-    // property (see `dist/wirekit.css` → "Resizable" section). No JavaScript,
-    // no Alpine, no aria-valuenow tracking — every non-last panel exposes a
-    // browser-native corner grip the user can drag, and the last panel uses
+    // Dragging a panel edge is delegated to the browser's native CSS `resize`
+    // property (see `dist/wirekit.css` → "Resizable" section): every non-last
+    // panel exposes a browser-native corner grip, and the last panel uses
     // `flex: 1` to absorb whatever space the others leave behind.
     //
-    // The accompanying `<x-wirekit::resizable.handle>` component renders a
-    // thin styled divider line between panels for visual continuity, but it
-    // is purely decorative — it has no JavaScript, no keyboard handler, and
-    // does not participate in the resize logic.
+    // The accompanying `<x-wirekit::resizable.handle>` is the other half, and it
+    // is NOT decorative: `wirekitResizableHandle` (resources/js/components/
+    // resizable.js) attaches the WAI-ARIA Window Splitter attributes to it at
+    // init — role, orientation, aria-controls, the value range and a live
+    // aria-valuenow — and owns the pointer-drag and arrow-key handlers, so the
+    // split is reachable and movable without a mouse. This comment described it
+    // as a decorative line with no JavaScript and no keyboard handler long after
+    // that stopped being true, which is worth more than a stale sentence usually
+    // is: a developer reading it would leave the handle unnamed and untested on
+    // the belief that nothing there was interactive.
     $classes = WireKit::resolveClasses('resizable', 'base', implode(' ', [
         'flex w-full',
         'font-[family-name:var(--font-wk-sans)]',

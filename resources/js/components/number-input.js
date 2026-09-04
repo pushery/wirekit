@@ -94,7 +94,7 @@ export default function wirekitNumberInput(config = {}) {
         /**
          * Hand the value to the optimistic layer, if one is nested here.
          *
-         * §10 — a stepper click IS a completed decision, so it commits at once;
+         * A stepper click IS a completed decision, so it commits at once;
          * there is nothing continuous to wait out. The FIELD commits separately,
          * when it is left, because typing is not finished until the reader is.
          *

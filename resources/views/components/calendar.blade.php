@@ -153,6 +153,18 @@
     $valueLiteral = $value ? \Pushery\WireKit\Support\AlpinePayload::from((string) $value) : 'null';
     $nameLiteral = \Pushery\WireKit\Support\AlpinePayload::from($name);
 
+    // The APPLICATION's locale reaches the factory, not the browser's. The month
+    // heading is mirrored into an aria-live region and every day cell is named
+    // with its full date, so the language those are spoken in is the one the
+    // page is written in — a German page read on an English laptop announced its
+    // months in English while the surrounding text stayed German. Underscores to
+    // hyphens because Laravel spells a regional locale `pt_BR` and Intl reads
+    // BCP-47. Same shape as <x-wirekit::countdown>.
+    $calendarLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale()));
+
+    // "Today" cannot come out of a date formatter, so it is passed in translated.
+    $todayLiteral = \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Today'));
+
     // The optimistic layer NESTS INSIDE this component, and the direction is not
     // interchangeable: a nested Alpine component's method reads and writes its
     // parent's properties through `this`, never the other way around. So it has
@@ -183,7 +195,7 @@
 @endphp
 
 <div
-    x-data="wirekitCalendar({ value: {{ $valueLiteral }}, name: {{ $nameLiteral }}, months: {{ (int) $months }}, weekStartsOn: {{ (int) $weekStartsOn }}, range: {{ $range ? 'true' : 'false' }} })"
+    x-data="wirekitCalendar({ value: {{ $valueLiteral }}, name: {{ $nameLiteral }}, months: {{ (int) $months }}, weekStartsOn: {{ (int) $weekStartsOn }}, range: {{ $range ? 'true' : 'false' }}, locale: {{ $calendarLocale }}, todayLabel: {{ $todayLiteral }} })"
     {{ $attributes->class([$classes]) }}
 >
     {{-- Hidden input for form submission --}}
@@ -221,9 +233,14 @@
                 <label class="sr-only" for="{{ $name }}-month">{{ __('wirekit::Month') }}</label>
                 <div class="relative">
                     <select id="{{ $name }}-month" x-model.number="viewMonth" aria-label="{{ __('wirekit::Month') }}" class="wk-field {{ $headerSelectClasses }}">
-                        @foreach(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as $i => $monthName)
-                            <option value="{{ $i }}">{{ $monthName }}</option>
-                        @endforeach
+                        {{-- Same shape as the year `<select>` beside it, and for the same
+                             reason the month heading is built in JavaScript: a list written
+                             out here can only be written in one language, while the label
+                             this control drives is already spelling those months in the
+                             reader's. --}}
+                        <template x-for="(monthName, monthIndex) in monthNames" :key="monthIndex">
+                            <option :value="monthIndex" x-text="monthName"></option>
+                        </template>
                     </select>
                     {{-- Chevron overlay — same glyph + token color as the select component. --}}
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -245,10 +262,10 @@
                         </svg>
                     </div>
                 </div>
-                <span class="sr-only" aria-live="polite" x-text="monthLabel"></span>
+                <span :id="monthLabelId(0)" class="sr-only" aria-live="polite" x-text="monthLabel"></span>
             </div>
         @else
-            <span class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-md)]" x-text="monthLabel" aria-live="polite"></span>
+            <span :id="monthLabelId(0)" class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-md)]" x-text="monthLabel" aria-live="polite"></span>
         @endif
 
         <button type="button" x-on:click="nextMonth()" class="{{ $navBtnClasses }}" aria-label="{{ __('wirekit::Next month') }}">
@@ -265,12 +282,23 @@
         <div class="flex flex-wrap gap-[var(--gap-wk-md)]" @keydown="handleKeydown($event)">
             <template x-for="month in monthsView" :key="month.offset">
                 <div :data-wk-month="month.offset">
-                    <div class="text-center mb-[var(--padding-wk-y-sm)] font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-sm)]" x-text="month.label"></div>
-                    <table role="grid" class="w-full">
+                    {{-- The month heading names its own grid. Four grids side by side
+                         with no accessible name between them are four anonymous
+                         tables to a screen reader, which is exactly the case where
+                         knowing which month you are in matters most. --}}
+                    <div :id="monthLabelId(month.offset)" class="text-center mb-[var(--padding-wk-y-sm)] font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-sm)]" x-text="month.label"></div>
+                    <table role="grid" class="w-full" :aria-labelledby="monthLabelId(month.offset)">
                         <thead>
                             <tr>
                                 @foreach($weekdays as $day)
-                                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col">{{ $day }}</th>
+                                    {{-- Static abbreviation as well as the bound one, the same way the
+                                         hidden input above carries both: the seed keeps the header row
+                                         readable before Alpine boots, and `weekdayHeaders` replaces it
+                                         with the reader's own language a frame later. `abbr` is the
+                                         spelling the WAI-ARIA date-picker example uses to give a column
+                                         its full name — two letters is what fits in the cell, not what a
+                                         screen reader should have to work from. --}}
+                                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day }}" :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day }}</th>
                                 @endforeach
                             </tr>
                         </thead>
@@ -283,6 +311,9 @@
                                                 type="button"
                                                 x-on:click="day.isCurrentMonth && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
                                                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
+                                                {{-- The visible text is the day number alone; the name is the
+                                                     whole date. See `_dayLabel` for why. --}}
+                                                :aria-label="day.label"
                                                 :data-wk-day="day.isCurrentMonth ? day.dayOfMonth : null"
                                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay && month.offset === focusOffset ? '0' : '-1'"
                                                 :disabled="!day.isCurrentMonth"
@@ -309,11 +340,13 @@
         </div>
     @else
     {{-- Calendar grid --}}
-    <table role="grid" class="w-full" @keydown="handleKeydown($event)">
+    <table role="grid" class="w-full" :aria-labelledby="monthLabelId(0)" @keydown="handleKeydown($event)">
         <thead>
             <tr>
                 @foreach($weekdays as $day)
-                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col">{{ $day }}</th>
+                    {{-- See the multi-month header above for why the abbreviation is
+                         written twice and what `abbr` is doing here. --}}
+                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day }}" :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day }}</th>
                 @endforeach
             </tr>
         </thead>
@@ -331,6 +364,9 @@
                                 type="button"
                                 x-on:click="day.isCurrentMonth && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
                                                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
+                                {{-- The visible text is the day number alone; the name is the
+                                     whole date. See `_dayLabel` for why. --}}
+                                :aria-label="day.label"
                                 :data-wk-day="day.isCurrentMonth ? day.dayOfMonth : null"
                                 :tabindex="day.isCurrentMonth && day.dayOfMonth === focusedDay ? '0' : '-1'"
                                 :disabled="!day.isCurrentMonth"

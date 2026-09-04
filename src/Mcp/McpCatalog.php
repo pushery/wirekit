@@ -33,8 +33,8 @@ final class McpCatalog
      * Sub-components ride along on their parent's entry rather than as entries of
      * their own: they ARE part of the API an agent must reach for, but they are
      * not components in the sense the counts in this project use the word, and
-     * listing them flat would take "173 components" to 243 without one new
-     * component shipping. Naming them on the parent means an agent listing the
+     * listing them flat would inflate the component count by close to half without
+     * one new component shipping. Naming them on the parent means an agent listing the
      * catalog SEES that card has a body — the thing it needs to know — and can
      * then ask for `card.body` directly.
      *

@@ -51,6 +51,13 @@
     // the marker, the footer would render capped at 75 ch
     // (~600 px) regardless of the surrounding layout's available
     // width — visually narrower than a real website footer should be.
+    //
+    // It carries a SECOND rule now, and one worth knowing before deleting the class:
+    // inside a shell's main region the footer's own top border stops being an edge and
+    // becomes the line between the content and the page chrome. `dist/wirekit.css` gives
+    // `:where(.wk-main) :where(.wk-footer)` air above that line and less below it —
+    // measured at 0px above and 49px below before, which is why the rule read as
+    // belonging to the card it touched. A standalone footer is untouched.
     $classes = WireKit::resolveClasses('footer', 'base', implode(' ', [
         'wk-footer',
         // `w-full` is load-bearing inside flex-row preview wrappers.

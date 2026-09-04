@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Console;
 use Illuminate\Console\Command;
 use Pushery\WireKit\Drift\ClassInventory;
 use Pushery\WireKit\Drift\CompiledCssParser;
+use Pushery\WireKit\Support\SuggestSimilar;
 
 /**
  * Class-by-area inventory + diff analyzer.
@@ -34,6 +35,17 @@ class ClassByAreaCommand extends Command
 
     protected $description = 'Inventory + diff classes across the five WireKit source layers';
 
+    /**
+     * The five area keys, in report order.
+     *
+     * Named once so the `--area` vocabulary, the `Available:` line and the suggestion
+     * haystack cannot say three different things — a hand-written second copy of a list
+     * is exactly how an error message comes to name a value the command does not accept.
+     *
+     * @var list<string>
+     */
+    private const AREAS = ['blade', 'php', 'js', 'compiled', 'wirekit-css'];
+
     public function handle(): int
     {
         $format = (string) $this->option('format');
@@ -48,6 +60,36 @@ class ClassByAreaCommand extends Command
         // would yield summary text instead of the JSON asked for.
         if (! in_array($format, ['summary', 'full', 'json'], true)) {
             $this->error("Unknown --format value: {$format}. Available: summary, full, json");
+
+            return self::FAILURE;
+        }
+
+        // --area gets the SAME treatment, and until now it did not: an unknown value fell
+        // through to the intersection below and produced "No areas match the --area filter."
+        // — a sentence that names neither the accepted values nor the closest one, from a
+        // repeatable flag where a typo is the likeliest way to reach it. Every sibling in
+        // the family answers an unknown enum with an `Available:` list and a Levenshtein
+        // hint, the reference page states that as the family contract, and the guard beside
+        // the --format case asserted this command already did it.
+        //
+        // Validated here rather than after collectAreas() for the reason stated above it:
+        // the scan parses every Blade, PHP and JS file plus the compiled CSS, and a typo
+        // should not have to pay for that first.
+        $unknownAreas = array_values(array_diff($filter, self::AREAS));
+
+        if ($unknownAreas !== []) {
+            $this->error(sprintf(
+                'Unknown --area value: %s. Available: %s',
+                implode(', ', $unknownAreas),
+                implode(', ', self::AREAS),
+            ));
+
+            $hint = SuggestSimilar::format(
+                SuggestSimilar::byLevenshtein((string) reset($unknownAreas), self::AREAS)
+            );
+            if ($hint !== null) {
+                $this->line('  '.$hint);
+            }
 
             return self::FAILURE;
         }
@@ -159,7 +201,7 @@ class ClassByAreaCommand extends Command
     {
         $candidates = [];
 
-        // The consuming application's Vite output, which is what a developer actually has.
+        // The adopting application's Vite output, which is what a developer actually has.
         if (function_exists('base_path')) {
             $candidates[] = base_path('public/build/assets/*.css');
         }

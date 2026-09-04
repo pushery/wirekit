@@ -195,7 +195,21 @@
     data-wk-scope-switcher
 >
     <x-slot:trigger>
-        <x-wirekit::button intent="neutral" surface="ghost" size="sm" :aria-label="$dialogLabel">
+        {{-- Named by its own two children rather than by an aria-label, and the order of the
+             IDREFs is the order the name is read in: the current scope first, its purpose
+             second. An aria-label sat here and REPLACED the visible text, so the button was
+             called "Switch Server" while the word on it said "Production" — a voice-control
+             user saying "click Production" matched nothing on the page (WCAG 2.5.3 Label in
+             Name), and a screen-reader user was never told which scope they were in. The
+             reference also keeps the name honest for free: `_showChosen` rewrites the visible
+             text the moment a row is picked, and a name assembled from that element follows
+             it, where a copy baked into an attribute would have gone stale on the same click. --}}
+        <x-wirekit::button
+            intent="neutral"
+            surface="ghost"
+            size="sm"
+            :aria-labelledby="$id.'-current-label '.$id.'-switch-purpose'"
+        >
             @if($currentRow && $currentRow['image'])
                 <img src="{{ $currentRow['image'] }}" alt="" class="h-4 w-4 shrink-0 rounded-[var(--radius-wk-sm)] object-cover" />
             @elseif($currentRow && $currentRow['icon'])
@@ -212,6 +226,12 @@
                     'text-[color:var(--color-wk-text-muted)]' => $currentRow === null,
                 ])
             >{{ $currentRow['label'] ?? $labelText }}</span>
+
+            {{-- The second half of the button's name, and the only reason it is a rendered
+                 element instead of an attribute: a name assembled from IDREFs can only cite
+                 nodes. Hidden from sight because the purpose is already obvious to anyone who
+                 can see the stacked chevrons beside it. --}}
+            <span id="{{ $id }}-switch-purpose" class="sr-only">{{ $dialogLabel }}</span>
 
             {{-- The pop-up-button marker: a stacked pair of chevrons says "this shows the
                  current choice and there are others", where a single downward one would say

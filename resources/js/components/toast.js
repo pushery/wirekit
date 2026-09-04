@@ -6,6 +6,17 @@
  * pause-on-hover, and swipe-to-dismiss.
  */
 export default function wirekitToast(config = {}) {
+    // The element focus came FROM when the reader first tabbed into the region,
+    // kept for the case where dismissing the last toast leaves nothing inside to
+    // hand focus to.
+    //
+    // A closure variable and not a property on purpose: Alpine makes the
+    // returned object reactive, and a DOM node stored on a reactive object comes
+    // back out as a Proxy. Calling `.focus()` through that proxy is not the same
+    // call, and this is the one place where the value has to stay the node
+    // itself.
+    let focusOrigin = null;
+
     return {
         /** @type {Array<{id: number, title: string, message: string, variant: string, _timer: number|null}>} */
         toasts: [],
@@ -144,15 +155,134 @@ export default function wirekitToast(config = {}) {
         },
 
         /**
+         * Record where focus entered the region from.
+         *
+         * `focusin` bubbles, so this fires for every focus move inside the stack
+         * too — the `relatedTarget` test keeps only the move that CROSSED the
+         * boundary, which is the one worth returning to.
+         *
+         * `$root` rather than `$el` for the boundary test, for the same reason the
+         * two lookups below use it: the region is the boundary, and `$el` only
+         * happens to be the region while this listener stays on the `x-data`
+         * element. Moving it onto a card would silently turn every intra-stack
+         * focus move into a "crossing" and overwrite the origin.
+         *
+         * @param {FocusEvent} event
+         */
+        noteFocusOrigin(event) {
+            const from = event && event.relatedTarget;
+
+            if (from && this.$root && typeof this.$root.contains === 'function' && ! this.$root.contains(from)) {
+                focusOrigin = from;
+            }
+        },
+
+        /**
          * Remove a toast by ID.
+         *
+         * The dismiss button lives inside the `x-for`, so removing a toast
+         * removes the button that was just pressed — and a keyboard user who
+         * tabbed to "Dismiss notification" and hit Enter was thrown to the top of
+         * the document, because focus on a detached element falls to `<body>`.
+         * With a stack of toasts that means tabbing through the whole page again
+         * for each one. WCAG 2.4.3 asks for the opposite: focus follows the
+         * reader's place in the sequence.
+         *
+         * Only the KEYBOARD path is touched. Focus is looked at first and left
+         * alone unless it sits inside the toast being removed — so an auto-
+         * dismiss, a hover dismiss, and a programmatic `remove()` all behave
+         * exactly as before. (The timer path cannot fire on a focused toast
+         * anyway: `focusin` pauses it.)
+         *
          * @param {number} id
          */
         remove(id) {
             const idx = this.toasts.findIndex((t) => t.id === id);
-            if (idx !== -1) {
-                const toast = this.toasts[idx];
-                if (toast._timer) clearTimeout(toast._timer);
-                this.toasts.splice(idx, 1);
+
+            if (idx === -1) {
+                return;
+            }
+
+            const successor = this._focusSuccessor(idx);
+            const toast = this.toasts[idx];
+
+            if (toast._timer) clearTimeout(toast._timer);
+            this.toasts.splice(idx, 1);
+
+            if (successor) {
+                this._restoreFocus(successor);
+            }
+        },
+
+        /**
+         * Where focus should land once the toast at `idx` is gone — or null when
+         * focus is not inside it and nothing should move.
+         *
+         * The next toast first: it is the one that slides into the position the
+         * reader was just looking at, so dismissing a stack top to bottom keeps
+         * the finger on the same key. Then the previous one, for the bottom of
+         * the stack. Then, with the region emptied, whatever the reader was on
+         * before they tabbed in.
+         *
+         * ⚠️ The scope is `$root`, not `$el`. `remove()` is reached from the dismiss
+         * button's own click handler, so Alpine binds `$el` to that BUTTON — and a
+         * button contains no `[data-wk-toast-id]` card, so the lookup returned null,
+         * this method returned null, and focus was never restored. The whole
+         * keyboard path was dead while every assertion around it stayed green.
+         * `$root` is the region whichever descendant dispatched the event.
+         *
+         * @param {number} idx
+         * @returns {{toastId: number}|{element: Element}|null}
+         */
+        _focusSuccessor(idx) {
+            if (typeof document === 'undefined' || ! this.$root || typeof this.$root.querySelector !== 'function') {
+                return null;
+            }
+
+            const active = document.activeElement;
+            const leaving = this.$root.querySelector(`[data-wk-toast-id="${this.toasts[idx].id}"]`);
+
+            if (! active || ! leaving || typeof leaving.contains !== 'function' || ! leaving.contains(active)) {
+                return null;
+            }
+
+            const neighbor = this.toasts[idx + 1] || this.toasts[idx - 1] || null;
+
+            return neighbor ? { toastId: neighbor.id } : { element: focusOrigin };
+        },
+
+        /**
+         * Move focus to the successor once Alpine has re-rendered the stack.
+         *
+         * Resolved after the tick rather than before it: the neighbor's node is
+         * the same element either way, but the removed toast is still on screen
+         * during its leave transition, and focusing while it is there is what
+         * takes focus off it.
+         *
+         * @param {{toastId: number}|{element: Element}} successor
+         */
+        _restoreFocus(successor) {
+            const land = () => {
+                // `$root` for the same reason as above: this runs off the dismiss
+                // button's handler, and by the time the tick lands that button is
+                // detached anyway — searching from it would find nothing twice over.
+                const target = successor.toastId !== undefined
+                    ? this.$root.querySelector(`[data-wk-toast-id="${successor.toastId}"] button`)
+                    : successor.element;
+
+                // `isConnected === false` is the case worth skipping: an origin
+                // element that has since been removed from the page. Focusing it
+                // would be the same silent drop to <body> this exists to prevent,
+                // and leaving focus where it is at least keeps it on screen.
+                if (target && target.isConnected !== false && typeof target.focus === 'function') {
+                    target.focus();
+                }
+            };
+
+            if (typeof this.$nextTick === 'function') {
+                this.$nextTick(land);
+            } else {
+                land();
             }
         },
 

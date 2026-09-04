@@ -27,6 +27,53 @@
     // integer in document-render order.
     $resolvedIndex = $index ?? TourStepCounter::next();
 
+    // Id for aria-labelledby — links the step dialog to its own heading.
+    //
+    // The index alone is not unique: several tours may sit on one page and each
+    // numbers its steps from zero. DomId dedupes that — the first sight of a base
+    // keeps it verbatim, a second gets `-2` — and it does so with a per-request
+    // counter rather than a random suffix. That difference is the whole point
+    // here: this dialog's aria-labelledby and its heading's id are two halves of
+    // one pairing, and a value re-minted per render leaves them well-formed while
+    // naming different things after any partial re-render. Nothing in the markup
+    // looks wrong; the only witness is a reader who is told the dialog has no name.
+    $titleId = \Pushery\WireKit\Support\DomId::unique(
+        'wk-tour-step-title-'.$resolvedIndex,
+        'wk-tour-step-title-'
+    );
+
+    // HOW THE STEP DIALOG GETS ITS NAME — three sources, one winner, and the
+    // caller's is the winner whenever there is one.
+    //
+    // The panel used to name itself and then let the attribute bag land on the
+    // same element, so `aria-label="…"` from the call site lost in both branches
+    // and lost SILENTLY, by two different mechanisms:
+    //
+    //   * with a title slot, the element carried `aria-labelledby` as well, and
+    //     ARIA resolves the reference in preference to the label;
+    //   * without one, the element carried `aria-label` TWICE, and the HTML parser
+    //     keeps the first — which was the generated "Tour step N".
+    //
+    // The second is the quieter of the two: it is not an ARIA precedence rule a
+    // developer might know to look up, just a parser rule, and the DOM inspector
+    // shows one attribute with the wrong value. No error, no warning, no lint hit.
+    //
+    // The order is the one `modal.blade.php` sets out and for the same reason: a
+    // name written at the call site is the most specific instruction available, so
+    // it wins over anything the component can derive. A tour step is where that
+    // matters most — the visible heading is a page heading, and the announcement
+    // often wants to be shorter and more telling than it.
+    //
+    // `filled()` rather than a null check: an interpolated caller value over a
+    // record with no title yields `""`, and an empty `aria-label` names nothing at
+    // all. Honoring it would trade the heading for no name — worse than the defect.
+    $callerAriaLabel = $attributes->get('aria-label');
+    $hasCallerName = filled($callerAriaLabel);
+
+    // Out of the bag, so the winner is emitted once rather than joined by a loser
+    // further along the tag.
+    $attributes = $attributes->except('aria-label');
+
     // Tour step — individual tooltip-like popup positioned near a target element.
     // The initial off-screen position (left/top: -9999px) is set via a CSS rule
     // in dist/wirekit.css scoped to [data-wk-tour-step] — it prevents a visible
@@ -54,13 +101,29 @@
     data-wk-target="{{ $target }}"
     data-wk-placement="{{ $placement }}"
     role="dialog"
-    aria-label="{{ __('wirekit::Tour step :number', ['number' => $resolvedIndex + 1]) }}"
+    {{-- The tour lays a full-viewport scrim over the page, so the step IS modal
+         in the sense ARIA means: everything behind it is unavailable while it is
+         open. The name follows the dialog rule — point at the visible heading
+         when there is one, and fall back to a generated name only when the step
+         ships without a title slot. --}}
+    aria-modal="true"
+    @if($hasCallerName)
+        aria-label="{{ $callerAriaLabel }}"
+    @elseif(isset($title))
+        aria-labelledby="{{ $titleId }}"
+    @else
+        aria-label="{{ __('wirekit::Tour step :number', ['number' => $resolvedIndex + 1]) }}"
+    @endif
+    {{-- Focus lands here when the step opens, ahead of its Back/Next controls, so
+         the step's name and body are read before the buttons. `-1` keeps the panel
+         out of the page's own tab order — it is a focus destination, not a stop. --}}
+    tabindex="-1"
     {{ $attributes->class([$panelClasses]) }}
     x-cloak
 >
     {{-- Step title --}}
     @isset($title)
-        <h3 class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] mb-[var(--padding-wk-y-xs)]">{{ $title }}</h3>
+        <h3 id="{{ $titleId }}" class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] mb-[var(--padding-wk-y-xs)]">{{ $title }}</h3>
     @endisset
 
     {{-- Step body --}}

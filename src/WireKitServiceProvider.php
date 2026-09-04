@@ -57,8 +57,8 @@ class WireKitServiceProvider extends ServiceProvider
         // component's defaults live under `components.<name>` — so a published
         // `components` array REPLACES the package's entire section rather than
         // adding to it. Measured: a config published when it carried one
-        // component override reduces 94 component sections to 1, and every key
-        // added since becomes unreachable. Nothing fails; the components simply
+        // component override reduces every component section to that one, and
+        // each key added since becomes unreachable. Nothing fails; the components simply
         // fall back to their in-Blade defaults, and `config('wirekit.components.
         // theme-controller.variant')` returns null forever.
         //
@@ -166,9 +166,17 @@ class WireKitServiceProvider extends ServiceProvider
             // Translation reference — the JSON string-key master list.
             //
             // WireKit's components run every user- and screen-reader-visible
-            // string through `__()` (JSON string keys — the English text IS the
-            // key). `lang/en.json` is the complete, generated reference of every
-            // such key.
+            // string through `__()` under the `wirekit::` key prefix, so a key
+            // reads `wirekit::Close` and its English VALUE reads `Close`.
+            // `lang/en.json` is the complete, generated reference of every such
+            // key.
+            //
+            // This paragraph used to describe the English wording as the key
+            // itself. That was true before the prefix, and it is the reason an
+            // app-side catalog written from memory resolves nothing: an app's
+            // own `de.json` is a different key from the one a component asks
+            // for. Copy the keys out of the reference rather than retyping the
+            // English.
             //
             // WHAT THE PUBLISHED COPY IS: an inert REFERENCE, not a load path.
             // Laravel's JSON loader reads `lang/{locale}.json` plus any directory
@@ -190,13 +198,21 @@ class WireKitServiceProvider extends ServiceProvider
             // of German as of English.
             //
             // DERIVED rather than listed, and the list is why. It named English and
-            // German at the moment those were the two catalogs; five more shipped and
-            // the tag kept publishing two, so the documentation promised seven
-            // languages and the command handed over a quarter of them. Nothing failed
-            // — a publish tag cannot notice a file it was never told about. Now a
-            // catalog is published by existing, and the next language needs no edit
-            // here at all. The glob runs only under `runningInConsole()`, so it costs
-            // the request path nothing.
+            // German at the moment those were the two catalogs; every language that
+            // landed afterwards shipped while the tag kept publishing the same pair,
+            // so the documentation promised the whole set and the command handed over
+            // a fraction of it. Nothing failed — a publish tag cannot notice a file it
+            // was never told about. Now a catalog is published by existing, and the
+            // next language needs no edit here at all. The glob runs only under
+            // `runningInConsole()`, so it costs the request path nothing.
+            //
+            // The tallies this paragraph used to carry are gone for the same reason
+            // the hand-written list is. It counted the catalogs that had shipped and
+            // the languages the docs promised — both correct on the day the glob
+            // replaced the list, and both wrong the moment the next catalog landed,
+            // which left the sentence describing the fix as the one thing still
+            // needing an edit by hand. A paragraph about a drift is a poor place to
+            // keep one.
             $catalogs = [];
 
             foreach (glob(__DIR__.'/../lang/*.json') ?: [] as $catalog) {
@@ -263,12 +279,17 @@ class WireKitServiceProvider extends ServiceProvider
         }
 
         // ── Translations ──
-        // Register the package's JSON translations so any locale file WireKit
-        // ships (today: the `en.json` source reference) merges into the global
-        // JSON translation set. Runs OUTSIDE the console guard — translation
-        // resolution happens at request time, not only when publishing. The
-        // English text is the key, so an untranslated string falls back to
-        // itself; an app that adds `lang/de.json` overrides per key.
+        // Register the package's JSON catalogs so every `lang/*.json` file
+        // WireKit ships merges into the global JSON translation set. Runs
+        // OUTSIDE the console guard — translation resolution happens at request
+        // time, not only when publishing.
+        //
+        // A key that no catalog resolves does NOT fall back to readable English:
+        // the keys carry the `wirekit::` prefix, so an unresolved one paints
+        // `wirekit::Close` onto the page. That is what the English backstop in
+        // `Support\BaseLocaleJsonLoader` is for — `en.json` is merged underneath
+        // every locale, including the ones nothing ships a catalog for. An app
+        // that adds its own `lang/de.json` still overrides per key.
         $this->loadJsonTranslationsFrom(__DIR__.'/../lang');
 
         // ── Views and Components ──
@@ -317,12 +338,13 @@ class WireKitServiceProvider extends ServiceProvider
         //
         // Two-tier serving strategy with automatic staleness detection:
         //
-        // Written without naming a file on purpose. `styleTag()` takes the filename as an
-        // argument and both twins are published side by side, so a comment that hardcodes one
-        // of them is wrong for the other and goes stale the moment the directive is repointed
-        // — which is exactly what happened when this directive moved to the minified twin and
-        // these lines kept naming the readable one, sending anyone chasing a stale stylesheet
-        // to the file that is not being served.
+        // The two steps below name no file on purpose. `styleTag()` takes the filename as an
+        // argument and both twins are published side by side, so a staleness rule written
+        // around one of them is wrong for the other and goes stale the moment the directive
+        // is repointed — which is exactly what happened when this directive moved to the
+        // minified twin and these lines kept describing the readable one, sending anyone
+        // chasing a stale stylesheet to the file that is not being served. The heading above
+        // may name the file because the directive body hardcodes it; the rule may not.
         //
         //   1. If a published copy of the file this directive links exists under
         //      public/vendor/wirekit/ AND is at least as new as the package's own copy in
@@ -906,8 +928,8 @@ class WireKitServiceProvider extends ServiceProvider
      * freezes a nested section: a developer who published `config/wirekit.php`
      * once keeps exactly the keys it had that day, and every key added by a later
      * release is unreachable. For a config whose whole shape is
-     * `components.<name>.<option>`, that is the difference between 94 usable
-     * component sections and 1.
+     * `components.<name>.<option>`, that is the difference between every usable
+     * component section and the handful that file happened to carry.
      *
      * The app always wins on a scalar — an override is an override. Recursion
      * only ADDS what the app never mentioned.

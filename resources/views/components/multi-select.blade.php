@@ -52,10 +52,15 @@
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'multi-select-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
+
+    // `id` and `name` are consumed above and re-emitted where they belong -- the
+    // internal combobox input and the hidden inputs. Leaving them in the bag would
+    // put a `name` on a <div>, which is not a form control and carries nothing.
+    $attributes = $attributes->except(['id', 'name']);
     // When a parent <x-wirekit::field label="..."> wraps this component, the
     // field-emitted <label for="$id"> doesn't reach the internal combobox
     // <input id="$id-input">, so screen readers + axe's label rule report
-    // an unlabelled form element. We synthesize an aria-label fallback —
+    // an unlabeled form element. We synthesize an aria-label fallback —
     // explicit `ariaLabel` prop wins, then the field's `label` prop (passed
     // down via attributes scan), then the `name`/`placeholder` as last resort.
     $resolvedAriaLabel = $ariaLabel ?? $attributes->get('aria-label') ?? $label ?? $placeholder ?? $name;
@@ -96,6 +101,24 @@
     ]);
 
     // Dropdown option classes
+    /*
+     * The two appearance branches of an option row, resolved HERE rather than
+     * written into the runtime binding below.
+     *
+     * A class string that only ever exists inside `:class="…"` is out of reach of
+     * WireKit::scope(): resolveClasses runs at render time and can be overridden per
+     * scope, an Alpine expression cannot. Same shape as segmented-control's selected /
+     * unselected segments, for the same reason.
+     */
+    $optionHighlightedClasses = WireKit::resolveClasses('multi-select', 'option-highlighted', implode(' ', [
+        'bg-[var(--color-wk-bg-muted)]',
+        'text-[color:var(--color-wk-text)]',
+    ]), $scope);
+
+    $optionSelectedClasses = WireKit::resolveClasses('multi-select', 'option-selected', implode(' ', [
+        'font-[number:var(--font-wk-heading-weight)]',
+    ]), $scope);
+
     $optionClasses = implode(' ', [
         'p-[var(--padding-wk-y-sm)]',
         'text-[length:var(--text-wk-md)]',
@@ -103,6 +126,19 @@
         'cursor-pointer',
         'hover:bg-[var(--color-wk-bg-muted)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
+    ]);
+
+    // Empty-state row. Shares the option row's sizing so "No results" scales
+    // with the control like the options do, and drops the pointer affordances —
+    // the hover tint and the pointer cursor both say "choosable", which this row
+    // is not. Built as its own string rather than appended to $optionClasses:
+    // two conflicting `cursor-*` utilities in one attribute are resolved by the
+    // order they sit in the stylesheet, not the order they are written here.
+    $emptyRowClasses = implode(' ', [
+        'p-[var(--padding-wk-y-sm)]',
+        'text-[length:var(--text-wk-md)]',
+        'text-[color:var(--color-wk-text-muted)]',
+        'cursor-default',
     ]);
 
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
@@ -157,9 +193,20 @@
         <x-wirekit::label :for="$id . '-input'">{{ $label }}</x-wirekit::label>
     @endif
 
+    {{-- `x-modelable` is what makes `wire:model` work here, and without it the control
+         failed in the direction that looks like success: the pills confirmed the choice to
+         the reader while the server never heard about it. A filter looked set and filtered
+         nothing.
+
+         The selection lives only in Alpine and reaches a classic form POST through hidden
+         inputs, which is a different contract: `wire:model` on a non-input root listens for
+         an `input` event from the subtree, and there was none to hear. `x-modelable` is the
+         bridge Alpine provides for exactly this, so the array becomes bindable both to
+         Livewire and to a plain `x-model` in an Alpine page. --}}
     <div
-        x-data="wirekitMultiSelect({ options: {{ json_encode($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ json_encode($selectedValues) }} })"
-        class="relative"
+        {{ $attributes->class(['relative']) }}
+        x-modelable="selected"
+        x-data="wirekitMultiSelect({ options: {{ json_encode($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ json_encode($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }} })"
         @click.away="dropdownOpen = false"
         @keydown.escape="dropdownOpen = false"
     >
@@ -205,8 +252,29 @@
                 x-ref="filterInput"
                 x-model="filter"
                 @focus="dropdownOpen = true"
-                @input="dropdownOpen = true"
+                {{-- A fresh filter is a fresh list, so the old index means
+                     nothing and the highlight restarts at the top. --}}
+                @input="openAndReset()"
                 @keydown.backspace="onBackspace($event)"
+                {{-- The combobox keyboard model. Focus never leaves this input —
+                     the options are `role="option"` with no tab stop — so these
+                     keys plus `aria-activedescendant` below are the ONLY way a
+                     keyboard reaches the list. Home/End move the highlight
+                     rather than the caret, matching the sibling combobox; the
+                     filter field holds a word or two, and jumping to the first
+                     or last option is what the reader is here for.
+                     Space is deliberately NOT bound: this is an editable
+                     combobox, and a text field that swallows the space bar
+                     cannot be typed into. --}}
+                @keydown.arrow-down.prevent="openAndMove(1)"
+                @keydown.arrow-up.prevent="openAndMove(-1)"
+                @keydown.home.prevent="openAtFirst()"
+                @keydown.end.prevent="openAtLast()"
+                {{-- runIf, not run: Enter also fires with nothing highlighted
+                     and on a list the user has closed, and `run(undefined)`
+                     would ask the server for a selection nobody made. --}}
+                @keydown.enter.prevent="{{ $optimisticConfig ? 'runIf(enterNext())' : 'onEnter()' }}"
+                :aria-activedescendant="activeDescendantId"
                 role="combobox"
                 aria-haspopup="listbox"
                 aria-expanded="false"
@@ -245,7 +313,12 @@
                  against its own counterpart, one to one, never against a keyed
                  sibling, so several multi-selects on a page do not compete. --}}
             wire:key="wk-multi-select-listbox"
-            x-show="dropdownOpen && filteredOptions.length > 0"
+            {{-- Open is open, whether or not anything matched. The panel used to
+                 hide itself on an empty list, so a filter that matched nothing
+                 and a filter that had not been typed yet looked identical — no
+                 panel either way — and the documented "No results" state had
+                 nowhere to appear. --}}
+            x-show="dropdownOpen"
             x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"
             x-transition:enter-start="opacity-0 -translate-y-1"
             x-transition:enter-end="opacity-100 translate-y-0"
@@ -259,12 +332,27 @@
             class="fixed z-[var(--z-wk-dropdown)] overflow-y-auto rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-lg)] wk-scrollbar"
             x-cloak
         >
-            <template x-for="opt in filteredOptions" :key="opt.value">
+            <template x-for="(opt, idx) in filteredOptions" :key="opt.value">
                 <div
                     role="option"
+                    {{-- The id half of the pairing whose other half is
+                         `aria-activedescendant` on the input above. Both read
+                         `optionId()`, so they cannot drift apart. --}}
+                    :id="optionId(idx)"
                     :aria-selected="selected.includes(opt.value) ? 'true' : 'false'"
                     class="{{ $optionClasses }}"
-                    :class="selected.includes(opt.value) ? 'font-[number:var(--font-wk-heading-weight)]' : ''"
+                    {{-- One binding, because an attribute can only be bound
+                         once, and the two conditions are independent: a row can
+                         be highlighted, selected, both or neither. The strings
+                         come from the resolver above, so a scope can restyle
+                         them the way it restyles every other class here. --}}
+                    :class="(idx === highlight ? {{ \Pushery\WireKit\Support\AlpinePayload::string($optionHighlightedClasses) }} : '')
+                        + ' '
+                        + (selected.includes(opt.value) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($optionSelectedClasses) }} : '')"
+                    {{-- Pointing at a row makes it the active one, so a pointer
+                         and the arrow keys leave the highlight in the same
+                         place instead of each keeping their own idea of it. --}}
+                    @mouseenter="hoverOption(idx)"
                     {{-- nextWith() returns a NEW array. toggle() splices in place,
                          and an in-place mutation gives the layer nothing to
                          snapshot — the rollback would restore the array it had
@@ -275,8 +363,43 @@
                     <span x-text="opt.label"></span>
                 </div>
             </template>
+
+            {{-- Empty state. Inside the panel and wearing `role="option"`,
+                 which is not decoration: `role="listbox"` may contain only
+                 options and groups, so a bare paragraph here would be a list
+                 with a stray child. `aria-disabled` says it is not a choice,
+                 and it never becomes the active descendant because the
+                 highlight indexes `filteredOptions`, which is empty exactly
+                 when this row is showing.
+                 The sibling combobox solves the same problem with a SECOND
+                 teleported panel; here that would be a second `fixed` box for
+                 _place() to anchor, and an unanchored one sits at the viewport
+                 origin. One panel, two contents, one anchor. --}}
+            <p
+                role="option"
+                aria-disabled="true"
+                x-show="filteredOptions.length === 0"
+                class="{{ $emptyRowClasses }}"
+            >{{ __('wirekit::No results') }}</p>
         </div>
         </template>
+
+        {{-- Selection announcer. Outside the listbox — a live region is not an
+             option — and present from the first render, carrying whatever the
+             `value` prop seeded: a region that arrives together with its text
+             is a new node, and nothing is announced at all.
+             It exists because the announcement a combobox normally gets for
+             free cannot happen here. `filteredOptions` DROPS an option the
+             moment it is chosen, so the `aria-selected` flip a reader would
+             hear happens on a row that has stopped existing.
+             Not rendered on the optimistic path, and that is the arbitration
+             rather than an omission: there the pick is already announced,
+             hedged, by the optimistic layer, and a second voice on the success
+             path is what makes a rollback indistinguishable from a
+             confirmation. One speaker per pick, whichever one is there. --}}
+        @unless($optimisticConfig)
+            <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="selectionAnnouncement"></div>
+        @endunless
 
         @if($optimisticConfig)
             {{-- Outside the listbox — a live region is not an option — and inside

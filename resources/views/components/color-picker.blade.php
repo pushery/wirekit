@@ -1,13 +1,14 @@
 {{-- optimistic-ui: supported
-     The commit-boundary obstacle this used to carry is SOLVED — §10 named the
-     boundary and `_endDrag()` already is one (it now ends on pointercancel too,
-     which was a real listener leak, not just an optimistic concern).
+     The commit-boundary obstacle this used to carry is SOLVED — a value stream
+     commits at an EVENT, never a timer, and `_endDrag()` already is one (it now
+     ends on pointercancel too, which was a real listener leak, not just an
+     optimistic concern).
 
      What blocks it is a different rule, and it was not visible until the drag
      path was looked at closely: this control is MIXED. The plane, the hue strip
      and the swatches are discrete picks whose previous value belongs to the
-     server, so an undo there costs nothing. **The hex field is typed**, and §8
-     says a rollback may not delete what the user wrote.
+     server, so an undo there costs nothing. **The hex field is typed**, and a
+     rollback may never delete what the user wrote.
 
      Enabling only the drag paths is not a way out — it is the same trap as
      number-input: a value typed into the field while a drag's request is in
@@ -43,8 +44,8 @@
 @props([
     // The Livewire method to call once a color is settled — a released drag, a
     // swatch, an arrow-key nudge. A refusal KEEPS the color and says it was not
-    // saved: the hex field is typed, and §8 does not allow a rollback to delete
-    // what the reader wrote. See the note at the top of this file.
+    // saved: the hex field is typed, and a rollback may never delete what the
+    // reader wrote. See the note at the top of this file.
     // Extra arguments appended to the optimistic action call, after the new value.
     // A list of identical controls — one per row — needs to tell the server WHICH row,
     // and the optimistic layer has always been able to carry that: it spreads `args`
@@ -218,10 +219,10 @@
         // the nesting: the component calls `this.run`, a child reaches its parent,
         // so the layer wraps this one instead of nesting inside it.
         //
-        // `keep`, not `undo`, and §8 is why: the hex field is TYPED. A rollback
-        // would delete what the reader wrote. The price is that a refused color
-        // stays on screen and says it was not saved — actionable, because the
-        // previous color is one click away in the recents strip.
+        // `keep`, not `undo`, and the hex field being TYPED is why: a rollback
+        // may never destroy what the reader wrote. The price is that a refused
+        // color stays on screen and says it was not saved — actionable, because
+        // the previous color is one click away in the recents strip.
         //
         // The JS DOES call `mark()` at pointerdown, and the reasoning that first
         // said it should not is worth keeping because it is a tempting mistake:
@@ -229,8 +230,9 @@
         // only the SERVER's refusal. A CANCELED request still restores — and a
         // second drag started during the first one's round trip is exactly that.
         // Without the mark, the restore writes back the value the drag produced,
-        // so the marker stays put and the cancellation is invisible. §10 holds
-        // for every streaming control regardless of which failure exit it takes.
+        // so the marker stays put and the cancellation is invisible. The rule
+        // that a baseline belongs to the START of the gesture holds for every
+        // streaming control, regardless of which failure exit it takes.
         $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
             'value' => $value,
             'action' => $optimistic,
@@ -262,8 +264,11 @@
         @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
         {{-- escape is window-scoped: the panel teleports out of the document flow, so a keydown
              inside it bubbles to body (not this root) — a non-window escape here
-             would never fire while focus is in the panel. --}}
-        @keydown.escape.window="open && (open = false)"
+             would never fire while focus is in the panel. The focus trap over the
+             panel already handles Escape while focus is inside it; this stays as the
+             path for an Escape pressed while focus sits elsewhere, and close() is a
+             no-op on an already-closed picker. --}}
+        @keydown.escape.window="open && close()"
     >
         @if($nativeOnMobile)
             {{-- nativeOnMobile trigger: on touch-primary devices (useNative, decided
@@ -303,7 +308,7 @@
                 type="button"
                 id="{{ $pickerId }}"
                 x-ref="trigger"
-                @click="open = ! open"
+                @click="toggle()"
                 :aria-expanded="open ? 'true' : 'false'"
                 aria-haspopup="dialog"
                 @if($disabled) disabled @endif
@@ -316,7 +321,7 @@
                 type="button"
                 id="{{ $pickerId }}"
                 x-ref="trigger"
-                @click="open = ! open"
+                @click="toggle()"
                 :aria-expanded="open ? 'true' : 'false'"
                 aria-haspopup="dialog"
                 aria-label="{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}"
@@ -347,7 +352,7 @@
             x-cloak
             x-ref="panel"
             x-transition.opacity
-            @click.outside="open = false"
+            @click.outside="close()"
             role="dialog"
             aria-label="{{ __('wirekit::Color picker') }}"
             class="fixed z-[var(--z-wk-dropdown,50)] w-[18rem] space-y-3 rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] p-[var(--padding-wk-x-md)] shadow-[var(--shadow-wk-lg)]"
@@ -361,6 +366,16 @@
                 role="slider"
                 tabindex="0"
                 aria-label="{{ __('wirekit::Saturation and brightness') }}"
+                {{-- `aria-valuenow` is REQUIRED on `slider` — a slider without it is
+                     malformed to a conformance checker and announces no numeric
+                     position at all. This one control moves on two axes, so the
+                     number carries saturation (the inline axis, the one the
+                     left/right keys drive) and `aria-valuetext` keeps saying both.
+                     Text wins over the number wherever a reader supports it, so
+                     nothing is lost by picking an axis for the numeric channel. --}}
+                :aria-valuenow="s"
+                aria-valuemin="0"
+                aria-valuemax="100"
                 :aria-valuetext="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::saturation :saturation%, brightness :brightness%')) }}.replace(':saturation', s).replace(':brightness', v)"
                 @keydown.arrow-left.prevent="nudgePlane(-1, 0)"
                 @keydown.arrow-right.prevent="nudgePlane(1, 0)"
@@ -387,8 +402,18 @@
                 :aria-valuenow="h"
                 aria-valuemin="0"
                 aria-valuemax="360"
+                {{-- The full slider key model, not half of it. Up/Down mirror
+                     Right/Left and Home/End go to the ends of the range: a hue
+                     step of 2 over 0–360 means reaching pure red from the far
+                     side of the strip costs 180 keypresses without them, and a
+                     reader who follows the announced `slider` pattern gets no
+                     response from keys the role promises. --}}
                 @keydown.arrow-left.prevent="nudgeHue(-2)"
                 @keydown.arrow-right.prevent="nudgeHue(2)"
+                @keydown.arrow-down.prevent="nudgeHue(-2)"
+                @keydown.arrow-up.prevent="nudgeHue(2)"
+                @keydown.home.prevent="setHue(0)"
+                @keydown.end.prevent="setHue(360)"
                 class="relative h-3 w-full cursor-pointer touch-none rounded-full focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 style="background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);"
             >
@@ -406,8 +431,14 @@
                     :aria-valuenow="alphaPercent()"
                     aria-valuemin="0"
                     aria-valuemax="100"
+                    {{-- Same full key model as the hue strip above: Up/Down mirror
+                         Right/Left, Home is fully transparent and End fully opaque. --}}
                     @keydown.arrow-left.prevent="nudgeAlpha(-0.05)"
                     @keydown.arrow-right.prevent="nudgeAlpha(0.05)"
+                    @keydown.arrow-down.prevent="nudgeAlpha(-0.05)"
+                    @keydown.arrow-up.prevent="nudgeAlpha(0.05)"
+                    @keydown.home.prevent="setAlpha(0)"
+                    @keydown.end.prevent="setAlpha(1)"
                     class="relative h-3 w-full cursor-pointer touch-none rounded-full focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     style="{{ $checker }}"
                 >
@@ -429,7 +460,14 @@
                     type="button"
                     @click="cycleFormat()"
                     class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
-                    aria-label="{{ __('wirekit::Cycle color format') }}"
+                    {{-- The name STARTS with the word the button shows. A static
+                         `aria-label` overrode the visible "hex"/"rgb" entirely, so
+                         someone using voice control could not activate the control
+                         by the word in front of them, and a reader heard a command
+                         with no trace of the one piece of state the button
+                         displays. WCAG 2.5.3, Label in Name — a name may add
+                         context, as long as it begins from what is written. --}}
+                    :aria-label="format + {{ \Pushery\WireKit\Support\AlpinePayload::from(', '.__('wirekit::Cycle color format')) }}"
                     x-text="format"
                 ></button>
                 <input

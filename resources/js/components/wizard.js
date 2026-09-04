@@ -95,6 +95,50 @@ export default function wirekitWizard(config = {}) {
 
             this.current = index;
             this.announce();
+
+            // The control that asked for the step is deliberately NOT read here and handed
+            // on. Whether it survived the change is only knowable after the bindings have
+            // settled, which is a tick later — so the rescue asks then, and asks the one
+            // question that answers it: is focus on `<body>`?
+            this.rescueFocus();
+        },
+
+        /**
+         * Put focus back on something real when the control that moved the flow hid itself.
+         *
+         * The endpoint controls carry `hidden` — Back on the first step, Next on the last —
+         * and so does the shape the documentation teaches for a `controls` slot, where a
+         * submit button takes Next's place on the final step. So the button that just took
+         * the click or the Enter is regularly the button the new state removes, and an
+         * element hidden while it holds focus drops focus onto `<body>`: the next Tab
+         * restarts at the top of the document, and the sentence the live region has just
+         * written describes a step the reader was thrown out of. It is the same loss
+         * `aria-disabled` is used instead of `disabled` to avoid, one state later.
+         *
+         * Only the loss is repaired. Focus that survived the change belongs to whatever is
+         * holding it — moving it on every step would take it off a control that stayed, and
+         * off a field the reader had reached on their own.
+         */
+        rescueFocus() {
+            // Neither exists in the bare construction the plugin is unit-tested in, and a
+            // page without Alpine's tick helper has nowhere to wait for the binding to
+            // settle — the button is still focused at the moment `current` changes.
+            if (typeof document === 'undefined' || typeof this.$nextTick !== 'function') return;
+
+            this.$nextTick(() => {
+                // `<body>` is where a browser leaves focus when the focused element is
+                // hidden. Anything else means the control survived, and it keeps focus.
+                const active = document.activeElement;
+                if (active && active !== document.body) return;
+
+                const panel = this.stepElement(this.current);
+                if (!panel || typeof panel.focus !== 'function') return;
+
+                // The panel the reader was moved to, rather than the opposite control: it
+                // is the top of what changed, and it is the one target that exists whatever
+                // the controls slot was replaced with.
+                panel.focus();
+            });
         },
 
         /**

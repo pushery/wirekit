@@ -19,17 +19,32 @@
  *     keeps working.
  *   - Inside the submenu panel: ArrowUp / ArrowDown / Home / End move within
  *     the level; ArrowLeft and Escape close the submenu and return focus to
- *     the parent item. These keys stopPropagation so the parent menu's
- *     handler does not also act on them.
+ *     the parent item; a printable character jumps to a row by its label and
+ *     Space activates the focused row. These keys stopPropagation so the parent
+ *     menu's handler does not also act on them.
+ *
+ * WHY THE LAST TWO ARE STATED AS PART OF THE MODEL RATHER THAN AS EXTRAS: a
+ * submenu panel is a `role="menu"`, and the pattern asks type-ahead of every
+ * one. They were missing here, and missing keys do not fall on the floor — the
+ * panel is an ordinary descendant of the parent menu's own keydown handler, so
+ * they bubbled into it. That handler filters submenu rows out of its list by
+ * construction, so it searched the PARENT level and focused a parent row: one
+ * letter and the reader was lifted out of the level they were reading.
  *
  * Lifecycle resources held on `this` (released in destroy()):
  *   - `_closeTimer` — the hover-out close setTimeout. Cleared on teardown so a
- *     pending close can't fire against a destroyed scope (no listeners/observers
- *     are registered, so the timer is the only thing to release).
+ *     pending close can't fire against a destroyed scope.
+ *   - `_typeAheadTimer` — the forget-what-was-typed setTimeout. Same reasoning:
+ *     it outlives a Livewire morph or an SPA navigation otherwise, and fires
+ *     against a scope that is gone.
+ *
+ * No listeners or observers are registered, so those two timers are the whole
+ * cleanup surface.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menu/
  */
 import { position } from '../utils/floating.js';
+import { typeAheadIndex } from '../utils/roving-focus.js';
 
 // Hover-out close delay. A short grace period lets the pointer travel
 // diagonally from the parent item onto the child panel without the submenu
@@ -47,14 +62,17 @@ export default function wirekitSubmenu(config = {}) {
         _subPlacement: config.placement || 'right-start',
         _subOffset: config.offset ?? 0,
         _closeTimer: null,
+        _typeAheadBuffer: '',
+        _typeAheadTimer: null,
 
         /**
-         * Release the only lifecycle resource: the pending hover-out close timer.
-         * Alpine calls this on teardown (Livewire morph / SPA navigation), so a
-         * scheduled close can never fire against a destroyed component scope.
+         * Release both lifecycle resources: the pending hover-out close timer and the
+         * type-ahead forget-timer. Alpine calls this on teardown (Livewire morph / SPA
+         * navigation), so neither can fire against a destroyed component scope.
          */
         destroy() {
             this._clearCloseTimer();
+            this._resetTypeAhead();
         },
 
         /**
@@ -92,6 +110,8 @@ export default function wirekitSubmenu(config = {}) {
          */
         closeSub(refocusParent = false) {
             this._clearCloseTimer();
+            // A search the reader abandoned must not resume when the flyout is opened again.
+            this._resetTypeAhead();
 
             if (!this.subOpen) return;
 
@@ -122,6 +142,7 @@ export default function wirekitSubmenu(config = {}) {
             this._closeTimer = setTimeout(() => {
                 this.subOpen = false;
                 this._closeTimer = null;
+                this._resetTypeAhead();
             }, HOVER_CLOSE_DELAY_MS);
         },
 
@@ -192,7 +213,92 @@ export default function wirekitSubmenu(config = {}) {
                     e.stopPropagation();
                     this.closeSub(true);
                     break;
+
+                case ' ':
+                    // SPACE ACTIVATES THE FOCUSED ROW, and it needs its own case ahead of the
+                    // type-ahead branch below — a space is a printable character one byte
+                    // long, so without this it would be buffered as a search term and its
+                    // preventDefault() would suppress the native activation a <button> row
+                    // performs on keyup. The menu would answer Space with nothing at all.
+                    //
+                    // Activating EXPLICITLY rather than by letting the default through,
+                    // because the rows are not all buttons: `dropdown.item` renders an <a>
+                    // whenever it is given an href, and Space on a focused link does not
+                    // activate it — it scrolls the page, behind an open menu. One synthetic
+                    // click covers both tags. This is the parent level's own answer, applied
+                    // at the level that never received it.
+                    //
+                    // Nothing focused means nothing to activate: break WITHOUT preventDefault
+                    // so the key keeps whatever meaning it had.
+                    if (idx < 0) break;
+
+                    e.preventDefault();
+                    e.stopPropagation();
+                    items[idx].click();
+                    break;
+
+                default:
+                    // TYPE-AHEAD, and stopping it here is the point rather than a detail. An
+                    // unhandled key does not stop at this panel: the panel is an ordinary
+                    // descendant of the parent menu's keydown handler, and that handler
+                    // filters submenu rows out of its own list — so it searched the parent
+                    // level and focused a parent row, lifting the reader out of the submenu
+                    // for a keystroke they aimed inside it. When no parent label matched, its
+                    // preventDefault() swallowed the key regardless.
+                    //
+                    // Single printable characters only. A modifier means the reader is
+                    // reaching for a browser or OS shortcut, and swallowing those is how a
+                    // widget stops being a good citizen of the page.
+                    if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) {
+                        break;
+                    }
+
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this._subTypeAhead(e.key, items, idx);
+                    break;
             }
+        },
+
+        /**
+         * Move focus to the next row of THIS level matching what has been typed.
+         *
+         * The arithmetic lives in `typeAheadIndex` — pure, shared with the parent menu, and
+         * unit-tested — so this is only the buffer and its timer. Same half-second to forget
+         * as the parent level, and the same reason to match it: a reader who types a word
+         * across a menu and its submenu should not meet two different rhythms.
+         *
+         * Disabled rows need no handling here — `_subItems()` already excludes
+         * `aria-disabled`, so they are not in the list this searches.
+         */
+        _subTypeAhead(char, items, currentIndex) {
+            this._typeAheadBuffer += char;
+
+            if (this._typeAheadTimer) {
+                clearTimeout(this._typeAheadTimer);
+            }
+
+            this._typeAheadTimer = setTimeout(() => {
+                this._typeAheadBuffer = '';
+                this._typeAheadTimer = null;
+            }, 500);
+
+            const labels = items.map((el) => el.textContent || '');
+            const index = typeAheadIndex(labels, this._typeAheadBuffer, currentIndex);
+
+            if (index >= 0) {
+                items[index]?.focus({ preventScroll: true });
+            }
+        },
+
+        /** Forget what was typed. Called wherever the submenu stops being open. */
+        _resetTypeAhead() {
+            if (this._typeAheadTimer) {
+                clearTimeout(this._typeAheadTimer);
+                this._typeAheadTimer = null;
+            }
+
+            this._typeAheadBuffer = '';
         },
 
         /**
@@ -204,7 +310,18 @@ export default function wirekitSubmenu(config = {}) {
             const panel = this.$refs.subPanel;
             if (!panel) return [];
 
-            return [...panel.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')]
+            // All three row roles, because a submenu panel holds the same rows its parent
+            // does: `dropdown.radio-item` and `dropdown.checkbox-item` render
+            // `menuitemradio` and `menuitemcheckbox`. Asking for `menuitem` alone returned an
+            // EMPTY list for a submenu built from them — and an empty list makes the key
+            // handler return before it does anything, so every key, arrow keys included, fell
+            // through to the level above. The parent collector learned this already; this is
+            // the same lesson one level down.
+            return [...panel.querySelectorAll(
+                '[role="menuitem"]:not([aria-disabled="true"]),'
+                + '[role="menuitemradio"]:not([aria-disabled="true"]),'
+                + '[role="menuitemcheckbox"]:not([aria-disabled="true"])'
+            )]
                 .filter((el) => el.closest('[data-wk-submenu-panel]') === panel);
         },
 

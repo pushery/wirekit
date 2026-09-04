@@ -7,11 +7,31 @@
     'scope' => null,
 ])
 
+{{-- Read the parent data-list's `layout`, because the `summary` layout is the
+     one arrangement whose grid tracks live on the CONTAINER while the elements
+     that occupy them (<dt> and <dd>) are emitted HERE. @aware is Laravel's
+     canonical parent→child prop bridge.
+
+     The fallback is this component's own default and mirrors the same config
+     key the container reads: @aware only ever sees what was passed to the
+     parent as an explicit attribute, never the parent's @props default — so a
+     plain <x-wirekit::data-list> with no attributes lands here as `horizontal`
+     by way of this line, not by way of the container's. --}}
+@aware([
+    'layout' => config('wirekit.components.data-list.layout', 'horizontal'),
+])
+
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('data-list.item', $attributes->getAttributes());
+
+    // `@aware` reads a value from the parent component, but — unlike `@props` —
+    // it does NOT remove that key from the attribute bag. So when the key is
+    // also written as an attribute on the tag, it survives into
+    // `{{ $attributes }}` and renders as a stray HTML attribute on the element.
+    $attributes = $attributes->except(['layout']);
 
     use Pushery\WireKit\WireKit;
 
@@ -28,18 +48,47 @@
         'wk-data-list-item',
         'py-[var(--padding-wk-y-sm)]',
     ]), $scope);
+
+    // In `summary` the grid tracks (`1fr max-content`) are declared on the <dl>,
+    // so the <dt> and <dd> have to BE the grid items. This wrapper drops its own
+    // box to let them through. That is also why the summary layout carries no row
+    // separator and no item padding: both hang off this box, and a totals block
+    // wants neither — its rhythm is the container's row gap, and its one rule
+    // belongs above the grand total, not between every line.
+    $isSummary = $layout === 'summary';
+
+    $wrapperStyle = $isSummary
+        ? 'display: contents;'
+        : 'display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;';
+
+    // The column is named explicitly rather than left to auto-placement. A row
+    // whose <dt> is omitted (no `label`) would otherwise put its <dd> into the
+    // FIRST track and shunt every following row one cell out of alignment —
+    // silent, and visible only once a real list happens to contain one.
+    $labelStyle = $isSummary
+        ? 'grid-column: 1; min-width: 0; overflow-wrap: anywhere;'
+        : 'width: 33%; flex-shrink: 1; min-width: 0; overflow-wrap: anywhere;';
+
+    // `font-variant-numeric` is set inline for the same reason the rest of the
+    // layout is: the `tabular-nums` utility only exists if the developer's
+    // Tailwind build happened to scan this vendor view. It affects digit glyphs
+    // only, so a summary row carrying text rather than an amount is unchanged.
+    $valueStyle = $isSummary
+        ? 'grid-column: 2; min-width: 0; text-align: right; overflow-wrap: anywhere; '
+            .'font-variant-numeric: tabular-nums;'
+        : 'flex: 1; min-width: 0; text-align: right; overflow-wrap: anywhere;';
 @endphp
 
-<div {{ $attributes->merge(['style' => 'display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;'])->class([$itemClasses]) }}>
+<div {{ $attributes->merge(['style' => $wrapperStyle])->class([$itemClasses]) }}>
     {{-- Label: the "key" in the key-value pair. min-width: 0 +
          overflow-wrap: anywhere let long single-word labels (e.g.
          "Berufsunfähigkeitsversicherung", "Mietpreisbremse" — German
          compound nouns are common in real-estate / insurance content)
-         wrap inside the 33% track on narrow viewports instead of
+         wrap inside their track on narrow viewports instead of
          bleeding past their cell and pushing the parent's scrollWidth
          past the viewport. --}}
     @if($label)
-        <dt style="width: 33%; flex-shrink: 1; min-width: 0; overflow-wrap: anywhere;" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
+        <dt style="{{ $labelStyle }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
             {{ $label }}
         </dt>
     @endif
@@ -47,7 +96,7 @@
     {{-- Value: the content slot. overflow-wrap: anywhere covers the
          symmetric case where the VALUE is a long single token (URL,
          compound German noun, file path). --}}
-    <dd style="flex: 1; min-width: 0; text-align: right; overflow-wrap: anywhere;" class="text-[color:var(--color-wk-text)]">
+    <dd style="{{ $valueStyle }}" class="text-[color:var(--color-wk-text)]">
         {{ $slot }}
     </dd>
 </div>

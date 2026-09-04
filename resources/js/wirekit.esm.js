@@ -99,7 +99,7 @@ import wirekitStream from './components/stream.js';
 /**
  * The shared runtime every WireKit component leans on, separated from the component
  * registrations so a developer who wants three components can obtain it without
- * referencing the other seventy-five.
+ * referencing every other one.
  *
  * Called by the default installer AND by `register()`; it is idempotent, so using both
  * is harmless.
@@ -155,10 +155,10 @@ export function installRuntime(Alpine) {
  *   Alpine.plugin((Alpine) => register(Alpine, { wirekitDropdown, wirekitModal }));
  *
  * This is what makes the ESM bundle worth choosing over the IIFE one. Until it existed
- * the module had exactly ONE export — the default installer, which references all 78
- * factories — so no bundler could drop anything and a one-component app shipped the
- * whole graph: 235,403 bytes raw / 65.7 KB gzip, byte-for-byte the size of the plain
- * IIFE build. The docs advertised tree-shaking the whole time.
+ * the module had exactly ONE export — the default installer, which references every
+ * factory — so no bundler could drop anything and a one-component app shipped the
+ * whole graph: byte-for-byte the size of the plain IIFE build. The docs advertised
+ * tree-shaking the whole time.
  *
  * The keys are the `x-data` names the Blade components emit, so passing the imported
  * bindings straight through is both the shortest and the correct spelling.
@@ -265,9 +265,9 @@ export default function (Alpine) {
 }
 
 /*
- * Every factory by name, so a bundler can keep the three a developer imports and drop
- * the seventy-five they do not. Generated from the import list above; the two must stay
- * in step, which `EsmBundleExportsEveryComponentTest` asserts.
+ * Every factory by name, so a bundler can keep the handful a developer imports and drop
+ * the rest. Generated from the import list above; the two must stay in step, which
+ * `EsmBundleIsTreeShakeableTest` asserts.
  */
 export {
     wirekitChartJs,

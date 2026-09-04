@@ -218,6 +218,21 @@
                         {{ $slot }}
                     </div>
 
+                    {{-- Empty state — a SIBLING of the list, and that is the whole point.
+                         `role="listbox"` owns its children, and they are options; a line of
+                         prose among them is a non-option child of a role that requires them,
+                         which is what axe reports as `aria-required-children`. Rendered in the
+                         default slot, `<x-wirekit::command-palette.empty>` was exactly that.
+
+                         It also announced nothing there, being a roleless <div>: the input
+                         keeps `aria-expanded="true"` and reports no active descendant, so a
+                         search that matched nothing was indistinguishable from a list the
+                         reader had not touched. The sub-component carries `role="status"`
+                         for that half; this slot is the other half. --}}
+                    @isset($empty)
+                        {{ $empty }}
+                    @endisset
+
                     {{-- Optional footer slot --}}
                     @isset($footer)
                         <div class="border-t border-[var(--color-wk-border)] p-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">

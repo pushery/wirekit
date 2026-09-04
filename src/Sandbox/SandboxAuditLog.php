@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Sandbox;
 
 /**
- * File-based rotating-daily audit log for sandbox
- * requests (per Open Question 4 default).
+ * File-based rotating-daily audit log for sandbox requests.
  *
  * Each request emits one line to `storage/logs/sandbox/YYYY-MM-DD.log`
  * with shape:

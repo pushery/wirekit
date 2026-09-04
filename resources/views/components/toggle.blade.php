@@ -94,6 +94,12 @@
     $wrapperClasses = implode(' ', [
         'relative inline-flex shrink-0 items-center',
         'cursor-pointer',
+        // The hit-area reserve. The native input is `peer sr-only` at 1x1, so the thing a finger
+        // lands on is the track — 40x20 at `md` and 32x16 at `sm`, both under the 24px AA floor
+        // on the vertical axis. The expander is out of flow, so the switch keeps the size it was
+        // designed at and nothing around it moves. The wrapper is already positioned, so the
+        // class only adds the area.
+        'wk-touch-target',
         $sizing['track'],
     ]);
 
@@ -164,7 +170,17 @@
     ]);
 @endphp
 
-<div class="space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+{{-- `wk-toggle` is the marker that puts this subtree inside the library's reduced-motion
+     rule, and it is load-bearing rather than decorative. That rule is deliberately scoped
+     to WireKit's own surface — it matches a `wk-` CLASS TOKEN and its descendants, because
+     matching the class attribute as a substring once clamped a whole application's
+     animations to 1ms through `bg-[var(--color-wk-bg)]` on its <body>. The knob below
+     slides on `transition-transform` with the themed duration, and nothing here carried
+     such a token, so on a page with no WireKit-classed ancestor the switch animated at
+     full duration for a reader who had asked their operating system for no motion. The
+     marker is also what lets an application's own motion setting win, since the
+     `data-reduce-motion` escape hatch is written against the same selector. --}}
+<div class="wk-toggle space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     <label for="{{ $id }}" class="inline-flex items-center gap-3 cursor-pointer">
         {{-- Switch visual: wrapper contains input (.peer), track, and knob as siblings --}}
         {{-- so peer-checked:* selectors resolve correctly (peer-checked targets siblings only). --}}

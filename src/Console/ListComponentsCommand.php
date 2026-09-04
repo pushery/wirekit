@@ -29,8 +29,8 @@ class ListComponentsCommand extends Command
     {
         $categoryFilter = $this->option('category');
         // --as is canonical; --format is the Laravel-ecosystem-conventional
-        // alias (Extension #4). Reject the combination — passing both with
-        // different values is ambiguous and likely a copy-paste typo.
+        // alias. Reject the combination — passing both with different values
+        // is ambiguous and likely a copy-paste typo.
         $asValue = $this->option('as');
         $formatValue = $this->option('format');
         if ($asValue !== null && $asValue !== '' && $formatValue !== null && $formatValue !== '' && $asValue !== $formatValue) {
@@ -44,7 +44,7 @@ class ListComponentsCommand extends Command
         $components = ComponentRegistry::all();
 
         if ($categoryFilter) {
-            // Extension #3 — multi-category filter: comma-separated list
+            // Multi-category filter: comma-separated list
             // unions the per-category sets. `--category=Marketing,Display`
             // returns every component in EITHER category.
             $requested = array_values(array_filter(array_map('trim', explode(',', (string) $categoryFilter))));

@@ -30,7 +30,12 @@
     // "↻ Replay" reset (inert in a developer app — no replay-button is injected
     // there).
     'dismissible' => false,
-    'dismissLabel' => 'Remove',
+    // Null, not the English word: the fallback is resolved through the catalog in
+    // the block below. A literal default here is a label a translated application
+    // cannot reach — the dialog cancel button shipped that way, rendering an
+    // English control inside a fully translated German dialog while the catalog
+    // that would have fixed it was already installed.
+    'dismissLabel' => null,
     // Multi-line mode. A badge is a fixed-height single-line pill by default. Set
     // `wrap` for a long label that must break across lines: the fixed height is
     // swapped for `min-h-*` + vertical padding so the pill GROWS with the text
@@ -50,12 +55,19 @@
     $dismissible = BooleanProp::from($dismissible, false);
     $wrap = BooleanProp::from($wrap, false);
 
+    // The dismiss button's accessible name is the one string this component renders
+    // on the developer's behalf, so it comes from the catalog rather than from a
+    // literal in @props. A caller-supplied label still wins untouched.
+    $dismissLabel ??= __('wirekit::Remove');
+
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('badge', $attributes->getAttributes());
 
-    // Accept the British spelling as a runtime alias (house enum-alias contract:
-    // any component exposing `outline` must also accept `outlined`).
+    // Accept `outlined` as a runtime alias (house enum-alias contract: any component
+    // exposing `outline` must also accept `outlined`). Same visual concept, different
+    // vocabulary — button spells the bordered-only treatment `surface="outline"`, card
+    // historically spelled it `variant="outlined"`; neither is a dialect of the other.
     $surfaceAliases = ['outlined' => 'outline'];
     $surface = $surfaceAliases[$surface] ?? $surface;
 

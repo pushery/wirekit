@@ -25,7 +25,15 @@ const LONG_PRESS_MOVE_TOLERANCE_PX = 10;
 export default function wirekitContextMenu() {
     return {
         open: false,
-        _focusIndex: -1,
+        // NO `_focusIndex` HERE, AND ITS ABSENCE IS THE POINT. This component used to hold
+        // the focused entry as a number and step it on every press, while `_getItems()` read
+        // the list back from the DOM each time — so the number and the list could describe
+        // different pages. `utils/roving-focus.js` opens with why that is not a style choice:
+        // an index captured before a morph survives it and points into a list that no longer
+        // exists, and the failure is quiet. It was the only one of this package's four menu
+        // models that worked that way; dropdown, menubar and submenu all resolve the current
+        // entry from `document.activeElement` per press, and `handleKeydown()` below now
+        // does too.
         _navCleanup: null,
         // Cross-close channel — see utils/overlay-coordination.js.
         _coordination: null,
@@ -107,7 +115,6 @@ export default function wirekitContextMenu() {
             this._coordination?.announce();
 
             this.open = true;
-            this._focusIndex = -1;
 
             await this.$nextTick();
 
@@ -134,6 +141,25 @@ export default function wirekitContextMenu() {
                 placement: 'bottom-start',
                 offset: 2,
             });
+
+            // Focus the first item — AFTER positioning, so the panel is already at its
+            // final coordinates and nothing has to be re-measured.
+            //
+            // This is what makes the menu operable at all, and it is not merely polish.
+            // Every item carries `tabindex="-1"` (the roving-focus half of the WAI-ARIA
+            // menu pattern), so nothing in the panel is reachable by tabbing; without a
+            // deliberate focus call the panel opens with `document.activeElement` still on
+            // the document, and from there arrow keys, Home, End and Escape all bubble
+            // past the component. The panel is visible and completely inert.
+            //
+            // Unconditional, on the pointer path as well as the keyboard one: a right-click
+            // menu that highlights its first entry is the platform convention, and it is
+            // the only shape in which the next keypress has somewhere to start from.
+            // `preventScroll` so a menu opened near the fold does not jump the page.
+            const items = this._getItems();
+            if (items.length) {
+                items[0].focus({ preventScroll: true });
+            }
         },
 
         /**
@@ -201,16 +227,55 @@ export default function wirekitContextMenu() {
          * Close context menu.
          */
         close() {
+            // Nothing to close, and — the reason this line is first — nothing to focus.
+            // `x-on:click.outside` is wired to the document, so one click anywhere fires
+            // close() once per menu on the page, including every menu that is already
+            // shut. Without this return, each of those closed menus would run the focus
+            // block below and the last one would win, pulling focus out of whatever the
+            // reader just clicked.
+            if (!this.open) return;
+
+            // Was the reader inside the panel when it closed? The answer has to be taken
+            // BEFORE anything hides, and it decides whether focus is ours to move.
+            //
+            // Escape, and activating an item, both close with focus on a menu item — and
+            // that item is about to be hidden, which drops focus on <body> and restarts a
+            // keyboard reader at the top of the page (WCAG 2.4.3). A click on some other
+            // control also lands here, and there focus belongs where the reader just put
+            // it; pulling it back to the trigger would take it out of the field they
+            // clicked. So the move is conditional on where focus already is.
+            const panel = this.$refs.panel;
+            const focusWasInside = panel ? panel.contains(document.activeElement) : false;
+
+            if (focusWasInside) {
+                // The interactive descendant, not the wrapper: `$refs.trigger` is a plain
+                // div around whatever the caller passed, and focusing a div announces
+                // nothing. Where the trigger area holds no focusable element there is
+                // nothing to return to, and doing nothing is the honest outcome.
+                this.$refs.trigger?.querySelector(
+                    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+                )?.focus({ preventScroll: true });
+            }
+
+            // BEFORE the hide, not after. The panel leaves through an `x-transition`, so
+            // `display: none` is applied when that transition ends — after any focus call
+            // made on this tick, which would therefore accomplish nothing and leave focus
+            // on <body> anyway. Moving focus out of the panel first means there is never a
+            // moment where the focused element sits inside a subtree that is going away.
             this.open = false;
-            this._focusIndex = -1;
         },
 
         /**
-         * Force close — SPA navigation cleanup.
+         * Force close — SPA navigation, page scroll, and the cross-instance handoff.
+         *
+         * Deliberately focus-neutral, unlike close(). Every caller here is the environment
+         * ending the menu rather than the reader dismissing it: the page is navigating away,
+         * the panel has been stranded by a scroll, or a sibling menu is opening and is about
+         * to focus its own first item. Returning focus to this trigger in those states would
+         * either be pointless or would fight the element that is taking over.
          */
         _forceClose() {
             this.open = false;
-            this._focusIndex = -1;
         },
 
         /**
@@ -237,28 +302,39 @@ export default function wirekitContextMenu() {
             const items = this._getItems();
             if (!items.length) return;
 
+            // Where the reader IS, asked of the document, rather than where this component
+            // last put them. The list on the line above was just read from the DOM; taking
+            // the position from anywhere else lets the two describe different pages.
+            //
+            // Two ordinary routes move focus without these keys, and a held index missed
+            // both: a Livewire morph rebuilding entries that depend on server state, and
+            // returning from a submenu — `submenu.js` focuses the parent item itself when it
+            // closes, which this component never heard about.
+            //
+            // `-1` when focus is outside the menu is handled by the arithmetic rather than
+            // by a branch, exactly as in `dropdown.js`: ArrowDown lands on the first entry
+            // and ArrowUp on the second-to-last, so a press always moves somewhere real
+            // instead of silently doing nothing.
+            const currentIndex = items.indexOf(document.activeElement);
+
             switch (event.key) {
                 case 'ArrowDown':
                     event.preventDefault();
-                    this._focusIndex = (this._focusIndex + 1) % items.length;
-                    items[this._focusIndex]?.focus();
+                    items[(currentIndex + 1) % items.length]?.focus();
                     break;
 
                 case 'ArrowUp':
                     event.preventDefault();
-                    this._focusIndex = this._focusIndex <= 0 ? items.length - 1 : this._focusIndex - 1;
-                    items[this._focusIndex]?.focus();
+                    items[(currentIndex - 1 + items.length) % items.length]?.focus();
                     break;
 
                 case 'Home':
                     event.preventDefault();
-                    this._focusIndex = 0;
                     items[0]?.focus();
                     break;
 
                 case 'End':
                     event.preventDefault();
-                    this._focusIndex = items.length - 1;
                     items[items.length - 1]?.focus();
                     break;
 

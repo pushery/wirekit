@@ -195,7 +195,13 @@
          sitting at its inline edges — an IntersectionObserver watching them therefore
          answered a vertical question, and the trailing-edge hint only appeared once
          something had already scrolled. Which is after the moment it exists for. --}}
-    class="flex w-full min-w-0 overflow-x-auto wk-scrollbar {{ $stickyHeader ? 'overflow-y-auto' : '' }}"
+    {{-- The scroller is a tab stop, so it needs a focus state a keyboard user can SEE —
+         it is the only handle for panning to columns that are off screen, and without a
+         ring the caret lands on it with nothing to show for it. The ring is drawn INSIDE
+         the box, matching the sortable header button: an outset ring on an element that
+         is itself a min-width-zero flex child adds width outside the border box, which is
+         the one thing this wrapper spends its own comment above avoiding. --}}
+    class="flex w-full min-w-0 overflow-x-auto wk-scrollbar focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] {{ $stickyHeader ? 'overflow-y-auto' : '' }}"
     @if($stickyHeaderStyle) style="{{ $stickyHeaderStyle }}" @endif
     {{-- Reachability is unconditional; the landmark is opt-in. `filled()` rather than `??`,
          because `role="region"` with an empty name is not exposed as a landmark at all — an

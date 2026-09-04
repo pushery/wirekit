@@ -25,7 +25,30 @@
     // Extract caller's aria-label (if any) and render it explicitly so we can
     // supply a fallback; drop it from the bag to avoid emitting a duplicate
     // attribute when the bag is echoed below.
-    $chartAriaLabel = $attributes->get('aria-label', 'Chart');
+    //
+    // The fallback goes through `__()` like every other built-in accessible name in
+    // this package. It was the one literal left: a reader on a Spanish site heard the
+    // English word, and the only way out was publishing the view — which then drifts
+    // on every update.
+    $chartAriaLabel = $attributes->get('aria-label', __('wirekit::Chart'));
+
+    // A fallback name is a placeholder, not a description: "Chart" tells a reader that
+    // something graphical is here and nothing about the data in it. The documentation
+    // calls a descriptive label the minimum accessibility contract for a chart, and a
+    // contract nothing checks is one that quietly goes unmet — so say it once, where
+    // the developer is already looking.
+    //
+    // Debug only, and it never throws: a chart described by neighboring text (a figure
+    // caption, a data table beside it) is a legitimate composition, and a fatal here
+    // would break a page that is already accessible.
+    if ((bool) config('app.debug') && ! $attributes->has('aria-label')) {
+        logger()->warning(
+            'wirekit::chart: this chart renders to a canvas that assistive technology cannot read, and it '
+            .'has no aria-label — so it announces only "Chart". Pass a label that summarizes what the data '
+            .'shows — for example: Monthly revenue, January to December. Peaks in December. '
+            .'See https://docs.wirekit.app/components/chart'
+        );
+    }
 
     // Merge caller-supplied inline `style` with the component's own hardcoded
     // style (height + background). Without this manual merge Blade would emit

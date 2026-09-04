@@ -42,6 +42,40 @@ export default function wirekitLightbox(config = {}) {
 
             return slide && slide.caption ? slide.caption : '';
         },
+
+        /**
+         * The one string a screen reader hears on every slide change.
+         *
+         * Stepping the gallery swaps the media and leaves focus on the control that
+         * did it, so nothing about the change reaches a reader who cannot see it —
+         * not the position, not the alt text, not the caption. This is what the
+         * live region in the template says.
+         *
+         * The position arrives as a TEMPLATE the server already translated: a
+         * sentence assembled from fragments here cannot be, and "of" is not a word
+         * every language puts in the middle. The English fallback covers a caller
+         * who constructs the factory by hand rather than through the component.
+         *
+         * The slide's own text is appended as a SECOND sentence rather than folded
+         * into the first. A full stop is punctuation in every language this ships
+         * to, so joining two finished sentences is safe where joining two fragments
+         * would not be — and a reader gets a pause between where they are and what
+         * is there.
+         */
+        get announcement() {
+            const template = typeof config.announcement === 'string' && config.announcement !== ''
+                ? config.announcement
+                : 'Slide :current of :total';
+
+            const position = template
+                .replace(':current', String(this.current + 1))
+                .replace(':total', String(this.count));
+
+            const slide = this._slides[this.current];
+            const label = slide ? (slide.alt || slide.caption || '') : '';
+
+            return label ? `${position}. ${label}` : position;
+        },
         _trap: null,
         _openHandler: null,
 

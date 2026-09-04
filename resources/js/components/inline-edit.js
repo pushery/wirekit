@@ -406,6 +406,31 @@ export default function wirekitInlineEdit(config = {}) {
 
                 if (control && document.activeElement === control) return;
 
+                /*
+                 * The control is the fast path; the ROOT is the honest question. Focus that
+                 * lands anywhere inside this component has not left it — and the confirm and
+                 * cancel buttons are inside it.
+                 *
+                 * Without this, those two buttons were unreachable by either input method.
+                 * Tabbing out of the control moved focus onto Confirm, this handler read
+                 * "not the control" as "gone", and the draft was discarded before the key
+                 * came back up. A mouse press failed the same way for a different reason:
+                 * a button takes focus on mousedown, so the discard ran in the gap before
+                 * mouseup and the button was hidden by the time the click would have
+                 * reached it. Only a synthetic press-and-release with no gap between them
+                 * ever committed, which is why it looked correct under test. A textarea was
+                 * left with exactly one way to save — the shortcut the view refuses to rely
+                 * on, because a reader who does not know it has none.
+                 *
+                 * The same containment covers a control supplied through the editor slot: a
+                 * composite widget moves focus between its own parts, and none of those
+                 * moves is a departure either. It is the test the exclusive-open listener
+                 * above already applies to a sender, for the same reason.
+                 */
+                const root = this.$root;
+
+                if (root && root.contains(document.activeElement)) return;
+
                 this.draft = this._snapshot(this._previous);
                 this.editing = false;
             });

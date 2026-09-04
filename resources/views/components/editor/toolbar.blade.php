@@ -68,6 +68,27 @@
     // (canUndo()/canRedo()) live in the wirekitEditor Alpine component.
     $historyGuard = ['undo' => 'canUndo()', 'redo' => 'canRedo()'];
 
+    // Which button is the toolbar's single tab stop. `role="toolbar"` promises a
+    // screen reader that Tab reaches the group ONCE and the arrow keys move
+    // inside it, so exactly one button may carry tabindex="0" — the `full` preset
+    // is otherwise seventeen consecutive tab stops between whatever precedes the
+    // editor and the editable surface itself. From there the tabindex roves with
+    // the focus (focusToolbarCommand() in the wirekitEditor component).
+    //
+    // The history buttons are skipped when choosing it: undo/redo bind :disabled
+    // to an empty history stack, and a disabled element is not focusable — a
+    // toolbar whose only tab stop starts out disabled cannot be entered at all.
+    $tabStopKeys = array_keys(array_filter(
+        $commands,
+        fn ($command) => isset($meta[$command]) && ! isset($historyGuard[$command]),
+    ));
+    // No such button (a toolbar of undo/redo alone): fall back to the first one
+    // that renders, which is focusable the moment there is anything to undo.
+    if ($tabStopKeys === []) {
+        $tabStopKeys = array_keys(array_filter($commands, fn ($command) => isset($meta[$command])));
+    }
+    $tabStopKey = $tabStopKeys[0] ?? null;
+
     $toolbarClasses = WireKit::resolveClasses('editor.toolbar', 'base', implode(' ', [
         'flex flex-wrap items-center gap-0.5',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
@@ -76,8 +97,22 @@
     ]), $scope);
 @endphp
 
-<div role="toolbar" aria-label="{{ __('wirekit::Editor commands') }}" {{ $attributes->class([$toolbarClasses]) }}>
-    @foreach($commands as $command)
+{{-- The arrow keys are bound on the container rather than on each button: keydown
+     bubbles out of the button (and out of the tooltip wrapper around it), so one
+     pair of handlers covers a vocabulary of any length and there is nothing to
+     keep in step when a command is added. focusToolbarCommand() lives in the
+     wirekitEditor Alpine component, the same scope the buttons already call
+     cmd() and isActive() in. --}}
+<div
+    role="toolbar"
+    aria-label="{{ __('wirekit::Editor commands') }}"
+    x-on:keydown.arrow-right.prevent="focusToolbarCommand($event, 'next')"
+    x-on:keydown.arrow-left.prevent="focusToolbarCommand($event, 'prev')"
+    x-on:keydown.home.prevent="focusToolbarCommand($event, 'first')"
+    x-on:keydown.end.prevent="focusToolbarCommand($event, 'last')"
+    {{ $attributes->class([$toolbarClasses]) }}
+>
+    @foreach($commands as $commandKey => $command)
         @if($command === '|')
             <span class="mx-1 h-5 w-px shrink-0 bg-[var(--color-wk-border)]" aria-hidden="true"></span>
         @elseif(isset($meta[$command]))
@@ -85,8 +120,16 @@
             {{-- WireKit's own tooltip (not the native browser `title`): a styled,
                  themed hover/focus hint placed below the toolbar. The button keeps
                  `aria-label` as its accessible name, so the tooltip is purely the
-                 visual affordance — no double-announce. --}}
-            <x-wirekit::tooltip :text="$label" placement="bottom">
+                 visual affordance — no double-announce.
+
+                 `focusable-trigger="false"` because the slot is already a button.
+                 The tooltip's trigger wrapper is focusable by default, which is right
+                 for a tooltip on an icon or a span and wrong here: it puts a
+                 `tabindex="0"` div in front of every command, so the toolbar would
+                 still be one tab stop per command however the buttons themselves are
+                 numbered. The trigger opens on `focusin`, which bubbles, so the
+                 button's own focus still shows the hint. --}}
+            <x-wirekit::tooltip :text="$label" placement="bottom" focusable-trigger="false">
                 <button
                     type="button"
                     {{-- Keep editor focus + selection while running the command (Pitfall #7). --}}
@@ -101,6 +144,7 @@
                         :class="{{ $active }} ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : ''"
                     @endif
                     aria-label="{{ $label }}"
+                    tabindex="{{ $commandKey === $tabStopKey ? '0' : '-1' }}"
                     class="{{ $buttonClasses }}"
                 >
                     {{-- SVG glyphs are static blade-authored markup from the $meta map

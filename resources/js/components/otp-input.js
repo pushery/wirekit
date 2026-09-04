@@ -221,10 +221,11 @@ export default function wirekitOtpInput(config = {}) {
         /**
          * The code is COMPLETE — the commit boundary for a segmented entry.
          *
-         * §10 asks what event says the person is finished, and for this field it
-         * is not a keystroke: `_sync()` runs on every character, so anything
-         * hung on it would fire once per box. The boundary is the code being
-         * whole, which is a different question from the value having changed.
+         * The commit boundary asks what event says the person is finished, and
+         * for this field it is not a keystroke: `_sync()` runs on every
+         * character, so anything hung on it would fire once per box. The
+         * boundary is the code being whole, which is a different question from
+         * the value having changed.
          *
          * Emitted as an event rather than called directly, so the component
          * still owes nothing to the optimistic layer: an application can listen

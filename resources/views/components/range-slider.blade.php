@@ -1,6 +1,6 @@
 {{-- optimistic-ui: supported
      Pass `optimistic="method"` and the range is sent when the gesture ENDS —
-     pointerup for a drag, each keypress for the keyboard (§10: the boundary is
+     pointerup for a drag, each keypress for the keyboard (the boundary is
      an event, never a timer). The method receives the pair `[min, max]`,
      because the pair is one value: a rollback restores both, and an untouched
      handle's restore is a no-op.
@@ -38,6 +38,14 @@
     // a screen reader reads the bare number, which is right for a price and wrong
     // for a tier.
     'valueTextMap' => null,
+    // Disable the whole control: `aria-disabled` on both thumbs, native `disabled`
+    // on the two hidden inputs (so a submitted form carries no range), no pointer
+    // or keyboard handlers, and the group dims via --opacity-wk-disabled.
+    // It was DOCUMENTED — a props-table row and an accessibility bullet — while
+    // undeclared here, so the flag landed in the attribute bag and rendered on the
+    // wrapper `<div>`, where `disabled` means nothing: the control looked untouched
+    // and stayed fully operable by pointer AND keyboard.
+    'disabled' => false,
     'scope' => null,
 ])
 
@@ -45,6 +53,11 @@
     use Pushery\WireKit\Support\BooleanProp;
 
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `disabled="false"` would mean the opposite of what the call site reads as.
+    // Normalized against the prop's own default so a cast never turns the control off.
+    $disabled = BooleanProp::from($disabled, false);
 
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
@@ -160,7 +173,10 @@
         'bg-[var(--color-wk-accent)]',
         'border-2 border-[var(--color-wk-bg-elevated)]',
         'shadow-[var(--shadow-wk-sm)]',
-        'cursor-pointer',
+        // The thumb sits inside the wrapper that carries the disabled cursor, and a
+        // `cursor-pointer` here would win on the one element the pointer is actually
+        // over — the handle would still invite a drag it can no longer start.
+        $disabled ? 'cursor-not-allowed' : 'cursor-pointer',
         'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-shadow duration-[var(--transition-wk-duration)]',
     ]);
@@ -202,7 +218,10 @@
 
     // aria-describedby has been routed to the thumbs — drop it from the
     // wrapper bag so it doesn't also render on the (now group) wrapper.
-    $attributes = $attributes->except('aria-describedby');
+    // `name` is dropped for the same reason: the two hidden inputs render it
+    // explicitly, each with its own bracketed key, and left in the bag it also lands
+    // on the wrapper, where `name` is not a valid attribute on a grouping div.
+    $attributes = $attributes->except(['aria-describedby', 'name']);
 @endphp
 
 @php
@@ -212,11 +231,15 @@
     // way around. So it has to be the child to reach `minVal`/`maxVal`, and the
     // thumbs have to be inside it to reach its `run()`.
     //
-    // The bind is a TUPLE. §10: a range is one value, not two — snapshot the
+    // The bind is a TUPLE: a range is one value, not two — snapshot the
     // pair, restore the pair, and let an unchanged half be a no-op. A tuple of
     // plain property names rather than a getter pair on the component, because
     // that does not depend on how the two scopes get merged.
-    $optimisticConfig = ($optimistic === null || $attributes->has('disabled')) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
+    // `$disabled`, not `$attributes->has('disabled')`: the flag is a declared prop
+    // now, so it never reaches the attribute bag and the bag test would read false
+    // for every disabled slider — arming an optimistic layer on a control that
+    // cannot be operated.
+    $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => ['minVal', 'maxVal'],
         'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
@@ -238,7 +261,13 @@
     {{-- On the GROUP rather than on either thumb: the message is about the range, and a
          thumb-level describedby would read it out on both ends of it. --}}
     @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
-    {{ $attributes->class([$wrapperClasses]) }}
+    {{-- On the GROUP as well as on the thumbs: a reader who lands on the group before
+         reaching either handle has to hear that the range is not editable. --}}
+    @if($disabled) aria-disabled="true" @endif
+    {{-- The dim is a wrapper class rather than a `disabled:` variant, because nothing
+         here is a native form control the variant could hang off — the thumbs are
+         `div[role="slider"]`, and the two inputs that DO carry `disabled` are hidden. --}}
+    {{ $attributes->class([$wrapperClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)] cursor-not-allowed' : '']) }}
 >
     @if($label)
         <x-wirekit::label id="{{ $id }}-label">{{ $label }}</x-wirekit::label>
@@ -272,6 +301,10 @@
             type="hidden"
             name="{{ $name }}[min]"
             value="{{ $initialMin }}"
+            {{-- Native `disabled`, so a disabled range is omitted from the submitted
+                 form the way every other disabled control is — the value the user
+                 cannot change is not one the server should receive. --}}
+            @disabled($disabled)
             :value="minVal"
             @if($wireModel) {{ $wireModel }}="{{ $wireModelKey }}.min" @endif
             x-ref="minInput"
@@ -280,6 +313,8 @@
             type="hidden"
             name="{{ $name }}[max]"
             value="{{ $initialMax }}"
+            {{-- Same reason as the min input above. --}}
+            @disabled($disabled)
             :value="maxVal"
             @if($wireModel) {{ $wireModel }}="{{ $wireModelKey }}.max" @endif
             x-ref="maxInput"
@@ -326,7 +361,12 @@
             <div
                 class="{{ $thumbClasses }} z-10"
                 :style="minThumbStyle()"
-                tabindex="0"
+                {{-- A disabled thumb leaves the tab order and says so. `aria-disabled`
+                     rather than removing `role="slider"`: the handle is still a slider,
+                     it is a slider that cannot be moved, and that is what a reader has
+                     to hear when they arrive on it from the group. --}}
+                tabindex="{{ $disabled ? '-1' : '0' }}"
+                @if($disabled) aria-disabled="true" @endif
                 role="slider"
                 aria-label="{{ $minThumbLabel }}"
                 @if($thumbDescribedBy) aria-describedby="{{ $thumbDescribedBy }}" @endif
@@ -334,20 +374,63 @@
                 :aria-valuenow="minVal"
                 @if($bindRangeValueText) :aria-valuetext="valueTextFor(minVal)" @endif
                 aria-valuemin="{{ $min }}"
-                aria-valuemax="{{ $initialMax }}"
-                :aria-valuemax="maxVal"
-                {{-- BOTH thumbs report the same pending state, because §10 says
+                {{-- The ceiling this handle can actually hold, not the track's end.
+                     Every path that moves the lower handle — `_setMin`, and through
+                     it the arrows, the page keys, End and the pointer drag — stops
+                     at `maxVal - step`, so announcing `maxVal` describes a value the
+                     slider silently refuses. A reader hears "maximum 100", arrows to
+                     90, and the handle stops while the announcement stays put: a
+                     control that reads as hung when it is in fact obeying its own
+                     rule. This is the one place the component says something untrue
+                     about itself, and it is untrue in the direction a reader cannot
+                     check.
+
+                     `maxVal - step` is EXACTLY reachable and not merely an upper
+                     estimate — the clamp is `Math.min(value, maxVal - step)`, so
+                     that number is the value the handle lands on, whether or not it
+                     sits on the step grid. `max()` against the floor because nothing
+                     clamps the initial values at mount: `:max-value` set nearer the
+                     floor than one step would otherwise put valuemax below valuemin.
+
+                     Static AND bound, because they are two different moments. The
+                     static one is what a scan sees before Alpine builds the scope;
+                     leaving it uncorrected would make the rendered document and the
+                     hydrated one disagree. --}}
+                aria-valuemax="{{ max($min, $initialMax - $step) }}"
+                :aria-valuemax="minThumbCeiling"
+                {{-- BOTH thumbs report the same pending state, because
                      a range is one value and one value is one flight. Putting it
                      on the thumb that happened to move would make the state
-                     depend on which end the user grabbed; putting it on the
-                     `role="group"` wrapper is not possible — that element sits
-                     OUTSIDE this layer's scope, and the layer itself is a
-                     `display: contents` scope carrier, which browsers do not
-                     reliably keep in the accessibility tree. --}}
+                     depend on which end the user grabbed. The `role="group"`
+                     wrapper cannot carry it either — that element sits OUTSIDE
+                     this layer's Alpine scope, so a binding placed there has
+                     nothing to read. The scope is the whole obstacle: a role on
+                     a `display: contents` element IS exposed in the platform
+                     accessibility tree together with its children, measured in
+                     Blink, which is why the segmented control puts its
+                     `radiogroup` on exactly that shape. And a wrapper here would
+                     carry no role of its own, so the pending state belongs on
+                     the sliders a reader actually lands on. --}}
                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
-                @keydown.arrow-right.prevent="stepMin(1)"
-                @keydown.arrow-left.prevent="stepMin(-1)"
-                @pointerdown="startDrag('min', $event)"
+                {{-- The APG slider keyboard model, in full. Up/Down, Home and End
+                     are REQUIRED keys of that pattern, not extras: a reader who
+                     presses Home to reach the low end, or ArrowUp out of the
+                     habit every vertical slider teaches, has to move the handle.
+                     Page keys step ten at a time — `stepMin` takes a multiplier
+                     on the step, so they share its clamp rather than repeating it.
+                     Home/End land on the ends of THIS handle's travel, which for
+                     the lower handle stops one step below the upper one. --}}
+                @unless($disabled)
+                    @keydown.arrow-right.prevent="stepMin(1)"
+                    @keydown.arrow-left.prevent="stepMin(-1)"
+                    @keydown.arrow-up.prevent="stepMin(1)"
+                    @keydown.arrow-down.prevent="stepMin(-1)"
+                    @keydown.page-up.prevent="stepMin(10)"
+                    @keydown.page-down.prevent="stepMin(-10)"
+                    @keydown.home.prevent="jumpMin(false)"
+                    @keydown.end.prevent="jumpMin(true)"
+                    @pointerdown="startDrag('min', $event)"
+                @endunless
             >
                 @if($resolvedShowValues)
                     {{-- Edge-flush clamp. The bubble's containing block is the
@@ -377,21 +460,37 @@
             <div
                 class="{{ $thumbClasses }} z-20"
                 :style="maxThumbStyle()"
-                tabindex="0"
+                {{-- The same disabled shape as the min thumb — see the note there. --}}
+                tabindex="{{ $disabled ? '-1' : '0' }}"
+                @if($disabled) aria-disabled="true" @endif
                 role="slider"
                 aria-label="{{ $maxThumbLabel }}"
                 @if($thumbDescribedBy) aria-describedby="{{ $thumbDescribedBy }}" @endif
                 aria-valuenow="{{ $initialMax }}"
                 :aria-valuenow="maxVal"
                 @if($bindRangeValueText) :aria-valuetext="valueTextFor(maxVal)" @endif
-                aria-valuemin="{{ $initialMin }}"
-                :aria-valuemin="minVal"
+                {{-- The mirror of the lower handle's ceiling — see the note there.
+                     `_setMax` clamps at `minVal + step`, so that, and not `minVal`,
+                     is this handle's floor. --}}
+                aria-valuemin="{{ min($max, $initialMin + $step) }}"
+                :aria-valuemin="maxThumbFloor"
                 aria-valuemax="{{ $max }}"
                 {{-- The same pending state as the min thumb — see the note there. --}}
                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
-                @keydown.arrow-right.prevent="stepMax(1)"
-                @keydown.arrow-left.prevent="stepMax(-1)"
-                @pointerdown="startDrag('max', $event)"
+                {{-- The same keyboard model as the min thumb — see the note there.
+                     Mirrored at the ends: Home lands one step above the lower
+                     handle, End on the track maximum. --}}
+                @unless($disabled)
+                    @keydown.arrow-right.prevent="stepMax(1)"
+                    @keydown.arrow-left.prevent="stepMax(-1)"
+                    @keydown.arrow-up.prevent="stepMax(1)"
+                    @keydown.arrow-down.prevent="stepMax(-1)"
+                    @keydown.page-up.prevent="stepMax(10)"
+                    @keydown.page-down.prevent="stepMax(-10)"
+                    @keydown.home.prevent="jumpMax(false)"
+                    @keydown.end.prevent="jumpMax(true)"
+                    @pointerdown="startDrag('max', $event)"
+                @endunless
             >
                 @if($resolvedShowValues)
                     {{-- Edge-flush clamp — mirror of the min bubble, keyed to

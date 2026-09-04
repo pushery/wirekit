@@ -370,7 +370,7 @@ export default function wirekitMap(config = {}) {
             const marker = this.markers.find((m) => m.id === id);
             if (!marker) return;
             // Persist the selection so the list highlights it (and a map-pin click
-            // mirrors into the sidebar — the reported gap). Both entry points (list
+            // mirrors into the sidebar, which it did not before). Both entry points (list
             // button @click + the pin click handler in _addMarker) route here.
             this.selectedId = id;
             this.panTo(marker);
@@ -380,12 +380,16 @@ export default function wirekitMap(config = {}) {
             if (!this._map) return;
             // Use the RESOLVED provider (the library actually in use), not the
             // requested one — _detectProvider can fall back to whichever is present.
+            // Respect reduced-motion: jump instead of animating. Read once, because BOTH
+            // branches move the viewport — Leaflet's panTo animates by default and takes
+            // the same `animate` option its flyTo does, so leaving it off meant a click in
+            // the marker list (the component's keyboard path) slid the map for a reader who
+            // had asked for no motion.
+            const reduce = typeof window !== 'undefined' && window.matchMedia
+                && prefersReducedMotion();
             if (this._resolved === 'leaflet' && typeof this._map.panTo === 'function') {
-                this._map.panTo([marker.lat, marker.lng]);
+                this._map.panTo([marker.lat, marker.lng], { animate: !reduce });
             } else if (typeof this._map.flyTo === 'function') {
-                // Respect reduced-motion: jump instead of fly.
-                const reduce = typeof window !== 'undefined' && window.matchMedia
-                    && prefersReducedMotion();
                 this._map.flyTo({ center: [marker.lng, marker.lat], zoom: Math.max(this.zoom, 12), animate: !reduce });
             }
         },

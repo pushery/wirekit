@@ -95,9 +95,20 @@
                 $isLast = $i === array_key_last($items);
             @endphp
             <li class="flex items-center gap-[var(--padding-wk-x-xs)]">
-                @if($isLast || !$href)
+                @if($isLast)
                     {{-- Current page: no link, aria-current tells AT "this is where you are" --}}
                     <span class="{{ $currentClasses }} {{ $iconWrap }}" aria-current="page">
+                        @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />@endif
+                        {{ $label }}
+                    </span>
+                @elseif(!$href)
+                    {{-- An unlinked crumb that is NOT the last one: a real position in
+                         the trail that simply has no page to point at. It reads as plain
+                         text and carries no aria-current, because only one crumb in a
+                         trail can be where the reader is. This branch was folded into
+                         the one above, so a trail like ['Home', 'Docs' => /docs, 'Page']
+                         announced "Home, current page" on a crumb two levels up. --}}
+                    <span class="{{ $currentClasses }} {{ $iconWrap }}">
                         @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />@endif
                         {{ $label }}
                     </span>

@@ -91,9 +91,12 @@
     // Auto-generate ID from name attribute, or generate random if neither provided
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'select-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
-    // Strip the caller's `id` from the bag: the deduped $id is rendered explicitly as
-    // id="{{ $id }}", so leaving it in the bag would emit a second, conflicting id attribute.
-    $attributes = $attributes->except('id');
+    // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
+    // below, so leaving either in the bag emits a second, conflicting attribute on the
+    // same element. `id` was stripped from the start; `name` was not, and a caller that
+    // passed one got two name attributes on one select — invalid HTML the browser
+    // accepts silently by keeping the first, which is why nothing ever went red over it.
+    $attributes = $attributes->except(['id', 'name']);
 
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);

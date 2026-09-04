@@ -99,8 +99,8 @@ export default () => ({
                 // Exactly one frame lands at t ≈ 0, writes formatValue(0 × target) — the
                 // string "0" — and if no successor ever arrives, that zero is final. So the
                 // one shape the net was spanned for was the one shape that took it down.
-                // Reported from the documentation site as frames: 1, progress: 0, value "0"
-                // still at 5000ms, with 146 rAF callbacks firing elsewhere in the document.
+                // Measured: frames 1, progress 0, value "0" still at 5000ms, with 146 rAF
+                // callbacks firing elsewhere in the document at the same time.
                 // The watchdog now decides for itself, by progress, when it fires.
 
                 const t = Math.min(1, (now - start) / duration);

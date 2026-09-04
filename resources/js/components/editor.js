@@ -19,6 +19,18 @@
  * Editor as opaque and only calls the shared ProseMirror-editor interface, so it
  * never hard-couples to one vendor.
  */
+import { moveRovingFocus } from '../utils/roving-focus.js';
+
+/**
+ * What counts as a toolbar command for focus purposes.
+ *
+ * `:not([disabled])` is the whole reason this is a selector rather than a node list
+ * captured once: undo and redo bind `:disabled` to an empty history stack, so which
+ * buttons are focusable changes as the reader types. A disabled button cannot take
+ * focus, and stepping onto one would strand the arrow keys on it.
+ */
+const TOOLBAR_COMMAND = 'button:not([disabled])';
+
 export default function wirekitEditor(config = {}) {
     return {
         editor: null,
@@ -108,13 +120,13 @@ export default function wirekitEditor(config = {}) {
                     },
                 },
                 onCreate: () => { this._version++; this._writeOut(); this._updateCount(); },
-                // §10 — the commit boundary for rich text is LEAVING the editor.
+                // The commit boundary for rich text is LEAVING the editor.
                 //
                 // Not `onUpdate`, and not the `change` this component emits from
                 // it: that fires on a 200ms debounce, so committing there would
                 // be a request every fifth of a second while someone types — a
-                // timer wearing an event's name, which is the one thing §10
-                // forbids. Blur is the moment the writing stopped.
+                // timer wearing an event's name, and the boundary has to be a
+                // real event. Blur is the moment the writing stopped.
                 onBlur: () => { this._commitOptimistic(); },
                 onUpdate: () => { this._version++; this._scheduleSync(); this._updateCount(); },
                 onSelectionUpdate: () => { this._version++; },
@@ -299,7 +311,7 @@ export default function wirekitEditor(config = {}) {
                     // Underline click. Surface a DX hint instead of letting an uncaught
                     // error break the editor (same "never silently broken" contract as
                     // the missing-factory fallback above).
-                     
+
                     console.error(
                         `[wirekit] editor: command "${name}" failed — is its editor `
                         + 'extension installed and registered in window.wirekitEditor? '
@@ -327,7 +339,7 @@ export default function wirekitEditor(config = {}) {
             // the first place. Denylist (not allowlist) so legitimate schemes —
             // mailto, tel, sms, app deep-links, relative, and anchors — keep working.
             if (this._isDangerousUrl(url)) {
-                 
+
                 console.error(
                     `[wirekit] editor: refused a link with an unsafe URL scheme ("${url}"). `
                     + 'javascript:, data:, and vbscript: URLs are blocked to prevent XSS.'
@@ -382,6 +394,44 @@ export default function wirekitEditor(config = {}) {
             }
         },
 
+        // ── Toolbar roving focus ─────────────────────────────────────
+
+        /**
+         * Move focus along the toolbar's commands, and take the tab stop with it.
+         *
+         * `role="toolbar"` promises a reader that Tab reaches the group ONCE and the
+         * arrow keys move inside it. The template renders the first enabled command
+         * with `tabindex="0"` and every other one with `-1`, which is one half of that
+         * promise; without this method the other commands are reachable by pointer
+         * alone, which is worse than the many tab stops it replaced.
+         *
+         * The buttons are read out of the DOM on every press rather than counted once
+         * at init. The vocabulary is server-rendered and Livewire REPLACES the markup
+         * on every round trip, so an index captured earlier would survive the morph and
+         * point into a list that no longer exists — and it would do it quietly, landing
+         * focus on the wrong command or on nothing.
+         *
+         * The tab stop moves only when focus actually did. A press that moved nothing
+         * (focus sitting outside the toolbar after a morph) must not hand the group's
+         * single tab stop to whichever command happens to be first.
+         *
+         * @param {KeyboardEvent} event  keydown, bound on the toolbar container
+         * @param {string} direction     'next' | 'prev' | 'first' | 'last'
+         */
+        focusToolbarCommand(event, direction) {
+            const root = event?.currentTarget;
+
+            if (! moveRovingFocus(root, direction, TOOLBAR_COMMAND)) {
+                return;
+            }
+
+            const focused = document.activeElement;
+
+            root.querySelectorAll(TOOLBAR_COMMAND).forEach((button) => {
+                button.setAttribute('tabindex', button === focused ? '0' : '-1');
+            });
+        },
+
         // ── Engine factory resolution ────────────────────────────────
 
         // Resolve the developer-supplied editor factory. The contract name is
@@ -389,8 +439,11 @@ export default function wirekitEditor(config = {}) {
         // is a deprecated alias kept working through the whole v2.x line (removed in
         // v3.0.0). A one-time console.info nudges old-name integrators to rename,
         // gated on a window flag so a page with N editors hints ONCE, not N times.
-        // (No collision with the `wirekitEditor` Alpine.data component: that lives in
-        // Alpine's registry, not on window — our IIFE bundles set no window globals.)
+        // (No collision with the `wirekitEditor` Alpine.data component: that name lives
+        // in Alpine's registry, never on `window`. The bundles do put a few names on
+        // `window` — `wirekitPosition`, `Alpine` in the Alpine build, and the one-shot
+        // `__wirekit*` diagnostic flags — but none of them is `wirekitEditor`, so this
+        // lookup only ever finds a factory the developer defined.)
         // Returns the factory function, or null when neither global is callable.
         _resolveFactory() {
             if (typeof window === 'undefined') {
@@ -403,7 +456,7 @@ export default function wirekitEditor(config = {}) {
                 window.__wirekit_editor_alias_warned__ ??= false;
                 if (!window.__wirekit_editor_alias_warned__) {
                     window.__wirekit_editor_alias_warned__ = true;
-                     
+
                     console.info(
                         '[wirekit] editor: window.tiptapEditor is a deprecated alias — rename your '
                         + 'factory to window.wirekitEditor. The old name keeps working through the '
@@ -431,7 +484,7 @@ export default function wirekitEditor(config = {}) {
                 window.__wirekit_editor_missing_warned__ ??= false;
                 if (!window.__wirekit_editor_missing_warned__) {
                     window.__wirekit_editor_missing_warned__ = true;
-                     
+
                     console.error(
                         '[wirekit] editor: no editor factory defined — falling back to a plain '
                         + 'textarea. Install a ProseMirror editor (e.g. @tiptap/core + @tiptap/starter-kit) '

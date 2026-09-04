@@ -108,6 +108,17 @@
     $indicatorClasses = $isVertical
         ? 'absolute right-[var(--padding-wk-x-sm)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-4'
         : 'mt-[var(--padding-wk-y-sm)] flex items-center justify-center gap-4';
+
+    // The live-region sentence, resolved here for the same reason the play/pause label
+    // below is: a literal inside the Alpine factory would be untranslatable AND invisible
+    // to every __() extractor. Every other name this component speaks already came from
+    // the catalog; the slide position — the one string a screen reader hears on EVERY
+    // change — was the one that did not, so a German page announced English positions.
+    //
+    // It travels as a TEMPLATE rather than a finished sentence because the numbers are
+    // only known in the browser, and a sentence assembled from fragments there cannot be
+    // translated: ":current of :total" is not the word order every language uses.
+    $announcementTemplate = __('wirekit::Slide :current of :total');
 @endphp
 
 {{-- The APG carousel shape, without the tabs.
@@ -124,7 +135,8 @@
         autoplay: {{ $autoplay ? 'true' : 'false' }},
         interval: {{ (int) $interval }},
         loop: {{ $loop ? 'true' : 'false' }},
-        vertical: {{ $isVertical ? 'true' : 'false' }}
+        vertical: {{ $isVertical ? 'true' : 'false' }},
+        announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($announcementTemplate) }}
     })"
     x-on:mouseenter="pauseOnHover()"
     x-on:mouseleave="resumeFromHover()"
@@ -257,7 +269,9 @@
         @endif
     </div>
 
-    {{-- aria-live IS present here — do not flag as missing --}}
+    {{-- The slide position, announced politely on every change. It lives in its own
+         always-present region rather than on the slides: a live region added to the page
+         at the moment it has something to say is frequently never announced at all. --}}
     <div aria-live="polite" aria-atomic="true" class="sr-only">
         <span x-text="announcement"></span>
     </div>

@@ -10,8 +10,21 @@
     'multiple' => config('wirekit.components.file-upload.multiple', false),
     'accept' => config('wirekit.components.file-upload.accept', null),
     'size' => config('wirekit.components.file-upload.size', 'md'),
+    // Shape, not chrome. `default` is the full drop AREA — a block-level dashed
+    // rectangle that fills its container, which is right for a field in a form.
+    // `compact` is the same control at button height, shrink-to-fit, for a dense
+    // row beside badges and `size="sm"` buttons where a full-width area would
+    // push every neighbor onto its own line. Both keep the native input, the
+    // click-to-browse path and the drop handlers — only the shape differs.
+    'variant' => 'default',
     'disabled' => false,
-    'label' => __('wirekit::Drop files here or click to browse'),
+    // Null rather than the sentence itself, so the component can tell "the caller
+    // said nothing" from "the caller chose this text". The shipped default is
+    // written for a large area; in `compact` it would make the control wider than
+    // the row it exists to fit, so there it names the control without painting.
+    // Resolved below — a null default also keeps TranslatableDefaultsGuardTest
+    // satisfied, which is what a hard literal here would fail.
+    'label' => null,
     // Accessible name for each file's remove button. The `:name` placeholder is
     // replaced with the file name at runtime, so translators control word order
     // (some languages put the object before the verb). Overridable per call site.
@@ -68,6 +81,32 @@
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($hasError && $name ? $errors->first($name) : null);
 
+    // The described-by list is computed here rather than inline on the input, because an
+    // IDREFS attribute is only valid when it names at least one element: with neither a
+    // hint nor an error the inline form emitted `aria-describedby=""`, which is an invalid
+    // attribute value (axe `aria-valid-attr-value`) rather than an absent description.
+    // Same shape as date-picker, which carries the reference implementation.
+    // The hint paragraph below renders only `@if($hint && ! $hasError)`, so an
+    // error state must not keep naming it: an idref whose element is not in the
+    // document is dropped silently by assistive technology, and the field is then
+    // described by less than the markup claims — or, with only a hint set, by
+    // nothing at all. Compose from what this render actually emits.
+    $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($hasError ? $errorId : ''));
+
+    $variantValue = match ($variant) {
+        'default', 'compact' => $variant,
+        default => WireKit::validateProp('file-upload', 'variant', $variant, ['default', 'compact']),
+    };
+
+    // The label sentence is the accessible name in BOTH variants. In `compact` it
+    // is painted only when the caller chose it: the shipped default reads
+    // "Drop files here or click to browse", which describes an area, and a
+    // compact control is not one. Hiding it visually keeps the name — `sr-only`
+    // clips, it does not remove the node from the accessibility tree, so the
+    // <label> still names the input exactly as before.
+    $labelText = $label ?? __('wirekit::Drop files here or click to browse');
+    $labelIsVisible = $variantValue !== 'compact' || $label !== null;
+
     // Dropzone sizing per size token.
     $dropzonePadding = match ($size) {
         'sm' => 'p-[var(--padding-wk-y-sm)]',
@@ -75,24 +114,75 @@
         default => 'p-[var(--padding-wk-y-md)]',
     };
 
+    // Compact sizing mirrors <x-wirekit::button> exactly — same height token, same
+    // horizontal padding token, same radius token per size — so a compact upload
+    // and a `size="sm"` button in the same row share one baseline instead of
+    // missing it by a couple of pixels. Deliberately the button's numbers rather
+    // than new ones: the whole point of the variant is to stand next to buttons.
+    $compactSizing = match ($size) {
+        'sm' => 'h-[var(--size-wk-sm)] px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)]',
+        'lg' => 'h-[var(--size-wk-lg)] px-[var(--padding-wk-x-lg)] rounded-[var(--radius-wk-md)]',
+        default => 'h-[var(--size-wk-md)] px-[var(--padding-wk-x-md)] rounded-[var(--radius-wk-md)]',
+    };
+
     // Dropzone base: dashed border with drag-highlight state via x-bind:class.
     // w-full ensures the dropzone matches the container width so file list items
     // below never extend beyond the dropzone boundaries.
+    //
+    // The focus ring sits on the LABEL, driven by `has-[:focus-visible]`, because
+    // the only focusable element here is the native input and that input is
+    // `sr-only` — a 1x1 clipped box. A ring on the input paints inside that clip
+    // and is invisible, so a keyboard user tabbing into the form saw no change
+    // whatsoever: same border color, same shadow, a pixel-identical dropzone,
+    // and then Enter opened a system file dialog from a position nothing on
+    // screen had pointed at. `has-[:focus-visible]` rather than `focus-within`
+    // for the same reason the card variants of checkbox and radio use it — those
+    // wrap an `sr-only` input in a bordered label exactly like this one, and
+    // `focus-within` would also fire on the mouse click that the pointer user
+    // can already see the result of.
+    //
+    // The two shapes share everything that makes this a DROP target — the dashed
+    // border, the pointer, the drag transition, the focus ring — and differ only
+    // in flow: `default` is a block-level column that fills its container,
+    // `compact` is an inline row at button height that shrinks to its content.
+    $dropzoneShape = $variantValue === 'compact'
+        ? implode(' ', [
+            // `inline-flex` (not `flex`) is the whole variant in one word: the
+            // control stops claiming the line and sits in the row it was placed in.
+            'wk-touch-target inline-flex items-center justify-center shrink-0',
+            'max-w-full',
+            'gap-[var(--padding-wk-x-sm)]',
+            // The token border width rather than `border-2`: at button height a
+            // 2px dashed edge reads as a heavier control than the buttons beside it.
+            'border-[length:var(--border-wk-width)] border-dashed',
+            $compactSizing,
+        ])
+        : implode(' ', [
+            'w-full',
+            'flex flex-col items-center justify-center gap-[var(--padding-wk-y-sm)]',
+            'text-center',
+            'border-2 border-dashed',
+            'rounded-[var(--radius-wk-lg)]',
+            $dropzonePadding,
+        ]);
+
     $dropzoneClasses = WireKit::resolveClasses('file-upload', 'dropzone', implode(' ', [
-        'w-full',
-        'flex flex-col items-center justify-center gap-[var(--padding-wk-y-sm)]',
-        'text-center',
-        'border-2 border-dashed',
-        'rounded-[var(--radius-wk-lg)]',
+        $dropzoneShape,
         'cursor-pointer',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
-        $dropzonePadding,
+        'has-[:focus-visible]:ring-[length:var(--ring-wk-width)]',
+        'has-[:focus-visible]:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
-    // Icon + label text styling.
-    $iconClasses = 'w-8 h-8 text-[color:var(--color-wk-text-subtle)]';
-    $labelClasses = 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]';
+    // Icon + label text styling. The compact icon drops to the catalog's inline
+    // glyph size so it sits on the text baseline of the row rather than setting
+    // the control's height on its own.
+    $iconClasses = ($variantValue === 'compact' ? 'h-4 w-4 shrink-0' : 'w-8 h-8').' text-[color:var(--color-wk-text-subtle)]';
+    $labelClasses = 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]'
+        // A compact control lives in a row whose width it does not control, so a
+        // long caller-supplied label truncates instead of stretching the row.
+        .($variantValue === 'compact' ? ' truncate min-w-0' : '');
 
     // File list below the dropzone — w-full prevents long filenames from
     // growing beyond the dropzone width; gap-sm for comfortable vertical spacing.
@@ -126,7 +216,14 @@
          undefined, so the binding silently became a value binding reading a
          `.value` that does not exist — the file list filled in, the server
          received nothing, and neither side reported an error. --}}
-    {{ $attributes->except('aria-label')->whereDoesntStartWith('wire:model')->class(['w-full']) }}
+    {{-- The wrapper follows the variant's flow. `w-full` on a compact control
+         would hand back exactly the line the variant exists to give up, so it
+         becomes an inline column that hugs its content — the file list, hint and
+         error still stack beneath the control, just no wider than they need. --}}
+    {{ $attributes->except('aria-label')->whereDoesntStartWith('wire:model')->class([
+        'w-full' => $variantValue !== 'compact',
+        'inline-flex max-w-full flex-col items-start align-middle' => $variantValue === 'compact',
+    ]) }}
 >
     <label
         for="{{ $uploadId }}"
@@ -143,7 +240,10 @@
             <path fill-rule="evenodd" d="M10 3a.75.75 0 01.75.75v6.69l2.72-2.72a.75.75 0 111.06 1.06l-4 4a.75.75 0 01-1.06 0l-4-4a.75.75 0 111.06-1.06l2.72 2.72V3.75A.75.75 0 0110 3z" clip-rule="evenodd"/>
             <path d="M3.75 13a.75.75 0 01.75.75v2.5a.75.75 0 00.75.75h9.5a.75.75 0 00.75-.75v-2.5a.75.75 0 011.5 0v2.5a2.25 2.25 0 01-2.25 2.25h-9.5A2.25 2.25 0 013 16.25v-2.5a.75.75 0 01.75-.75z"/>
         </svg>
-        <span class="{{ $labelClasses }}">{{ $label }}</span>
+        {{-- `sr-only` rather than omitted when compact carries no caller label:
+             the <label> must still name the input, and a control whose only
+             content is an aria-hidden icon has no accessible name at all. --}}
+        <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}">{{ $labelText }}</span>
 
         {{-- Hidden native input — click on label triggers it, drag-drop replaces files. --}}
         <input
@@ -160,7 +260,7 @@
                  as segmented-control's hidden input. `whereStartsWith` keeps the
                  modifiers (`wire:model.live`, `.blur`) attached to it. --}}
             {{ $attributes->whereStartsWith('wire:model') }}
-            aria-describedby="{{ trim(($hint ? $hintId : '') . ' ' . ($hasError ? $errorId : '')) }}"
+            @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @change="handleFiles($event.target.files)"
             class="sr-only"
         />

@@ -7,7 +7,7 @@ namespace Pushery\WireKit\Icons\Presets;
 use Pushery\WireKit\Contracts\IconPreset;
 
 /**
- * Lucide preset — outline-only style, 1500+ icons.
+ * Lucide preset — outline-only style.
  *
  * @see https://lucide.dev
  */
@@ -48,7 +48,7 @@ final class LucidePreset implements IconPreset
             'filter' => 'lucide-filter',
             'external-link' => 'lucide-external-link',
 
-            // common dashboard icons.
+            // The common dashboard icons.
             'home' => 'lucide-home',
             'moon' => 'lucide-moon',
             'sun' => 'lucide-sun',
@@ -80,6 +80,16 @@ final class LucidePreset implements IconPreset
             'gift' => 'lucide-gift',
             'list-bullets' => 'lucide-list',
             'list-checks' => 'lucide-list-checks',
+
+            // The text-formatting marks a composer toolbar is built from — see
+            // `HeroiconsPreset` for why the group was closed and how the targets were
+            // verified. `list-numbers` is the shared word; Lucide draws it as
+            // `list-ordered`, and the word stays the one `list-bullets` already set.
+            'bold' => 'lucide-bold',
+            'italic' => 'lucide-italic',
+            'strikethrough' => 'lucide-strikethrough',
+            'underline' => 'lucide-underline',
+            'list-numbers' => 'lucide-list-ordered',
             'lock-key' => 'lucide-lock-keyhole',
             'map-pin' => 'lucide-map-pin',
             'percent' => 'lucide-percent',
@@ -171,7 +181,7 @@ final class LucidePreset implements IconPreset
             // settings/gear, book/book-open and billing/credit-card.
             'stack' => 'lucide-layers',
 
-            // ─── The overflow affordance, and five words a consuming project
+            // ─── The overflow affordance, and five words an adopting application
             // reached for and did not find.
             //
             // EVERY ONE OF THESE IS A TRUE COGNATE IN ALL FOUR INTERCHANGEABLE

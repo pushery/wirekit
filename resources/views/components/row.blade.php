@@ -21,6 +21,26 @@
     // inside it to render placeholder parts. Nothing renders differently until asked.
     'alignFields' => false,
     'justify' => 'start',
+    // Which spacing ladder `gap` names a rung on.
+    //
+    // WireKit defines two, they share the rung names `xs`…`2xl`, and from `md`
+    // up they are different numbers — `--gap-wk-md` is 0.75rem against
+    // `--space-wk-md`'s 1rem. This prop read only `--space-wk-*`, while the
+    // kit's own components read `--gap-wk-*` in dozens of places. So a
+    // repository that followed WireKit's example and wrote
+    // `gap-[var(--gap-wk-md)]` could never turn that container into a `row`
+    // without re-spacing it, and kept the raw utility instead — reported by
+    // three separate developers, blocking a conversion sweep each time.
+    //
+    // Default `space`, which is what this prop has always meant. The rung names
+    // are unchanged too, so `gap="md"` still resolves exactly as before and
+    // only `scale="gap"` moves anything.
+    //
+    // The two maps below are written out rather than derived. Tailwind emits an
+    // arbitrary utility only when it can see the class as a literal string in a
+    // scanned file, so a token name assembled at runtime produces a class that
+    // never gets generated — a gap that silently does nothing.
+    'scale' => 'space',
     'wrap' => false,
     'as' => 'div',
     'scope' => null,
@@ -40,16 +60,31 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $wrap = BooleanProp::from($wrap, false);
 
-    $gapClasses = match ($gap) {
-        'none' => '',
-        'xs' => 'gap-[var(--space-wk-xs,0.25rem)]',
-        'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
-        'md' => 'gap-[var(--space-wk-md,1rem)]',
-        'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
-        'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
-        '2xl' => 'gap-[var(--space-wk-2xl,4rem)]',
-        default => WireKit::validateProp('row', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
-    };
+    // Resolved before the rungs, so an unknown ladder name is reported as what
+    // it is rather than silently falling through to the historical one.
+    $scale = WireKit::validateProp('row', 'scale', (string) $scale, ['space', 'gap']);
+
+    $gapClasses = $scale === 'gap'
+        ? match ($gap) {
+            'none' => '',
+            'xs' => 'gap-[var(--gap-wk-xs,0.25rem)]',
+            'sm' => 'gap-[var(--gap-wk-sm,0.5rem)]',
+            'md' => 'gap-[var(--gap-wk-md,0.75rem)]',
+            'lg' => 'gap-[var(--gap-wk-lg,1rem)]',
+            'xl' => 'gap-[var(--gap-wk-xl,1.5rem)]',
+            '2xl' => 'gap-[var(--gap-wk-2xl,2rem)]',
+            default => WireKit::validateProp('row', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
+        }
+        : match ($gap) {
+            'none' => '',
+            'xs' => 'gap-[var(--space-wk-xs,0.25rem)]',
+            'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
+            'md' => 'gap-[var(--space-wk-md,1rem)]',
+            'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
+            'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
+            '2xl' => 'gap-[var(--space-wk-2xl,4rem)]',
+            default => WireKit::validateProp('row', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
+        };
 
     $alignClasses = match ($align) {
         'start' => 'items-start',

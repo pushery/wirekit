@@ -32,7 +32,15 @@
 @endphp
 
 <div
-    x-data="wirekitTour({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }} })"
+    {{-- The progress sentence is handed in as a TEMPLATE rather than built in the plugin,
+         because it has to be translatable — a sentence assembled from fragments in
+         JavaScript cannot be, and word order is not the same in every language. It is the
+         same key the wizard uses, and it reaches both the live region below and the visible
+         progress line in `tour.step`. --}}
+    x-data="wirekitTour({
+        name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }},
+        announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Step :current of :total')) }}
+    })"
     @keydown.escape.window="active && dismiss()"
     {{ $attributes->class([$classes]) }}
 >

@@ -124,7 +124,12 @@
     x-show="items.length > 0"
     x-cloak
     data-position="{{ $position }}"
-    {{ $attributes->class([$rootClass])->merge(['aria-label' => 'Page sections']) }}
+    {{-- The landmark's name is the one string this component writes on the
+         developer's behalf, so it asks the catalog rather than freezing English
+         into the markup. `merge()` still keeps it a DEFAULT: a caller passing
+         `aria-label="…"` wins, exactly as before. The key already ships in
+         every locale file — reading-minimap names the same landmark with it. --}}
+    {{ $attributes->class([$rootClass])->merge(['aria-label' => __('wirekit::Page sections')]) }}
     style="--reading-toc-offset: {{ $offsetCss }};"
 >
     {{--

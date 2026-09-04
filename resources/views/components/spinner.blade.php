@@ -72,8 +72,18 @@
      its accessible name, so the loading state is announced even though the SVG
      itself is decorative (aria-hidden). The same ring + arc glyph the button
      loading state uses, scaled by size and spun with the Tailwind animate-spin
-     utility. --}}
-<span role="status" aria-live="polite" {{ $attributes->class([$wrapperClasses]) }}>
+     utility.
+
+     `wk-spinner` is the marker the stylesheet's reduced-motion rule selects, and
+     it sits OUTSIDE resolveClasses on purpose: that helper returns a configured
+     override INSTEAD of the default string, so a marker placed inside it would
+     vanish for exactly the developer who restyled the component. An accessibility
+     guarantee must not be removable by a class override.
+
+     The rotation is Tailwind's, not one of WireKit's own keyframes, so it is the
+     one continuous animation in the library that the stylesheet cannot name by its
+     animation. It has to name the element instead. --}}
+<span role="status" aria-live="polite" {{ $attributes->class(['wk-spinner', $wrapperClasses]) }}>
     <svg class="animate-spin {{ $sizeClass }}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>

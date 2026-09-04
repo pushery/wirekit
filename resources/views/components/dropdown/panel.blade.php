@@ -47,9 +47,10 @@
 {{-- Dropdown panel — positioned by Floating UI, shown/hidden via Alpine.
      The id is bound dynamically from the parent's data-wk-panel-id for aria-controls.
      Only the ENTER transition is animated — the panel disappears instantly on close.
-     This matches common UX patterns (GitHub, Linear, Stripe — dropdowns close instantly)
-     and avoids a race where Alpine's ~150ms leave transition leaves the panel visible
-     long enough to break synchronous browser test assertions like `assertDontSee`. --}}
+     That is the prevailing convention — a menu opens with a little motion and dismisses
+     the instant it is asked to — and it avoids a race where Alpine's ~150ms leave
+     transition leaves the panel visible long enough to break synchronous browser test
+     assertions like `assertDontSee`. --}}
 {{-- Teleported to <body>: `position: fixed` escapes a clipping ancestor but not a
      STACKING context. A host with `contain: layout`, a transform or a filter scopes
      this panel's z-index inside itself, and anything painted after it covers the

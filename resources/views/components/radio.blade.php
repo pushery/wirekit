@@ -1,6 +1,6 @@
 {{-- optimistic-ui: candidate
-     I marked this supported and the browser refuted it within the hour, which is
-     what the rendered test is for.
+     This was classified as supported once, and a rendered browser test refuted it
+     the same day — which is what that test is for.
 
      A radio is a GROUP control and this component is one element of it. Each
      radio would carry its own optimistic layer holding its own `value`
@@ -115,6 +115,13 @@
     // Visual circle — sibling of the peer input, reacts via peer-checked/focus/disabled
     $boxClasses = WireKit::resolveClasses('radio', 'base', implode(' ', [
         'relative inline-flex items-center justify-center shrink-0',
+        // The hit-area reserve, on the BOX rather than the label: the label is the box PLUS
+        // its text, so an area centered on it sits over the words instead of over the control.
+        // Not in the `card` variant — there the label IS the target, already bordered and
+        // full-width, and a 2.75rem area hung off the 20px box inside it reaches past the
+        // card's own edge, so a tap in the gap between two stacked cards lands on the upper
+        // one. Same split, and the same reasoning, as `checkbox.blade.php`.
+        $variantValue === 'card' ? '' : 'wk-touch-target',
         $sizing['box'],
         'rounded-full',
         'border-[length:var(--border-wk-width)]',

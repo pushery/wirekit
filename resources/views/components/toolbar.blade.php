@@ -73,8 +73,33 @@
     ])), $scope);
 @endphp
 
+{{-- `role="group"`, NOT `role="toolbar"` — the same correction action-bar took, for
+     the same reason and after the same mistake.
+
+     The toolbar role is a composite-widget promise: Tab reaches the whole bar ONCE,
+     Left/Right move between the controls inside it, Home/End jump to the ends. This
+     component binds no keys at all. It is a layout wrapper whose children are
+     whatever the caller passed, so Tab walks every one of them and the arrows do
+     nothing — a screen reader announced "toolbar" and told its user to press keys
+     that were never bound. Nothing reported it, and nothing could: axe has no rule
+     for a composite role shipped without its keyboard model, so every lane stayed
+     green over it.
+
+     Adding the model here was the other way out and it is the wrong one. A roving
+     tabindex has to own the tab sequence of every control in the bar, and this bar's
+     contents are arbitrary: the leading slot is documented for a SEARCH FIELD, where
+     Left/Right belong to the text and taking them is a regression on its own, and
+     several WireKit children render a tab stop of their own (a tooltip trigger
+     defaults to one) that a roving index neither sees nor moves. A half-owned roving
+     model is worse than none — it leaves the extra tab stops in place AND makes the
+     arrows look bound.
+
+     `role="group"` says the true thing instead — a related set of controls, each
+     reached with Tab — and costs the caller nothing. Where a real roving model is
+     wanted, the catalog has one: `<x-wirekit::editor.toolbar>` owns its own children
+     and can therefore keep the promise. --}}
 <div
-    role="toolbar"
+    role="group"
     @if($ariaLabel) aria-label="{{ $ariaLabel }}" @endif
     {{ $attributes->class([$baseClasses]) }}
 >
