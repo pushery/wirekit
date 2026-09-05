@@ -1,4 +1,4 @@
-/*! WireKit Alpine Bundle v2.45.0 | MIT License | https://wirekit.app
+/*! WireKit Alpine Bundle v2.45.1 | MIT License | https://wirekit.app
  * Alpine.js license: https://alpinejs.dev/license
  * Bundled:
  *   @floating-ui/dom 1.8.0 (MIT)

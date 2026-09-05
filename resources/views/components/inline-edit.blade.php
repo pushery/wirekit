@@ -272,7 +272,7 @@
     @wirekit:inline-edit-failed.window="onFailed($event)"
 >
     {{-- The label renders in BOTH modes and lives outside the part that toggles.
-         Inside it, the field would be unlabelled while reading and the label
+         Inside it, the field would be unlabeled while reading and the label
          would jump into place on open — a layout shift caused by a11y markup. --}}
     @if($label)
         <label for="{{ $controlId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">

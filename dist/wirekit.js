@@ -1,4 +1,4 @@
-/*! WireKit v2.45.0 | MIT License | https://wirekit.app
+/*! WireKit v2.45.1 | MIT License | https://wirekit.app
  * Bundled:
  *   @floating-ui/dom 1.8.0 (MIT)
  *   @floating-ui/core 1.8.0 (MIT)

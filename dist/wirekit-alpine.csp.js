@@ -1,4 +1,4 @@
-/*! WireKit Alpine CSP Bundle v2.45.0 | MIT License | https://wirekit.app
+/*! WireKit Alpine CSP Bundle v2.45.1 | MIT License | https://wirekit.app
  * Built against Alpine's Content-Security-Policy distribution
  * (https://alpinejs.dev/license): expressions are parsed and interpreted
  * rather than compiled at runtime, so no 'unsafe-eval'. The phrasing avoids
