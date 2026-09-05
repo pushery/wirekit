@@ -10,6 +10,31 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.46.0] — 2026-09-05
+
+**Minor.** [Data Table](https://docs.wirekit.app/components/data-table) learns the cell shapes an admin table is actually made of. Until now a cell could be a word, a figure, or a status pill, and everything else had to be built by hand around the component instead of with it — a customer over their email, a stock count that turns into a warning under ten, a face beside a name, a row of segment tags. Five additions close that, and each of them is a field on the column rather than markup you write per row, because the table body is built in the browser and there is no per-row template to hand back.
+
+### Added
+
+- **A column can point at a second row field for its intent, so one row wears a pill and its neighbor does not.** `intentKey` names the field; a row that fills it renders the cell as a pill, a row that leaves it empty renders it in the column's own type. That is the stock cell every catalog has: `Out` in red at zero, `3 low` in amber under ten, and a plain tabular figure above it. Three things vary there — the color, the wording, and whether there is a pill at all — and all three follow the value, which is why a rule attached to the column could never express it. The comparison stays in your application, beside the query that produced the number, where it is ordinary PHP you can test.
+- **A column can draw an initials circle before its value.** `avatarKey` names the field holding the initials, and the color comes from the same palette the avatar component's own initials mode uses — so one person is one color across your whole application, not one color in a table and another on their profile. Combine it with the existing second-line field and the cell is a face over two lines. The circle is hidden from screen readers, because it restates the name standing next to it.
+- **`cellType: 'badges'` reads a list and draws one pill per entry.** How many a row carries is data — a customer is a subscriber, or a lapsed VIP, or neither — and the single-pill type can only ever draw one. Each entry maps through the same intent table a single badge reads. An empty list draws nothing rather than an empty pill, and a lone string is accepted too, so a column configured with a scalar by mistake still shows its value instead of going quietly blank.
+- **`cellType: 'code'` sets a cell in a monospace face.** A column of SKUs, barcodes, order references or hashes is read down rather than across, and in a proportional face the fourth character of two rows lands in different places, so the eye loses the column it was following. Its second line stays monospace too, which keeps a barcode on the same edge as the SKU above it. It is the same answer the numeric type gives figures, for the same reason.
+- **`prominence` says how loud a column reads.** `strong` is the column carrying the row's identity — its reference, its name, its total; `muted` is the one that is context rather than content, like an address beside a name or a timestamp beside an amount. Leaving it off is the middle, and most columns belong there: a table where everything shouts says nothing, and one where nothing does gives the eye no way in.
+- **[Data List](https://docs.wirekit.app/components/data-list) gains a `detail` layout** — labels and values in two columns, aligned on their baselines, for the summary block that sits beside a form rather than inside a table. The gaps in every layout now come from the spacing tokens instead of fixed values, so a theme that widens its spacing widens these too.
+- **[Card](https://docs.wirekit.app/components/card)'s variant classes route through the same personalization seam as the rest of the component.** Overriding a card variant no longer means overriding the whole card.
+
+### Fixed
+
+- **`wirekit:csp-audit` passed an expression whose callee is a JavaScript literal.** `wire:click="true()"` and its siblings parse as valid syntax and can never dispatch anything, so the audit reported a clean result over a control that does nothing when clicked. Those four names are the ones the strict evaluator treats as values rather than as methods, which is exactly why the mistake is easy to make and invisible afterwards.
+- **[Profile](https://docs.wirekit.app/components/profile) drew its own initials circle instead of composing the avatar primitive.** It now uses the component, which means it picks up the shared palette and every future avatar improvement rather than drifting away from them. A long name truncates instead of pushing the layout sideways.
+
+### Documentation
+
+- **The [Data Table](https://docs.wirekit.app/components/data-table) row-actions example named every row's control the same thing, and the page taught that as the pattern.** The slot is rendered once and repeated for each row, so a plain label becomes one accessible name heard as many times as there are rows — a screen-reader user working down the list hears "View, View, View" with no way to tell which record they are on. The slot sits inside the row loop, so the current row is in scope and the control can name what it acts on. The page says so now, and its example does it.
+
+---
+
 ## [2.45.1] — 2026-09-05
 
 **Patch.** One regression from v2.45.0 and the documentation corrections that came with hunting it. The verify command told correctly configured installations that their Tailwind integration was missing and exited non-zero — so upgrading turned a healthy gate red, and the fix it printed was the line the developer already had.

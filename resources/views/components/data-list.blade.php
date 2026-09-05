@@ -22,8 +22,15 @@
     // server-side renders without a Tailwind build step, or any context
     // outside the developer's source-tree scan.
     $layoutStyle = match ($layout) {
-        'stacked' => 'display: flex; flex-direction: column; gap: 1rem;',
-        'grid' => 'display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;',
+        // `--gap-wk-lg`, NOT `--gap-wk-md`, and the difference is the whole point of using a
+        // token here at all. The reporting application proposed `md` on the reasoning that a
+        // fallback keeps today's behavior — which holds only while the token is unset, and it
+        // is not: `dist/wirekit.css` ships `--gap-wk-md: 0.75rem`. Swapping to it would have
+        // tightened every stacked and grid list in every application from 1rem to 0.75rem, on
+        // a change described as non-breaking. `--gap-wk-lg` IS 1rem, so nothing moves and the
+        // gap becomes adjustable, which was the actual request.
+        'stacked' => 'display: flex; flex-direction: column; gap: var(--gap-wk-lg, 1rem);',
+        'grid' => 'display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--gap-wk-lg, 1rem);',
         // `summary` is the totals shape: an invoice subtotal block, a cart
         // summary, an order overview. The LABEL takes whatever width is left
         // over; the VALUE is as wide as its own content and sits flush right,
@@ -47,6 +54,17 @@
         // line above the grand total, not every line. `align-items: baseline`
         // seats the smaller label text on the same baseline as the value.
         'summary' => 'display: grid; grid-template-columns: 1fr max-content; '
+            .'gap: var(--gap-wk-xs, 0.25rem) var(--gap-wk-md, 0.75rem); align-items: baseline;',
+        // `detail` is `summary` with the columns swapped, and it is the commoner of the two:
+        // "Customer: …", "Payment method: …" — the LABEL is as wide as its own text and the
+        // VALUE takes the rest. An application builds more detail lists than totals blocks.
+        //
+        // `grid` is the obvious wrong choice for it. At `repeat(2, 1fr)` a label like
+        // "Payment method" is handed half the row and the value the other half, so the two
+        // stand far apart with the middle of the row empty. Everything else here — the gaps,
+        // the baseline seating, the `display: contents` on the items — is identical to
+        // `summary`; this is literally the swapped column declaration.
+        'detail' => 'display: grid; grid-template-columns: max-content 1fr; '
             .'gap: var(--gap-wk-xs, 0.25rem) var(--gap-wk-md, 0.75rem); align-items: baseline;',
         default => '', // horizontal uses border on items
     };

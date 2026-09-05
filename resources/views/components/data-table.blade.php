@@ -2,7 +2,11 @@
      Sorting, filtering and paging are query round trips. Nobody can show rows nobody has fetched; only the intent could be acknowledged, and that is a different state machine. --}}
 @props([
     'rows' => [],                   // row objects (client mode)
-    'columns' => [],                // [{key,label,sortable?,align?,cellType?,intents?}] — cellType: text|number|badge; intents maps a value to success|warning|danger|neutral
+    // [{key,label,sortable?,align?,cellType?,intents?,subKey?,intentKey?,avatarKey?,prominence?}]
+    //   cellType: text|number|badge|badges|code · intents: value -> success|warning|danger|neutral
+    //   subKey / intentKey / avatarKey: the ROW names its second line, its intent, its avatar.
+    //   prominence: strong|muted — how loud the column reads. Absent is the middle.
+    'columns' => [],
     'rowKey' => 'id',               // unique id field for selection + morph keying
     'selectable' => config('wirekit.components.data-table.selectable', false), // per-row + header selection checkboxes
     'searchable' => config('wirekit.components.data-table.searchable', false), // toolbar search box (client-side filter)
@@ -28,6 +32,7 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\AvatarPalette;
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
@@ -59,6 +64,37 @@
     $colsArr = $columns instanceof \Illuminate\Support\Collection ? $columns->values()->all() : array_values((array) $columns);
     $hiddenArr = array_values((array) $hidden);
 
+    // Avatar tints are resolved HERE, in PHP, and that is the whole reason an
+    // avatar cell is expressible at all. `AvatarPalette` hashes a key with crc32
+    // across eight oklch entries; reimplementing that hash in the Alpine factory
+    // would put TWO of them in one library, and on the day they disagree the same
+    // person renders one color in a table cell and another on their profile
+    // avatar — a divergence nothing would catch, because each side stays
+    // internally consistent. The rows already travel through PHP on their way to
+    // Alpine (`AlpinePayload::from($rowsArr)` below), so the pair is computed once
+    // per DISTINCT key and handed over as ordinary data.
+    //
+    // Keyed by the value rather than merged into the row: a derived field would
+    // have to invent a name no application already uses, and rows arrive here as
+    // arrays AND as objects, which is two ways to write it and two to get wrong.
+    $avatarTints = [];
+
+    foreach ($colsArr as $col) {
+        $avatarKey = data_get($col, 'avatarKey');
+
+        if (! $avatarKey) {
+            continue;
+        }
+
+        foreach ($rowsArr as $row) {
+            $value = data_get($row, $avatarKey);
+
+            if (filled($value) && ! isset($avatarTints[(string) $value])) {
+                $avatarTints[(string) $value] = AvatarPalette::for((string) $value);
+            }
+        }
+    }
+
     // Soft tinted intent pills for `cellType: 'badge'` columns. Defined here (PHP
     // string literals) so Tailwind compiles them AND the drift inventory traces
     // them; the cell binds `:class="badgeClasses[badgeIntent(...)]"`.
@@ -77,6 +113,27 @@
     // thing in a table cell as on a badge. That equivalence IS the fix; three
     // indistinguishable tints of one hue would have closed the vocabulary gap and
     // reopened it as a visual one.
+    // The pill's SHAPE, named once. It is worn by two different cells — a `badge`
+    // column, where every row is a pill, and a row that named its own intent below —
+    // and two copies of this string is how they would come to differ by a quarter rem
+    // without anyone editing either on purpose.
+    // How loud a column reads. One axis, three positions, and the middle one is the absence of
+    // an entry — a table where every column shouts says nothing, and one where none does gives
+    // the eye no way in. `strong` is the column carrying the row's identity or its total;
+    // `muted` is the one that is context rather than content, like an address beside a name.
+    //
+    // A map of PHP literals rather than a ternary in the template: Tailwind compiles what it
+    // finds in this file and the drift inventory traces it, and a class assembled inside an
+    // Alpine expression is invisible to both. It travels in the payload and the CELL calls a
+    // method to read it — `??` is outside Alpine's CSP grammar, so an application on the CSP
+    // bundle would have rendered the binding inert with no error at all.
+    $prominenceClasses = [
+        'strong' => 'font-semibold',
+        'muted' => 'text-[color:var(--color-wk-text-muted)]',
+    ];
+
+    $pillClass = 'inline-flex items-center px-[var(--padding-wk-x-sm)] py-0.5 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] capitalize';
+
     $badgeClasses = [
         'primary' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-accent-content)]',
         'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
@@ -104,7 +161,7 @@
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitDataTable({ rows: {{ \Pushery\WireKit\Support\AlpinePayload::from($rowsArr) }}, columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }} })"
+    x-data="wirekitDataTable({ rows: {{ \Pushery\WireKit\Support\AlpinePayload::from($rowsArr) }}, columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }}, avatarTints: {{ \Pushery\WireKit\Support\AlpinePayload::from($avatarTints) }}, prominenceClasses: {{ \Pushery\WireKit\Support\AlpinePayload::from($prominenceClasses) }} })"
     {{ $attributes->only('class')->class([$base]) }}
 >
     @if($selectable && $name)
@@ -268,7 +325,27 @@
                                 class="px-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text)] whitespace-nowrap"
                             >
                                 <template x-if="col.cellType === 'badge'">
-                                    <span class="inline-flex items-center px-[var(--padding-wk-x-sm)] py-0.5 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] capitalize" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($badgeClasses) }}[badgeIntent(cellText(row, col), col)]" x-text="cellText(row, col)"></span>
+                                    <span class="{{ $pillClass }}" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($badgeClasses) }}[badgeIntent(cellText(row, col), col)]" x-text="cellText(row, col)"></span>
+                                </template>
+                                {{-- A column whose VALUE is a list, drawn as one pill per entry. The tags cell of a
+                                     customer table is the shape: a row carries none, one, or four of them, and the count
+                                     is data rather than configuration. `badge` draws exactly one pill from one value and
+                                     could never express it.
+
+                                     A nested `x-for` rather than a cell slot: the entries are strings in the row, the
+                                     intent of each comes from the same `intents` map the single badge reads, and nothing
+                                     here needs markup the caller writes. Keyed by INDEX, not by value — a row may legally
+                                     carry the same tag twice, and a duplicate key silently drops the second one.
+
+                                     Deliberately NO cap with a "+2 more" affordance. That would be a second control with
+                                     its own keyboard question, built against a guess about how many entries a real row
+                                     carries; the four grids measured here top out at two. `flex-wrap` handles the rest. --}}
+                                <template x-if="col.cellType === 'badges'">
+                                    <span class="inline-flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
+                                        <template x-for="(item, index) in badgeItems(row, col)" :key="index">
+                                            <span class="{{ $pillClass }}" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($badgeClasses) }}[badgeIntent(item, col)]" x-text="item"></span>
+                                        </template>
+                                    </span>
                                 </template>
                                 {{-- A column may carry a `subKey`, and the cell then reads as two lines:
                                      the value over a quieter second one. That is the ordinary shape of an
@@ -286,20 +363,62 @@
                                      An empty second value renders nothing at all, not an empty line: whether
                                      a row HAS the second value is data, and a gap where a row happens to
                                      lack one reads as a rendering fault. --}}
-                                <template x-if="col.cellType === 'number'">
-                                    <span>
-                                        <span class="tabular-nums block" x-text="cellText(row, col)"></span>
-                                        <template x-if="subText(row, col)">
-                                            <span class="tabular-nums block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
+                                {{-- A row that names its own intent wears the pill, whatever base type the
+                                     column declares; a row that names none renders in that base type. That is
+                                     the admin table's threshold cell — `Out` in red, `3 low` in amber, a plain
+                                     tabular `42` — and all three of the things it varies (the intent, the label,
+                                     and whether there is a pill at all) are functions of the VALUE, which is why
+                                     a value->intent map on the column could never express it.
+
+                                     The threshold itself stays in the application, where it is ordinary PHP and
+                                     can be tested. The alternative was a comparison dialect inside a config array
+                                     (`['<', 10, 'warning']`) — a small language this component would have to parse,
+                                     document and version, in return for the one dimension it could express. --}}
+                                <template x-if="col.cellType !== 'badge' && col.cellType !== 'badges' && rowIntent(row, col)">
+                                    <span class="{{ $pillClass }}" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($badgeClasses) }}[rowIntent(row, col)]" x-text="cellText(row, col)"></span>
+                                </template>
+                                <template x-if="col.cellType === 'number' && ! rowIntent(row, col)">
+                                    <span :class="avatarText(row, col) ? 'inline-flex items-center gap-[var(--gap-wk-sm)]' : ''">
+                                        <template x-if="avatarText(row, col)">
+                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-6 h-6 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
                                         </template>
+                                        <span>
+                                            <span class="tabular-nums block" :class="prominenceClass(col)" x-text="cellText(row, col)"></span>
+                                            <template x-if="subText(row, col)">
+                                                <span class="tabular-nums block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
+                                            </template>
+                                        </span>
                                     </span>
                                 </template>
-                                <template x-if="!col.cellType || col.cellType === 'text'">
-                                    <span>
-                                        <span class="block" x-text="cellText(row, col)"></span>
-                                        <template x-if="subText(row, col)">
-                                            <span class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
+                                {{-- A monospace cell. SKU, barcode, order id, hash — a table column of codes reads as a
+                                     column only when the glyphs line up, and a proportional font puts an `I` and an `M` at
+                                     different widths in the same position of two rows. It sits on the SAME axis as `number`
+                                     rather than being a new concept: both say "these values are compared down the column,
+                                     not read as prose", and both answer it by fixing the advance width. --}}
+                                <template x-if="col.cellType === 'code' && ! rowIntent(row, col)">
+                                    <span :class="avatarText(row, col) ? 'inline-flex items-center gap-[var(--gap-wk-sm)]' : ''">
+                                        <template x-if="avatarText(row, col)">
+                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-6 h-6 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
                                         </template>
+                                        <span>
+                                            <span class="font-mono block" :class="prominenceClass(col)" x-text="cellText(row, col)"></span>
+                                            <template x-if="subText(row, col)">
+                                                <span class="font-mono block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
+                                            </template>
+                                        </span>
+                                    </span>
+                                </template>
+                                <template x-if="(!col.cellType || col.cellType === 'text') && ! rowIntent(row, col)">
+                                    <span :class="avatarText(row, col) ? 'inline-flex items-center gap-[var(--gap-wk-sm)]' : ''">
+                                        <template x-if="avatarText(row, col)">
+                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-6 h-6 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
+                                        </template>
+                                        <span>
+                                            <span class="block" :class="prominenceClass(col)" x-text="cellText(row, col)"></span>
+                                            <template x-if="subText(row, col)">
+                                                <span class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
+                                            </template>
+                                        </span>
                                     </span>
                                 </template>
                             </td>

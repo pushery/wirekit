@@ -57,15 +57,28 @@
     // belongs above the grand total, not between every line.
     $isSummary = $layout === 'summary';
 
-    $wrapperStyle = $isSummary
+    // `detail` shares the grid mechanics and NOT the alignment. Both drop this box to
+    // `display: contents` so the <dt>/<dd> become the container's own grid items — that is
+    // what makes the value column ONE track measured across every row rather than a
+    // per-row measurement.
+    //
+    // What does not carry over is the totals treatment. A summary value is an amount: flush
+    // right, tabular figures, so the digits line up under one another. A detail value is
+    // prose — "Credit card", "Standard shipping" — and right-aligning it would strand it
+    // against the far edge with a gap in the middle of every row. The reporting application
+    // described this layout as "literally the swapped column declaration", and the columns
+    // are indeed swapped; the alignment has to swap with them.
+    $isGridPair = $isSummary || $layout === 'detail';
+
+    $wrapperStyle = $isGridPair
         ? 'display: contents;'
-        : 'display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;';
+        : 'display: flex; align-items: flex-start; justify-content: space-between; gap: var(--gap-wk-lg, 1rem);';
 
     // The column is named explicitly rather than left to auto-placement. A row
     // whose <dt> is omitted (no `label`) would otherwise put its <dd> into the
     // FIRST track and shunt every following row one cell out of alignment —
     // silent, and visible only once a real list happens to contain one.
-    $labelStyle = $isSummary
+    $labelStyle = $isGridPair
         ? 'grid-column: 1; min-width: 0; overflow-wrap: anywhere;'
         : 'width: 33%; flex-shrink: 1; min-width: 0; overflow-wrap: anywhere;';
 
@@ -73,10 +86,12 @@
     // layout is: the `tabular-nums` utility only exists if the developer's
     // Tailwind build happened to scan this vendor view. It affects digit glyphs
     // only, so a summary row carrying text rather than an amount is unchanged.
-    $valueStyle = $isSummary
-        ? 'grid-column: 2; min-width: 0; text-align: right; overflow-wrap: anywhere; '
-            .'font-variant-numeric: tabular-nums;'
-        : 'flex: 1; min-width: 0; text-align: right; overflow-wrap: anywhere;';
+    $valueStyle = match (true) {
+        $isSummary => 'grid-column: 2; min-width: 0; text-align: right; overflow-wrap: anywhere; '
+            .'font-variant-numeric: tabular-nums;',
+        $layout === 'detail' => 'grid-column: 2; min-width: 0; overflow-wrap: anywhere;',
+        default => 'flex: 1; min-width: 0; text-align: right; overflow-wrap: anywhere;',
+    };
 @endphp
 
 <div {{ $attributes->merge(['style' => $wrapperStyle])->class([$itemClasses]) }}>
