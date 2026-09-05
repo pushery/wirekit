@@ -199,6 +199,39 @@ class CspAuditCommand extends Command
         $unresolved = [];
 
         foreach ($found as $i => $entry) {
+            // A call whose callee is a LITERAL parses and is dead, and that combination is
+            // invisible to both halves of this audit: the grammar accepts it, and there is
+            // no Blade left in it for the substitution check to object to.
+            //
+            // It exists because `contextualizeExpression()` mirrors Livewire's own SKIP
+            // list, correctly — `true`, `false`, `null` and `undefined` are NOT prefixed
+            // with `$wire.`, so `wire:click="true(1)"` reaches the browser as `true(1)` and
+            // throws `true is not a function`. Reported from a consuming package that
+            // measured all four cases: `delete(1)` was found, `true(1)` and `null(1)` were
+            // certified, and the run exited 0 over two dead controls.
+            //
+            // Decidable without a runtime, and deliberately narrow: only a CALL, and only
+            // where Livewire would otherwise have prefixed it. In an `x-` attribute a bare
+            // `true` is an ordinary value (`x-show="true"`), and `$wire['true'](1)` — the
+            // repair this command already recommends — is a string key rather than a
+            // callee, so neither is touched.
+            $literalCall = str_starts_with((string) ($entry['attribute'] ?? ''), 'wire:')
+                ? self::literalCallee($entry['expression'])
+                : null;
+
+            if ($literalCall !== null) {
+                $offenders[] = $entry + ['error' => sprintf(
+                    'Calls the literal `%s`, which parses and then throws `%s is not a function`. '
+                    .'Livewire does not prefix the four literals, so this reaches the browser '
+                    ."unchanged. Use index access: \$wire['%s'](…).",
+                    $literalCall,
+                    $literalCall,
+                    $literalCall,
+                )];
+
+                continue;
+            }
+
             if (($verdicts[$i]['ok'] ?? false) === true) {
                 // Parsing and resolving are not the same as EVALUATING, and the gap
                 // between them is where a control dies quietly. Collected apart and
@@ -802,6 +835,27 @@ class CspAuditCommand extends Command
      * no hint. A guard in the package's own suite derives the claim from `Js::from()`
      * itself rather than restating it here.
      */
+    /**
+     * The literal a rewritten Livewire expression calls, or null when it calls none.
+     *
+     * The four names are Livewire's own SKIP list minus the ones that cannot be a callee:
+     * `this`, `$wire` and `$event` are objects and `JSON` is a real global, so calling any
+     * of them is a different question. What is left is exactly the set that parses as a
+     * call and evaluates to a non-function.
+     *
+     * The lookbehind is what keeps the recommended repair out of the findings: in
+     * `$wire['true'](1)` the name sits behind a quote, and in `a.true(…)` behind a dot —
+     * both are member access rather than a bare identifier, and both are fine.
+     */
+    private static function literalCallee(string $expression): ?string
+    {
+        if (preg_match('/(?<![\w$.\\\'"\[])(true|false|null|undefined)\s*\(/u', $expression, $m) === 1) {
+            return $m[1];
+        }
+
+        return null;
+    }
+
     private static function unresolvedReason(string $raw): ?string
     {
         $withoutComments = (string) preg_replace('/\{\{--.*?--\}\}/su', '', $raw);

@@ -73,8 +73,25 @@
     $variantAliases = ['outline' => 'outlined'];
     $variant = $variantAliases[$variant] ?? $variant;
 
-    // Variant classes: border/shadow combinations for visual weight
-    $variantClasses = match ($variant) {
+    // Variant classes: border/shadow combinations for visual weight.
+    //
+    // Through the SAME seam as `base`, and that is not symmetry for its own sake. Every
+    // variant sets `border-color` and none leaves it off, so an application that wants a
+    // selected state — a metric card that sets a filter, say — cannot express one by
+    // appending: its class lands in the same attribute at the same specificity, and the
+    // winner is then decided by EMISSION ORDER in the built stylesheet.
+    //
+    // Tailwind v4 derives that order from the class name rather than from the intent, so
+    // the outcome is arbitrary with respect to what the developer meant. Measured in a
+    // consuming application's built CSS: `border-[var(--color-wk-accent)]` at offset 50367,
+    // `border-[var(--color-wk-border)]` at 50600 — the component's border wins, and the
+    // selected card looks exactly like an unselected one. `border-transparent` sits further
+    // back still, so `flat` and `elevated` lose by more.
+    //
+    // With the seam an application REPLACES the block in its own scope instead of hanging
+    // something beside it, which is the one shape that cannot be decided by an ordering
+    // nobody controls.
+    $variantClasses = WireKit::resolveClasses('card', 'variant', match ($variant) {
         'outlined' => implode(' ', [
             'border-[length:var(--border-wk-width)]',
             'border-[var(--color-wk-border)]',
@@ -90,7 +107,7 @@
             'border-transparent',
         ]),
         default => WireKit::validateProp('card', 'variant', $variant, ['outlined', 'elevated', 'flat']),
-    };
+    }, $scope);
 
     // The interactive treatment is keyed on whether the card DOES something when it is
     // clicked, not on whether it happens to render an `<a>`. The condition used to read

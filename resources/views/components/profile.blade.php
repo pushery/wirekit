@@ -147,12 +147,24 @@
     @if($avatarSrc)
         <img src="{{ $avatarSrc }}" alt="{{ $avatarAlt }}" class="h-8 w-8 rounded-full object-cover" />
     @elseif($avatarInitials)
-        {{-- Initials fallback — same deterministic-palette shape as the --}}
-        {{-- canonical avatar primitive uses for non-image avatars.       --}}
-        <span
-            aria-label="{{ $name ?? $avatarInitials }}"
-            class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text)]"
-        >{{ $avatarInitials }}</span>
+        {{-- The PRIMITIVE, not a copy of it. This was hand-rolled, and the comment above it
+             claimed "the same deterministic-palette shape as the canonical avatar primitive"
+             while painting a flat `--color-wk-bg-muted` — the one thing the palette exists to
+             replace. Measured from a consuming kit before adopting this component: the copy
+             also differed in border (none against a subtle one), text size (`xs` against `sm`)
+             and weight (body against heading). Four differences under a comment asserting
+             sameness.
+
+             The cost is not cosmetic and it is why they kept a hand-build instead: the palette
+             derives the color from the initials, so two people are two colors. Adopting the
+             copy traded a color-coded list for a uniformly gray one, and in a list of people
+             the color IS what tells two rows apart. --}}
+        <x-wirekit::avatar
+            :initials="$avatarInitials"
+            from-initials
+            size="sm"
+            :alt="$name ?? $avatarInitials"
+        />
     @endif
     @if($name)
         {{-- In a collapsed sidebar rail the name becomes sr-only, exactly as a
@@ -164,7 +176,13 @@
              `group-data-[settling]` as well as `group-data-[collapsed]`, because the
              collapse animates: hiding only at the end of it lets the name reflow once
              on the way there. --}}
-        <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)] group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $name }}</span>
+        {{-- `min-w-0 flex-1 truncate` for the EXPANDED state, which the comment above
+             diagnosed and then only fixed for the collapsed one: the same long name that
+             wraps at 43px also wraps in a narrow-but-open column, and the row grows the
+             same way. `min-w-0` is not decoration — a flex child defaults to `min-width:
+             auto`, so `truncate` has nothing to shrink against and silently does nothing.
+             That pairing is the trap; the class on its own reads as done. --}}
+        <span class="min-w-0 flex-1 truncate text-left text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)] group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $name }}</span>
     @endif
     {{ $slot }}
 </{{ $tag }}>

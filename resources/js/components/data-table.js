@@ -16,7 +16,10 @@
  *
  * @param {Object} config
  * @param {Array}  config.rows    - row objects (client mode)
- * @param {Array}  config.columns - [{key,label,sortable?,align?,cellType?}]
+ * @param {Array}  config.columns - [{key,label,sortable?,align?,cellType?,
+ *   subKey?,intentKey?,avatarKey?}] — the three optional keys let a ROW name its
+ *   own second line, its own intent, and its own avatar.
+ * @param {Object} config.avatarTints - initials -> {bg,fg}, resolved in PHP
  * @param {string} config.rowKey  - unique id field (default 'id')
  * @param {Array}  config.hidden  - initially-hidden column keys
  * @param {string} config.density - 'comfortable' | 'compact'
@@ -26,6 +29,15 @@
  *   JavaScript cannot be translated, and word order is not the same in every
  *   language. Same shape as the wizard's announcement template.
  */
+/**
+ * The intents a cell may wear — the SAME seven `<x-wirekit::badge>` validates
+ * against, and the same seven the Blade class table carries. Module scope
+ * because two methods read it now: the built-in status-word scan and the
+ * row-declared intent. Two copies of a closed list is how one of them quietly
+ * stops accepting a word the other does.
+ */
+const KNOWN_INTENTS = ['primary', 'accent', 'info', 'success', 'warning', 'danger', 'neutral'];
+
 export default function wirekitDataTable(config = {}) {
     return {
         /**
@@ -49,6 +61,17 @@ export default function wirekitDataTable(config = {}) {
         density: config.density || 'comfortable',
         hiddenKeys: Array.isArray(config.hidden) ? [...config.hidden] : [],
         emptyText: typeof config.emptyText === 'string' ? config.emptyText : '',
+        // initials -> {bg, fg}, resolved in PHP by `AvatarPalette` and handed over as
+        // data. Deliberately NOT computed here: the palette is a crc32 hash, and a
+        // second implementation of it would drift silently against the avatar
+        // component the same person is rendered with two rows further up the page.
+        avatarTints: config.avatarTints && typeof config.avatarTints === 'object' ? config.avatarTints : {},
+        // prominence -> class, resolved in PHP so Tailwind compiles the literals and the drift
+        // inventory can trace them. Read through a method rather than indexed in the template:
+        // the fallback needs `??`, which is outside Alpine's CSP grammar, and an expression
+        // outside that grammar is never evaluated on the CSP bundle — the binding goes inert
+        // and nothing reports it.
+        prominenceClasses: config.prominenceClasses && typeof config.prominenceClasses === 'object' ? config.prominenceClasses : {},
 
         // ── Columns ──────────────────────────────────────────────────────
         get visibleColumns() {
@@ -202,6 +225,108 @@ export default function wirekitDataTable(config = {}) {
 
             return v === null || v === undefined ? '' : String(v);
         },
+
+        /**
+         * The intent a ROW declares for itself, when the column points at a field
+         * holding one.
+         *
+         * This is what makes the admin threshold cell expressible — `stock === 0`
+         * reading `Out` in red, `stock < 10` reading `3 low` in amber, and anything
+         * above it a plain tabular number. Three things vary there and all three are
+         * functions of the value: the intent, the LABEL, and whether the cell is a
+         * pill at all. A value -> intent map on the column can only ever express the
+         * first, so a column-side threshold syntax would have closed one third of the
+         * gap while the ticket read as closed.
+         *
+         * Handing the intent over per row moves the comparison back into the
+         * application, where it is ordinary PHP next to the query that produced the
+         * number — testable, translatable, and not a dialect this component has to
+         * parse. The label comes along for free: it is just the cell's value.
+         *
+         * Empty behaves as absent, exactly as `subText` treats a missing sub-field —
+         * that is the "no pill" arm, not a degenerate case. And an unrecognized name
+         * returns empty rather than itself, because the class table would hand back
+         * `undefined` for it and the pill would render with no classes at all: the
+         * closed-list defect one level up, reached through the hatch built to escape one.
+         */
+        rowIntent(row, col) {
+            if (! col.intentKey) {
+                return '';
+            }
+
+            const v = row[col.intentKey];
+
+            if (v === null || v === undefined || v === '') {
+                return '';
+            }
+
+            const name = String(v).toLowerCase();
+
+            return KNOWN_INTENTS.includes(name) ? name : '';
+        },
+
+        /**
+         * The entries of a list-valued cell — one pill per entry.
+         *
+         * The tags cell of a customer table is the shape this exists for: a row carries none,
+         * one, or four of them, and how many is DATA. `badge` draws exactly one pill from one
+         * value, so a column of tags could not be expressed at all and the page stayed on the
+         * plain table.
+         *
+         * A scalar is normalized into a one-element list rather than rejected. The alternative
+         * — return nothing for a non-array — fails silently: the cell renders empty, which is
+         * indistinguishable from a row that legitimately has no tags, and nothing anywhere says
+         * the column was misconfigured. Being forgiving here has no failure mode; being strict
+         * has one that cannot be seen.
+         *
+         * Empty entries drop out for the same reason `subText` treats empty as absent: a pill
+         * containing nothing is a visual defect, not a value.
+         */
+        badgeItems(row, col) {
+            const v = row[col.key];
+
+            if (v === null || v === undefined || v === '') {
+                return [];
+            }
+
+            return (Array.isArray(v) ? v : [v])
+                .filter((entry) => entry !== null && entry !== undefined && entry !== '')
+                .map((entry) => String(entry));
+        },
+
+        /**
+         * How loud a column reads — one axis, three positions, the middle one being the absence
+         * of an entry. An unrecognized value resolves to the middle rather than to `undefined`,
+         * which is a value Alpine's class binding cannot use.
+         */
+        prominenceClass(col) {
+            return this.prominenceClasses[col.prominence] || '';
+        },
+
+        /** The initials a row shows in its avatar circle, when the column asks for one. */
+        avatarText(row, col) {
+            if (! col.avatarKey) {
+                return '';
+            }
+
+            const v = row[col.avatarKey];
+
+            return v === null || v === undefined ? '' : String(v);
+        },
+
+        /**
+         * The circle's own color pair, looked up rather than computed — see
+         * `avatarTints` above for why the hash stays on the PHP side. A key with no
+         * entry yields no style, so the circle falls back to its class-based default
+         * instead of painting with `undefined`. That arm is reachable: an application
+         * may push rows into `rows` client-side, and those never passed through the
+         * render that built the map.
+         */
+        avatarStyle(row, col) {
+            const tint = this.avatarTints[this.avatarText(row, col)];
+
+            return tint ? `background-color: ${tint.bg}; color: ${tint.fg};` : '';
+        },
         /**
          * Status word -> intent for a `cellType: 'badge'` column.
          *
@@ -224,12 +349,13 @@ export default function wirekitDataTable(config = {}) {
          */
         badgeIntent(value, col = null) {
             const v = String(value).toLowerCase();
-            // The SAME seven `<x-wirekit::badge>` validates against. This list held four
-            // until 2026-08-29, so a column declaring `'intents' => ['processing' => 'accent']`
-            // named a value the badge component accepts and got `neutral` back — silently,
-            // because an unknown intent falls back rather than complaining. One library, one
-            // word, two vocabularies is the defect; the fallback only hid it.
-            const known = ['primary', 'accent', 'info', 'success', 'warning', 'danger', 'neutral'];
+            // Held four until 2026-08-29, so a column declaring
+            // `'intents' => ['processing' => 'accent']` named a value the badge component
+            // accepts and got `neutral` back — silently, because an unknown intent falls
+            // back rather than complaining. One library, one word, two vocabularies is the
+            // defect; the fallback only hid it. It lives at module scope now (see
+            // `KNOWN_INTENTS`) because `rowIntent` reads the same list.
+            const known = KNOWN_INTENTS;
 
             if (col && col.intents) {
                 for (const key of Object.keys(col.intents)) {
