@@ -147,7 +147,7 @@
     $navLabel = is_string($navLabel) ? $navLabel : 'Pagination';
 
     // Resolved once. `?:` rather than `??` on purpose: an empty string is a caller asking
-    // for nothing, and rendering an unlabelled arrow would be worse than the default.
+    // for nothing, and rendering an unlabeled arrow would be worse than the default.
     $previousText = $previousLabel ?: __('wirekit::Previous');
     $nextText = $nextLabel ?: __('wirekit::Next');
 @endphp

@@ -412,6 +412,75 @@ class VerifyInstallationCommand extends Command
      * Check that resources/css/app.css has a @source directive scanning WireKit Blade templates.
      * Without this, Tailwind v4 won't generate utility classes used by WireKit components.
      */
+    /**
+     * Strip CSS comments, ignoring comment syntax that occurs inside a quoted string.
+     *
+     * A Tailwind `@source` argument is a quoted path, and a glob is made of the same two
+     * characters a comment is: `views/**` + `/*.blade.php` reads as a comment to anything
+     * that does not know where the strings are. Tracking the quote state is what separates
+     * a configuration line from a commented-out one, and both shapes are ordinary.
+     */
+    private static function withoutCssComments(string $css): string
+    {
+        $out = '';
+        $quote = null;
+        $length = strlen($css);
+
+        for ($i = 0; $i < $length; $i++) {
+            $char = $css[$i];
+
+            if ($quote !== null) {
+                // A backslash escape keeps the next character out of the quote decision, so
+                // a path ending in one cannot close the string early.
+                if ($char === '\\' && $i + 1 < $length) {
+                    $out .= $char.$css[$i + 1];
+                    $i++;
+
+                    continue;
+                }
+
+                // A raw newline ends it. A CSS string cannot contain one — the spec calls it a
+                // parse error — and without this rule a single stray apostrophe anywhere in the
+                // file swallows every comment after it, which turns the strip back off exactly
+                // where it matters: a directive commented out during a migration would read as
+                // configuration again.
+                if ($char === $quote || $char === "\n") {
+                    $quote = null;
+                }
+
+                $out .= $char;
+
+                continue;
+            }
+
+            if ($char === '"' || $char === "'") {
+                $quote = $char;
+                $out .= $char;
+
+                continue;
+            }
+
+            if ($char === '/' && ($css[$i + 1] ?? '') === '*') {
+                $end = strpos($css, '*/', $i + 2);
+
+                // An unterminated comment swallows the rest, which is what a CSS parser
+                // does with it too — the file is broken either way, and reporting a missing
+                // directive is the honest answer.
+                if ($end === false) {
+                    return $out;
+                }
+
+                $i = $end + 1;
+
+                continue;
+            }
+
+            $out .= $char;
+        }
+
+        return $out;
+    }
+
     private function checkTailwindSource(): void
     {
         $cssFiles = glob(resource_path('css/*.css')) ?: [];
@@ -457,7 +526,22 @@ class VerifyInstallationCommand extends Command
             //
             // The two halves are checked inside ONE directive rather than across the file,
             // and in either order: the published-views form says the same thing backwards.
-            $withoutComments = (string) preg_replace('~/\*.*?\*/~s', '', $content);
+            //
+            // ⚠️ AND THE COMMENT STRIP IS STRING-AWARE, BECAUSE A TAILWIND GLOB IS COMMENT
+            // SYNTAX. `preg_replace('~/\*.*?\*/~s', …)` over this file is not a comment
+            // strip, it is a hazard: `views/**/*.blade.php` contains a complete empty
+            // comment pair, and `views/*.blade.php` contains an UNPAIRED opener. Put an
+            // ordinary Laravel pagination `@source` above the WireKit one and everything
+            // between them is swallowed — including the WireKit path. Reported from a
+            // consuming site whose build was correct, whose app.css carried 1777 `wk-`
+            // rules, and whose next line of the same output said so.
+            //
+            // That is the very sentence this comment warns about two paragraphs up, pointed
+            // the other way, and it shipped anyway — because the hardening was written
+            // against CSS-as-text and the argument of a `@source` is a QUOTED STRING.
+            // Skipping comment openers inside quotes is the whole fix, and it keeps what
+            // the strip was for: a directive commented out during a migration is still text.
+            $withoutComments = self::withoutCssComments($content);
 
             preg_match_all('~@source\s+(?!not\b)([^;]*);~i', $withoutComments, $directives);
 

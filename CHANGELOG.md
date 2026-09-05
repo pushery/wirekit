@@ -10,6 +10,24 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.45.1] — 2026-09-05
+
+**Patch.** One regression from v2.45.0 and the documentation corrections that came with hunting it. The verify command told correctly configured installations that their Tailwind integration was missing and exited non-zero — so upgrading turned a healthy gate red, and the fix it printed was the line the developer already had.
+
+### Fixed
+
+- **`wirekit:verify` reported a missing `@source` on an installation that had one, and exited 1.** The check strips CSS comments before reading the directives, and a Tailwind glob is built from the same two characters a comment is: `views/**/*.blade.php` contains a complete empty comment pair, and `views/*.blade.php` an unpaired opener. Put an ordinary pagination `@source` above the WireKit one and everything between them was swallowed, the WireKit path included. The same run then reported that the built stylesheet did contain WireKit's utility rules, so the command contradicted itself inside one output. Comments are now recognized only outside quoted strings — a path is a quoted string, so a glob inside one is a glob — and a raw newline ends a string, because it does in CSS too and otherwise a single unmatched apostrophe would disable the strip for the rest of the file. Reported by a developer whose build was correct and whose gate was red because of this.
+- **Two Blade comments that ship with the package, and three component pages, used a British inflection.** The house rule is US spelling throughout, and the check that enforces it could not see the prefixed form of these words at all, so it had been quietly passing over them. See [Inline Edit](https://docs.wirekit.app/components/inline-edit), [Multi-Select](https://docs.wirekit.app/components/multi-select) and [Pagination](https://docs.wirekit.app/components/pagination).
+- **The bundle table in `dist/README.md` quoted sizes that had drifted from the files beside it.** Eight of the ten rows were low — each within tolerance on its own, and each therefore one honest build away from being wrong by more. The numbers are derived from the files now rather than kept by hand, so the table cannot fall behind a build again. The prose around them is unchanged: what each bundle is for, and which one to pick, is still written rather than generated.
+
+### Documentation
+
+- **[OTP Input](https://docs.wirekit.app/components/otp-input) said the digit cells sit in a `<fieldset>` with a `<legend>`; the component renders a `role="group"` region with an `aria-label`.** The difference is audible rather than cosmetic: a legend is announced before every field in the group, so a six-digit code would repeat the label six times before anything is typed, while a group label is spoken once on entry and each cell then says only which digit it is. The page carries that reason now, and the component is unchanged — moving it would change what every screen reader says on every one-time-code screen.
+- **The [CLI reference](https://docs.wirekit.app/cli-reference) described the `@source` check as needing a directive that points at `resources/views`, which is only half of the supported setups.** A Tailwind `@source` path is relative to the CSS file it sits in, so an application that has published the views writes `../views/vendor/wirekit/**` — correct, and never containing the longer literal. The check has always accepted both; only the page named one.
+- **[Theme Controller](https://docs.wirekit.app/components/theme-controller) claimed none of the menu variant's keyboard model was documented, four lines below the four rows that document it.** The rest of that model belongs to [Dropdown](https://docs.wirekit.app/components/dropdown), which the variant composes, and the page now says which half is where.
+
+---
+
 ## [2.45.0] — 2026-09-04
 
 **Minor.** The motion preference an application sets now reaches the whole library rather than one rule of it — nine of the ten reduced-motion blocks ignored the opt-out entirely, and forcing reduction reached no pseudo-element and clamped no delay, so a shimmer kept shimmering and a staggered reveal kept staggering for exactly the readers who had asked them not to. Alongside it, a round of keyboard and focus defects found by driving the components rather than reading them: a hover card that closed out from under a focused control, a popover that pulled focus back from wherever you clicked, a submenu whose keys fell through to the menu above it, and an inline editor that never closed. Five components stop baking in values only your call site knows, and two controls reserve a touch target of their own.
