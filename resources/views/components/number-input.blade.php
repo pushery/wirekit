@@ -227,7 +227,7 @@
      build, so under a strict policy both buttons rendered, looked enabled, and
      did nothing. --}}
 <div
-    class="space-y-1.5"
+    class="space-y-1.5 min-w-0"
     x-data="wirekitNumberInput({ value: {{ $attributes->get('value', $min ?? 0) }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }} })"
 >
 @if($optimisticConfig)

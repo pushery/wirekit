@@ -11,7 +11,17 @@
     'exclude' => null,
     'levels' => '2,3',
     'position' => 'right',
+    // How far in from the edge `position` chose. `position` picks WHICH edge; this
+    // picks the distance, and `0` is expressible — a spine flush against the window
+    // was unreachable before, because both arms carried `1rem` as a literal. Reported
+    // from the documentation site, which had reached for an unlayered stylesheet
+    // override: that reaches every spine in the app rather than the one call that
+    // wants it, and it wins only because Tailwind v4 emits its utilities into a layer.
+    // Null keeps the 1rem that shipped, so no existing call site moves.
+    'edgeOffset' => null,
     'expand' => 'hover',
+    // NOT the distance from the edge — that is `edgeOffset` above. This is the
+    // scroll/observer offset the plugin measures a section's arrival against.
     'offset' => '6rem',
     'hideBelow' => 'md',
     'numbered' => false,
@@ -74,10 +84,37 @@
 
     // Position class — left or right viewport edge. Both pin vertically
     // centered with translate-y, leaving a margin gutter to expand into.
+    // The fallback in the arbitrary value is the 1rem the two arms used to carry as a
+    // spacing-step utility, so a call site that says nothing renders exactly what it
+    // rendered before. Same shape the sidebar uses for its width: the property is
+    // settable from a `style` attribute or from CSS, and the utility carries the
+    // default rather than a second declaration that could drift away from it.
+    //
+    // ⚠️ The two step utilities are deliberately NOT named here. Tailwind scans the raw
+    // file, comments included, so writing them would emit them into the compiled CSS —
+    // while the drift harvester parses Blade properly and skips comments. The result is
+    // a selector in the stylesheet that no source emits, and the reverse diff goes red
+    // over a sentence. Measured here, on the first run after this change.
     $positionClass = match ($position) {
-        'left' => 'left-4',
-        default => 'right-4',
+        'left' => 'left-[var(--reading-spine-edge-offset,1rem)]',
+        default => 'right-[var(--reading-spine-edge-offset,1rem)]',
     };
+
+    // A length or nothing. Blade escapes the interpolation, so a quote cannot break
+    // out of the attribute — but an unparseable value would still reach the browser
+    // and silently drop the whole declaration, taking the position with it. Rejecting
+    // it here keeps a typo loud in debug instead of invisible in the layout.
+    // `0` is deliberately valid without a unit; it is the whole point of the prop.
+    $edgeOffsetStyle = null;
+    if ($edgeOffset !== null && $edgeOffset !== '') {
+        $edgeOffsetValue = trim((string) $edgeOffset);
+
+        if (preg_match('/^-?(\d*\.?\d+)(px|rem|em|%|vw|vh|ch)?$/', $edgeOffsetValue)) {
+            $edgeOffsetStyle = '--reading-spine-edge-offset: '.$edgeOffsetValue;
+        } else {
+            WireKit::validateProp('reading-spine', 'edge-offset', $edgeOffsetValue, ['0', '1rem', '12px', '2%']);
+        }
+    }
 
     // Expand mode — `always` and `always-md` force expanded state.
     // `always` is unconditionally expanded; `always-md` is expanded only at
@@ -206,6 +243,7 @@
     @endif
     x-show="items.length > 0"
     x-cloak
+    @if ($edgeOffsetStyle !== null) style="{{ $edgeOffsetStyle }}" @endif
     {{ $attributes->class([$rootClass])->merge(['aria-label' => 'Page contents', 'tabindex' => '0']) }}
 >
     {{-- Optional developer-supplied filter input slot. Two-way-binds to

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Mcp;
 
 use Pushery\WireKit\ComponentRegistry;
+use Pushery\WireKit\Support\AccessibilityContract;
 use Pushery\WireKit\WireKit;
 
 /**
@@ -166,7 +167,22 @@ final class McpCatalog
             return null;
         }
 
-        $page = is_string($meta['parent'] ?? null) ? $meta['parent'] : $name;
+        // Three sources, most authoritative first.
+        //
+        // `parent` is what the registry states outright. The baked map covers the
+        // case it does not: a component that carries NO parent and still has no
+        // page of its own, because a family documents all of its primitives on
+        // one page. Measured 2026-09-05 — sixteen of them, every `reading-*`
+        // primitive among them, and the registry states a parent for none.
+        //
+        // Falling straight through to `$name` returned an empty list for all of
+        // them, and an empty list is indistinguishable from "this component has
+        // no worked examples". An agent told that builds markup from a prop list
+        // instead of from usage a person already reviewed — the exact guessing
+        // this catalog exists to remove.
+        $page = is_string($meta['parent'] ?? null)
+            ? $meta['parent']
+            : ($this->componentPages()[$name] ?? $name);
 
         $baked = $this->bakedExamples();
 
@@ -175,6 +191,33 @@ final class McpCatalog
             'page' => $page,
             'examples' => $baked[$page] ?? [],
         ];
+    }
+
+    /**
+     * Which page documents a component that has none of its own, read once per process.
+     *
+     * Baked for the same reason the examples are: `docs/` is export-ignored, so
+     * the relationship is invisible in every installation. A missing file yields
+     * an empty map and the lookup falls back to the component's own name — the
+     * behavior before this map existed, which is degraded rather than broken.
+     *
+     * @return array<string, string>
+     */
+    private function componentPages(): array
+    {
+        if ($this->componentPagesCache !== null) {
+            return $this->componentPagesCache;
+        }
+
+        $path = \dirname(__DIR__, 2).'/resources/mcp/component-pages.json';
+
+        if (! is_file($path)) {
+            return $this->componentPagesCache = [];
+        }
+
+        $decoded = json_decode((string) file_get_contents($path), true);
+
+        return $this->componentPagesCache = is_array($decoded) ? $decoded : [];
     }
 
     /**
@@ -206,6 +249,9 @@ final class McpCatalog
 
     /** @var array<string, list<array{title: string, code: string}>>|null */
     private ?array $examplesCache = null;
+
+    /** @var array<string, string>|null */
+    private ?array $componentPagesCache = null;
 
     /**
      * The component's documentation URL, or null when it has no publicly
@@ -260,6 +306,28 @@ final class McpCatalog
 
     /** @var list<string>|null */
     private ?array $publicPagesCache = null;
+
+    /**
+     * What one component has already wired for accessibility, and what its caller still owes it.
+     *
+     * A thin pass-through to the derivation in `AccessibilityContract` — the catalog is where an
+     * assistant looks, and the derivation is where the reading of the shipped sources lives. Both
+     * wrong answers to this question ship markup that looks right: a role added on top of one the
+     * component already carries is two competing contracts on one element, and a name the
+     * component waits for and never gets is an announced landmark that says nothing.
+     *
+     * @return array{
+     *     component: string,
+     *     roles: list<string>,
+     *     aria: list<string>,
+     *     caller_supplies: list<string>,
+     *     keys: list<string>,
+     * }|null
+     */
+    public function accessibility(string $name): ?array
+    {
+        return AccessibilityContract::for($name);
+    }
 
     /**
      * Every `--*-wk-*` design token defined in the shipped `dist/wirekit.css`

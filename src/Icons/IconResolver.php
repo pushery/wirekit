@@ -92,6 +92,49 @@ final class IconResolver
      *
      * @return array<string, string> configured entry => composer package
      */
+    /**
+     * One real identifier per configured preset, for a check that wants to RESOLVE rather than
+     * ask whether a package is installed.
+     *
+     * The two questions have different answers, and the difference is not academic: an
+     * application may ship the glyphs itself under the preset's prefix — derive the subset it
+     * actually renders, register that set in its own `blade-icons` config, and deliberately not
+     * depend on the upstream package. Asking Composer then reports a problem over a tree where
+     * every icon resolves, and the recommended remedy makes it worse, because Blade Icons
+     * refuses two sets claiming one prefix.
+     *
+     * @return array<string, string> preset name => an identifier that preset emits
+     */
+    public function sampleIdentifiers(): array
+    {
+        $samples = [];
+
+        foreach ($this->getPresets() as $index => $preset) {
+            $configured = $this->configuredEntries()[$index] ?? $preset::class;
+            $icons = $preset->icons();
+
+            if ($icons === []) {
+                continue;
+            }
+
+            $samples[is_string($configured) ? $configured : $preset::class] = (string) reset($icons);
+        }
+
+        return $samples;
+    }
+
+    /**
+     * Which composer package each configured icon preset needs.
+     *
+     * Keyed by the configured entry rather than by package: two presets can share a
+     * package (`heroicons` and `heroicons-marketing` both need blade-heroicons), and
+     * the developer needs to be told which line of their config is the problem.
+     *
+     * ⚠️ INSTALLED IS NOT THE SAME QUESTION AS RESOLVES — see `sampleIdentifiers()` above,
+     * which answers the one that decides whether a page renders.
+     *
+     * @return array<string, string> configured entry => composer package
+     */
     public function requiredPackages(): array
     {
         $packages = [];

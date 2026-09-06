@@ -48,6 +48,14 @@ export default function wirekitSidebarRail(config = {}) {
          * the words wait.
          */
         settling: false,
+        // ⚠️ ONLY TRUE JUST AFTER A REAL EXPAND, AND THAT IS THE WHOLE POINT. The label
+        // fade-in is an ARRIVAL animation: it belongs to the moment the names come back
+        // into flow, not to a page that loaded with the column already open. Scoped to
+        // `:not([data-collapsed]):not([data-settling])` it also matched first paint, so
+        // every label on every load spent the transition duration at partial opacity —
+        // axe measured one at 3.16:1 against a 4.5:1 threshold and called it serious,
+        // which it is: for that window the text really is that faint.
+        justExpanded: false,
 
         /**
          * Whether this column may ANIMATE its width yet. False for the first frame.
@@ -93,6 +101,7 @@ export default function wirekitSidebarRail(config = {}) {
             this._onWidthSettled = (event) => {
                 if (event.propertyName === 'width' && event.target === this.$el) {
                     this.settling = false;
+                    this._markArrival();
                 }
             };
 
@@ -156,6 +165,14 @@ export default function wirekitSidebarRail(config = {}) {
                 this._settleFallback = null;
             }
 
+            // The arrival marker's own timer, and it is here because the sweep caught it
+            // missing on the develop gate: every timeout a plugin opens is released on
+            // teardown, or it fires into a scope that no longer exists.
+            if (this._arrivalTimer) {
+                clearTimeout(this._arrivalTimer);
+                this._arrivalTimer = null;
+            }
+
             if (this._readyFrame && typeof cancelAnimationFrame === 'function') {
                 cancelAnimationFrame(this._readyFrame);
                 this._readyFrame = null;
@@ -190,11 +207,29 @@ export default function wirekitSidebarRail(config = {}) {
 
                 this._settleFallback = setTimeout(() => {
                     this.settling = false;
+                    this._markArrival();
                 }, longest + 80);
             }
 
             writePersistedFlag(this._persistKey, this.collapsed, this._persistDriver);
             this._announce();
+        },
+
+        // Raise the arrival marker for exactly as long as the fade lasts, then drop it.
+        // A marker that stayed would re-run the animation on the next unrelated re-render,
+        // and one that never rose would leave the names snapping in — the defect the fade
+        // was added for. Collapsing raises nothing: there the names leave at once, which
+        // is the half that always looked right.
+        _markArrival() {
+            if (this.collapsed) {
+                return;
+            }
+
+            this.justExpanded = true;
+            clearTimeout(this._arrivalTimer);
+            this._arrivalTimer = setTimeout(() => {
+                this.justExpanded = false;
+            }, 600);
         },
 
         _announce() {

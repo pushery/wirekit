@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.46.0 — MIT License
+ * WireKit CSS v2.47.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -4545,6 +4545,12 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     /* Sticky offset from the top of the scroll container when boundary="container"
        (the spine pins here instead of scrolling away with the article). */
     --reading-spine-offset-top: 1rem;
+    /* Distance from the viewport edge `position` chose. The `position` prop picks
+       WHICH edge; this picks how far in, and `0` is a legitimate value — a spine
+       flush against the window had no route through the component before, because
+       both arms carried the distance as a literal. Set it here to move every spine
+       in an app, or per call site through the `edge-offset` prop. */
+    --reading-spine-edge-offset: 1rem;
     --reading-spine-tick-height: 2px;
     --reading-spine-color-idle: var(--color-wk-text-subtle);
     --reading-spine-color-active: var(--color-wk-text);
@@ -5832,6 +5838,85 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
  * has grown its label is the same defect read from the other end — the name was never
  * written, because there was nothing to write it into.
  */
+/*
+ * The words fade in at the end of the widening instead of appearing in one frame.
+ *
+ * ## Measured frame by frame, because that is how it was reported
+ *
+ * Expanding a 53px column to 256px, sampled every animation frame:
+ *
+ *   t=152  w=53   collapsed  label 1px, position absolute
+ *   t=200  w=116  settling   label 1px
+ *   t=276  w=250  settling   label 1px
+ *   t=300  w=256  settling   label 1px
+ *   t=326  w=256  settled    label 193px          <- one frame, full opacity
+ *
+ * So the column grows smoothly for 150ms with nothing in it, and then every label
+ * arrives at once. Reported as "the animation is smooth and then it snaps the menu
+ * content in — very flickery", which is exactly what those two rows are.
+ *
+ * ## Why the labels cannot simply stay in flow
+ *
+ * The rule above takes them out of flow for the whole transition ON PURPOSE, and
+ * its own comment says why: a label left in a 53px column reflows and wraps on the
+ * way out, which is a worse flicker than the one being fixed. That stays.
+ *
+ * What changes is only the arrival. An animation rather than a transition, because
+ * the element goes from `position: absolute` to `static` in the same frame — there
+ * is no previous opacity for a transition to start from, and a transition declared
+ * on a value that did not exist a frame ago does nothing at all.
+ */
+@keyframes wk-rail-label-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/*
+ * ⚠️ THE SELECTOR WAS `:not([data-collapsed]):not([data-settling])` AND THAT ALSO MATCHES
+ * FIRST PAINT. A page that loads with the column already open has neither attribute, so
+ * every label on every load ran this fade — and for its duration the text really is
+ * fainter than it reads. axe measured `#8a8a8a` on `#f5f5f5` at 3.16:1 against a 4.5:1
+ * threshold and called it serious, on a page with no animation in sight by the time a
+ * human looks. The fix is not a longer wait in the test; the animation was simply about
+ * a moment this page was not in.
+ *
+ * `data-just-expanded` is raised by the factory when the names come BACK into flow and
+ * dropped once the fade is over, so the rule now describes the arrival it was written for.
+ */
+.wk-sidebar[data-just-expanded] .wk-rail-hide,
+.wk-rail[data-expanded][data-just-expanded] .wk-rail-hide {
+    animation: wk-rail-label-in var(--transition-wk-duration, 200ms) var(--transition-wk-easing, ease-out) both;
+}
+
+/*
+ * A fade is motion, and a reader who asked for less of it gets the old behavior —
+ * which is correct here rather than a compromise: the instant appearance was never
+ * broken for them, only abrupt for everyone else.
+ */
+@media (prefers-reduced-motion: reduce) {
+    /*
+     * Scoped so an application can opt back in. `data-reduce-motion="no-preference"` on the
+     * root is this package's override for a reader whose OS says reduce and whose application
+     * has a reason to animate anyway — and a reduce rule written without the prefix is simply
+     * unreachable by it. `ReducedMotionOverrideTest` fails the build on one, which is how this
+     * pair was caught on the develop gate rather than by somebody toggling a setting.
+     */
+    :root:not([data-reduce-motion="no-preference"]) .wk-sidebar[data-just-expanded] .wk-rail-hide,
+    :root:not([data-reduce-motion="no-preference"]) .wk-rail[data-expanded][data-just-expanded] .wk-rail-hide {
+        animation: none;
+    }
+}
+
+/* The other half, for an application that asks for less motion directly rather than
+   inheriting the request from the OS. Written out rather than shared, for the reason
+   stated at every other pair in this file: CSS cannot apply one rule under two
+   conditions. `ReducedMotionOverrideTest` compares the two halves rule by rule, so one
+   can no longer gain a selector the other never hears about. */
+:root[data-reduce-motion="reduce"] .wk-sidebar[data-just-expanded] .wk-rail-hide,
+:root[data-reduce-motion="reduce"] .wk-rail[data-expanded][data-just-expanded] .wk-rail-hide {
+    animation: none;
+}
+
 .wk-sidebar[data-collapsed] .wk-rail-hide,
 .wk-sidebar[data-settling] .wk-rail-hide,
 .wk-rail:not([data-expanded]) .wk-rail-hide {
@@ -5864,5 +5949,288 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
  * holding a single bar is anyway.
  */
 .wk-shell-foot {
-    min-height: var(--wk-shell-foot-h, var(--size-wk-shell-bar, 3.5rem));
+    /*
+     * ⚠️ THE FLOOR IS NOW OPT-IN, AND THE PARAGRAPH ABOVE ARGUED FOR THAT WITHOUT
+     * NOTICING. It ends "unset it and nothing changes — the floor is the shell-bar
+     * height, which is what a foot holding a single bar is anyway". True, and it
+     * says nothing about a foot holding a nav ITEM, which is what a rail's foot
+     * holds. Measured 2026-09-05 across three shells:
+     *
+     *   sidebar-shell   band 56, content 56, 0 above, 0 below   <- the claim holds
+     *   rail-shell      band 56, content 43, 7 above, 6 below
+     *   console-shell   band 56, content 32, 7 above, 17 BELOW  <- reported by eye
+     *
+     * The last row is the defect, reported three times on three different previews
+     * before it was read as one: a 44px content box in a 56px band, with the whole
+     * remainder landing underneath. So the default is `auto` and a shell that wants
+     * the shared line still states it — the mechanism is unchanged, only its
+     * imposition on shells that never asked for it.
+     */
+    min-height: var(--wk-shell-foot-h, auto);
+
+    /*
+     * And centered, which is the half a content-sized band would otherwise hide.
+     * A shell that DOES set the property is back in the same position — a band
+     * taller than its content — and the leftover has to be shared rather than
+     * dropped below — reported as the entry and the control both sitting vertically
+     * centered again, which is the same sentence from the reader's side.
+     */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/*
+ * A folded column centers what is left in its bars.
+ *
+ * Everything else in a folded sidebar already is centered — the items, and the collapse
+ * control through its own `self-center`. The head and foot bars were the exception, so a
+ * badge or an icon that survived the fold stayed pinned to the edge the words used to
+ * start at, hanging off-center in a column that is now 52px wide. Reported from real use
+ * on a mail shell whose folded list column showed its unread count against the left rule.
+ *
+ * The strip has to stop growing as well, and that is the half a `justify-content` alone
+ * silently loses: it carries `flex-1` so a brand can claim the full width, and a flex item
+ * that fills the line leaves justification nothing to move.
+ *
+ * Unlayered on purpose, like the rest of this file — Tailwind emits its utilities into a
+ * layer, so this wins over `justify-start` and `flex-1` without an `!important` and without
+ * raising specificity against the caller. A caller who wants something else says so on the
+ * bar itself.
+ */
+.wk-sidebar[data-collapsed] .wk-shell-bar {
+    justify-content: center;
+}
+
+.wk-sidebar[data-collapsed] .wk-shell-bar > .wk-shell-bar-strip {
+    flex: 0 1 auto;
+}
+
+/*
+ * And a strip holding nothing but hidden words leaves the line entirely.
+ *
+ * `wk-rail-hide` takes its content out of flow, so such a strip is zero pixels wide — but
+ * it is still a flex item, and the bar's 12px gap sits between it and whatever follows.
+ * Centering then puts the cluster half a gap off the column's middle, which is visible at
+ * 52px: measured at +5px with the strip still in the line, 0 with it gone.
+ *
+ * `:has()` is below this project's browser floor on all four supported engines, so the
+ * selector is not a progressive enhancement — it either matches or the markup does not
+ * have the shape it asks about.
+ */
+.wk-sidebar[data-collapsed] .wk-shell-bar > .wk-shell-bar-strip:not(:has(> :not(.wk-rail-hide))) {
+    display: none;
+}
+
+/*
+ * The fold control shares the foot band's line with whatever else is on it.
+ *
+ * `sidebar.blade.php` builds `absolute top-1/2 -translate-y-1/2 end-…` in PHP for this
+ * case. Measured 2026-09-05 on a rendered page: the classes are on the element and
+ * `position` resolves to `absolute`, while `top` computes to `0px` and `transform` to
+ * `none` — the placement half never reaches the element. A string assembled in PHP is
+ * invisible to a scanner that reads templates, and the safelist entry that would fix
+ * that is one more thing to keep in step with a match arm nobody looks at twice.
+ *
+ * So the rule lives beside the band it positions. It is not a workaround for the
+ * utilities: it is the same statement made where the band's own layout already is, and
+ * it cannot fall out of step with a class list.
+ *
+ * What the reader saw: a footer holding "Test mode" and a badge on one line, with the
+ * control 28px below them and overlapping the badge by two — reported as the pair
+ * belonging on the same line.
+ */
+/*
+ * A foot band that hosts the fold control puts it on the row, not over it.
+ *
+ * The control used to be positioned absolutely — `absolute top-1/2 -translate-y-1/2`,
+ * assembled in PHP. Measured on the rendered page, only half of that ever arrived:
+ * `position` resolved to `absolute` and `top` to `0px`, so the control came to rest
+ * wherever its static position happened to be. Adding a tooltip moved that position,
+ * because the tooltip wraps its trigger in a `relative inline-block` which then became
+ * the containing block — 28 pixels of button instead of 81 pixels of band.
+ *
+ * Reported as the badge and the control belonging on one line. They are siblings in a
+ * flex row now, so there is no containing block to get wrong and nothing to keep in
+ * step with a class list built somewhere else.
+ */
+/*
+ * A foot band that hosts the fold control is ONE LINE: the entry beside it takes the
+ * room that is left, the control stands at the trailing edge, and both sit on the band's
+ * middle. Reported as "test mode - on should be to the LEFT of the fold control" — they
+ * were not beside each other at all, the control sat 23px lower and overlapped the badge
+ * by two.
+ *
+ * Scoped to the sidebar COLUMN, and that is not caution. The rail's foot carries the
+ * same marker and is a 64px-wide stack by construction; turning it into a row would put
+ * an avatar and a chevron side by side in a column too narrow for either.
+ *
+ * And only while the column is open. Collapsed, the two belong on top of each other with
+ * the account above — which is what the band does by default, so the rule simply stops
+ * applying rather than being undone.
+ */
+.wk-sidebar:not([data-collapsed]):not([data-settling]) .wk-shell-foot:has([data-wk-sidebar-collapse]) {
+    flex-direction: row;
+
+    /*
+     * ⚠️ NOT `center`, AND THAT IS THE WHOLE OF THIS DECLARATION. Centering the band's
+     * children centers the SHELL-BAR that draws the foot's rule, so in a column 81px tall
+     * the rule sat 13px below the rail's — measured on `console-shell/2`, rail rule at
+     * y=641, sidebar rule at y=654. Side by side the two columns then show one horizontal
+     * line broken in the middle, which is what `ShellCollapsedLegibilitySweepTest` reports.
+     *
+     * The sidebar's own foot zone draws no border (0px, measured); the bar inside it does.
+     * So the bar has to reach the top of the band or the rule moves with it.
+     */
+    align-items: stretch;
+    gap: var(--space-wk-nav-gap, 0.25rem);
+
+    /*
+     * And the control keeps the column's own inset on its far side. The band bleeds past
+     * that inset on purpose, so its rule reaches both edges — which left the control
+     * standing 1px from the column edge while every row above it stopped at 7, so the
+     * one control in the column was the one thing sticking out of it. Reported as the
+     * control wanting room around it, with the highlight reaching exactly up to that room.
+     *
+     * Padding rather than a margin on the control: a border draws around the padding box,
+     * so the rule still spans the full width.
+     */
+    padding-inline-end: var(--padding-wk-x-xs);
+}
+
+.wk-sidebar:not([data-collapsed]):not([data-settling]) .wk-shell-foot:has([data-wk-sidebar-collapse]) > *:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+
+    /*
+     * ⚠️ AND IT FILLS THE BAND, WHICH IS WHAT RECONCILES TWO GUARDS THAT OTHERWISE
+     * CONTRADICT EACH OTHER.
+     *
+     * The bar carries a fixed `h-[--size-wk-shell-bar]` (56px) while the band is whatever
+     * `--wk-shell-foot-h` states (81px where two columns share a line). Leave the height
+     * and one of two things is wrong: the bar sits at the top and 25px of slack lands
+     * below it (`ShellFootIsOnlyAsTallAsItsContentTest`, which allows 2), or the bar is
+     * centered and the RULE it draws sits 13px below the rail's
+     * (`ShellCollapsedLegibilitySweepTest`). The sidebar's foot zone draws no border of
+     * its own — measured 0px — so the bar's border IS the column's foot rule, and where
+     * the bar starts is where the line is.
+     *
+     * Filling the band satisfies both at once: the rule is at the top because the bar is,
+     * and there is no remainder to share because the bar is the band. The entry inside
+     * stays centered by the bar's own `items-center`.
+     */
+    height: auto;
+    align-self: stretch;
+}
+
+/*
+ * The half that `align-items: center` was really for. The control is a button beside a
+ * full-height bar, so it centers itself rather than stretching to the band's height —
+ * a stretched button is an 81px hit target with a 20px glyph adrift in it.
+ */
+/*
+ * The control centers on the band's line, and it takes THREE elements to say so.
+ *
+ * ⚠️ `align-self` on the flex child does not reach it. The button is a GRANDCHILD — the
+ * flex child is the tooltip's `relative inline-block` wrapper, and inside that sits an
+ * unclassed div holding the button. Measured: the child stretches to the 56px band, the
+ * button sits at its top, and the control's center lands 14px above the account entry's.
+ * `FoldControlSharesTheFootLineTest` allows 2px and reported exactly that 14.
+ *
+ * So the wrapper becomes the centering box. `:has()` without a child combinator on
+ * purpose: the depth between wrapper and button is the tooltip's business, not this
+ * rule's, and pinning it here breaks the next time that component gains a layer.
+ */
+.wk-sidebar .wk-shell-foot:has([data-wk-sidebar-collapse]) > :has([data-wk-sidebar-collapse]) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /*
+     * ⚠️ CENTERED ON THE BAR, NOT ON THE BAND — and the two are different heights, which
+     * is the whole reason this line exists. The bar carries a fixed `h-[--size-wk-shell-bar]`
+     * (56px), while the band is whatever `--wk-shell-foot-h` states (81px on the console
+     * shell). Center on the band and the control lands 12px below the account entry it is
+     * supposed to sit beside; `FoldControlSharesTheFootLineTest` allows 2px.
+     *
+     * Measured on `console-shell/2`: band 641..722 (mid 682), bar 641..697 (mid 669),
+     * entry mid 670. Matching the bar's box puts the control on 669 — one line, as
+     * reported wanted.
+     */
+}
+
+/*
+ * ⚠️ AND ONLY WHILE THE BAND IS A ROW. Folded, the band is a COLUMN — where `align-self`
+ * is the HORIZONTAL axis, so `flex-start` pinned the control to the left edge and the
+ * measurement flipped from 12px low to 12px left. Same two declarations, opposite meaning,
+ * decided entirely by the band's direction.
+ */
+/*
+ * ⚠️ THIS RULE USED TO PIN THE CONTROL TO THE BAR'S 56px BOX, AND IT IS GONE BECAUSE THE
+ * BAR NOW FILLS THE BAND. While the bar kept its fixed height, band and bar were different
+ * heights and the control had to pick one; matching the bar was right then. With the bar
+ * stretched they are the same box, and re-pinning 56px inside an 81px band put the control
+ * 12px high again — the same failure, arrived at from the other side.
+ */
+
+/*
+ * Collapsed, the control centers on the narrow column instead of stretching across it —
+ * a flex item's default is to stretch, and a 28px button spanning the rail reads as a
+ * bar rather than a button.
+ */
+/*
+ * Folded, the bar gives its inline padding back to its content.
+ *
+ * The column is 53px and the bar carried 6px either side, leaving a 40px content box for a
+ * strip whose avatar and gap measure 42 — `CollapsedColumnNeverWrapsOrScrollsTest` reports
+ * that as `+2` on three strips, and a 2px clip is exactly the kind of thing that reads as a
+ * rendering glitch rather than a layout decision. The column already carries its own inset;
+ * a second one inside it is what leaves nothing for the content.
+ */
+.wk-sidebar[data-collapsed] .wk-shell-foot:has([data-wk-sidebar-collapse]) .wk-shell-bar,
+.wk-sidebar[data-settling] .wk-shell-foot:has([data-wk-sidebar-collapse]) .wk-shell-bar {
+    padding-inline: 0;
+}
+
+.wk-sidebar[data-collapsed] .wk-shell-foot:has([data-wk-sidebar-collapse]),
+.wk-sidebar[data-settling] .wk-shell-foot:has([data-wk-sidebar-collapse]) {
+    /*
+     * ⚠️ `center` HERE, IN A COLUMN, IS A HORIZONTAL RULE — and it made the account bar
+     * size to its CONTENT instead of to the column. Measured on `sidebar-shell/2`
+     * collapsed: a 64px bar in a 53px column, 11px of it outside the column it belongs
+     * to. `stretch` is the default for a reason; what actually wanted centering is the
+     * one control, and it says so itself below.
+     */
+    align-items: stretch;
+    gap: var(--space-wk-nav-gap, 0.25rem);
+}
+
+/*
+ * A navbar's navigation list is ONE element that the disclosure reveals below the breakpoint
+ * and that is simply always there above it.
+ *
+ * It used to be two elements holding the same slot, and a slot echoed twice carries every id
+ * inside it twice — measured at 390px, three duplicate dropdown-panel ids on one preview,
+ * with the visible trigger opening a panel anchored to the hidden copy at the viewport
+ * origin. One element cannot be both hidden by `x-show` and shown by a class, because
+ * `x-show` writes an inline `display: none` and no class outranks an inline style. This rule
+ * is the one thing that does.
+ *
+ * Keyed on the marker rather than on a class: the `force-mobile` demo deliberately omits it,
+ * which is what keeps that bar mobile at every width.
+ */
+@media (min-width: 48rem) {
+    nav [data-wk-navbar-items] {
+        display: flex !important;
+    }
+}
+
+/*
+ * And the wrapper around the button stops sitting it on a text baseline. The tooltip
+ * trigger is an inline box, which leaves descender space underneath and put the control
+ * 14px above the line it had just been brought onto.
+ */
+.wk-shell-foot :has(> [data-wk-sidebar-collapse]) {
+    display: flex;
+    align-items: center;
 }

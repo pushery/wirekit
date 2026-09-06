@@ -366,10 +366,25 @@
         'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)] cursor-pointer',
-        // Riding on the footer band: out of flow, centered on it, at its trailing edge.
-        // Out of flow on purpose — in flow it would either stretch the band or shorten
-        // the row it sits beside, and the row is somebody's account name.
-        isset($footer) ? 'absolute top-1/2 -translate-y-1/2 end-[var(--padding-wk-x-sm)]' : '',
+        // Riding on the footer band. This used to take the control OUT OF FLOW and
+        // center it on the band by hand, reasoning that in flow it would either stretch
+        // the band or shorten the row it sits beside. Shortening that row is exactly what
+        // was asked for — the highlight has to stop where the control's space begins —
+        // and the stretching half was never true once the band became a flex row: a 28px
+        // control in a 56px band stretches nothing.
+        //
+        // Out of flow cost more than it saved, in three layers. The offsets were assembled
+        // here in PHP, so Tailwind never saw them and neither the offset nor the shift
+        // was ever in the stylesheet; the control had been falling back to its static
+        // position for as long as this shipped. Safelisting them only moved the defect:
+        // the offset then resolved against the tooltip wrapper beside the button rather
+        // than against the band. And the half-height shift is a `translate` property in
+        // Tailwind v4, which a `transform` reset does not reach — so the button kept
+        // riding 14px high with every declaration in the cascade reading correct.
+        //
+        // The band places it now (`.wk-shell-foot` in `dist/wirekit.css`), which is the
+        // one place that knows how tall it is.
+        '',
         // In the collapsed rail the button centers with the icons.
         isset($footer) ? '' : 'group-data-[collapsed]/wk-sidebar:self-center',
     ]), $scope);
@@ -456,6 +471,10 @@
              is widening back the names stay out of the layout, so they are never set at a
              width they will not keep — which is what made the rows jump and settle. --}}
         :data-settling="settling ? '' : null"
+        {{-- Read by ONE rule: the label fade-in. It marks the moment the names come back
+             into flow after an expand, which is the only moment that animation is about.
+             A page that loads with the column already open never carries it. --}}
+        :data-just-expanded="justExpanded ? '' : null"
         {{-- OBJECT syntax, not a ternary, and the difference is load-bearing. A ternary hands
              Alpine one class to add, and Alpine only ever removes what it added itself — so the
              static width below survived every toggle and a collapsed column stayed at 16rem with

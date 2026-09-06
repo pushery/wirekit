@@ -155,22 +155,42 @@ final class BladeParser
             }
         }
 
+        // ⚠️ A `{{ … }}` INSIDE AN `@php` BLOCK IS NOT OUTPUT — it is characters in a PHP
+        // string, and the parser was reading them as an expression.
+        //
+        // `reading-bookmark` throws an exception whose MESSAGE shows the developer how to
+        // call it: `key="article-{{ $post->slug }}"`. That documentation string made `post`
+        // a required slot in every artifact derived from this parser — `components.json`,
+        // the api-map, the MCP catalog an assistant reads.
+        //
+        // ⚠️ AND ONLY THOSE SEQUENCES, NOT THE WHOLE BLOCK. Dropping the block entirely was
+        // the first attempt and it cost a REAL slot: `faq-item` reads its own content as
+        // `$answerHtml = trim($slot->toHtml())` and nowhere else, so the component's whole
+        // body stopped being a slot. Measured — 206 slots became 203, and one of the three
+        // was that one. A `{{ }}` in PHP can only be a string; a `$name->method()` there is
+        // ordinary code and may well be the only reference a slot has.
+        $output = (string) preg_replace_callback(
+            '/@php\b.*?@endphp/s',
+            static fn (array $m): string => (string) preg_replace('/\{\{.*?\}\}|\{!!.*?!!\}/s', '', $m[0]),
+            $contents,
+        );
+
         // Bare references: `{{ $name }}`, `{!! $name !!}`, `$name->method()`,
         // `$name->isEmpty()`. These signal a hard dependency — if the
         // developer doesn't supply the slot, the component errors.
-        if (preg_match_all('/\{\{\s*\$([a-zA-Z][a-zA-Z0-9]*)\b/', $contents, $bareMatches)) {
+        if (preg_match_all('/\{\{\s*\$([a-zA-Z][a-zA-Z0-9]*)\b/', $output, $bareMatches)) {
             foreach ($bareMatches[1] as $name) {
                 $bareNames[$name] = null;
             }
         }
-        if (preg_match_all('/\{!!\s*\$([a-zA-Z][a-zA-Z0-9]*)\b/', $contents, $rawMatches)) {
+        if (preg_match_all('/\{!!\s*\$([a-zA-Z][a-zA-Z0-9]*)\b/', $output, $rawMatches)) {
             foreach ($rawMatches[1] as $name) {
                 $bareNames[$name] = null;
             }
         }
         // Method calls on slot vars — e.g. `$slot->isEmpty()`,
         // `$trigger->toHtml()`.
-        if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9]*)->[a-zA-Z]/', $contents, $methodMatches)) {
+        if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9]*)->[a-zA-Z]/', $output, $methodMatches)) {
             foreach ($methodMatches[1] as $name) {
                 $bareNames[$name] = null;
             }
@@ -394,6 +414,37 @@ final class BladeParser
         if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9]*)\s*=(?!=)/', $body, $matches)) {
             foreach ($matches[1] as $name) {
                 $locals[] = $name;
+            }
+        }
+
+        // ⚠️ CLOSURE AND FUNCTION PARAMETERS BIND A NAME TOO, and this is the same class of
+        // miss the docblock above records for destructuring — a name bound without an `=`.
+        //
+        // `fn (?FontPreset $preset) => …` inside an `@php` block made `fonts` advertise
+        // `preset` as a slot a developer must fill. It is not a slot; it is the argument of
+        // an arrow function two lines away, and that answer ships in `components.json`, the
+        // api-map and the MCP catalog an assistant reads.
+        //
+        // The parameter LIST rather than the whole body, so a call like `foo($bar)` — which
+        // uses a name rather than binding one — is untouched.
+        if (preg_match_all('/\b(?:function|fn)\s*\(([^)]*)\)/', $body, $signatures)) {
+            foreach ($signatures[1] as $params) {
+                if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9]*)/', $params, $names)) {
+                    foreach ($names[1] as $name) {
+                        $locals[] = $name;
+                    }
+                }
+            }
+        }
+
+        // And `use ($x)` on a closure, which binds the name into its scope the same way.
+        if (preg_match_all('/\buse\s*\(([^)]*)\)/', $body, $uses)) {
+            foreach ($uses[1] as $params) {
+                if (preg_match_all('/\$([a-zA-Z][a-zA-Z0-9]*)/', $params, $names)) {
+                    foreach ($names[1] as $name) {
+                        $locals[] = $name;
+                    }
+                }
             }
         }
         // foreach (`@foreach($items as $item)`) declares $item locally;

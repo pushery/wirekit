@@ -11,6 +11,24 @@
 
      Reads `$collapsed` and `$collapseBtnClasses` from the including scope, the same way
      `sidebar-zones` reads `$header` and `$footer`. --}}
+        {{-- The control says what it does on hover, not only to a screen reader.
+             Reported for every view that has one: the chevron alone is a guess until
+             you click it, and the name that answers the question was already here in
+             `aria-label` — reachable by assistive technology and by nobody else.
+
+             `focusable-trigger="false"` because the button is already a tab stop; the
+             tooltip's default would add a second one in front of it. Its own prop
+             documentation names exactly this case.
+
+             The text is bound rather than passed, because it changes with the state
+             and `text` renders once. The binding resolves against the column's own
+             Alpine scope, which this partial already reads for `:aria-expanded`. --}}
+        <x-wirekit::tooltip :focusable-trigger="false">
+            <x-slot:content>
+                <span x-text="collapsed
+                    ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand sidebar')) }}
+                    : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse sidebar')) }}">{{ $collapsed ? __('wirekit::Expand sidebar') : __('wirekit::Collapse sidebar') }}</span>
+            </x-slot:content>
         <button
             type="button"
             x-on:click="toggle()"
@@ -22,6 +40,12 @@
                  Alpine owns both attributes after init and rewrites them on every toggle,
                  so the static pair can never disagree with the bound one. Same __() keys,
                  so the translation is maintained once. --}}
+            {{-- A stable hook for the control that folds the column. Everything else on this
+                 button is either translatable (`aria-label`) or shared with other widgets
+                 (`aria-expanded` is on every collapsible group too), so a test or an
+                 application reaching for THIS control had to guess — "the last button in the
+                 column" was the guess, and it holds on three previews out of twenty. --}}
+            data-wk-sidebar-collapse
             aria-expanded="{{ $collapsed ? 'false' : 'true' }}"
             aria-label="{{ $collapsed ? __('wirekit::Expand sidebar') : __('wirekit::Collapse sidebar') }}"
             :aria-expanded="collapsed ? 'false' : 'true'"
@@ -35,3 +59,4 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 4.5 11.25 12l7.5 7.5m-7.5-15L3.75 12l7.5 7.5" />
             </svg>
         </button>
+        </x-wirekit::tooltip>

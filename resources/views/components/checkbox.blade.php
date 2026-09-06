@@ -220,7 +220,7 @@
     ]);
 @endphp
 
-<div class="space-y-1.5" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
+<div class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     <label for="{{ $id }}" class="{{ $labelClasses }}">
         {{-- Native checkbox: visually hidden but fully accessible + Livewire-compatible.
              Siblings below consume its :checked / :indeterminate / :focus-visible / :disabled state via peer-*. --}}

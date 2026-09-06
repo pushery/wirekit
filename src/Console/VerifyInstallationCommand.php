@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use BaconQrCode\Renderer\ImageRenderer;
+use BladeUI\Icons\Factory;
 use Composer\InstalledVersions;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
@@ -1779,7 +1780,7 @@ class VerifyInstallationCommand extends Command
         /** @var array<string, list<string>> $collisions namespaced key => locales it diverges in */
         $collisions = [];
 
-        /** @var array<string, list<string>> $ambiguous namespaced key => locales holding BOTH spellings */
+        /** @var array<string, array<string, bool>> $ambiguous namespaced key => locale => the two spellings hold the SAME string */
         $ambiguous = [];
 
         foreach ((array) glob($packageLang.'/*.json') as $ours) {
@@ -1819,7 +1820,14 @@ class VerifyInstallationCommand extends Command
                 // adopted the new key almost certainly meant to retire the old one, and nothing
                 // else in the system will ever mention that they did not.
                 if ($hasPlain && $hasNamespaced) {
-                    $ambiguous[(string) $key][] = $locale;
+                    // Whether the two spellings hold the SAME string decides how this reads, and
+                    // the old code did not look. Two copies of one wording is a fork waiting to
+                    // drift — that is the case worth a warning. Two DIFFERENT wordings is the
+                    // state the divergence message a few lines down explicitly asks for
+                    // ("translate THAT key ... and keep 'Home' for your own use"), so reporting
+                    // it at the same severity made the two checks contradict each other: follow
+                    // the first one's advice and the second one fails your gate.
+                    $ambiguous[(string) $key][$locale] = $app[$plain] === $app[$key];
 
                     continue;
                 }
@@ -1834,6 +1842,27 @@ class VerifyInstallationCommand extends Command
 
         if ($collisions === []) {
             $this->reportPass('No translation key means something different in your catalog than in WireKit');
+
+            return;
+        }
+
+        // A divergence only bites while the LEGACY-KEY BRIDGE is on, and the check never read
+        // the switch. With the bridge off, a plain `Home` in the application's catalog does not
+        // reach the component at all — WireKit renders its own `wirekit::Home` — so the wording
+        // difference has no effect on anything the component shows. Reporting it as a warning
+        // there also made the message untrue: it ends with "the legacy-key bridge keeps applying
+        // your wording inside the component", which is exactly what turning the bridge off stops.
+        //
+        // Measured in a live application: switching it off changed nothing about the output, so the one
+        // documented escape from fourteen gate-failing warnings did not work.
+        $bridgeIsOn = (bool) config('wirekit.translations.legacy_key_bridge', true);
+
+        if (! $bridgeIsOn) {
+            $this->reportInfo(sprintf(
+                'Your catalog re-words %d shared key(s), and the legacy-key bridge is off — so those '
+                .'wordings stay on your own strings and the components render their own.',
+                count($collisions)
+            ));
 
             return;
         }
@@ -1854,21 +1883,59 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
+        // Which of these the application renders ITSELF decides what to advise, and the
+        // old wording never asked. It led with "write the `wirekit::` twin and keep your
+        // own key", which copies a string this package already ships into a second file
+        // that then drifts from the first — and the fork reporter above names that copy
+        // as a finding of its own, so following the first advice failed the second check.
+        //
+        // Measured in a live application: 23 of 26 colliding keys were ORPHANS, left over
+        // from before this package namespaced its own strings. Deleting them was the whole
+        // fix, and it was the one route the message did not mention.
+        $plainKeys = [];
+        foreach (array_keys($reportable) as $key) {
+            $plainKeys[] = substr((string) $key, strlen(BaseLocaleJsonLoader::NAMESPACE));
+        }
+
+        $appUses = $this->applicationUsesTranslationKeys($plainKeys);
+
         foreach ($reportable as $key => $locales) {
             $plain = substr((string) $key, strlen(BaseLocaleJsonLoader::NAMESPACE));
+
+            // The ways out, most-likely first. The last one is last because it is the one
+            // that creates a second copy, and it carries the step the old wording omitted:
+            // the plain key has to go with it, or this command reports a fork next run.
+            $ways = isset($appUses[$plain])
+                ? sprintf(
+                    "Your own templates DO render '%s', so it is not stale. Either rename your key to "
+                    .'something that says what it means in your interface, or — if the component is '
+                    .'being handed the string as a prop — let it derive that string itself. As a last '
+                    ."resort translate '%s' as well and delete '%s'; keeping both is a fork, and this "
+                    .'command reports it as one.',
+                    $plain,
+                    $key,
+                    $plain
+                )
+                : sprintf(
+                    "Nothing in your own views or app code appears to render '%s', so it is most likely "
+                    .'left over from before this package namespaced its own strings — deleting it gives '
+                    .'the component its wording back and costs you nothing. If you do use it somewhere '
+                    ."this scan cannot see, rename it instead. As a last resort translate '%s' as well "
+                    ."and delete '%s'; keeping both is a fork, and this command reports it as one.",
+                    $plain,
+                    $key,
+                    $plain
+                );
 
             $this->reportWarn(sprintf(
                 "Translation key '%s' means something different in your catalog than in WireKit (%s), "
                 .'and %s renders it — so that component will show your wording in a context it was not '
-                ."written for. WireKit now ships this string as '%s': translate THAT key to give the "
-                ."component its own wording back, and keep '%s' for your own use. Renaming your key "
-                .'works too. Until you do one of them, the legacy-key bridge keeps applying your '
-                .'wording inside the component, exactly as before.',
+                .'written for. %s Until then, the legacy-key bridge keeps applying your wording inside '
+                .'the component, exactly as before.',
                 $plain,
                 implode(', ', $locales),
                 $rendered[$key],
-                $key,
-                $plain
+                $ways
             ));
         }
     }
@@ -1884,21 +1951,52 @@ class VerifyInstallationCommand extends Command
      *
      * @param  array<string, list<string>>  $ambiguous  namespaced key => locales holding both
      */
+    /**
+     * Both spellings of one key in a catalog — and only one of the two shapes is a defect.
+     *
+     * Holding `Home` and `wirekit::Home` with DIFFERENT wordings is the state the divergence
+     * message a few methods up explicitly asks for: translate the namespaced key to give the
+     * component its wording back, keep the plain one for your own pages. Reporting that at
+     * warning severity made the two checks contradict each other — follow the first one's
+     * advice and the second one fails your gate, with no third state that satisfies both.
+     *
+     * Holding both with the SAME wording is the case worth a warning, and it is the one this
+     * check was written for: somebody copied the string across and now maintains two of it.
+     * Nothing else in the system will ever mention the day they drift apart.
+     *
+     * @param  array<string, array<string, bool>>  $ambiguous  namespaced key => locale => same string
+     */
     private function reportTranslationKeyForks(array $ambiguous): void
     {
+        $intentional = 0;
+
         foreach ($ambiguous as $key => $locales) {
             $plain = substr((string) $key, strlen(BaseLocaleJsonLoader::NAMESPACE));
+            $duplicated = array_keys(array_filter($locales));
+
+            if ($duplicated === []) {
+                $intentional++;
+
+                continue;
+            }
 
             $this->reportWarn(sprintf(
-                "Your catalog holds both '%s' and '%s' (%s). Only the second one reaches WireKit: "
-                ."the legacy-key bridge steps aside as soon as you have adopted '%s', so '%s' now "
-                .'applies to your own strings alone. If that is what you meant, nothing is broken — '
-                .'if you were still maintaining both as one string, they have quietly become two.',
+                "Your catalog holds '%s' and '%s' with the SAME wording (%s). Only the second one "
+                ."reaches WireKit, so they are one string in two places now: change '%s' and the "
+                .'component keeps the old text, with nothing to tell you they came apart. Keep the '
+                .'copy only if the two are meant to say different things.',
                 $plain,
                 $key,
-                implode(', ', $locales),
-                $key,
+                implode(', ', $duplicated),
                 $plain
+            ));
+        }
+
+        if ($intentional > 0) {
+            $this->reportInfo(sprintf(
+                '%d key(s) exist in both spellings with different wordings — the split this command '
+                .'recommends, so your pages and the components each keep their own text.',
+                $intentional
             ));
         }
     }
@@ -1964,39 +2062,139 @@ class VerifyInstallationCommand extends Command
         return $found;
     }
 
-    private function checkIconPresetPackages(): void
+    /**
+     * Which of these keys the APPLICATION renders itself.
+     *
+     * The sibling above asks which WireKit component renders a key. This asks the other
+     * half, and without it the advice cannot tell an orphan from a word the application
+     * genuinely uses — which is the difference between "delete it" and "rename it".
+     *
+     * It matters more than it looks. Reported from a live application: of 26 colliding
+     * keys, 23 were orphans left behind from before this package gave its own strings a
+     * namespace. Nothing rendered them, and the advice sent their maintainer to write a
+     * `wirekit::` twin for every one.
+     *
+     * Scanning the application is bounded on purpose — its views and its PHP, which is
+     * where a translation call lives. A miss here is safe in the direction that matters:
+     * an unseen usage reports as an orphan candidate, and the wording says "if nothing
+     * renders it" rather than asserting it.
+     *
+     * @param  list<string>  $keys
+     * @return array<string, true>
+     */
+    private function applicationUsesTranslationKeys(array $keys): array
     {
-        if (! class_exists(InstalledVersions::class)) {
-            // Composer's runtime API is how the ecosystem answers this. Without it the
-            // honest answer is that nothing was measured — which is NOT the same as
-            // "everything is installed", and must not print like it.
-            $this->line('  <fg=cyan>i</> Icon preset packages not checked (Composer runtime API unavailable)');
-
-            return;
+        if ($keys === []) {
+            return [];
         }
 
-        $missing = [];
+        $roots = array_values(array_filter([
+            function_exists('resource_path') ? resource_path('views') : null,
+            function_exists('app_path') ? app_path() : null,
+        ], static fn ($dir) => is_string($dir) && is_dir($dir)));
 
-        foreach (app(IconResolver::class)->requiredPackages() as $preset => $package) {
-            if (! InstalledVersions::isInstalled($package)) {
-                $missing[$preset] = $package;
+        if ($roots === []) {
+            return [];
+        }
+
+        $used = [];
+
+        // Same three call forms as the sibling, and the same reason for spelling the
+        // parenthesis as an escape: written inline, the needle reads to the
+        // translation-key drift guard as this command emitting a key of its own.
+        $call = '(?:__|trans|trans_choice|@lang)';
+
+        foreach ($roots as $root) {
+            $files = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS)
+            );
+
+            foreach ($files as $file) {
+                if (! $file->isFile() || ! str_ends_with($file->getFilename(), '.php')) {
+                    continue;
+                }
+
+                $body = (string) file_get_contents($file->getPathname());
+
+                foreach ($keys as $key) {
+                    if (isset($used[$key])) {
+                        continue;
+                    }
+
+                    if (preg_match('/'.$call.'\(\s*([\'"])'.preg_quote($key, '/').'\1/', $body) === 1) {
+                        $used[$key] = true;
+                    }
+                }
             }
         }
 
-        if ($missing === []) {
-            $this->reportPass('Every configured icon preset has its package installed');
+        return $used;
+    }
+
+    private function checkIconPresetPackages(): void
+    {
+        if (! class_exists(Factory::class)) {
+            // Nothing measured is NOT the same as everything fine, and must not print like it.
+            $this->line('  <fg=cyan>i</> Icon presets not checked (Blade Icons is unavailable)');
 
             return;
         }
 
-        foreach ($missing as $preset => $package) {
+        $resolver = app(IconResolver::class);
+        $samples = $resolver->sampleIdentifiers();
+
+        if ($samples === []) {
+            $this->reportPass('No icon preset configured');
+
+            return;
+        }
+
+        // ⚠️ THIS ASKED COMPOSER WHETHER THE PACKAGE WAS INSTALLED, AND THAT IS A DIFFERENT
+        // QUESTION FROM THE ONE THAT DECIDES WHETHER A PAGE RENDERS.
+        //
+        // An application may ship the glyphs itself: derive the subset its tree actually uses,
+        // drop them under the preset's prefix, register that set in its own `blade-icons` config
+        // and deliberately not depend on the upstream package. Measured in a live application at
+        // 137 icons against the package's ~9,000. Composer says "not installed"; every icon on
+        // every page resolves.
+        //
+        // The old warning then asserted a runtime it had not measured — "so they throw when a
+        // page renders" — and its remedy made things worse: `composer require` brings a second
+        // set claiming the same prefix, which Blade Icons refuses outright. The starter-kit
+        // baseline builds exactly that arrangement, so the check tripped over the template.
+        //
+        // Resolving one real identifier per preset answers the question the message is about,
+        // through the supported API rather than the factory's `@internal` set list.
+        $unresolved = [];
+
+        foreach ($samples as $preset => $identifier) {
+            try {
+                app(Factory::class)->svg($identifier);
+            } catch (\Throwable) {
+                $unresolved[$preset] = $identifier;
+            }
+        }
+
+        if ($unresolved === []) {
+            $this->reportPass('Every configured icon preset resolves');
+
+            return;
+        }
+
+        $packages = $resolver->requiredPackages();
+
+        foreach ($unresolved as $preset => $identifier) {
+            $package = $packages[$preset] ?? null;
+
             $this->reportWarn(sprintf(
-                "Icon preset '%s' needs %s, which is not installed — its aliases resolve to "
-                .'identifiers that are absent, so they throw when a page renders instead of '
-                .'degrading. Run: composer require %s',
+                "Icon preset '%s' does not resolve: '%s' is not registered with Blade Icons, so "
+                .'the aliases pointing at it fail when a page renders. Either install %s, or '
+                .'register a set of your own under that prefix — shipping the glyphs yourself is '
+                .'a supported arrangement, and it is why this check asks whether the identifier '
+                .'resolves rather than whether the package is present.',
                 $preset,
-                $package,
-                $package
+                $identifier,
+                $package ?? 'the preset\'s package'
             ));
         }
     }

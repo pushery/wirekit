@@ -23,6 +23,13 @@
     'rule' => true,
     // Inline padding, on the page-edge spine scale. `none` is for the rail head,
     // whose content is a centered mark rather than text on the spine.
+    //
+    // `xs` is the rung a bar needs to line its content up with the navigation rows of
+    // the column it sits in. A sidebar pads itself on the extra-small step, a bleeding
+    // foot band cancels that padding so its rule reaches the edge, and a bar inside it
+    // therefore starts at zero — while the rows above start at the column's inset. The
+    // next rung up overshoots by 4px, which reads as a footer row belonging to a
+    // slightly different list than the one it closes.
     'padding' => 'lg',
     // Main-axis distribution. `between` (default) pushes the `end` slot to the far
     // edge, which is what a title-plus-actions bar wants; `start` and `center` are
@@ -93,11 +100,12 @@
 
     $paddingClasses = match ($padding) {
         'none' => '',
+        'xs' => 'px-[var(--padding-wk-x-xs)]',
         'sm' => 'px-[var(--padding-wk-x-sm)]',
         'md' => 'px-[var(--padding-wk-x-md)]',
         'lg' => 'px-[var(--padding-wk-x-lg)]',
         'xl' => 'px-[var(--padding-wk-x-xl)]',
-        default => WireKit::validateProp('shell-bar', 'padding', $padding, ['none', 'sm', 'md', 'lg', 'xl']),
+        default => WireKit::validateProp('shell-bar', 'padding', $padding, ['none', 'xs', 'sm', 'md', 'lg', 'xl']),
     };
 
     $alignClasses = match ($align) {

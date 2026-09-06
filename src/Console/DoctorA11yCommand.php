@@ -49,6 +49,7 @@ class DoctorA11yCommand extends Command
 {
     protected $signature = 'wirekit:doctor:a11y
         {path? : Path to scan (defaults to resources/views in the host app)}
+        {--path=* : Directory to scan, repeatable and ADDITIVE to the default ground set. Same shape as wirekit:csp-audit.}
         {--fail-on= : Treat findings at this severity or higher as a non-zero exit. One of `error` (default), `warning`, or `none`. Use `warning` in CI to gate on every finding.}
         {--theme-contrast : Also audit the active theme tokens for WCAG 2.1 AA contrast against the canonical pairings. Reads resources/css/app.css.}';
 
@@ -56,13 +57,34 @@ class DoctorA11yCommand extends Command
 
     public function handle(): int
     {
-        $path = $this->argument('path') ?: base_path('resources/views');
+        // ⚠️ THE POSITIONAL REPLACES, `--path` ADDS, and the difference is the whole ask.
+        //
+        // A package component mounted BY NAME renders its Blade from `vendor/`, outside the
+        // application's own view paths — so a page that mounts four package panels is
+        // reported clean because the audit never opens their files. `wirekit:csp-audit`
+        // already answers that with a repeatable, additive `--path`; this command had only
+        // the positional, which replaces the ground set instead of extending it, so
+        // checking a package meant giving up checking the application in the same run.
+        /** @var array<int, string> $named */
+        $named = (array) $this->option('path');
 
-        if (! is_dir($path)) {
-            $this->error("Path not found or not a directory: {$path}");
+        $positional = $this->argument('path');
 
-            return self::FAILURE;
+        $roots = $named !== []
+            ? array_merge($positional !== null ? [$positional] : [base_path('resources/views')], $named)
+            : [$positional ?: base_path('resources/views')];
+
+        $roots = array_values(array_unique(array_filter($roots, 'is_string')));
+
+        foreach ($roots as $root) {
+            if (! is_dir($root)) {
+                $this->error("Path not found or not a directory: {$root}");
+
+                return self::FAILURE;
+            }
         }
+
+        $path = implode(', ', $roots);
 
         $failOn = (string) ($this->option('fail-on') ?: 'error');
         if (! in_array($failOn, ['error', 'warning', 'none'], true)) {
@@ -74,7 +96,14 @@ class DoctorA11yCommand extends Command
         $this->info("Scanning {$path} for a11y issues...");
         $this->line('');
 
-        $bladeFiles = $this->collectBladeFiles($path);
+        $bladeFiles = [];
+
+        foreach ($roots as $root) {
+            // `$named` decides whether the vendor filter applies — see `collectBladeFiles()`.
+            $bladeFiles = array_merge($bladeFiles, $this->collectBladeFiles($root, in_array($root, $named, true) || $positional !== null));
+        }
+
+        $bladeFiles = array_values(array_unique($bladeFiles));
 
         // Zero files is not a clean app, it is an unanswered question. Reporting
         // "no a11y issues found across 0 Blade files" reads as a pass and is what
@@ -132,7 +161,7 @@ class DoctorA11yCommand extends Command
             // instead of an early-return — the developer may have
             // passed `--theme-contrast` on a clean app and still
             // expects that stage to run.
-            return $this->maybeRunThemeContrast($bladeExit, $failOn);
+            return $this->maybeRunThemeContrast($bladeExit, $failOn, $bladeFiles);
         }
 
         if ($errors !== []) {
@@ -159,7 +188,7 @@ class DoctorA11yCommand extends Command
             'none' => self::SUCCESS,
         };
 
-        return $this->maybeRunThemeContrast($bladeExit, $failOn);
+        return $this->maybeRunThemeContrast($bladeExit, $failOn, $bladeFiles);
     }
 
     /**
@@ -182,14 +211,17 @@ class DoctorA11yCommand extends Command
             || (string) getenv('WIREKIT_DOCTOR_THEME_CONTRAST') === '1';
     }
 
-    private function maybeRunThemeContrast(int $bladeExit, string $failOn): int
+    /**
+     * @param  array<int, string>  $bladeFiles
+     */
+    private function maybeRunThemeContrast(int $bladeExit, string $failOn, array $bladeFiles = []): int
     {
         if (! $this->themeContrastRequested()) {
             return $bladeExit;
         }
 
         $this->line('');
-        $themeExit = $this->runThemeContrastAudit($failOn);
+        $themeExit = $this->runThemeContrastAudit($failOn, $bladeFiles);
 
         return ($bladeExit === self::FAILURE || $themeExit === self::FAILURE)
             ? self::FAILURE
@@ -204,7 +236,10 @@ class DoctorA11yCommand extends Command
      * computes WCAG 2.1 ratios for the canonical pairings, and prints
      * a PASS / WARN / FAIL report.
      */
-    private function runThemeContrastAudit(string $failOn): int
+    /**
+     * @param  array<int, string>  $bladeFiles
+     */
+    private function runThemeContrastAudit(string $failOn, array $bladeFiles = []): int
     {
         $this->line('<fg=cyan>Theme contrast audit</>');
         $this->line('');
@@ -264,6 +299,35 @@ class DoctorA11yCommand extends Command
             // bug: the tool was blind to the one token it mattered most for.)
             ['name' => 'border on bg', 'fg' => '--color-wk-border', 'bg' => '--color-wk-bg', 'threshold' => 'ui', 'advisory' => true],
         ];
+
+        // ⚠️ AND THE PAIRINGS THIS TREE ACTUALLY RENDERS, which the list above cannot know.
+        //
+        // The canonical list is a list. It covers the pairings this package's own components
+        // use, and a component that puts a different foreground on a different background —
+        // its own, or one from a package the application mounts — appears in none of its
+        // rows. The contrast is then unchecked, and unchecked SILENTLY: the run reports PASS
+        // over the pairings it knows and says nothing about the one on the page.
+        //
+        // Both nets have their hole in the same place. This one is not in the Blade rules
+        // either, because contrast is not one of them.
+        //
+        // Measured over this package's own views before building it: 23 distinct pairings
+        // are rendered and 19 of them are outside the canonical list — the most frequent
+        // being muted text on a muted background, fifteen times. So the gap had content
+        // rather than being a hypothetical.
+        $derived = $this->derivedPairings($bladeFiles, $pairings);
+        $pairings = array_merge($pairings, $derived);
+
+        // ⚠️ AND THE COUNT IS SAID OUT LOUD, because a derivation that finds nothing
+        // reports no contrast failure — which is indistinguishable from a tree that has
+        // none. Zero over a non-empty template set is a scan to repair, not a clean result,
+        // and without this line the two print identically.
+        if ($bladeFiles !== []) {
+            $this->line($derived === []
+                ? '  <fg=yellow>No rendered pairing was derived from '.count($bladeFiles).' template(s) — the scan found nothing to add, which is not the same as nothing being there.</>'
+                : sprintf('  <fg=gray>%d pairing(s) derived from the templates themselves, beyond the canonical list.</>', count($derived)));
+            $this->line('');
+        }
 
         $totals = ['pass' => 0, 'warn' => 0, 'fail' => 0, 'skip' => 0, 'exempt' => 0];
 
@@ -543,12 +607,90 @@ class DoctorA11yCommand extends Command
     }
 
     /**
+     * The foreground/background token pairings the scanned templates actually render.
+     *
+     * An element carrying both a `bg-[var(--color-wk-X)]` and a
+     * `text-[color:var(--color-wk-Y)]` is a pairing this tree puts on a page, whether or
+     * not anybody listed it. Derived rather than enumerated for the reason the canonical
+     * list exists at all: a list covers what its author knew about.
+     *
+     * Deliberately conservative — only a class attribute, only the two arbitrary-value
+     * shapes this package emits, and only tokens. A guess here becomes a contrast finding
+     * in somebody's application about a pairing that never renders, and this command's
+     * whole worth is that its output can be trusted.
+     *
+     * @param  array<int, string>  $bladeFiles
+     * @param  array<int, array<string, mixed>>  $known
+     * @return list<array<string, mixed>>
+     */
+    private function derivedPairings(array $bladeFiles, array $known): array
+    {
+        $seen = [];
+
+        foreach ($known as $pair) {
+            $seen[$pair['fg'].'|'.$pair['bg']] = true;
+        }
+
+        $found = [];
+
+        foreach ($bladeFiles as $file) {
+            $contents = file_get_contents($file);
+
+            if ($contents === false) {
+                continue;
+            }
+
+            // ⚠️ A LITERAL `class` ONLY — never `:class`, `x-bind:class` or `@class`.
+            //
+            // A bound class list is where the BRANCHES live, and two classes in different
+            // branches never render together. The first version of this scan matched them
+            // and produced SIX contrast failures over this package's own views, every one
+            // of them a pairing that cannot occur: `text on accent 1.10:1` came from an
+            // event-calendar ternary whose true branch sets the accent background with
+            // inverse text and whose false branch sets ordinary text on nothing.
+            //
+            // Six invented findings is not a rough edge. It is the failure mode this whole
+            // command is written against, and it would have shipped as a FAIL.
+            preg_match_all('/(?<![:\w-])class="([^"]{0,2000})"/', $contents, $chunks);
+
+            foreach ($chunks[1] as $chunk) {
+                preg_match_all('/\bbg-\[var\((--color-wk-[a-z0-9-]+)\)\]/', $chunk, $bgs);
+                preg_match_all('/text-\[color:var\((--color-wk-[a-z0-9-]+)\)\]/', $chunk, $fgs);
+
+                foreach (array_unique($bgs[1]) as $bg) {
+                    foreach (array_unique($fgs[1]) as $fg) {
+                        $key = $fg.'|'.$bg;
+
+                        if (isset($seen[$key])) {
+                            continue;
+                        }
+
+                        $seen[$key] = true;
+                        $found[] = [
+                            'name' => sprintf(
+                                '%s on %s (rendered)',
+                                str_replace('--color-wk-', '', $fg),
+                                str_replace('--color-wk-', '', $bg),
+                            ),
+                            'fg' => $fg,
+                            'bg' => $bg,
+                            'threshold' => 'text',
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $found;
+    }
+
+    /**
      * Collect every .blade.php file under the given root, excluding
      * vendor / node_modules / storage / cache directories.
      *
      * @return list<string>
      */
-    private function collectBladeFiles(string $root): array
+    private function collectBladeFiles(string $root, bool $named = false): array
     {
         $files = [];
         $iterator = new \RecursiveIteratorIterator(
@@ -560,10 +702,23 @@ class DoctorA11yCommand extends Command
             if (! str_ends_with($path, '.blade.php')) {
                 continue;
             }
+            // ⚠️ THE FILTER IS FOR THE DEFAULT SWEEP, NOT FOR A ROOT SOMEBODY NAMED.
+            // Naming a directory is the statement that its contents are in scope, and
+            // refusing to read it then reports "found no Blade templates" over a tree full
+            // of them.
+            //
+            // It was worse than a refusal, because it depended on how the path was SPELLED.
+            // The test is `/vendor/` with both separators, so a RELATIVE
+            // `vendor/foo/resources/views` slipped through while the same directory written
+            // absolutely did not. Measured on one tree: `4 Blade files, clean` one way and
+            // `Found no Blade templates` with a non-zero exit the other — the same
+            // question, two answers, and the failing one is the spelling a script produces.
             if (
-                str_contains($path, '/vendor/') ||
-                str_contains($path, '/node_modules/') ||
-                str_contains($path, '/storage/framework/')
+                ! $named && (
+                    str_contains($path, '/vendor/') ||
+                    str_contains($path, '/node_modules/') ||
+                    str_contains($path, '/storage/framework/')
+                )
             ) {
                 continue;
             }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Drift;
 
 use FilesystemIterator;
+use Pushery\WireKit\Support\SourceComments;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
@@ -370,44 +371,16 @@ final class ClassInventory
     }
 
     /**
-     * Strip block- and line-comments before scanning a source file — for class
-     * candidates as well as token references.
-     * Without this, an example like `var(--color-wk-X)` inside a docblock
-     * surfaces as a phantom reference and produces a false-positive
-     * Tier-1 violation. Conservative — handles `/* … *\/`, `//…`, `<!-- … -->`,
-     * and Blade's `{{-- … --}}` shapes; CSS only uses block comments, the
-     * line-comment regex is a no-op there.
+     * Strip comments before scanning a source file — for class candidates as
+     * well as token references.
+     *
+     * The rules moved to `Support\\SourceComments` when a second caller needed
+     * exactly them; the reasoning for each one lives there. This stays as the
+     * name the inventory's own call sites already use.
      */
     private function stripComments(string $contents): string
     {
-        /*
-         * Newlines survive every strip below.
-         *
-         * The inventory reports each candidate as `file:line`, and a multi-line
-         * comment removed outright shifts every line after it — so the ONE piece of
-         * information a reader uses to go and look would point at the wrong place, in
-         * exactly the files that carry the most prose. Replacing a comment with its own
-         * newlines costs nothing and keeps the report navigable.
-         */
-        $keepLines = fn (array $m): string => str_repeat("\n", substr_count($m[0], "\n"));
-
-        $stripped = preg_replace_callback('!/\*.*?\*/!s', $keepLines, $contents) ?? $contents;
-        /*
-         * Line-comment stripper: must NOT match `//` inside URL schemes
-         * (`https://`, `http://`, protocol-relative `//cdn.example.com`).
-         * The negative lookbehind for `:` excludes `https://`-style URLs;
-         * the lookbehind for `/` excludes the second `/` of an already-
-         * consumed `//`. Without these guards a `class="… https://x.io …"`
-         * attribute on a Blade line gets truncated at the colon, losing
-         * every Tailwind class to the right of the URL — the silent bug
-         * class that drove sample/resources/views/welcome.blade.php's
-         * line-115 anchor (40+ classes) to surface as reverse-dead.
-         */
-        $stripped = preg_replace('~(?<![:/])//[^\n]*~', '', $stripped) ?? $stripped;
-        $stripped = preg_replace_callback('/<!--.*?-->/s', $keepLines, $stripped) ?? $stripped;
-        $stripped = preg_replace_callback('/\{\{--.*?--\}\}/s', $keepLines, $stripped) ?? $stripped;
-
-        return $stripped;
+        return SourceComments::strip($contents);
     }
 
     /**

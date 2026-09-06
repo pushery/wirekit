@@ -19,6 +19,22 @@
     // + the rel tabnabbing auto-inject). Null = today's untargeted behavior
     // (byte-identical); scoping is strictly opt-in.
     'loadingTarget' => null,
+    // Whether the busy state DISABLES the control, or merely announces itself.
+    //
+    // `disabled` is what this component has always used, and it costs the focus: the
+    // browser blurs a control the moment it becomes disabled, so the element the reader
+    // just activated stops being focused for the whole in-flight window and focus falls to
+    // `<body>`. That is WCAG 2.4.3, on every request, and it is why an adopting project
+    // set `aria-busy` through the attribute bag by hand rather than use `loading` at all.
+    //
+    // `false` swaps the attribute for `aria-busy`, which announces the same wait while the
+    // element stays focusable and in the tab order. Livewire's `.attr` sets the attribute
+    // to `true` — measured in its own `toggleBooleanStateDirective`, not assumed — so this
+    // yields a valid `aria-busy="true"` rather than the attribute's own name.
+    //
+    // The default stays `true`, and the trade is the developer's to make: a control that
+    // stays enabled while its action is in flight can be pressed twice.
+    'disableOnLoading' => true,
     'scope' => null,
 ])
 
@@ -31,6 +47,20 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false);
     $loading = BooleanProp::from($loading, false);
+    $disableOnLoading = BooleanProp::from($disableOnLoading, true);
+
+    // ⚠️ `loadingTarget` IMPLIES `loading`, because there is no other reason to set it.
+    //
+    // Both branches below hang on `$loading`; `loadingTarget` only SCOPES a spinner that
+    // `loading` switches on. So `loading-target="submit"` without `loading` rendered a
+    // button byte-identical to one without the attribute — no spinner, no disable, nothing
+    // — while reading at the call site exactly like a working busy state.
+    //
+    // Nothing goes red over it: no error, no warning, no log. Reported from an adopting
+    // project where it sat on a re-consent screen, the one page a person cannot leave
+    // without agreeing, and a slow connection got no feedback at all — neither visual nor
+    // assistive — until the answer came back.
+    $loading = $loading || $loadingTarget !== null;
     $forceLoading = BooleanProp::from($forceLoading, false);
 
     // warn when developers pass an
@@ -207,7 +237,7 @@
          $linkDisabledClasses above, so the two disabled states look identical and
          `pointer-events-none` is what actually stops the click. --}}
     @if($loading && ! $declarativeLoading)
-        @if($tag === 'button') wire:loading.attr="disabled" @else wire:loading.class="opacity-[var(--opacity-wk-disabled)] pointer-events-none" @endif
+        @if($tag === 'button') wire:loading.attr="{{ $disableOnLoading ? 'disabled' : 'aria-busy' }}" @else wire:loading.class="opacity-[var(--opacity-wk-disabled)] pointer-events-none" @endif
         @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif
     @endif
 >

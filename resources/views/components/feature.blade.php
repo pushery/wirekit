@@ -10,6 +10,13 @@
     // Optional reveal animation when the feature card scrolls into view.
     // Null = no animation (default, v1.5.0-identical).
     'animateIn' => null,
+    // Heading level for the title (1-6). Defaults to 3 — a card in a grid of features — so nothing
+    // moves for a caller who never sets it. Set it to match the surrounding document
+    // outline: a component cannot know where in the page it sits, and a guessed level
+    // is worse than a chosen one. A skipped level is what `heading-order` reports, and
+    // that rule lives in axe's best-practice tag rather than the WCAG tags most suites
+    // run — so it is invisible to an axe sweep and visible in Lighthouse.
+    'level' => 3,
     'scope' => null,
 ])
 
@@ -81,6 +88,15 @@
     [$chipSizeClasses, $iconSizeProp] = $sizeMap[$validSize];
 
     $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty();
+
+    // Heading level (1-6). An invalid value signals in debug (validateProp throws with a
+    // did-you-mean) and falls back to the default in production — never to h1, which is
+    // what validateProp's own first-allowed fallback would produce and which would break
+    // the outline worse than the default does.
+    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
+    if ($levelValue !== (int) $level) {
+        WireKit::validateProp('feature', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    }
 @endphp
 
 <div {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
@@ -94,9 +110,9 @@
     @endif
 
     @if($title)
-        <h3 class="text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        <h{{ $levelValue }} class="text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $title }}
-        </h3>
+        </h{{ $levelValue }}>
     @endif
 
     @if($slot->isNotEmpty())
