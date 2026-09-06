@@ -207,7 +207,7 @@
      getter and a method, and Alpine's CSP parser does not accept that as an
      expression — under a strict policy the element got an EMPTY scope, so the
      show/hide button and the whole meter were dead with no error to say why. --}}
-<div class="space-y-1.5" x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
+<div class="space-y-1.5 min-w-0" x-data="wirekitPasswordInput({ strengthMeter: {{ $strengthMeter ? 'true' : 'false' }}@if($strengthLabels !== null), strengthLabels: {{ $strengthLabels }}@endif })">
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value, because a
          nested Alpine component reads and writes its parent's properties

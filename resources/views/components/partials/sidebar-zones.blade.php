@@ -127,19 +127,16 @@
             // shell carry it, and it is what lets a page put their two rules on one line
             // without either column knowing the other exists.
             'wk-shell-foot',
-            // Containing block for the control below, which rides ON this band rather than
-            // taking a row of its own.
-            'relative' => $footHostsToggle,
-            // Trailing room for the control, on the row it stands beside.
+            // No containing block and no trailing-room inset here any more. Both existed
+            // to serve an ABSOLUTELY positioned control: one anchored it, the other
+            // reserved on the second-to-last child the width it took without occupying.
+            // The control is a flex item of this band now, so the row beside it shortens
+            // on its own — reserving the room a second time indented the account name by
+            // the control's width twice over.
             //
-            // `nth-last-child(2)`, not `last-child`: the control is out of flow but still
-            // the last CHILD, so `last-child` pads the button itself — measured, it grew
-            // from 28px to 60px and pushed itself off its own anchor.
-            //
-            // Withdrawn when the column is a rail: there the control drops back onto its
-            // own line under the avatar, and the room is not owed.
-            '[&>*:nth-last-child(2)]:pe-[2.25rem]' => $footHostsToggle,
-            'group-data-[collapsed]/wk-sidebar:[&>*:nth-last-child(2)]:pe-0' => $footHostsToggle,
+            // Spelled in prose deliberately: Tailwind scans this file as TEXT, comments
+            // included, so a utility named here compiles into the stylesheet with nothing
+            // emitting it and the reverse drift diff goes red over a sentence.
             'px-[var(--padding-wk-x-sm)]' => $zoneInset ?? true,
         ])>
             {{ $footer }}

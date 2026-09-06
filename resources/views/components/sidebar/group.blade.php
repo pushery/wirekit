@@ -181,14 +181,14 @@
         @isset($action)
             <div class="flex items-center justify-between gap-[var(--padding-wk-x-xs)]">
                 @if($label)
-                    <div class="{{ $labelClasses }} min-w-0 break-words group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $label }}</div>
+                    <div class="{{ $labelClasses }} min-w-0 break-words wk-rail-hide">{{ $label }}</div>
                 @endif
                 <div class="shrink-0 group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden">{{ $action }}</div>
             </div>
         @elseif($label)
             {{-- Visible label; also the accessible name via aria-label above.
                  We render it visually because sighted users benefit from the grouping too. --}}
-            <div class="{{ $labelClasses }} group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $label }}</div>
+            <div class="{{ $labelClasses }} wk-rail-hide">{{ $label }}</div>
         @endisset
         {{ $slot }}
     </div>

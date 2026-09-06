@@ -99,31 +99,67 @@
         : '';
 
     $containerClasses = WireKit::resolveClasses('navbar', 'container', implode(' ', array_filter([
-        'flex items-center justify-between',
+        'flex flex-wrap items-center justify-between',
         'px-[var(--padding-wk-x-lg)]',
-        'h-16',
-        $maxClass,
-    ])), $scope);
-
-    $mobileMenuClasses = WireKit::resolveClasses('navbar', 'mobile-menu', implode(' ', array_filter([
-        'border-t border-[var(--color-wk-border)]',
-        'px-[var(--padding-wk-x-lg)]',
-        'py-[var(--padding-wk-y-md)]',
-        'space-y-1',
+        // `min-h` below the breakpoint, a fixed height above it. The navigation list is one
+        // node now and becomes a full-width second line when the disclosure opens, so the row
+        // has to be able to grow — while a bar with a closed disclosure is the same 64px it
+        // has always been.
+        'min-h-16 md:h-16',
         $maxClass,
     ])), $scope);
 
     // When $forceMobile is on the desktop row is always hidden and the
     // hamburger is always shown; otherwise we use the `md:` breakpoint
     // classes so the layout is responsive.
-    $desktopRowClasses = $forceMobile
-        ? 'hidden'
-        : 'hidden md:flex md:items-center md:gap-1 flex-1 ml-[var(--padding-wk-x-lg)]';
-    $desktopActionsClasses = $forceMobile
-        ? 'hidden'
-        : 'hidden md:flex md:items-center md:gap-[var(--gap-wk-sm)]';
+    // ONE navigation list, laid out two ways — a horizontal row beside the brand above the
+    // breakpoint, a full-width stack under it below.
+    //
+    // It used to be two: a row in the bar and a second copy in the disclosure. That is the
+    // same duplication the actions slot had, with the same consequence — a slot is rendered
+    // ONCE into a string and echoed twice, so every id inside it exists twice. Harmless for
+    // plain links, which carry none; not harmless for a dropdown in the list, whose panel id,
+    // `aria-controls` and Alpine scope all appeared twice. Measured at 390px: three duplicate
+    // panel ids on one preview, and the visible trigger opening a panel anchored to the
+    // hidden copy.
+    //
+    // The reported symptom was in the actions slot. This is the same defect one slot over,
+    // found by generalizing the guard rather than by a second report.
+    $navListClasses = $forceMobile
+        ? implode(' ', [
+            'w-full order-last flex-col items-stretch gap-1',
+            'border-t border-[var(--color-wk-border)]',
+            'mt-[var(--padding-wk-y-md)] pt-[var(--padding-wk-y-md)] pb-[var(--padding-wk-y-md)]',
+        ])
+        : implode(' ', [
+            'w-full order-last flex-col items-stretch gap-1',
+            'border-t border-[var(--color-wk-border)]',
+            'mt-[var(--padding-wk-y-md)] pt-[var(--padding-wk-y-md)] pb-[var(--padding-wk-y-md)]',
+            'md:w-auto md:order-none md:flex-row md:items-center md:flex-1 md:ml-[var(--padding-wk-x-lg)]',
+            'md:border-t-0 md:mt-0 md:pt-0 md:pb-0',
+        ]);
+    // ONE actions cluster, in the bar, at every width — and the "one" is the point.
+    //
+    // The bar used to hide this cluster below `md` and the disclosure below re-emitted the
+    // same slot, which looks like a responsive move and is a duplication: a slot is rendered
+    // ONCE into a string and echoed twice, so every id inside it exists twice. Measured at
+    // 390px on the stacked shell: `wk-dropdown-panel-1` appeared twice, and clicking the
+    // visible account trigger opened its panel at the viewport origin — Floating UI had
+    // anchored it to the hidden copy, whose box is 0x0 at 0,0. Reported as the account menu
+    // opening somewhere other than its button.
+    //
+    // The disclosure also stacked them in a column, so a bell icon became a 334px-wide row.
+    // Reported in the same breath: the icons want to stand beside each other.
+    //
+    // Both are gone with one render. An action cluster is icon-sized by convention — that is
+    // what an actions slot in a bar is for — and beside the hamburger it fits the narrowest
+    // supported width with room to spare.
+    $actionsClasses = 'flex items-center gap-[var(--gap-wk-sm)]';
     $hamburgerClasses = $forceMobile ? '' : 'md:hidden';
-    $mobileMenuWrapperHide = $forceMobile ? '' : 'md:hidden';
+
+    // The `mobile-menu` personalization key survives the merge of the two containers and now
+    // resolves the one list. Same override point, same subject — what the disclosure reveals.
+    $navListClasses = WireKit::resolveClasses('navbar', 'mobile-menu', $navListClasses, $scope);
 
     // The disclosure's id, and the string the hamburger's `aria-controls` points at.
     // Both were the literal `wk-navbar-mobile`, which is correct for exactly one navbar per
@@ -168,14 +204,32 @@
             </div>
         @endisset
 
-        {{-- Desktop nav items (hidden on mobile, or always hidden when forceMobile) --}}
-        <div class="{{ $desktopRowClasses }}">
+        {{-- The navigation list — one render, revealed by the disclosure below the breakpoint
+             and always shown above it.
+
+             `x-show` writes an inline `display: none`, which no class can beat, so the
+             always-shown half is a stylesheet rule keyed on `data-wk-navbar-items` (see
+             `dist/wirekit.css`). The marker is absent under `force-mobile`, which is what
+             keeps that demo mobile at every width. --}}
+        <div
+            id="{{ $mobileId }}"
+            @if(! $forceMobile) data-wk-navbar-items @endif
+            x-show="mobileOpen"
+            x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="opacity-0 -translate-y-1"
+            x-transition:enter-end="opacity-100 translate-y-0"
+            x-transition:leave="transition ease-in duration-150"
+            x-transition:leave-start="opacity-100 translate-y-0"
+            x-transition:leave-end="opacity-0 -translate-y-1"
+            class="flex {{ $navListClasses }}"
+            x-cloak
+        >
             {{ $slot }}
         </div>
 
-        {{-- Actions slot (always visible on desktop) --}}
+        {{-- Actions slot — the only render of it, at every width --}}
         @isset($actions)
-            <div class="{{ $desktopActionsClasses }}">
+            <div class="{{ $actionsClasses }}">
                 {{ $actions }}
             </div>
         @endisset
@@ -200,25 +254,7 @@
         </button>
     </div>
 
-    {{-- Mobile menu (disclosure) --}}
-    <div
-        id="{{ $mobileId }}"
-        x-show="mobileOpen"
-        x-transition:enter="transition ease-out duration-200"
-        x-transition:enter-start="opacity-0 -translate-y-1"
-        x-transition:enter-end="opacity-100 translate-y-0"
-        x-transition:leave="transition ease-in duration-150"
-        x-transition:leave-start="opacity-100 translate-y-0"
-        x-transition:leave-end="opacity-0 -translate-y-1"
-        class="{{ $mobileMenuWrapperHide }} {{ $mobileMenuClasses }}"
-        x-cloak
-    >
-        {{ $slot }}
-
-        @isset($actions)
-            <div class="pt-[var(--padding-wk-y-md)] border-t border-[var(--color-wk-border)] mt-[var(--padding-wk-y-md)] flex flex-col gap-[var(--gap-wk-sm)]">
-                {{ $actions }}
-            </div>
-        @endisset
-    </div>
+    {{-- No second menu block. Both slots are rendered once, in the bar above: the list is
+         the disclosure's own target and the actions stand beside the brand at every width.
+         This block held a second copy of each, which duplicated every id in them. --}}
 </nav>

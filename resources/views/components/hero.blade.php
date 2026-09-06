@@ -32,6 +32,13 @@
     // `size="md"`, the prop is a no-op (mobile already runs at the
     // tightest tier).
     'tightOnMobile' => false,
+    // Heading level for the title (1-6). Defaults to 1 — the page's main heading — the level a hero usually carries — so nothing
+    // moves for a caller who never sets it. Set it to match the surrounding document
+    // outline: a component cannot know where in the page it sits, and a guessed level
+    // is worse than a chosen one. A skipped level is what `heading-order` reports, and
+    // that rule lives in axe's best-practice tag rather than the WCAG tags most suites
+    // run — so it is invisible to an axe sweep and visible in Lighthouse.
+    'level' => 1,
     'scope' => null,
 ])
 
@@ -195,6 +202,15 @@
         default => 'bg-gradient-to-br from-transparent to-black/20',
     };
     $gradientClasses = $gradient ? $gradientOverlayClass : '';
+
+    // Heading level (1-6). An invalid value signals in debug (validateProp throws with a
+    // did-you-mean) and falls back to the default in production — never to h1, which is
+    // what validateProp's own first-allowed fallback would produce and which would break
+    // the outline worse than the default does.
+    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 1;
+    if ($levelValue !== (int) $level) {
+        WireKit::validateProp('hero', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    }
 @endphp
 
 <section data-variant="{{ $variant }}" {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
@@ -229,9 +245,9 @@
                 @endisset
 
                 @isset($title)
-                    <h1 class="text-[length:var(--text-wk-3xl,1.875rem)] sm:text-[length:var(--font-wk-heading-2xl,3.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] tracking-tight mb-[var(--space-wk-md,1rem)]">
+                    <h{{ $levelValue }} class="text-[length:var(--text-wk-3xl,1.875rem)] sm:text-[length:var(--font-wk-heading-2xl,3.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] tracking-tight mb-[var(--space-wk-md,1rem)]">
                         {{ $title }}
-                    </h1>
+                    </h{{ $levelValue }}>
                 @endisset
 
                 @isset($lede)

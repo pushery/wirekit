@@ -56,6 +56,8 @@ export default function wirekitCountdown(config = {}) {
         _phrases: config.unitPhrases || {},
         _locale: config.locale || 'en',
         _timer: null,
+        // The one-shot that fires AT the deadline rather than at the next display tick.
+        _expiryTimer: null,
 
         // Completion state. `done` is a plain reactive prop so x-modelable can
         // bind it (the read-only `expired` getter cannot be bound); `_fired`
@@ -67,7 +69,7 @@ export default function wirekitCountdown(config = {}) {
 
         init() {
             this.now = Date.now();
-            this._timer = setInterval(() => { this.now = Date.now(); }, 1000);
+            this._timer = setInterval(() => { this.now = Date.now(); }, this._tickMs());
 
             const sync = () => {
                 if (! this.expired) {
@@ -86,6 +88,16 @@ export default function wirekitCountdown(config = {}) {
             sync();
             this.$watch('now', () => sync());
 
+            // ⚠️ AND THE DEADLINE GETS ITS OWN TIMER, which is what lets the display tick be
+            // coarse without making the EVENT coarse. `sync()` hangs on the interval, so a
+            // 30-second display tick would delay `wirekit-countdown-expired` by up to thirty
+            // seconds — a component that reads "0 days" while nothing has fired yet.
+            //
+            // This is better than the state it replaces rather than a compensation for it:
+            // the event used to arrive up to a full second late even at 1 Hz, and now it
+            // arrives at the deadline.
+            this._armExpiry(sync);
+
             // Re-assert after any write that clears `done` while the deadline is
             // past — that write is the entangle copy, not the application.
             this.$watch('done', (value) => {
@@ -100,6 +112,71 @@ export default function wirekitCountdown(config = {}) {
                 clearInterval(this._timer);
                 this._timer = null;
             }
+
+            if (this._expiryTimer) {
+                clearTimeout(this._expiryTimer);
+                this._expiryTimer = null;
+            }
+        },
+
+        /**
+         * How often the DISPLAY has to be refreshed, from the smallest unit it shows.
+         *
+         * The interval used to be an unconditional 1 Hz, and neither `showSeconds` nor the
+         * unit list appeared in it — they only decided what was rendered out of `now`. So a
+         * deadline shown in DAYS still set a reactive property every second on every
+         * authenticated page, re-evaluating every expression derived from it, for a value
+         * that changes once a day. Reported from an adopting project as the only continuous
+         * client work in the whole package, which is why it stood out at all.
+         *
+         * One rung under Nyquist on the display, so a minute still turns over visibly.
+         */
+        _tickMs() {
+            const smallest = this.activeUnits[this.activeUnits.length - 1];
+
+            if (smallest === 'seconds' || ! smallest) {
+                return 1000;
+            }
+
+            return smallest === 'minutes' ? 30000 : 60000;
+        },
+
+        /**
+         * Fire `sync()` AT the deadline, exactly once.
+         *
+         * ⚠️ `setTimeout` TAKES A 32-BIT SIGNED DELAY, and anything past 2^31-1 ms — about
+         * 24.8 days — OVERFLOWS AND FIRES IMMEDIATELY. The report that prompted this work
+         * describes a legal deadline measured in WEEKS, so the naive form would have
+         * announced expiry the moment the page loaded. That is not a hypothetical: it is the
+         * first case this function has to survive, and it is why the arm re-arms instead of
+         * scheduling once.
+         */
+        _armExpiry(sync) {
+            const MAX_DELAY = 2147483647;
+
+            if (this._expiryTimer) {
+                clearTimeout(this._expiryTimer);
+                this._expiryTimer = null;
+            }
+
+            const remaining = this.target - Date.now();
+
+            if (remaining <= 0) {
+                return;
+            }
+
+            const delay = Math.min(remaining, MAX_DELAY);
+
+            this._expiryTimer = setTimeout(() => {
+                this._expiryTimer = null;
+                this.now = Date.now();
+                sync();
+
+                // Still short of the deadline: this was a hop, not the arrival.
+                if (! this.expired) {
+                    this._armExpiry(sync);
+                }
+            }, delay);
         },
 
         get remainingMs() {

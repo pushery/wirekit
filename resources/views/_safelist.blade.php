@@ -141,6 +141,8 @@
     perception and pointing the way a reader parses as fading out. Mixing toward
     the TEXT color is right in both modes by construction.
       hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
+      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]
+      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]
 
     (text color classes shared with outline() above)
 

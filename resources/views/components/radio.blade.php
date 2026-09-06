@@ -145,7 +145,7 @@
     }
 @endphp
 
-<div class="space-y-1.5">
+<div class="space-y-1.5 min-w-0">
     <label for="{{ $id }}" class="{{ $labelClasses }}">
         {{-- Native radio input — visually hidden but accessible + Livewire wire:model compatible --}}
         <input

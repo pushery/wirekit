@@ -156,7 +156,7 @@
 
              It costs nothing outside a sidebar — the group selector only matches inside
              one, so a brand in a header or a footer is untouched. --}}
-        <span class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $name }}</span>
+        <span class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] wk-rail-hide">{{ $name }}</span>
     @endif
     @if(!$logo && !$name)
         {{ $slot }}

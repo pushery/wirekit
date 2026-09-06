@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\View;
+use Pushery\WireKit\Support\AlpineRegistrations;
 use Pushery\WireKit\Support\BladeParser;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
@@ -67,6 +68,7 @@ class CspAuditCommand extends Command
     protected $signature = 'wirekit:csp-audit
         {--path=* : Directory to scan. Repeatable. Defaults to the application view paths.}
         {--vendor : Also scan the view directories packages registered with loadViewsFrom.}
+        {--registrations=* : JavaScript file or directory to read Alpine.data registrations from. Repeatable. Defaults to the built and published bundles.}
         {--json : Emit machine-readable JSON instead of a report.}';
 
     protected $description = 'Check every Alpine expression in your Blade views against Alpine\'s CSP grammar (needs node)';
@@ -187,6 +189,10 @@ class CspAuditCommand extends Command
             return self::FAILURE;
         }
 
+        // What is actually registered, read before any verdict — because for `x-data` the
+        // grammar answers the wrong question, and the right one needs this set.
+        $registrationScan = $this->registrations();
+
         $verdicts = $this->parse(array_column($found, 'expression'));
 
         if ($verdicts === null) {
@@ -197,6 +203,7 @@ class CspAuditCommand extends Command
         $unchecked = [];
         $warnings = [];
         $unresolved = [];
+        $unregistered = [];
 
         foreach ($found as $i => $entry) {
             // A call whose callee is a LITERAL parses and is dead, and that combination is
@@ -230,6 +237,38 @@ class CspAuditCommand extends Command
                 )];
 
                 continue;
+            }
+
+            // ⚠️ FOR `x-data` THE GRAMMAR ANSWERS THE WRONG QUESTION, and it answers it
+            // affirmatively in both directions that matter. `x-data="{ open: false }"`
+            // parses and is exactly the form a CSP build has no factory for;
+            // `x-data="wirekitAlertDialog({…})"` parses and leaves the element WITHOUT A
+            // SCOPE when nothing registered that name.
+            //
+            // The second is the dangerous one because it fails upward: no scope means
+            // `x-show` cannot evaluate, so it never sets `display: none`, while Alpine's
+            // init removes `x-cloak` regardless. The panel is visible and every control in
+            // it is dead — which reads as a layout bug, not as a missing script.
+            //
+            // Measured in an adopting application: this command reported PASS over a tree
+            // with 81 unregistered kit components and six inline `x-data` beside them.
+            //
+            // ⚠️ AND NOT OVER A SUBSTITUTION. An `x-data="@js(…)"` reaches this loop as a
+            // placeholder, and a placeholder is a bare identifier — so the very first run of
+            // this check reported six of this command's own fixtures as unregistered
+            // factories. That is the same trap `$unchecked` exists for one branch down: a
+            // verdict about Blade dressed as a verdict about the template.
+            $judgeable = $entry['unresolved'] === null
+                && ! BladeParser::hasServerSideConstruct($entry['expression']);
+
+            if ($judgeable && ($entry['attribute'] ?? null) === 'x-data' && $registrationScan['names'] !== []) {
+                $needs = AlpineRegistrations::requiredName($entry['expression']);
+
+                if ($needs !== null && ! in_array($needs, $registrationScan['names'], true)) {
+                    $unregistered[] = $entry + ['name' => $needs];
+
+                    continue;
+                }
             }
 
             if (($verdicts[$i]['ok'] ?? false) === true) {
@@ -286,12 +325,81 @@ class CspAuditCommand extends Command
                 'unresolved_expressions' => $unresolved,
                 'encoder_in_script' => count($inScript),
                 'encoder_in_script_hits' => $inScript,
+                // Both halves, because a reader of this payload has the same blind spot a
+                // reader of the report does: zero unregistered names over zero registrations
+                // scanned is not a clean result, it is an unasked question.
+                'registrations_seen' => count($registrationScan['names']),
+                'registration_files' => count($registrationScan['files']),
+                'unregistered' => count($unregistered),
+                'unregistered_components' => $unregistered,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG));
 
-            return $offenders === [] && $inScript === [] ? self::SUCCESS : self::FAILURE;
+            return $offenders === [] && $inScript === [] && $unregistered === [] ? self::SUCCESS : self::FAILURE;
         }
 
-        return $this->report($found, $offenders, $unchecked, $warnings, $unresolved, $inScript, $paths, $unscanned);
+        return $this->report($found, $offenders, $unchecked, $warnings, $unresolved, $inScript, $paths, $unscanned, $unregistered, $registrationScan);
+    }
+
+    /**
+     * The Alpine registrations this run can see, and where it looked.
+     *
+     * ⚠️ AN EMPTY SCAN IS NOT A FINDING, and the whole `x-data` check is gated on that.
+     * A pattern that reads a bundle full of registrations as empty produces the same
+     * output as an application that registered nothing — and the second reading turns
+     * every `x-data` in the tree into an offender. So zero registrations disables the
+     * check and says so, rather than reporting a catalog of defects that do not exist.
+     *
+     * The reporting side names the surface for the same reason the view surface is named:
+     * "nothing unregistered" and "nothing looked at" have to be different sentences.
+     *
+     * @return array{names: list<string>, files: list<string>}
+     */
+    private function registrations(): array
+    {
+        /** @var array<int, string> $given */
+        $given = (array) $this->option('registrations');
+
+        $candidates = $given !== [] ? $given : [
+            // Where a Laravel application's own bundle lands, in the two shapes Vite and a
+            // hand-rolled build produce.
+            base_path('public/build'),
+            base_path('public/js'),
+            // Published package assets — this package's own included, which is what puts
+            // the kit's factories in reach without the developer naming them.
+            base_path('public/vendor'),
+            // The sources, for a tree that has not been built yet. A registration reads the
+            // same there; only the receiver's name differs, and this scan does not use it.
+            base_path('resources/js'),
+            // And the package's own shipped bundles, so an application that loads them from
+            // the route fallback rather than a published copy is still measured.
+            dirname(__DIR__, 2).'/dist',
+        ];
+
+        $files = [];
+
+        foreach ($candidates as $candidate) {
+            if (is_file($candidate)) {
+                $files[] = $candidate;
+
+                continue;
+            }
+
+            if (! is_dir($candidate)) {
+                continue;
+            }
+
+            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($candidate));
+
+            foreach ($it as $entry) {
+                if ($entry instanceof \SplFileInfo && $entry->isFile() && $entry->getExtension() === 'js') {
+                    $files[] = $entry->getPathname();
+                }
+            }
+        }
+
+        $files = array_values(array_unique($files));
+
+        return ['names' => AlpineRegistrations::inFiles($files), 'files' => $files];
     }
 
     /**
@@ -969,8 +1077,10 @@ class CspAuditCommand extends Command
      * @param  array<int, array{file: string, line: int, encoder: string}>  $inScript
      * @param  array<int, string>  $paths
      * @param  array<string, array<int, string>>  $unscanned
+     * @param  array<int, array{file: string, line: int, attribute: string, expression: string, name: string}>  $unregistered
+     * @param  array{names: list<string>, files: list<string>}  $registrationScan
      */
-    private function report(array $found, array $offenders, array $unchecked, array $warnings = [], array $unresolved = [], array $inScript = [], array $paths = [], array $unscanned = []): int
+    private function report(array $found, array $offenders, array $unchecked, array $warnings = [], array $unresolved = [], array $inScript = [], array $paths = [], array $unscanned = [], array $unregistered = [], array $registrationScan = ['names' => [], 'files' => []]): int
     {
         // Named rather than implied. "Scanned" reads as "checked, and it works", and
         // the difference between what this measures and what a reader hears is the
@@ -1004,6 +1114,30 @@ class CspAuditCommand extends Command
         $this->line('`x-data` on a component that sets its own is discarded, and every identifier in it is');
         $this->line('then dead at runtime while resolving fine here. WireKit warns about that collision');
         $this->line('separately, in the application log, when app.debug is on.');
+
+        // The registration surface, and it sits AFTER the qualifier above rather than
+        // between it and its claim. `CspAuditStatesItsBoundaryTest` measures the distance
+        // between those two sentences in the source and fails when something drifts in —
+        // which this block did, by 521 characters, on its first placement.
+        //
+        // It belongs on the same footing as the view surface for the same reason: the
+        // `x-data` check is only as good as this set, and an empty one disables it silently.
+        if ($registrationScan['names'] === []) {
+            $this->line(sprintf(
+                'No Alpine.data registration was found in %d JavaScript file(s), so `x-data` is NOT '
+                .'checked against them.',
+                count($registrationScan['files']),
+            ));
+            $this->line('Reported rather than assumed: zero registrations and zero found files look the same');
+            $this->line('from here, and treating either as "nothing is registered" would make every `x-data`');
+            $this->line('in the tree an offender. Point --registrations=… at your built bundle.');
+        } else {
+            $this->line(sprintf(
+                'Registrations: %d name(s) across %d JavaScript file(s) — `x-data` is held against these.',
+                count($registrationScan['names']),
+                count($registrationScan['files']),
+            ));
+        }
 
         // Listed before the verdict, so the verdict is the last thing on screen and cannot be
         // read without this qualifying it.
@@ -1183,7 +1317,37 @@ class CspAuditCommand extends Command
             $this->line('an audit that fails your build over one gets deleted rather than read.');
         }
 
-        if ($offenders === [] && $inScript !== []) {
+        // ⚠️ REPORTED BEFORE THE VERDICT, because a scope that was never registered is not a
+        // grammar problem and would otherwise sit under a PASS.
+        //
+        // What it looks like on the page: the element gets no scope, `x-show` cannot
+        // evaluate and therefore never sets `display: none`, while Alpine's init removes
+        // `x-cloak` regardless. The panel is VISIBLE with every control in it dead — so the
+        // symptom points at the stylesheet and the cause is a missing script.
+        if ($unregistered !== []) {
+            $this->line('');
+            $this->error(sprintf(
+                '%d `x-data` expression(s) name a factory nothing registers:',
+                count($unregistered),
+            ));
+            $this->line('');
+
+            foreach (array_slice($unregistered, 0, 20) as $hit) {
+                $this->line(sprintf('  %s:%d', $hit['file'], $hit['line']));
+                $this->line(sprintf('    x-data="%s" — `%s` is not registered.', $hit['expression'], $hit['name']));
+            }
+
+            if (count($unregistered) > 20) {
+                $this->line(sprintf('  …and %d more.', count($unregistered) - 20));
+            }
+
+            $this->line('');
+            $this->line('Each of these renders VISIBLE and dead: no scope means `x-show` never evaluates,');
+            $this->line('so it never hides anything, and Alpine still removes `x-cloak`. Register the factory');
+            $this->line('with Alpine.data(), or load the bundle that does.');
+        }
+
+        if ($offenders === [] && ($inScript !== [] || $unregistered !== [])) {
             return self::FAILURE;
         }
 

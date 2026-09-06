@@ -14,7 +14,8 @@ namespace Pushery\WireKit\Mcp;
  *
  * Exposes read-only tools sourced from the shipped catalog:
  * `search_components`, `list_components`, `get_component`,
- * `get_component_examples`, `get_tokens`. No write tools and no network —
+ * `get_component_examples`, `get_component_accessibility`, `get_tokens`. No
+ * write tools and no network —
  * everything it serves ships in the Packagist tarball, so a developer-hosted
  * local server is always version-matched to their installed WireKit.
  *
@@ -127,6 +128,17 @@ final class McpServer
                 ],
             ],
             [
+                'name' => 'get_component_accessibility',
+                'description' => 'Get what one WireKit component has ALREADY wired for accessibility — the roles and ARIA attributes its markup emits, the keys its behavior handles, and the names it waits for the caller to supply. Ask for this before adding any role, aria-* attribute or key handler of your own: a role added on top of one the component already carries is two competing contracts on one element, and a name it waits for and never receives is an announced landmark that says nothing. Derived from the shipped sources, never from a list.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string', 'description' => 'The component name, e.g. "tabs" or "sidebar.item".'],
+                    ],
+                    'required' => ['name'],
+                ],
+            ],
+            [
                 'name' => 'get_tokens',
                 'description' => 'List every WireKit design token (the --*-wk-* CSS variables) as name → value pairs.',
                 'inputSchema' => ['type' => 'object', 'properties' => (object) []],
@@ -151,6 +163,7 @@ final class McpServer
             'list_components' => $this->toolResult($id, $this->catalog->components()),
             'get_component' => $this->getComponentResult($id, is_string($args['name'] ?? null) ? $args['name'] : ''),
             'get_component_examples' => $this->getComponentExamplesResult($id, is_string($args['name'] ?? null) ? $args['name'] : ''),
+            'get_component_accessibility' => $this->getComponentAccessibilityResult($id, is_string($args['name'] ?? null) ? $args['name'] : ''),
             'get_tokens' => $this->toolResult($id, $this->catalog->tokens()),
             default => $this->error($id, -32602, "Unknown tool: {$name}"),
         };
@@ -186,6 +199,23 @@ final class McpServer
         }
 
         return $this->toolResult($id, $examples);
+    }
+
+    /** @return array<string, mixed> */
+    private function getComponentAccessibilityResult(int|string|null $id, string $name): array
+    {
+        $contract = $this->catalog->accessibility($name);
+
+        // The same error shape the other two per-component tools use, on purpose: an agent
+        // that learned one should not have to learn a third.
+        if ($contract === null) {
+            return $this->ok($id, [
+                'content' => [['type' => 'text', 'text' => "Unknown component: {$name}"]],
+                'isError' => true,
+            ]);
+        }
+
+        return $this->toolResult($id, $contract);
     }
 
     /**

@@ -71,7 +71,11 @@ class VariantResolver
                 'bg-[var(--color-wk-bg-muted)]',
                 'text-[color:var(--color-wk-text)]',
                 'border-[var(--color-wk-bg-muted)]',
-                'hover:bg-[var(--color-wk-bg-subtle)]',
+                // The pairing `soft()`'s comment measures and rejects, fixed here rather than
+                // only described there: muted (L=0.972) hovering to subtle (L=0.985) moves 1.3
+                // points BRIGHTER, which reads as fading out. Mixing toward the text moves away
+                // from the base in both modes by construction.
+                'hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]',
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             'success' => implode(' ', [
@@ -139,7 +143,10 @@ class VariantResolver
             'bg-[var(--color-wk-bg)]',
             "text-[color:var({$textColor})]",
             "border-[var({$borderColor})]",
-            'hover:bg-[var(--color-wk-bg-subtle)]',
+            // Same construction as `soft()` and `ghost()`. An outline button sits on the
+            // page background, so subtle was a 1.5-point step on a white theme — present in
+            // the stylesheet and absent to the eye.
+            'hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg))]',
             'shadow-[var(--shadow-wk-sm)]',
         ]);
     }
@@ -215,11 +222,29 @@ class VariantResolver
             default => '--color-wk-text',
         };
 
+        // ⚠️ THE SAME DEFECT `soft()` DIAGNOSED, LEFT IN PLACE ONE FUNCTION LOWER.
+        //
+        // This was `hover:bg-[var(--color-wk-bg-subtle)]` — the exact form the comment
+        // in `soft()` above calls "at the threshold of perception". Reported from real
+        // use on 2026-09-05: a workspace switcher rendered as a ghost button "has no
+        // hover highlight, unlike the other menu items", and the measurement agrees —
+        // `--color-wk-bg-subtle` is L=0.985 against a page at L=1.0, a step of 1.5
+        // points, while the rail items beside it move by 3.
+        //
+        // Mixing toward the TEXT color is the construction `soft()` already settled on,
+        // and it is a better fit here than there: ghost has NO surface of its own, so
+        // it sits on whatever is behind it. A fixed shade can only be right for one
+        // background; an overlay derived from the text color moves away from every one
+        // of them, in both modes, without knowing what it is on.
+        //
+        // Mixed into `transparent` rather than into a background token for the same
+        // reason — a ghost button on a card, a bar or a page must not paint the page's
+        // background over the surface it is actually on.
         return implode(' ', [
             'bg-transparent',
             "text-[color:var({$textColor})]",
             'border-transparent',
-            'hover:bg-[var(--color-wk-bg-subtle)]',
+            'hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,transparent)]',
             'shadow-[var(--shadow-wk-none)]',
         ]);
     }

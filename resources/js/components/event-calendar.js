@@ -42,7 +42,7 @@ export default function wirekitEventCalendar(config = {}) {
         })) : [],
         view: config.view || 'month',
         weekStartsOn: Number.isInteger(config.weekStartsOn) ? config.weekStartsOn : 1,
-        focus: config.date ? new Date(config.date) : new Date(),
+        focusedDate: config.date ? new Date(config.date) : new Date(),
         now: new Date(),
         _clock: null,
 
@@ -101,9 +101,9 @@ export default function wirekitEventCalendar(config = {}) {
             // Node's ICU happens to produce something sane. Only a real browser
             // shows it, which is why the header formatting is asserted there.
             if (this.view === 'month') {
-                return this.focus.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+                return this.focusedDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
             }
-            const start = this.view === 'week' ? this._startOfWeek(this.focus) : this._startOfDay(this.focus);
+            const start = this.view === 'week' ? this._startOfWeek(this.focusedDate) : this._startOfDay(this.focusedDate);
             const span = this.view === 'week' ? 6 : 13; // week = 7 days, agenda = 14
             const end = this._addDays(start, span);
             const startStr = start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -167,26 +167,26 @@ export default function wirekitEventCalendar(config = {}) {
             }
         },
         today() {
-            this.focus = new Date();
+            this.focusedDate = new Date();
         },
         prev() {
-            this.focus = this.view === 'week'
-                ? this._addDays(this.focus, -7)
+            this.focusedDate = this.view === 'week'
+                ? this._addDays(this.focusedDate, -7)
                 : this.view === 'agenda'
-                    ? this._addDays(this.focus, -14)
-                    : new Date(this.focus.getFullYear(), this.focus.getMonth() - 1, 1);
+                    ? this._addDays(this.focusedDate, -14)
+                    : new Date(this.focusedDate.getFullYear(), this.focusedDate.getMonth() - 1, 1);
         },
         next() {
-            this.focus = this.view === 'week'
-                ? this._addDays(this.focus, 7)
+            this.focusedDate = this.view === 'week'
+                ? this._addDays(this.focusedDate, 7)
                 : this.view === 'agenda'
-                    ? this._addDays(this.focus, 14)
-                    : new Date(this.focus.getFullYear(), this.focus.getMonth() + 1, 1);
+                    ? this._addDays(this.focusedDate, 14)
+                    : new Date(this.focusedDate.getFullYear(), this.focusedDate.getMonth() + 1, 1);
         },
 
         // ── Month grid ───────────────────────────────────────────────────
         get monthWeeks() {
-            const first = new Date(this.focus.getFullYear(), this.focus.getMonth(), 1);
+            const first = new Date(this.focusedDate.getFullYear(), this.focusedDate.getMonth(), 1);
             const gridStart = this._startOfWeek(first);
             const weeks = [];
             let cursor = gridStart;
@@ -197,7 +197,7 @@ export default function wirekitEventCalendar(config = {}) {
                     days.push({
                         date: cursor,
                         label: cursor.getDate(),
-                        inMonth: cursor.getMonth() === this.focus.getMonth(),
+                        inMonth: cursor.getMonth() === this.focusedDate.getMonth(),
                         isToday: this._sameDay(cursor, this.now),
                         events: dayEvents,
                         visibleEvents: dayEvents.slice(0, 3),
@@ -208,7 +208,7 @@ export default function wirekitEventCalendar(config = {}) {
                 }
                 weeks.push(days);
                 // Stop after the week that completes the month (5 or 6 rows).
-                if (cursor.getMonth() !== this.focus.getMonth() && w >= 3) break;
+                if (cursor.getMonth() !== this.focusedDate.getMonth() && w >= 3) break;
             }
             return weeks;
         },
@@ -219,7 +219,7 @@ export default function wirekitEventCalendar(config = {}) {
 
         // ── Week time grid ───────────────────────────────────────────────
         get weekDays() {
-            const start = this._startOfWeek(this.focus);
+            const start = this._startOfWeek(this.focusedDate);
             return Array.from({ length: 7 }, (_, i) => {
                 const date = this._addDays(start, i);
                 return {
@@ -240,7 +240,7 @@ export default function wirekitEventCalendar(config = {}) {
         // True when ANY day in the focused week carries a marker — markers share the
         // all-day band, so the band must also open for a marker-only week.
         get weekHasMarkers() {
-            const start = this._startOfWeek(this.focus);
+            const start = this._startOfWeek(this.focusedDate);
             for (let i = 0; i < 7; i += 1) {
                 if (this._markersFor(this._addDays(start, i)).length > 0) return true;
             }
@@ -259,7 +259,7 @@ export default function wirekitEventCalendar(config = {}) {
         // band so a week with none doesn't render an empty row. Computed directly
         // (not via weekDays) to avoid re-running the per-day overlap layout.
         get weekHasAllDay() {
-            const start = this._startOfWeek(this.focus);
+            const start = this._startOfWeek(this.focusedDate);
             for (let i = 0; i < 7; i += 1) {
                 if (this._allDayFor(this._addDays(start, i)).length > 0) return true;
             }
@@ -323,7 +323,7 @@ export default function wirekitEventCalendar(config = {}) {
 
         // ── Agenda ───────────────────────────────────────────────────────
         get agendaDays() {
-            const start = this._startOfDay(this.focus);
+            const start = this._startOfDay(this.focusedDate);
             const end = this._addDays(start, 14);
             const byDay = new Map();
             const bucket = (date) => {
@@ -377,7 +377,7 @@ export default function wirekitEventCalendar(config = {}) {
         // hidden events become visible. A read-focused calendar needs no popover
         // infra for this; switching to the hour grid reveals every event.
         showMore(date) {
-            this.focus = new Date(date);
+            this.focusedDate = new Date(date);
             this.setView('week');
         },
 

@@ -40,6 +40,13 @@
     'description' => null,
     // 'in-stock' | 'low-stock' | 'out-of-stock'. Out of stock disables the CTA.
     'availability' => 'in-stock',
+    // Heading level for the title (1-6). Defaults to 3 — a card in a grid of products — so nothing
+    // moves for a caller who never sets it. Set it to match the surrounding document
+    // outline: a component cannot know where in the page it sits, and a guessed level
+    // is worse than a chosen one. A skipped level is what `heading-order` reports, and
+    // that rule lives in axe's best-practice tag rather than the WCAG tags most suites
+    // run — so it is invisible to an axe sweep and visible in Lighthouse.
+    'level' => 3,
     'scope' => null,
 ])
 
@@ -78,6 +85,15 @@
         'bg-[var(--color-wk-bg-elevated)]',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
+
+    // Heading level (1-6). An invalid value signals in debug (validateProp throws with a
+    // did-you-mean) and falls back to the default in production — never to h1, which is
+    // what validateProp's own first-allowed fallback would produce and which would break
+    // the outline worse than the default does.
+    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
+    if ($levelValue !== (int) $level) {
+        WireKit::validateProp('product-card', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    }
 @endphp
 
 {{-- An <article>: a product card is a self-contained thing, and a screen reader
@@ -160,7 +176,7 @@
     </div>
 
     <div class="flex flex-1 flex-col gap-[var(--gap-wk-sm)] p-[var(--padding-wk-x-md)]">
-        <h3 class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        <h{{ $levelValue }} class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             @if($href)
                 {{-- stretched-link: the whole card is clickable by pointer while
                      the LINK is still just the name. The pointer target and the
@@ -177,7 +193,7 @@
             @else
                 {{ $name }}
             @endif
-        </h3>
+        </h{{ $levelValue }}>
 
         @if($description)
             <p class="line-clamp-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</p>

@@ -55,7 +55,7 @@
          its neighbor without hovering. Maintainer's rule, and it is absolute.
          `break-words` rather than plain wrapping, because a single long word has no space to
          break at and would otherwise overflow the column instead of wrapping inside it. --}}
-    <span class="flex-1 break-words group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $slot }}</span>
+    <span class="flex-1 break-words wk-rail-hide">{{ $slot }}</span>
     {{-- Trailing counter (an unread badge). Rendered OUTSIDE the label span so a long
          name wraps beside it rather than pushing it out, and pushed to the end with ml-auto.
 
@@ -80,7 +80,7 @@
             group-data-[collapsed]/wk-sidebar:ml-0
             group-data-[collapsed]/wk-sidebar:p-0
             group-data-[collapsed]/wk-sidebar:h-2
-            group-data-[collapsed]/wk-sidebar:w-2"><span class="group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $badge }}</span></span>
+            group-data-[collapsed]/wk-sidebar:w-2"><span class="wk-rail-hide">{{ $badge }}</span></span>
     @endif
     @if($opensNewTab)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>

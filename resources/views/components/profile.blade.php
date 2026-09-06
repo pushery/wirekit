@@ -38,6 +38,28 @@
     // Space between the avatar and the name. Reads the `--gap-wk-*` ladder —
     // the tighter of the two, and the one this component already stood on.
     'gap' => 'sm',
+    // How loud the name is. `default` is the color this component has always
+    // emitted; `muted` is what a navigation column asks for.
+    //
+    // A sidebar's own entries stand muted at rest and go full on hover
+    // (`sidebar/item.blade.php`). The account trigger sits directly under them, so a
+    // name baked to the full color leaves exactly ONE row in the column permanently
+    // brighter than every other — reported from a consuming project, which could only
+    // work around it by abandoning the `name` prop for the slot and re-writing the
+    // collapse handling by hand.
+    //
+    // A color on the wrapper does not reach it: the span sets its own and wins.
+    'tone' => 'default',
+    // Inline padding, on the page-edge spine ladder. `none` keeps the DOM this
+    // component has always emitted.
+    //
+    // It exists for the same place `radius` does — the account trigger at the foot of a
+    // sidebar. Without it the hover background hugs the name instead of drawing a row,
+    // so the entry that closes a navigation list looks unlike every entry in it. That is
+    // reachable from a call site as a class, and being reachable that way is exactly the
+    // problem: a component whose most common use needs an incantation gets rebuilt by
+    // hand instead of adopted.
+    'padding' => 'none',
 ])
 
 @php
@@ -78,6 +100,26 @@
         default => WireKit::validateProp('profile', 'gap', (string) $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
     };
 
+    // Muted goes full on HOVER, which is the half that makes it match rather than
+    // merely dim: an entry above it does exactly that. The pair sits on the span
+    // because the span is what overrides an inherited color, and it is keyed to a
+    // NAMED group so a `group-hover:` a caller writes in the slot cannot capture it.
+    $toneClasses = match ($tone) {
+        'default' => 'text-[color:var(--color-wk-text)]',
+        'muted' => 'text-[color:var(--color-wk-text-muted)] group-hover/wk-profile:text-[color:var(--color-wk-text)]',
+        default => WireKit::validateProp('profile', 'tone', (string) $tone, ['default', 'muted']),
+    };
+
+    $paddingClasses = match ($padding) {
+        'none' => '',
+        'xs' => 'px-[var(--padding-wk-x-xs)]',
+        'sm' => 'px-[var(--padding-wk-x-sm)]',
+        'md' => 'px-[var(--padding-wk-x-md)]',
+        'lg' => 'px-[var(--padding-wk-x-lg)]',
+        'xl' => 'px-[var(--padding-wk-x-xl)]',
+        default => WireKit::validateProp('profile', 'padding', (string) $padding, ['none', 'xs', 'sm', 'md', 'lg', 'xl']),
+    };
+
     $radiusClasses = match ($radius) {
         'none' => '',
         'sm' => 'rounded-[var(--radius-wk-sm)]',
@@ -92,7 +134,11 @@
     // Profile — avatar + name display for header areas.
     $classes = WireKit::resolveClasses('profile', 'base', implode(' ', [
         'flex items-center',
+        // Only where it is read: the hover half of `muted` needs the group, and a
+        // profile that is not a control has no hover to answer.
+        $tone === 'muted' && $control ? 'group/wk-profile' : '',
         $gapClasses,
+        $paddingClasses,
         // Add focus-visible ring when this is a control — same shape as the
         // canonical button focus state (matches the button component).
         // `cursor-pointer` is not decoration on the button branch: Tailwind v4's
@@ -100,13 +146,6 @@
         // would otherwise go missing. The rest of the UA chrome — the border, the
         // background, the button's own font — that same preflight already removes,
         // and Tailwind v4 is a hard requirement of this package.
-        // An interactive row answers the pointer, not only the keyboard.
-        //
-        // This branch has always carried `cursor-pointer` and a focus ring, so a keyboard
-        // reader saw the row react and a mouse reader saw nothing at all — while the
-        // navigation entries directly above it in a sidebar footer light up on hover. The
-        // same two tokens they use, so the footer row belongs to the same list it sits at
-        // the bottom of.
         // An interactive row answers the pointer, not only the keyboard.
         //
         // This branch has always carried `cursor-pointer` and a focus ring, so a keyboard
@@ -182,7 +221,7 @@
              same way. `min-w-0` is not decoration — a flex child defaults to `min-width:
              auto`, so `truncate` has nothing to shrink against and silently does nothing.
              That pairing is the trap; the class on its own reads as done. --}}
-        <span class="min-w-0 flex-1 truncate text-left text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)] group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $name }}</span>
+        <span class="min-w-0 flex-1 truncate text-left text-[length:var(--text-wk-sm)] {{ $toneClasses }} font-[number:var(--font-wk-body-weight)] wk-rail-hide">{{ $name }}</span>
     @endif
     {{ $slot }}
 </{{ $tag }}>

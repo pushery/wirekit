@@ -1,0 +1,17 @@
+{
+    "attachment-group": "attachment",
+    "bento-cell": "bento-grid",
+    "faq-item": "faq",
+    "glass": "liquid-glass",
+    "kanban-column": "kanban",
+    "pricing-tier": "pricing-table",
+    "reading-bookmark": "reading",
+    "reading-minimap": "reading",
+    "reading-progress": "reading",
+    "reading-shell": "reading",
+    "reading-spine": "reading",
+    "reading-toc": "reading",
+    "team-member": "team-section",
+    "testimonial-grid": "testimonial",
+    "toast-region": "toast"
+}

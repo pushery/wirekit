@@ -28,6 +28,13 @@
     // entries (axe: `landmark-unique`). Unnamed, the grid keeps `tabindex="0"` and no role —
     // reachable per WCAG 2.1.1, deliberately not a destination.
     'weekLabel' => null,
+    // Heading level for the title (1-6). Defaults to 2 — the calendar's period label — so nothing
+    // moves for a caller who never sets it. Set it to match the surrounding document
+    // outline: a component cannot know where in the page it sits, and a guessed level
+    // is worse than a chosen one. A skipped level is what `heading-order` reports, and
+    // that rule lives in axe's best-practice tag rather than the WCAG tags most suites
+    // run — so it is invisible to an axe sweep and visible in Lighthouse.
+    'level' => 2,
     'scope' => null,
 ])
 
@@ -101,6 +108,15 @@
 
     $navBtn = 'inline-flex items-center justify-center h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
     $viewTab = 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors';
+
+    // Heading level (1-6). An invalid value signals in debug (validateProp throws with a
+    // did-you-mean) and falls back to the default in production — never to h1, which is
+    // what validateProp's own first-allowed fallback would produce and which would break
+    // the outline worse than the default does.
+    $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 2;
+    if ($levelValue !== (int) $level) {
+        WireKit::validateProp('event-calendar', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
+    }
 @endphp
 
 <div
@@ -129,7 +145,7 @@
                 <button type="button" @click="today()" class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Today') }}</button>
                 <button type="button" @click="next()" aria-label="{{ __('wirekit::Next') }}" class="{{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
             </div>
-            <h2 class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" aria-live="polite" x-text="title"></h2>
+            <h{{ $levelValue }} class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" aria-live="polite" x-text="title"></h{{ $levelValue }}>
         </div>
         {{-- View switcher — a single-select RADIOGROUP (not tabs: the buttons own
              no tabpanels; the views swap in place). aria-checked + roving tabindex

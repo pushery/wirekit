@@ -380,6 +380,17 @@
                     // and the button hangs outside a collapsed band.
                     'group-data-[expanded]/wk-rail:absolute group-data-[expanded]/wk-rail:bottom-[var(--padding-wk-y-sm)] group-data-[expanded]/wk-rail:end-[var(--padding-wk-y-sm)]' => isset($footer),
                 ])>
+                    {{-- Same reason as the sidebar's control: the chevron alone is a guess
+                         until you click it, and the name that answers it was reachable only
+                         by assistive technology. Bound rather than passed, because it
+                         changes with the state; the binding resolves against the rail's own
+                         Alpine scope, which this markup already reads for `:aria-expanded`. --}}
+                    <x-wirekit::tooltip placement="right" :focusable-trigger="false">
+                        <x-slot:content>
+                            <span x-text="expanded
+                                ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse rail')) }}
+                                : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand rail')) }}">{{ $expanded ? __('wirekit::Collapse rail') : __('wirekit::Expand rail') }}</span>
+                        </x-slot:content>
                     <button
                         type="button"
                         x-on:click="toggle()"
@@ -389,6 +400,10 @@
                              control. `$expanded` is the same normalized value the factory is
                              seeded with a few lines up, so the two states agree, and Alpine
                              owns both attributes from init onward. --}}
+                        {{-- Same stable hook as the sidebar's collapse control, and the same
+                             reason: `aria-label` is translated and `aria-expanded` is shared with
+                             every disclosure on the page, so nothing here named THIS button. --}}
+                        data-wk-sidebar-collapse
                         aria-expanded="{{ $expanded ? 'true' : 'false' }}"
                         aria-label="{{ $expanded ? __('wirekit::Collapse rail') : __('wirekit::Expand rail') }}"
                         :aria-expanded="expanded ? 'true' : 'false'"
@@ -399,6 +414,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" d="M18.75 4.5 11.25 12l7.5 7.5m-7.5-15L3.75 12l7.5 7.5" />
                         </svg>
                     </button>
+                    </x-wirekit::tooltip>
                 </div>
             @endif
         </div>

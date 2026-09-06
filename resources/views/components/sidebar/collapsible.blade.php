@@ -181,7 +181,7 @@
             </span>
         @endif
         {{-- Wraps rather than truncating — see sidebar.item for the rule. --}}
-        <span class="flex-1 break-words text-left group-data-[collapsed]/wk-sidebar:sr-only group-data-[settling]/wk-sidebar:sr-only">{{ $label }}</span>
+        <span class="flex-1 break-words text-left wk-rail-hide">{{ $label }}</span>
         @isset($trailing)
             {{-- Anything the caller wants at the end of the trigger.
                  A group is collapsed to keep the list short — and if it contains items with

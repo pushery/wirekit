@@ -188,7 +188,7 @@
 
 @endphp
 
-<div class="space-y-1.5">
+<div class="space-y-1.5 min-w-0">
     @if($label)
         <x-wirekit::label :for="$id . '-input'">{{ $label }}</x-wirekit::label>
     @endif

@@ -8,10 +8,23 @@
     // carry this escape hatch; the dropdown was the one overlay without it, which is
     // why a Livewire round trip could not be made survivable from the call site.
     'name' => null,
+    // Fills the row it sits in instead of shrinking to its trigger.
+    //
+    // The wrapper is shrink-to-fit by default, which is right for a menu button in a
+    // toolbar and wrong for the one place a dropdown is the WHOLE row: the account
+    // trigger at the foot of a sidebar column. There the trigger's highlight has to
+    // span the row like the navigation entries above it, and no width set on the
+    // trigger can reach past a wrapper sized to that same trigger.
+    //
+    // A class from the call site cannot do this either — the wrapper's own `display`
+    // would have to be overridden, and two conflicting utilities resolve by stylesheet
+    // order rather than by which one the caller wrote.
+    'block' => false,
     'scope' => null,
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -40,8 +53,16 @@
         'wk-dropdown-panel-'
     );
 
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy.
+    $block = BooleanProp::from($block, false);
+
     // Base wrapper classes — relative positioning context for floating panel
-    $classes = WireKit::resolveClasses('dropdown', 'base', 'relative inline-block', $scope);
+    $classes = WireKit::resolveClasses(
+        'dropdown',
+        'base',
+        $block ? 'relative block w-full' : 'relative inline-block',
+        $scope
+    );
 @endphp
 
 {{-- Alpine dropdown component with Floating UI positioning.
@@ -114,7 +135,7 @@
             @php
                 // Gated on debug per the house rule: a developer warning never
                 // reaches a production page.
-                logger()->warning('[wirekit] dropdown: this call site uses <x-slot:trigger> AND an explicit <x-wirekit::dropdown.panel>. Pick one — the quick form wraps the default slot in a panel for you, so naming both nests a panel inside a panel and gives the two the same id.');
+                logger()->warning('[wirekit] dropdown: this call site uses <x-slot:trigger> AND an explicit <x-wirekit::dropdown.panel>. Pick one — the quick form composes the trigger and the panel for you, so the explicit panel is repeating work the component already does. It is passed through untouched, so nothing is wrapped twice; removing it renders the same markup with one shell less to reason about.');
             @endphp
         @endif
         <x-wirekit::dropdown.trigger>{{ $trigger }}</x-wirekit::dropdown.trigger>
