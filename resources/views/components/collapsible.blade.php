@@ -56,7 +56,7 @@
         'text-[color:var(--color-wk-text)]',
         'cursor-pointer',
         'rounded-[var(--radius-wk-sm)]',
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);

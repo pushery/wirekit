@@ -50,6 +50,10 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $editable = BooleanProp::from($editable, false);
+    // Same contract, different spelling of the default: a `config()` fallback declares a
+    // boolean as surely as a literal does. `legend` defaults ON, so `legend="false"` is a
+    // switch a developer sets deliberately — and the legend it asked to drop stayed drawn.
+    $legend = BooleanProp::from($legend, true);
 
     $cellType = WireKit::validateProp('status-matrix', 'cellType', $cellType, ['tristate', 'toggle', 'status', 'heat']);
     $isEditable = filter_var($editable, FILTER_VALIDATE_BOOLEAN) && in_array($cellType, ['tristate', 'toggle'], true);
@@ -167,13 +171,43 @@
     $cellBox = 'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-center border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
 
     // A focusable interactive cell button (tristate / toggle).
-    $cellButton = 'inline-flex items-center justify-center min-w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors '.($isEditable ? 'cursor-pointer hover:bg-[var(--color-wk-bg-muted)]' : 'cursor-default');
+    $cellButton = 'inline-flex items-center justify-center min-w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors '.($isEditable ? 'cursor-pointer hover:bg-[var(--color-wk-bg-muted)]' : 'cursor-default');
+
+    // ── The strings that reach a reader from JAVASCRIPT ───────────────────
+    //
+    // Translated HERE and handed to the factory. A literal inside an Alpine
+    // plugin passes through no `__()`, so it is localizable by NO ONE — not
+    // even by publishing the views, which is the escape hatch the rest of this
+    // package leans on. `stream` records the same class as a fixed bug, and the
+    // toggle cell below already takes exactly this route for On / Off.
+    //
+    // For the tristate cell the word IS the state: its three SVGs are
+    // `aria-hidden`, so `tristateLabel()` is the ONLY channel a screen reader
+    // has, and it used to answer in English whatever the application's locale.
+    $stateLabels = \Pushery\WireKit\Support\AlpinePayload::from([
+        'allow' => __('wirekit::Allowed'),
+        'deny' => __('wirekit::Denied'),
+        'inherit' => __('wirekit::Inherited'),
+    ]);
+
+    // The unsaved-changes counter is a COUNT that only exists in the browser, so
+    // the plural form has to be chosen there — the server renders every form and
+    // `Intl.PluralRules` picks. It read `N unsaved change(s)`, and the
+    // parenthesized `(s)` is an English shorthand no locale can express: German
+    // inflects the adjective, Polish has three categories, and none of them has
+    // a form that is the singular with a letter stuck on the end.
+    $changePhrases = \Pushery\WireKit\Support\AlpinePayload::from(
+        \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count unsaved change|[2,*] :count unsaved changes')
+    );
+
+    // BCP-47 for `Intl.PluralRules` — the APPLICATION's locale, not the browser's.
+    $pluralLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale()));
 @endphp
 
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitStatusMatrix({ cells: {{ \Pushery\WireKit\Support\AlpinePayload::from($flatCells) }}, cellType: {{ \Pushery\WireKit\Support\AlpinePayload::string($cellType) }}, editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ (float) $heatMin }}, heatMax: {{ (float) $heatMax }} })"
+    x-data="wirekitStatusMatrix({ cells: {{ \Pushery\WireKit\Support\AlpinePayload::from($flatCells) }}, cellType: {{ \Pushery\WireKit\Support\AlpinePayload::string($cellType) }}, editable: {{ $isEditable ? 'true' : 'false' }}, rowCount: {{ count($rowList) }}, colCount: {{ count($colList) }}, heatMin: {{ (float) $heatMin }}, heatMax: {{ (float) $heatMax }}, stateLabels: {{ $stateLabels }}, changePhrases: {{ $changePhrases }}, locale: {{ $pluralLocale }} })"
     {{ $attributes->only('class')->class([$base]) }}
 >
     @if($isEditable)
@@ -191,7 +225,7 @@
     <div
         @if(filled($ariaLabel)) role="region" aria-label="{{ $ariaLabel }}" @endif
         tabindex="0"
-        class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+        class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
     >
         {{-- The role is a promise of a keyboard model — see `$isCompositeGrid` above.
              Named either way: `aria-label` names a plain <table> exactly as it named
@@ -318,9 +352,9 @@
         <div class="mt-2 flex flex-wrap items-center gap-[var(--space-wk-md)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">
             @switch($cellType)
                 @case('tristate')
-                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-success)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg> Allowed</span>
-                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-danger)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg> Denied</span>
-                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 8h8"/></svg> Inherited</span>
+                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-success)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.5 3.5 6.5-7"/></svg> {{ __('wirekit::Allowed') }}</span>
+                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-danger)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 4l8 8M12 4l-8 8"/></svg> {{ __('wirekit::Denied') }}</span>
+                    <span class="inline-flex items-center gap-1"><svg aria-hidden="true" class="h-3.5 w-3.5 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M4 8h8"/></svg> {{ __('wirekit::Inherited') }}</span>
                     @break
                 @case('heat')
                     <span>{{ $heatMin }}{{ $heatUnit }}</span>
@@ -333,7 +367,11 @@
                     @break
             @endswitch
             @if($isEditable && $cellType === 'tristate')
-                <span x-show="changedCount > 0" x-cloak class="text-[color:var(--color-wk-warning-text)]"><span x-text="changedCount"></span> unsaved change(s)</span>
+                {{-- One node, one string: the count and its noun are ONE sentence, and a
+                     sentence assembled around a `<span>` in the template fixes English word
+                     order for every language. `changedLabel` picks the translated form in the
+                     browser, where the count lives. --}}
+                <span x-show="changedCount > 0" x-cloak x-text="changedLabel" class="text-[color:var(--color-wk-warning-text)]"></span>
             @endif
         </div>
     @endif

@@ -850,14 +850,14 @@ window.ApexCharts = ApexCharts;</pre>
             this._navCleanup = () => this.destroy();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
 
-            // Wire-streaming setup (Extension 12.3) — read data-wire-stream-*
+            // Wire-streaming setup — read data-wire-stream-*
             // attributes off the root + register a window listener that
             // appends incoming points via ApexCharts' chart.appendData().
             this._setupWireStream();
         },
 
         /**
-         * Wire-streaming for ApexCharts (Extension 12.3). Mirrors the Chart.js
+         * Wire-streaming for ApexCharts. Mirrors the Chart.js
          * factory's setup but uses ApexCharts' imperative APIs:
          *   - chart.appendData([{ data: [point] }, ...]) for cartesian charts
          *   - chart.appendSeries(...) when starting a fresh series
@@ -995,7 +995,7 @@ window.ApexCharts = ApexCharts;</pre>
 
                     const themed = this._themeApexConfig(rawConfig, colors, fontFamily);
 
-                    // Smooth transition (Extension 12.7) — collapsed to instant
+                    // Smooth transition — collapsed to instant
                     // under prefers-reduced-motion.
                     const reduced = this._reducedMotion();
                     if (!themed.chart) themed.chart = {};

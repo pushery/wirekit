@@ -58,6 +58,70 @@
     }
 
     $listClasses = WireKit::resolveClasses('tabs', 'tablist', TablistStyles::list($variant, $isVertical), $scope);
+
+    // ⚠️ A BAR WITH NO SELECTED TAB HAS NO TAB STOP, AND THAT IS THE WHOLE WIDGET GONE.
+    //
+    // `tabs.tab` renders `tabindex="0"` for the selected tab and `-1` for the rest, which
+    // is the roving model and is right — but `selected` defaults to false, so a bar where
+    // the server picked nothing puts EVERY tab at -1. Tab skips the bar entirely, and the
+    // arrow keys cannot rescue it because `moveRovingFocus` refuses to guess a starting
+    // item when focus is not already inside (roving-focus.js, the `current === -1` return).
+    // WCAG 2.1.1 and 2.4.3, with no visible symptom: the bar looks perfectly normal.
+    //
+    // It is not an exotic state. `docs/components/tabs.md` teaches
+    // `:selected="$key === $current"`, which yields zero selected for every render where
+    // `$current` is still null — the ordinary initial state of a Livewire component.
+    //
+    // SEEDED HERE, ON THE SERVER, rather than from the Alpine factory. `init()` runs once
+    // per element instance while Livewire re-authors every tab's `tabindex` on each morph,
+    // so a DOM seed would be overwritten by the next round trip without `init()` running
+    // again — the silent staleness this pair's own docblocks were written against. Doing
+    // it in the render means the answer is recomputed exactly as often as the markup is.
+    //
+    // `aria-selected` is deliberately NOT touched. Selection belongs to the server, and
+    // inventing one here would be the second answer to a settled question that this
+    // component exists to avoid. A tab stop is reachability, not a choice.
+    //
+    // The slot is stringified ONCE and echoed as a string below: reading a ComponentSlot
+    // and then also echoing it renders it twice. Same shape as `dropdown`.
+    $slotHtml = (string) $slot;
+
+    if (str_contains($slotHtml, 'role="tab"') && ! str_contains($slotHtml, 'tabindex="0"')) {
+        $unselected = 'tabindex="-1"';
+        $seedAt = null;
+        $offset = 0;
+
+        while (($at = strpos($slotHtml, $unselected, $offset)) !== false) {
+            // Everything `tabs/tab.blade.php` authors runs from `role="tab"` to `class="`;
+            // a call site's own attributes land after the class list. So this window can
+            // hold our `aria-disabled` and nothing a caller wrote — which matters, because
+            // an `x-on:click="() => {…}"` in the bag would defeat any wider match. Bounded
+            // by the NEXT tab as well, so a caller who wrote their own `tabindex` after the
+            // class list cannot make the window read the tab after this one.
+            $ends = array_filter([
+                strpos($slotHtml, 'class="', $at),
+                strpos($slotHtml, 'role="tab"', $at),
+            ], static fn ($p): bool => $p !== false);
+
+            $window = $ends === [] ? '' : substr($slotHtml, $at, min($ends) - $at);
+
+            // First choice is a tab the reader can actually operate. A disabled tab stays
+            // arrow-reachable by design (see tab.blade.php), so it is a fine second choice
+            // and a poor entry point.
+            $seedAt ??= $at;
+
+            if (! str_contains($window, 'aria-disabled="true"')) {
+                $seedAt = $at;
+                break;
+            }
+
+            $offset = $at + strlen($unselected);
+        }
+
+        if ($seedAt !== null) {
+            $slotHtml = substr_replace($slotHtml, 'tabindex="0"', $seedAt, strlen($unselected));
+        }
+    }
 @endphp
 
 <div
@@ -80,5 +144,5 @@
     x-on:keydown.end.prevent="moveFocus('last')"
     {{ $attributes->class([$listClasses]) }}
 >
-    {{ $slot }}
+    {!! $slotHtml !!}
 </div>

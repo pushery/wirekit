@@ -258,7 +258,7 @@
         @class([
             'wk-shell-bar-strip flex min-w-0 items-center gap-[var(--gap-wk-sm,0.5rem)] overflow-x-auto',
             // The strip is a tab stop now, so it must show that it has focus.
-            'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+            'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
             // Grows to fill, so a child that asks for the full width gets it — a workspace
             // brand in a rail's head is the case. NOT applied under `align="center"`, where
             // the whole point is that the cluster is narrower than the bar and sits in the

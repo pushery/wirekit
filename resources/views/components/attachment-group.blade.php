@@ -33,7 +33,7 @@
     // an allowlist entry instead — same reason scroll-area resolves its
     // overflow classes this way.
     $orientationClasses = match ($orientationValue) {
-        'row' => 'wk-scrollbar snap-x snap-mandatory overflow-x-auto overflow-y-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-wk-ring)]',
+        'row' => 'wk-scrollbar snap-x snap-mandatory overflow-x-auto overflow-y-hidden focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--color-wk-ring)]',
         default => 'flex-col',
     };
 

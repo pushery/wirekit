@@ -27,8 +27,15 @@
     //     overlays etc.) when surfaced
     //   - accent surface + accent-fg foreground tracks the active theme
     //   - radius + shadow inherit current theme tokens
-    // The `outline-none` is paired with a fully-themed focus ring so
-    // forced-colors-mode keyboard users still see a clear focus indicator.
+    // ⚠️ `outline-hidden`, never `outline-none`. This line used to say the
+    // themed ring was what kept forced-colors-mode keyboard users covered, and
+    // it was the wrong way round: a Tailwind ring compiles to `box-shadow`,
+    // which that mode drops outright, and `outline-style: none` had already
+    // suppressed the user agent's own ring — so the pill surfaced with no focus
+    // indicator at all, for the readers the mode exists for. `outline-hidden`
+    // is byte-identical at baseline and adds a `(forced-colors: active)` branch
+    // carrying a transparent 2px outline, which the mode repaints in a system
+    // color. `ForcedColorsStateGuardTest` holds it across the catalog.
     $classes = WireKit::resolveClasses('skip-link', 'base', implode(' ', [
         'sr-only',
         'focus-visible:not-sr-only',
@@ -42,7 +49,7 @@
         'focus-visible:bg-[var(--color-wk-accent)]',
         'focus-visible:text-[var(--color-wk-accent-fg)]',
         'focus-visible:shadow-[var(--shadow-wk-lg)]',
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'focus-visible:ring-2',
         'focus-visible:ring-[var(--color-wk-accent)]',
         'focus-visible:ring-offset-2',

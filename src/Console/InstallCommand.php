@@ -879,14 +879,22 @@ class InstallCommand extends Command
         ) ?? $contents;
 
         // Add or replace 'apex_license' => '<tier>' inside the charts block.
-        if (preg_match("/'apex_license'\s*=>/u", $replaced)) {
+        //
+        // ⚠️ `preg_match` ANSWERS 1, 0 **OR FALSE**, and only the third is an error. Read
+        // as a boolean, a failed scan is indistinguishable from "no apex_license line",
+        // which sends it down the INSERT branch — and that branch's own `preg_replace`
+        // then fails for the same reason and returns NULL. Compared against 1 explicitly,
+        // the error is a third state and gets its own answer below.
+        $hasLicense = preg_match("/'apex_license'\s*=>/u", $replaced);
+
+        if ($hasLicense === 1) {
             $replaced = preg_replace(
                 "/('apex_license'\s*=>\s*)('[^']*'|\"[^\"]*\"|null)/u",
                 sprintf("$1'%s'", $tier),
                 $replaced,
                 1,
-            );
-        } else {
+            ) ?? $replaced;
+        } elseif ($hasLicense === 0) {
             // Insert apex_license alongside library — match the quote style
             // and indentation of the line we just edited.
             $replaced = preg_replace(
@@ -894,7 +902,35 @@ class InstallCommand extends Command
                 "$1\n        'apex_license' => '".$tier."',",
                 $replaced,
                 1,
-            );
+            ) ?? $replaced;
+        }
+
+        /*
+         * ⚠️ NOTHING IS WRITTEN UNLESS THE REWRITE PRODUCED A FILE, AND THE FIRST CALL
+         * ABOVE ALREADY KNEW IT.
+         *
+         * `preg_replace` returns NULL on any PCRE failure, and a `/u` pattern over a
+         * subject that is not valid UTF-8 is one — `PREG_BAD_UTF8_ERROR`. That is not
+         * exotic here: this file is the DEVELOPER's `config/wirekit.php`, and one save
+         * from an editor in a single-byte encoding produces exactly it. The first call
+         * carried `?? $contents` for that reason; the two below did not, so the null
+         * traveled into `file_put_contents()`, which opens the file 'wb' and truncated
+         * it to zero bytes. The `@` swallowed the notice, the caller printed
+         * "Set charts.library => apexcharts …" and returned SUCCESS, and the developer's
+         * configuration was gone with a green run on top of it.
+         *
+         * An empty `$replaced` covers the second way in as well: an existing file that
+         * cannot be READ makes `(string) file_get_contents()` above `''`, and writing
+         * that back is the same truncation by another route.
+         */
+        if ($hasLicense === false || $replaced === '') {
+            $this->warn(sprintf(
+                'Could not rewrite config/wirekit.php (unreadable, or not valid UTF-8) — '
+                ."please add manually: 'charts' => ['library' => 'apexcharts', 'apex_license' => '%s'],",
+                $tier,
+            ));
+
+            return;
         }
 
         @file_put_contents($configPath, $replaced);

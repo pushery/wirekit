@@ -24,6 +24,11 @@
     // landed in the attribute bag and rendered as a stray HTML attribute — a validation
     // message the developer wrote, silently not shown, on a control that is part of forms.
     'error' => null,
+    // A11y: render the error message in a polite live region by default so a
+    // server-side validation error that appears after submit (when focus is
+    // elsewhere) is announced. Mirrors the input component. Set false to opt out —
+    // an app that runs its OWN error summary would otherwise double-announce here.
+    'announceError' => null,
     'hint' => null,
     'min' => 0,
     'max' => 100,
@@ -49,10 +54,22 @@
     'scope' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
     use Pushery\WireKit\Support\BooleanProp;
 
     use Pushery\WireKit\WireKit;
+
+    // `@aware` reads a value from the parent component, but — unlike `@props` —
+    // it does NOT remove that key from the attribute bag. So when the key is also
+    // written as an attribute on the tag, it survives into `{{ $attributes }}` and
+    // renders as a stray HTML attribute on the element. Blade accepts both
+    // spellings on a tag, so both are dropped here.
+    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
+    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `disabled="false"` would mean the opposite of what the call site reads as.
@@ -177,7 +194,7 @@
         // `cursor-pointer` here would win on the one element the pointer is actually
         // over — the handle would still invite a drag it can no longer start.
         $disabled ? 'cursor-not-allowed' : 'cursor-pointer',
-        'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-shadow duration-[var(--transition-wk-duration)]',
     ]);
 
@@ -212,8 +229,15 @@
     // visible $hint plus any caller-supplied aria-describedby. Routing it to
     // the thumbs (and off the wrapper) lands it on the element the user
     // actually focuses.
+    //
+    // The hint id is named only while the hint is on the page. An error REPLACES
+    // the hint in this catalog, and an idref pointing at nothing is not a partial
+    // description — assistive technology drops it in silence, so a thumb naming
+    // one id and rendering none is described by nothing at all. The error message
+    // itself stays off the thumbs on purpose: it is about the range, and the group
+    // below carries it once rather than both handles reading it out.
     $callerDescribedBy = $attributes->get('aria-describedby');
-    $thumbDescribedBy = trim(($hint !== null ? $id.'-hint' : '').' '.((string) ($callerDescribedBy ?? '')));
+    $thumbDescribedBy = trim(($hint !== null && $error === null ? $id.'-hint' : '').' '.((string) ($callerDescribedBy ?? '')));
     $thumbDescribedBy = $thumbDescribedBy !== '' ? $thumbDescribedBy : null;
 
     // aria-describedby has been routed to the thumbs — drop it from the
@@ -580,13 +604,15 @@
         @endif
     </div>
 
-    @if($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
-    @endif
     {{-- Same shape as `input`: one region, error winning over hint, announced politely so
-         it does not interrupt what the reader is doing. --}}
+         it does not interrupt what the reader is doing.
+
+         This block ARRIVED to replace a standalone hint-only paragraph and the older one
+         was left standing, so for as long as the slider could show an error it also
+         printed its hint twice and minted `id="…-hint"` twice — an ambiguous IDREF for
+         the very describedby composed above. One emitter, and only one. --}}
     @if($error)
-        <p id="{{ $id }}-error" aria-live="polite" aria-atomic="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
+        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
     @elseif($hint)
         <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif

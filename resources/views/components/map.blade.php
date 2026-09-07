@@ -169,7 +169,7 @@
          the sr-only companion, which does not scroll. A tab stop there would put keyboard focus
          on something nobody can see (WCAG 2.4.7), so it stays out of the tab order while the
          wiring stays readable. --}}
-    <div @if(filled($listLabel)) role="region" aria-label="{{ $listLabel }}" @endif tabindex="{{ $showList ? '0' : '-1' }}" class="{{ $showList ? 'w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only' }}">
+    <div @if(filled($listLabel)) role="region" aria-label="{{ $listLabel }}" @endif tabindex="{{ $showList ? '0' : '-1' }}" class="{{ $showList ? 'w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only' }}">
         <p class="sticky top-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
             {{ $listLabelResolved }} (<span x-text="markerCount"></span>)
         </p>
@@ -182,7 +182,7 @@
                         :aria-label="m.label + (m.body ? ', ' + m.body : '') + {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::, latitude :lat, longitude :lng')) }}.replace(':lat', m.lat).replace(':lng', m.lng)"
                         :aria-current="selectedId === m.id ? 'true' : null"
                         :class="selectedId === m.id ? {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedClasses) }} : ''"
-                        class="w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset cursor-pointer transition-colors"
+                        class="w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset cursor-pointer transition-colors"
                     >
                         <span class="mt-1 shrink-0 h-2.5 w-2.5 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($dotClasses) }}[m.intent || 'accent']"></span>
                         <span class="min-w-0 flex-1">

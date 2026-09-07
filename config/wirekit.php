@@ -370,7 +370,10 @@ return [
         // by the page. The key shipped for a while and could never have had an effect.
         'date-picker' => ['size' => 'md'],
         'file-upload' => ['size' => 'md', 'multiple' => false, 'accept' => null],
-        'combobox' => ['size' => 'md', 'placeholder' => 'Select...'],
+        'combobox' => ['size' => 'md', 'placeholder' => null],
+        // `placeholder` is null rather than a literal so the component keeps resolving its
+        // own translated default; set a string here to override it in every locale at once.
+        'tags-input' => ['max-tags' => null, 'placeholder' => null],
         'slider' => ['size' => 'md', 'min' => 0, 'max' => 100, 'step' => 1],
         'range-slider' => ['show_values' => true],
         'color-picker' => ['size' => 'md', 'format' => 'hex', 'native-on-mobile' => false],

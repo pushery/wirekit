@@ -60,7 +60,7 @@
     $codeClasses = implode(' ', [
         'wk-scrollbar block overflow-x-auto',
         // A tab stop must show that it has focus.
-        'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'p-[var(--space-wk-md,1rem)]',
         'bg-transparent border-0 rounded-none',
         'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)]',

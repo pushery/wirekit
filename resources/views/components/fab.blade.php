@@ -60,7 +60,7 @@
         aria-haspopup="menu"
         aria-label="{{ $label }}"
         data-wk-fab-trigger
-        class="flex h-14 w-14 cursor-pointer items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] shadow-[var(--shadow-wk-lg)] transition-transform duration-[var(--transition-wk-duration)] hover:brightness-110 focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-2"
+        class="flex h-14 w-14 cursor-pointer items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] shadow-[var(--shadow-wk-lg)] transition-transform duration-[var(--transition-wk-duration)] hover:brightness-110 focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-2"
     >
         {{-- The plus turns into a close mark. Both icons stay in the DOM so the
              rotate can cross between them, which means the inactive one must be

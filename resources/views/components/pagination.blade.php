@@ -98,7 +98,7 @@
         'duration-[var(--transition-wk-duration)]',
         'hover:bg-[var(--color-wk-bg-muted)]',
         'hover:border-[var(--color-wk-border-hover)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-[var(--color-wk-ring)]',

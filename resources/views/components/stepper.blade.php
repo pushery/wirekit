@@ -156,7 +156,7 @@
                     $isVertical ? 'flex-row items-start gap-[var(--padding-wk-x-sm)]' : 'flex-col items-center',
                     'cursor-pointer text-start' => $stepIsOperable,
                     'rounded-[var(--radius-wk-md)]' => $stepIsOperable,
-                    'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' => $stepIsOperable,
+                    'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' => $stepIsOperable,
                     'transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-80' => $stepIsOperable,
                 ])
             >

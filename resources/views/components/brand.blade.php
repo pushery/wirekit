@@ -46,13 +46,18 @@
         'text-[color:var(--color-wk-text)]',
         'no-underline',
     ]), $scope);
-    // Auto-inject rel="noopener noreferrer" when target="_blank"
+    // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
+    // Rendered EXPLICITLY, bag echoed with except('rel'): $attributes->merge()
+    // treats a non-class attribute as a DEFAULT, so a caller writing rel="me"
+    // (the ordinary IndieAuth/Mastodon verification on a brand link) silently
+    // replaced the computed value. See dropdown/item.blade.php.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr . ' noopener noreferrer')
         : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 
     // Accessibility — when the brand renders as a link (it always does, via
     // the `<a href>` root) AND the only visible content is the logo image
@@ -101,7 +106,8 @@
 <a
     href="{{ $href }}"
     @if($logoOnlyNeedsLabel) aria-label="{{ __('wirekit::Home') }}" @endif
-    {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$classes]) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->class([$classes]) }}
 >
     @if($logo instanceof \Illuminate\View\ComponentSlot)
         {{-- A NAMED slot `<x-slot:logo>...</x-slot:logo>` was passed

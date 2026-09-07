@@ -91,7 +91,7 @@
     $interactiveClasses = $href !== null
         ? implode(' ', [
             'hover:bg-[var(--color-wk-rail-hover-bg)]',
-            'focus-visible:outline-none',
+            'focus-visible:outline-hidden',
             'focus-visible:ring-[length:var(--ring-wk-width)]',
             'focus-visible:ring-[var(--color-wk-rail-ring)]',
             'transition-colors duration-[var(--transition-wk-duration)]',
@@ -115,11 +115,26 @@
     ]), $scope);
 
     $tag = $href !== null ? 'a' : 'div';
+    // Auto-inject rel="noopener noreferrer" when target="_blank". This component
+    // takes an href and echoes the caller's bag onto the element that carries it,
+    // so the caller's target passed straight through to a bare anchor. The house
+    // rule makes the injection unconditional for exactly that shape. Rendered
+    // explicitly with the bag echoed via except('rel'), because
+    // $attributes->merge() treats rel as a DEFAULT and a caller-supplied rel
+    // would replace the computed value.
+    $targetAttr = $attributes->get('target', '');
+    $opensNewTab = $href !== null && str_contains($targetAttr, '_blank');
+    $relAttr = $attributes->get('rel', '');
+    $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr.' noopener noreferrer')
+        : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
 <{{ $tag }}
     @if($href !== null) href="{{ $href }}" @endif
-    {{ $attributes->class([$classes, $interactiveClasses]) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->class([$classes, $interactiveClasses]) }}
 >
     {{-- The mark. `shrink-0` so a long name can never squeeze it.
          NOT aria-hidden: this is a slot, and what a developer puts in it is theirs. Hiding it
@@ -158,5 +173,15 @@
                 <span data-wk-rail-brand-desc class="{{ $descriptionClasses }}">{{ $description }}</span>
             @endif
         </span>
+    @endif
+
+    {{-- The other half of the target="_blank" rule: rel protects the opener, this
+         warns the person who cannot see the new tab appear. It sits in the
+         CONTENT because this link carries no aria-label — the workspace name
+         above is its accessible name, computed from what is written here, so a
+         span appended to it is announced. Every sibling that names itself the
+         same way places the hint the same way. --}}
+    @if($opensNewTab)
+        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
     @endif
 </{{ $tag }}>

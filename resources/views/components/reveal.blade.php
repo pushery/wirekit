@@ -78,13 +78,21 @@
         ? $duration
         : WireKit::validateProp('reveal', 'duration', $duration, ['fast', 'normal', 'slow']);
 
-    // JSON-encode options object for x-data — Alpine parses it as JS literal.
-    $optionsJson = json_encode([
+    // Options object for x-data — Alpine parses it as a JS literal.
+    //
+    // AlpinePayload rather than a hand-picked flag set. Every value here is a validated
+    // enum, a bool or a float, so no byte above ASCII can reach it today — but the flags
+    // are chosen for the CONTEXT, not for the payload that happens to be in it, and
+    // JSON_HEX_TAG is the wrong choice for a directive attribute: it escapes `<` to
+    // `<`, and Alpine's CSP tokenizer drops that backslash and keeps the letters, so
+    // the value would arrive as `u003C`. Blade's `{{ }}` already escapes `<` on the way
+    // into the attribute, which is what makes the flag unnecessary as well as harmful.
+    $optionsJson = \Pushery\WireKit\Support\AlpinePayload::from([
         'trigger' => $validatedTrigger,
         'once' => (bool) $once,
         'threshold' => (float) $threshold,
         'duration' => $validatedDuration,
-    ], JSON_HEX_TAG | JSON_UNESCAPED_SLASHES);
+    ]);
 
     // Delay resolution:
     //   null  → no animation-delay style emitted

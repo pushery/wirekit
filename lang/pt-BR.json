@@ -6,9 +6,12 @@
     "wirekit::Could not save. Your entry is still here.": "Não foi possível salvar. Sua entrada continua aqui.",
     "wirekit::Could not save. Your text is still here.": "Não foi possível salvar. Seu texto continua aqui.",
     "wirekit::Drop files here or click to browse": "Solte os arquivos aqui ou clique para procurar",
+    "wirekit::Dropped at position :position of :total.": "Solto na posição :position de :total.",
     "wirekit::Generating response…": "Gerando resposta…",
     "wirekit::Go to slide :number": "Ir para o slide :number",
+    "wirekit::Grabbed. Position :position of :total. Use the arrow keys to move it.": "Item pego. Posição :position de :total. Use as teclas de seta para movê-lo.",
     "wirekit::Hide password": "Ocultar senha",
+    "wirekit::Link": "Link",
     "wirekit::Loading": "Carregando",
     "wirekit::Next slide": "Próximo slide",
     "wirekit::No results.": "Nenhum resultado.",
@@ -22,10 +25,13 @@
     "wirekit::Show password": "Mostrar senha",
     "wirekit::Showing :first to :last of :total results": "Exibindo :first a :last de :total resultados",
     "wirekit::Slide :current of :total": "Slide :current de :total",
+    "wirekit::Sortable item": "Item ordenável",
     "wirekit::Still not confirmed. Your text is kept here — reload to see whether it was saved.": "Ainda sem confirmação. Seu texto fica aqui — recarregue para ver se foi salvo.",
     "wirekit::Switch :label": "Trocar :label",
     "wirekit::Tabs": "Abas",
     "wirekit::Typing…": "Digitando…",
     "wirekit::Uploading": "Enviando",
-    "wirekit::Uploading :name": "Enviando :name"
+    "wirekit::Uploading :name": "Enviando :name",
+    "wirekit::You're all caught up": "Você está em dia",
+    "wirekit::{1} :count unsaved change|[2,*] :count unsaved changes": "{1} :count alteração não salva|[2,*] :count alterações não salvas"
 }

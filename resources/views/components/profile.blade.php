@@ -154,7 +154,7 @@
         // same two tokens they use, so the footer row belongs to the same list it sits at
         // the bottom of.
         $control ? 'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)] transition-colors duration-[var(--transition-wk-duration)] ' : '',
-        $control ? 'cursor-pointer focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[var(--color-wk-ring-offset)] '.$radiusClasses : '',
+        $control ? 'cursor-pointer focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[var(--color-wk-ring-offset)] '.$radiusClasses : '',
     ]), $scope);
 
     // accept either a string URL
@@ -178,6 +178,26 @@
     @if($interactive && $tag !== 'button')
         tabindex="0"
         role="button"
+        {{-- ⚠️ THE BARE `x-data` IS WHAT MAKES THE TWO HANDLERS BELOW EXIST. Alpine walks
+             only the trees rooted at an element carrying `x-data` or `x-init` — everything
+             else in the document is never visited, so an `x-on:` on an unscoped element is
+             inert markup: no handler, no error, no console line. The row takes focus and
+             announces itself as a button, and Enter does nothing.
+
+             That is not a hypothetical placement. `interactive` is documented for exactly
+             the case where a real `<button>` is ruled out — an account row closing a
+             sidebar footer — and neither `sidebar` nor `shell-bar` opens a scope around
+             their footer slot. The dropdown-trigger usage worked only because the dropdown
+             happens to own one, and a Livewire-morphed row worked only because Alpine's
+             mutation observer initializes markup inserted AFTER boot. The first server
+             render outside both is the shape the docs recommend.
+
+             Empty on purpose: an empty scope inherits from any ancestor scope, so nesting
+             this inside a dropdown changes nothing. Gated on the caller not having supplied
+             one, because HTML keeps the FIRST of two identical attributes — emitting ours
+             unconditionally would silently discard theirs, which is the class
+             `StrictnessGate::discardedScopeDirectives` warns about at runtime. --}}
+        @if(! $attributes->has('x-data')) x-data @endif
         x-on:keydown.enter.prevent="$el.click()"
         x-on:keydown.space.prevent="$el.click()"
     @endif

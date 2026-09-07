@@ -49,7 +49,12 @@ class MakeCommand extends Command
      *
      * @var list<string>
      */
-    private const RECIPES = [
+    /*
+     * PUBLIC because `McpCatalog` reads it. The alternative was a second list somewhere
+     * else, and a second list of the eleven recipes is a second thing to keep in step —
+     * the failure the whole MCP catalog is arranged against. One source, two readers.
+     */
+    public const RECIPES = [
         'documentation-reader',
         'feature-numbered-marker',
         'hero-with-code-aside',

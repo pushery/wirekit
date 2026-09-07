@@ -21,6 +21,40 @@
  */
 import { position } from '../utils/floating.js';
 
+/**
+ * What counts as a tab stop, for the two edges of the teleported panel.
+ *
+ * The same shape filter-builder, navigation-menu, hover-card and menubar each
+ * declare — one selector per component rather than a shared util, because each
+ * one pairs it with its own notion of "and actually usable right now" below.
+ */
+const PANEL_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Is this element a tab stop the reader can actually reach right now?
+ *
+ * TWO ways it can be present and not reachable, and this panel has both:
+ *
+ *   - `x-show` writes `display: none`, which leaves the element in the DOM and
+ *     in every `querySelectorAll` result. "Mark all read" is exactly that — it
+ *     is hidden while nothing is unread — and `focus()` on it does nothing, so
+ *     the browser drops focus on `<body>`: the same nowhere the bug produced.
+ *   - The type filter is a ROVING-TABINDEX radiogroup, so every radio except the
+ *     checked one carries `tabindex="-1"` while still matching
+ *     `button:not([disabled])` — the selector clauses are an OR, and a button
+ *     satisfies the button clause whatever its tabindex says.
+ *
+ * ⚠️ The second one is the half a copy of another component's helper does not
+ * have, and dropping it is invisible on the first filter: `focusables[0]` becomes
+ * a radio the reader can never stand on, the Shift+Tab edge stops matching, and
+ * focus leaves the document exactly as it did before — on every filter but "All".
+ */
+function isTabStop(el) {
+    if (typeof el.tabIndex === 'number' && el.tabIndex < 0) return false;
+
+    return typeof el.getClientRects !== 'function' || el.getClientRects().length > 0;
+}
+
 export default function wirekitNotificationCenter(config = {}) {
     return {
         // The summary's middle phrase is translated server-side and travels in,
@@ -149,6 +183,106 @@ export default function wirekitNotificationCenter(config = {}) {
             if (restoreFocus) this.$refs.bell?.focus();
         },
 
+        /**
+         * The panel's tab stops, in DOM order, re-read on every keypress.
+         *
+         * Never cached: "Mark all read" appears and disappears with the unread
+         * count, the filter row appears once a second type exists, the empty
+         * state replaces the rows, and the checked radio moves. Any of those
+         * changes which element is the first or the last one.
+         */
+        _panelFocusables() {
+            const panel = this.$refs.panel;
+
+            return panel ? [...panel.querySelectorAll(PANEL_FOCUSABLE)].filter(isTabStop) : [];
+        },
+
+        /**
+         * Move to the control that FOLLOWS the bell on the page.
+         *
+         * Where a forward Tab out of the flyout belongs: the panel is drawn
+         * beside the bell, so leaving it should continue from the bell and not
+         * from the end of the document, where the panel's markup happens to
+         * live. Anything inside the bell is skipped (a descendant also "follows"
+         * it by document position) and so is the overlay root, which holds this
+         * panel and every other teleported one.
+         */
+        _focusAfterBell() {
+            const bell = this.$refs.bell;
+
+            if (! bell) return;
+
+            const overlayRoot = document.getElementById('wk-overlay-root');
+
+            const next = [...document.querySelectorAll(PANEL_FOCUSABLE)].find((el) => {
+                if (bell.contains(el)) return false;
+                if (overlayRoot?.contains(el)) return false;
+                if (! isTabStop(el)) return false;
+
+                return Boolean(bell.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+            });
+
+            next?.focus({ preventScroll: true });
+        },
+
+        /**
+         * Tab pressed inside the flyout — handle both of its edges.
+         *
+         * ⚠️ NEITHER EDGE IS WHAT THE BROWSER WOULD DO, because the panel is
+         * teleported to the end of `<body>` while it is drawn beside the bell,
+         * and sequential focus order follows the DOM rather than the screen.
+         * Opening moves focus into the panel, so before this existed a Tab off
+         * the last notification left the DOCUMENT for the browser chrome, and a
+         * Shift+Tab landed on whatever precedes the overlay root — both with
+         * `role="dialog"` still open and painted over the page. The reader lost
+         * the panel and their place in one keystroke, and the keyboard table in
+         * the component's docs promised the opposite.
+         *
+         * Leaving closes it, which is what this flyout's other three dismissals
+         * already mean: Escape, a click outside and a page scroll all return the
+         * reader to the page. A non-modal dialog is left, not escaped from — so
+         * a focus TRAP is deliberately not used here, the same call filter-builder
+         * records for the identical shape. There is no `aria-modal` and no scroll
+         * lock, and a trap would also have to be taught about the roving-tabindex
+         * radiogroup and the `tabindex="0"` scroll region the panel already owns.
+         *
+         * ⚠️ The BACKWARD edge also fires on the panel container itself. Opening
+         * focuses `$refs.panel`, which is `tabindex="-1"` and therefore not a tab
+         * stop and never equal to `focusables[0]` — so the very first Shift+Tab
+         * after opening is the one edge a `focusables`-only check does not catch.
+         */
+        tabWithinPanel(event) {
+            const panel = this.$refs.panel;
+
+            if (! panel) return;
+
+            const focusables = this._panelFocusables();
+
+            if (event.shiftKey) {
+                if (document.activeElement !== panel && document.activeElement !== focusables[0]) return;
+
+                event.preventDefault();
+                // Identical to Escape: close and hand focus back to the bell.
+                this.close(true);
+
+                return;
+            }
+
+            // With nothing focusable inside, the container is both the first and
+            // the last stop the reader can be standing on.
+            const last = focusables.length ? focusables[focusables.length - 1] : panel;
+
+            if (document.activeElement !== last) return;
+
+            event.preventDefault();
+            // Focus moves BEFORE the panel hides. `x-show` writes `display: none`,
+            // and hiding the subtree that holds focus makes the browser drop it on
+            // `<body>` — after our own focus() call, which would then have
+            // accomplished nothing.
+            this._focusAfterBell();
+            this.close();
+        },
+
         // Anchor the teleported (fixed) panel to the bell. Prefers opening toward
         // the inline-end (bottom-start = left-aligned, so the panel extends to the
         // RIGHT into available space); crossAxisShift pulls it back on-screen when
@@ -190,6 +324,16 @@ export default function wirekitNotificationCenter(config = {}) {
         // Radio-group keyboard model for the filter row: arrows move AND select
         // (selection follows focus, per the ARIA radio pattern), wrapping at the
         // ends. Focus lands on the newly active radio via its data-filter hook.
+        //
+        // Resolved through `$refs.panel`, NEVER `$root`. The radios live in the
+        // panel, and the panel is teleported to `#wk-overlay-root` at the end of
+        // <body> — so it is not a descendant of the element `$root` is bound to,
+        // and a downward `querySelector` from there finds nothing. Selection had
+        // already moved by then, which is what made the failure quiet rather than
+        // loud: `activeFilter` changed, the roving `:tabindex` turned the radio
+        // under the reader's focus into -1 and `:aria-checked` turned it false,
+        // and the ring stayed on a radio that is no longer the selected one. Same
+        // reason the scroll guard and the panel focus walk above read the ref.
         filterMove(dir) {
             const order = ['all', ...this.types];
             const i = Math.max(0, order.indexOf(this.activeFilter));
@@ -197,7 +341,8 @@ export default function wirekitNotificationCenter(config = {}) {
             this.setFilter(next);
             this.$nextTick(() => {
                 const sel = (typeof CSS !== 'undefined' && CSS.escape) ? CSS.escape(next) : next;
-                const radio = this.$root && this.$root.querySelector(`[data-filter="${sel}"]`);
+                const panel = this.$refs.panel;
+                const radio = panel && panel.querySelector(`[data-filter="${sel}"]`);
                 if (radio) radio.focus();
             });
         },

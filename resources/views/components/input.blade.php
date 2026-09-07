@@ -169,7 +169,7 @@
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         'hover:border-[var(--color-wk-border-strong-hover)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
@@ -355,7 +355,7 @@
                     $fontFamilyClass,
                     'text-[color:var(--color-wk-text)]',
                     'placeholder:text-[color:var(--color-wk-text-placeholder)]',
-                    'focus:outline-none focus:ring-0',
+                    'focus:outline-hidden focus:ring-0',
                     'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed',
                     $prefixInputPadClass,
                     'pl-1' => (bool) $prefix || $hasLeading,
@@ -385,7 +385,7 @@
                     @if($disabled) disabled @endif
                     aria-label="{{ __('wirekit::Copy to clipboard') }}"
                     :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy to clipboard')) }}"
-                    class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                    class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                 >
                     <svg x-show="! copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V12.5a1.5 1.5 0 01-1.5 1.5h-1v-3.379a3 3 0 00-.879-2.121L10.5 5.379A3 3 0 008.379 4.5H7v-1z"/>
@@ -407,7 +407,7 @@
                     @click="clear()"
                     @if($disabled) disabled @endif
                     aria-label="{{ __('wirekit::Clear input') }}"
-                    class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                    class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                 >
                     <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>

@@ -1681,7 +1681,7 @@ class VerifyInstallationCommand extends Command
     private function checkInstalledPackageMatchesLock(): void
     {
         if (! class_exists(InstalledVersions::class)) {
-            $this->line('  <fg=cyan>i</> Installed-vs-locked check skipped (Composer runtime API unavailable)');
+            $this->reportInfo('Installed-vs-locked check skipped (Composer runtime API unavailable)');
 
             return;
         }
@@ -1689,7 +1689,7 @@ class VerifyInstallationCommand extends Command
         $lockPath = base_path('composer.lock');
 
         if (! is_file($lockPath)) {
-            $this->line('  <fg=cyan>i</> No composer.lock beside the app — nothing to compare the installed package against');
+            $this->reportInfo('No composer.lock beside the app — nothing to compare the installed package against');
 
             return;
         }
@@ -1712,7 +1712,7 @@ class VerifyInstallationCommand extends Command
         }
 
         if ($locked === null) {
-            $this->line('  <fg=cyan>i</> pushery/wirekit is not in composer.lock — installed some other way, nothing to compare');
+            $this->reportInfo('pushery/wirekit is not in composer.lock — installed some other way, nothing to compare');
 
             return;
         }
@@ -1721,7 +1721,7 @@ class VerifyInstallationCommand extends Command
 
         if (! is_string($lockedReference) || $lockedReference === '') {
             // A path repository, and the ordinary case for this package's own sample app.
-            $this->line('  <fg=cyan>i</> WireKit is installed from a path repository, so there is no commit to compare — installed-vs-locked NOT measured');
+            $this->reportInfo('WireKit is installed from a path repository, so there is no commit to compare — installed-vs-locked NOT measured');
 
             return;
         }
@@ -1729,7 +1729,7 @@ class VerifyInstallationCommand extends Command
         $installedReference = InstalledVersions::getReference('pushery/wirekit');
 
         if (! is_string($installedReference) || $installedReference === '') {
-            $this->line('  <fg=cyan>i</> Composer reports no reference for the installed WireKit — installed-vs-locked NOT measured');
+            $this->reportInfo('Composer reports no reference for the installed WireKit — installed-vs-locked NOT measured');
 
             return;
         }
@@ -1772,7 +1772,7 @@ class VerifyInstallationCommand extends Command
         $appLang = function_exists('lang_path') ? lang_path() : base_path('lang');
 
         if (! is_dir($packageLang) || ! is_dir($appLang)) {
-            $this->line('  <fg=cyan>i</> Translation collisions not checked (no published language directory)');
+            $this->reportInfo('Translation collisions not checked (no published language directory)');
 
             return;
         }
@@ -2135,7 +2135,7 @@ class VerifyInstallationCommand extends Command
     {
         if (! class_exists(Factory::class)) {
             // Nothing measured is NOT the same as everything fine, and must not print like it.
-            $this->line('  <fg=cyan>i</> Icon presets not checked (Blade Icons is unavailable)');
+            $this->reportInfo('Icon presets not checked (Blade Icons is unavailable)');
 
             return;
         }
@@ -2216,13 +2216,13 @@ class VerifyInstallationCommand extends Command
             // while verify reports the installation healthy.
             $this->checkApexChartsAdapter();
         } else {
-            $this->line('  <fg=cyan>i</> Chart adapter not configured (optional — set charts.library to "chartjs" or "apexcharts" in config/wirekit.php to enable <x-wirekit-chart>)');
+            $this->reportInfo('Chart adapter not configured (optional — set charts.library to "chartjs" or "apexcharts" in config/wirekit.php to enable <x-wirekit-chart>)');
         }
 
         if (class_exists(ImageRenderer::class)) {
             $this->reportPass('bacon/bacon-qr-code installed');
         } else {
-            $this->line('  <fg=cyan>i</> bacon/bacon-qr-code not installed (optional — only needed for <x-wirekit::qr-code>)');
+            $this->reportInfo('bacon/bacon-qr-code not installed (optional — only needed for <x-wirekit::qr-code>)');
         }
 
         // Front-end peer dependencies for <x-wirekit::editor> and <x-wirekit::map>.
@@ -2231,8 +2231,8 @@ class VerifyInstallationCommand extends Command
         // surface as a contextual INFO reminder, not a pass/fail check. Listed
         // here so the onboarding doctor mentions them, not just the component
         // pages. Each component degrades gracefully if its dependency is absent.
-        $this->line('  <fg=cyan>i</> <x-wirekit::editor> needs a ProseMirror editor (optional — Tiptap recommended: npm install @tiptap/core @tiptap/starter-kit and expose window.wirekitEditor; only if you use the editor)');
-        $this->line('  <fg=cyan>i</> <x-wirekit::map> needs a map engine (optional — npm install maplibre-gl or leaflet and load it before WireKit; only if you use the map)');
+        $this->reportInfo('<x-wirekit::editor> needs a ProseMirror editor (optional — Tiptap recommended: npm install @tiptap/core @tiptap/starter-kit and expose window.wirekitEditor; only if you use the editor)');
+        $this->reportInfo('<x-wirekit::map> needs a map engine (optional — npm install maplibre-gl or leaflet and load it before WireKit; only if you use the map)');
     }
 
     /**
@@ -2410,7 +2410,7 @@ class VerifyInstallationCommand extends Command
                 $this->checkApexChartsMajor((string) $deps['apexcharts']);
             }
         } else {
-            $this->line('  <fg=cyan>i</> package.json not found — skipping apexcharts npm presence check');
+            $this->reportInfo('package.json not found — skipping apexcharts npm presence check');
         }
 
         // Step 1b: is the global actually ASSIGNED anywhere?
@@ -2974,13 +2974,40 @@ class VerifyInstallationCommand extends Command
      * Distinct from PASS (everything's fine) and WARN (something the
      * developer should look at). INFO is "this is the natural state of a
      * fresh install; here's the next step if you want to act on it."
-     * Counts as PASS in the summary tally so the summary line doesn't
-     * read as if something failed.
+     *
+     * ⚠️ IT COUNTS TOWARD NOTHING, AND IT USED TO COUNT AS A PASS. The old
+     * docblock said so — "so the summary line doesn't read as if something
+     * failed" — and the reason is answered by the `0 failed` sitting right
+     * beside it in the same line. What it cost was worse: most INFO lines
+     * here say "skipped" or "NOT measured", so counting them as passes
+     * claimed a result for checks that never ran.
+     *
+     * That was only half the damage. Twelve other sites printed the same
+     * glyph through a raw `$this->line()` and incremented nothing, so the
+     * tally included exactly one of thirteen INFO lines on a live run, and
+     * WHICH one depended on the emitter rather than on anything a reader
+     * could see. Both spellings now go through here (or through
+     * reportInfoIndented() for a nested diagnostic) and neither counts —
+     * so `passed` is the ✓ count, exactly.
+     * Held by a guard over this command's transcript, which fails if the two disagree.
      */
     private function reportInfo(string $message): void
     {
         $this->line("  <fg=blue>i</> {$message}");
-        $this->passed++;
+    }
+
+    /**
+     * INFO tier, one level in — for a diagnostic printed underneath a
+     * check's own heading rather than at the top level of the report.
+     *
+     * Exists so the token-alignment skips can share the one info emitter
+     * without losing their indentation; the guard that keeps the glyph in
+     * one place would otherwise have to allow a raw line, which is the hole
+     * it was built to close.
+     */
+    private function reportInfoIndented(string $message): void
+    {
+        $this->line("    <fg=blue>i</> {$message}");
     }
 
     /**
@@ -3056,14 +3083,14 @@ class VerifyInstallationCommand extends Command
                 default => "{$wkToken} unset",
             };
 
-            $this->line("    <fg=blue>i</> {$label}: skipped ({$reason})");
+            $this->reportInfoIndented("{$label}: skipped ({$reason})");
 
             return;
         }
 
         // Skip if either side is a var(...) reference (intentional aliasing)
         if (str_contains($twValue, 'var(') || str_contains($wkValue, 'var(')) {
-            $this->line("    <fg=blue>i</> {$label}: skipped (var(...) reference — intentional alias)");
+            $this->reportInfoIndented("{$label}: skipped (var(...) reference — intentional alias)");
 
             return;
         }

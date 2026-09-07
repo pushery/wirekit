@@ -110,7 +110,7 @@
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         'hover:border-[var(--color-wk-border-strong-hover)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
@@ -225,6 +225,15 @@
 
     <div class="relative">
         <input
+            {{-- The STATIC type comes first and is not decoration. With only the binding,
+                 an <input> has no type until Alpine builds the scope — and an input with
+                 no type is `text` per HTML. So the field rendered the password in the
+                 clear on first paint, under a CSP that blocks the expression, and with
+                 JavaScript off entirely. Alpine's x-bind:type overwrites it the moment
+                 the scope exists, so the hydrated DOM is unchanged; only the states
+                 before and without hydration change, and they change to the one the
+                 component documents. --}}
+            type="password"
             :type="showPassword ? 'text' : 'password'"
             id="{{ $id }}"
             name="{{ $name }}"
@@ -245,7 +254,7 @@
         @if($toggle)
             <button
                 type="button"
-                class="absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)]"
+                class="absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)]"
                 @click="showPassword = !showPassword"
                 {{-- Static aria-label and aria-pressed guard the pre-Alpine render
                      (axe scans the DOM before hydration may complete); the bound

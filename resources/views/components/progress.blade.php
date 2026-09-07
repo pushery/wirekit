@@ -148,12 +148,16 @@
             aria-valuemin="0"
             aria-valuemax="{{ (int) $max }}"
         @endif
-        class="{{ $trackClasses }} {{ $heightClass }}"
+        {{-- `wk-progress-track` / `wk-progress-fill` are the markers the stylesheet's
+             forced-colors rule selects. Both sit outside the resolved class list, like
+             `wk-spinner`, so a `personalize()` override cannot remove the rule that keeps
+             the bar readable when the palette is forced. --}}
+        class="wk-progress-track {{ $trackClasses }} {{ $heightClass }}"
     >
         @if($isIndeterminate)
-            <div class="{{ $fillClasses }}"></div>
+            <div class="wk-progress-fill {{ $fillClasses }}"></div>
         @else
-            <div class="{{ $fillClasses }}" style="width: {{ $percent }}%"></div>
+            <div class="wk-progress-fill {{ $fillClasses }}" style="width: {{ $percent }}%"></div>
         @endif
     </div>
 </div>

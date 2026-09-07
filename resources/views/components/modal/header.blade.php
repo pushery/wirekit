@@ -60,7 +60,7 @@
         'text-[color:var(--color-wk-text-muted)]',
         'hover:text-[color:var(--color-wk-text)]',
         'hover:bg-[var(--color-wk-bg-muted)]',
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors',

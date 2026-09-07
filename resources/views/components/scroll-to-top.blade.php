@@ -45,7 +45,7 @@
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         'hover:bg-[var(--color-wk-accent-hover)]',
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
@@ -124,8 +124,11 @@
     type="button"
     {{-- aria-label via merge so a caller can override the default — a
          hardcoded attribute plus a separate $attributes bag renders a
-         duplicate aria-label that the browser ignores (first wins). --}}
-    {{ $attributes->merge(['aria-label' => 'Scroll to top'])->class([$buttonClasses, $sizeClasses, $positionClasses]) }}
+         duplicate aria-label that the browser ignores (first wins).
+         The default goes through the catalog: this button's only child is an
+         aria-hidden glyph, so this string IS its accessible name, and a merge
+         default a German app never overrides is announced in English. --}}
+    {{ $attributes->merge(['aria-label' => __('wirekit::Scroll to top')])->class([$buttonClasses, $sizeClasses, $positionClasses]) }}
 >
     {{-- Chevron up icon — decorative, label is on the button --}}
     <svg aria-hidden="true" class="{{ $iconSize }}" viewBox="0 0 20 20" fill="currentColor">

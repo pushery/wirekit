@@ -285,7 +285,7 @@
                 autocomplete="off"
                 spellcheck="false"
                 autocapitalize="off"
-                class="wk-field w-full border-0 bg-transparent p-0 text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] placeholder:text-[color:var(--color-wk-text-muted)] focus:outline-none focus:ring-0"
+                class="wk-field w-full border-0 bg-transparent p-0 text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] placeholder:text-[color:var(--color-wk-text-muted)] focus:outline-hidden focus:ring-0"
             />
         </div>
 

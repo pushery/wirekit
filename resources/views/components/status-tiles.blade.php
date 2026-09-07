@@ -109,7 +109,7 @@
     // off the <a> to preserve its native link role).
     $tileBase = 'block h-full rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] px-[var(--padding-wk-x-sm)] py-1';
     $tileInner = 'flex h-full flex-col justify-center gap-[var(--gap-wk-xs)]';
-    $tileLink = ' transition-shadow hover:shadow-[var(--shadow-wk-sm)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]';
+    $tileLink = ' transition-shadow hover:shadow-[var(--shadow-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]';
 
     // Normalize + pre-resolve every tile so the markup below stays pure data (no
     // closures / dynamic element tags — those break Blade's slot compilation), and

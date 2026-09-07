@@ -45,8 +45,10 @@
     // shows just the green border. `error` always wins when both are set.
     'success' => null,
     'size' => config('wirekit.components.textarea.size', 'md'),
-    // Number of rows, OR 'auto' to grow with content (CSS field-sizing: content,
-    // baseline-safe). In auto mode `rows` acts as the minimum height.
+    // Number of rows, OR 'auto' to grow with content via CSS field-sizing: content
+    // — a property ABOVE the browser baseline, which this line called safe to
+    // assume for thirteen releases. Auto mode falls back to a 2-row minimum where
+    // the property is unsupported; the degradation is spelled out at $autosize.
     'rows' => config('wirekit.components.textarea.rows', 3),
     'resize' => true,
     'scope' => null,
@@ -142,7 +144,7 @@
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
         'hover:border-[var(--color-wk-border-strong-hover)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-[var(--color-wk-ring)]',

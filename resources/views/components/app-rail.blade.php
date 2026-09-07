@@ -201,7 +201,7 @@
         // inverts, these are different colors, and reading the column's would paint the
         // glyph in the same color as the surface behind it.
         'hover:text-[color:var(--color-wk-rail-hover-fg)]',
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-rail-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)]',

@@ -92,7 +92,25 @@
         'text-[length:var(--text-wk-md)] font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
         'transition-colors duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]',
-        'focus:outline-none focus:bg-[var(--color-wk-bg-subtle)] hover:bg-[var(--color-wk-bg-subtle)]',
+        // `focus-visible` plus a RING, which is the shape dropdown/item.blade.php
+        // carries with its full reasoning — read it there rather than here.
+        //
+        // A surface alone cannot mark focus in this menu, and the reason is a token
+        // equality rather than anything in this file: dark mode declares
+        // --color-wk-bg-subtle and --color-wk-bg-elevated as the SAME value, and the
+        // panel behind this row is bg-elevated. So the focused row changed by 1.00:1
+        // — it did not change — while `focus:outline-hidden` had already removed the
+        // browser's own ring. Light mode managed 1.04:1. The ring measures 17.2:1 in
+        // dark and 19.8:1 in light against that panel, and the two tokens stay as
+        // they are: 20.5% IS dark's elevated tone by decision (dist/wirekit.css,
+        // `[data-wk-tone="inverse"]`), so re-tinting one would move every hover in
+        // the catalog to close a focus hole.
+        'focus:outline-hidden',
+        'focus-visible:bg-[var(--color-wk-bg-subtle)]',
+        'focus-visible:ring-[length:var(--ring-wk-width)]',
+        'focus-visible:ring-inset',
+        'focus-visible:ring-[var(--color-wk-ring)]',
+        'hover:bg-[var(--color-wk-bg-subtle)]',
         'cursor-pointer',
     ]), $scope);
 

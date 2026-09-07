@@ -39,9 +39,10 @@
     // and <img>/<picture>/<svg> — code blocks and figure captions don't read
     // at prose pace.
     //
-    // perParagraph mode (Medium-style): when enabled, the component injects
-    // a small `<span class="wk-reading-meta-paragraph">N min</span>`
-    // annotation immediately before each <p> in the target with at least
+    // perParagraph mode (the long-form-publishing pattern): when enabled,
+    // the component injects a small
+    // `<span class="wk-reading-meta-paragraph">N min</span>` annotation
+    // immediately before each <p> in the target with at least
     // `paragraphMinWords` words. Annotations show estimated remaining-time
     // FROM that paragraph onward (re-computed on scroll). Default off; opt-in.
     // aria-hidden — total/remaining display is the canonical SR reading-time.

@@ -22,12 +22,44 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('drawer', $attributes->getAttributes());
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `dismissible="false"` used to mean the opposite of what the call site reads as. The
+    // prop's default is spelled as a `config()` fallback rather than a literal, which is
+    // the only reason the coverage guard did not see it. It defaults ON, so turning it off
+    // is the direction a developer chooses deliberately — and Escape and the backdrop both
+    // kept closing the drawer, which is the whole of what the prop suppresses. Same shape,
+    // same fix as the modal beside it.
+    $dismissible = BooleanProp::from($dismissible, true);
+
+    // `size` and `position` are resolved by a `match` with a `default` arm below, and a
+    // default arm is silent by construction: `size="xl"` rendered `md` and
+    // `position="diagonal"` rendered `right`, in every environment, with nothing anywhere
+    // to read. `warnUnknownProps` cannot see it either — it flags unknown prop KEYS, and
+    // both of these are declared props carrying an out-of-set VALUE.
+    //
+    // The gate supplies the signal without changing what renders: it throws in a console
+    // or test run, logs at error level and continues in an HTTP dev request, and stays
+    // silent in production. The fallback is assigned here rather than taken from the
+    // gate's return, because the gate falls back to the FIRST allowed value and this
+    // component's default is `md` / `right` — reordering the allowed set to steer that
+    // would make the error message lie about which value is canonical.
+    if (! in_array($size, ['sm', 'md', 'lg'], true)) {
+        WireKit::validateProp('drawer', 'size', (string) $size, ['sm', 'md', 'lg']);
+        $size = 'md';
+    }
+
+    if (! in_array($position, ['left', 'right', 'top', 'bottom'], true)) {
+        WireKit::validateProp('drawer', 'position', (string) $position, ['left', 'right', 'top', 'bottom']);
+        $position = 'right';
+    }
 
     // Title ID for aria-labelledby — links dialog to its header
     $titleId = 'wk-drawer-title-' . ($name ?? \Illuminate\Support\Str::random(12));

@@ -38,8 +38,44 @@ export function createFocusTrap(container, {
         returnFocusOnDeactivate: true,
         // Prevent scroll jump when activating trap
         preventScroll: true,
-        // Fallback focus to the container itself if no focusable elements inside
-        fallbackFocus: container,
+        // Fallback focus to the container itself if no focusable elements inside.
+        //
+        // ⚠️ A FUNCTION, AND THE `tabindex` IT WRITES IS THE WHOLE POINT. focus-trap's
+        // own README states the precondition next to this option: *"Make sure the
+        // fallback element has a negative `tabindex` so it can be programmatically
+        // focused."* Handing it the bare node did not meet that — and not one of the
+        // panels this library passes carries a `tabindex`: modal, drawer,
+        // alert-dialog, popover, command-palette and lightbox are all zero.
+        //
+        // Nothing failed loudly, which is why it survived. A truthy fallback
+        // satisfies the library's "must have at least one tabbable node" check, so
+        // no error is thrown; the fallback then resolves to a `<div>` and
+        // `node.focus()` on a div without a tabindex is a NO-OP. The trap reports
+        // itself active while `document.activeElement` is still `<body>`, and every
+        // subsequent Tab is `preventDefault()`ed and handed to that same node — so
+        // focus does not move at all.
+        //
+        // Reachable from a shipped docs preview: the popover placement demo opens
+        // four panels whose entire content is plain text. `app-shell.blade.php`
+        // measured exactly this in a browser and fixed it locally with its own
+        // conditional `:tabindex`; the shared helper is where it belongs.
+        //
+        // Lazy on purpose. The library only resolves this option once its tabbable
+        // set comes up empty (`state.tabbableGroups.length <= 0 && !getNodeForOption(…)`
+        // short-circuits), so a panel with real controls is never touched — and
+        // `-1` is focusable but NOT tabbable, so the fallback stays the fallback
+        // instead of becoming the first tab stop.
+        fallbackFocus: () => {
+            if (container
+                && typeof container.hasAttribute === 'function'
+                && typeof container.setAttribute === 'function'
+                && ! container.hasAttribute('tabindex')
+            ) {
+                container.setAttribute('tabindex', '-1');
+            }
+
+            return container;
+        },
     };
 
     // Optional initial focus override (e.g. command palette search input,

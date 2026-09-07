@@ -10,6 +10,13 @@
  * the rest carry -1. Inside an open menu the arrows walk the items, and Escape closes and
  * hands focus back to the trigger it came from rather than dropping it on <body>.
  *
+ * Tab is the third exit and belongs to the same group: it closes the menu and leaves the
+ * BAR — not the next trigger, because the bar is one stop. It has to be handled rather
+ * than left to the browser for the reason the panel is teleported at all: while a menu is
+ * open, focus sits on a `tabindex="-1"` item at the end of <body>, so the browser's own
+ * answer is off the end of the document one way and before the overlay root the other,
+ * with the menu still painted over the page either way.
+ *
  * Where the reader is standing comes from the EVENT, not from `activeMenu`. Deriving it
  * from the open menu alone gives the same answer for every trigger while the bar is
  * closed, and the arithmetic then runs off that: ArrowDown on the third menu opened the
@@ -28,6 +35,17 @@
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
+
+/**
+ * What the browser would consider a tab stop OUTSIDE this bar.
+ *
+ * Same selector hover-card and navigation-menu use for their teleported panels —
+ * same question, so the same answer rather than a third list that drifts from
+ * the other two. `[tabindex="-1"]` is excluded, which is exactly why the menu
+ * items themselves never show up here: the bar is one tab stop and its items are
+ * reached with the arrow keys.
+ */
+const TAB_STOP = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 export default function wirekitMenubar() {
     return {
@@ -170,6 +188,45 @@ export default function wirekitMenubar() {
             // viewport coordinates, so letting the browser scroll to the trigger makes a
             // mid-page menubar jump on close.
             trigger?.focus({ preventScroll: true });
+        },
+
+        /**
+         * The tab stop the reader would reach by leaving the whole bar.
+         *
+         * ⚠️ THE BAR IS ONE TAB STOP, so "the next element in the tab sequence"
+         * is the next one OUTSIDE it — not the next trigger. That is the
+         * difference from navigation-menu, whose top-level items are each their
+         * own stop and whose panel Tab therefore steps along the bar.
+         *
+         * Every teleported panel is skipped along with this component's own: they
+         * sit at the end of `<body>` while being drawn somewhere else entirely,
+         * so one is never a sensible neighbor of anything. And a present but
+         * `display: none` element is skipped because `focus()` on one does
+         * nothing — the browser drops focus on `<body>` instead, which is the
+         * outcome this whole branch exists to prevent.
+         *
+         * @param {boolean} forward
+         * @returns {Element|null}
+         */
+        _tabStopBesideBar(forward) {
+            const root = this.$root;
+
+            if (! root || typeof root.compareDocumentPosition !== 'function') return null;
+
+            const overlayRoot = document.getElementById('wk-overlay-root');
+            const wanted = forward
+                ? Node.DOCUMENT_POSITION_FOLLOWING
+                : Node.DOCUMENT_POSITION_PRECEDING;
+
+            const outside = [...document.querySelectorAll(TAB_STOP)].filter((el) => {
+                if (root.contains(el)) return false;
+                if (overlayRoot?.contains(el)) return false;
+                if (typeof el.getClientRects === 'function' && el.getClientRects().length === 0) return false;
+
+                return Boolean(root.compareDocumentPosition(el) & wanted);
+            });
+
+            return forward ? outside[0] ?? null : outside[outside.length - 1] ?? null;
         },
 
         /**
@@ -437,6 +494,46 @@ export default function wirekitMenubar() {
                     event.preventDefault();
                     this.closeAndFocusTrigger();
                     break;
+
+                case 'Tab': {
+                    // With the bar CLOSED the browser is already right: the roving
+                    // tabindex makes the whole bar one stop, and Tab passes it. Claiming
+                    // the key there would only reimplement what works.
+                    if (! this.activeMenu) break;
+
+                    // ⚠️ WITH A MENU OPEN THE BROWSER IS WRONG, and it fails silently.
+                    // The panel is teleported to the end of <body> while it is drawn
+                    // under its trigger, and its items carry `tabindex="-1"` — so the
+                    // sequential order continues from a point at the end of the
+                    // document. Forwards that leaves the document for the browser
+                    // chrome; backwards it lands on whatever precedes the overlay root.
+                    // Either way the menu stayed OPEN and painted over the page with
+                    // focus somewhere else, which is the half of the pattern the docs
+                    // page promised and this handler did not implement.
+                    //
+                    // preventDefault is not optional here: focus sits on a `tabindex=-1`
+                    // element inside the overlay root, so there is nothing sensible for
+                    // the browser to continue from. The placement has to be explicit,
+                    // the way navigation-menu's panel handler does it.
+                    const beside = this._tabStopBesideBar(! event.shiftKey);
+
+                    event.preventDefault();
+
+                    if (beside) {
+                        this.closeAll();
+                        beside.focus({ preventScroll: true });
+
+                        break;
+                    }
+
+                    // Nothing tabbable on that side of the bar. Falling back to the
+                    // trigger keeps the reader on the page at the bar's own tab stop,
+                    // from where the next Tab leaves the document natively — rather
+                    // than on a menu item that is about to be hidden, which drops focus
+                    // on <body>.
+                    this.closeAndFocusTrigger();
+                    break;
+                }
 
                 case 'Home':
                 case 'End': {

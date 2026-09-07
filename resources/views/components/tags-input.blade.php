@@ -30,8 +30,13 @@
     'hint' => null,
     'error' => null,
     'value' => [],
-    'maxTags' => null,
-    'placeholder' => __('wirekit::Add a tag...'),
+    // Both resolve through config, because the docs page has told developers to override
+    // them in `config/wirekit.php` since it shipped and nothing here ever read it — an
+    // instruction that fails silently, with no error to search for. The catalog default
+    // stays behind a `??` rather than moving into the config stub: a literal in the stub
+    // would freeze one language for every locale.
+    'maxTags' => config('wirekit.components.tags-input.max-tags'),
+    'placeholder' => config('wirekit.components.tags-input.placeholder') ?? __('wirekit::Add a tag...'),
     // Documented as part of this control's API since it shipped, and until now it was
     // documentation only: the attribute bag never reached the text input, so a call site
     // asking for a disabled field got a fully working one.
@@ -267,7 +272,7 @@
                         @if($disabled) disabled @endif
                         @click="removeTag(i)"
                         :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', tag)"
-                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:cursor-not-allowed transition-colors cursor-pointer"
                     >
                         <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                     </button>
@@ -313,7 +318,7 @@
                 @keydown.comma.prevent="addTag()"
                 @keydown.backspace="onBackspace($event)"
                 @keydown.escape="onEscape($event)"
-                class="wk-field flex-1 min-w-[80px] px-2 bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] outline-none disabled:cursor-not-allowed"
+                class="wk-field flex-1 min-w-[80px] px-2 bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] focus-visible:outline-hidden disabled:cursor-not-allowed"
             />
         </div>
 @if($optimisticConfig)

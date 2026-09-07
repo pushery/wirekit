@@ -93,8 +93,20 @@
     // A validation failure returns as re-rendered HTML with a filled bag, NOT as
     // a transport error — so the bag is where the message actually is. Read the
     // same way the form controls read it, under this field's name.
-    $hasError = (bool) $error || (bool) ($errors ?? null)?->has($name);
-    $errorMessage = $error ?: ($errors ?? null)?->first($name);
+    //
+    // Both reads are guarded on the name, exactly as field.blade.php does.
+    // `MessageBag::has(null)` falls through to `any()` and `first(null)` returns
+    // the bag's FIRST message — so an inline-edit with no `name` did not merely
+    // turn red when an unrelated field failed, it displayed that other field's
+    // message as its own.
+    $hasError = (bool) $error || ($name && (bool) ($errors ?? null)?->has($name));
+    $errorMessage = $error ?: ($name ? ($errors ?? null)?->first($name) : null);
+
+    // The paragraph and the idref pointing at it move together. `$hasError` can
+    // be true with nothing to say (`error=""` plus a bag hit), and a described-by
+    // resolving to an empty element announces the control as invalid without
+    // saying why — a WCAG 3.3.1 failure the markup looks fine in.
+    $showsError = $hasError && $errorMessage;
 
     // A caller-supplied `aria-label` names the CONTROL, and `{{ $attributes }}` lands on
     // the roleless root wrapper — so `<x-wirekit::inline-edit aria-label="Notes" />`
@@ -184,7 +196,7 @@
     $attributes = $attributes->except(['id']);
 
     $hintId = $hint ? $id.'-hint' : null;
-    $errorId = $hasError ? $id.'-error' : null;
+    $errorId = $showsError ? $id.'-error' : null;
     // Composed, and never emitted empty: an empty aria-describedby is a
     // dangling reference, which some screen readers announce as a blank.
     $describedBy = trim(implode(' ', array_filter([$hintId, $errorId]))) ?: null;
@@ -230,7 +242,7 @@
         'rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
-        'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'cursor-pointer',
         $triggerVisibility,
     ]), $scope);
@@ -244,7 +256,7 @@
         ?? __('wirekit::Still not confirmed. Your text is kept here — reload to see whether it was saved.');
 
     $actionClasses = 'wk-touch-target inline-flex shrink-0 items-center justify-center rounded-[var(--radius-wk-sm)] '
-        .'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer';
+        .'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer';
 @endphp
 
 <div
@@ -393,7 +405,7 @@
         <p id="{{ $hintId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
-    @if($hasError)
+    @if($showsError)
         <p id="{{ $errorId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 

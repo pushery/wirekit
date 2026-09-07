@@ -31,6 +31,38 @@ export default function wirekitTagsInput(config = {}) {
         ? config.announcements
         : {};
 
+    // The field's root element, resolved ONCE while something is still attached
+    // to resolve it from.
+    //
+    // ⚠️ `$root` IS RESOLVED WHEN IT IS READ, by walking up from `$el` to the
+    // nearest `[x-data]`. `removeTag()` runs from a chip's own remove button, so
+    // `$el` is that button — and `_focusAfterRemoval` reads the scope inside
+    // `$nextTick`, by which time the button has gone with its chip. The walk from
+    // a detached node reaches nothing.
+    //
+    // The `?? this.$el` fallback that used to stand there is what made it quiet
+    // rather than loud: a button answers `querySelectorAll` perfectly well and has
+    // no chips inside it, so the list came back EMPTY and the code took its
+    // last-resort branch — focus to the text field. That is a plausible place for
+    // focus to be, which is exactly why nobody noticed the chip it was meant to go
+    // to. Measured in chromium: three chips, remove the last one with its button
+    // focused, and focus lands on the INPUT rather than on the new last chip.
+    //
+    // Same defect as the one fixed in `toast.js`; the two were found by one sweep.
+    let rootEl = null;
+
+    /**
+     * @param {{$root?: Element}} ctx
+     * @returns {Element|null}
+     */
+    const rootOf = (ctx) => {
+        if (! rootEl && ctx) {
+            rootEl = ctx.$root ?? null;
+        }
+
+        return rootEl;
+    };
+
     return {
         // Seed with developer-supplied initial tags. Defensive Array.from
         // accepts both plain arrays and array-like inputs (e.g. when the
@@ -104,6 +136,9 @@ export default function wirekitTagsInput(config = {}) {
             this.tags.splice(index, 1);
             this._commit();
             this._announce(announcements.removed, { name: removed });
+            // Resolved HERE — synchronously, while the button that anchors the
+            // scope is still in the document. The move itself waits for the tick.
+            rootOf(this);
             this._focusAfterRemoval(index);
         },
 
@@ -119,10 +154,14 @@ export default function wirekitTagsInput(config = {}) {
          * before the template has caught up finds the buttons as they were.
          * Outside Alpine there is no tick and no DOM — the guards make this a
          * no-op there rather than the throw a bare `this.$nextTick` would be.
+         *
+         * The root comes from the cache the caller filled, NOT from `$root` read
+         * here: by then the element that anchored the scope is detached. See the
+         * note at the top of this file.
          */
         _focusAfterRemoval(index) {
             const place = () => {
-                const root = this.$root ?? this.$el ?? null;
+                const root = rootOf(this);
 
                 if (! root || typeof root.querySelectorAll !== 'function') return;
 

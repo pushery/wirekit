@@ -127,6 +127,10 @@
     // it on the outer wrapper instead of the inner `x-data` element.
     $callerReplayable = $chartAttributes->get('data-replayable');
     $chartAttributes = $chartAttributes->except(['data-replayable']);
+    // The marker below is a package contract, not a pass-through slot: a caller
+    // who sets `data-wk-chart` themselves would otherwise put the attribute on
+    // the tag twice, and a host reading it would get whichever the parser kept.
+    $chartAttributes = $chartAttributes->except(['data-wk-chart']);
     $needsReplayWrapper = $emitReplayable || $callerReplayable !== null;
 @endphp
 @if ($needsReplayWrapper)
@@ -150,6 +154,22 @@
 @endif
 <{{ $wrapperTag }}
     x-data="{{ $alpineComponent }}({{ \Pushery\WireKit\Support\AlpinePayload::from($chartConfig) }})"
+    {{-- The one stable signal that says "a chart renders here", carrying the
+         active adapter's library identifier as its value. A host that defers a
+         chart library until the first chart appears has nothing else to aim at:
+         the component emits no `wk-*` class of its own, so before this the only
+         handle was the Alpine factory's NAME — an implementation detail whose
+         rename is not a breaking change from here, which makes a selector built
+         on it stop matching without a word.
+
+         It sits on this element and not on the replay wrapper, so counting
+         `[data-wk-chart]` counts charts. `chart-mixed` renders through this same
+         view, so it is marked by delegation rather than by a second copy. The
+         debug placeholder — rendered when no adapter is configured and
+         APP_DEBUG is on — deliberately does NOT carry it: no chart renders
+         there, and a lazy-loader firing on it would fetch a chart library for
+         a chart that was never configured. --}}
+    data-wk-chart="{{ $chartLibrary }}"
     @if ($wireStreamEvent)
         data-wire-stream-event="{{ $wireStreamEvent }}"
         data-wire-stream-mode="{{ $wireStreamModeAttr }}"

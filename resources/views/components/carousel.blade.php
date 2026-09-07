@@ -71,7 +71,7 @@
         'flex',
         'overflow-hidden',
         'rounded-[var(--radius-wk-lg)]',
-        'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         $isVertical
             ? 'flex-col h-full overflow-y-auto snap-y snap-mandatory'
             : 'overflow-x-auto snap-x snap-mandatory',
@@ -87,7 +87,7 @@
         'text-[color:var(--color-wk-text)]',
         'transition-opacity duration-[var(--transition-wk-duration)]',
         'hover:bg-[var(--color-wk-bg-subtle)]',
-        'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-default',
         $isVertical ? 'left-1/2 -translate-x-1/2' : 'top-1/2 -translate-y-1/2',
     ]);
@@ -222,7 +222,7 @@
                      centers 24px apart, which is exactly the distance at which the
                      standard's circles stop intersecting, and an 8px dot is then compliant
                      without being any bigger. --}}
-                class="w-2 h-2 cursor-pointer rounded-full transition-colors duration-[var(--transition-wk-duration)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="w-2 h-2 cursor-pointer rounded-full transition-colors duration-[var(--transition-wk-duration)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 :class="current === i ? 'bg-[var(--color-wk-accent)]' : 'bg-[var(--color-wk-border)]'"
             ></button>
         </template>
@@ -257,7 +257,7 @@
                 {{-- Resolved server-side: a literal here would be untranslatable AND invisible to every __() extractor. --}}
                 :aria-label="playing ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Pause carousel')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Play carousel')) }}"
                 data-wk-carousel-playpause
-                class="ms-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="ms-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
             >
                 <svg x-show="playing" class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M6 5h4v14H6zM14 5h4v14h-4z" />

@@ -56,6 +56,19 @@
     // they did not ask to go. WCAG forbids neither; the call site knows which
     // of the two screens it is building.
     'autofocus' => false,
+    // Disable the whole control: native `disabled` on every digit box and on the
+    // hidden input that carries the combined value, plus `aria-disabled` on the
+    // group so a reader who lands there before reaching a box hears it too.
+    //
+    // It was DOCUMENTED — a props-table row and a `--opacity-wk-disabled` theming
+    // row — while undeclared here, so the flag landed in the attribute bag, and the
+    // bag never reaches the digit boxes: the only reads are `->only('class')` on the
+    // wrapper, `->whereStartsWith('wire:model')` on the hidden input and
+    // `->get('aria-label')`. Nothing was emitted anywhere. A one-time-code field
+    // written `disabled` stayed fully typeable, pasteable and submittable, announced
+    // as editable, and the `disabled:` variants below could never fire. Same defect,
+    // same shape, as the one range-slider carries a note about.
+    'disabled' => false,
 ])
 
 @aware(['announceErrors' => null])
@@ -68,6 +81,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $masked = BooleanProp::from($masked, false);
     $autofocus = BooleanProp::from($autofocus, false);
+    $disabled = BooleanProp::from($disabled, false);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -184,7 +198,7 @@
         'rounded-[var(--radius-wk-md)]',
         'shadow-[var(--shadow-wk-sm)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
@@ -245,8 +259,11 @@
         <x-wirekit::label :for="$id . '-digit-0'">{{ $label }}</x-wirekit::label>
     @endif
 
-    {{-- Hidden input holds the combined OTP value for form submission / wire:model --}}
-    <input type="hidden" id="{{ $id }}" name="{{ $name }}" {{ $attributes->whereStartsWith('wire:model') }} />
+    {{-- Hidden input holds the combined OTP value for form submission / wire:model.
+         Native `disabled`, so a disabled code is omitted from the submitted form the
+         way every other disabled control is — the value the reader could not enter
+         must not be posted on their behalf. --}}
+    <input type="hidden" id="{{ $id }}" name="{{ $name }}" @disabled($disabled) {{ $attributes->whereStartsWith('wire:model') }} />
 
     {{-- Alpine logic inlined (no wirekit.js dependency needed).
          Handles auto-advance on digit input, backspace to previous,
@@ -263,6 +280,9 @@
         class="flex flex-wrap gap-2"
         role="group"
         aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::One-time code') }}"
+        {{-- On the GROUP as well as on every box: a reader who lands on the group
+             before reaching a digit has to hear that the code is not enterable. --}}
+        @if($disabled) aria-disabled="true" @endif
     >
         @for($i = 0; $i < $length; $i++)
             <input
@@ -307,6 +327,15 @@
                      and which box happens to be focused when the answer arrives
                      is not something the reader chose. --}}
                 @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
+                {{-- The native attribute alone, and the four handlers below stay
+                     unguarded on purpose: a disabled <input> dispatches no focus,
+                     input, keydown or paste event at all, so an `@unless($disabled)`
+                     around them would be a branch no run can enter. It is on every
+                     box rather than the group because `disabled` does not inherit —
+                     the group carries `aria-disabled` for the same state instead.
+                     (range-slider DOES guard its handlers: its thumbs are
+                     `div[role="slider"]`, which the attribute cannot switch off.) --}}
+                @disabled($disabled)
                 class="wk-field {{ $digitClasses }} {{ $stateClasses }}"
                 x-ref="digit{{ $i }}"
                 {{-- Selects the cell on focus, so a filled cell overwrites like an empty

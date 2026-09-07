@@ -114,17 +114,88 @@ CSS,
             'brutalist' => [
                 'label' => 'Brutalist',
                 'vars' => <<<'CSS'
-    /* Brutalist — bold borders, no shadows */
-    --radius-wk-sm: 0px;
-    --radius-wk-md: 0px;
-    --radius-wk-lg: 0px;
-    --radius-wk-xl: 0px;
+    /* Brutalist — raw honesty, visible structure. Mirrors docs/theming/brutalist.md.
+
+       This entry used to declare three token families and a comment reading
+       "bold borders, no shadows", which is the opposite of the aesthetic the
+       page has taught since 2026-03-31: a hard 2D offset shadow with zero blur.
+       The command wrote one theme, the page taught another, and they shared a
+       name. ThemePresetDocsValueDriftTest held the gap as a known divergence.
+
+       The FONT stays out on purpose: the page's JetBrains Mono pairing needs
+       config/wirekit.php -> 'mono' => 'jetbrains-mono', which this command
+       cannot write. Naming a family nobody installed renders as the system
+       fallback, so the page states it as a prerequisite instead.
+
+       WCAG: border neutral-900 on white = 17.9:1 AAA; white label on the
+       neutral-900 accent = 17.9:1 AAA; 0ms motion carries no vestibular risk. */
+
+    /* Typography — 700 headings as a statement, 0.04em tracking for monospace
+       breathing room, 1.4 line-height tighter than Default's 1.5. */
+    --font-wk-heading-weight: 700;
+    --font-wk-letter-spacing: 0.04em;
+    --font-wk-line-height: 1.4;
+
+    /* Radius — the BASE of the calc() cascade, so -sm, -md, -lg, -xl and every
+       token derived from them square off in one line. */
+    --radius-wk: 0px;
+
+    /* Shadows — hard 2D offset, zero blur. currentColor lets dark text cast a
+       black shadow (the sticker effect). Pinned again in dark, where
+       currentColor is not controllable. */
+    --shadow-wk-sm: 2px 2px 0 0 currentColor;
+    --shadow-wk-md: 3px 3px 0 0 currentColor;
+    --shadow-wk-lg: 5px 5px 0 0 currentColor;
+    --shadow-wk-none: none;
+
+    /* Motion — 0ms, an instant reaction. Easing is irrelevant at 0ms. */
+    --transition-wk-duration: 0ms;
+
+    /* Borders — 2px and explicitly colored. The inherited neutral-300 is 1.45:1
+       on white: a WCAG 1.4.11 failure, and an invisible border defeats the whole
+       preset. Form controls read border-strong rather than border, so both
+       families are pinned or the heavy edge stops applying to inputs. */
     --border-wk-width: 2px;
-    --shadow-wk-sm: none;
-    --shadow-wk-md: none;
-    --shadow-wk-lg: none;
+    --color-wk-border: oklch(20.5% 0 none);
+    --color-wk-border-hover: oklch(14.5% 0 none);
+    --color-wk-border-strong: oklch(20.5% 0 none);
+    --color-wk-border-strong-hover: oklch(14.5% 0 none);
+    --color-wk-border-subtle: oklch(37.1% 0 none);
+
+    /* Focus ring — 3px exceeds the WCAG 2.4.11 minimum of 2px; a 0px offset
+       seats the ring directly on the element. */
+    --ring-wk-width: 3px;
+    --ring-wk-offset: 0px;
+
+    /* Hover — subtler than Default, because this preset communicates state
+       through its borders rather than through opacity. */
+    --opacity-wk-hover: 0.85;
+
+    /* Accent — zero-chroma near-black with a white label. */
+    --color-wk-accent: oklch(20.5% 0 none);
+    --color-wk-accent-fg: #fff;
+    --color-wk-ring: oklch(20.5% 0 none);
 CSS,
-                'dark_vars' => null,
+                'dark_vars' => <<<'CSS'
+    /* Shadows dark — an explicit light gray. currentColor is not controllable
+       here, and a black offset on a dark surface is invisible. */
+    --shadow-wk-sm: 2px 2px 0 0 oklch(87% 0 none);
+    --shadow-wk-md: 3px 3px 0 0 oklch(87% 0 none);
+    --shadow-wk-lg: 5px 5px 0 0 oklch(87% 0 none);
+
+    /* Borders dark — symmetric to light: bright edges on a dark surface.
+       Default's neutral-600/500/700 are too subtle for a structural border. */
+    --color-wk-border: oklch(97% 0 none);
+    --color-wk-border-hover: oklch(98.5% 0 none);
+    --color-wk-border-strong: oklch(97% 0 none);
+    --color-wk-border-strong-hover: oklch(98.5% 0 none);
+    --color-wk-border-subtle: oklch(87% 0 none);
+
+    /* Accent dark — inverted: a white surface with a near-black label. */
+    --color-wk-accent: #fff;
+    --color-wk-accent-fg: oklch(20.5% 0 none);
+    --color-wk-ring: #fff;
+CSS,
             ],
             'retro-terminal' => [
                 'label' => 'Retro Terminal',
@@ -178,9 +249,17 @@ CSS,
        The two extra brand-decorative tokens (`--color-wk-accent-brand`,
        `--color-wk-accent-brand-fg`) preserve the brand-exact L=0.605 value
        for surfaces where body text never sits on top (logo backplate, hero
-       glyphs). The interactive `--color-wk-accent` reads from L=0.55 — the
-       WCAG-AA floor at any hue, so the accent-fg label clears AA (5.28:1
-       light / 6.29:1 dark at the default hue 306). */
+       glyphs). The interactive `--color-wk-accent` reads from L=0.55, which
+       clears AA at the default hue 306 (5.28:1 light / 6.29:1 dark).
+
+       ⚠️ L=0.55 IS NOT THE AA FLOOR "AT ANY HUE", WHICH IS WHAT THIS COMMENT
+       CLAIMED. A lightness is not hue-independent — a cyan carries far more
+       luminance than a magenta at the same L — so the near-white label falls
+       to 3.64:1 around hue 189 and is below AA across roughly 113°-247°. The
+       preset ships at its own hue and is compliant there; a retint into the
+       green-to-blue band needs the accent ladder stepped down to L=0.49,
+       which clears the whole wheel (worst case 4.62:1). The block for that
+       is written out under "Cool hues" on the Aurora theming page. */
 
     --theme-hue: 306;
 

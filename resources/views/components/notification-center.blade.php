@@ -15,8 +15,12 @@
     'realtimeEvent' => null,        // window event name to listen for new items
     'open' => false,                // start with the panel open (inline embeds / demos)
     'seeAllHref' => null,           // footer "see all" link
-    'seeAllLabel' => 'See all',
-    'emptyText' => "You're all caught up",
+    // Both defaults resolve through the catalog, the way faq's `label` does. They were
+    // English literals, so a German application rendered a fully translated panel with
+    // an English footer link and an English empty state — the catalog that would have
+    // fixed it was already installed; the strings simply never asked.
+    'seeAllLabel' => __('wirekit::See all'),
+    'emptyText' => __("wirekit::You're all caught up"),
     'name' => null,                 // hidden-input name mirroring the unread count
     'scope' => null,
 ])
@@ -35,6 +39,10 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $open = BooleanProp::from($open, false);
+    // Same contract, different spelling of the default: a `config()` fallback declares a
+    // boolean as surely as a literal does. This one gates the whole filter strip above the
+    // list, so the string 'false' rendered a control row the call site had turned off.
+    $filters = BooleanProp::from($filters, false);
 
     $groupBy = WireKit::validateProp('notification-center', 'groupBy', $groupBy, ['none', 'time', 'type']);
     // Seeded from `name`, not re-randomized per render: Livewire's morph matches on the
@@ -56,11 +64,11 @@
 
     $base = WireKit::resolveClasses('notification-center', 'base', 'relative inline-block font-[family-name:var(--font-wk-sans)]', $scope);
 
-    $tab = 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
+    $tab = 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
 
     // Shared row chrome for both row variants (a real <a> when the item carries
     // an href, a <button> otherwise) — ONE interactive element per row.
-    $row = 'w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors cursor-pointer border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
+    $row = 'w-full flex items-start gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors cursor-pointer border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]';
 @endphp
 
 <div
@@ -103,7 +111,7 @@
         aria-label="{{ $titleResolved }}"
         {{-- Only :count is unknown server-side, so only :count is substituted here. --}}
         :aria-label="unreadCount > 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, :count unread', ['title' => $titleResolved])) }}.replace(':count', unreadCount) : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::title, none unread', ['title' => $titleResolved])) }}"
-        class="wk-touch-target relative inline-flex items-center justify-center h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+        class="wk-touch-target relative inline-flex items-center justify-center h-[var(--size-wk-md)] w-[var(--size-wk-md)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
     >
         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
         {{-- Unread count pill (decorative — the count is in the bell's aria-label).
@@ -139,9 +147,16 @@
         tabindex="-1"
         x-transition.origin.top.left
         x-on:click.outside="close()"
+        {{-- Tab containment lives HERE, on the teleported panel: its events bubble
+             to <body> and never reach the component root, where the window-scoped
+             Escape handler sits. Both edges are wrong by default — the panel is
+             drawn beside the bell and sits at the end of <body> — so leaving it
+             either way closes it and continues from the bell's position. See
+             wirekitNotificationCenter.tabWithinPanel. --}}
+        x-on:keydown.tab="tabWithinPanel($event)"
         role="dialog"
         aria-labelledby="{{ $titleId }}"
-        class="fixed z-[var(--z-wk-dropdown)] w-[22rem] max-w-[calc(100vw-2rem)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] focus-visible:outline-none overflow-hidden"
+        class="fixed z-[var(--z-wk-dropdown)] w-[22rem] max-w-[calc(100vw-2rem)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] focus-visible:outline-hidden overflow-hidden"
     >
         {{-- Header --}}
         <div class="flex items-center justify-between gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
@@ -154,8 +169,8 @@
                 {{-- Ghost button (subtle hover surface), not a hover-underline
                      text-link — matches WireKit's other in-panel actions
                      (e.g. data-table "Clear", filter-builder "Clear all"). --}}
-                class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent-text)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
-            >Mark all read</button>
+                class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-accent-text)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors"
+            >{{ __('wirekit::Mark all read') }}</button>
         </div>
 
         @if($filters)
@@ -169,7 +184,7 @@
                 @keydown.arrow-left.prevent="filterMove(-1)"
                 @keydown.arrow-up.prevent="filterMove(-1)"
                 class="flex flex-wrap items-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
-                <button type="button" role="radio" data-filter="all" @click="setFilter('all')" :aria-checked="activeFilter === 'all'" :tabindex="activeFilter === 'all' ? 0 : -1" :class="activeFilter === 'all' ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)]'" class="{{ $tab }}">All</button>
+                <button type="button" role="radio" data-filter="all" @click="setFilter('all')" :aria-checked="activeFilter === 'all'" :tabindex="activeFilter === 'all' ? 0 : -1" :class="activeFilter === 'all' ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)]'" class="{{ $tab }}">{{ __('wirekit::All') }}</button>
                 <template x-for="t in types" :key="t">
                     <button type="button" role="radio" :data-filter="t" @click="setFilter(t)" :aria-checked="activeFilter === t" :tabindex="activeFilter === t ? 0 : -1" x-text="t" :class="activeFilter === t ? 'bg-[var(--color-wk-bg-inverse)] text-[color:var(--color-wk-text-inverse)]' : 'text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-muted)]'" class="{{ $tab }} capitalize"></button>
                 </template>
@@ -179,7 +194,7 @@
         {{-- List — a labeled, keyboard-reachable scroll region (WCAG 2.1.1). --}}
         {{-- Reachability unconditional (WCAG 2.1.1), landmark only when the caller named the
              center: the derived name was the same on every unnamed one. --}}
-        <div @if(filled($title)) role="region" aria-label="{{ __('wirekit:::title list', ['title' => $title]) }}" @endif tabindex="0" class="max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+        <div @if(filled($title)) role="region" aria-label="{{ __('wirekit:::title list', ['title' => $title]) }}" @endif tabindex="0" class="max-h-[24rem] overflow-y-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
             {{-- Empty state --}}
             <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
                 <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
@@ -256,7 +271,7 @@
             {{-- Footer — ghost action (subtle full-width hover surface), NOT a
                  hover-underline text-link, matching the "Mark all read" header
                  action and WireKit's in-panel-action standard. --}}
-            <a href="{{ $seeAllHref }}" class="block px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] hover:bg-[var(--color-wk-bg-muted)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors">{{ $seeAllLabel }}</a>
+            <a href="{{ $seeAllHref }}" class="block px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] hover:bg-[var(--color-wk-bg-muted)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors">{{ $seeAllLabel }}</a>
         @endif
     </div>
     </template>

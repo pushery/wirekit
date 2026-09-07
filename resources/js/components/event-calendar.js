@@ -22,10 +22,44 @@
  * @param {string} config.view   - 'month' | 'week' | 'agenda'
  * @param {string} config.date   - ISO date the calendar opens on
  * @param {number} config.weekStartsOn - 0 (Sun) .. 1 (Mon, default)
+ * @param {string} [config.allDayLabel] - what an all-day event is CALLED, translated.
+ *   The English fallback is for a developer who mounts the factory by hand; the
+ *   component passes the catalog string.
+ * @param {string} [config.locale] - BCP-47 tag for every date and time this
+ *   component prints. Supplied by the component from the application locale.
  */
 import { position } from '../utils/floating.js';
 
 export default function wirekitEventCalendar(config = {}) {
+    // The APPLICATION's locale, not the browser's — the component receives it
+    // from Blade, the way calendar and countdown do. `undefined` is the
+    // deliberate fallback and not a placeholder: it is what `Intl` reads as
+    // "use the browser's own preference", so a calendar mounted by hand
+    // without the config still names its months in a language the reader
+    // chose rather than in the one this file happens to be written in.
+    //
+    // Every other word on this calendar comes out of the translation catalog,
+    // so leaving these to the browser made one page two languages: German
+    // chrome — "Heute", "Kalenderansicht" — over an English month heading and
+    // English weekday columns, for a reader whose laptop happens to be set to
+    // English. Nothing was wrong with the page; it was the same page in two
+    // languages at once, and no prop could correct it.
+    const locale = config.locale || undefined;
+
+    // Built once per instance rather than per read. Every format below depends
+    // only on the locale, which does not change for the life of the component —
+    // while `weekdayLabels`, `weekDays` and `monthWeeks` are re-read on every
+    // keystroke that moves focus, so a formatter constructed inside one of them
+    // is constructed again on each of those keystrokes.
+    const monthYearFormat = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
+    const rangeStartFormat = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' });
+    const rangeEndFormat = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', year: 'numeric' });
+    const weekdayShortFormat = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+    const hourFormat = new Intl.DateTimeFormat(locale, { hour: 'numeric' });
+    const timeFormat = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
+    const agendaDayFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'short', day: 'numeric' });
+    const fullDateFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'long', day: 'numeric' });
+
     return {
         events: Array.isArray(config.events) ? config.events.map((e) => ({ ...e })) : [],
         // Day-level markers (holidays / working days / notes) — a SEPARATE dimension
@@ -45,6 +79,15 @@ export default function wirekitEventCalendar(config = {}) {
         focusedDate: config.date ? new Date(config.date) : new Date(),
         now: new Date(),
         _clock: null,
+
+        // What an all-day event is CALLED. The agenda row prints it and `eventLabel`
+        // puts it in every event's accessible name, so a literal here is a word the
+        // catalog cannot reach: the week view's own axis label goes through `__()` two
+        // files over, and a German app would read "Ganztägig" above a list of events
+        // announced as "All day". A blank catalog entry — which happens while a
+        // language is being translated — falls back to the English rather than to an
+        // empty string, because a time slot with no word at all reads as a missing value.
+        _allDayLabel: config.allDayLabel || 'All day',
 
         init() {
             // The current-time line only matters in week view; refresh each minute.
@@ -101,13 +144,13 @@ export default function wirekitEventCalendar(config = {}) {
             // Node's ICU happens to produce something sane. Only a real browser
             // shows it, which is why the header formatting is asserted there.
             if (this.view === 'month') {
-                return this.focusedDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+                return monthYearFormat.format(this.focusedDate);
             }
             const start = this.view === 'week' ? this._startOfWeek(this.focusedDate) : this._startOfDay(this.focusedDate);
             const span = this.view === 'week' ? 6 : 13; // week = 7 days, agenda = 14
             const end = this._addDays(start, span);
-            const startStr = start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-            const endStr = end.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            const startStr = rangeStartFormat.format(start);
+            const endStr = rangeEndFormat.format(end);
             return `${startStr} – ${endStr}`;
         },
         setView(v) {
@@ -214,7 +257,7 @@ export default function wirekitEventCalendar(config = {}) {
         },
         get weekdayLabels() {
             const base = this._startOfWeek(new Date());
-            return Array.from({ length: 7 }, (_, i) => this._addDays(base, i).toLocaleDateString(undefined, { weekday: 'short' }));
+            return Array.from({ length: 7 }, (_, i) => weekdayShortFormat.format(this._addDays(base, i)));
         },
 
         // ── Week time grid ───────────────────────────────────────────────
@@ -224,7 +267,7 @@ export default function wirekitEventCalendar(config = {}) {
                 const date = this._addDays(start, i);
                 return {
                     date,
-                    weekday: date.toLocaleDateString(undefined, { weekday: 'short' }),
+                    weekday: weekdayShortFormat.format(date),
                     label: date.getDate(),
                     isToday: this._sameDay(date, this.now),
                     blocks: this._layoutDay(date),
@@ -269,7 +312,7 @@ export default function wirekitEventCalendar(config = {}) {
         hourLabel(h) {
             const d = new Date();
             d.setHours(h, 0, 0, 0);
-            return d.toLocaleTimeString(undefined, { hour: 'numeric' });
+            return hourFormat.format(d);
         },
         // Overlap-split layout: greedily assign each day's timed events to the
         // first free column, then size every block to 1/columns width.
@@ -310,7 +353,7 @@ export default function wirekitEventCalendar(config = {}) {
                     height: (durMin / 1440) * 100,
                     left: (p.col / colCount) * 100,
                     width: (1 / colCount) * 100,
-                    timeLabel: p.start.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+                    timeLabel: timeFormat.format(p.start),
                 };
             });
         },
@@ -350,12 +393,12 @@ export default function wirekitEventCalendar(config = {}) {
                     const date = new Date(key);
                     return {
                         date,
-                        label: date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' }),
+                        label: agendaDayFormat.format(date),
                         isToday: this._sameDay(date, this.now),
                         markers,
                         events: events.map((e) => ({
                             ...e,
-                            timeLabel: e.allDay ? 'All day' : this._eventStart(e).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+                            timeLabel: e.allDay ? this._allDayLabel : timeFormat.format(this._eventStart(e)),
                         })),
                     };
                 });
@@ -367,8 +410,31 @@ export default function wirekitEventCalendar(config = {}) {
         // ── Event interaction ────────────────────────────────────────────
         eventLabel(e) {
             const s = this._eventStart(e);
-            const time = e.allDay ? 'All day' : s.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-            return `${e.title}, ${s.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}, ${time}`;
+            const time = e.allDay ? this._allDayLabel : timeFormat.format(s);
+            return `${e.title}, ${fullDateFormat.format(s)}, ${time}`;
+        },
+        // The spoken form of one day, for the month view's "+N more" control.
+        //
+        // A method rather than an inline `toLocaleDateString` in the template: the
+        // template has no way to reach the instance's formatters, so the one date
+        // that was formatted there was the one date still spoken in the browser's
+        // language after everything else had moved to the application's.
+        longDate(date) {
+            return fullDateFormat.format(date);
+        },
+        // The start time a MONTH pill shows to the right of its title.
+        //
+        // Empty for an all-day event, and that is the whole decision here rather than an
+        // omission: a day cell already IS the date, so an "All day" chip would spend the
+        // pill's scarcest resource — its width — restating what the reader can see. The
+        // agenda view says "All day" because a flat list has no cell to say it for it.
+        //
+        // Same format as `eventLabel` and the agenda, so a reader comparing the two views
+        // sees one clock rather than two. The pill truncates its TITLE to make room; the
+        // time is the part that must stay whole, because a clipped time is unreadable
+        // while a clipped title is still recognizable.
+        pillTime(e) {
+            return e.allDay ? '' : timeFormat.format(this._eventStart(e));
         },
         selectEvent(e) {
             this.$dispatch('event-click', { id: e.id });

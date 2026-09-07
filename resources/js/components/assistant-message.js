@@ -30,8 +30,17 @@ export default function wirekitAssistantMessage(config = {}) {
         _observer: null,
         _body: null,
         _region: null,
-        // How much of the body text we have already announced.
-        _flushed: 0,
+        /**
+         * The body text already announced — the TEXT, deliberately, not its length.
+         *
+         * This was an index, and an index is only meaningful against the string it was
+         * taken from. A streamed body grows, so it held for the append path; but a body
+         * can also be REPLACED — a regenerate, an edit, an error sentence taking the
+         * answer's place — and after a Livewire morph the index pointed into a string
+         * that no longer existed. Keeping the text instead makes the question answerable:
+         * is what is there now a continuation of what has been said, or something else?
+         */
+        _consumed: '',
 
         init() {
             this._body = this.$refs.body || null;
@@ -66,11 +75,41 @@ export default function wirekitAssistantMessage(config = {}) {
                 return;
             }
             const text = this._text();
-            const rest = text.slice(this._flushed).trim();
+            this._resync(text);
+            const rest = text.slice(this._consumed.length).trim();
             if (rest !== '') {
                 this.announced = rest;
-                this._flushed = text.length;
+                this._consumed = text;
             }
+        },
+
+        /**
+         * Forget what has been announced when the body stops being a continuation of it.
+         *
+         * Continuity is decided on the TEXT, never on its length. A shorter replacement
+         * and a same-length rewrite are the same event, and only one of them is visible
+         * to a length test — which is why the cheap form of this check closes half the
+         * hole and reads as if it closed all of it.
+         *
+         * The two failures it ends look nothing alike, and the quiet one is the worse:
+         * against a SHORTER body the pending slice was '' forever, so the live region
+         * went silent for the rest of the component's life while the reader still held
+         * the last sentence of the PREVIOUS answer; against a longer one it sliced
+         * mid-string and read out a fragment. In both, the visible body updates exactly
+         * as it should, so there is nothing for a sighted developer to notice.
+         *
+         * Starting over does NOT re-announce the whole answer token by token, which is
+         * the flooding this component exists to prevent: the reset happens once per
+         * replacement, and from the next mutation the new text is its own prefix again.
+         *
+         * @param {string} text - The body text as `_text()` returns it now.
+         */
+        _resync(text) {
+            if (text.startsWith(this._consumed)) {
+                return;
+            }
+
+            this._consumed = '';
         },
 
         /**
@@ -99,7 +138,8 @@ export default function wirekitAssistantMessage(config = {}) {
             }
 
             const text = this._text();
-            const pending = text.slice(this._flushed);
+            this._resync(text);
+            const pending = text.slice(this._consumed.length);
 
             // Announce only through the LAST sentence terminator, so a
             // half-written clause is never read out.
@@ -128,7 +168,7 @@ export default function wirekitAssistantMessage(config = {}) {
             }
 
             this.announced = chunk;
-            this._flushed += lastEnd + 1;
+            this._consumed = text.slice(0, this._consumed.length + lastEnd + 1);
         },
     };
 }

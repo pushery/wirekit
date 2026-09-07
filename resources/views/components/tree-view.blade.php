@@ -17,6 +17,19 @@
     // Uses role="tree" with keyboard navigation handled by Alpine.
     // Padding prevents node hover backgrounds from overlapping container borders.
     $classes = WireKit::resolveClasses('tree-view', 'base', implode(' ', [
+        // `wk-tree-view` is a marker, not a styled class, and it is load-bearing:
+        // the library's reduced-motion clamp matches a `wk-` CLASS TOKEN and its
+        // descendants — deliberately a token and not a substring, because
+        // matching the attribute as a substring once clamped a whole
+        // application's animations through `bg-[var(--color-wk-bg)]` on its
+        // <body>. Nothing in this subtree carried such a token, so for a reader
+        // who had asked their operating system for no motion the chevron still
+        // rotated on `transition-transform` and a branch still opened on
+        // `x-collapse`'s inline 250ms height transition. Every node, chevron and
+        // role="group" panel is a descendant of this <ul>, so the token here is
+        // what puts all of them inside the rule — and inside the
+        // `data-reduce-motion` escape hatch written against the same selector.
+        'wk-tree-view',
         // list-none strips the browser-default <ul> disc markers; the tree
         // renders its own indent + chevron affordances per node.
         'list-none m-0',

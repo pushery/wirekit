@@ -186,7 +186,7 @@
                         :aria-disabled="hasPrev ? null : 'true'"
                         :class="hasPrev ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
                         aria-label="{{ __('wirekit::Previous') }}"
-                        class="absolute left-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="absolute left-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
                         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M12.5 4L7 10l5.5 6"/></svg>
                     </button>
@@ -198,7 +198,7 @@
                         :aria-disabled="hasNext ? null : 'true'"
                         :class="hasNext ? 'cursor-pointer' : 'cursor-not-allowed opacity-[var(--opacity-wk-disabled)]'"
                         aria-label="{{ __('wirekit::Next') }}"
-                        class="absolute right-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="absolute right-[var(--space-wk-md)] top-1/2 z-20 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     >
                         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7.5 4L13 10l-5.5 6"/></svg>
                     </button>
@@ -208,7 +208,7 @@
                     type="button"
                     x-on:click="close()"
                     aria-label="{{ __('wirekit::Close') }}"
-                    class="absolute right-[var(--space-wk-md)] top-[var(--space-wk-md)] z-20 flex h-10 w-10 items-center justify-center cursor-pointer rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="absolute right-[var(--space-wk-md)] top-[var(--space-wk-md)] z-20 flex h-10 w-10 items-center justify-center cursor-pointer rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)] shadow-[var(--shadow-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 >
                     <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>

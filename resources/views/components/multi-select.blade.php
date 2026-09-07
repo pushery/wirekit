@@ -57,6 +57,14 @@
     // internal combobox input and the hidden inputs. Leaving them in the bag would
     // put a `name` on a <div>, which is not a form control and carries nothing.
     $attributes = $attributes->except(['id', 'name']);
+
+    // `@aware` reads a value from the parent component, but — unlike `@props` —
+    // it does NOT remove that key from the attribute bag. So when the key is also
+    // written as an attribute on the tag, it survives into `{{ $attributes }}` and
+    // renders as a stray HTML attribute on the element. Blade accepts both
+    // spellings on a tag, so both are dropped here.
+    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+
     // When a parent <x-wirekit::field label="..."> wraps this component, the
     // field-emitted <label for="$id"> doesn't reach the internal combobox
     // <input id="$id-input">, so screen readers + axe's label rule report
@@ -143,11 +151,33 @@
 
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
 
-    // Encode options for Alpine — convert to array of {value, label} objects
-    $encodedOptions = collect($options)->map(fn ($label, $optionValue) => [
-        'value' => (string) $optionValue,
-        'label' => (string) $label,
-    ])->values()->all();
+    // Encode options for Alpine — convert to array of {value, label} objects.
+    //
+    // ⚠️ Three call shapes reach this and the docs page promises all three: an
+    // associative `key => label` map, a list of plain strings, and a list of
+    // `['value' => ..., 'label' => ...]` arrays. The earlier version handled
+    // only the first — it read the KEY as the value unconditionally — so a list
+    // of strings submitted array INDEXES (0, 1, 2) under labels that looked
+    // right, and a list of arrays stringified each entry to the literal word
+    // "Array" and submitted its index. Neither shape threw, neither shape
+    // rendered an empty listbox, and every case in MultiSelectRenderTest passed
+    // an associative map, so the two broken formats had no coverage at all.
+    // Mirrors the ungrouped half of combobox's own $normalizeOption; multi-select
+    // has no grouped-option shape, so the group branch does not apply here.
+    $encodedOptions = collect($options)->map(function ($option, $key) {
+        if (is_array($option)) {
+            return [
+                'value' => (string) ($option['value'] ?? $key),
+                'label' => (string) ($option['label'] ?? $option['value'] ?? $key),
+            ];
+        }
+
+        // An int key means a list, so the string is BOTH value and label; a
+        // string key is the submitted value and the string beside it its label.
+        return is_int($key)
+            ? ['value' => (string) $option, 'label' => (string) $option]
+            : ['value' => (string) $key, 'label' => (string) $option];
+    })->values()->all();
 
     // Normalize the `value` prop to an array of string option keys for
     // pre-selection. Accepts an array (['php', 'js']) or a comma-separated
@@ -202,11 +232,18 @@
          inputs, which is a different contract: `wire:model` on a non-input root listens for
          an `input` event from the subtree, and there was none to hear. `x-modelable` is the
          bridge Alpine provides for exactly this, so the array becomes bindable both to
-         Livewire and to a plain `x-model` in an Alpine page. --}}
+         Livewire and to a plain `x-model` in an Alpine page.
+
+         Both payloads go through AlpinePayload rather than json_encode, and that is not
+         interchangeable here: an option label is developer text, and a plain encode escapes
+         non-ASCII as `ü`. Alpine's CSP tokenizer understands only `\n`, `\t`, `\r`, `\\`
+         and the quote, so it drops that backslash and keeps the letters — `Grüße` arrives in
+         the listbox as `Gru00fce`. Nothing throws; the option a reader picks from is simply
+         spelled wrong. --}}
     <div
         {{ $attributes->class(['relative']) }}
         x-modelable="selected"
-        x-data="wirekitMultiSelect({ options: {{ json_encode($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ json_encode($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }} })"
+        x-data="wirekitMultiSelect({ options: {{ \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }} })"
         @click.away="dropdownOpen = false"
         @keydown.escape="dropdownOpen = false"
     >
@@ -238,7 +275,7 @@
                              the same path and is undone the same way. --}}
                         @click.stop="{{ $optimisticConfig ? 'run(nextWith(val))' : 'deselect(val)' }}"
                         :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove :name')) }}.replace(':name', getLabel(val))"
-                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                        class="p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                     >
                         <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                     </button>
@@ -288,7 +325,7 @@
                 {{-- doesn't reach this internal combobox input.                 --}}
                 aria-label="{{ $resolvedAriaLabel }}"
                 :placeholder="selected.length === 0 ? {{ \Pushery\WireKit\Support\AlpinePayload::string($placeholder) }} : ''"
-                class="wk-field flex-1 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] outline-none"
+                class="wk-field flex-1 min-w-[80px] bg-transparent text-[color:var(--color-wk-text)] text-[length:var(--text-wk-md)] placeholder:text-[color:var(--color-wk-text-placeholder)] focus-visible:outline-hidden"
             />
         </div>
 

@@ -124,7 +124,7 @@
     <div
         tabindex="0"
         @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
-        class="wk-scrollbar flex flex-col gap-[var(--space-wk-sm,0.5rem)] px-[var(--space-wk-sm,0.5rem)] pb-[var(--space-wk-sm,0.5rem)] overflow-y-auto min-h-[120px] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
+        class="wk-scrollbar flex flex-col gap-[var(--space-wk-sm,0.5rem)] px-[var(--space-wk-sm,0.5rem)] pb-[var(--space-wk-sm,0.5rem)] overflow-y-auto min-h-[120px] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
         @if($sortable)
             data-sortable-items
             {{-- The marker used to be the whole feature: three attributes and
@@ -132,7 +132,27 @@
                  produced valid markup, no warning, and a board where nothing
                  moved. The behavior lives here now, keyboard path included —
                  a drag-only list is not reorderable by everyone. --}}
-            x-data="wirekitSortable()"
+            {{-- The factory's own docblock says "the component passes the catalog string",
+                 and until now this call site passed nothing at all — so every sentence a
+                 keyboard reorder writes into the live region came from the English
+                 fallbacks meant for a hand-mount. The live region is the ONLY feedback
+                 that path produces, so a German board announced "Grabbed. Position 2 of
+                 5." and a reader who does not read English got nothing usable out of the
+                 whole interaction.
+
+                 They travel as TEMPLATES with `:position` / `:total` rather than as
+                 finished sentences, because the numbers are only known in the browser and
+                 ":position of :total" is not the word order every language uses. Same
+                 shape as the carousel's slide announcement and stream's status messages. --}}
+            x-data="wirekitSortable({{ \Pushery\WireKit\Support\AlpinePayload::from([
+                'roleDescription' => __('wirekit::Sortable item'),
+                'messages' => [
+                    'grabbed' => __('wirekit::Grabbed. Position :position of :total. Use the arrow keys to move it.'),
+                    'moved' => __('wirekit::Position :position of :total.'),
+                    'dropped' => __('wirekit::Dropped at position :position of :total.'),
+                    'canceled' => __('wirekit::Reorder canceled. Back at position :position of :total.'),
+                ],
+            ]) }})"
             x-on:dragstart="dragstart($event)"
             x-on:dragover="dragover($event)"
             x-on:dragend="dragend()"

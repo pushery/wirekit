@@ -329,17 +329,26 @@ class WireKit
     /**
      * @internal Validates the `as` prop for a component template.
      *
-     * Public without an external caller: every call site is a Blade view in this package —
-     * the eleven components that accept `as` — and a view cannot reach a non-public static.
-     * A developer sets `as` on the component; they do not call this.
+     * Public without an external caller: every call site is a Blade view in this package,
+     * and a view cannot reach a non-public static. A developer sets `as` on the component;
+     * they do not call this.
      *
      * Validate a developer-supplied HTML tag name before it is rendered as one.
      *
-     * Eleven components accept an `as` prop and interpolate it straight into the opening
-     * tag — `<{{ $as }} …>`. Blade escapes that echo, and `e()` escapes NEITHER A SPACE NOR
-     * AN `=`, so `as="div onmouseover=alert(1)"` renders
-     * `<div onmouseover=alert(1) class="…">`: a working event handler. Measured across
-     * text, container, row, stack, center and section, all six identical.
+     * A component that accepts `as` interpolates it straight into its opening tag — either
+     * as `<{{ $as }} …>` or as `<{{ $tag }} …>`, where a default was resolved first. Blade
+     * escapes that echo, and `e()` escapes NEITHER A SPACE NOR AN `=`, so
+     * `as="div onmouseover=alert(1)"` renders `<div onmouseover=alert(1) class="…">`: a
+     * working event handler. Measured across text, container, row, stack, center and
+     * section, all six identical.
+     *
+     * ⚠️ THE COVERED SET IS DERIVED, NEVER RESTATED HERE AS A NUMBER. This docblock used to
+     * put a count on it, twice, and by then the count was too low under either reading of
+     * what it was counting — which mattered because this file is where an auditor comes
+     * for the rationale, and a stated total reads as complete coverage. What holds the set
+     * is `TagNamePropCannotCarryAnAttributeTest`: every component that declares an `as`
+     * prop and interpolates a variable into its opening tag either calls this, or validates
+     * against a closed enum of its own. Read the set there; it cannot go stale.
      *
      * `as` is developer-supplied rather than end-user input, which is why this is a hole
      * rather than a live exploit — but a value derived from data (a CMS block type, a

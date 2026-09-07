@@ -26,8 +26,23 @@ import { moveRovingFocus } from '../utils/roving-focus.js';
  * choice the tablist makes: a developer who wraps a group of items in a layout
  * element of their own would silently lose the arrow keys under an anchored
  * selector, and a silent loss is the failure nobody reports.
+ *
+ * ⚠️ EVERY heading level is listed, and the list is the accordion's `level`
+ * prop written out. This read `h3 > button[aria-controls]` — the DEFAULT level
+ * — while the item template emits `<h{{ $levelValue }}>` for any of 1..6, and
+ * the docs tell a reader to set `level="2"` directly under the page `<h1>`. On
+ * such an accordion both gates below closed: `target.matches()` was false, and
+ * `moveRovingFocus` found no items and returned false. Arrow keys, Home and End
+ * were dead, with Enter and Space still toggling — so the loss read as the
+ * reader mis-remembering the shortcut rather than as a defect. The two things
+ * `level` exists to reconcile, a correct page outline and a working keyboard
+ * model, were in conflict. Add a level to the prop and it belongs here too.
+ *
+ * `:is()` is far below the supported-browser baseline (Chrome 88, Safari 14,
+ * Firefox 78 against a floor of 111 / 16.4 / 128), so it needs no `@supports`
+ * and no fallback.
  */
-const HEADER_SELECTOR = 'h3 > button[aria-controls]';
+const HEADER_SELECTOR = ':is(h1, h2, h3, h4, h5, h6) > button[aria-controls]';
 
 /**
  * Which key moves focus where. Home and End are absolute, so they answer even

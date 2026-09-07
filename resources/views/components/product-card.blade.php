@@ -187,7 +187,7 @@
                      at. Opacity, not an accent color: on the stock theme accent
                      (oklch 20.5%) barely differs from text (14.5%) and in dark mode
                      they are identical, so a color hover would be invisible. --}}
-                <a href="{{ $href }}" data-wk-product-card-link class="wk-product-card-link transition-opacity duration-[var(--transition-wk-duration)] group-hover:opacity-80 focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+                <a href="{{ $href }}" data-wk-product-card-link class="wk-product-card-link transition-opacity duration-[var(--transition-wk-duration)] group-hover:opacity-80 focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
                     {{ $name }}
                 </a>
             @else

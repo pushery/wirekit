@@ -37,9 +37,25 @@
 @endphp
 
 @if($label && !$isVertical)
-    {{-- Horizontal divider with centered label --}}
+    {{-- Horizontal divider with centered label.
+
+         The name is emitted HERE rather than left to the caller, because `separator` has
+         `childrenPresentational: true` — the label span below renders, and contributes
+         nothing to the accessible name. So `<x-wirekit::divider label="OR" />`, which is
+         what the docs page teaches, announced as an unnamed separator and the whole point
+         of the label was inaudible.
+
+         Two siblings had already worked around it from their call site rather than here:
+         `chat-marker` passes `:aria-label` alongside `:label` with a comment explaining why,
+         and `date-separator` re-implements the shape with its own `aria-label`. That is the
+         workaround shape — the defect lived in this file, and every developer calling the
+         component directly got the unfixed version.
+
+         The caller still wins: a supplied `aria-label` / `aria-labelledby` suppresses this
+         one, so nothing emits the attribute twice. --}}
     <div
         role="separator"
+        @if(! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endif
         {{ $attributes->class([
             WireKit::resolveClasses('divider', 'base', implode(' ', [
                 'flex items-center',
