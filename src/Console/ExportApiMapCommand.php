@@ -9,6 +9,7 @@ use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\DocsVisibility;
+use Pushery\WireKit\Support\PublicCssClassInventory;
 use Pushery\WireKit\Support\VersionResolver;
 use Pushery\WireKit\Theming\ThemePresetRegistry;
 use Pushery\WireKit\WireKit;
@@ -64,9 +65,24 @@ class ExportApiMapCommand extends Command
 
     protected $description = 'Emit a machine-readable AI-friendly sitemap of every WireKit surface';
 
+    /**
+     * The package root every docs-derived group is scanned relative to.
+     *
+     * Its own method so a test can point the command at a tree WITHOUT a
+     * `docs/` directory — which is the state every Composer install is in,
+     * because `docs/` is export-ignored. Resolving it inline in `handle()`
+     * is what kept the one environment this command actually runs in
+     * unreachable from a test, and the stdout/stderr split below is only
+     * observable there.
+     */
+    protected function packageRoot(): string|false
+    {
+        return realpath(__DIR__.'/../..');
+    }
+
     public function handle(): int
     {
-        $packageRoot = realpath(__DIR__.'/../..');
+        $packageRoot = $this->packageRoot();
         if ($packageRoot === false) {
             $this->error('Could not resolve package root.');
 
@@ -375,8 +391,19 @@ class ExportApiMapCommand extends Command
             // command's other groups are derived from shipped source and remain correct, so
             // refusing to emit them would trade one wrong answer for a worse one. The group
             // is marked instead, so the absence travels with the data.
-            $this->components->warn(sprintf(
-                'api-map: the "%s" group has no source in this installation — docs/%s is not part of '.
+            //
+            // ⚠️ On STDERR, and that is the whole point of the line rather than a detail of
+            // it. This command's entire stdout is one JSON document, and the documented way
+            // to run it is `wirekit:export-api-map --pretty | jq …` — `jq` does not skip a
+            // human sentence, so a notice printed alongside the object makes the manifest
+            // unparseable while the command still exits 0. That is the worst shape a failure
+            // can take: a build step that reports success and produced nothing usable. This
+            // file already carries the incident once (see `layoutsGroup()`: scanning a
+            // directory that no longer existed "made the whole manifest unparseable"), and
+            // the notice then reintroduced it four times per run in EVERY Composer install,
+            // where `docs/` is export-ignored and therefore always absent.
+            $this->output->getErrorStyle()->writeln(sprintf(
+                '<comment>WARN</comment>  api-map: the "%s" group has no source in this installation — docs/%s is not part of '.
                 'the distributed package, so the group is reported as unavailable rather than empty.',
                 $subdir,
                 $subdir,
@@ -631,47 +658,18 @@ class ExportApiMapCommand extends Command
      * the actual shipped CSS — adding or removing a `wk-*` class without
      * updating the catalog fails the upstream build.
      *
+     * ⚠️ The scan itself is `PublicCssClassInventory`, and it is shared
+     * rather than restated HERE for a measured reason: this method used
+     * to carry its own copy of the regex, the copy predated three
+     * learned exclusions, and it published ten identifiers as Stable
+     * public CSS classes that style nothing. See that class for what
+     * each exclusion is and what published it.
+     *
      * @return array{id: string, count: int, items: array<int, array<string, string>>}
      */
     private function cssClassesGroup(string $packageRoot): array
     {
-        $classes = [];
-
-        // (1) Compiled CSS selectors.
-        $css = (string) file_get_contents($packageRoot.'/dist/wirekit.css');
-        $css = (string) preg_replace('~/\*.*?\*/~s', '', $css);
-        preg_match_all('/(?<=^|\s|,)\.(\bwk-[a-z][a-z0-9_-]*(?:__[a-z][a-z0-9_-]*)?(?:--[a-z][a-z0-9_-]*)?)\b/m', $css, $cssMatches);
-        foreach ($cssMatches[1] as $class) {
-            $classes[$class] = true;
-        }
-
-        // (2) Static-string emissions in Blade.
-        $bladeDir = $packageRoot.'/resources/views/components';
-        if (is_dir($bladeDir)) {
-            $iterator = new \RecursiveIteratorIterator(
-                new \RecursiveDirectoryIterator($bladeDir, \RecursiveDirectoryIterator::SKIP_DOTS)
-            );
-            foreach ($iterator as $file) {
-                if (! $file->isFile() || $file->getExtension() !== 'php') {
-                    continue;
-                }
-                $source = (string) file_get_contents($file->getPathname());
-                preg_match_all(
-                    '/(?<![-a-z0-9])(\bwk-[a-z][a-z0-9_-]*(?:__[a-z][a-z0-9_-]*)?(?:--[a-z][a-z0-9_-]*)?)(?=[\s\'">,])/',
-                    $source,
-                    $bladeMatches
-                );
-                foreach ($bladeMatches[1] as $class) {
-                    if (str_ends_with($class, '-')) {
-                        continue;
-                    }
-                    $classes[$class] = true;
-                }
-            }
-        }
-
-        $list = array_keys($classes);
-        sort($list);
+        $list = PublicCssClassInventory::forPackage($packageRoot);
 
         // --public: drop the marker class of a component whose docs
         // page is not publicly rendered — a class whose wk-stripped name

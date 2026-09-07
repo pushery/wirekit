@@ -3,6 +3,21 @@
      shown early. Measured rather than asserted: the guard refutes this reason for
      any file that renders one. --}}
 @props([
+    // The slide's accessible name. `role="group"` conformance does not require one, but
+    // `aria-roledescription="slide"` is what makes a screen reader say "slide" instead of
+    // "group" — and it is unreliable on an element that has no name at all, so a track of
+    // unnamed slides reads as N identical groups with nothing to tell them apart.
+    //
+    // It is a PROP rather than only an `aria-label` passthrough because a prop is what the
+    // props parser, the JSON export and the api-map can see; an attribute that happens to
+    // work is not a documented affordance, and the parent's own name for the same idea is
+    // `label` too.
+    //
+    // Deliberately NOT defaulted. There is no honest built-in name here: an anonymous Blade
+    // slide has no index of its own, so anything this file could invent would name every
+    // slide identically — the same reasoning that gates `role="region"` on a caller-supplied
+    // name everywhere else in this library, rather than on a name the component made up.
+    'label' => null,
     'scope' => null,
 ])
 
@@ -34,6 +49,12 @@
     data-wk-carousel-slide
     role="group"
     aria-roledescription="slide"
+    {{-- `filled()`, never `??`: an interpolated caller value over a record with no title
+         arrives as an empty string, and `aria-label=""` is not a name — it leaves the group
+         nameless while looking wired. Same gate, same reason, as every named region here.
+         A caller-supplied `aria-label` / `aria-labelledby` still wins, so the two spellings
+         never collide on one tag. --}}
+    @if(filled($label) && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')) aria-label="{{ $label }}" @endif
     {{ $attributes->class([$classes]) }}
 >
     {{ $slot }}

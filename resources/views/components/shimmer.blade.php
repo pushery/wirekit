@@ -19,12 +19,21 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('shimmer', $attributes->getAttributes());
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `active="false"` used to mean the opposite of what the call site reads as. The prop's
+    // default is spelled as a `config()` fallback rather than a literal, which is the only
+    // reason the coverage guard did not see it. It defaults ON, and both reads below are
+    // truth tests — the shimmer class and the duration custom property — so the animation
+    // the call site asked to stop kept running.
+    $active = BooleanProp::from($active, true);
 
     // A shimmer wraps text, so only a small allowlist of text tags is sensible.
     // Validate up front so an invalid value resolves to a real allowed tag

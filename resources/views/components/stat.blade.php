@@ -66,6 +66,84 @@
     // reveal; the inner root keeps the counter scope.
     $needsEntranceWrapper = $animate && $animateAttr;
 
+    // ── The counter's MACHINE value, resolved here rather than in JavaScript ──
+    //
+    // `value` is a DISPLAY string — "€31.200", "$1,250.50", "42%", "10000". The
+    // counter needs a number to count to, the pieces around it to put back, and
+    // the number of decimals to keep. JavaScript used to re-derive all three from
+    // the display string with one grammar: strip everything but digits, `.` and
+    // `-`, then concatenate whatever was left AFTER the number.
+    //
+    // Both halves of that were wrong, and one of them silently. A German page
+    // writing "€31.200" — the ordinary spelling of 31,200 euros — counted to
+    // 31.2, off by a factor of a thousand, because a grouping period was read as
+    // a decimal point. And a leading currency symbol came back on the trailing
+    // side: "$1,250.50" settled as "1250.50$" in every locale, including English.
+    //
+    // PHP is where the application locale is known, so the split happens here and
+    // the browser is handed pieces rather than a puzzle.
+    $targetValue = null;
+    $targetPrefix = '';
+    $targetSuffix = '';
+    $targetDecimals = 0;
+
+    if ($animate && $value !== null) {
+        $raw = (string) $value;
+
+        // The separators this application actually uses, discovered by formatting
+        // a probe rather than by carrying a locale table that would go stale.
+        // 1234.5 renders "1,234.5" in en and "1.234,5" in de, so the LAST
+        // non-digit is the decimal separator and the other one groups.
+        $probe = preg_replace('/\d/u', '', \Pushery\WireKit\Support\LocalizedNumber::format(1234.5, precision: 1)) ?? '.';
+        $decimalSeparator = mb_substr($probe, -1) ?: '.';
+        $groupSeparator = mb_strlen($probe) > 1 ? mb_substr($probe, 0, 1) : '';
+
+        // Everything before the first digit is the prefix, everything after the
+        // last one is the suffix, and what is between them is the number. By
+        // POSITION, so a symbol goes back on the side it came from — the whole
+        // point, since concatenating both onto the end is what moved the `$`.
+        $core = '';
+        if (preg_match_all('/\d/u', $raw, $digits, PREG_OFFSET_CAPTURE) > 0) {
+            $start = $digits[0][0][1];
+            $end = $digits[0][count($digits[0]) - 1][1] + 1;
+
+            // A sign directly in front of the first digit belongs to the number,
+            // not to the prefix — otherwise a negative delta counts upward.
+            if ($start > 0 && ($raw[$start - 1] === '-' || $raw[$start - 1] === '+')) {
+                $start--;
+            }
+
+            $targetPrefix = substr($raw, 0, $start);
+            $core = substr($raw, $start, $end - $start);
+            $targetSuffix = substr($raw, $end);
+        } else {
+            $targetSuffix = $raw;
+        }
+
+        // No locale spells a decimal separator with whitespace, so every kind of
+        // it groups — including the narrow no-break space fr and ru use, which a
+        // developer types as a plain space and no probe would match.
+        $core = preg_replace('/[\p{Zs}\x{00A0}\x{202F}]/u', '', $core) ?? '';
+
+        if ($groupSeparator !== '') {
+            $core = str_replace($groupSeparator, '', $core);
+        }
+
+        $decimalPosition = $decimalSeparator === '' ? false : mb_strrpos($core, $decimalSeparator);
+        $targetDecimals = $decimalPosition === false ? 0 : mb_strlen($core) - $decimalPosition - 1;
+        $core = $decimalSeparator === '' ? $core : str_replace($decimalSeparator, '.', $core);
+
+        // A value with no digits at all ("N/A", an em dash) counts to zero and
+        // keeps its text, which is what it did before and is the honest answer:
+        // there is nothing to count.
+        $targetValue = is_numeric($core) ? (float) $core : 0.0;
+    }
+
+    // BCP-47 for the in-flight grouping, since `toLocaleString()` with no
+    // argument reads the reader's browser rather than the application. Laravel
+    // spells a regional locale `pt_BR`; Intl reads `pt-BR`.
+    $statLocale = str_replace('_', '-', app()->getLocale());
+
     // Container: card-like surface with padding + elevated background + border
     $classes = WireKit::resolveClasses('stat', 'base', implode(' ', [
         'flex flex-col gap-1',
@@ -128,7 +206,17 @@
              / $root.progress. When $needsEntranceWrapper is also true, the
              outer wrapper carries the entrance animateAttr — separate scope. --}}
         x-data="wirekitStatAnimate"
+        {{-- `data-target` stays the DISPLAY string: it is the documented handle a
+             page uses to reach a stat and replay it. The four below are what the
+             counter reads — the machine value, the pieces to put back on the
+             right sides, how many decimals the display keeps, and the locale that
+             groups the in-flight number. --}}
         data-target="{{ $value }}"
+        data-target-value="{{ $targetValue !== null ? rtrim(rtrim(number_format($targetValue, 6, '.', ''), '0'), '.') : '' }}"
+        @if($targetPrefix !== '') data-target-prefix="{{ $targetPrefix }}" @endif
+        @if($targetSuffix !== '') data-target-suffix="{{ $targetSuffix }}" @endif
+        data-target-decimals="{{ $targetDecimals }}"
+        data-locale="{{ $statLocale }}"
         @unless($needsEntranceWrapper) data-replayable="true" @endunless
     @elseif($animateAttr)
         {{-- animateIn only (no counter): root carries the entrance reveal directly. --}}

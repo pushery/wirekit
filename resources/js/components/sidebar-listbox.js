@@ -52,6 +52,39 @@ export default function wirekitSidebarListbox(config = {}) {
             const selected = options.find((el) => el.getAttribute('aria-selected') === 'true');
 
             this.activeId = (selected || options[0]).id || null;
+            this.writeActiveMarker(selected || options[0]);
+        },
+
+        /**
+         * Put `data-active` on the marked row and take it off every other one.
+         *
+         * The visible half of the marker, and it has to be authored: this pattern keeps DOM
+         * focus on the column and moves an `aria-activedescendant` instead, so the browser
+         * draws nothing on the option itself. Without this the screen-reader half worked and
+         * the sighted half did not — ArrowDown announced a row and marked none, which is
+         * exactly why it read as finished.
+         *
+         * An attribute rather than a class, the way `scope-switcher.js` writes the same
+         * state: the row's class list is the developer's through the attribute bag, and a
+         * controller adding and removing entries in it fights whatever they put there.
+         *
+         * Both writers go through here — `initListbox()` as well as `markActive()` — because
+         * the marker and `activeId` are one state. Setting the id in one place and the
+         * attribute in the other is how they come apart, and the way they come apart is
+         * silent: the announcement stays correct and the highlight sits on the wrong row.
+         *
+         * `typeof` rather than a bare call, matching `scrollIntoView` below. The ESM chain
+         * constructs this factory against a deliberately barren double, and a factory that
+         * assumes a full element throws at init in a real browser without Pest ever seeing it.
+         */
+        writeActiveMarker(el) {
+            for (const option of this.listboxOptions()) {
+                if (option === el) {
+                    if (typeof option.setAttribute === 'function') option.setAttribute('data-active', '');
+                } else if (typeof option.removeAttribute === 'function') {
+                    option.removeAttribute('data-active');
+                }
+            }
         },
 
         /**
@@ -103,6 +136,7 @@ export default function wirekitSidebarListbox(config = {}) {
             if (!el) return;
 
             this.activeId = el.id || null;
+            this.writeActiveMarker(el);
 
             // A pointer is already looking at the row it just chose, so the scroll below
             // would only pull the list out from under it. The half-visible row at the

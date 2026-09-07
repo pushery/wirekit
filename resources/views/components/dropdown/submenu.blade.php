@@ -38,8 +38,16 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'focus:outline-none',
-        'focus:bg-[var(--color-wk-bg-subtle)]',
+        // `focus-visible` + a ring, per dropdown/item.blade.php — which resolves
+        // under this same `dropdown.item` block, so the two defaults have to agree
+        // or a personalization inherits whichever file the reader happened to open.
+        // The background alone marks nothing: dark's --color-wk-bg-subtle equals
+        // its --color-wk-bg-elevated, which is the panel this row sits on.
+        'focus:outline-hidden',
+        'focus-visible:bg-[var(--color-wk-bg-subtle)]',
+        'focus-visible:ring-[length:var(--ring-wk-width)]',
+        'focus-visible:ring-inset',
+        'focus-visible:ring-[var(--color-wk-ring)]',
         'cursor-pointer',
     ]), $scope);
 

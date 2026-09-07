@@ -106,8 +106,19 @@
     $errorId = $dateId . '-error';
     $hintId = $dateId . '-hint';
 
-    $hasError = $error || ($errors ?? null)?->has($name);
+    // The bag read is guarded on the name, exactly as field.blade.php does.
+    // `MessageBag::has(null)` falls through to `any()`, so an unguarded read
+    // makes a date-picker with no `name` report itself invalid the moment ANY
+    // unrelated field on the page fails validation — a red border and an
+    // `aria-invalid` on a control nobody validated.
+    $hasError = $error || ($name && ($errors ?? null)?->has($name));
     $errorMessage = $error ?? ($hasError && $name ? $errors->first($name) : null);
+
+    // The paragraph and the idref pointing at it move together. `$hasError` can
+    // be true with nothing to say (`error=""` plus a bag hit), and a described-by
+    // resolving to an empty element announces the control as invalid without
+    // saying why — a WCAG 3.3.1 failure the markup looks fine in.
+    $showsError = $hasError && $errorMessage;
 
     // Sizing shared with other form controls for visual consistency.
     $heightClasses = match ($size) {
@@ -125,7 +136,7 @@
         'border-[length:var(--border-wk-width)]',
         $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]',
         'rounded-[var(--radius-wk-md)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         'focus:ring-[length:var(--ring-wk-width)]',
         'focus:ring-[var(--color-wk-ring)]',
         'focus:border-[var(--color-wk-accent)]',
@@ -142,7 +153,7 @@
     // document is dropped silently by assistive technology, and the field is then
     // described by less than the markup claims — or, with only a hint set, by
     // nothing at all. Compose from what this render actually emits.
-    $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($hasError ? $errorId : ''));
+    $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($showsError ? $errorId : ''));
 
     // Accessible-name fallback. WCAG 2.1 (4.1.2) requires every input to
     // have a programmatically-determinable name. When no visible `label`
@@ -153,6 +164,69 @@
     $hasExplicitAriaName = $attributes->has('aria-label') || $attributes->has('aria-labelledby');
     $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
     $fallbackLabel = $name ? Str::headline((string) $name) : 'Date';
+
+    // ⚠️ The range arm below never rendered the attribute bag — `$attributes` reached
+    // exactly one element in this file, the single-date `<input>`. So `class`, `style`,
+    // every `data-*`, every `aria-*` and, expensively, `wire:model` were parsed off the
+    // tag and dropped: `<x-wirekit::date-picker range wire:model="stay" />` bound nothing
+    // at all, with no error, no console entry and a control that looks and behaves
+    // normally. Native form submission still works through the `name[start]` /
+    // `name[end]` fields, which is exactly what hid it.
+    //
+    // A range has two controls and one wrapper, so the bag is split three ways rather
+    // than splatted onto whichever element came first.
+    $rangeStartAttributes = null;
+    $rangeEndAttributes = null;
+    $rangeWrapperAttributes = null;
+    $rangeName = $fallbackLabel;
+
+    if ($isRange) {
+        // 1. `wire:model` is a BINDING, and a binding cannot be duplicated: both inputs
+        //    writing one scalar property would resolve by whichever commit landed last.
+        //    It therefore follows the shape this component already emits and documents
+        //    for the native post — `name="stay[start]"` / `name="stay[end]"` becomes
+        //    `wire:model="stay.start"` / `wire:model="stay.end"`, which is Livewire's own
+        //    path notation for the same array. The DIRECTIVE is copied verbatim so the
+        //    modifiers survive (`wire:model.live`, `wire:model.blur.debounce.500ms`);
+        //    only the property path gains its end.
+        $startPairs = [];
+        $endPairs = [];
+
+        foreach ($attributes->whereStartsWith('wire:model')->getAttributes() as $directive => $property) {
+            if (! is_string($property) || $property === '') {
+                continue;
+            }
+
+            $startPairs[$directive] = $property.'.start';
+            $endPairs[$directive] = $property.'.end';
+        }
+
+        // 2. `aria-label` / `aria-labelledby` are NAMES, and a name on the flex row reaches
+        //    nothing: it carries no role and is not focusable, so assistive technology
+        //    ignores it there. The caller's name goes onto the two inputs instead.
+        //
+        //    An idref cannot be suffixed the way a string can, so a caller-supplied
+        //    `aria-labelledby` lands on both ends unchanged and names them alike; a `label`
+        //    prop or an `aria-label` is what tells the two apart.
+        $callerAriaLabel = $attributes->get('aria-label');
+        $rangeName = filled($label) ? $label : (filled($callerAriaLabel) ? (string) $callerAriaLabel : $fallbackLabel);
+
+        if ($attributes->has('aria-labelledby')) {
+            $startPairs['aria-labelledby'] = $attributes->get('aria-labelledby');
+            $endPairs['aria-labelledby'] = $attributes->get('aria-labelledby');
+        }
+
+        $rangeStartAttributes = new \Illuminate\View\ComponentAttributeBag($startPairs);
+        $rangeEndAttributes = new \Illuminate\View\ComponentAttributeBag($endPairs);
+
+        // 3. Everything else lands on the flex row — the element that IS the range control,
+        //    which is what the single-date `<input>` is to the other arm. The outer `w-full`
+        //    div also wraps the label, the hint and the error, none of which the bag has
+        //    ever reached.
+        $rangeWrapperAttributes = $attributes
+            ->whereDoesntStartWith('wire:model')
+            ->except(['aria-label', 'aria-labelledby']);
+    }
 @endphp
 
 @php
@@ -195,8 +269,10 @@
         {{-- Range = two native date inputs. A tiny Alpine scope holds the current
              start (s) + end (e) so each input can constrain the other reactively:
              the end can't precede the start, the start can't follow the end. This
-             is additive — it doesn't touch the values, so wire:model / native form
-             submission of the {name}[start] / {name}[end] fields still works. --}}
+             is additive — it doesn't touch the values, so native form submission of
+             the {name}[start] / {name}[end] fields is untouched, and `wire:model`
+             binds the same two keys as `{property}.start` / `{property}.end` (see
+             the split above). --}}
         <div
             x-data="{ s: {{ \Pushery\WireKit\Support\AlpinePayload::from($startValue) }}, e: {{ \Pushery\WireKit\Support\AlpinePayload::from($endValue) }} }"
             {{-- min-w-0 on the two fields is what makes this row survive a narrow
@@ -207,7 +283,7 @@
                  scroll CLIPS the excess: the end date becomes unreachable on a phone.
                  Measured at a 310px frame before the fix: 25px past the edge, and the
                  fields at 139/155 rather than an even split. --}}
-            class="flex items-center gap-[var(--padding-wk-x-sm)]"
+            {{ $rangeWrapperAttributes->class('flex items-center gap-[var(--padding-wk-x-sm)]') }}
         >
             <input
                 type="date"
@@ -221,7 +297,8 @@
                 @if($required) required aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-                @unless($label) aria-label="{{ __('wirekit:::label start', ['label' => $fallbackLabel]) }}" @endunless
+                @unless($label) aria-label="{{ __('wirekit:::label start', ['label' => $rangeName]) }}" @endunless
+                {{ $rangeStartAttributes }}
                 class="wk-field min-w-0 flex-1 {{ $inputClasses }}"
             />
             <span aria-hidden="true" class="shrink-0 text-[color:var(--color-wk-text-muted)]">&ndash;</span>
@@ -237,7 +314,8 @@
                 @if($required) required aria-required="true" @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-                aria-label="{{ __('wirekit:::label end', ['label' => $label ?: $fallbackLabel]) }}"
+                aria-label="{{ __('wirekit:::label end', ['label' => $rangeName]) }}"
+                {{ $rangeEndAttributes }}
                 class="wk-field min-w-0 flex-1 {{ $inputClasses }}"
             />
         </div>
@@ -268,7 +346,7 @@
         <p id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
-    @if($hasError)
+    @if($showsError)
         {{-- Error message linked via aria-describedby for assistive tech. --}}
         <p id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif

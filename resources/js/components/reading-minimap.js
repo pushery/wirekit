@@ -83,13 +83,13 @@ export default (options = {}) => ({
     // Rendered-mode state
     _renderedReady: false,
 
-    // Extension E2 — bookmark marker
+    // Bookmark marker
     bookmarkPct: null,
 
-    // Extension E3 — heading anchors
+    // Heading anchors
     headingAnchorsList: [],
 
-    // Extension E4 — auto-fade idle
+    // Auto-fade idle
     idle: false,
 
     // Internal handles + observers
@@ -742,7 +742,7 @@ export default (options = {}) => ({
     },
 
     /**
-     * Extension E2 — bookmark marker. Reads the existing reading-bookmark
+     * Bookmark marker. Reads the existing reading-bookmark
      * localStorage payload on init + listens for the custom event the
      * bookmark dispatches on save + the browser storage event for
      * cross-tab consistency.
@@ -796,7 +796,7 @@ export default (options = {}) => ({
     },
 
     /**
-     * Extension E3 — heading anchors. Walks the source target for
+     * Heading anchors. Walks the source target for
      * h2/h3 (or whatever headingLevels CSV resolves to), emits each
      * heading as a clickable anchor at its proportional position.
      *
@@ -879,7 +879,7 @@ export default (options = {}) => ({
     },
 
     /**
-     * Extension E1 — hover preview popover. On pointermove inside the
+     * Hover preview popover. On pointermove inside the
      * minimap, position the popover near the cursor (flipped to stay
      * inside the viewport) and clone the surrounding source content
      * into it. Re-uses the iframe-clone technique at a higher scale
@@ -977,7 +977,7 @@ export default (options = {}) => ({
     },
 
     /**
-     * Extension E4 — auto-fade after idle. Starts a timer on init;
+     * Auto-fade after idle. Starts a timer on init;
      * resets on every pointermove / scroll / pointerdown. When the
      * timer fires, set idle=true (CSS class kicks in, opacity fades).
      * Hovering the minimap clears the idle state instantly via CSS

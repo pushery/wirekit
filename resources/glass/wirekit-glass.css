@@ -95,6 +95,29 @@
     -webkit-backdrop-filter: none;
 }
 
+/* The same reset, repeated at the specificity dark needs, and the repetition is
+ * the point rather than an oversight.
+ *
+ * The rule above neutralizes the Tier-1 fallback by SOURCE ORDER: both are
+ * (0,1,0), and the later one wins. `.dark .wk-glass-refract` is (0,2,0) and wins
+ * wherever it sits, so the dark fallback's 78% fill survived a neutralization
+ * that only ever reached the light one. What shipped in dark was neither tier —
+ * an opaque slab with no blur (`backdrop-filter: none` above still applied,
+ * because the dark fallback declares none) and the ::before then displacing that
+ * fill. Roughly 15% of the page behind survived in dark against 78% in light, so
+ * the refraction had nothing to bend: the exact silent zero the whole note above
+ * is about, arriving through the mode nobody was measuring.
+ *
+ * Every property the reset touches is repeated here, including the two that
+ * happen to need no override today — the trap was one rule declaring a subset,
+ * and a subset is what makes the next addition to the fallback silently reopen
+ * this. */
+.dark .wk-glass-refract {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
 .wk-glass-refract::before {
     content: '';
     position: absolute;

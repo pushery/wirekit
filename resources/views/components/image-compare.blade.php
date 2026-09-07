@@ -104,7 +104,7 @@
         'w-[var(--wk-image-compare-handle-size,2.5rem)] h-[var(--wk-image-compare-handle-size,2.5rem)]',
         'grid place-items-center',
         'cursor-grab active:cursor-grabbing',
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
         'border border-[var(--color-wk-border)]',

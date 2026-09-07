@@ -6,6 +6,11 @@
  * Uses Floating UI for positioning at cursor / touch-point coordinates.
  * Follows WAI-ARIA menu pattern with arrow key navigation.
  *
+ * A `role="menu"` is a composite widget, not a dialog, so Tab is an EXIT rather than
+ * something to trap: it closes the menu and hands focus onward. That is the same answer
+ * dropdown and menubar give, and it has to be spelled out here for the reason the panel is
+ * teleported at all — see `_tabStopBesideTrigger()`.
+ *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menu/
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
@@ -16,6 +21,16 @@ import { position } from '../utils/floating.js';
 // deliberate hold from the start of a scroll/drag gesture.
 const LONG_PRESS_MS = 500;
 const LONG_PRESS_MOVE_TOLERANCE_PX = 10;
+
+/**
+ * What the browser would consider a tab stop OUTSIDE this menu.
+ *
+ * Same selector menubar, navigation-menu and hover-card use for their teleported panels —
+ * same question, so the same answer rather than a fourth list that drifts from the other
+ * three. `[tabindex="-1"]` is excluded, which is exactly why the menu items themselves
+ * never show up here: they are reached with the arrow keys, never with Tab.
+ */
+const TAB_STOP = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /*
  * Takes no configuration. It used to declare a `config` parameter documented as coming
@@ -294,6 +309,57 @@ export default function wirekitContextMenu() {
         },
 
         /**
+         * The tab stop the reader reaches by leaving the menu.
+         *
+         * ⚠️ ANCHORED ON THE TRIGGER, NOT ON THE PANEL, and that is the whole point.
+         * `teleport` defaults to true, so the panel is moved to the end of `<body>` while
+         * being drawn at the pointer — and sequential focus order follows the DOM, not the
+         * paint. Continuing from where the panel SITS lands off the end of the document
+         * going forward, and on whatever precedes the overlay root going back. The place
+         * the reader actually is, is the thing they right-clicked.
+         *
+         * The trigger's OWN focusable descendants count as following it (a descendant
+         * carries `DOCUMENT_POSITION_FOLLOWING` alongside `CONTAINED_BY`), so a forward Tab
+         * out of a menu opened on a table row lands at the start of that row rather than
+         * skipping past it — nothing in the trigger becomes unreachable. Going back they
+         * carry no `PRECEDING` bit and are correctly left out: the reader steps out of the
+         * region, and its own stops stay one Tab away.
+         *
+         * Two exclusions, each for a measured reason. Every teleported panel is skipped —
+         * ours and every other overlay's — because they sit at the end of `<body>` while
+         * being drawn somewhere else entirely, so one is never a sensible neighbor. And a
+         * present but `display: none` element is skipped because `focus()` on one does
+         * nothing: the browser drops focus on `<body>` instead, which is the outcome this
+         * whole branch exists to prevent.
+         *
+         * @param {boolean} forward
+         * @returns {Element|null}
+         */
+        _tabStopBesideTrigger(forward) {
+            const trigger = this.$refs.trigger;
+
+            if (!trigger || typeof trigger.compareDocumentPosition !== 'function') return null;
+
+            const panel = this.$refs.panel;
+            const overlayRoot = document.getElementById('wk-overlay-root');
+            const wanted = forward
+                ? Node.DOCUMENT_POSITION_FOLLOWING
+                : Node.DOCUMENT_POSITION_PRECEDING;
+
+            const outside = [...document.querySelectorAll(TAB_STOP)].filter((el) => {
+                // `panel` as well as the overlay root: with `teleport="false"` the panel
+                // stays inside the component, where the overlay-root test cannot see it.
+                if (panel?.contains?.(el)) return false;
+                if (overlayRoot?.contains?.(el)) return false;
+                if (typeof el.getClientRects === 'function' && el.getClientRects().length === 0) return false;
+
+                return Boolean(trigger.compareDocumentPosition(el) & wanted);
+            });
+
+            return forward ? outside[0] ?? null : outside[outside.length - 1] ?? null;
+        },
+
+        /**
          * Handle keyboard navigation within the context menu.
          */
         handleKeydown(event) {
@@ -342,6 +408,46 @@ export default function wirekitContextMenu() {
                     event.preventDefault();
                     this.close();
                     break;
+
+                case 'Tab': {
+                    // ⚠️ THE BROWSER IS WRONG HERE, AND IT FAILS SILENTLY. Focus sits on a
+                    // `tabindex="-1"` item inside a panel teleported to the end of `<body>`,
+                    // so there is nothing sensible for the browser to continue from: forwards
+                    // it leaves the document for the browser chrome, backwards it lands on
+                    // whatever precedes the overlay root. Either way the menu stayed OPEN and
+                    // painted over the page with focus somewhere else. Nothing reports it —
+                    // the menu is visible, the item was focusable, only the destination is
+                    // wrong.
+                    //
+                    // Tab is a CLOSE that hands focus onward, not a trap. A `role="menu"` is a
+                    // composite widget (WAI-ARIA menu pattern), so leaving it is a normal exit
+                    // — the opposite call from a `role="dialog"`, which contains focus instead.
+                    // The destination has to be placed explicitly for the same reason the
+                    // default is useless, which is what `preventDefault()` below is for.
+                    const beside = this._tabStopBesideTrigger(!event.shiftKey);
+
+                    event.preventDefault();
+
+                    if (beside) {
+                        // Focus BEFORE the hide, the same ordering and the same reason as
+                        // close(): the panel leaves through an `x-transition`, so
+                        // `display: none` lands when that transition ends — after any focus
+                        // call made on this tick, which would then have moved focus out of a
+                        // subtree the browser is about to drop onto `<body>` anyway.
+                        beside.focus({ preventScroll: true });
+
+                        // NOT close(): focus has already been placed, and close() would take
+                        // it straight back off the destination onto the trigger.
+                        this.open = false;
+                        break;
+                    }
+
+                    // Nothing tabbable on that side of the trigger. close() hands focus back
+                    // to the trigger where there is something to hand it to, which keeps the
+                    // reader on the page rather than on an item that is about to be hidden.
+                    this.close();
+                    break;
+                }
             }
         },
     };

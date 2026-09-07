@@ -44,7 +44,7 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         // `focus-visible`, not `focus`, and a RING rather than only a surface.
         //
         // The menu focuses its first item on open so keyboard users land inside it. With a

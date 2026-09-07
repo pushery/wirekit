@@ -17,6 +17,53 @@ export default function wirekitToast(config = {}) {
     // itself.
     let focusOrigin = null;
 
+    // The region element itself, captured at init.
+    //
+    // ⚠️ IT EXISTS BECAUSE `$root` IS RESOLVED WHEN IT IS READ, AND ONE OF THE
+    // READS HAPPENS AFTER THE ELEMENT IT RESOLVES FROM IS GONE.
+    //
+    // `remove()` runs from the dismiss button's own `@click`, so Alpine anchors the
+    // magics to that BUTTON. `_focusSuccessor` reads `$root` synchronously, while
+    // the button is still in the document, and gets the region — that half was
+    // always fine. `_restoreFocus` reads it inside `$nextTick`, by which time the
+    // button has gone with its card, `closest('[x-data]')` from a detached node
+    // finds nothing, and the lookup that should hand focus to the next toast never
+    // happens. Focus stays where the browser dropped it: `<body>`.
+    //
+    // The file already knew the button gets detached — the note in `_restoreFocus`
+    // says "by the time the tick lands that button is detached anyway" — and reached
+    // for `$root` in the same breath. That is the second time this path has been
+    // dead while everything around it stayed green.
+    //
+    // Measured, not reasoned. `ToastKeyboardFocusTest` fails on exactly the two
+    // neighbor cases when that one lookup goes back to `$root`, and passes on all
+    // four with this handle; the `{element}` branch — an origin outside the region
+    // — is unaffected either way, which is the asymmetry that named the cause.
+    //
+    // A closure variable for the same reason as `focusOrigin` above: a DOM node
+    // stored on the reactive object comes back out as a Proxy.
+    let regionEl = null;
+
+    /**
+     * The region, resolved ONCE while something is still attached to resolve it
+     * from, and kept.
+     *
+     * Every caller below reaches this synchronously — from `init()`, from a
+     * `focusin` on the region, or from `remove()` before the splice — so `$root`
+     * still answers. The one read that happens after the fact takes the cached
+     * value instead of asking again.
+     *
+     * @param {{$root?: Element, $el?: Element}} ctx
+     * @returns {Element|null}
+     */
+    const region = (ctx) => {
+        if (! regionEl && ctx) {
+            regionEl = ctx.$root ?? null;
+        }
+
+        return regionEl;
+    };
+
     return {
         /** @type {Array<{id: number, title: string, message: string, variant: string, _timer: number|null}>} */
         toasts: [],
@@ -39,6 +86,10 @@ export default function wirekitToast(config = {}) {
         _nextId: 1,
 
         init() {
+            // The earliest and most certain moment: init runs on the element that
+            // carries the x-data, so `$el` and `$root` are the same element here.
+            regionEl = this.$root ?? this.$el ?? null;
+
             // Scoped event name — when name is set, only this region receives
             // events dispatched to 'wirekit-toast-{name}'. Without a name,
             // the region listens on the global 'wirekit-toast' event.
@@ -146,11 +197,40 @@ export default function wirekitToast(config = {}) {
             this.toasts.push(toast);
             this._announce(toast);
 
-            // Enforce max queue length — remove oldest
+            // Enforce max queue length — remove oldest.
+            //
+            // ⚠️ THE EVICTION IS THE SECOND WAY A TOAST LEAVES THE DOM, and it takes
+            // focus with it exactly as the dismiss button does — the mechanism and the
+            // WCAG 2.4.3 requirement are written out on `remove()` below. This path is
+            // the worse of the two, because the reader did not press anything: the jump
+            // to the top of the document is unprompted.
+            //
+            // It is also not a corner case. `focusin` pauses a focused toast's timer, so
+            // the toast a keyboard reader is parked in is the one that never auto-
+            // dismisses — its neighbors expire around it, it ages into slot 0, and the
+            // next notification evicts precisely it.
+            //
+            // Routed through the same two methods rather than a second implementation.
+            // `_focusSuccessor` returns null unless focus really sits inside the leaving
+            // toast, so a pointer dismissal, an auto-dismiss and a programmatic push all
+            // behave exactly as they did.
+            let successor = null;
+
             while (this.toasts.length > this._max) {
                 const oldest = this.toasts[0];
+
+                // Read BEFORE the shift: afterwards `toasts[0]` is a different toast and
+                // the lookup would measure the wrong one. The first non-null answer is
+                // kept, because a second pass looks at a toast focus was never inside and
+                // returns null — which would otherwise erase the landing found here.
+                successor = successor ?? this._focusSuccessor(0);
+
                 if (oldest._timer) clearTimeout(oldest._timer);
                 this.toasts.shift();
+            }
+
+            if (successor) {
+                this._restoreFocus(successor);
             }
         },
 
@@ -161,18 +241,25 @@ export default function wirekitToast(config = {}) {
          * too — the `relatedTarget` test keeps only the move that CROSSED the
          * boundary, which is the one worth returning to.
          *
-         * `$root` rather than `$el` for the boundary test, for the same reason the
-         * two lookups below use it: the region is the boundary, and `$el` only
-         * happens to be the region while this listener stays on the `x-data`
+         * The captured region rather than `$el` for the boundary test, for the same
+         * reason the lookups below use it: the region IS the boundary, and `$el`
+         * only happens to be the region while this listener stays on the `x-data`
          * element. Moving it onto a card would silently turn every intra-stack
          * focus move into a "crossing" and overwrite the origin.
+         *
+         * It reads `regionEl` and not `$root` for the reason at the top of this
+         * file — this one happens to work, because the listener sits ON the
+         * `x-data` element, and "happens to work" is what the other two also did
+         * until they were reached from a handler one level down.
          *
          * @param {FocusEvent} event
          */
         noteFocusOrigin(event) {
             const from = event && event.relatedTarget;
 
-            if (from && this.$root && typeof this.$root.contains === 'function' && ! this.$root.contains(from)) {
+            const root = region(this);
+
+            if (from && root && typeof root.contains === 'function' && ! root.contains(from)) {
                 focusOrigin = from;
             }
         },
@@ -235,12 +322,14 @@ export default function wirekitToast(config = {}) {
          * @returns {{toastId: number}|{element: Element}|null}
          */
         _focusSuccessor(idx) {
-            if (typeof document === 'undefined' || ! this.$root || typeof this.$root.querySelector !== 'function') {
+            const root = region(this);
+
+            if (typeof document === 'undefined' || ! root || typeof root.querySelector !== 'function') {
                 return null;
             }
 
             const active = document.activeElement;
-            const leaving = this.$root.querySelector(`[data-wk-toast-id="${this.toasts[idx].id}"]`);
+            const leaving = root.querySelector(`[data-wk-toast-id="${this.toasts[idx].id}"]`);
 
             if (! active || ! leaving || typeof leaving.contains !== 'function' || ! leaving.contains(active)) {
                 return null;
@@ -259,6 +348,19 @@ export default function wirekitToast(config = {}) {
          * during its leave transition, and focusing while it is there is what
          * takes focus off it.
          *
+         * ⚠️ A LATER LANDING WAS BUILT AND THEN TAKEN BACK OUT, and that is worth a
+         * line because the obvious next fix is to put it back. The suspicion was
+         * that the tick is too early — that the leaving card is removed by its own
+         * transition, outside Alpine's tick, and takes focus with it. A second
+         * landing via `MutationObserver`, once the card really detaches, was
+         * written and measured: the four browser cases pass identically without
+         * it, because the card is already detached by the tick and, when it is
+         * not, focus has moved to the successor before the removal reaches it.
+         * Shipping it anyway would have been a mechanism nothing exercises,
+         * standing where the real cause was.
+         *
+         * The real cause was `$root` — see the note at the top of this file.
+         *
          * @param {{toastId: number}|{element: Element}} successor
          */
         _restoreFocus(successor) {
@@ -267,7 +369,7 @@ export default function wirekitToast(config = {}) {
                 // button's handler, and by the time the tick lands that button is
                 // detached anyway — searching from it would find nothing twice over.
                 const target = successor.toastId !== undefined
-                    ? this.$root.querySelector(`[data-wk-toast-id="${successor.toastId}"] button`)
+                    ? (regionEl ? regionEl.querySelector(`[data-wk-toast-id="${successor.toastId}"] button`) : null)
                     : successor.element;
 
                 // `isConnected === false` is the case worth skipping: an origin

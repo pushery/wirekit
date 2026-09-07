@@ -48,6 +48,11 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false);
+    // Same contract, different spelling of the default: a `config()` fallback declares a
+    // boolean as surely as a literal does. This one decides both the `multiple` attribute on
+    // the input and whether the field posts as `name[]`, so an unbound `multiple="false"`
+    // changed the shape of the submitted payload as well as the picker.
+    $multiple = BooleanProp::from($multiple, false);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -77,9 +82,19 @@
     $errorId = $uploadId . '-error';
     $hintId = $uploadId . '-hint';
 
-    // Laravel errors bag check.
-    $hasError = $error || ($errors ?? null)?->has($name);
+    // Laravel errors bag check, guarded on the name exactly as field.blade.php
+    // does. `MessageBag::has(null)` falls through to `any()`, so an unguarded
+    // read makes a file-upload with no `name` report itself invalid the moment
+    // ANY unrelated field on the page fails validation — a red border and an
+    // `aria-invalid` on a control nobody validated.
+    $hasError = $error || ($name && ($errors ?? null)?->has($name));
     $errorMessage = $error ?? ($hasError && $name ? $errors->first($name) : null);
+
+    // The paragraph and the idref pointing at it move together. `$hasError` can
+    // be true with nothing to say (`error=""` plus a bag hit), and a described-by
+    // resolving to an empty element announces the control as invalid without
+    // saying why — a WCAG 3.3.1 failure the markup looks fine in.
+    $showsError = $hasError && $errorMessage;
 
     // The described-by list is computed here rather than inline on the input, because an
     // IDREFS attribute is only valid when it names at least one element: with neither a
@@ -91,7 +106,7 @@
     // document is dropped silently by assistive technology, and the field is then
     // described by less than the markup claims — or, with only a hint set, by
     // nothing at all. Compose from what this render actually emits.
-    $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($hasError ? $errorId : ''));
+    $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($showsError ? $errorId : ''));
 
     $variantValue = match ($variant) {
         'default', 'compact' => $variant,
@@ -198,6 +213,21 @@
         'bg-[var(--color-wk-bg-muted)]',
         'rounded-[var(--radius-wk-md)]',
     ]);
+
+    // What a screen reader is told once a file is gone. The visible list is the only
+    // other feedback a removal gives, which is no feedback at all for a reader who
+    // cannot see it.
+    //
+    // Internal and translated rather than a prop, which is the shape the tags input
+    // already uses for the same gesture: the accessible NAME of the remove button is a
+    // caller's business, the component's own narration is not, and a new public prop
+    // would be API surface for a sentence nobody has asked to reword. Reusing that
+    // control's catalog key keeps the two from drifting apart in wording, and adds
+    // nothing to the eight catalogs.
+    //
+    // Assembled from a `:name` placeholder because a sentence concatenated in
+    // JavaScript cannot be translated and word order is not the same in every language.
+    $removedMessage = __('wirekit::Removed :name');
 @endphp
 
 {{-- Alpine: tracks drag-over state + an array of selected file metadata for preview.
@@ -208,7 +238,7 @@
          four statements and a `const`, which Alpine's CSP build does not parse —
          under a strict Content-Security-Policy dropping a file did nothing while
          clicking the label still worked. --}}
-    x-data="wirekitFileUpload({ removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }} })"
+    x-data="wirekitFileUpload({ removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }}, removedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removedMessage) }} })"
     {{-- `wire:model` is peeled off here and re-attached to the file input below.
          Livewire decides what a model binding MEANS by reading the element's
          type: on a `<input type="file">` it takes the upload path, and on
@@ -225,6 +255,13 @@
         'inline-flex max-w-full flex-col items-start align-middle' => $variantValue === 'compact',
     ]) }}
 >
+    {{-- The removal's own live region. Unconditional and starting EMPTY, for the reason
+         the pattern states everywhere it appears: a live region that arrives together
+         with its text is a new node, and a new node announces nothing. The only other
+         `aria-live` in this file belongs to the error paragraph, which renders only when
+         there IS an error — so before this, a removal was silent by construction. --}}
+    <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="fileAnnouncement"></div>
+
     <label
         for="{{ $uploadId }}"
         :class="dragging
@@ -294,8 +331,15 @@
                      small visual chip; only the pointer/touch target is enlarged. --}}
                 <button
                     type="button"
+                    {{-- What `_focusAfterRemoval` queries for. The removal destroys this
+                         very button, so focus has to be handed to the one that took the
+                         row's place — and a marker the template does not carry is the
+                         quiet half of that bug: the query returns nothing, the move falls
+                         through to its last resort, and focus lands somewhere plausible
+                         enough that nobody notices it is the wrong somewhere. --}}
+                    data-wk-file-remove
                     @click="removeFile(index)"
-                    class="relative shrink-0 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
+                    class="relative shrink-0 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
                     :aria-label="removeLabel.replace(':name', file.name)"
                 >
                     {{-- X icon — decorative, label is on the button. Matches the
@@ -312,7 +356,7 @@
         <p id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
-    @if($hasError)
+    @if($showsError)
         {{-- Error message — aria-describedby'd above, and visually distinguished. --}}
         <p id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif

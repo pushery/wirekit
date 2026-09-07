@@ -16,7 +16,21 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `dismissible="false"` meant the opposite of what the call site reads as, on the
+    // one switch a confirmation dialog exists to set. All four reads below are truth
+    // tests (the x-data seed, the Escape listener and the two backdrop handlers), and
+    // modal.header's close-X hangs off the seeded Alpine value, so the string turned
+    // every one of them back ON: Escape closed the dialog, the overlay closed it, and
+    // the close-X the prop suppresses was rendered. Nothing went red and the page
+    // rendered either way — only the bound spelling `:dismissible="false"` worked.
+    //
+    // Normalized against the prop's own default so a cast never turns dismissal off on
+    // a modal that never asked for it.
+    $dismissible = BooleanProp::from($dismissible, true);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -139,7 +153,7 @@
                  Leave transition intentionally omitted: pest-plugin-browser's
                  `assertDontSee()` is synchronous (no auto-wait), and any fade-out
                  (even 150ms) races against the assertion. Instant close is also
-                 better UX — matches GitHub, Linear, macOS dialogs. --}}
+                 better UX — it matches the platform dialog convention. --}}
             <div
                 x-show="open"
                 x-transition:enter="transition ease-out duration-200"

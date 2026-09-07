@@ -93,7 +93,7 @@
         'rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-subtle)]',
-        'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
     ]);
 
@@ -104,7 +104,7 @@
         'text-[length:var(--text-wk-sm)]',
         'tabular-nums',
         'transition-colors duration-[var(--transition-wk-duration)]',
-        'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]);
 
     // Native month/year selects (selectableHeader) — token-styled.
@@ -121,7 +121,7 @@
         'text-[color:var(--color-wk-text)]',
         'font-[family-name:var(--font-wk-sans)]',
         'cursor-pointer',
-        'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]);
 
     // Base order is Sunday-first; rotate so the configured start day leads

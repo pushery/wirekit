@@ -25,9 +25,21 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $accent = BooleanProp::from($accent, false);
 
-    // Determine the HTML heading level (h1–h6)
-    $headingLevel = $level ?? 2;
-    $tag = $as ?? "h{$headingLevel}";
+    // Determine the HTML heading level (h1–h6).
+    //
+    // ⚠️ RESOLVED TO AN INT IN RANGE, because this value is concatenated into the opening
+    // tag below. Blade compiles an unbound attribute to a string and `e()` escapes neither
+    // a space nor an `=`, so `level="2 onmouseover=alert(1)"` rendered
+    // `<h2 onmouseover=alert(1) …>` — the same attribute injection `as` carried, one prop
+    // over, and it survived the fix that closed `as` because only that branch was guarded.
+    // An int clamped to the documented 1–6 cannot carry an attribute and cannot name an
+    // element that does not exist.
+    $headingLevel = min(6, max(1, (int) ($level ?? 2)));
+    // `as` is rendered straight into the opening tag, so anything with a space or an
+    // `=` in it becomes an ATTRIBUTE — `as="div onmouseover=alert(1)"` shipped a working
+    // event handler. tagName() admits a tag name and nothing else; it is the same call
+    // text / row / container / link already make.
+    $tag = $as === null ? "h{$headingLevel}" : \Pushery\WireKit\WireKit::tagName('heading', (string) $as);
 
     // Auto-size based on heading level when size is not explicitly set
     $resolvedSize = $size ?? match ((int) $headingLevel) {

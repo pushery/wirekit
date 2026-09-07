@@ -31,7 +31,7 @@
         'font-[family-name:var(--font-wk-sans)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         'focus:bg-[var(--color-wk-bg-subtle)]',
         'cursor-pointer',
     ]), $scope);

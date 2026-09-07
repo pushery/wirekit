@@ -37,12 +37,21 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('alert-dialog', $attributes->getAttributes());
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `dismissible="false"` used to mean the opposite of what the call site reads as. The
+    // prop's default is spelled as a `config()` fallback rather than a literal, which is
+    // the only reason the coverage guard did not see it. All three reads are truth tests
+    // (the Alpine seed and the two backdrop handlers), so the string turned every one of
+    // them back on and a destructive-confirmation dialog dismissed on a backdrop click.
+    $dismissible = BooleanProp::from($dismissible, false);
 
     // Alert Dialog — specialized confirmation dialog for destructive actions.
     // Uses role="alertdialog" (not "dialog") to signal urgency to screen readers.

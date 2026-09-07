@@ -72,7 +72,7 @@
         'text-[length:var(--text-wk-lg)]',
         'text-[color:var(--color-wk-text)]',
         'placeholder:text-[color:var(--color-wk-text-placeholder)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
     ]), $scope);
 
     // The results list was the only region here without a seam: backdrop, panel

@@ -326,7 +326,16 @@
          context makes the two coincide everywhere. --}}
     <div class="relative flex flex-1 overflow-hidden">
         @if(isset($sidebar) || isset($rail))
-            {{-- Mobile backdrop --}}
+            {{-- Mobile backdrop.
+
+                 The scrim paints from --color-wk-overlay, like every other backdrop in the
+                 library (modal, drawer, alert-dialog, command-palette, tour, lightbox). It
+                 shipped as a bare `bg-black/50` and was the one overlay a theme could not
+                 reach: Retro Terminal sets the token to 0.8 and dressed every scrim on a page
+                 except this one, and the dark block steps the token to 0.7 while this stayed
+                 at 0.5 — the shell's own navigation was the least-dimmed overlay exactly where
+                 dimming matters most. `lg:hidden` is why it survived that long: the divergence
+                 needs a mobile viewport to be visible at all. --}}
             <div
                 x-show="sidebarOpen"
                 x-on:click="sidebarOpen = false"
@@ -336,7 +345,7 @@
                 x-transition:leave="transition ease-in duration-[var(--transition-wk-duration)]"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
-                class="absolute inset-0 z-[calc(var(--z-wk-sticky)+1)] bg-black/50 lg:hidden"
+                class="absolute inset-0 z-[calc(var(--z-wk-sticky)+1)] bg-[var(--color-wk-overlay)] lg:hidden"
                 aria-hidden="true"
                 x-cloak
             ></div>

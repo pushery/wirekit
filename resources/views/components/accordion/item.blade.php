@@ -86,7 +86,7 @@
         'text-[color:var(--color-wk-text)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'hover:bg-[var(--color-wk-bg-muted)]',
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
         'focus-visible:ring-inset',

@@ -32,26 +32,38 @@
     //
     // The id is DERIVED, in this order: an explicit `id`, then the href (the
     // natural key for a link item), then the item's own text. Only when none of
-    // those exist does it fall back to a random string — which is what every
-    // item used to get, and what made the list a different set of elements on
-    // every render.
+    // those exist is there nothing to derive from at all.
     $wkCmdSlug = static function (string $value): string {
         $slug = strtolower(preg_replace('/[^A-Za-z0-9]+/', '-', $value) ?? '');
 
         return trim($slug, '-');
     };
 
-    $itemId = $id
+    $wkCmdDerivedId = $id
         ?? ($href !== null && $href !== ''
             ? 'wk-cmd-item-'.$wkCmdSlug((string) $href)
             : null);
 
-    if ($itemId === null) {
+    if ($wkCmdDerivedId === null) {
         $label = $wkCmdSlug(trim(strip_tags((string) $slot)));
-        $itemId = $label !== ''
-            ? 'wk-cmd-item-'.$label
-            : 'wk-cmd-item-'.\Illuminate\Support\Str::random(6);
+        $wkCmdDerivedId = $label !== '' ? 'wk-cmd-item-'.$label : null;
     }
+
+    // ⚠️ The derivation above is stable but NOT unique, and a palette is the one
+    // place that shape hurts. The same verb under two groups — "Settings" under
+    // Docs and under Admin, "Open" under Files and Projects — derives ONE id for
+    // two rows, and `document.getElementById` answers with the first: arrowing
+    // onto the second row publishes an `aria-activedescendant` that resolves to
+    // the first, so the reader is told about a row it is not standing on, and
+    // because the string does not change between the two some readers announce
+    // nothing at all. DomId::unique hands the FIRST sight back verbatim — a lone
+    // item keeps the clean, readable id the paragraph above argues for — and
+    // counts only the collisions, so both properties hold instead of one being
+    // traded for the other. It also replaces the old Str::random fallback for the
+    // item that has neither href nor text: a counter survives a re-render, a
+    // random string makes the row a different element every time. Its registry is
+    // per request, which is what a re-render is.
+    $itemId = \Pushery\WireKit\Support\DomId::unique($wkCmdDerivedId, 'wk-cmd-item-');
 
     $classes = WireKit::resolveClasses('command-palette.item', 'base', implode(' ', [
         'flex items-center gap-x-[var(--gap-wk-sm)] w-full',
@@ -64,8 +76,22 @@
         'duration-[var(--transition-wk-duration)]',
         'cursor-pointer',
         'hover:bg-[var(--color-wk-bg-subtle)]',
-        'focus:outline-none focus:bg-[var(--color-wk-bg-subtle)]',
+        'focus:outline-hidden',
+        // `data-active`, not `focus`, and this is the one menu-ish component where
+        // that distinction matters. The option is `tabindex="-1"` under the list's
+        // `aria-activedescendant`, and command-palette.js never calls `.focus()` on
+        // it — the highlight is written by markActive() at line 325. So a `focus:`
+        // background here was inert and has been dropped rather than converted.
+        //
+        // The RING is the mark, for the reason dropdown/item.blade.php records: dark
+        // mode declares --color-wk-bg-subtle and --color-wk-bg-elevated as the same
+        // value, and the palette panel is bg-elevated, so the highlighted row moved
+        // 1.00:1 against what it sits on. Light managed 1.04:1. The ring measures
+        // 17.2:1 dark and 19.8:1 light.
         'data-[active=true]:bg-[var(--color-wk-bg-subtle)]',
+        'data-[active=true]:ring-[length:var(--ring-wk-width)]',
+        'data-[active=true]:ring-inset',
+        'data-[active=true]:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
     $disabledClasses = $disabled

@@ -30,7 +30,7 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'hover:bg-[var(--color-wk-bg-subtle)]',
-        'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
     $colorClasses = $active

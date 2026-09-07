@@ -15,6 +15,20 @@
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
     $attributes = $attributes->except(['interactive']);
+    // Auto-inject rel="noopener noreferrer" when target="_blank". This component
+    // takes an href and echoes the caller's bag onto the element that carries it,
+    // so the caller's target passed straight through to a bare anchor. The house
+    // rule makes the injection unconditional for exactly that shape. Rendered
+    // explicitly with the bag echoed via except('rel'), because
+    // $attributes->merge() treats rel as a DEFAULT and a caller-supplied rel
+    // would replace the computed value.
+    $targetAttr = $attributes->get('target', '');
+    $opensNewTab = true && str_contains($targetAttr, '_blank');
+    $relAttr = $attributes->get('rel', '');
+    $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr.' noopener noreferrer')
+        : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
 
@@ -46,6 +60,16 @@
         ? trim($label).', '.$badge
         : $label;
 
+    // The other half of the target="_blank" rule: rel protects the opener, this
+    // warns the person who cannot see the new tab appear. The house pattern puts
+    // that hint in an sr-only span inside the link, which works for a link named
+    // by its own content — and this one is not. It carries aria-label, and name
+    // computation stops there, so a span inside would sit in the DOM and outside
+    // the announcement. The hint therefore rides the label itself.
+    if ($opensNewTab) {
+        $accessibleName = trim($accessibleName.' '.__('wirekit::(opens in new tab)'));
+    }
+
     $classes = WireKit::resolveClasses('bottom-nav.item', 'base', implode(' ', [
         'wk-bottom-nav-item',
         'relative flex flex-1 flex-col items-center justify-center gap-1',
@@ -54,7 +78,7 @@
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-lg)]',
         'text-[length:var(--text-wk-xs)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
-        'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset',
         // The current-tab look (accent color + heavier weight) is CSS keyed on
         // data-active (see dist/wirekit.css), NOT baked in here — so it follows the
         // state whether the server sets `active` or the interactive mode's Alpine
@@ -87,7 +111,8 @@
     aria-label="{{ $accessibleName }}"
     data-wk-bottom-nav-item
     data-active="{{ $active ? 'true' : 'false' }}"
-    {{ $attributes->class([$classes]) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->class([$classes]) }}
 >
     @if($icon)
         <span class="relative inline-flex" aria-hidden="true">

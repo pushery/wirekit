@@ -233,12 +233,12 @@ export default function wirekitChartJs(config) {
             this._navCleanup = () => this.destroy();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
 
-            // Wire-streaming setup (Extension 12.3) — read data-wire-stream-*
+            // Wire-streaming setup — read data-wire-stream-*
             // attributes off the root and register a window listener so
             // Livewire $dispatch('<event>', { point }) calls feed the live chart.
             this._setupWireStream();
 
-            // Annotations plugin warning (Extension 12.4) — Chart.js requires
+            // Annotations plugin warning — Chart.js requires
             // chartjs-plugin-annotation. Emit a console.warn at init time when
             // annotations are present but the plugin is missing, so developers
             // see the cause without a silent visual no-op.

@@ -117,12 +117,41 @@
     // outside it. A link with no actions keeps the whole-card-clickable <a>.
     $splitLink = $isLink && $hasActions;
     $tag = ($isLink && ! $hasActions) ? 'a' : 'div';
+    // Auto-inject rel="noopener noreferrer" when target="_blank". This component
+    // takes an href and echoes the caller's bag onto the element that carries it,
+    // so the caller's target passed straight through to a bare anchor. The house
+    // rule makes the injection unconditional for exactly that shape. Rendered
+    // explicitly with the bag echoed via except('rel'), because
+    // $attributes->merge() treats rel as a DEFAULT and a caller-supplied rel
+    // would replace the computed value.
+    $targetAttr = $attributes->get('target', '');
+    $opensNewTab = $tag === 'a' && str_contains($targetAttr, '_blank');
+    $relAttr = $attributes->get('rel', '');
+    $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr.' noopener noreferrer')
+        : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
 @php
     $accessibleName = $name
         .($descriptionParts ? ', '.implode(', ', $descriptionParts) : '')
         .($stateText ? ', '.$stateText : '');
+
+    // The other half of the target="_blank" rule: rel protects the opener, this
+    // warns the person who cannot see the new tab appear. WHERE it goes depends
+    // on how this card is named, and the card has both shapes. With a composed
+    // name it carries aria-label, and name computation stops at the label — a
+    // span inside would sit in the DOM and outside the announcement, so the hint
+    // rides the label. With no name at all (every naming part empty) no label is
+    // emitted, the anchor falls back to its own content, and the house pattern's
+    // sr-only span is what reaches the reader. The flag below records which of
+    // the two took it so the second cannot fire as well and say it twice.
+    $hintsNewTabInLabel = $opensNewTab && filled($accessibleName);
+
+    if ($hintsNewTabInLabel) {
+        $accessibleName = trim($accessibleName.' '.__('wirekit::(opens in new tab)'));
+    }
 @endphp
 
 <{{ $tag }}
@@ -143,13 +172,14 @@
             aria-label="{{ $accessibleName }}"
         @endif
     @endunless
-    {{ $attributes->class([$rootClasses]) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->class([$rootClasses]) }}
 >
     {{-- Link over the media+name only when there are also actions, so the action
          controls can live outside the anchor. Without actions the whole card is
          the link (the $tag === 'a' root above). --}}
     @if($splitLink)
-        <a href="{{ $href }}" aria-label="{{ $accessibleName }}" data-wk-attachment-link class="flex min-w-0 flex-1 items-center gap-[var(--gap-wk-sm)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+        <a href="{{ $href }}" aria-label="{{ $accessibleName }}" data-wk-attachment-link class="flex min-w-0 flex-1 items-center gap-[var(--gap-wk-sm)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
     @endif
 
     {{-- Media tile: a real thumbnail when we have one, else the file glyph.
@@ -201,4 +231,8 @@
             {{ $actions }}
         </span>
     @endisset
+
+    @if($opensNewTab && ! $hintsNewTabInLabel)
+        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
+    @endif
 </{{ $tag }}>

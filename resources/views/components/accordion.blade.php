@@ -76,7 +76,28 @@
             'bg-[var(--color-wk-bg-elevated)]',
         ]),
     };
-    $classes = WireKit::resolveClasses('accordion', 'base', $containerClasses, $scope);
+
+    // `wk-accordion` is a marker, not a styled class, and it is load-bearing.
+    //
+    // The library's reduced-motion clamp matches a `wk-` CLASS TOKEN and its
+    // descendants — deliberately a token and not a substring, because matching the
+    // attribute as a substring once clamped a whole application's animations
+    // through `bg-[var(--color-wk-bg)]` on its <body>. Every class this root emits
+    // spells `wk-` inside an arbitrary value (`--border-wk-width`,
+    // `--color-wk-border`), where the prefix is preceded by a dash and no branch of
+    // the clamp can reach it. The chevron in accordion/item.blade.php makes a
+    // half-turn on the themed transition duration, so for a reader who had asked
+    // their operating system for no motion it kept turning — and
+    // `data-wk-accordion-mode` is named in no motion rule, so nothing else reached
+    // it either. The header buttons are all descendants of this element, which is
+    // why one token here covers the whole subtree, and why it also brings the
+    // component inside the `data-reduce-motion` escape hatch written against the
+    // same selector. Same remedy, same reason as `wk-toggle`.
+    //
+    // Prepended OUTSIDE the match so it survives every variant: `flush` and
+    // `separated` carry no chrome of their own, and a marker living in one arm of
+    // three is a marker two variants do not have.
+    $classes = WireKit::resolveClasses('accordion', 'base', 'wk-accordion '.$containerClasses, $scope);
 @endphp
 
 {{-- Accordion root — holds the mode flag and exposes a tiny Alpine API:

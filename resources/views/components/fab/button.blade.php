@@ -120,7 +120,7 @@
         'shadow-[var(--shadow-wk-lg)]',
         'transition-transform duration-[var(--transition-wk-duration)]',
         'hover:brightness-110',
-        'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-2',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-2',
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 @endphp

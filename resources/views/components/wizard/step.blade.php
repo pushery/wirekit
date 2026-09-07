@@ -30,6 +30,12 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
+    // `@aware` reads a value from the parent component, but — unlike `@props` —
+    // it does NOT remove that key from the attribute bag. So when the key is also
+    // written as an attribute on the tag, it survives into `{{ $attributes }}` and
+    // renders as a stray HTML attribute on the element.
+    $attributes = $attributes->except(['current']);
+
     $position = (int) ($index ?? 0);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so

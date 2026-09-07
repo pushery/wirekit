@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Mcp;
 
 use Pushery\WireKit\ComponentRegistry;
+use Pushery\WireKit\Console\MakeCommand;
 use Pushery\WireKit\Support\AccessibilityContract;
+use Pushery\WireKit\Theming\ThemePresetRegistry;
 use Pushery\WireKit\WireKit;
 
 /**
@@ -114,13 +116,29 @@ final class McpCatalog
         // Every field the extractor produces, not a chosen three.
         //
         // This used to narrow to name/default/comment, which reads as tidy and is
-        // a loss the caller cannot detect: `type_hint` is what tells an agent the
-        // prop is an enum rather than free text, `default_normalized` is the
-        // resolved value behind a `config(...)` call, and `examples` are the
-        // values the docblock actually names. An agent given only the raw default
-        // `config('wirekit.components.button.intent', 'primary')` has to guess
-        // what may be passed — which is precisely the guessing this catalog
-        // exists to remove.
+        // a loss the caller cannot detect: `type_hint` carries the declared PHP
+        // type of a class-based component's constructor argument,
+        // `default_normalized` is the same expression as `default` with whitespace
+        // collapsed and comments stripped so two records can be compared as
+        // strings, and `examples` are the values an `@example` annotation names.
+        // Dropping any of them narrows what the caller can answer, and says
+        // nothing about having done so.
+        //
+        // ⚠️ Two of those clauses read the other way here, and on the public
+        // `docs/ai-tooling.md` page, for a long series of releases: a type hint
+        // that identifies an enum, and "the resolved value behind a `config(...)`
+        // call". Neither is produced, and the payload says so plainly to anyone
+        // who looks — measured 2026-09-06 over a real `--public` export:
+        // `default_normalized` is byte-identical to `default` for all 139
+        // config-backed defaults, and `type_hint` is null for 1282 of 1297 props,
+        // because an anonymous component's `@props` block declares no types.
+        //
+        // Resolving the fallback literal is worth doing and would need a NEW
+        // field: `default_normalized`'s whitespace-collapse semantics are
+        // published in `docs/extending/component-registry.md` and pinned by
+        // `PropsParserTest`, so repurposing it breaks a documented contract.
+        // `McpPropFieldClaimsTest` now holds every such sentence to what the
+        // extractor really returns, in both directions.
         $props = ComponentRegistry::extractProps($name);
 
         $class = ComponentRegistry::componentClass($name);
@@ -359,6 +377,206 @@ final class McpCatalog
         }
 
         return $out;
+    }
+
+    /**
+     * The bundled theme presets, read from the registry that `wirekit:theme` writes from.
+     *
+     * ⚠️ FROM `ThemePresetRegistry`, NEVER FROM THE DOCUMENTATION, AND THAT IS NOT A STYLE
+     * PREFERENCE. A preset already reaches a developer by three artifacts — the registry the
+     * command writes, the page they copy by hand, and the live picker on the documentation
+     * site — and those three have measurably disagreed (`ThemePresetDocsValueDriftTest` holds
+     * the surviving divergences as a ratchet). A fourth retelling would be a fourth thing to
+     * hold in step. Reading the registry makes this view current by construction: it cannot
+     * drift from the command, because it IS the command's source.
+     *
+     * @return list<array{key: string, label: string, has_dark_block: bool, command: string}>
+     */
+    public function presets(): array
+    {
+        $out = [];
+
+        foreach (ThemePresetRegistry::all() as $key => $preset) {
+            $out[] = [
+                'key' => $key,
+                'label' => (string) $preset['label'],
+                'has_dark_block' => ($preset['dark_vars'] ?? null) !== null && $preset['dark_vars'] !== '',
+                'command' => "php artisan wirekit:theme {$key}",
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
+     * One preset with the CSS the command appends to `app.css`.
+     *
+     * `dark_vars` is null for most presets and that is meaningful rather than missing: those
+     * presets inherit dark mode from the bundled defaults. It is reported as null rather than
+     * as an empty string so the two states stay distinguishable.
+     *
+     * @return array{key: string, label: string, has_dark_block: bool, command: string, vars: string, dark_vars: string|null}|null
+     */
+    public function preset(string $key): ?array
+    {
+        if (! ThemePresetRegistry::isValid($key)) {
+            return null;
+        }
+
+        $preset = ThemePresetRegistry::get($key);
+        $dark = $preset['dark_vars'] ?? null;
+
+        return [
+            'key' => $key,
+            'label' => (string) $preset['label'],
+            'has_dark_block' => $dark !== null && $dark !== '',
+            'command' => "php artisan wirekit:theme {$key}",
+            'vars' => (string) $preset['vars'],
+            'dark_vars' => $dark === null || $dark === '' ? null : (string) $dark,
+        ];
+    }
+
+    /**
+     * The recipe library — the composed page shapes `wirekit:make recipe:<name>` scaffolds.
+     *
+     * ⚠️ NOTHING HERE READS `docs/`, AND THE RECIPES ARE THE CASE WHERE THAT IS EASY TO GET
+     * WRONG. Each recipe has a documentation page under `docs/blueprints/recipes/`, which is
+     * the obvious place to read a title and a summary from — and it is export-ignored, so a
+     * catalog built that way answers in this repository and returns eleven blanks in every
+     * real install. The stubs under `src/Console/stubs/recipes/` ship, carry the same header,
+     * and are the file the developer actually receives.
+     *
+     * The names come from `MakeCommand::RECIPES`, so the list an agent sees and the list the
+     * command accepts cannot disagree.
+     *
+     * @return list<array{name: string, title: string, summary: string, docs_url: string, command: string}>
+     */
+    public function recipes(): array
+    {
+        $out = [];
+
+        foreach (MakeCommand::RECIPES as $name) {
+            $meta = $this->recipeHeader($name);
+
+            if ($meta === null) {
+                continue;
+            }
+
+            $out[] = $meta;
+        }
+
+        return $out;
+    }
+
+    /**
+     * One recipe, with the Blade source the scaffold writes.
+     *
+     * @return array{name: string, title: string, summary: string, docs_url: string, command: string, source: string}|null
+     */
+    public function recipe(string $name): ?array
+    {
+        if (! in_array($name, MakeCommand::RECIPES, true)) {
+            return null;
+        }
+
+        $meta = $this->recipeHeader($name);
+        $path = $this->recipeStubPath($name);
+
+        if ($meta === null || $path === null) {
+            return null;
+        }
+
+        return $meta + ['source' => rtrim((string) file_get_contents($path))."\n"];
+    }
+
+    /**
+     * Title, summary and docs URL, read out of the stub's own header comment.
+     *
+     * Every stub opens with the same three-line block — `{{-- Recipe: <Title> — <summary>`
+     * then a `Full reference:` URL — so the metadata lives next to the code it describes
+     * rather than in a table beside it. A stub whose header does not parse is skipped rather
+     * than guessed at, and a test fails on it: a recipe listed with an empty summary reads as
+     * a recipe that has nothing to say.
+     *
+     * @return array{name: string, title: string, summary: string, docs_url: string, command: string}|null
+     */
+    private function recipeHeader(string $name): ?array
+    {
+        $path = $this->recipeStubPath($name);
+
+        if ($path === null) {
+            return null;
+        }
+
+        $head = (string) file_get_contents($path);
+
+        // The em dash is the separator the stubs use; a hyphen inside a title must not split it.
+        if (preg_match('/\{\{--\s*Recipe:\s*(.+?)\s+\x{2014}\s+(.+?)\.?\s*$/mu', $head, $m) !== 1) {
+            return null;
+        }
+
+        preg_match('#Full reference:\s*(https://\S+)#', $head, $url);
+
+        return [
+            'name' => $name,
+            'title' => trim($m[1]),
+            'summary' => trim($m[2]),
+            'docs_url' => $url[1] ?? '',
+            'command' => "php artisan wirekit:make recipe:{$name}",
+        ];
+    }
+
+    /** The shipped stub for one recipe, or null when it is absent. */
+    private function recipeStubPath(string $name): ?string
+    {
+        $path = \dirname(__DIR__, 2)."/src/Console/stubs/recipes/{$name}.blade.php";
+
+        return is_file($path) ? $path : null;
+    }
+
+    /**
+     * The house conventions, as shipped prose rather than as a list held here.
+     *
+     * ⚠️ THIS CLOSES A GAP `AGENTS.md` NAMES IN ITS OWN WORDS. That file tells an
+     * assistant that "for an MCP-native editor, the WireKit MCP server exposes the same
+     * CATALOG as live tools" — the catalog, not the conventions. So an agent on the MCP
+     * path could read every prop of every component and never learn that a Tailwind
+     * palette class, a `dark:` prefix or a hand-written color will fail this project's
+     * guards. Cursor users got those rules from `.cursor/rules/wirekit.mdc`; an MCP
+     * client has no filesystem and reached neither file.
+     *
+     * Nothing is authored here on purpose. Both documents already ship, and a third
+     * copy of the same rules is a third thing to keep in step — the failure this whole
+     * class is arranged against. Read at call time, so the answer is whatever the
+     * installed version says.
+     *
+     * @return array{source: string, format: string, text: string}|null
+     */
+    public function conventions(bool $detailed = false): ?array
+    {
+        // Both files survive `git archive` — verified, and pinned by a test, because the
+        // opposite is this class's signature defect: a source that is present in the
+        // repository and absent in a real `composer require` install answers correctly
+        // where it is developed and says nothing where it is used.
+        $relative = $detailed ? '.cursor/rules/wirekit.mdc' : 'AGENTS.md';
+        $path = \dirname(__DIR__, 2).'/'.$relative;
+
+        if (! is_file($path)) {
+            return null;
+        }
+
+        $text = (string) file_get_contents($path);
+
+        // The `.mdc` frontmatter is Cursor's file-glob configuration. It tells an editor
+        // which files the rules attach to and tells an agent over MCP nothing at all, so
+        // it is dropped rather than shipped as noise the reader has to skip.
+        $text = (string) preg_replace('/\A---\R.*?\R---\R+/s', '', $text);
+
+        return [
+            'source' => $relative,
+            'format' => 'markdown',
+            'text' => trim($text),
+        ];
     }
 
     /**

@@ -39,6 +39,11 @@
     // landed in the attribute bag and rendered as a stray HTML attribute — a validation
     // message the developer wrote, silently not shown, on a control that is part of forms.
     'error' => null,
+    // A11y: render the error message in a polite live region by default so a
+    // server-side validation error that appears after submit (when focus is
+    // elsewhere) is announced. Mirrors the input component. Set false to opt out —
+    // an app that runs its OWN error summary would otherwise double-announce here.
+    'announceError' => null,
     'hint' => null,
     'min' => config('wirekit.components.slider.min', 0),
     'max' => config('wirekit.components.slider.max', 100),
@@ -59,8 +64,20 @@
     'scope' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
     use Pushery\WireKit\Support\BooleanProp;
+
+    // `@aware` reads a value from the parent component, but — unlike `@props` —
+    // it does NOT remove that key from the attribute bag. So when the key is also
+    // written as an attribute on the tag, it survives into `{{ $attributes }}` and
+    // renders as a stray HTML attribute on the element. Blade accepts both
+    // spellings on a tag, so both are dropped here.
+    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
+    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
@@ -259,7 +276,7 @@
         'appearance-none',
         'bg-transparent',
         'cursor-pointer',
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
         $trackHeight,
@@ -481,7 +498,7 @@
     {{-- Same shape as `input`: one region, error winning over hint, announced politely so
          it does not interrupt what the reader is doing. --}}
     @if($error)
-        <p id="{{ $sliderId }}-error" aria-live="polite" aria-atomic="true" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
+        <p id="{{ $sliderId }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
     @elseif($hint)
         <p id="{{ $sliderId }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif

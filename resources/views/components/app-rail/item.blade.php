@@ -141,7 +141,7 @@
         'not-[[aria-current]]:text-[color:var(--color-wk-rail-muted)]',
         'not-[[aria-current]]:hover:bg-[var(--color-wk-rail-hover-bg)]',
         'not-[[aria-current]]:hover:text-[color:var(--color-wk-rail-hover-fg)]',
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-rail-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)]',

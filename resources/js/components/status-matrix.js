@@ -26,7 +26,15 @@
  * @param {Object} config.cells - initial value map { "rowKey:colKey": value }
  * @param {string} config.cellType - tristate | toggle | status | heat
  * @param {boolean} config.editable - whether interactive cell types mutate
+ * @param {Object} [config.stateLabels] - translated tristate state words, keyed
+ *   allow / deny / inherit. They arrive from the server because a literal here
+ *   passes through no `__()` and is therefore localizable by nobody.
+ * @param {Object} [config.changePhrases] - sample count -> template, from
+ *   PluralPhrases; the unsaved-changes counter's translated plural forms.
+ * @param {string} [config.locale] - the application's locale, for Intl.PluralRules.
  */
+import { pluralize } from '../utils/plural.js';
+
 export default function wirekitStatusMatrix(config = {}) {
     return {
         /**
@@ -48,6 +56,19 @@ export default function wirekitStatusMatrix(config = {}) {
         // Tristate cycle order. inherit is the neutral default.
         tristateOrder: ['inherit', 'allow', 'deny'],
 
+        // The spoken state of a tristate cell, and the plural forms of the
+        // unsaved-changes counter. Both are TRANSLATED ON THE SERVER and handed
+        // over: a string that never passes through `__()` cannot be localized by
+        // any application, not even by publishing the views. The English values
+        // below are the standalone fallback for a factory built by hand — the
+        // Blade component always supplies its own, in the reader's language.
+        _stateLabels: Object.assign(
+            { allow: 'Allowed', deny: 'Denied', inherit: 'Inherited' },
+            config.stateLabels || {},
+        ),
+        _changePhrases: config.changePhrases || {},
+        _locale: config.locale || 'en',
+
         // Snapshot for the diff highlight; cloned so later edits don't mutate it.
         _baseline: config.cells && typeof config.cells === 'object' ? { ...config.cells } : {},
 
@@ -65,7 +86,7 @@ export default function wirekitStatusMatrix(config = {}) {
             return this.cellValue(rowKey, colKey) ?? 'inherit';
         },
         tristateLabel(rowKey, colKey) {
-            return { allow: 'Allowed', deny: 'Denied', inherit: 'Inherited' }[this.tristateValue(rowKey, colKey)];
+            return this._stateLabels[this.tristateValue(rowKey, colKey)];
         },
         toggleOn(rowKey, colKey) {
             return this.cellValue(rowKey, colKey) === true || this.cellValue(rowKey, colKey) === 'on';
@@ -105,6 +126,14 @@ export default function wirekitStatusMatrix(config = {}) {
                 if ((this._baseline[k] ?? null) !== (this.cells[k] ?? null)) n += 1;
             });
             return n;
+        },
+
+        // The whole sentence, not the number: `Intl.PluralRules` chooses the form
+        // here because the count only exists here. Two forms are enough for
+        // English and German and are not enough for Polish, which is why the
+        // server sends every form rather than a singular and a plural.
+        get changedLabel() {
+            return pluralize(this._changePhrases, this.changedCount, this._locale);
         },
 
         // ── Heat scaling ─────────────────────────────────────────────────

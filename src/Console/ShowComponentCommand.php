@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\DocsVisibility;
@@ -286,9 +287,20 @@ class ShowComponentCommand extends Command
             $line = substr_count(substr($content, 0, $tag['start']), "\n") + 1;
 
             foreach ($tag['attributes'] as $attr) {
-                // Strip Alpine-binding / wire / Livewire prefixes for
-                // the prop-name comparison.
-                $candidate = ltrim($attr, ':@');
+                // The spelling the developer WROTE, minus the binding punctuation.
+                // Reported back as-is: a warning that names a string absent from their
+                // file reads as a bug in the linter.
+                $written = ltrim($attr, ':@');
+
+                // Laravel camelCases every component attribute before it ever reaches
+                // the component — `ComponentTagCompiler` does `[Str::camel($key) => $value]`
+                // — so `aside-width` IS `$asideWidth` and the two spellings render
+                // identically. Comparing the written form against the declared prop names
+                // reported the kebab-case spelling as unknown, and kebab-case is what this
+                // library's own documentation teaches on nearly every page. The flag is
+                // sold for pre-commit hooks, so that fired a red commit on code copied out
+                // of the docs.
+                $candidate = Str::camel($written);
 
                 if (in_array($candidate, $knownProps, true)) {
                     continue;
@@ -296,13 +308,21 @@ class ShowComponentCommand extends Command
 
                 // Allowlist common Blade / Alpine / Livewire attributes
                 // that aren't WireKit props but are valid usage.
-                if (preg_match('/^(class|style|id|slot|wire(:|$)|x-|data-|aria-|@|role|tabindex)/', $attr)) {
+                //
+                // ⚠️ Matched against the COLON-stripped spelling, and camelCasing FIRST
+                // would be the mirror-image bug: `x-on:click` camelCases to `xOn:click`,
+                // which stops matching `^x-`, so a fix aimed at `:class` would break the
+                // passthrough family this already got right. Only the `:` comes off — the
+                // `@` must stay, because `^@` is what carries Alpine's shorthand `@click`.
+                if (preg_match('/^(class|style|id|slot|wire(:|$)|x-|data-|aria-|@|role|tabindex)/', ltrim($attr, ':'))) {
                     continue;
                 }
 
                 $issues[] = [
                     'line' => $line,
-                    'attr' => $candidate,
+                    'attr' => $written,
+                    // Suggested from the normalized form, so a kebab-case typo is measured
+                    // against the prop names in the spelling those are declared in.
                     'closest' => $this->closestProp($candidate, $knownProps),
                 ];
             }

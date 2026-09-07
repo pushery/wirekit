@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.47.0 — MIT License
+ * WireKit CSS v2.48.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -94,13 +94,24 @@
     --color-wk-danger-text: oklch(50.5% 0.213 27.518);
 
     /* ─── Success Colors ─── */
-    /* fg is dark-on-green (zinc-900 on green-600 = 6.35:1) because white-on-green-600
-       only reaches 3.30:1 and fails WCAG 2.2 AA for normal text. success-text is
+    /* fg is dark-on-green (zinc-900 on green-600 = 5.51:1) because white-on-green-600
+       only reaches 3.22:1 and fails WCAG 2.2 AA for normal text. success-text is
        the foreground-on-soft-bg variant — calibrated to ≥4.5:1 on the 12%
        color-mix soft-success background (#d2efd9). Tailwind green-700 only
-       reaches 4.33:1 there; green-800 (oklch 45.6%) lands at ~6.17:1. */
+       reaches 4.33:1 there; green-800 (oklch 45.6%) lands at ~6.17:1.
+       ⚠️ THE HOVER FILL MOVES LIGHTER, AND THAT IS THE WHOLE POINT — a dark label
+       needs the fill to move AWAY from it, so the one-step-darker green-700 this
+       shipped as took the pair to 3.59:1, i.e. below AA precisely while the pointer
+       was on the button. Same failure shape as --color-wk-border-hover, whose own
+       comment is two blocks down, and the same remedy: move the interactive state
+       away from the thing that has to stay readable, never toward it.
+       green-500 lands at 7.98:1 and is the step the DARK block already
+       takes for the same token (green-500 fill → green-400 hover), so the two modes
+       now describe one ramp instead of opposite ones. Warning survives its darker
+       hover (8.26 → 5.55) only because amber-500 starts far lighter; green-600 has
+       no such headroom, which is why the direction differs between the two. */
     --color-wk-success: oklch(62.7% 0.194 149.214);
-    --color-wk-success-hover: oklch(52.7% 0.154 150.069);
+    --color-wk-success-hover: oklch(72.3% 0.219 149.579);
     --color-wk-success-fg: oklch(21% 0.006 285.885);
     --color-wk-success-text: oklch(45.6% 0.17 149.7);
 
@@ -3774,6 +3785,83 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 :root[data-reduce-motion="reduce"] .wk-progress-stripes { animation: none; }
 :root[data-reduce-motion="reduce"] .wk-progress-shimmer::after { content: none; }
 
+/* ─── Forced colors: state carried in a background survives ─ */
+/* Windows High Contrast (and any other forced-colors palette) replaces every
+   author BACKGROUND with one system color and drops box-shadow entirely. Three
+   controls in this library put their whole state into a background and nothing
+   else, so in that mode the state is not merely restyled — it is gone:
+
+     - the toggle's knob paints with a background plus a shadow and carries no
+       border, so the pill is empty in both states and the only difference left
+       is a transform on an element nobody can see;
+     - the radio's selected dot is a background inside an already-bordered
+       circle, so selected and empty are the same picture;
+     - the progress fill and its track are two backgrounds against each other,
+       which forced to one color is a bar with nothing in it.
+
+   The ARIA is correct in all three (role="switch", the native :checked, and
+   aria-valuenow), so a screen-reader user never noticed. The reader who loses
+   the state is the sighted low-vision one this mode exists for — WCAG 1.4.1
+   Use of Color and 1.4.11 Non-text Contrast. `checkbox` was never affected: it
+   draws a real <svg stroke="currentColor"> tick, which is ink and survives.
+
+   ⚠️ SYSTEM COLOR KEYWORDS HERE, NEVER `--color-wk-*`. A design token is exactly
+   the value this mode is replacing, so writing one would restate the bug. And
+   `forced-color-adjust: none` appears only where an element must keep a FILL —
+   it is an opt-out of the reader's palette, so the value it is paired with is
+   itself from that palette (`Highlight` is the reader's own selection color).
+   Where a BORDER can carry the signal it is used instead and no opt-out is
+   needed: forced colors overrides colors, never widths or styles, so a border
+   declared here is painted.
+
+   None of this changes anything outside the mode. Nothing below is reachable at
+   baseline, which is the point: the defect is invisible until the palette is
+   forced, and so is the repair. */
+@media (forced-colors: active) {
+    /* Outlined rather than filled, so the knob stays inside the reader's palette.
+       Its POSITION is then the state, which is what a native switch shows here. */
+    .wk-toggle-knob {
+        border: calc(var(--border-wk-width) * 2) solid CanvasText;
+    }
+
+    /* Filled rather than outlined: the dot is 6–10px across depending on `size`,
+       and a ring at that scale reads as a smudge rather than as a selection. */
+    .wk-radio-dot {
+        forced-color-adjust: none;
+        background: Highlight;
+    }
+
+    /* The track needs an edge of its own or the filled part has nothing to be a
+       fraction OF — a lone bar says "some progress" and not how much. */
+    .wk-progress-track {
+        border: var(--border-wk-width) solid CanvasText;
+    }
+
+    .wk-progress-fill {
+        forced-color-adjust: none;
+        background: Highlight;
+    }
+
+    /* The theme-controller's switch variant is the toggle's shape a second time —
+       an unbordered track around an unbordered knob — and it needed no template
+       change, because both markers were already emitted for other reasons. */
+    .wk-theme-switch-track {
+        border: var(--border-wk-width) solid CanvasText;
+    }
+
+    .wk-theme-switch-knob {
+        border: calc(var(--border-wk-width) * 2) solid CanvasText;
+    }
+
+    /* The second signal for the current tab, added so the state does not rely on
+       hue — and then given the one paint this mode removes, which left it doing
+       nothing precisely where it was needed most. See its rule further up. */
+    .wk-bottom-nav-item[data-active="true"]::before {
+        forced-color-adjust: none;
+        background: Highlight;
+    }
+}
+
 /* ─── Circular progress indeterminate ─────────────────────── */
 /* SVG circle that rotates when value is unknown.              */
 .wk-progress-circle-indeterminate {
@@ -4591,8 +4679,12 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     --reading-minimap-color-active: var(--reading-spine-color-active);
     /* Rendered-mode (code-editor-style canvas) per-element-type colors. Each
        category is alpha-modulated so the canvas reads as a translucent
-       texture; override these tokens at :root to retheme the minimap
-       without touching JS. */
+       texture; override these tokens at :root AND .dark to retheme the
+       minimap without touching JS.
+
+       These are LIGHT-theme values. The `.dark` counterparts are declared in
+       the `:where(.dark)` block that follows this one — see the rationale
+       there for why they cannot live in the stylesheet's top dark block. */
     --reading-minimap-color-h1: rgba(15, 23, 42, 0.85);
     --reading-minimap-color-h2: rgba(15, 23, 42, 0.75);
     --reading-minimap-color-h3: rgba(15, 23, 42, 0.65);
@@ -4623,23 +4715,23 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     --reading-minimap-rendered-placeholder-bg: var(--color-wk-bg-elevated);
     --reading-minimap-rendered-radius: var(--radius-wk-sm);
 
-    /* Extension E1 — hover preview popover (magnified region near cursor) */
+    /* Hover preview popover (magnified region near cursor) */
     --reading-minimap-preview-scale: 0.25;
     --reading-minimap-preview-size: 200px;
     --reading-minimap-preview-bg: var(--color-wk-bg-elevated);
     --reading-minimap-preview-border: 1px solid var(--color-wk-border);
     --reading-minimap-preview-shadow: var(--shadow-wk-md);
 
-    /* Extension E2 — bookmark marker on the minimap */
+    /* Bookmark marker on the minimap */
     --reading-minimap-bookmark-marker-color: var(--color-wk-accent);
     --reading-minimap-bookmark-marker-height: 2px;
 
-    /* Extension E3 — heading anchors on the outboard edge */
+    /* Heading anchors on the outboard edge */
     --reading-minimap-anchor-text-color: var(--color-wk-text-muted);
     --reading-minimap-anchor-text-color-hover: var(--color-wk-text);
     --reading-minimap-anchor-font-size: 0.625rem;
 
-    /* Extension E4 — auto-fade idle */
+    /* Auto-fade idle */
     --reading-minimap-idle-opacity: 0.3;
     --reading-minimap-idle-delay: 3s;
     --reading-minimap-idle-transition: 250ms;
@@ -4663,6 +4755,54 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
        at md+ (see .wk-reading-content below) because the spine itself is
        hidden below md (reading-spine default hideBelow="md"). */
     --reading-content-spine-gutter: 12rem;
+}
+
+/* ─── Reading minimap: rendered-mode canvas colors, dark theme ──────────── */
+/*                                                                           */
+/* Every OTHER reading token flips with the theme for free, because it       */
+/* resolves through a `--color-wk-*` role that the top `:where(.dark)` block */
+/* already re-points. The thirteen below are the family's only raw literals, */
+/* so without this block they stayed slate-900-on-near-black in dark mode:   */
+/* all six heading tiers composited to 1.00:1 against                        */
+/* `--reading-minimap-rendered-placeholder-bg` (= `--color-wk-bg-elevated`,  */
+/* oklch(20.5% 0 0)) — identical luminance, i.e. a canvas that still paints  */
+/* and shows no hierarchy at all. Nothing reports that: the canvas renders,  */
+/* it is simply empty.                                                       */
+/*                                                                           */
+/* ⚠️ THIS BLOCK MUST STAY AFTER THE `:where(:root)` BLOCK ABOVE — moving it */
+/* into the stylesheet's top `:where(.dark)` block silently reverts the fix. */
+/* Both selectors are wrapped in `:where()` and therefore have specificity   */
+/* (0,0,0), and both match the same `<html class="dark">` element, so SOURCE */
+/* ORDER decides. The top dark block is ~4000 lines EARLIER than the reading */
+/* light block, so a declaration made there loses to the light value and     */
+/* nothing on the page or in the console says so.                            */
+/*                                                                           */
+/* The values mirror the light ramp rather than re-inventing it: the same    */
+/* alphas (the alpha IS the density encoding), with the hues swapped for     */
+/* their light-on-dark counterparts. That keeps the two themes structurally  */
+/* identical, so the pair stays diffable by eye.                             */
+/*                                                                           */
+/* Why fixed literals instead of `color-mix(in oklab, var(--color-wk-text)   */
+/* N%, transparent)`, which would flip with any theme: the canvas reads      */
+/* these through `getComputedStyle().getPropertyValue()` and assigns the     */
+/* string straight to `ctx.fillStyle`. A `fillStyle` the browser cannot      */
+/* parse is IGNORED — the previous fill silently persists — and Canvas2D     */
+/* `color-mix()` support is not inside the Safari 16.4 support floor. That   */
+/* trades a visible defect for an invisible one.                             */
+:where(.dark) {
+    --reading-minimap-color-h1: rgba(226, 232, 240, 0.85);
+    --reading-minimap-color-h2: rgba(226, 232, 240, 0.75);
+    --reading-minimap-color-h3: rgba(226, 232, 240, 0.65);
+    --reading-minimap-color-h4: rgba(226, 232, 240, 0.55);
+    --reading-minimap-color-h5: rgba(226, 232, 240, 0.48);
+    --reading-minimap-color-h6: rgba(226, 232, 240, 0.42);
+    --reading-minimap-color-code: rgba(129, 140, 248, 0.55);
+    --reading-minimap-color-table: rgba(251, 113, 133, 0.50);
+    --reading-minimap-color-blockquote: rgba(148, 163, 184, 0.55);
+    --reading-minimap-color-prose: rgba(148, 163, 184, 0.42);
+    --reading-minimap-color-wirekit: rgba(52, 211, 153, 0.50);
+    --reading-minimap-color-image: rgba(251, 191, 36, 0.55);
+    --reading-minimap-color-default: rgba(148, 163, 184, 0.32);
 }
 
 /* reading-content — responsive article wrapper for spine compositions.   */
@@ -5081,7 +5221,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     background: transparent;
 }
 
-/* Extension E1 — hover preview popover. Hidden by default; shown via      */
+/* Hover preview popover. Hidden by default; shown via                    */
 /* `data-visible="true"` written inline by the controller on pointermove. */
 .wk-reading-minimap__preview {
     position: fixed;
@@ -5101,7 +5241,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     opacity: 1;
 }
 
-/* Extension E2 — bookmark marker. Single horizontal line at the saved    */
+/* Bookmark marker. Single horizontal line at the saved                   */
 /* offset percentage. Renders above the iframe-clone via z-index.         */
 .wk-reading-minimap__bookmark-marker {
     position: absolute;
@@ -5114,7 +5254,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     /* top written inline (percentage) */
 }
 
-/* Extension E3 — heading anchors strip. Sits on the outboard edge of the */
+/* Heading anchors strip. Sits on the outboard edge of the                */
 /* minimap (right by default, left when data-side="left"). Anchors are    */
 /* keyboard-reachable; their parent <nav> carries an aria-label.          */
 .wk-reading-minimap__anchors {
@@ -5170,7 +5310,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     pointer-events: auto;
 }
 
-/* Extension E4 — auto-fade idle. Triggered by data-idle="true" written   */
+/* Auto-fade idle. Triggered by data-idle="true" written                  */
 /* inline by the controller after the idle timer fires. Hover overrides   */
 /* the idle state (returns to full opacity instantly).                    */
 .wk-reading-minimap[data-auto-fade="true"] {

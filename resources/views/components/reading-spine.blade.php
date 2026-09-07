@@ -70,6 +70,19 @@
         ->values()
         ->all();
 
+    // A `levels` string can filter down to NOTHING — `levels="0,7"` is entirely
+    // out of range, and a value that arrived with its own quotes still attached
+    // (`levels="'2'"`) casts to 0. The empty array then reached `min()` at the
+    // bottom of this block, and `min([])` is a ValueError: the whole page
+    // carrying the spine 500'd, rather than the spine degrading.
+    //
+    // Falling back to the `levels` default keeps the promise the prop already
+    // makes — an out-of-range level is FILTERED, not fatal — and it is the one
+    // outcome a reader can act on: a default outline instead of a white screen.
+    // Held equal to the declared default by ReadingSpineRenderTest, so the two
+    // spellings of `2,3` cannot drift apart.
+    $levelsArray = $levelsArray ?: [2, 3];
+
     // hideBelow controls a Tailwind responsive prefix that toggles display.
     // Mobile (< breakpoint) never sees the spine — hover doesn't exist on
     // touch and the fixed sidebar would crowd narrow viewports.
@@ -189,7 +202,7 @@
         'wk-reading-spine',
         $boundaryClass,
         'wk-scrollbar max-h-[calc(100vh-8rem)] overflow-x-hidden overflow-y-auto',
-        'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         $positionClass,
         $hideBelowClass,
     ]), $scope);
@@ -200,7 +213,11 @@
     $resolvedTarget = $target ?? 'main, article';
 
     // Plugin options as JSON for the x-data initializer. Keep keys terse.
-    $alpineOptions = json_encode([
+    // AlpinePayload, not json_encode: `target` and `exclude` are developer-supplied CSS
+    // selectors, so a heading id such as `#überschrift` is ordinary input here. A plain
+    // encode escapes it as `ü`, and Alpine's CSP tokenizer drops that backslash and
+    // keeps the letters — the selector arrives as `#u00fcberschrift` and matches nothing.
+    $alpineOptions = \Pushery\WireKit\Support\AlpinePayload::from([
         'target' => $resolvedTarget,
         'exclude' => $exclude,
         'levels' => $levelsArray,
@@ -218,7 +235,7 @@
         // it, and passing it here keeps the arithmetic in one place instead of
         // interpolated into a style string.
         'baseLevel' => min($levelsArray),
-    ], JSON_THROW_ON_ERROR);
+    ]);
 @endphp
 
 @if ($useScoped)
@@ -244,7 +261,11 @@
     x-show="items.length > 0"
     x-cloak
     @if ($edgeOffsetStyle !== null) style="{{ $edgeOffsetStyle }}" @endif
-    {{ $attributes->class([$rootClass])->merge(['aria-label' => 'Page contents', 'tabindex' => '0']) }}
+    {{-- The default name goes through the catalog. This `<aside>` is a
+         complementary landmark, so the string is what a screen reader reads out
+         when it hops to it; the same file's back-to-top button already routes
+         its name through `__()`, and a merge default is not a reason to skip it. --}}
+    {{ $attributes->class([$rootClass])->merge(['aria-label' => __('wirekit::Page contents'), 'tabindex' => '0']) }}
 >
     {{-- Optional developer-supplied filter input slot. Two-way-binds to
          `filter` Alpine state via `x-model` on the developer's input. --}}
@@ -295,7 +316,7 @@
                         :data-active="item.index === activeIndex ? 'true' : 'false'"
                         :data-level="item.level"
                         :aria-current="item.index === activeIndex ? 'location' : null"
-                        class="wk-reading-spine__link group flex items-center gap-2 cursor-pointer text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="wk-reading-spine__link group flex items-center gap-2 cursor-pointer text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                         :style="linkStyle(item)"
                         @click="scrollTo(item.id, $event)"
                     >
@@ -357,7 +378,7 @@
                  dist/wirekit.css — it is a styling hook, not a style. --}}
             <button
                 type="button"
-                class="wk-reading-spine__back-to-top mt-2 ml-2 inline-flex items-center justify-center cursor-pointer w-8 h-8 rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-reading-spine__back-to-top mt-2 ml-2 inline-flex items-center justify-center cursor-pointer w-8 h-8 rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 aria-label="{{ __('wirekit::Back to top') }}"
                 @click="scrollToTop()"
             >

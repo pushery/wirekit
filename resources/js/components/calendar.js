@@ -463,8 +463,16 @@ export default function wirekitCalendar(config = {}) {
         handleKeydown(event) {
             // The focused grid = base view shifted by focusOffset. For a single
             // month focusOffset is always 0, so fYear/fMonth === view*, lastOffset
-            // is 0, and every cross-grid branch below is skipped — byte-identical
-            // to the classic single-month behavior.
+            // is 0, and every cross-grid branch below is skipped.
+            //
+            // ⚠️ This said "byte-identical to the classic single-month behavior",
+            // and that stopped being the goal once the classic behavior turned out
+            // to be wrong: at a month boundary ArrowUp and ArrowDown fell through to
+            // `prevMonth()` / `nextMonth()`, which land on the 1st, while the
+            // documented model promises the same weekday one week away. Both else-
+            // branches now compute the day the way the cross-grid branches beside
+            // them already did, so the two modes answer identically instead of the
+            // single-month one preserving an omission.
             const fBase = new Date(this.viewYear, this.viewMonth + this.focusOffset, 1);
             const fYear = fBase.getFullYear();
             const fMonth = fBase.getMonth();
@@ -509,7 +517,18 @@ export default function wirekitCalendar(config = {}) {
                         this.focusedDay = new Date(fYear, fMonth, this.focusedDay + 7).getDate();
                         this.focusOffset++;
                     } else {
+                        // Off the last displayed grid, so the VIEW has to move —
+                        // but the day the reader lands on is still the same weekday
+                        // one week down, which is what the keyboard table promises.
+                        // Read it BEFORE the view moves: `nextMonth()` writes
+                        // `focusedDay = 1`, and a bare call to it therefore threw the
+                        // reader to the 1st of the next month instead. ArrowRight is
+                        // the branch where day 1 IS the answer, which is why the
+                        // default is right there and wrong here; ArrowLeft has
+                        // overridden it in exactly this shape all along.
+                        const sameWeekdayNextWeek = new Date(fYear, fMonth, this.focusedDay + 7).getDate();
                         this.nextMonth();
+                        this.focusedDay = sameWeekdayNextWeek;
                     }
                     this._focusDay();
                     break;
@@ -522,7 +541,12 @@ export default function wirekitCalendar(config = {}) {
                         this.focusedDay = new Date(fYear, fMonth, this.focusedDay - 7).getDate();
                         this.focusOffset--;
                     } else {
+                        // The mirror of ArrowDown above, and broken the same way:
+                        // `prevMonth()` also lands on the 1st, which is not a day any
+                        // reader arrowing UPWARD asked for.
+                        const sameWeekdayPrevWeek = new Date(fYear, fMonth, this.focusedDay - 7).getDate();
                         this.prevMonth();
+                        this.focusedDay = sameWeekdayPrevWeek;
                     }
                     this._focusDay();
                     break;

@@ -364,7 +364,7 @@
         'p-1 rounded-[var(--radius-wk-sm)]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
-        'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)] cursor-pointer',
         // Riding on the footer band. This used to take the control OUT OF FLOW and
         // center it on the band by hand, reasoning that in flow it would either stretch
@@ -435,7 +435,7 @@
         x-on:keydown.end.prevent="moveToLast()"
         x-on:keydown.enter.prevent="selectActive()"
         x-on:keydown.space.prevent="selectActive()"
-        {{ $attributes->class([$classes, 'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]'])->merge($navLabelAttrs) }}
+        {{ $attributes->class([$classes, 'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]'])->merge($navLabelAttrs) }}
     >
         @include('wirekit::components.partials.sidebar-zones')
     </div>

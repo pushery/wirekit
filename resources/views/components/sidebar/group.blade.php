@@ -51,7 +51,7 @@
         'uppercase tracking-wider',
         'text-[color:var(--color-wk-text-subtle)]',
         'hover:text-[color:var(--color-wk-text-muted)]',
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
         'rounded-[var(--radius-wk-md)]',

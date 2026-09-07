@@ -76,6 +76,17 @@
     $callerLabel = $attributes->get('aria-label');
     $attributes = $attributes->except(['aria-label']);
 
+    // `@aware` reads a value from the parent component, but — unlike `@props` —
+    // it does NOT remove that key from the attribute bag. So when the key is also
+    // written as an attribute on the tag, it survives into `{{ $attributes }}` and
+    // renders as a stray HTML attribute on the element. Blade accepts both
+    // spellings on a tag, so both are dropped here.
+    //
+    // It has to happen BEFORE `$rest` is derived below: the wrapper echoes `$rest`,
+    // not `$attributes`, so a strip applied afterwards would leave the key in the
+    // very bag that reaches the element.
+    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+
 
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
@@ -283,7 +294,7 @@
                 {{-- Mirror the maxHeight cap on the fallback textarea so the absent-Tiptap
                      path scrolls at the same ceiling (a textarea scrolls natively). --}}
                 @if($maxHeight) style="max-height: {{ $maxHeight }}; overflow-y: auto;" @endif
-                class="wk-field block w-full bg-transparent px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] focus:outline-none {{ $minHeight }}"
+                class="wk-field block w-full bg-transparent px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] focus:outline-hidden {{ $minHeight }}"
                 {{-- wire:model binds to the textarea the editor writes to. --}}
                 {{ $wireModel }}
             >{{ is_string($value) ? $value : ($value !== null ? json_encode($value) : '') }}</textarea>

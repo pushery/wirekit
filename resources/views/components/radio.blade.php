@@ -165,7 +165,10 @@
              (a nested element isn't a sibling of .peer, so peer-checked can't
              reach it; the circle border still uses peer-checked, unchanged). --}}
         <span class="{{ $boxClasses }}" aria-hidden="true">
-            <span class="hidden group-has-[:checked]:block pointer-events-none {{ $sizing['dot'] }} rounded-full bg-[var(--color-wk-accent)]"></span>
+            {{-- `wk-radio-dot` is the marker the stylesheet's forced-colors rule selects: the
+                 dot's fill IS the selected state, and a background is the one paint that
+                 mode takes away — so selected and empty render identically without it. --}}
+            <span class="wk-radio-dot hidden group-has-[:checked]:block pointer-events-none {{ $sizing['dot'] }} rounded-full bg-[var(--color-wk-accent)]"></span>
         </span>
 
         @if($label)

@@ -31,10 +31,25 @@
         'inline-block',
     ]), $scope);
 
-    // Resolve the accessible name. Fall back to 'QR code' rather than echoing
-    // the raw $value, which is often a URL — leaking it as the screen-reader
-    // announcement is rarely useful and can be a privacy concern.
-    $resolvedLabel = $accessibleLabel ?: 'QR code';
+    // Resolve the accessible name. Fall back to a generic name rather than
+    // echoing the raw $value, which is often a URL — leaking it as the
+    // screen-reader announcement is rarely useful and can be a privacy concern.
+    //
+    // ⚠️ Through the catalog, and this is the one string where it decides the
+    // whole experience: a QR code is opaque, so `aria-label` is ALL a screen
+    // reader has to work with. Frozen to English it announced "QR code" inside
+    // a fully German application, with nothing visible to give it away.
+    //
+    // ⚠️ A passthrough `aria-label` is READ here and then taken OUT of the bag,
+    // and both halves are load-bearing. Both render branches below write
+    // `aria-label` before the attribute bag, so a caller's own attribute used
+    // to arrive as a SECOND aria-label on the same element — and an HTML parser
+    // keeps the first, which is ours. The override looked applied in the markup
+    // and changed nothing that a screen reader says. `accessibleLabel` still
+    // wins over both; this only decides what happens when a caller reaches for
+    // the attribute instead of the prop, which the docs page used to recommend.
+    $resolvedLabel = $accessibleLabel ?: ($attributes->get('aria-label') ?: __('wirekit::QR code'));
+    $attributes = $attributes->except('aria-label');
 
     $hasQrLibrary = class_exists('\BaconQrCode\Renderer\ImageRenderer');
     $svgContent = null;

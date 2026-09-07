@@ -21,31 +21,41 @@
     // render as colored "3D" emoji and clash with the flat set; the link 🔗 was
     // exactly that bug) where the convention is pictographic (link, undo/redo,
     // task-list). Static blade-authored markup, never developer-controlled.
+    //
+    // ⚠️ THE LABEL GOES THROUGH THE TRANSLATOR, AND IT SHIPPED HARDCODED. It reaches the
+    // page twice — as the button's `aria-label` and as the VISIBLE tooltip text below it —
+    // so an untranslated literal here means a German application renders a fully translated
+    // form with a toolbar that announces and hovers "Bold", "Italic", "Bullet list". The
+    // container one block down was already translated, which is what made the gap hard to
+    // see: the group announced itself as "Editor-Befehle" and every control in it did not.
+    // The keys are written out LITERALLY, one `__()` per row, for the same reason
+    // countdown.blade.php gives: `lang:extract` and TranslationKeyDriftTest read the source,
+    // so a key built from a variable is a key no reference file can ever know about.
     $svgAttrs = 'class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
     $meta = [
-        'bold' => ['Bold', 'B', 'font-bold', "isActive('bold')"],
-        'italic' => ['Italic', 'I', 'italic', "isActive('italic')"],
-        'underline' => ['Underline', 'U', 'underline', "isActive('underline')"],
-        'strike' => ['Strikethrough', 'S', 'line-through', "isActive('strike')"],
-        'code' => ['Inline code', '</>', 'font-mono text-[0.7em]', "isActive('code')"],
-        'link' => ['Link', '<svg '.$svgAttrs.'><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', '', "isActive('link')"],
-        'heading-1' => ['Heading 1', 'H1', 'font-bold text-[0.8em]', "isActive('heading', { level: 1 })"],
-        'heading-2' => ['Heading 2', 'H2', 'font-bold text-[0.8em]', "isActive('heading', { level: 2 })"],
-        'heading-3' => ['Heading 3', 'H3', 'font-bold text-[0.8em]', "isActive('heading', { level: 3 })"],
-        'paragraph' => ['Paragraph', '¶', '', "isActive('paragraph')"],
-        'quote' => ['Quote', '”', 'font-serif', "isActive('blockquote')"],
-        'bullet-list' => ['Bullet list', '•', '', "isActive('bulletList')"],
-        'ordered-list' => ['Numbered list', '1.', 'text-[0.8em]', "isActive('orderedList')"],
-        'task-list' => ['Task list', '<svg '.$svgAttrs.'><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><path d="m9 11 3 3L22 4"/></svg>', '', "isActive('taskList')"],
-        'code-block' => ['Code block', '{}', 'font-mono', "isActive('codeBlock')"],
-        'horizontal-rule' => ['Divider', '―', '', null],
-        'align-left' => ['Align left', '⇤', '', "isActive({ textAlign: 'left' })"],
-        'align-center' => ['Align center', '↔', '', "isActive({ textAlign: 'center' })"],
-        'align-right' => ['Align right', '⇥', '', "isActive({ textAlign: 'right' })"],
-        'align-justify' => ['Justify', '☰', '', "isActive({ textAlign: 'justify' })"],
-        'clear-formatting' => ['Clear formatting', '⨉', '', null],
-        'undo' => ['Undo', '<svg '.$svgAttrs.'><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>', '', null],
-        'redo' => ['Redo', '<svg '.$svgAttrs.'><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/></svg>', '', null],
+        'bold' => [__('wirekit::Bold'), 'B', 'font-bold', "isActive('bold')"],
+        'italic' => [__('wirekit::Italic'), 'I', 'italic', "isActive('italic')"],
+        'underline' => [__('wirekit::Underline'), 'U', 'underline', "isActive('underline')"],
+        'strike' => [__('wirekit::Strikethrough'), 'S', 'line-through', "isActive('strike')"],
+        'code' => [__('wirekit::Inline code'), '</>', 'font-mono text-[0.7em]', "isActive('code')"],
+        'link' => [__('wirekit::Link'), '<svg '.$svgAttrs.'><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>', '', "isActive('link')"],
+        'heading-1' => [__('wirekit::Heading 1'), 'H1', 'font-bold text-[0.8em]', "isActive('heading', { level: 1 })"],
+        'heading-2' => [__('wirekit::Heading 2'), 'H2', 'font-bold text-[0.8em]', "isActive('heading', { level: 2 })"],
+        'heading-3' => [__('wirekit::Heading 3'), 'H3', 'font-bold text-[0.8em]', "isActive('heading', { level: 3 })"],
+        'paragraph' => [__('wirekit::Paragraph'), '¶', '', "isActive('paragraph')"],
+        'quote' => [__('wirekit::Quote'), '”', 'font-serif', "isActive('blockquote')"],
+        'bullet-list' => [__('wirekit::Bullet list'), '•', '', "isActive('bulletList')"],
+        'ordered-list' => [__('wirekit::Numbered list'), '1.', 'text-[0.8em]', "isActive('orderedList')"],
+        'task-list' => [__('wirekit::Task list'), '<svg '.$svgAttrs.'><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/><path d="m9 11 3 3L22 4"/></svg>', '', "isActive('taskList')"],
+        'code-block' => [__('wirekit::Code block'), '{}', 'font-mono', "isActive('codeBlock')"],
+        'horizontal-rule' => [__('wirekit::Divider'), '―', '', null],
+        'align-left' => [__('wirekit::Align left'), '⇤', '', "isActive({ textAlign: 'left' })"],
+        'align-center' => [__('wirekit::Align center'), '↔', '', "isActive({ textAlign: 'center' })"],
+        'align-right' => [__('wirekit::Align right'), '⇥', '', "isActive({ textAlign: 'right' })"],
+        'align-justify' => [__('wirekit::Justify'), '☰', '', "isActive({ textAlign: 'justify' })"],
+        'clear-formatting' => [__('wirekit::Clear formatting'), '⨉', '', null],
+        'undo' => [__('wirekit::Undo'), '<svg '.$svgAttrs.'><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>', '', null],
+        'redo' => [__('wirekit::Redo'), '<svg '.$svgAttrs.'><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/></svg>', '', null],
     ];
 
     $buttonClasses = implode(' ', [
@@ -56,7 +66,7 @@
         'text-[color:var(--color-wk-text-muted)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
         'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
-        'focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'cursor-pointer',
         // Disabled state — only the history buttons (undo/redo) ever set [disabled]
         // (when there's nothing to undo/redo). The disabled: variants are inert on

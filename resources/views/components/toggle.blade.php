@@ -208,8 +208,12 @@
             {{-- Track: sibling of .peer, background color flips via peer-checked --}}
             <span class="{{ $trackClasses }}" aria-hidden="true"></span>
 
-            {{-- Knob: sibling of .peer, slides via peer-checked:translate-x-* --}}
-            <span class="{{ $knobClasses }}" aria-hidden="true"></span>
+            {{-- Knob: sibling of .peer, slides via peer-checked:translate-x-*.
+                 `wk-toggle-knob` is the marker the stylesheet's forced-colors rule selects,
+                 and it sits OUTSIDE the class list on purpose — the same discipline
+                 `wk-spinner` uses, so a developer replacing the block through
+                 `personalize()` cannot take the accessibility rule out with it. --}}
+            <span class="wk-toggle-knob {{ $knobClasses }}" aria-hidden="true"></span>
         </span>
 
         @if($label)

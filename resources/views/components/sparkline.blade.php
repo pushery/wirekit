@@ -181,6 +181,34 @@
     $displayStyle = $inline
         ? 'display: inline-block; vertical-align: middle; '
         : 'min-width: 0; overflow: hidden; ';
+
+    // ⚠️ A caller's accessible name has to reach the INNER chart, because that is
+    // the element carrying `role="img"`. On this wrapper it sits on a role-less
+    // `<div>`/`<span>` — ARIA `generic`, where naming is PROHIBITED (axe
+    // `aria-prohibited-attr`) — so assistive technology dropped it and the chart
+    // announced its own generic fallback instead. A dashboard of eight sparklines
+    // read as eight images all called "Chart", and `aria-label`, the one attribute
+    // a developer reaches for to fix exactly that, was the attribute being
+    // discarded. Worse for the developer: chart.blade.php's debug warning gates on
+    // `! $attributes->has('aria-label')`, which was ALWAYS true here, so the
+    // package told them to pass a label they had just passed.
+    //
+    // Forwarded as an attribute bag rather than as named props: the chart is a
+    // CLASS-based component, so an attribute it does not declare flows into its
+    // bag, and a bound `:attributes` is the same path an echoed bag compiles to.
+    // Empty values are filtered out so the chart's own `__('wirekit::Chart')`
+    // fallback still applies when no name was given — the decision about what an
+    // unlabeled chart should announce stays where it is made.
+    $chartAriaAttributes = new \Illuminate\View\ComponentAttributeBag(
+        array_filter(
+            $attributes->only(['aria-label', 'aria-labelledby'])->getAttributes(),
+            static fn ($value) => filled($value),
+        ),
+    );
+
+    // Stripped from the wrapper so the name is not ALSO emitted where it is
+    // prohibited; the wrapper keeps every other attribute the caller passed.
+    $sparklineAttributes = $attributes->except(['aria-label', 'aria-labelledby']);
 @endphp
 
 {{--
@@ -190,7 +218,7 @@
 --}}
 @php $sparklineTag = $inline ? 'span' : 'div'; @endphp
 <{{ $sparklineTag }}
-    {{ $attributes->class([$rootClass]) }}
+    {{ $sparklineAttributes->class([$rootClass]) }}
     style="{{ $displayStyle }}height: {{ $resolvedHeight }}; {{ $inline ? 'width: 4rem;' : 'width: 100%;' }}"
     data-trend="{{ $resolvedTrend }}"
 >
@@ -202,5 +230,6 @@
         :height="$resolvedHeight"
         :inline="$inline"
         :library="$library"
+        :attributes="$chartAriaAttributes"
     />
 </{{ $sparklineTag }}>

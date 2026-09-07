@@ -45,8 +45,35 @@
         'shadow-[var(--shadow-wk-md)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
         'hover:bg-[var(--color-wk-bg-subtle)]',
-        'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-2',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-2',
     ]), $scope);
+
+    // Auto-inject rel="noopener noreferrer" when target="_blank" on an <a>.
+    // fab.button has carried this since it shipped; this component takes the same
+    // href prop and echoes the same bag, so the caller's target passed straight
+    // through to a bare anchor. Rendered explicitly with the bag echoed via
+    // except('rel'), because $attributes->merge() treats rel as a DEFAULT and a
+    // caller-supplied rel would replace the computed value.
+    $targetAttr = $attributes->get('target', '');
+    $opensNewTab = $href && str_contains($targetAttr, '_blank');
+    $relAttr = $attributes->get('rel', '');
+    $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
+        ? trim($relAttr.' noopener noreferrer')
+        : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
+
+    // The other half of the same rule: rel protects the opener, this warns the
+    // person who cannot see the new tab appear. WHERE it goes depends on how the
+    // action is named, and this one has both shapes. With a label it carries
+    // aria-label, and name computation stops at the label — a span inside would
+    // sit in the DOM and outside the announcement, so the hint rides the label.
+    // Without a label the name comes from the slot's own content, and the house
+    // pattern's sr-only span is what reaches the reader. The flag records which
+    // of the two took it so the second cannot fire as well and say it twice.
+    $hintsNewTabInLabel = $opensNewTab && $label !== '';
+    $accessibleLabel = $hintsNewTabInLabel
+        ? trim($label.' '.__('wirekit::(opens in new tab)'))
+        : $label;
 @endphp
 
 {{-- role="menuitem" to match the parent's role="menu": the two have to agree, or
@@ -63,9 +90,10 @@
          already had. With no label AND no text (the icon-only case) nothing can
          invent one — the strict-mode validation below says so out loud instead of
          shipping a nameless menu item. --}}
-    @if($label !== '') aria-label="{{ $label }}" @endif
+    @if($label !== '') aria-label="{{ $accessibleLabel }}" @endif
     data-wk-fab-action
-    {{ $attributes->class([$classes.' wk-fab-action-labeled']) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->class([$classes.' wk-fab-action-labeled']) }}
 >
     @if($icon)
         <x-wirekit::icon :name="$icon" class="h-5 w-5" />
@@ -104,5 +132,9 @@
             aria-hidden="true"
             class="wk-fab-action-label pointer-events-none absolute end-full me-[var(--gap-wk-sm)] whitespace-nowrap rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-inverse)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-inverse)] opacity-0 shadow-[var(--shadow-wk-md)] transition-opacity duration-[var(--transition-wk-duration)]"
         >{{ $label }}</span>
+    @endif
+
+    @if($opensNewTab && ! $hintsNewTabInLabel)
+        <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
     @endif
 </{{ $tag }}>

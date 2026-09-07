@@ -93,7 +93,7 @@
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
@@ -202,7 +202,36 @@
         $declarativeLoading = true;
     }
 
-    $isDisabled = $disabled || $declarativeLoading;
+    // ⚠️ `disableOnLoading` used to be read in ONE place — the `wire:loading.attr`
+    // branch at the bottom of this file — so on the DECLARATIVE path (`loading` set
+    // with no `wire:*` attribute on the tag) the prop was inert. A call site that
+    // opted out still got the native `disabled`, still lost focus to `<body>` for the
+    // whole in-flight window, and got no `aria-busy` announcement in its place: the
+    // exact WCAG 2.4.3 failure the prop exists to avoid, plus a silent one. Nothing
+    // went red over it either, because both tests covering the prop pass a
+    // `wire:click` and therefore never enter this path.
+    //
+    // Two boundaries below are deliberate rather than oversights:
+    //
+    //   `forceLoading` keeps disabling. Its own contract is a PREVIEW of the disabled
+    //   busy state for static demos and non-Livewire contexts — "disables the button
+    //   regardless" — so honoring the opt-out there would break a different promise.
+    //
+    //   The swap is scoped to `<button>`, exactly like `wire:loading.attr` below.
+    //   `disabled` is inert on an anchor, so the link branch withholds the `href`
+    //   instead; that is a different mechanism with a different trade, and the
+    //   wire:loading path has never applied this prop to it either.
+    $declarativeBusyOnly = $tag === 'button'
+        && $declarativeLoading
+        && ! $forceLoading
+        && ! $disableOnLoading;
+
+    // The docblock on the prop records an adopting project setting `aria-busy` through
+    // the attribute bag by hand rather than using `loading` at all. Emitting ours beside
+    // theirs would put the attribute on the element twice.
+    $emitAriaBusy = $declarativeBusyOnly && ! $attributes->has('aria-busy');
+
+    $isDisabled = $disabled || ($declarativeLoading && ! $declarativeBusyOnly);
 
     // `disabled` is not a valid attribute on <a>, and `:disabled` never matches
     // one — so on the link branch the `disabled:` variants in $baseClasses select
@@ -227,6 +256,7 @@
     @if($tag === 'button') type="{{ $type }}" @endif
     @if($linkDisabled) role="link" aria-disabled="true" @endif
     @disabled($tag === 'button' && $isDisabled)
+    @if($emitAriaBusy) aria-busy="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{ $attributes->except('rel')->class([$baseClasses, $variantClasses, $sizeClasses, $linkDisabledClasses]) }}
     {{-- ⚠️ `disabled` IS INERT ON AN ANCHOR, so the link branch gets the treatment

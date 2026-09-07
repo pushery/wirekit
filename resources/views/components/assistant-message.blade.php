@@ -90,7 +90,12 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    $alpineConfig = json_encode((object) ['announce' => $announceValue], JSON_THROW_ON_ERROR);
+    // AlpinePayload is the encoder for a directive attribute. `$announceValue` is a
+    // validated `sentence|all|off` enum, so no byte above ASCII can reach it today — but
+    // the encoder is chosen for the CONTEXT rather than for the payload that happens to be
+    // in it, and a plain json_encode leaves the next value added here escaping non-ASCII
+    // into `ü` shapes that Alpine's CSP tokenizer flattens to `u00fc`.
+    $alpineConfig = \Pushery\WireKit\Support\AlpinePayload::from((object) ['announce' => $announceValue]);
 @endphp
 
 <article

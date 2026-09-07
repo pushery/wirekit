@@ -19,7 +19,11 @@
 
     // Ordered types render as <ol>; everything else (incl. 'disc' / 'none') uses <ul>.
     $orderedTypes = ['decimal', 'lower-roman', 'upper-roman', 'lower-alpha', 'upper-alpha'];
-    $tag = $as ?? (in_array($type, $orderedTypes, true) ? 'ol' : 'ul');
+    // `as` is rendered straight into the opening tag — see heading.blade.php for the
+    // payload this admitted. tagName() accepts a tag name and rejects everything else.
+    $tag = $as === null
+        ? (in_array($type, $orderedTypes, true) ? 'ol' : 'ul')
+        : WireKit::tagName('list', (string) $as);
 
     $typeClasses = match ($type) {
         'disc' => 'list-disc',

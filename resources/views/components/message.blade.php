@@ -154,11 +154,11 @@
         default => null,
     };
 
-    // Delivery convention shared by every messaging app (WhatsApp / Telegram /
-    // iMessage): ONE check = sent to the server, TWO checks = delivered to the
-    // recipient, two ACCENT checks = read. delivered + read render the
-    // double-check glyph; the rung color ($statusClass) is what separates read
-    // (accent) from delivered (muted). sent keeps the single check.
+    // The delivery convention every messaging client shares: ONE check = sent to
+    // the server, TWO checks = delivered to the recipient, two ACCENT checks =
+    // read. delivered + read render the double-check glyph; the rung color
+    // ($statusClass) is what separates read (accent) from delivered (muted).
+    // sent keeps the single check.
     $statusDouble = in_array($statusValue, ['delivered', 'read'], true);
 
     $statusClass = match ($statusValue) {

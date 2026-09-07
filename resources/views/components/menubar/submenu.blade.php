@@ -36,7 +36,7 @@
         'hover:bg-[var(--color-wk-bg-subtle)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         'focus:bg-[var(--color-wk-bg-subtle)]',
         'cursor-pointer',
     ]), $scope);

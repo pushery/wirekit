@@ -102,19 +102,40 @@ class ClassByAreaCommand extends Command
 
         $areas = $this->collectAreas($projectRoot);
 
-        if ($filter !== []) {
-            $areas = array_intersect_key($areas, array_flip($filter));
-            if ($areas === []) {
-                $this->error('No areas match the --area filter.');
+        // ⚠️ `--area` says which rows are ASKED FOR. It must never say which operands EXIST.
+        //
+        // The filter used to prune `$areas` itself, and diffPairs() reads its operands back
+        // out with `$areas['compiled'] ?? []` — so a filtered-away layer arrived as an EMPTY
+        // SET rather than as an absent question, and every one of the five diff rows came out
+        // falsified, in both directions, with nothing in the output saying a set had been
+        // emptied. Measured under `--area=blade`: `blade ∖ compiled` reported 1272 against a
+        // true 16, while the three real gaps (928, 152, 190) all reported 0 — which a reader
+        // takes as clean. The documented `--area=blade --area=compiled` example was wrong the
+        // same way, and `--format=json`, which the reference page pitches for CI dashboards,
+        // carried the same numbers.
+        //
+        // It is the failure mode collectAreas() already warns about from a different cause:
+        // an empty compiled column and a compiled column that was never read look identical.
+        //
+        // So the operands stay whole and the SCOPE decides which rows can be computed at all.
+        // A row whose operands are not all in scope is SUPPRESSED and says why — a suppressed
+        // row cannot be misread, an emptied one can.
+        $scope = $filter === [] ? self::AREAS : $filter;
+        $scoped = array_intersect_key($areas, array_flip($scope));
 
-                return self::FAILURE;
-            }
+        // Unreachable while the --area validation above holds — every accepted value is a key
+        // collectAreas() returns. Kept fail-closed against the two lists drifting apart, which
+        // is exactly the drift that would otherwise print an inventory of nothing.
+        if ($scoped === []) {
+            $this->error('No areas match the --area filter.');
+
+            return self::FAILURE;
         }
 
         return match ($format) {
-            'json' => $this->renderJson($areas),
-            'full' => $this->renderFull($areas),
-            default => $this->renderSummary($areas),
+            'json' => $this->renderJson($areas, $scope),
+            'full' => $this->renderFull($areas, $scope),
+            default => $this->renderSummary($areas, $scope),
         };
     }
 
@@ -221,15 +242,16 @@ class ClassByAreaCommand extends Command
     }
 
     /**
-     * @param  array<string, list<string>>  $areas
+     * @param  array<string, list<string>>  $areas  every layer, unpruned — see handle()
+     * @param  list<string>  $scope  the layers --area asked for
      */
-    private function renderSummary(array $areas): int
+    private function renderSummary(array $areas, array $scope): int
     {
         $this->line('');
         $this->line('<fg=cyan>Class-by-Area Inventory</>');
         $this->line(str_repeat('─', 60));
 
-        foreach ($areas as $name => $classes) {
+        foreach ($this->scopedAreas($areas, $scope) as $name => $classes) {
             $this->line(sprintf(
                 '  <fg=yellow>%-15s</> %5d classes',
                 $name,
@@ -241,12 +263,23 @@ class ClassByAreaCommand extends Command
         $this->line('<fg=cyan>Inter-area diffs</>');
         $this->line(str_repeat('─', 60));
 
-        foreach ($this->diffMatrix($areas) as [$label, $count, $sample]) {
+        foreach ($this->diffPairs($areas, $scope) as $row) {
+            if ($row['outOfScope'] !== []) {
+                $this->line(sprintf(
+                    '  <fg=yellow>%-50s</>     — not computed, %s outside --area',
+                    $row['label'],
+                    implode(', ', $row['outOfScope']),
+                ));
+
+                continue;
+            }
+
+            $sample = $row['entries'][0] ?? '';
             $sampleHint = $sample !== '' ? ' (e.g. '.$sample.')' : '';
             $this->line(sprintf(
                 '  <fg=yellow>%-50s</> %5d%s',
-                $label,
-                $count,
+                $row['label'],
+                count($row['entries']),
                 $sampleHint,
             ));
         }
@@ -260,15 +293,16 @@ class ClassByAreaCommand extends Command
     }
 
     /**
-     * @param  array<string, list<string>>  $areas
+     * @param  array<string, list<string>>  $areas  every layer, unpruned — see handle()
+     * @param  list<string>  $scope  the layers --area asked for
      */
-    private function renderFull(array $areas): int
+    private function renderFull(array $areas, array $scope): int
     {
-        $this->renderSummary($areas);
+        $this->renderSummary($areas, $scope);
 
         $this->line('<fg=cyan>Per-area class lists (first 50 each)</>');
         $this->line(str_repeat('─', 60));
-        foreach ($areas as $name => $classes) {
+        foreach ($this->scopedAreas($areas, $scope) as $name => $classes) {
             $this->line('');
             $this->line(sprintf('<fg=yellow>%s</> (%d total)', $name, count($classes)));
             foreach (array_slice($classes, 0, 50) as $class) {
@@ -282,14 +316,25 @@ class ClassByAreaCommand extends Command
 
         $this->line('<fg=cyan>Diff details (first 50 entries each)</>');
         $this->line(str_repeat('─', 60));
-        foreach ($this->diffPairs($areas) as [$label, $entries]) {
+        foreach ($this->diffPairs($areas, $scope) as $row) {
             $this->line('');
-            $this->line(sprintf('<fg=yellow>%s</> (%d total)', $label, count($entries)));
-            foreach (array_slice($entries, 0, 50) as $class) {
+
+            if ($row['outOfScope'] !== []) {
+                $this->line(sprintf(
+                    '<fg=yellow>%s</> — not computed, %s outside --area',
+                    $row['label'],
+                    implode(', ', $row['outOfScope']),
+                ));
+
+                continue;
+            }
+
+            $this->line(sprintf('<fg=yellow>%s</> (%d total)', $row['label'], count($row['entries'])));
+            foreach (array_slice($row['entries'], 0, 50) as $class) {
                 $this->line('  '.$class);
             }
-            if (count($entries) > 50) {
-                $this->line(sprintf('  … +%d more', count($entries) - 50));
+            if (count($row['entries']) > 50) {
+                $this->line(sprintf('  … +%d more', count($row['entries']) - 50));
             }
         }
         $this->line('');
@@ -298,23 +343,37 @@ class ClassByAreaCommand extends Command
     }
 
     /**
-     * @param  array<string, list<string>>  $areas
+     * @param  array<string, list<string>>  $areas  every layer, unpruned — see handle()
+     * @param  list<string>  $scope  the layers --area asked for
      */
-    private function renderJson(array $areas): int
+    private function renderJson(array $areas, array $scope): int
     {
         $report = [
             'areas' => array_map(
                 fn (array $classes) => ['count' => count($classes), 'classes' => $classes],
-                $areas,
+                $this->scopedAreas($areas, $scope),
             ),
             'diffs' => [],
         ];
 
-        foreach ($this->diffPairs($areas) as [$label, $entries]) {
-            $report['diffs'][$label] = [
-                'count' => count($entries),
-                'entries' => $entries,
-            ];
+        foreach ($this->diffPairs($areas, $scope) as $row) {
+            // `computed` on BOTH shapes, and a suppressed row carries no `count` at all.
+            // A downstream reader that keys on `count` must not be able to read a
+            // suppressed row as a measured zero — that is the whole defect this shape
+            // replaces, one layer further out.
+            $report['diffs'][$row['label']] = $row['outOfScope'] !== []
+                ? [
+                    'computed' => false,
+                    'not_computed_because' => sprintf(
+                        '%s outside --area',
+                        implode(', ', $row['outOfScope']),
+                    ),
+                ]
+                : [
+                    'computed' => true,
+                    'count' => count($row['entries']),
+                    'entries' => $row['entries'],
+                ];
         }
 
         $this->line(json_encode($report, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
@@ -323,17 +382,19 @@ class ClassByAreaCommand extends Command
     }
 
     /**
+     * The per-area report, restricted to what --area asked for, in report order.
+     *
      * @param  array<string, list<string>>  $areas
-     * @return list<array{0:string, 1:int, 2:string}>
+     * @param  list<string>  $scope
+     * @return array<string, list<string>>
      */
-    private function diffMatrix(array $areas): array
+    private function scopedAreas(array $areas, array $scope): array
     {
-        $rows = [];
-        foreach ($this->diffPairs($areas) as [$label, $entries]) {
-            $rows[] = [$label, count($entries), $entries[0] ?? ''];
-        }
-
-        return $rows;
+        return array_filter(
+            $areas,
+            static fn (string $name): bool => in_array($name, $scope, true),
+            ARRAY_FILTER_USE_KEY,
+        );
     }
 
     /**
@@ -341,10 +402,16 @@ class ClassByAreaCommand extends Command
      * Each diff returns the SET of classes in the first area minus the
      * second.
      *
-     * @param  array<string, list<string>>  $areas
-     * @return list<array{0:string, 1:list<string>}>
+     * A row is computed only when EVERY layer it reads is in scope. Otherwise it comes
+     * back with the missing operands named and no entries, and every renderer prints that
+     * rather than a number: the operands are always whole here, so a zero would be a
+     * measurement and must only ever be printed as one.
+     *
+     * @param  array<string, list<string>>  $areas  every layer, unpruned — see handle()
+     * @param  list<string>  $scope  the layers --area asked for
+     * @return list<array{label: string, entries: list<string>, outOfScope: list<string>}>
      */
-    private function diffPairs(array $areas): array
+    private function diffPairs(array $areas, array $scope): array
     {
         $blade = $areas['blade'] ?? [];
         $php = $areas['php'] ?? [];
@@ -352,17 +419,39 @@ class ClassByAreaCommand extends Command
         $compiled = $areas['compiled'] ?? [];
         $wirekitCss = $areas['wirekit-css'] ?? [];
 
-        return [
+        /** @var list<array{0:string, 1:list<string>, 2:callable(): list<string>}> $definitions */
+        $definitions = [
             ['blade ∖ compiled (Blade-emitted but Tailwind didn\'t generate)',
-                array_values(array_diff($blade, $compiled))],
+                ['blade', 'compiled'],
+                static fn (): array => array_values(array_diff($blade, $compiled))],
             ['php ∖ compiled (PHP-emitted but Tailwind never saw)',
-                array_values(array_diff($php, $compiled))],
+                ['php', 'compiled'],
+                static fn (): array => array_values(array_diff($php, $compiled))],
             ['js ∖ compiled (JS-emitted but Tailwind never saw)',
-                array_values(array_diff($js, $compiled))],
+                ['js', 'compiled'],
+                static fn (): array => array_values(array_diff($js, $compiled))],
             ['compiled ∖ (blade ∪ php ∪ js) (compiled but no source)',
-                array_values(array_diff($compiled, array_merge($blade, $php, $js)))],
+                ['compiled', 'blade', 'php', 'js'],
+                static fn (): array => array_values(array_diff($compiled, array_merge($blade, $php, $js)))],
             ['wirekit-css selectors (BEM custom classes from dist/wirekit.css)',
-                $wirekitCss],
+                ['wirekit-css'],
+                static fn (): array => $wirekitCss],
         ];
+
+        $rows = [];
+
+        foreach ($definitions as [$label, $operands, $compute]) {
+            $outOfScope = array_values(array_diff($operands, $scope));
+
+            $rows[] = [
+                'label' => $label,
+                // Not computed at all when suppressed — a diff nobody may read is work
+                // nobody asked for, and the empty list is never mistaken for a result.
+                'entries' => $outOfScope === [] ? $compute() : [],
+                'outOfScope' => $outOfScope,
+            ];
+        }
+
+        return $rows;
     }
 }

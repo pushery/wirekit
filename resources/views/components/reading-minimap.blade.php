@@ -127,7 +127,12 @@
         ->values()
         ->all();
 
-    $alpineOptions = json_encode([
+    // AlpinePayload, not json_encode: `target`, `itemSelector` and `renderTarget` are
+    // developer-supplied CSS selectors, so a heading id such as `#überschrift` is
+    // ordinary input here. A plain encode escapes it as `ü`, and Alpine's CSP
+    // tokenizer drops that backslash and keeps the letters — the selector arrives as
+    // `#u00fcberschrift`, matches nothing, and the minimap renders empty in silence.
+    $alpineOptions = \Pushery\WireKit\Support\AlpinePayload::from([
         'target' => $target,
         'itemSelector' => $itemSelector,
         'side' => $sideValue,
@@ -141,7 +146,7 @@
         'headingAnchors' => filter_var($headingAnchors, FILTER_VALIDATE_BOOL),
         'headingLevels' => $headingLevelsArray,
         'autoFadeIdle' => filter_var($autoFadeIdle, FILTER_VALIDATE_BOOL),
-    ], JSON_THROW_ON_ERROR);
+    ]);
 
     $autoFadeFlag = filter_var($autoFadeIdle, FILTER_VALIDATE_BOOL) ? 'true' : 'false';
 @endphp
@@ -236,7 +241,7 @@
         @endif
     ></div>
 
-    {{-- Extension E2 — bookmark marker. Renders only when a saved bookmark
+    {{-- Bookmark marker. Renders only when a saved bookmark
          exists; controller writes the `top` percentage inline. --}}
     @if (filter_var($showBookmarks, FILTER_VALIDATE_BOOL))
         <div
@@ -249,7 +254,7 @@
         ></div>
     @endif
 
-    {{-- Extension E3 — heading anchors. Real <a> elements in a named <nav>:
+    {{-- Heading anchors. Real <a> elements in a named <nav>:
          the only part of the minimap that reaches assistive technology, which
          is why the wrapper above no longer hides its whole subtree. --}}
     @if (filter_var($headingAnchors, FILTER_VALIDATE_BOOL))
@@ -299,7 +304,7 @@
         x-text="tooltipText"
     ></div>
 
-    {{-- Extension E1 — hover preview popover. Position-fixed; controller
+    {{-- Hover preview popover. Position-fixed; controller
          writes top/left + data-visible on pointermove. --}}
     @if (filter_var($hoverPreview, FILTER_VALIDATE_BOOL))
         <div

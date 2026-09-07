@@ -4,11 +4,11 @@
 <div wire:poll.30s>
     <x-wirekit::row>
         @foreach($kpis ?? [] as $kpi)
-            <x-wirekit::stat
+            <x-wirekit::ticker
                 :label="$kpi['label']"
                 :value="$kpi['value']"
                 :delta="$kpi['delta'] ?? null"
-                animate
+                size="sm"
             />
         @endforeach
     </x-wirekit::row>

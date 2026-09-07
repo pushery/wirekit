@@ -271,8 +271,20 @@ class DoctorA11yCommand extends Command
             ['name' => 'accent-content as text on bg', 'fg' => '--color-wk-accent-content', 'bg' => '--color-wk-bg', 'threshold' => 'text'],
             ['name' => 'accent-fg on accent (primary button)', 'fg' => '--color-wk-accent-fg', 'bg' => '--color-wk-accent', 'threshold' => 'text'],
             ['name' => 'accent-fg on accent-hover', 'fg' => '--color-wk-accent-fg', 'bg' => '--color-wk-accent-hover', 'threshold' => 'text'],
+            // Every semantic filled button, at rest AND under the pointer. The
+            // hover rows are here because the list carried `accent-fg on
+            // accent-hover` and none of its three semantic siblings, and the
+            // derived scan cannot make up the difference: it reads a literal
+            // `class="…"`, while these classes come out of VariantResolver at
+            // render time. So a theme could darken --color-wk-success-hover under
+            // a near-black label and the doctor stayed silent — which is exactly
+            // what the shipped default did (5.51:1 at rest, 3.59:1 on hover).
             ['name' => 'danger-fg on danger', 'fg' => '--color-wk-danger-fg', 'bg' => '--color-wk-danger', 'threshold' => 'text'],
+            ['name' => 'danger-fg on danger-hover', 'fg' => '--color-wk-danger-fg', 'bg' => '--color-wk-danger-hover', 'threshold' => 'text'],
             ['name' => 'success-fg on success', 'fg' => '--color-wk-success-fg', 'bg' => '--color-wk-success', 'threshold' => 'text'],
+            ['name' => 'success-fg on success-hover', 'fg' => '--color-wk-success-fg', 'bg' => '--color-wk-success-hover', 'threshold' => 'text'],
+            ['name' => 'warning-fg on warning', 'fg' => '--color-wk-warning-fg', 'bg' => '--color-wk-warning', 'threshold' => 'text'],
+            ['name' => 'warning-fg on warning-hover', 'fg' => '--color-wk-warning-fg', 'bg' => '--color-wk-warning-hover', 'threshold' => 'text'],
 
             // Communicating borders — WCAG 1.4.11 DOES require >= 3:1 for these:
             // a focus ring and the stateful (error / success) borders convey

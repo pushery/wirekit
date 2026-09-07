@@ -49,6 +49,15 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $stickyHeader = BooleanProp::from($stickyHeader, false);
+    // Same contract for the four whose default is spelled as a `config()` fallback rather
+    // than a literal — a spelling the coverage guard could not see until 2026-09-07, so
+    // these four went unnormalized while their literal-defaulted neighbor above did not.
+    // `responsive` is the sharp one: it defaults ON, so `responsive="false"` is a switch a
+    // developer reaches for deliberately, and the wrapper it was meant to remove stayed.
+    $responsive = BooleanProp::from($responsive, true);
+    $striped = BooleanProp::from($striped, false);
+    $hoverable = BooleanProp::from($hoverable, false);
+    $compact = BooleanProp::from($compact, false);
 
     // The value reaches the element as an inline max-height rather than as a Tailwind class,
     // and that is the whole design of this prop rather than a shortcut. Two reasons, and
@@ -201,7 +210,7 @@
          the box, matching the sortable header button: an outset ring on an element that
          is itself a min-width-zero flex child adds width outside the border box, which is
          the one thing this wrapper spends its own comment above avoiding. --}}
-    class="flex w-full min-w-0 overflow-x-auto wk-scrollbar focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] {{ $stickyHeader ? 'overflow-y-auto' : '' }}"
+    class="flex w-full min-w-0 overflow-x-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] {{ $stickyHeader ? 'overflow-y-auto' : '' }}"
     @if($stickyHeaderStyle) style="{{ $stickyHeaderStyle }}" @endif
     {{-- Reachability is unconditional; the landmark is opt-in. `filled()` rather than `??`,
          because `role="region"` with an empty name is not exposed as a landmark at all — an

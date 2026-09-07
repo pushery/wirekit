@@ -384,10 +384,64 @@ export default function wirekitMultiSelect(config = {}) {
 
         /**
          * Deselect (remove) a selected value.
+         *
+         * The removal takes the focused element away with it, and nothing else
+         * puts focus back. The button that calls this sits INSIDE the pill, the
+         * pills are keyed by VALUE, so Alpine drops exactly the node holding
+         * focus — and the `@click.stop` on that button is there to keep the
+         * field's own `focusAndOpen()` from firing, so no other handler runs
+         * either. A destroyed active element leaves focus on `<body>`, which
+         * starts the next Tab at the top of the document (WCAG 2.4.3). Same
+         * shape and same treatment as tags-input's chip removal.
          */
         deselect(value) {
             const idx = this.selected.indexOf(value);
-            if (idx >= 0) this.selected.splice(idx, 1);
+
+            if (idx < 0) return;
+
+            this.selected.splice(idx, 1);
+            this._focusAfterRemoval(idx);
+        },
+
+        /**
+         * Put focus on the remove button that took the removed pill's place.
+         *
+         * Same position first — that is the pill which moved up into the gap and
+         * where the reader's eye already is, so removing several in a row keeps
+         * working. Nothing there means the last pill was the one removed, so the
+         * new last one takes focus; an empty set leaves only the filter input,
+         * which is where `toggle()` and `onBackspace()` both end up anyway.
+         *
+         * NOT the filter input in every case, even though that is this
+         * component's usual resting place: the input's own `@focus` opens the
+         * dropdown, so sending every removal there pops the option list open on
+         * a gesture that was about taking a value away.
+         *
+         * After a tick, because the pills are re-rendered from the array — a
+         * query before the template has caught up finds the buttons as they
+         * were. The field element survives the removal (only the pill inside it
+         * is dropped), so it is resolved in the tick rather than cached; it goes
+         * through `_fieldElement()` so a nested optimistic `x-data` cannot hide
+         * the ref. Outside Alpine there is no tick and no DOM, so the guards make
+         * this a no-op there rather than the throw a bare `this.$nextTick` would
+         * be.
+         */
+        _focusAfterRemoval(index) {
+            const place = () => {
+                const field = this._fieldElement();
+                const buttons = field && typeof field.querySelectorAll === 'function'
+                    ? [...field.querySelectorAll('button')]
+                    : [];
+                const target = buttons[index] ?? buttons[buttons.length - 1] ?? this.$refs?.filterInput;
+
+                if (target && typeof target.focus === 'function') target.focus();
+            };
+
+            if (typeof this.$nextTick === 'function') {
+                this.$nextTick(place);
+            } else {
+                place();
+            }
         },
 
         /**

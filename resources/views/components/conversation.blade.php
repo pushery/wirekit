@@ -28,14 +28,21 @@
     // compiled, so the binding would carry the literal directive text, Alpine
     // would fail to evaluate it, and the control would ship with no accessible
     // name — silent, and exactly what happened.
-    $alpineConfig = json_encode((object) array_filter(
+    //
+    // AlpinePayload, not json_encode: the labels come out of the catalog, and a
+    // plain encode escapes non-ASCII as `é`. Alpine's CSP tokenizer knows
+    // only `\n`, `\t`, `\r`, `\\` and the quote, so it drops that backslash and
+    // keeps the letters — `Aller au plus récent` (lang/fr.json) reaches the
+    // reader as `Aller au plus ru00e9cent`. Nothing throws; the label is simply
+    // wrong, and it is the accessible name of the jump-to-latest control.
+    $alpineConfig = \Pushery\WireKit\Support\AlpinePayload::from((object) array_filter(
         [
             'threshold' => $threshold !== null ? (int) $threshold : null,
             'jumpLabel' => __('wirekit::Jump to latest'),
             'jumpLabelCount' => __('wirekit::Jump to latest, :count new'),
         ],
         static fn ($v): bool => $v !== null,
-    ), JSON_THROW_ON_ERROR);
+    ));
 
     $rootClasses = WireKit::resolveClasses('conversation', 'base', 'relative', $scope);
 
@@ -56,7 +63,7 @@
     // behavior; nothing depends on it.
     $viewportClasses = WireKit::resolveClasses('conversation', 'viewport', implode(' ', [
         'wk-scrollbar overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-wk-ring)]',
+        'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--color-wk-ring)]',
     ]), $scope);
 @endphp
 

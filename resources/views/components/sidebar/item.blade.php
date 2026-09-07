@@ -37,6 +37,14 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
+    // `@aware` reads a value from the parent component, but — unlike `@props` —
+    // it does NOT remove that key from the attribute bag. So when the key is also
+    // written as an attribute on the tag, it survives into the bag the link partial
+    // echoes and renders as a stray HTML attribute on the <a>/<button>. `selected`
+    // is the one that bites hardest: it IS a real HTML attribute, just not on these
+    // elements, so it reads as intentional to anyone looking at the DOM.
+    $attributes = $attributes->except(['mode', 'selected', 'collapsible']);
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
@@ -69,6 +77,37 @@
             'not-[[aria-current]]:hover:bg-[var(--color-wk-bg-muted)]',
             'not-[[aria-current]]:hover:text-[color:var(--color-wk-text)]',
         ];
+
+    // WHERE THE KEYBOARD IS — a third mark, and it has to be a third one.
+    //
+    // In `selection` mode the listbox keeps DOM focus on the column and moves an
+    // `aria-activedescendant` instead, so the browser draws nothing on the option
+    // and the indicator has to be authored. It was not: ArrowDown moved the
+    // pointer, `scrollIntoView` sometimes moved the list, and nothing on screen
+    // said which row the reader was on.
+    //
+    // A RING rather than a fill, because the fill is taken. The chosen row already
+    // renders `$activeClasses` — `bg-[var(--color-wk-bg-muted)]` — so painting the
+    // keyboard's position with that same token would make the chosen row and the
+    // marked row look identical, which is the one distinction the two states exist
+    // to draw. scope-switcher can use the fill precisely because nothing else there
+    // does. Measured against `--color-wk-ring`: 18.2:1 light and 14.5:1 dark on a
+    // chosen row, 19.8:1 and 19.0:1 on an ordinary one.
+    //
+    // `data-active`, written by `writeActiveMarker()` in sidebar-listbox.js the way
+    // scope-switcher.js writes it — one attribute per move, no observer, because the
+    // options are re-read on demand anyway. Both writers of the marked row route
+    // through it, `initListbox()` as well as `markActive()`: the id and the attribute
+    // are one state, and splitting them is silent — the announcement stays correct
+    // while the highlight sits on the wrong row. Written out in full for the reason
+    // the block above gives: Tailwind scans source for complete class names.
+    $keyboardActiveClasses = $selectionMode
+        ? [
+            'data-[active]:ring-[length:var(--ring-wk-width)]',
+            'data-[active]:ring-inset',
+            'data-[active]:ring-[var(--color-wk-ring)]',
+        ]
+        : [];
 
     $active = BooleanProp::from($active, false);
     $submenu = BooleanProp::from($submenu, false);
@@ -131,13 +170,14 @@
         // (0,1,0) utility loses to this one too, so the escape hatch was `!important`.
         // Do not "simplify" the variant off — equal specificity is the whole problem.
         ...$notCurrentClasses,
+        ...$keyboardActiveClasses,
         // Hover is scoped to NON-active items via `:not([aria-current])`. An active item
         // already carries `aria-current="page"`, and an UNSCOPED `hover:bg` here (specificity
         // 0,2,0) would override a retinted active block (a developer's 0,1,0 utilities) the
         // instant the pointer arrives — the pill would snap back to muted mid-hover, forcing
         // the developer to reach for `!important`. Scoping matches the common expectation too:
         // the current page does not react to hover, it is already the target state.
-        'focus-visible:outline-none',
+        'focus-visible:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors',

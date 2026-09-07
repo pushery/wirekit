@@ -45,9 +45,19 @@
     // never sees spelled out — an interpolated one produces a class with no rule
     // behind it, and the failure is silent because the attribute is present and
     // simply does nothing.
+    //
+    // ⚠️ `auto` is the one arm that turns the card's own box into a SCROLL CONTAINER, so it
+    // carries the keyboard contract with it. WCAG 2.1.1 asks that a region which scrolls be
+    // reachable and operable without a mouse, and a `<div>` that scrolls is neither: there is
+    // no tab stop on it, so the content past the fold cannot be panned at all. The ring rides
+    // in this arm rather than in a ternary for the same reason attachment-group's does — the
+    // drift auditor harvests match-arm class strings, and a ternary hides them from it.
+    // `ring-inset` because the card clips its own box: an outset ring would be cut off by the
+    // very overflow that makes the ring necessary. The `tabindex` half is below, next to
+    // `$tag`, because it depends on which element this ends up being.
     $overflowClass = match ($overflow) {
         'visible' => 'overflow-visible',
-        'auto' => 'overflow-auto',
+        'auto' => 'overflow-auto focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)]',
         'clip' => 'overflow-clip',
         default => 'overflow-hidden',
     };
@@ -157,13 +167,43 @@
     // Render as <a> when href given, otherwise use $as tag (default: div)
     $tag = $href ? 'a' : $as;
 
-    // Auto-inject rel="noopener noreferrer" when target="_blank"
+    // The other half of the `overflow="auto"` contract: the tab stop.
+    //
+    // Deliberately NOT the shape attachment-group uses (`tabindex="{{ $isRow ? '0' : '-1' }}"`,
+    // the condition in the VALUE). That works there because its root is always a `<div>`; this
+    // root is not. With `href` the card renders as an `<a>`, which is already a tab stop, and
+    // writing `-1` onto it would take a link card OUT of the tab order — a keyboard regression
+    // dressed as a keyboard fix. And `-1` on the DEFAULT path would make every card in the
+    // library click-focusable, which is a behavior change nobody asked for on a clipping card
+    // that scrolls nothing.
+    //
+    // So three states rather than two, and the two that need no attribute get none.
+    //
+    // `a` is absent from the tag list ON PURPOSE and the `$href` term is not a duplicate of
+    // it: an anchor without an `href` is not focusable at all, so `as="a"` on its own still
+    // needs the stop.
+    $rootIsNativelyFocusable = (bool) $href
+        || in_array(strtolower((string) $tag), ['button', 'input', 'select', 'textarea'], true);
+
+    // Merged through the bag rather than written into the tag, so a caller who manages focus
+    // themselves keeps their own value — `merge()` treats this as a default, which is the
+    // right way round here and is exactly what `rel` below must NOT do.
+    $scrollKeyboardModel = $overflow === 'auto' && ! $rootIsNativelyFocusable
+        ? ['tabindex' => '0']
+        : [];
+
+    // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
+    // The rel is rendered EXPLICITLY and the bag echoes with except('rel'):
+    // $attributes->merge() treats a non-class attribute as a DEFAULT, so a
+    // caller writing rel="prev" silently replaced the computed value and took
+    // the protection with it. See dropdown/item.blade.php for the same shape.
     $targetAttr = $attributes->get('target', '');
     $opensNewTab = $href && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr . ' noopener noreferrer')
         : $relAttr;
+    $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 
     // Dev-only composition warning. The card root is a FRAME with no
     // padding — real content belongs in card.body / card.header / card.footer
@@ -198,7 +238,8 @@
     @endif
     @if($href) href="{{ $href }}" @endif
     @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif
-    {{ $attributes->merge($opensNewTab ? ['rel' => $finalRel] : [])->class([$baseClasses, $variantClasses, $interactiveClasses]) }}
+    @if($computedRel) rel="{{ $computedRel }}" @endif
+    {{ $attributes->except('rel')->merge($scrollKeyboardModel)->class([$baseClasses, $variantClasses, $interactiveClasses]) }}
 >
     {{ $slot }}
     @if($opensNewTab)

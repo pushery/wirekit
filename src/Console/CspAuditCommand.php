@@ -68,7 +68,8 @@ class CspAuditCommand extends Command
     protected $signature = 'wirekit:csp-audit
         {--path=* : Directory to scan. Repeatable. Defaults to the application view paths.}
         {--vendor : Also scan the view directories packages registered with loadViewsFrom.}
-        {--registrations=* : JavaScript file or directory to read Alpine.data registrations from. Repeatable. Defaults to the built and published bundles.}
+        {--registrations=* : JavaScript file or directory to read Alpine.data registrations from. Repeatable, and ADDED to the built and published bundles.}
+        {--registrations-only : Read registrations ONLY from --registrations, ignoring the built and published bundles.}
         {--json : Emit machine-readable JSON instead of a report.}';
 
     protected $description = 'Check every Alpine expression in your Blade views against Alpine\'s CSP grammar (needs node)';
@@ -191,7 +192,7 @@ class CspAuditCommand extends Command
 
         // What is actually registered, read before any verdict — because for `x-data` the
         // grammar answers the wrong question, and the right one needs this set.
-        $registrationScan = $this->registrations();
+        $registrationScan = $this->registrations($paths);
 
         $verdicts = $this->parse(array_column($found, 'expression'));
 
@@ -330,6 +331,16 @@ class CspAuditCommand extends Command
                 // scanned is not a clean result, it is an unasked question.
                 'registrations_seen' => count($registrationScan['names']),
                 'registration_files' => count($registrationScan['files']),
+                // ONE unambiguous field, because the two counts above were already here and the
+                // report they came from still got read as clean. A developer has to know to look
+                // at them, and `unregistered: 0` sits right next to them saying the reassuring
+                // thing. This says whether the question was asked at all.
+                //
+                // A field rather than an exit code, deliberately. Failing would redden every
+                // application that has no Alpine registrations because it has no Alpine, which is
+                // not a finding. Being able to tell the two apart is what was missing, and a
+                // boolean is the whole of it.
+                'x_data_checked' => $registrationScan['names'] !== [],
                 'unregistered' => count($unregistered),
                 'unregistered_components' => $unregistered,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG));
@@ -352,14 +363,17 @@ class CspAuditCommand extends Command
      * The reporting side names the surface for the same reason the view surface is named:
      * "nothing unregistered" and "nothing looked at" have to be different sentences.
      *
+     * @param  array<int, string>  $paths  The view directories this run is scanning. A package
+     *                                     whose views are in there contributes its own
+     *                                     registration source; see below.
      * @return array{names: list<string>, files: list<string>}
      */
-    private function registrations(): array
+    private function registrations(array $paths = []): array
     {
         /** @var array<int, string> $given */
         $given = (array) $this->option('registrations');
 
-        $candidates = $given !== [] ? $given : [
+        $candidates = [
             // Where a Laravel application's own bundle lands, in the two shapes Vite and a
             // hand-rolled build produce.
             base_path('public/build'),
@@ -374,6 +388,56 @@ class CspAuditCommand extends Command
             // the route fallback rather than a published copy is still measured.
             dirname(__DIR__, 2).'/dist',
         ];
+
+        // Every package whose views this run is SCANNING contributes its own registration
+        // source. A package that serves its bundle from its own route, or ships
+        // it unbuilt, is in none of the defaults above, so every factory it registers reads
+        // here as "named by a view, registered by nothing": the same words as a genuinely
+        // dead panel, and the opposite meaning.
+        //
+        // ⚠️ This overturns a decision that was written down two methods below, and the
+        // objection there is worth answering rather than deleting: going looking on its own
+        // "would mean guessing a package layout, and a wrong guess re-introduces the same
+        // ambiguity one level down". The reason that does not apply is that nothing here
+        // guesses -- `registrationSourceIn()` probes three concrete directory names with
+        // `is_dir()` and returns null when none is there. The command ALREADY trusts that
+        // probe enough to print its result as a paste-ready command; a path good enough to
+        // hand a developer is good enough to read.
+        //
+        // Scoped to the packages already in the scan surface, deliberately. Reading every
+        // package under vendor/ would answer a question nobody asked, and a stale bundle in
+        // an unrelated package could then register a name away.
+        foreach ($paths as $path) {
+            if (preg_match('#^(.*/vendor/[^/]+/[^/]+)/#', rtrim($path, '/').'/', $match) !== 1) {
+                continue;
+            }
+
+            if (($source = $this->registrationSourceIn($match[1])) !== null) {
+                $candidates[] = $source;
+            }
+        }
+
+        // `--registrations` ADDS to that set; `--path` replaces its own. The asymmetry is
+        // deliberate, and the two flags are not the same kind of thing.
+        //
+        // `--path` names WHAT to check, so narrowing it is the whole point of passing it.
+        // `--registrations` names where to find EVIDENCE that something is registered, and
+        // narrowing that does not narrow the check: it makes it wrong. A set that is missing
+        // a source does not report less, it reports MORE -- every factory registered only in
+        // the dropped source becomes an offender that does not exist.
+        //
+        // Which is precisely the trap the report's own hint used to walk a reader into: it
+        // prints `--registrations=<package source>`, and under the old replacing semantics
+        // that one flag threw away the application's own bundles on the way in.
+        //
+        // ⚠️ ISOLATION IS STILL REACHABLE, and it had to stay: replacing was not only a
+        // default, it was the only way to ask "what does THIS bundle register, and nothing
+        // else". Making the flag additive without a replacement for that would have removed
+        // a working capability silently -- no test would have failed for the right reason,
+        // and the answer would just quietly have become a different question.
+        $candidates = $this->option('registrations-only') === true
+            ? $given
+            : array_merge($candidates, $given);
 
         $files = [];
 
@@ -1345,6 +1409,10 @@ class CspAuditCommand extends Command
             $this->line('Each of these renders VISIBLE and dead: no scope means `x-show` never evaluates,');
             $this->line('so it never hides anything, and Alpine still removes `x-cloak`. Register the factory');
             $this->line('with Alpine.data(), or load the bundle that does.');
+
+            foreach ($this->registrationSourceHint($unregistered, $registrationScan) as $line) {
+                $this->line($line);
+            }
         }
 
         if ($offenders === [] && ($inScript !== [] || $unregistered !== [])) {
@@ -1372,6 +1440,17 @@ class CspAuditCommand extends Command
                     ' — over the scanned surface only, with %d registered namespace(s) outside it (listed above).',
                     count($unscanned),
                 );
+            }
+
+            // The `x-data` half of this command is GATED on a non-empty registration set, so a
+            // PASS earned with an empty one is a pass over a check that never ran.
+            // The qualifier belongs in the verdict for the same reason the unscanned one does:
+            // a developer who reads PASS stops reading, and everything that limits it has to be
+            // in the sentence they stop on. It is already explained three paragraphs up; that is
+            // where the repair is, and this is where the reader is.
+            if ($registrationScan['names'] === []) {
+                $verdict = rtrim($verdict, '.').' — grammar only. `x-data` was NOT checked: no '
+                    .'Alpine.data registration was found to hold it against.';
             }
 
             $this->info($verdict);
@@ -1414,5 +1493,132 @@ class CspAuditCommand extends Command
         $this->line('set: delete false in instanceof new null true typeof undefined void.');
 
         return self::FAILURE;
+    }
+
+    /**
+     * The question that comes BEFORE the repair, when an offending view is a package's.
+     *
+     * ⚠️ Reported from a starter kit whose gate stayed red over a package that was
+     * CORRECT. A package that serves its bundle from its own route — a deliberate
+     * choice, because an inline `<script>` under a nonce-less `script-src 'self'` is
+     * refused with no error and no log — appears in neither of the sources this run
+     * defaults to. Every factory it registers then reads as "named by a view, registered
+     * by nothing", which is word-for-word the report for a genuinely dead panel. The two
+     * cases are indistinguishable in the output.
+     *
+     * That matters because the repair printed above is expensive in the wrong direction:
+     * a reader who follows it files a false ticket against a correct package and turns a
+     * working screen off. The ticket costs somebody else's time; the shutdown is noticed
+     * only when a person misses the panel.
+     *
+     * So this asks whether the run READ the package's own source, and hands over the
+     * command that answers it. What it deliberately does NOT do is go looking on its own:
+     * that would mean guessing a package layout, and a wrong guess here re-introduces the
+     * same ambiguity one level down. The flag exists and is documented — what was missing
+     * is the pointer to it at the place somebody needs it.
+     *
+     * @param  array<int, array{file: string, line: int, attribute: string, expression: string, name: string}>  $unregistered
+     * @param  array{names: list<string>, files: list<string>}  $registrationScan
+     * @return list<string>
+     */
+    private function registrationSourceHint(array $unregistered, array $registrationScan): array
+    {
+        $packages = [];
+
+        foreach ($unregistered as $hit) {
+            if (preg_match('#^(.*/vendor/[^/]+/[^/]+)/#', $hit['file'], $match) === 1) {
+                $packages[$match[1]] = true;
+            }
+        }
+
+        if ($packages === []) {
+            return [];
+        }
+
+        $lines = [
+            '',
+            sprintf(
+                'At least one of these lives in a package, and that changes the first question. This run '
+                .'read %d JavaScript file(s) for registrations;',
+                count($registrationScan['files']),
+            ),
+            'a package that serves its bundle from its own route, or ships it unbuilt, is in none of them.',
+            'A factory it registers correctly then reads here exactly like one nothing registers — same',
+            'words, opposite meaning. Point --registrations at the package\'s own source before filing',
+            'anything upstream or turning a surface off:',
+            '',
+        ];
+
+        foreach (\array_slice(array_keys($packages), 0, 5) as $root) {
+            $views = is_dir($root.'/resources/views') ? $root.'/resources/views' : $root;
+            $source = $this->registrationSourceIn($root);
+
+            // The scan now reads a scanned package's own source by itself, so for
+            // most packages the printed command is advice the run already took. Telling a
+            // reader to point at a file this run has read is worse than saying nothing: they
+            // run it, get the identical report, and conclude the tool is broken. When it was
+            // already read, the finding is CONFIRMED rather than pending -- which is the more
+            // useful sentence, and the one the closing line below promises.
+            $alreadyRead = $source !== null && array_filter(
+                $registrationScan['files'],
+                static fn (string $f): bool => $f === $source || str_starts_with($f, rtrim($source, '/').'/'),
+            ) !== [];
+
+            if ($source === null) {
+                $lines[] = sprintf('  %s — no resources/js/ or dist/ to point at; find what its provider publishes.', self::shorten($root));
+            } elseif ($alreadyRead) {
+                $lines[] = sprintf(
+                    '  %s — its own %s was read by this run and does not register the name; the finding stands.',
+                    self::shorten($root),
+                    basename($source),
+                );
+            } else {
+                $lines[] = sprintf(
+                    '  php artisan wirekit:csp-audit --path=%s --registrations=%s',
+                    self::shorten($views),
+                    self::shorten($source),
+                );
+            }
+        }
+
+        if (\count($packages) > 5) {
+            $lines[] = sprintf('  …and %d more package(s).', \count($packages) - 5);
+        }
+
+        $lines[] = '';
+        $lines[] = 'If it still reports them with the package\'s own source in scope, the finding is real.';
+
+        return $lines;
+    }
+
+    /**
+     * Where a package plausibly keeps the registrations this run did not read.
+     *
+     * Ordered by how likely it is to be the SOURCE rather than a copy: an unbuilt
+     * `resources/js` is what an in-house package ships, `dist` is what a package builds
+     * for itself, and `public` is what it publishes. The first that exists wins — this is
+     * a pointer for a person to check, not a resolution the verdict rests on.
+     */
+    private function registrationSourceIn(string $packageRoot): ?string
+    {
+        foreach (['/resources/js', '/dist', '/public'] as $candidate) {
+            if (is_dir($packageRoot.$candidate)) {
+                return $packageRoot.$candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Trim the application root off a path so the printed command is one a person can paste.
+     *
+     * An absolute path from a container prints a directory the reader does not have.
+     */
+    private static function shorten(string $path): string
+    {
+        $root = base_path().'/';
+
+        return str_starts_with($path, $root) ? substr($path, \strlen($root)) : $path;
     }
 }

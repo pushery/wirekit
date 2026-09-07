@@ -2,14 +2,17 @@
      Full reference: https://docs.wirekit.app/blueprints/recipes/long-form-article --}}
 <div>
     <x-wirekit::container max="md">
-        <x-wirekit::reading-meta
-            author="Jane Doe"
-            published="2026-05-21"
-            reading-time="6 min read"
-        />
-
         <article class="prose">
-            <h1>The case for declarative components</h1>
+            <header>
+                <h1>The case for declarative components</h1>
+                {{-- The byline is ordinary markup, and deliberately so: reading-meta
+                     measures the article's own text and renders the time-to-read from
+                     it. Author and date are yours to render however your model spells
+                     them. --}}
+                <x-wirekit::text variant="muted" as="p">By Jane Doe · Published 2026-05-21</x-wirekit::text>
+                <x-wirekit::reading-meta :showRemaining="true" />
+            </header>
+
             <p class="lede">Declarative APIs let your application's intent show through the markup. Imperative wiring buries that intent in event handlers and side effects.</p>
 
             <h2>What this looks like in practice</h2>

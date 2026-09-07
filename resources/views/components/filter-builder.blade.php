@@ -11,6 +11,7 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
     use Illuminate\Support\Str;
 
@@ -18,6 +19,13 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('filter-builder', $attributes->getAttributes());
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `searchable="false"` used to mean the opposite of what the call site reads as. The
+    // prop's default is spelled as a `config()` fallback rather than a literal, which is
+    // the only reason the coverage guard did not see it. The single read is a truth test
+    // around the free-text search box, so the box the call site removed was still drawn.
+    $searchable = BooleanProp::from($searchable, false);
 
     // Seeded from `name`, not re-randomized per render: Livewire's morph matches on the
     // id, so a fresh one each render means destroy-and-rebuild — and the Alpine-only
@@ -61,7 +69,7 @@
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]',
         'rounded-[var(--radius-wk-md)]',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
-        'focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]);
 
     // Select variant of $control: hide the native dropdown arrow
@@ -73,17 +81,45 @@
     $selectControl = $control.' appearance-none pr-8';
 
     $controlLabel = 'block text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] mb-1';
+
+    /*
+     * What the reader is told when the set shrinks.
+     *
+     * Both subtractive gestures are invisible without this: a chip disappears from a
+     * bar the reader is not looking at, and Clear-all empties the whole set at once.
+     * Neither reloads anything and neither used to move focus, so a screen reader was
+     * handed nothing to notice — on the one piece of state a filter bar exists to hold.
+     *
+     * Assembled from placeholders here because a sentence concatenated in JavaScript
+     * cannot be translated and word order is not the same in every language — the shape
+     * `tags-input` and `wizard` both use.
+     *
+     * The optional `$status` slot below is NOT this: it is the developer's result count,
+     * it is empty unless they fill it, and the docs say so.
+     */
+    $filterAnnouncements = \Pushery\WireKit\Support\AlpinePayload::from([
+        'removed' => __('wirekit::Filter removed: :name'),
+        'cleared' => __('wirekit::All filters cleared'),
+    ]);
 @endphp
 
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitFilterBuilder({ fields: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldsArr) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueArr) }} })"
+    x-data="wirekitFilterBuilder({ fields: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldsArr) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueArr) }}, announcements: {{ $filterAnnouncements }} })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
          escape stays here (window-scoped, teleport-agnostic). --}}
     x-on:keydown.escape.window="open && close(true)"
     {{ $attributes->only('class')->class([$base]) }}
 >
+    {{-- The set's own live region.
+         Unconditional and starting EMPTY, both deliberately: a live region that
+         arrives together with its text is a new node and announces nothing, and one
+         gated on a condition is absent for exactly the readers who need it. It is not
+         the `$status` slot below — that is the developer's result count, and it is
+         empty until they fill it. --}}
+    <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="filterAnnouncement"></div>
+
     {{-- JSON bridge: forwards wire:model + serves plain-form submission. The
          normalized filter array is mirrored here as JSON on every change. --}}
     <input
@@ -119,7 +155,7 @@
                     @click="openEdit(i)"
                     {{-- :name is substituted client-side because chipText() is only known there. --}}
                     :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Edit filter: :name')) }}.replace(':name', chipText(filter))"
-                    class="cursor-pointer focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]"
+                    class="cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)]"
                 >
                     <span x-text="chipText(filter)"></span>
                 </button>
@@ -127,8 +163,14 @@
                 <button
                     type="button"
                     @click="remove(i)"
+                    {{-- The marker `remove()` re-finds the surviving chips by, once the
+                         splice has run. The loop is INDEX-keyed, so Alpine drops the
+                         element holding the highest key and rewrites the rest in place:
+                         removing the LAST chip destroys this button while it holds focus,
+                         which is why the focus move cannot be left to the browser. --}}
+                    data-wk-filter-remove
                     :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Remove filter: :name')) }}.replace(':name', chipText(filter))"
-                    class="p-0.5 rounded-[var(--radius-wk-full)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                    class="p-0.5 rounded-[var(--radius-wk-full)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
                 >
                     <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 12 12" fill="currentColor"><path d="M3.05 3.05a.5.5 0 01.7 0L6 5.29l2.25-2.24a.5.5 0 01.7.7L6.71 6l2.24 2.25a.5.5 0 01-.7.7L6 6.71 3.75 8.95a.5.5 0 01-.7-.7L5.29 6 3.05 3.75a.5.5 0 010-.7z"/></svg>
                 </button>
@@ -143,7 +185,7 @@
                 @click="open ? close() : openAdd()"
                 :aria-expanded="open"
                 aria-haspopup="dialog"
-                class="inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] border-dashed rounded-[var(--radius-wk-full)] hover:text-[color:var(--color-wk-text)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                class="inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] border-dashed rounded-[var(--radius-wk-full)] hover:text-[color:var(--color-wk-text)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
             >
                 <svg aria-hidden="true" class="h-3.5 w-3.5" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 2v10M2 7h10"/></svg>
                 <span>{{ $addLabel }}</span>
@@ -160,6 +202,14 @@
                 x-ref="panel"
                 x-transition.origin.top.left
                 x-on:click.outside="close()"
+                {{-- The two edges the teleport broke. The panel is drawn beside the
+                     trigger and lives at the end of <body>, so forwards off the last
+                     control the browser would leave the DOCUMENT, and backwards off
+                     the first it would land on whatever precedes the overlay root —
+                     both while this dialog is still open and painted over the page.
+                     Opening moves focus in here, so without this a reader was put
+                     somewhere they could not Tab out of sensibly. --}}
+                x-on:keydown.tab="tabWithinPanel($event)"
                 role="dialog"
                 aria-labelledby="{{ $popoverTitleId }}"
                 class="fixed z-[var(--z-wk-dropdown)] w-[18rem] max-w-[calc(100vw-2rem)] p-[var(--padding-wk-x-md)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] space-y-[var(--space-wk-sm)]"
@@ -242,8 +292,8 @@
 
                 {{-- Actions --}}
                 <div class="flex items-center justify-end gap-[var(--gap-wk-sm)] pt-1">
-                    <button type="button" @click="close(true)" class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Cancel') }}</button>
-                    <button type="button" @click="apply()" :disabled="!canApply()" class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-inverse)] bg-[var(--color-wk-accent)] rounded-[var(--radius-wk-md)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Add')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Apply')) }}"></button>
+                    <button type="button" @click="close(true)" class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Cancel') }}</button>
+                    <button type="button" @click="apply()" :disabled="!canApply()" class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-inverse)] bg-[var(--color-wk-accent)] rounded-[var(--radius-wk-md)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer" x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Add')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Apply')) }}"></button>
                 </div>
             </div>
             </template>
@@ -255,7 +305,7 @@
             x-show="filters.length > 0"
             x-cloak
             @click="clearAll()"
-            class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] rounded-[var(--radius-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+            class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
         >Clear all</button>
     </div>
 

@@ -5,7 +5,8 @@
         <x-wirekit::stat
             label="Revenue"
             value="$12,340"
-            delta="+12%"
+            change="+12%"
+            trend="up"
         >
             <x-slot:sparkline>
                 <x-wirekit::sparkline
@@ -18,7 +19,8 @@
         <x-wirekit::stat
             label="Active Users"
             value="2,840"
-            delta="+8%"
+            change="+8%"
+            trend="up"
         >
             <x-slot:sparkline>
                 <x-wirekit::sparkline

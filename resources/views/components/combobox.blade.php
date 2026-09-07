@@ -26,7 +26,13 @@
     'options' => [],
     'value' => null,
     'size' => config('wirekit.components.combobox.size', 'md'),
-    'placeholder' => config('wirekit.components.combobox.placeholder', 'Select...'),
+    // `??` rather than a `config(…, 'Select...')` fallback, and the difference is the
+    // whole point: a config default holds ONE string for every locale, so the literal
+    // that used to sit in that second argument was unreachable to a translated app —
+    // its only escape was publishing the config, which freezes the wording again. The
+    // seam survives (an app may still pin its own word), and an untouched default now
+    // resolves through the catalog, exactly as the sibling multi-select already does.
+    'placeholder' => config('wirekit.components.combobox.placeholder') ?? __('wirekit::Select...'),
     'disabled' => false,
     'error' => null,
     // Accessible name for the combobox. Mirrors select / multi-select: a visible
@@ -147,8 +153,19 @@
         }
     }
 
-    $hasError = $error || ($errors ?? null)?->has($name);
+    // The bag read is guarded on the name, exactly as field.blade.php does.
+    // `MessageBag::has(null)` falls through to `any()`, so an unguarded read
+    // makes a combobox with no `name` report itself invalid the moment ANY
+    // unrelated field on the page fails validation — a red border and an
+    // `aria-invalid` on a control nobody validated.
+    $hasError = $error || ($name && ($errors ?? null)?->has($name));
     $errorMessage = $error ?? ($hasError && $name ? $errors->first($name) : null);
+
+    // The paragraph and the idref pointing at it move together. `$hasError` can
+    // be true with nothing to say (`error=""` plus a bag hit), and a described-by
+    // resolving to an empty element announces the control as invalid without
+    // saying why — a WCAG 3.3.1 failure the markup looks fine in.
+    $showsError = $hasError && $errorMessage;
 
     // Accessible name resolution. A visible label associates via <label for>
     // (label wins, no aria-label needed). Otherwise fall back to the ariaLabel
@@ -160,7 +177,7 @@
     // Merge a caller aria-describedby with our own error target into ONE attribute on
     // the input, so a caller description reaches the labelable control and
     // never collides with the error id as two attributes.
-    $ownDescribedBy = $hasError ? $errorId : null;
+    $ownDescribedBy = $showsError ? $errorId : null;
     $callerDescribedBy = $attributes->get('aria-describedby');
     $describedBy = trim(((string) ($ownDescribedBy ?? '')).' '.((string) ($callerDescribedBy ?? '')));
     $describedBy = $describedBy !== '' ? $describedBy : null;
@@ -192,7 +209,7 @@
         'border-[length:var(--border-wk-width)]',
         $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]',
         'rounded-[var(--radius-wk-md)]',
-        'focus:outline-none',
+        'focus:outline-hidden',
         'focus-visible:ring-[length:var(--ring-wk-width)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
         'focus:border-[var(--color-wk-accent)]',
@@ -344,7 +361,7 @@
                  is a mutation the server has to hear about. `undefined` would be
                  the absence of a choice; null is a choice. --}}
             @click.stop="{{ $optimisticConfig ? 'run(null)' : 'clearSelection()' }}"
-            class="absolute right-8 top-1/2 -translate-y-1/2 inline-flex items-center justify-center min-w-[24px] min-h-[24px] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+            class="absolute right-8 top-1/2 -translate-y-1/2 inline-flex items-center justify-center min-w-[24px] min-h-[24px] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
             aria-label="{{ __('wirekit::Clear selection') }}"
         >
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -371,7 +388,7 @@
         @if($disabled) disabled @endif
         tabindex="-1"
         aria-hidden="true"
-        class="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-transform duration-[var(--transition-wk-duration)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-[var(--opacity-wk-disabled)]"
+        class="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-transform duration-[var(--transition-wk-duration)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-[var(--opacity-wk-disabled)]"
         :class="open ? 'rotate-180' : ''"
     >
         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -516,7 +533,7 @@
     </div>
     </template>
 
-    @if($hasError)
+    @if($showsError)
         <p id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 

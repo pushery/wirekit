@@ -111,12 +111,18 @@
     // docs/components/reading.md.
     $resolvedTarget = $target ?? 'main, article';
 
-    // Plugin options as JSON for the x-data initializer.
-    $alpineOptions = json_encode([
+    // Plugin options as a JS literal for the x-data initializer.
+    //
+    // AlpinePayload, not json_encode: `target` is a developer-supplied CSS selector, so a
+    // heading id such as `#überschrift` is ordinary input here. A plain encode escapes it
+    // as `ü`, and Alpine's CSP tokenizer drops that backslash and keeps the letters —
+    // the selector arrives as `#u00fcberschrift`, matches nothing, and the list stays empty
+    // behind its own `x-show="items.length > 0"`, so nothing on the page says why.
+    $alpineOptions = \Pushery\WireKit\Support\AlpinePayload::from([
         'target' => $resolvedTarget,
         'levels' => $levelsArray,
         'offset' => $offsetPx,
-    ], JSON_THROW_ON_ERROR);
+    ]);
 @endphp
 
 <nav
@@ -158,7 +164,7 @@
                     :data-active="item.index === activeIndex ? 'true' : 'false'"
                     :data-level="item.level"
                     :aria-current="item.index === activeIndex ? 'location' : null"
-                    class="wk-reading-toc__link inline-block max-w-[var(--reading-toc-link-max-width)] truncate text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="wk-reading-toc__link inline-block max-w-[var(--reading-toc-link-max-width)] truncate text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     x-text="item.text"
                     @click="scrollTo(item.id, $event)"
                 ></a>

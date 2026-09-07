@@ -56,6 +56,22 @@
     'optimistic' => null,
     'name' => null,
     'id' => null,
+    // `error` and `hint` were undeclared on the one Form-category CONTROL that never
+    // got them, so `:error="$errors->first('brand_color')"` landed in the attribute
+    // bag and rendered as `error="…"` on the native `<input type="color">` — invalid
+    // HTML carrying a validation message the reader is never shown. The same class was
+    // closed once for the four controls that take a `label`; this one takes a `name`
+    // instead and fell outside that reading of it.
+    //
+    // No `label` prop comes with them, deliberately. The accessible name here is the
+    // DEFAULT SLOT (rendered `sr-only` beside the swatch, documented on the component
+    // page and sanctioned in the accessibility rules), and a second naming path would
+    // give the component two ways to be named with nothing deciding between them.
+    'error' => null,
+    'hint' => null,
+    // Whether the error paragraph announces itself. Same precedence chain as every
+    // sibling control: explicit prop > the enclosing form's @aware value > config.
+    'announceError' => null,
     'value' => '#000000',
     'size' => config('wirekit.components.color-picker.size', 'md'),
     'showValue' => true,
@@ -84,6 +100,8 @@
     'scope' => null,
 ])
 
+@aware(['announceErrors' => null])
+
 @php
     use Pushery\WireKit\Support\BooleanProp;
 
@@ -97,9 +115,20 @@
     $withEyedropper = BooleanProp::from($withEyedropper, true);
     $withClear = BooleanProp::from($withClear, false);
     $withRecents = BooleanProp::from($withRecents, true);
+    // Same contract, different spelling of the default: a `config()` fallback is as much a
+    // boolean declaration as a literal, and the switch decides whether a touch device gets
+    // the native color panel or this one.
+    $nativeOnMobile = BooleanProp::from($nativeOnMobile, false);
 
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
+
+    // `@aware` reads a value from the parent component, but — unlike `@props` — it does
+    // NOT remove that key from the attribute bag, so written on the tag it survives into
+    // `{{ $attributes }}` and renders as a stray HTML attribute. Blade accepts both
+    // spellings, so both are dropped. BEFORE the unknown-prop warning below, as in every
+    // sibling control: the key is understood here, and warning about it would be noise.
+    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -111,8 +140,27 @@
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
 
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
+    $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
     $pickerId = $id ?? ($name ? 'wk-color-' . $name : 'wk-color-' . Str::random(6));
+
+    // Explicit prop OR the Laravel validation bag, keyed by `name`. The read is
+    // guarded on the name being there: `MessageBag::has(null)` falls through to
+    // `any()`, so an unnamed picker would paint itself invalid the moment any
+    // unrelated field on the page failed validation.
+    $hasError = $error || ($name && ($errors ?? null)?->has($name));
+    $errorMessage = $error ?? ($name ? ($errors ?? null)?->first($name) : null);
+
+    // The error REPLACES the hint in the single paragraph below, so the description
+    // names whichever id is actually on the page. An idref pointing at nothing is not
+    // a partial description — assistive technology drops it in silence.
+    //
+    // Composed once because this component has FOUR shapes that can be the control:
+    // the native input, the nativeOnMobile input, the trigger-slot button and the
+    // default swatch button. Spelling the wiring out four times is how three of them
+    // end up out of step with the fourth.
+    $controlDescribedBy = $hasError ? $pickerId.'-error' : ($hint ? $pickerId.'-hint' : null);
 
     $swatchSize = match ($size) {
         'sm' => 'w-8 h-8',
@@ -128,11 +176,22 @@
 
     $wrapperClasses = WireKit::resolveClasses('color-picker', 'wrapper', 'inline-flex items-center gap-[var(--padding-wk-x-sm)]', $scope);
 
+    // One stacking wrapper around BOTH render branches, so the hint / error paragraph
+    // has somewhere to go: the picker's own root is an inline-flex ROW, and a message
+    // dropped into it would render beside the swatch instead of under it. Inline-level
+    // for the same reason the root is — a picker sits inside a form row, not on a line
+    // of its own — and `items-start` keeps the swatch at its intrinsic width.
+    $fieldClasses = WireKit::resolveClasses('color-picker', 'field', 'inline-flex flex-col items-start gap-[var(--gap-wk-xs)]', $scope);
+
     $swatchClasses = WireKit::resolveClasses('color-picker', 'swatch', implode(' ', [
         'relative inline-block',
         'rounded-full',
         'border-[length:var(--border-wk-width)]',
-        'border-[var(--color-wk-border)]',
+        // The swatch ring is this control's boundary, so it carries the error state the
+        // way every sibling control does. Outside the error state it stays on the
+        // decorative token: a ring around an ARBITRARY user-chosen color cannot be held
+        // to a contrast floor against what is inside it (FormControlBorderTokenTest).
+        $hasError ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border)]',
         'overflow-hidden',
         'cursor-pointer',
         'focus-within:ring-[length:var(--ring-wk-width)]',
@@ -166,6 +225,12 @@
     ]), $scope);
 @endphp
 
+{{-- The field wrapper wraps BOTH branches so the hint / error paragraph below is a
+     sibling of whichever picker rendered, never a child of its inline-flex row. It is
+     unconditional on purpose: a wrapper that only appears when a message does gives the
+     component two DOM shapes, and the one a developer inspects is whichever they hit
+     first. --}}
+<div class="{{ $fieldClasses }}">
 @if(! $popoverValue)
     {{-- ── Native mode (default). ── Slightly wider swatch↔readout gap than the
          shared wrapper default: the hex pill sits inline next to the swatch, and
@@ -182,12 +247,21 @@
                 :value="current"
                 @input="current = $event.target.value"
                 @if($disabled) disabled @endif
+                @if($hasError) aria-invalid="true" @endif
+                @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
                 {{ $attributes->class([$inputClasses]) }}
             />
             @if(trim((string) $slot) !== '')
                 <span class="sr-only">{{ $slot }}</span>
             @else
-                <span class="sr-only">{{ $name ? Str::headline((string) $name) . ' color' : 'Color picker' }}</span>
+                {{-- The ONLY accessible name the native `<input type="color">` gets — there is no
+                     visible label beside it. It goes through the catalog for the same reason the
+                     popover branch below does: both keys already ship in every locale, so a
+                     literal here hands a translated application a fully localized picker with one
+                     English name on it. The label guard could not see this one — it matches a
+                     label as an element's whole raw text (`>Color picker<`), and this sat inside a
+                     `{{ … }}` echo. --}}
+                <span class="sr-only">{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}</span>
             @endif
         </label>
         @if($showValue)
@@ -238,6 +312,10 @@
             'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
             'failure' => 'keep',
+            // The field's own error region, so the layer stays quiet when that
+            // paragraph is already speaking — one announcement per deviation, not
+            // two saying different things about the same refusal.
+            'errorRegion' => '#'.$pickerId.'-error',
             'debug' => (bool) config('app.debug'),
             // Two colors settled in quick succession would otherwise resolve by
             // whichever answer arrives last — network timing, which is both wrong
@@ -289,9 +367,14 @@
                         @input="onInput($event.target.value)"
                         @change="pickColor($event.target.value)"
                         @if($disabled) disabled @endif
+                        @if($hasError) aria-invalid="true" @endif
+                        @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
                         class="{{ $inputClasses }} disabled:opacity-[var(--opacity-wk-disabled)]"
                     />
-                    <span class="sr-only">{{ $name ? Str::headline((string) $name) . ' color' : 'Color picker' }}</span>
+                    {{-- Same name, same catalog call as the native branch above and the popover
+                         trigger below. This arm is the one a phone reaches, so an untranslated
+                         literal here is invisible to every desktop check. --}}
+                    <span class="sr-only">{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}</span>
                 </label>
             </template>
         @endif
@@ -312,7 +395,9 @@
                 :aria-expanded="open ? 'true' : 'false'"
                 aria-haspopup="dialog"
                 @if($disabled) disabled @endif
-                class="inline-flex items-center cursor-pointer rounded-[var(--radius-wk-sm)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
+                @if($hasError) aria-invalid="true" @endif
+                @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
+                class="inline-flex items-center cursor-pointer rounded-[var(--radius-wk-sm)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
             >
                 {{ $trigger }}
             </button>
@@ -326,6 +411,8 @@
                 aria-haspopup="dialog"
                 aria-label="{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}"
                 @if($disabled) disabled @endif
+                @if($hasError) aria-invalid="true" @endif
+                @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
                 class="{{ $swatchClasses }} disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed"
                 style="{{ $checker }}"
             >
@@ -381,7 +468,7 @@
                 @keydown.arrow-right.prevent="nudgePlane(1, 0)"
                 @keydown.arrow-up.prevent="nudgePlane(0, 1)"
                 @keydown.arrow-down.prevent="nudgePlane(0, -1)"
-                class="relative h-40 w-full cursor-crosshair touch-none overflow-hidden rounded-[var(--radius-wk-md)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="relative h-40 w-full cursor-crosshair touch-none overflow-hidden rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 :style="planeStyle"
             >
                 <div class="pointer-events-none absolute inset-0" style="background: linear-gradient(to right, #fff, transparent);"></div>
@@ -414,7 +501,7 @@
                 @keydown.arrow-up.prevent="nudgeHue(2)"
                 @keydown.home.prevent="setHue(0)"
                 @keydown.end.prevent="setHue(360)"
-                class="relative h-3 w-full cursor-pointer touch-none rounded-full focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="relative h-3 w-full cursor-pointer touch-none rounded-full focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 style="background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);"
             >
                 <div class="pointer-events-none absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-sm)]" :style="hueMarkerStyle"></div>
@@ -439,7 +526,7 @@
                     @keydown.arrow-up.prevent="nudgeAlpha(0.05)"
                     @keydown.home.prevent="setAlpha(0)"
                     @keydown.end.prevent="setAlpha(1)"
-                    class="relative h-3 w-full cursor-pointer touch-none rounded-full focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="relative h-3 w-full cursor-pointer touch-none rounded-full focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     style="{{ $checker }}"
                 >
                     <div class="pointer-events-none absolute inset-0 rounded-full" :style="alphaTrackStyle"></div>
@@ -459,7 +546,7 @@
                 <button
                     type="button"
                     @click="cycleFormat()"
-                    class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)] px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)] uppercase hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     {{-- The name STARTS with the word the button shows. A static
                          `aria-label` overrode the visible "hex"/"rgb" entirely, so
                          someone using voice control could not activate the control
@@ -477,7 +564,7 @@
                     aria-label="{{ __('wirekit::Color value') }}"
                     :aria-invalid="invalidInput ? 'true' : 'false'"
                     spellcheck="false"
-                    class="wk-field w-full rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] bg-[var(--color-wk-bg-input)] px-[var(--padding-wk-x-sm)] py-1 font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] focus:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="wk-field w-full rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] bg-[var(--color-wk-bg-input)] px-[var(--padding-wk-x-sm)] py-1 font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     :class="invalidInput ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]'"
                 />
                 @if($withEyedropper)
@@ -485,7 +572,7 @@
                         type="button"
                         x-show="hasEyeDropper"
                         @click="eyedropper()"
-                        class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                         aria-label="{{ __('wirekit::Pick a color from the screen') }}"
                     >
                         {{-- A recognizable PIPETTE silhouette (angled dropper barrel + tip).
@@ -497,7 +584,7 @@
                 <button
                     type="button"
                     @click="copy()"
-                    class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                    class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy color value')) }}"
                 >
                     {{-- Canonical clipboard glyph (matches <x-wirekit::clipboard-button>);
@@ -514,7 +601,7 @@
                     <button
                         type="button"
                         @click="clear()"
-                        class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                        class="shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-1 text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                         aria-label="{{ __('wirekit::Clear color') }}"
                     >
                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
@@ -530,7 +617,7 @@
                         <button
                             type="button"
                             @click="pickColor({{ \Pushery\WireKit\Support\AlpinePayload::from($preset) }})"
-                            class="h-6 w-6 cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                            class="h-6 w-6 cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             style="background-color: {{ $preset }};"
                             aria-label="{{ __('wirekit::Use :color', ['color' => $preset]) }}"
                         ></button>
@@ -545,7 +632,7 @@
                         <button
                             type="button"
                             @click="pickColor(recent)"
-                            class="h-6 w-6 cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-none focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                            class="h-6 w-6 cursor-pointer rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                             :style="recentStyle(recent)"
                             :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Use :color')) }}.replace(':color', recent)"
                         ></button>
@@ -564,3 +651,15 @@
 </div>
 @endif
 @endif
+
+{{-- One region, the error winning over the hint — the same shape every sibling
+     control renders, and the reason `$controlDescribedBy` names only one id. It sits
+     OUTSIDE the optimistic wrapper deliberately: the rejected-state outline in the
+     stylesheet selects that wrapper's own children, and the field's error paragraph is
+     not part of what the optimistic layer withdrew. --}}
+@if($hasError && $errorMessage)
+    <p id="{{ $pickerId }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+@elseif($hint)
+    <p id="{{ $pickerId }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+@endif
+</div>

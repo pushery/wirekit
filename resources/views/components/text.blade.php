@@ -75,7 +75,32 @@
 
     $truncateClasses = $truncate ? 'truncate' : '';
 
-    $lineClampClasses = $lineClamp ? "line-clamp-{$lineClamp}" : '';
+    // Literal arms rather than `line-clamp-{$lineClamp}`, and this is the whole prop.
+    // Tailwind scans SOURCE for complete class names and generates nothing for a name it
+    // never sees spelled out, so the interpolated form emitted an attribute with no rule
+    // behind it: DevTools showed `line-clamp-3`, the paragraph rendered at full height, and
+    // nothing was red anywhere — the class is absent from the compiled stylesheet, so both
+    // sides of the drift diff agreed on it. Measured 2026-09-06: the only `line-clamp-N`
+    // literal in the whole tree was `line-clamp-2` in product-card, which is the entire
+    // reason `:lineClamp="2"` appeared to work and every other value did not.
+    //
+    // A `match` (not the interpolation, and not a ternary) for the same reason
+    // sticky-panel and stack spell theirs out: a class the scanner can read has to be in
+    // the source as text, and a match arm is where this library puts it. Tailwind ships
+    // `line-clamp-1` … `line-clamp-6`, so the arms are the whole utility rather than an
+    // arbitrary cut, and a number outside it is reported instead of silently clamping
+    // nothing. `$lineClamp ? … : null` keeps the original truthiness gate exactly, so
+    // `null`, `0`, `'0'` and `false` still mean "no clamp".
+    $lineClampClasses = match ($lineClamp ? (string) $lineClamp : null) {
+        '1' => 'line-clamp-1',
+        '2' => 'line-clamp-2',
+        '3' => 'line-clamp-3',
+        '4' => 'line-clamp-4',
+        '5' => 'line-clamp-5',
+        '6' => 'line-clamp-6',
+        null => '',
+        default => WireKit::validateProp('text', 'lineClamp', (string) $lineClamp, ['1', '2', '3', '4', '5', '6']),
+    };
 
     $classes = WireKit::resolveClasses('text', 'base', implode(' ', array_filter([
         'font-[family-name:var(--font-wk-sans)]',

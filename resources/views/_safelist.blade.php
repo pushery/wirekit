@@ -247,7 +247,7 @@
     duration-[var(--transition-wk-duration)]
     flex
     flex-col
-    focus-visible:outline-none
+    focus-visible:outline-hidden
     focus-visible:ring-[length:var(--ring-wk-width)]
     focus-visible:ring-[var(--color-wk-ring)]
     font-[number:var(--font-wk-body-weight)]

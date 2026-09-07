@@ -17,7 +17,7 @@ import { createFocusTrap } from '../utils/focus-trap.js';
  *
  * ⚠️ The failure that makes it worth a factory rather than a few attributes is asymmetric,
  * and asymmetry is why it looked fine to everyone who tried it with a mouse. The
- * `bg-black/50` backdrop blocks POINTERS from the page behind it. It does not block the
+ * scrim backdrop blocks POINTERS from the page behind it. It does not block the
  * keyboard. So focus walked on through controls the backdrop was covering — visible to
  * nobody, operable by exactly the people who cannot see where focus went.
  *

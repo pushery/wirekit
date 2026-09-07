@@ -16,7 +16,15 @@
      this placeholder by name, so it could match nothing in any state and
      never fired once. Nothing failed — a loader that never runs looks exactly
      like one with nothing to do. `PublicCssApiDriftTest` now fails the build
-     on a comment here that names a class no component emits. --}}
+     on a comment here that names a class no component emits.
+
+     ⚠️ The signal a host should aim at is `data-wk-chart`, and this placeholder
+     deliberately does NOT carry it. Every rendered chart emits it with the
+     active library as its value; nothing renders here, so a lazy-loader firing
+     on this element would fetch a chart library for a chart that was never
+     configured — the exact cost the deferral existed to avoid. The absence is
+     part of the contract rather than an omission, and
+     `ChartMarkerAttributeTest` holds both halves. --}}
 @php
     $tag = $inline ?? false ? 'span' : 'div';
 @endphp

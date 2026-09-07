@@ -133,8 +133,18 @@
         @endif
     </span>
 
-    {{-- Optional sparkline via chart component --}}
-    @if($trend !== null)
+    {{-- Optional sparkline via chart component.
+
+         ⚠️ The SLOT decides, not `trend` — and `trend` alone used to. `trend` names
+         no glyph anywhere in this component: it opens this box and nothing else, so
+         `<x-wirekit::ticker trend="up" />` with no slot emitted a 2rem-tall element
+         announced as an image called "Trend visualization" with nothing inside it.
+         That is the failure the comment above the <article> already names one screen
+         up — a name that resolves to an empty element is worse than no name, because
+         assistive technology announces it and then has nothing to say — applied to
+         the label and not to this. Twenty-two blueprint previews were passing `trend`
+         self-closing and getting exactly that. --}}
+    @if($trend !== null && $slot->isNotEmpty())
         <span role="img" aria-label="{{ __('wirekit::Trend visualization') }}" class="h-8 w-full">
             {{ $slot }}
         </span>

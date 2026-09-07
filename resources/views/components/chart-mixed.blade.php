@@ -79,9 +79,41 @@
         'wk-chart-mixed',
         $scope,
     );
+
+    // ⚠️ A caller's accessible name has to reach the INNER chart, because that is
+    // the element carrying `role="img"`. On this wrapper it sits on a role-less
+    // `<div>` — ARIA `generic`, where naming is PROHIBITED (axe
+    // `aria-prohibited-attr`) — so assistive technology dropped it and the chart
+    // announced its own generic fallback instead. A mixed chart paints to a canvas
+    // no reader can inspect, so that one word was the whole of what it said, and
+    // `aria-label`, the attribute a developer reaches for to fix exactly that, was
+    // the attribute being discarded. Worse for the developer: chart.blade.php's
+    // debug warning gates on `! $attributes->has('aria-label')`, which was ALWAYS
+    // true here, so the package told them to pass a label they had just passed.
+    //
+    // Same defect and same remedy as `sparkline.blade.php`. Those two are the whole
+    // class: they are the only views in the package that wrap the class-based chart
+    // rather than being it, so they are the only ones that can swallow its name.
+    //
+    // Forwarded as an attribute bag rather than as named props: the chart is a
+    // CLASS-based component, so an attribute it does not declare flows into its
+    // bag, and a bound `:attributes` is the same path an echoed bag compiles to.
+    // Empty values are filtered out so the chart's own `__('wirekit::Chart')`
+    // fallback still applies when no name was given — the decision about what an
+    // unlabeled chart should announce stays where it is made.
+    $chartAriaAttributes = new \Illuminate\View\ComponentAttributeBag(
+        array_filter(
+            $attributes->only(['aria-label', 'aria-labelledby'])->getAttributes(),
+            static fn ($value) => filled($value),
+        ),
+    );
+
+    // Stripped from the wrapper so the name is not ALSO emitted where it is
+    // prohibited; the wrapper keeps every other attribute the caller passed.
+    $mixedAttributes = $attributes->except(['aria-label', 'aria-labelledby']);
 @endphp
 
-<div {{ $attributes->merge(['style' => 'width: 100%; min-width: 0; display: block;'])->class([$rootClass]) }} >
+<div {{ $mixedAttributes->merge(['style' => 'width: 100%; min-width: 0; display: block;'])->class([$rootClass]) }} >
     {{--
         Explicit `width: 100%; min-width: 0; display: block;` so the
         wrapper reliably resolves its width inside ANY parent context.
@@ -107,5 +139,6 @@
         :inline="$inline"
         :replayable="$replayable"
         :library="$library"
+        :attributes="$chartAriaAttributes"
     />
 </div>

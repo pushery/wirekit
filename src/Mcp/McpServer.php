@@ -14,7 +14,8 @@ namespace Pushery\WireKit\Mcp;
  *
  * Exposes read-only tools sourced from the shipped catalog:
  * `search_components`, `list_components`, `get_component`,
- * `get_component_examples`, `get_component_accessibility`, `get_tokens`. No
+ * `get_component_examples`, `get_component_accessibility`, `get_tokens`,
+ * `get_conventions`, `list_recipes`, `get_recipe`, `list_presets`, `get_preset`. No
  * write tools and no network —
  * everything it serves ships in the Packagist tarball, so a developer-hosted
  * local server is always version-matched to their installed WireKit.
@@ -143,6 +144,48 @@ final class McpServer
                 'description' => 'List every WireKit design token (the --*-wk-* CSS variables) as name → value pairs.',
                 'inputSchema' => ['type' => 'object', 'properties' => (object) []],
             ],
+            [
+                'name' => 'list_recipes',
+                'description' => 'List the WireKit recipe library — the composed page shapes (documentation reader, marketing landing page, KPI strip, on-page TOC and the rest) that `wirekit:make` scaffolds into a project as real Blade. Ask for this before assembling a whole page out of individual components: if one of these already is the page you were about to build, scaffolding it is a command rather than an afternoon.',
+                'inputSchema' => ['type' => 'object', 'properties' => (object) []],
+            ],
+            [
+                'name' => 'get_recipe',
+                'description' => 'Get one recipe in full, including the Blade source the scaffold writes — so you can read the composition before running the command, or adapt it inline instead of scaffolding.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'name' => ['type' => 'string', 'description' => 'The recipe name, e.g. "on-page-toc" — see list_recipes.'],
+                    ],
+                    'required' => ['name'],
+                ],
+            ],
+            [
+                'name' => 'list_presets',
+                'description' => 'List the bundled WireKit theme presets with the command that applies each one. A preset is applied by running a command, never by hand-writing tokens — reach for this before proposing a palette of your own.',
+                'inputSchema' => ['type' => 'object', 'properties' => (object) []],
+            ],
+            [
+                'name' => 'get_preset',
+                'description' => 'Get one theme preset with the exact CSS custom properties `wirekit:theme` appends to app.css, light and dark. Read from the same registry the command writes from, so it describes the version installed rather than a copy of it.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'key' => ['type' => 'string', 'description' => 'The preset key, e.g. "aurora" or "brutalist" — see list_presets.'],
+                    ],
+                    'required' => ['key'],
+                ],
+            ],
+            [
+                'name' => 'get_conventions',
+                'description' => 'Get the house rules for authoring WireKit markup — the conventions that decide whether generated code passes this project\'s guards or fails them. Ask for this ONCE before writing any Blade, and before reaching for a Tailwind palette class, a `dark:` prefix, a hand-written color, an outer margin or an icon sized with `h-N w-N`: every one of those is rejected here, and the prop list you get from `get_component` does not say so. Pass `detailed` for the full authoring ruleset instead of the entry-point summary.',
+                'inputSchema' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'detailed' => ['type' => 'boolean', 'description' => 'Return the full authoring ruleset rather than the short entry point (default false).'],
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -165,8 +208,65 @@ final class McpServer
             'get_component_examples' => $this->getComponentExamplesResult($id, is_string($args['name'] ?? null) ? $args['name'] : ''),
             'get_component_accessibility' => $this->getComponentAccessibilityResult($id, is_string($args['name'] ?? null) ? $args['name'] : ''),
             'get_tokens' => $this->toolResult($id, $this->catalog->tokens()),
+            'list_presets' => $this->toolResult($id, $this->catalog->presets()),
+            'get_preset' => $this->getPresetResult($id, is_string($args['key'] ?? null) ? $args['key'] : ''),
+            'list_recipes' => $this->toolResult($id, $this->catalog->recipes()),
+            'get_recipe' => $this->getRecipeResult($id, is_string($args['name'] ?? null) ? $args['name'] : ''),
+            'get_conventions' => $this->getConventionsResult($id, ($args['detailed'] ?? false) === true),
             default => $this->error($id, -32602, "Unknown tool: {$name}"),
         };
+    }
+
+    /** @return array<string, mixed> */
+    private function getPresetResult(int|string|null $id, string $key): array
+    {
+        $preset = $this->catalog->preset($key);
+
+        // The same unknown-name shape the rest of the per-item tools use.
+        if ($preset === null) {
+            return $this->ok($id, [
+                'content' => [['type' => 'text', 'text' => "Unknown preset: {$key}"]],
+                'isError' => true,
+            ]);
+        }
+
+        return $this->toolResult($id, $preset);
+    }
+
+    /** @return array<string, mixed> */
+    private function getRecipeResult(int|string|null $id, string $name): array
+    {
+        $recipe = $this->catalog->recipe($name);
+
+        // The same unknown-name shape every other per-item tool uses. An agent that learned
+        // one error shape should not have to learn another for recipes.
+        if ($recipe === null) {
+            return $this->ok($id, [
+                'content' => [['type' => 'text', 'text' => "Unknown recipe: {$name}"]],
+                'isError' => true,
+            ]);
+        }
+
+        return $this->toolResult($id, $recipe);
+    }
+
+    /** @return array<string, mixed> */
+    private function getConventionsResult(int|string|null $id, bool $detailed): array
+    {
+        $conventions = $this->catalog->conventions($detailed);
+
+        // An absent file is reported rather than answered around. The two documents ship
+        // in the tarball, so this arm means the installation is incomplete — and a tool
+        // that returned an empty string here would teach an agent that WireKit has no
+        // conventions, which is the most expensive wrong answer it could give.
+        if ($conventions === null) {
+            return $this->ok($id, [
+                'content' => [['type' => 'text', 'text' => 'The conventions document is missing from this installation.']],
+                'isError' => true,
+            ]);
+        }
+
+        return $this->toolResult($id, $conventions);
     }
 
     /** @return array<string, mixed> */

@@ -17,14 +17,69 @@
  *
  * Numeric input:
  *   data-target="10000"        → animates 0 → 10,000
- *   data-target="$1,250.50"    → animates 0 → 1,250.50, suffix "$" / "," preserved as-is
- *   data-target="42%"          → animates 0 → 42, suffix "%" appended
+ *   data-target="$1,250.50"    → animates 0 → $1,250.50 — the `$` returns to the
+ *                                side it came from, the grouping is re-applied
+ *   data-target="42%"          → animates 0 → 42%
  *
- * The plugin extracts numerics with a regex; non-numeric prefix/suffix
- * is preserved verbatim. toLocaleString() formats the in-flight value
- * so thousand-separators appear during animation.
+ * The component resolves the machine value, the prefix, the suffix, the decimal
+ * count and the locale in PHP, where the application locale is known, and hands
+ * them over on `data-target-value`, `data-target-prefix`, `data-target-suffix`,
+ * `data-target-decimals` and `data-locale`. `data-target` stays the display
+ * string, because that is the documented handle a page uses to find a stat and
+ * replay it.
+ *
+ * A hand-mounted plugin — the shape in the usage block above — has none of those
+ * and falls back to reading the display string with the grammar it is written
+ * in: `,` groups, `.` separates decimals, and the browser's own preference
+ * formats the result.
  */
 import { prefersReducedMotion } from '../utils/motion.js';
+
+/**
+ * Split a display string into the number, the pieces around it, and how many
+ * decimals it shows.
+ *
+ * Only the hand-mount path reaches this — the component supplies all four from
+ * PHP. The split is by POSITION rather than by class, which is the half that was
+ * wrong in every locale including English: the old form stripped digits out and
+ * concatenated everything left over AFTER the number, so `$1,250.50` settled as
+ * `1250.50$`.
+ */
+function parseCounterTarget(target) {
+    const firstDigit = /\d/.exec(target);
+
+    if (!firstDigit) {
+        // Nothing to count to. The text is kept as the suffix so a value like
+        // "N/A" still renders its own characters rather than disappearing.
+        return { value: 0, prefix: '', suffix: target, decimals: 0 };
+    }
+
+    let start = firstDigit.index;
+    // A sign directly in front of the first digit belongs to the number, not to
+    // the prefix — otherwise a negative delta counts upward.
+    if (start > 0 && (target[start - 1] === '-' || target[start - 1] === '+')) {
+        start -= 1;
+    }
+
+    let end = target.length;
+    while (end > 0 && !/\d/.test(target[end - 1])) {
+        end -= 1;
+    }
+
+    // No locale spells a decimal separator with whitespace, so every kind of it
+    // groups — including the narrow no-break space fr and ru use.
+    const core = target.slice(start, end).replace(/[\s\u00a0\u202f,]/g, '');
+    const value = Number.parseFloat(core);
+    const point = core.lastIndexOf('.');
+
+    return {
+        value: Number.isFinite(value) ? value : 0,
+        prefix: target.slice(0, start),
+        suffix: target.slice(end),
+        decimals: point === -1 ? 0 : core.length - point - 1,
+    };
+}
+
 export default () => ({
     value: '0',
     // animating: true while counter is running (used by descriptionDeferred Option A
@@ -35,19 +90,43 @@ export default () => ({
     progress: 1,
 
     init() {
-        const target = this.$root.dataset.target ?? '0';
+        const data = this.$root.dataset ?? {};
+        const target = data.target ?? '0';
+        const fallback = parseCounterTarget(String(target));
 
-        const numeric = parseFloat(String(target).replace(/[^\d.-]/g, '')) || 0;
-        const suffix = String(target).replace(/[\d.,\s-]/g, '');
+        // The component's own resolution wins wherever it is present. It is
+        // present as one unit — `data-target-value` is written on every rendered
+        // stat — so a single flag decides which side of this reads, rather than
+        // five independent `??`s that could mix a resolved value with a guessed
+        // prefix.
+        const supplied = Number(data.targetValue);
+        const resolved = data.targetValue !== undefined && data.targetValue !== '' && Number.isFinite(supplied);
 
-        // Format helper — used both for the reduced-motion snap and for
-        // the in-flight animation tick. Keeps display consistent (locale-
-        // formatted thousands-separators + suffix preservation) regardless
-        // of which path resolves the value.
-        const formatValue = (current) => {
-            const rounded = Number.isInteger(numeric) ? Math.round(current) : current.toFixed(2);
-            return (typeof rounded === 'number' ? rounded.toLocaleString() : rounded) + suffix;
-        };
+        const numeric = resolved ? supplied : fallback.value;
+        const prefix = resolved ? (data.targetPrefix ?? '') : fallback.prefix;
+        const suffix = resolved ? (data.targetSuffix ?? '') : fallback.suffix;
+        const decimals = resolved ? (Number(data.targetDecimals) || 0) : fallback.decimals;
+
+        // The APPLICATION's locale, not the browser's. `toLocaleString()` with no
+        // argument reads the reader's own preference, so a German dashboard
+        // grouped its revenue the English way for a reader on an English laptop —
+        // beside labels the same component had just translated correctly.
+        // `undefined` is the hand-mount fallback and is what `Intl` reads as "use
+        // the browser's own preference".
+        const numberFormat = new Intl.NumberFormat(data.locale || undefined, {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        });
+
+        // Format helper — used both for the reduced-motion snap and for the
+        // in-flight animation tick, so the two paths cannot disagree.
+        //
+        // The prefix goes back on the LEADING side. Concatenating both onto the
+        // end is what made `$1,250.50` settle as `1250.50$`, in every locale.
+        // And the decimal count comes from the display string rather than from
+        // the float, because 1250.5 and "1,250.50" are the same number written to
+        // two different precisions and the reader chose the second one.
+        const formatValue = (current) => prefix + numberFormat.format(current) + suffix;
 
         // Reduced-motion shortcut: snap to target immediately, no animation.
         // Both `animating` and `progress` resolve to settled state for SR/CLS contract.

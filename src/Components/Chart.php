@@ -8,6 +8,7 @@ use Illuminate\View\Component;
 use Illuminate\View\View;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Charts\TypeNotSupportedException;
+use Pushery\WireKit\Contracts\ChartAdapter;
 use RuntimeException;
 
 /**
@@ -24,6 +25,19 @@ final class Chart extends Component
     public array $chartConfig = [];
 
     public string $alpineComponent = '';
+
+    /**
+     * The active adapter's stable library identifier — `apexcharts`, `chartjs`,
+     * or a developer-registered slug. Emitted as the value of `data-wk-chart`.
+     *
+     * Deliberately {@see ChartAdapter::name()} and not
+     * {@see ChartAdapter::alpineComponent()}: the interface documents `name()`
+     * as stable across patch releases because developer config depends on it,
+     * which is exactly the promise a host's lazy-loader needs. The factory name
+     * carries no such promise — renaming it is not a breaking change from the
+     * package's side, and a selector built on it stops matching in silence.
+     */
+    public string $chartLibrary = '';
 
     /** Mount element: 'canvas' (Chart.js) or 'div' (ApexCharts). */
     public string $mountElement = 'canvas';
@@ -204,6 +218,7 @@ final class Chart extends Component
 
         $this->chartConfig = array_merge($normalized, ['options' => $mergedOptions]);
         $this->alpineComponent = $adapter->alpineComponent();
+        $this->chartLibrary = $adapter->name();
         $this->mountElement = $adapter->rendersTo();
     }
 

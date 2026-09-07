@@ -372,6 +372,16 @@ export default function wirekitSortable(config = {}) {
                 this._release(item);
                 this._say(this._messages.canceled, back + 1, this._items().length);
 
+                // The same re-insertion as the arrow branch below, so the same
+                // reason: a browser can drop focus when a focused node is
+                // re-inserted. Escape is the ONLY way out of a keyboard reorder,
+                // which makes the loss here the more punishing of the two — a
+                // reader who backs out of a move lands on `<body>` and has to tab
+                // the whole list again to reach the card they decided NOT to
+                // move, so abandoning costs more than finishing. WCAG 2.4.3.
+                // A no-op wherever the browser kept focus on the node.
+                item.focus();
+
                 return;
             }
 
