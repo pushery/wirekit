@@ -15,6 +15,7 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/carousel/
  */
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
+import { pauseWhileHidden } from '../utils/page-visibility.js';
 export default function wirekitCarousel(config = {}) {
     return {
         current: 0,
@@ -39,6 +40,7 @@ export default function wirekitCarousel(config = {}) {
             this.total = this._slides.length;
 
             this._watchSlides();
+            this._watchVisibility();
 
             // Autoplay is motion the reader did not ask for, so it must not start
             // for someone who asked for less of it. This is a real runtime check,
@@ -83,6 +85,8 @@ export default function wirekitCarousel(config = {}) {
 
         destroy() {
             this._stopTimer();
+            this._visibility?.stop();
+            this._visibility = null;
 
             // Disconnect explicitly. An observer that outlives its element keeps
             // firing into a dead Alpine scope, and the callback then reads
@@ -247,6 +251,25 @@ export default function wirekitCarousel(config = {}) {
         resumeFromHover() {
             this._hoverPaused = false;
             if (this.playing) this._startTimer();
+        },
+
+        /**
+         * Pause the rotation while the tab is in the background.
+         *
+         * This is a correctness fix before it is a battery one. A backgrounded tab
+         * throttles a `setInterval` but does not stop it, so the carousel kept
+         * advancing through slides nobody could see — and the reader came back to
+         * whichever slide the clock had landed on rather than the one they left.
+         *
+         * `_restartTimer` rather than `_startTimer`, so returning to the tab honors
+         * the component's own reasons for being stopped: a paused carousel stays
+         * paused, and one the pointer is resting on stays put.
+         */
+        _watchVisibility() {
+            this._visibility = pauseWhileHidden({
+                onHide: () => this._stopTimer(),
+                onShow: () => this._restartTimer(),
+            });
         },
 
         _startTimer() {

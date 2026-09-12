@@ -42,7 +42,7 @@
     $seedNonce = \Pushery\WireKit\WireKit::cspNonce();
 @endphp
 <script
-    @if($seedNonce) nonce="{{ $seedNonce }}" @endif
+    @if($seedNonce)nonce="{{ $seedNonce }}"@endif
     data-wk-seed-key="{{ $seedKey }}"
     data-wk-seed-on="{{ $seedOn ? '1' : '0' }}"
     data-wk-seed-class-on="{{ $seedClassOn }}"

@@ -35,8 +35,9 @@
 /*
  * Registers the local system font under its own name with Roboto's
  * metrics, so the text painted before the swap occupies the same box as
- * the text painted after it. Measured against Arial; regenerate with
- * `python3 scripts/generate-font-fallbacks.py`.
+ * the text painted after it. Measured against Arial. The numbers are
+ * generated from the font file rather than chosen, and the generator is part
+ * of this package's build rather than something you run.
  */
 @font-face {
     font-family: 'Roboto Fallback';

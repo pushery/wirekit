@@ -34,10 +34,30 @@ final class FaqCollector
     private static array $pending = [];
 
     /**
+     * The container this buffer belongs to, so a stale one is never read.
+     *
+     * The buffer is process-global, and the class's own docblock explains why that is
+     * enough WITHIN one render: children push before their parent drains. Across renders it
+     * is not enough, and nothing reset it between them. An orphaned `faq-item` — rendered
+     * without a surrounding `faq`, which is a template mistake nothing reports — leaves its
+     * question in the buffer, and on a long-running server (Octane, a queue worker
+     * rendering views) the NEXT request's faq drains it and emits it as its own FAQPage
+     * schema. That is structured data describing an answer on somebody else's page, which
+     * is the exact policy violation this class exists to prevent.
+     *
+     * The container instance is the identity that changes between requests and cannot be
+     * recycled underneath us the way an object hash can. When it differs, the buffer
+     * belonged to a render that is over.
+     */
+    private static ?object $owner = null;
+
+    /**
      * Record one rendered question. Called by faq-item as it renders.
      */
     public static function push(string $question, string $answer): void
     {
+        self::forgetIfStale();
+
         $question = trim($question);
         $answer = trim($answer);
 
@@ -62,6 +82,8 @@ final class FaqCollector
      */
     public static function drain(): array
     {
+        self::forgetIfStale();
+
         $questions = self::$pending;
         self::$pending = [];
 
@@ -79,5 +101,24 @@ final class FaqCollector
     public static function reset(): void
     {
         self::$pending = [];
+        self::$owner = null;
+    }
+
+    /**
+     * Drop a buffer that belongs to an earlier request.
+     *
+     * Deliberately checked on READ and WRITE rather than cleared by a lifecycle hook. A
+     * `terminating` callback is registered once and, under Octane, is not re-registered on
+     * the next request — so the reset would work for one request and silently stop. Asking
+     * "does this buffer belong to me?" at the two places that touch it cannot go stale.
+     */
+    private static function forgetIfStale(): void
+    {
+        $current = function_exists('app') ? app() : null;
+
+        if (self::$owner !== $current) {
+            self::$pending = [];
+            self::$owner = $current;
+        }
     }
 }

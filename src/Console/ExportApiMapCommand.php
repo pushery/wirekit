@@ -349,9 +349,6 @@ class ExportApiMapCommand extends Command
     }
 
     /**
-     * @return array{id: string, count: int, items: array<int, array<string, string>>}
-     */
-    /**
      * The recipes live under `blueprints/`, and scanning `recipes/` found nothing anywhere.
      *
      * This group was empty even in a checkout of the package repository, where the sources
@@ -362,7 +359,7 @@ class ExportApiMapCommand extends Command
      *
      * The group id stays `recipes` — it is the name in the published manifest.
      *
-     * @return array<string, mixed>
+     * @return array{id: string, count: int, items: array<int, array<string, string>>}
      */
     private function recipesGroup(string $packageRoot): array
     {

@@ -85,9 +85,17 @@
     // Size scale: track width/height + knob offset distance
     // Knob diameter = track height minus 4px of padding
     $sizing = match ($size) {
-        'sm' => ['track' => 'w-8 h-4', 'knob' => 'w-3 h-3', 'translate' => 'peer-checked:translate-x-4'],
-        'lg' => ['track' => 'w-12 h-6', 'knob' => 'w-5 h-5', 'translate' => 'peer-checked:translate-x-6'],
-        default => ['track' => 'w-10 h-5', 'knob' => 'w-4 h-4', 'translate' => 'peer-checked:translate-x-5'],
+        // ⚠️ BOTH DIRECTIONS PER SIZE, and the RTL half is not decoration. A switch encodes
+        // off -> on as travel along the READING direction; that is the whole affordance. With
+        // only the positive form, an Arabic or Hebrew form mirrors around the control while the
+        // knob still starts at the left edge and runs right, so "on" points back at the start of
+        // the line. Nothing fails and nothing is logged — the control simply reads inverted.
+        //
+        // Written out per size rather than assembled, because Tailwind scans source TEXT for
+        // class names and a class built at runtime is never generated.
+        'sm' => ['track' => 'w-8 h-4', 'knob' => 'w-3 h-3', 'translate' => 'peer-checked:translate-x-4 rtl:peer-checked:-translate-x-4'],
+        'lg' => ['track' => 'w-12 h-6', 'knob' => 'w-5 h-5', 'translate' => 'peer-checked:translate-x-6 rtl:peer-checked:-translate-x-6'],
+        default => ['track' => 'w-10 h-5', 'knob' => 'w-4 h-4', 'translate' => 'peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5'],
     };
 
     // Wrapper styles: fixed-size positioning context for the (absolutely placed) track + knob
@@ -125,10 +133,14 @@
         'pointer-events-none',
     ]), $scope);
 
-    // Knob styles: a circle that slides from left to right when checked.
+    // Knob styles: a circle that slides from the inline start to the inline end when checked.
     // MUST be a direct sibling of .peer for peer-checked:* to resolve.
+    //
+    // `start-0.5`, not `left-0.5`: the anchor is the other half of the direction pair above,
+    // and repairing only the travel would leave the knob starting at the wrong edge and then
+    // running off it.
     $knobClasses = implode(' ', [
-        'absolute left-0.5 top-1/2 -translate-y-1/2',
+        'absolute start-0.5 top-1/2 -translate-y-1/2',
         'rounded-full',
         'bg-[var(--color-wk-bg-elevated)]',
         'shadow-[var(--shadow-wk-sm)]',
@@ -192,7 +204,6 @@
                 id="{{ $id }}"
                 name="{{ $name }}"
                 role="switch"
-                class="peer sr-only"
                 @if($fallbackAriaLabel) aria-label="{{ $fallbackAriaLabel }}" @endif
                 @if($optimisticConfig)
                     x-ref="control"
@@ -202,7 +213,10 @@
                 @endif
                 @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
                 @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
-                {{ $attributes->except(['id', 'name']) }}
+                {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
+                     caller's own class became a second class attribute and the browser kept
+                     only this one. --}}
+                {{ $attributes->except(['id', 'name'])->class(['peer', 'sr-only']) }}
             />
 
             {{-- Track: sibling of .peer, background color flips via peer-checked --}}
@@ -217,7 +231,13 @@
         </span>
 
         @if($label)
-            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
+@php
+    // Read, not consumed: a declared `required` prop would take the attribute out of the bag,
+    // and the bag is what delivers it to the native control. A bare `required` arrives as
+    // `true`.
+    $wkRequiredMarker = (bool) $attributes->get('required', false);
+@endphp
+            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @endif
     </label>
 

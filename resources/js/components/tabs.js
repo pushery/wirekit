@@ -38,18 +38,18 @@ export default function wirekitTabs(config = {}) {
 
         init() {
             // Seed from the server attribute when the template left `active` out,
-            // which it does exactly when the server drives the tab. See the note
-            // on the `x-data` attribute in tabs.blade.php: interpolating a value
-            // that changes per render makes every morph re-initialize this scope.
+            // which it does exactly when the server drives the tab — and the server's
+            // tab beats the prop-derived seed wherever both are present. It arrives as
+            // an attribute rather than in `x-data` for the reason spelled out on that
+            // attribute in tabs.blade.php: interpolating a value that changes per
+            // render makes every morph re-initialize this scope.
+            //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
             // here, but the ESM harness constructs each factory with a deliberately
             // barren stub — `test-tabs.mjs` passes `{ querySelectorAll }` and nothing
             // else, on purpose — and a factory that requires more than it uses turns
-            // that into a TypeError at init. Measured: one of 63 ESM scripts, red in
-            // CI and invisible to the PHP suite, which does not run them.
-            // The server's tab, when there is one, beats the prop-derived seed.
-            // It arrives as an attribute rather than in `x-data` for the reason
-            // spelled out on that attribute in tabs.blade.php.
+            // that into a TypeError at init. Measured on 2026-08-16: one of 63 ESM
+            // scripts, red in CI and invisible to the PHP suite, which never runs them.
             const seed = typeof this.$root?.getAttribute === 'function'
                 ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE)
                 : null;

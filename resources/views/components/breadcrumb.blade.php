@@ -49,6 +49,22 @@
 
     // Link classes (for non-final items with href).
     $linkClasses = WireKit::resolveClasses('breadcrumb', 'link', implode(' ', [
+        // A breadcrumb link is 20px tall — its line box — and that is below the 24x24
+        // WCAG 2.5.8 AA minimum, with its siblings close enough that the spacing exception
+        // does not rescue it either. Measured on an iPhone 14 Pro viewport: 30x20 for
+        // "Atlas" in the stacked-shell blueprint.
+        //
+        // ⚠️ `wk-touch-target` was tried FIRST and is the wrong tool here, which is worth
+        // recording because it is the library's own answer everywhere else. It centers a
+        // 44x44 pseudo-element on the host, and inside a trail that already sits in a
+        // narrow scroll strip that hit box reaches past the strip's edge: the clipped-
+        // overflow detector went red on `detail-record` with the link 5px outside its
+        // clipping ancestor. The expander is for a control with room around it.
+        //
+        // Growing the LINE BOX instead adds four pixels of height and not one of width, so
+        // the trail keeps its density and nothing reaches past anything. `inline-flex`
+        // makes the min-height apply to an inline element at all.
+        'inline-flex items-center min-h-[1.5rem]',
         'text-[color:var(--color-wk-text-muted)]',
         'hover:text-[color:var(--color-wk-text)]',
         'hover:underline',
@@ -63,6 +79,35 @@
 
     // Current page: rendered as <span> with aria-current, slightly emphasized.
     $currentClasses = WireKit::resolveClasses('breadcrumb', 'current', 'text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)]', $scope);
+
+    // A control that belongs to the trail without being a step in it.
+    //
+    // ⚠️ THE SLOT SITS BESIDE THE `<ol>`, NOT INSIDE IT, AND THAT IS THE WHOLE POINT. The list
+    // is mirrored one-to-one into the BreadcrumbList JSON-LD below, where every entry is a
+    // `ListItem` — a position in the trail. A favorite toggle or a copy-link button is not a
+    // position, so putting it in the list would either publish a crumb that leads nowhere or
+    // force the schema loop to learn which children to skip.
+    //
+    // Reported from an adopting application that wanted exactly one `<button aria-pressed>`
+    // next to the trail: with nowhere to put it, it kept a FULL local copy of this component —
+    // including a second implementation of the JSON-LD — for the sake of one control.
+    //
+    // `self-center` rather than `items-center` on the nav — see the class list below.
+    //
+    // Written as an implode array rather than one string, which is what `$linkClasses` above
+    // does and is not only style: the drift inventory reads class literals out of an
+    // `implode(' ', [...])` and out of a `class="…"` attribute, not out of a bare
+    // `resolveClasses()` string argument. `self-center` is the catalog's first BARE use — the
+    // sidebar only has it behind a `group-data-` variant — so it compiled into a selector the
+    // reverse diff could not trace back to any source.
+    $actionsClasses = WireKit::resolveClasses('breadcrumb', 'actions', implode(' ', [
+        'inline-flex items-center shrink-0',
+        // The wrapper aligns ITSELF, so the nav keeps its default and a trail without this
+        // slot renders exactly as it did before.
+        'self-center',
+        'gap-[var(--padding-wk-x-xs)]',
+        'ms-[var(--padding-wk-x-sm)]',
+    ]), $scope);
 
     // Separator glyph between items. Decorative — aria-hidden so AT doesn't
     // read "chevron" or "slash" between crumb labels.
@@ -80,7 +125,7 @@
 @endphp
 
 <nav aria-label="{{ __('wirekit::Breadcrumb') }}" {{ $attributes->class([$navClasses]) }}>
-    <ol class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;">
+    <ol role="list" class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($items as $i => $item)
             @php
                 // Normalize item: accept ['label' => .., 'href' => .., 'icon' => ..] or just a string label.
@@ -126,6 +171,12 @@
             </li>
         @endforeach
     </ol>
+
+    @if(isset($actions))
+        {{-- Inside the nav landmark, outside the list: the control belongs to the trail, but it
+             is not a step in it and must never reach the structured data. --}}
+        <div class="{{ $actionsClasses }}">{{ $actions }}</div>
+    @endif
 </nav>
 
 {{-- Schema.org BreadcrumbList structured data (JSON-LD). — Delegated to <x-wirekit::structured-data> so

@@ -1,6 +1,10 @@
 {{-- optimistic-ui: candidate
      It already has a save seam with its own error and morph handling — the closest thing in the catalog to an optimistic component, and the one whose enablement needs the most care not to duplicate what it does. --}}
 @props([
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk.
+    'required' => false,
     'name' => null,
     'label' => null,
     'value' => '',
@@ -89,6 +93,7 @@
     $actions = BooleanProp::from($actions, true);
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
     $loading = BooleanProp::from($loading, false);
+    $required = BooleanProp::from($required, false);
 
     // A validation failure returns as re-rendered HTML with a filled bag, NOT as
     // a transport error — so the bag is where the message actually is. Read the
@@ -288,7 +293,7 @@
          would jump into place on open — a layout shift caused by a11y markup. --}}
     @if($label)
         <label for="{{ $controlId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
-            {{ $label }}
+            {{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
         </label>
     @endif
 
@@ -388,6 +393,7 @@
              documented rather than defined away. --}}
         <x-wirekit::partials.inline-edit-editor
             :id="$controlId"
+            :required="$required"
             :aria-label="$callerAriaLabel"
             :control="$control"
             :size="$size"

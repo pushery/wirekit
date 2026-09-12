@@ -148,7 +148,7 @@
          have quietly taken that landmark away for no reason at all. The label is
          now configurable, which makes the landmark better, not worse. --}}
     role="region"
-    aria-roledescription="carousel"
+    aria-roledescription="{{ __('wirekit::carousel') }}"
     aria-label="{{ $label }}"
     data-wk-carousel
     data-wk-carousel-orientation="{{ $orientationValue }}"
@@ -251,9 +251,17 @@
                      from init(). It is also the state that SURVIVES for a reader who asked
                      for less motion — autoplay never starts for them, so "Play" is not a
                      transient value there but the final one. --}}
-                aria-pressed="true"
+                {{-- No `aria-pressed`. The accessible NAME already carries the state — it
+                     swaps between "Play carousel" and "Pause carousel" — and a toggle that
+                     reports its state twice reports it ambiguously: "Pause carousel,
+                     pressed" leaves a reader to work out whether pressed means it is
+                     playing or that they have pressed pause. The two signals here also ran
+                     in OPPOSITE directions (`playing` gave `aria-pressed="false"`), so the
+                     name said one thing and the state said its inverse.
+
+                     Naming the action rather than the state is the media-button convention,
+                     and it is the one this button already followed. --}}
                 aria-label="{{ __('wirekit::Play carousel') }}"
-                :aria-pressed="playing ? 'false' : 'true'"
                 {{-- Resolved server-side: a literal here would be untranslatable AND invisible to every __() extractor. --}}
                 :aria-label="playing ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Pause carousel')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Play carousel')) }}"
                 data-wk-carousel-playpause

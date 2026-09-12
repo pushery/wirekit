@@ -18,8 +18,21 @@
     // visit — and it is what makes a live demo resettable, since a re-mount then
     // brings the bar back instead of reading a stored "dismissed" flag.
     'persist' => true,
-    // Accessible name for the region.
-    'label' => __('wirekit::Announcement'),
+    // Accessible name for the region — and the LANDMARK waits for it.
+    //
+    // ⚠️ THE DEFAULT USED TO BE `__('wirekit::Announcement')`, WHICH MADE EVERY BANNER THE
+    // SAME LANDMARK. `position` validates against top AND bottom, so a page with a promo bar
+    // above and a notice below is a first-class composition — and it produced two
+    // `role="region"` landmarks both called "Announcement". Somebody paging through landmarks
+    // meets two regions with one name and cannot tell them apart, which is the failure the
+    // house rule on named landmarks was written against — a component may not invent the name
+    // that turns itself into one. Eight siblings in this catalog already gate the role on
+    // `filled()`; this component was the outlier.
+    //
+    // Null, so the role is gated on the CALLER having supplied a name rather than on this file
+    // being able to invent one. The dismiss button still gets a composed name below, because a
+    // control needs one whether or not the banner is a landmark.
+    'label' => null,
     'scope' => null,
 ])
 
@@ -100,8 +113,7 @@
              a dismissible demo stays gone with no way to bring it back. --}}
         data-replayable="true"
     @endif
-    role="region"
-    aria-label="{{ $label }}"
+    @if(filled($label)) role="region" aria-label="{{ $label }}" @endif
     data-wk-announcement-banner
     data-position="{{ $positionValue }}"
     data-intent="{{ $intentValue }}"
@@ -119,7 +131,10 @@
             type="button"
             @click="dismiss()"
             data-wk-announcement-dismiss
-            aria-label="{{ __('wirekit::Dismiss') }} {{ $label }}"
+            {{-- Composed from the caller's name where there is one, and from the generic word
+                 where there is not: a control always needs a name, even when the banner
+                 deliberately is not a landmark. --}}
+            aria-label="{{ __('wirekit::Dismiss') }} {{ filled($label) ? $label : __('wirekit::Announcement') }}"
             class="ms-auto shrink-0 cursor-pointer rounded-[var(--radius-wk-sm)] p-[var(--padding-wk-x-xs)] opacity-70 transition-opacity duration-[var(--transition-wk-duration)] hover:opacity-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--color-wk-ring)]"
         >
             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">

@@ -209,6 +209,35 @@
     // Stripped from the wrapper so the name is not ALSO emitted where it is
     // prohibited; the wrapper keeps every other attribute the caller passed.
     $sparklineAttributes = $attributes->except(['aria-label', 'aria-labelledby']);
+
+    /*
+     * ⚠️ `aria-hidden="true"` ON THIS WRAPPER HIDES A FOCUSABLE DESCENDANT, AND THAT IS AN
+     * AXE `aria-hidden-focus` VIOLATION — measured on the nightly browser lane, serious.
+     *
+     * A sparkline is a chart, and a chart puts focusable things inside itself. When the peer
+     * library is missing it paints an advisory with a `<pre tabindex="0">` so the install
+     * command can be scrolled by keyboard; when ApexCharts is present it stamps `tabindex="0"`
+     * on its own `<svg>`. Either way the wrapper ends up hiding something a keyboard reader can
+     * still reach — which is the exact shape the rule exists for: focus lands on an element no
+     * screen reader will describe.
+     *
+     * `inert` is the missing half of the caller's intent. Marking a graphic decorative means it
+     * is not interactive either, and `inert` says so to the browser: nothing inside takes focus,
+     * so `aria-hidden` becomes a complete statement instead of half of one. It sits inside the
+     * support baseline (Chrome 102, Safari 15.5, Firefox 112 — all below the floor), so this is
+     * not progressive enhancement and needs no `@supports`.
+     *
+     * The caller keeps the choice. A sparkline that carries meaning of its own takes an
+     * `aria-label` and nothing here fires.
+     */
+    $sparklineIsDecorative = filter_var(
+        $sparklineAttributes->get('aria-hidden'),
+        FILTER_VALIDATE_BOOLEAN,
+    );
+
+    if ($sparklineIsDecorative && ! $sparklineAttributes->has('inert')) {
+        $sparklineAttributes = $sparklineAttributes->merge(['inert' => true]);
+    }
 @endphp
 
 {{--

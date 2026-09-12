@@ -53,6 +53,18 @@ export default function wirekitAppShell(config = {}) {
          */
         _opener: null,
 
+        /*
+         * The drawer's settle wait, both halves.
+         *
+         * `_armTimer` was already reachable from `destroy()` and was the only half being
+         * cleaned up; the `transitionend` handler lived in a closure, so nothing outside the
+         * settle could release it. Declared here with the other handles because a handle
+         * that only appears inside a method is one nobody reading the teardown knows to
+         * look for.
+         */
+        _settlePanel: null,
+        _onSettle: null,
+
         /**
          * Whether the navigation is CURRENTLY a drawer.
          *
@@ -114,6 +126,20 @@ export default function wirekitAppShell(config = {}) {
             });
         },
 
+        /**
+         * Drop the drawer's `transitionend` handler, from wherever the wait ended.
+         *
+         * Idempotent: called by the settle itself, and by `destroy()` when the settle never
+         * came. Only one of those is guaranteed to happen.
+         */
+        _releaseSettleListener() {
+            if (this._onSettle) {
+                this._settlePanel?.removeEventListener?.('transitionend', this._onSettle);
+                this._onSettle = null;
+                this._settlePanel = null;
+            }
+        },
+
         destroy() {
             // Release before dropping the reference. A Livewire navigation replaces the
             // shell, and a trap still armed over a detached node keeps its document-level
@@ -131,6 +157,8 @@ export default function wirekitAppShell(config = {}) {
                 clearTimeout(this._armTimer);
                 this._armTimer = null;
             }
+
+            this._releaseSettleListener();
 
             if (this._onViewportChange) {
                 this._viewport?.removeEventListener?.('change', this._onViewportChange);
@@ -265,15 +293,64 @@ export default function wirekitAppShell(config = {}) {
             // `transitionend` does not fire for a zero-duration transition, for
             // `prefers-reduced-motion`, or when the browser coalesces the frame. Whichever
             // comes first wins; `activate` is idempotent against its own guard.
-            const settle = () => {
-                panel.removeEventListener?.('transitionend', settle);
+            // Both halves are held on `this`, and only the timer was. `destroy()` cleared
+            // the timeout and left the `transitionend` on the panel — so a shell torn down
+            // WHILE the drawer animates (a Livewire navigation is the ordinary case; the
+            // window is the whole 350 ms) kept a listener on a detached node that then ran
+            // `activate()`, arming a focus trap over markup nobody owns.
+            //
+            // A handle that lives only in a closure cannot be released from anywhere else,
+            // which is why the timer — the half that WAS reachable — is the half that was
+            // being cleaned up.
+            this._settlePanel = panel;
+            this._onSettle = (event) => {
+                // ⚠️ `transitionend` BUBBLES, and this panel is full of things that transition.
+                // Every link inside it animates its color on hover, the toggle animates its
+                // own transform — and each of those used to arrive here and arm the trap
+                // early, in the middle of the drawer sliding in. That is the exact moment the
+                // long comment above proves focus lands nowhere.
+                //
+                // The sibling already had this right: `app-rail` filters on
+                // `propertyName === 'width' && target === $el` and says why in one line —
+                // "this element also transitions colors, and every one of those would
+                // otherwise publish the names early".
+                //
+                // ⚠️ AND THE PROPERTY LIST IS BOTH OF THE PANEL'S OWN, NOT JUST `transform`.
+                // This read "so `transform` is its settle", which is a reasonable reading of
+                // `transition-[transform,visibility]` and is not what the browser does.
+                // Measured at 393px in Blink, on all four application-shell blueprints: the
+                // ONLY `transitionend` this panel emits is `visibility` at ~152 ms. No
+                // `transform` event arrives at all, so the narrow filter discarded the one
+                // event there was and left the 350 ms fallback as the whole arming path.
+                //
+                // What that cost is not subtle: for 350 ms after the drawer opens, focus sits
+                // on `<body>`, so an Escape aimed at the focused element never reaches the
+                // drawer and the panel stays open. The engine sweep caught it as 19
+                // `escape-does-not-close` findings at phone width.
+                //
+                // `target === panel` is what does the anti-bubbling work and it is kept: the
+                // backdrop's own `opacity` event was measured arriving 9 ms later from a
+                // `div`, and a link's color transition bubbles from a child. Neither is the
+                // panel.
+                //
+                // ⚠️ AND THE TIMER PATH MUST SURVIVE THE FILTER. `setTimeout(this._onSettle, …)`
+                // calls this with NO event, and that call is the whole fallback for a
+                // zero-duration transition, for `prefers-reduced-motion`, and for a coalesced
+                // frame. Filtering an absent event would leave exactly those readers with a
+                // drawer that never traps focus — the failure this settle exists to prevent,
+                // reintroduced by its own fix.
+                if (event && (! ['transform', 'visibility'].includes(event.propertyName) || event.target !== panel)) {
+                    return;
+                }
+
+                this._releaseSettleListener();
                 clearTimeout(this._armTimer);
                 this._armTimer = null;
                 activate();
             };
 
-            panel.addEventListener?.('transitionend', settle);
-            this._armTimer = setTimeout(settle, 350);
+            panel.addEventListener?.('transitionend', this._onSettle);
+            this._armTimer = setTimeout(this._onSettle, 350);
         },
 
         /**

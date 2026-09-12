@@ -26,6 +26,15 @@
 
     $separated = BooleanProp::from($separated, false);
 
+    // One id for the heading, so the group can be named BY it rather than beside it.
+    //
+    // `DomId::unique` and NOT `Str::random` — the shell records what that costs: a random id
+    // is minted afresh on every render, so inside a Livewire morph or a `wire:poll` region
+    // the `aria-labelledby` and the `id` stop naming each other while both stay perfectly
+    // well-formed. `dropdown` and `progress` each shipped that defect. The counted fallback
+    // is unique by construction, so two rails on one page still get two ids.
+    $labelId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-rail-group-');
+
     $classes = WireKit::resolveClasses('app-rail.group', 'base', implode(' ', [
         'flex flex-col gap-[2px]',
     ]), $scope);
@@ -59,9 +68,29 @@
     ]), $scope);
 @endphp
 
-<div role="group" @if($label) aria-label="{{ $label }}" @endif {{ $attributes->class([$classes, $separatorClasses]) }}>
-    @if($label)
-        <div class="{{ $labelClasses }}">{{ $label }}</div>
+{{-- ⚠️ THE ROLE IS GATED ON A NAME, and the sibling that decided this says why:
+     "Naming it unconditionally would push an empty group into the accessibility tree of
+     every plain accordion, which is noise rather than structure." A rail without headings
+     emitted one nameless group per cluster; that is the same noise, one component over.
+
+     ⚠️ AND THE NAME COMES FROM THE HEADING RATHER THAN FROM A SECOND COPY OF IT. This
+     carried `aria-label="{{ $label }}"` AND rendered the same string as a child. In the
+     rail's default mode that child is `sr-only`, so the group announced its name and then
+     contained it — the cost this catalog names in `app-rail/item`: "it gives the link a
+     second source of the same name, which a screen-reader user pays for twice."
+
+     `aria-labelledby` keeps the property the prop docblock above promises — the heading is
+     the group's accessible name in EVERY mode — while the string exists once. It needs no
+     knowledge of which mode the rail is in, which this component does not have. --}}
+<div
+    @if(filled($label))
+        role="group"
+        aria-labelledby="{{ $labelId }}"
+    @endif
+    {{ $attributes->class([$classes, $separatorClasses]) }}
+>
+    @if(filled($label))
+        <div id="{{ $labelId }}" class="{{ $labelClasses }}">{{ $label }}</div>
     @endif
     {{ $slot }}
 </div>

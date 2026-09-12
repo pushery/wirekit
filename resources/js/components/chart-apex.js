@@ -1,5 +1,5 @@
 import { resolveThemeColors, palette, resolveCssVarsDeep } from '../utils/chart-theme-colors.js';
-import { prefersReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 
 /**
  * Unified tooltip renderer for every ApexCharts type. Emits ApexCharts'
@@ -237,6 +237,11 @@ export default function wirekitApexChart(config) {
         _navCleanup: null,
         _darkModeObserver: null,
         _darkModeDebounce: null,
+
+        // The palette the chart is currently painted with. See the dark-mode observer:
+        // it fires on class mutations that have nothing to do with the theme, and this
+        // is what tells those apart from a real one.
+        _themeSignature: null,
         // The bounded retry for the first render, and the standing watch that
         // keeps the tab stops stripped through every later rebuild. Declared
         // here with the other handles so destroy() has a complete list to work
@@ -249,8 +254,11 @@ export default function wirekitApexChart(config) {
         // the wait is a chain of up to 31 frames, and a chain nobody can cancel
         // outlives the component it belongs to.
         _tooltipAnchorRaf: null,
+        // The unsubscribe for the live reduced-motion watch. Declared here with the
+        // other handles for the reason the comment above gives: a handle that only ever
+        // appears inside a method is one nobody reading the teardown knows to look for.
+        _motionCleanup: null,
         _manualColorIndices: new Set(),
-        // Focus-guard for the aria-hidden mount (see _setupFocusGuard).
 
         init() {
             // ApexCharts peer-dependency guard. WireKit ships only the
@@ -269,7 +277,7 @@ export default function wirekitApexChart(config) {
                 // Deduplicate the console.error so N apex charts on the same
                 // page emit ONE warning instead of N. The in-DOM fallback
                 // panel still renders per-chart (each chart needs its own
-                // visible advisory). (v2.4.0 R5 polish.)
+                // visible advisory).
                 if (typeof window !== 'undefined' && !window.__wirekit_apexcharts_missing_warned__) {
                     window.__wirekit_apexcharts_missing_warned__ = true;
                     console.error(
@@ -295,15 +303,67 @@ export default function wirekitApexChart(config) {
                     // what state the surrounding theme is in). Reads as a
                     // muted-yellow advisory panel on light backgrounds and
                     // adapts to dark mode via CSS color-scheme inheritance.
-                    mount.innerHTML = `
+                    // ⚠️ The panel goes into the mount, and the mount carries `aria-hidden`
+                    // (see _removeHiddenTabStop). A `role="alert"` inside an aria-hidden subtree
+                    // is never announced — the browser does not walk into it — so the one
+                    // message that exists to reach a reader when the chart cannot render was
+                    // reaching nobody. The attribute is lifted for as long as the fallback is
+                    // the only thing in there; the guard puts it back when a chart renders.
+                    mount.removeAttribute('aria-hidden');
+
+                    // Same host-width branch as the Chart.js panel, and for the same
+                    // reason: `sparkline` is in this adapter's supportedTypes(), so an
+                    // inline sparkline on the ApexCharts engine puts this panel in a 4rem
+                    // box. The Chart.js side was measured doing exactly that — a 19px-wide,
+                    // 975px-tall column of three characters per line inside a sentence.
+                    // This half is proven by forcing `window.ApexCharts` away in a probe
+                    // rather than by a preview, because the sample loads ApexCharts.
+                    // An empty mount can measure 0 — the panel is what will give it width —
+                    // so a bare `width > 0` test defaults to the FULL panel exactly where the
+                    // compact one is needed. Walk out to the nearest ancestor that has a
+                    // resolved width; that is the room the panel will actually get.
+                    const roomFor = (el) => {
+                        let n = el;
+                        while (n && n !== document.body) {
+                            const w = Math.round(n.getBoundingClientRect().width);
+                            if (w > 0) return w;
+                            n = n.parentElement;
+                        }
+                        return 0;
+                    };
+                    const availablePx = roomFor(mount);
+                    const compact = availablePx > 0 && availablePx < 240;
+                    mount.setAttribute('data-wk-chart-missing', compact ? 'compact' : 'full');
+
+                    mount.innerHTML = compact ? `
+                        <span role="alert"
+                              style="
+                                 display: inline-block;
+                                 max-width: 100%;
+                                 overflow: hidden;
+                                 text-overflow: ellipsis;
+                                 white-space: nowrap;
+                                 padding: 0 0.25rem;
+                                 border: 1px solid color-mix(in oklab, var(--color-wk-warning-text, #78350f) 40%, transparent);
+                                 border-radius: 0.25rem;
+                                 background: var(--color-wk-warning-bg, #fffbeb);
+                                 color: var(--color-wk-warning-text, #78350f);
+                                 font-family: system-ui, -apple-system, sans-serif;
+                                 font-size: 0.6875rem;
+                                 line-height: 1.4;
+                              ">
+                            <span aria-hidden="true">! ApexCharts missing</span>
+                            <span style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;">ApexCharts is not loaded. Install the apexcharts npm package and expose it on window.ApexCharts; the browser console carries the commands.</span>
+                        </span>
+                    ` : `
                         <div role="alert"
                              style="
                                 padding: 1rem 1.25rem;
-                                border: 1px solid rgba(180, 83, 9, 0.4);
-                                border-left: 4px solid rgb(180, 83, 9);
+                                border: 1px solid color-mix(in oklab, var(--color-wk-warning-text, #78350f) 40%, transparent);
+                                border-left: 4px solid var(--color-wk-warning-text, #b45309);
                                 border-radius: 0.375rem;
-                                background: rgba(254, 243, 199, 0.5);
-                                color: rgb(120, 53, 15);
+                                background: var(--color-wk-warning-bg, #fffbeb);
+                                color: var(--color-wk-warning-text, #78350f);
                                 font-family: system-ui, -apple-system, sans-serif;
                                 font-size: 0.8125rem;
                                 line-height: 1.5;
@@ -313,14 +373,14 @@ export default function wirekitApexChart(config) {
                             </div>
                             <p style="margin: 0 0 0.5rem 0;">
                                 WireKit's ApexCharts adapter glue is loaded, but the
-                                <code style="font-family: ui-monospace, monospace; font-size: 0.85em; padding: 0.05rem 0.25rem; background: rgba(255, 255, 255, 0.6); border-radius: 0.2rem;">apexcharts</code>
+                                <code style="font-family: ui-monospace, monospace; font-size: 0.85em; padding: 0.05rem 0.25rem; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.2rem;">apexcharts</code>
                                 npm package is missing or not exposed on
-                                <code style="font-family: ui-monospace, monospace; font-size: 0.85em; padding: 0.05rem 0.25rem; background: rgba(255, 255, 255, 0.6); border-radius: 0.2rem;">window.ApexCharts</code>.
+                                <code style="font-family: ui-monospace, monospace; font-size: 0.85em; padding: 0.05rem 0.25rem; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.2rem;">window.ApexCharts</code>.
                             </p>
                             <p style="margin: 0 0 0.5rem 0;">
                                 Install it and expose it globally:
                             </p>
-                            <pre style="margin: 0 0 0.5rem 0; padding: 0.625rem 0.75rem; background: rgba(255, 255, 255, 0.7); border-radius: 0.25rem; font-family: ui-monospace, monospace; font-size: 0.75rem; line-height: 1.5; overflow-x: auto;">npm install apexcharts
+                            <pre tabindex="0" style="margin: 0 0 0.5rem 0; padding: 0.625rem 0.75rem; outline-offset: 2px; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.25rem; font-family: ui-monospace, monospace; font-size: 0.75rem; line-height: 1.5; overflow-x: auto;">npm install apexcharts
 
 // resources/js/app.js
 import ApexCharts from 'apexcharts';
@@ -330,7 +390,7 @@ window.ApexCharts = ApexCharts;</pre>
                                 See <a href="https://apexcharts.com/license/"
                                        target="_blank"
                                        rel="noopener noreferrer"
-                                       style="color: rgb(120, 53, 15); text-decoration: underline;">apexcharts.com/license</a>
+                                       style="color: var(--color-wk-warning-text, #78350f); text-decoration: underline;">apexcharts.com/license</a>
                                 for terms (Community free under $2M USD revenue, Commercial above).
                             </p>
                         </div>
@@ -847,6 +907,28 @@ window.ApexCharts = ApexCharts;</pre>
             });
 
             // Cleanup on Livewire navigation (SPA mode).
+            // Reduced motion is a LIVE preference. It was read once at construction and
+            // never again, so a reader who turns motion down while the page is open kept
+            // every animation — and the OS preference is not even the common case: this
+            // library's own site-level toggle writes `data-reduce-motion` onto <html>,
+            // which a chart already on screen had no way to notice.
+            this._motionCleanup = watchReducedMotion((reduced) => {
+                if (! this.chart) {
+                    return;
+                }
+
+                // `false, false` — no redraw-with-animation, no series reset. Animating
+                // the switch to no-animation is the one transition nobody asked for, and
+                // resetting the series would replay the entrance this is turning off.
+                try {
+                    this.chart.updateOptions(
+                        { chart: { animations: { enabled: ! reduced } } },
+                        false,
+                        false
+                    );
+                } catch { /* defensive: the chart may be mid-teardown */ }
+            });
+
             this._navCleanup = () => this.destroy();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
 
@@ -993,6 +1075,23 @@ window.ApexCharts = ApexCharts;</pre>
                     const fontFamily = style.getPropertyValue('--font-wk-sans').trim()
                         || 'ui-sans-serif, system-ui, sans-serif';
 
+                    /*
+                     * Same gate as chart.js, for the same reason and against the same
+                     * defect: the observer only asks whether the mutated attribute was
+                     * `class`, and html/body carry many classes that say nothing about
+                     * the theme. Every one of them re-themed the config, re-resolved
+                     * every var() reference in it and updated the chart.
+                     *
+                     * Compared on the RESOLVED palette rather than on a `.dark` class,
+                     * so a preset switch that changes colors without touching that class
+                     * still goes through.
+                     */
+                    const signature = fontFamily + '|' + JSON.stringify(colors);
+                    if (signature === this._themeSignature) {
+                        return;
+                    }
+                    this._themeSignature = signature;
+
                     const themed = this._themeApexConfig(rawConfig, colors, fontFamily);
 
                     // Smooth transition — collapsed to instant
@@ -1072,7 +1171,7 @@ window.ApexCharts = ApexCharts;</pre>
                     //
                     // A uniform `tabindex="-1"` was the first version, chosen
                     // because one rule with no branches cannot be half-right.
-                    // It was wrong, and the sweep that now watches the console
+                    // It was wrong, and the check that now watches the console
                     // caught it: axe reports `nested-interactive` for a
                     // negative tabindex inside an interactive control, because
                     // assistive tech can still reach it. Silencing the tab stop
@@ -1186,6 +1285,10 @@ window.ApexCharts = ApexCharts;</pre>
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
                 this._navCleanup = null;
+            }
+            if (this._motionCleanup) {
+                this._motionCleanup();
+                this._motionCleanup = null;
             }
             if (this._wireStreamHandler) {
                 const eventName = this.$el?.dataset?.wireStreamEvent;

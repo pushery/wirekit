@@ -29,7 +29,11 @@
 
     <x-wirekit::cta variant="accent">
         <x-slot:title>Ready to ship?</x-slot:title>
-        <x-slot:lede>Install WireKit in two minutes — no credit card required.</x-slot:lede>
+        {{-- `description`, not `lede`. `hero` names this slot `lede` and `cta` names it
+             `description`, and Blade DISCARDS an unknown named slot silently — this line
+             rendered nothing at all, so a scaffolded landing page had a headline and a button
+             with the sentence between them missing. --}}
+        <x-slot:description>Install WireKit in two minutes — no credit card required.</x-slot:description>
         <x-slot:actions>
             <x-wirekit::button href="/signup" intent="neutral" surface="filled" size="lg">Get started free</x-wirekit::button>
         </x-slot:actions>

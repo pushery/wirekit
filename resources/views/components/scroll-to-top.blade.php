@@ -121,7 +121,6 @@
     x-transition:leave-start="opacity-100 translate-y-0"
     x-transition:leave-end="opacity-0 translate-y-2"
     @click="scrollToTop()"
-    type="button"
     {{-- aria-label via merge so a caller can override the default — a
          hardcoded attribute plus a separate $attributes bag renders a
          duplicate aria-label that the browser ignores (first wins).

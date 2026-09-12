@@ -26,15 +26,21 @@
     'options' => [],
     'value' => null,
     'size' => config('wirekit.components.combobox.size', 'md'),
-    // `??` rather than a `config(…, 'Select...')` fallback, and the difference is the
+    // `??` rather than a `config(…, 'Select…')` fallback, and the difference is the
     // whole point: a config default holds ONE string for every locale, so the literal
     // that used to sit in that second argument was unreachable to a translated app —
     // its only escape was publishing the config, which freezes the wording again. The
     // seam survives (an app may still pin its own word), and an untouched default now
     // resolves through the catalog, exactly as the sibling multi-select already does.
-    'placeholder' => config('wirekit.components.combobox.placeholder') ?? __('wirekit::Select...'),
+    'placeholder' => config('wirekit.components.combobox.placeholder') ?? __('wirekit::Select…'),
     'disabled' => false,
     'error' => null,
+    // `hint` — the one Form control with both `label` and `error` that did not have it. A
+    // caller writing `hint="Start typing to search"` got the string on the wrapper div as a
+    // stray HTML attribute: never displayed, never announced, and never reported, because
+    // Blade folds an undeclared prop into the attribute bag without complaint. Every sibling
+    // control has carried it for releases.
+    'hint' => null,
     // Accessible name for the combobox. Mirrors select / multi-select: a visible
     // `label` renders an associated x-wirekit::label (for={comboId}); `hideLabel`
     // keeps it in the DOM for assistive tech but visually hidden (compact
@@ -177,7 +183,12 @@
     // Merge a caller aria-describedby with our own error target into ONE attribute on
     // the input, so a caller description reaches the labelable control and
     // never collides with the error id as two attributes.
-    $ownDescribedBy = $showsError ? $errorId : null;
+    // The hint describes the control only while no error does — an error supersedes it, the
+    // same precedence input.blade.php uses, so the reader is never pointed at two messages.
+    $hintId = $comboId.'-hint';
+    $showsHint = $hint !== null && $hint !== '' && ! $showsError;
+
+    $ownDescribedBy = $showsError ? $errorId : ($showsHint ? $hintId : null);
     $callerDescribedBy = $attributes->get('aria-describedby');
     $describedBy = trim(((string) ($ownDescribedBy ?? '')).' '.((string) ($callerDescribedBy ?? '')));
     $describedBy = $describedBy !== '' ? $describedBy : null;
@@ -260,6 +271,11 @@
     $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'selected',
         'after' => '_syncQuery',
+        // The field's own error region. Without it the layer's generic "Could not save"
+        // is the only thing a listener hears, and it BEATS the specific message the server
+        // sent — the whole point of the arbitration is that a specific message wins, and it
+        // cannot run against a region nobody pointed at.
+        'errorRegion' => '#'.$errorId,
         'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -275,7 +291,11 @@
 
 <div class="space-y-1.5 min-w-0">
     @if($label)
-        <x-wirekit::label :for="$comboId" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
+             declaring it would pull `required` OUT of the bag, and the bag is what carries the
+             attribute to the native control below. A bare `required` lands in the bag as
+             `true`, so this reads it without consuming it. --}}
+        <x-wirekit::label :for="$comboId" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 <div
     x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ \Pushery\WireKit\Support\AlpinePayload::from($normalized) }}, listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }} })"
@@ -535,6 +555,8 @@
 
     @if($showsError)
         <p id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    @elseif($showsHint)
+        <p id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @if($optimisticConfig)

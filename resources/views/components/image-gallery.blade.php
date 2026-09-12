@@ -1,9 +1,19 @@
 {{-- optimistic-ui: n/a — client-only
      The thumbnails switch which image is shown. All of it happens in the browser. --}}
 @props([
+    // The empty state. `empty` REPLACES the body rather than sitting beside it: the screen a
+    // new user sees FIRST is the one with no data, and a single muted sentence can only say
+    // that nothing is here — it cannot say what to do about it, which is the whole job of that
+    // screen. `emptyText` is the default, so a caller that does not care changes nothing.
+    // Same shape as data-table, which is where the reasoning was first written down.
+    'emptyText' => __('wirekit::Nothing here yet'),
     // List of images: each an array with 'src' (required), 'alt' (required for a
-    // content image), and optional 'caption'. A plain string is treated as a src
-    // with an empty alt (decorative) — pass the array form for real content.
+    // content image), and optional 'caption' and 'full'. A plain string is treated
+    // as a src with an empty alt (decorative) — pass the array form for real content.
+    //
+    // 'full' is the address the LIGHTBOX loads, and it defaults to 'src'. A grid tile is a
+    // few hundred pixels wide with ten of them on a page; the zoom view is the whole screen.
+    // Serving one address to both is the compromise an image ladder exists to end.
     'images' => [],
     // Responsive grid column spec, forwarded to the grid component (e.g.
     // "2 md:3 lg:4"). Literal handling lives in grid — never interpolated here.
@@ -31,7 +41,6 @@
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
-    use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -44,33 +53,72 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $lightbox = BooleanProp::from($lightbox, true);
 
-    // Normalize each entry to ['src', 'alt', 'caption'].
+    // Normalize each entry to ['src', 'alt', 'caption', 'full'].
+    //
+    // ⚠️ `full` IS THE ZOOM'S ADDRESS, NOT A SECOND THUMBNAIL. A grid tile is a few hundred
+    // pixels wide and a page carries ten of them; the lightbox is the whole screen. That
+    // difference is the entire reason an image ladder exists, and with one address per image a
+    // developer has to pick a side: the small step makes the zoom blurry, the large one makes
+    // every tile in a feed pay the zoom's resolution. Reported from an application that chose
+    // the large one and wrote the compromise into its own template.
+    //
+    // Absent — or present and empty — it falls back to `src`, so every gallery shipping today
+    // renders byte-identically. `??` alone would NOT do that: an entry carrying `'full' => ''`
+    // is a developer's own empty variable, and honoring it would point the lightbox at nothing.
     $items = [];
     foreach ($images as $img) {
         if (is_array($img)) {
+            $src = (string) ($img['src'] ?? '');
+            $full = trim((string) ($img['full'] ?? ''));
+
             $items[] = [
-                'src' => (string) ($img['src'] ?? ''),
+                'src' => $src,
                 'alt' => (string) ($img['alt'] ?? ''),
                 'caption' => isset($img['caption']) ? (string) $img['caption'] : null,
+                'full' => $full === '' ? $src : $full,
             ];
         } else {
-            $items[] = ['src' => (string) $img, 'alt' => '', 'caption' => null];
+            $items[] = ['src' => (string) $img, 'alt' => '', 'caption' => null, 'full' => (string) $img];
         }
     }
 
-    $galleryId = 'wk-gallery-'.Str::random(6);
+    // The lightbox normalizes its own entries on `src`, so the zoom address is handed over
+    // under that name. The grid below keeps reading `$item['src']`, which is the thumbnail —
+    // mapping here rather than teaching the lightbox a second key keeps ITS contract at one
+    // address per slide, which is right for a component that only ever shows the large one.
+    $lightboxItems = array_map(
+        static fn (array $item): array => array_replace($item, ['src' => $item['full']]),
+        $items,
+    );
+
+    // Counted rather than random: a fresh id on every render is a fresh Alpine component to
+    // a Livewire morph, so an unrelated update discarded the open lightbox and the scroll
+    // position. See DomId::unique()'s docblock — it exists for exactly this.
+    $galleryId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-gallery-');
     $count = count($items);
 
     $wrapperClasses = WireKit::resolveClasses('image-gallery', 'base', '', $scope);
 @endphp
 
-@if($lightbox && $count > 0)
+@if($count === 0)
+    {{-- The empty state comes FIRST, before either render branch: both of them produce a grid
+         with nothing in it, which reads as a broken layout rather than as "no images yet". The
+         `empty` slot replaces the sentence entirely — see data-table, where the reasoning for
+         that shape was first written down. --}}
+    <div id="{{ $galleryId }}" {{ $attributes->class([$wrapperClasses, 'flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center']) }}>
+        @isset($empty)
+            {{ $empty }}
+        @else
+            <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
+        @endisset
+    </div>
+@elseif($lightbox && $count > 0)
     {{-- The gallery IS a lightbox instance: the thumbnail buttons live in the
          lightbox's default slot, so they share its Alpine scope and call
          openAt(i) directly. The dialog / focus-trap / keyboard / captions all
          come from the shared <x-wirekit::lightbox> component — the gallery no
          longer carries its own overlay markup. --}}
-    <x-wirekit::lightbox :name="$galleryId" :items="$items" {{ $attributes->class([$wrapperClasses]) }}>
+    <x-wirekit::lightbox :name="$galleryId" :items="$lightboxItems" {{ $attributes->class([$wrapperClasses]) }}>
         <x-wirekit::grid :cols="$columns" :gap="$gap">
             @foreach($items as $i => $item)
                 {{-- Each thumbnail is a real button so the lightbox is

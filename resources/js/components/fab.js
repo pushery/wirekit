@@ -11,6 +11,31 @@
  */
 export default function wirekitFab() {
     return {
+
+        /**
+         * Close the panel once focus has left it entirely.
+         *
+         * A keyboard user could tab past an open panel and leave it hanging over the page
+         * behind them — the panel has no focus trap, deliberately, because its actions are
+         * ordinary controls rather than a menu.
+         *
+         * `relatedTarget` is where focus is GOING. It is null when focus leaves the document
+         * altogether (a window blur, or a click on browser chrome), and that must NOT close
+         * the panel: coming back to the tab would find it gone.
+         */
+        closeIfFocusLeft(event) {
+            const next = event?.relatedTarget;
+
+            if (!next) {
+                return;
+            }
+
+            const root = this.$refs?.actions ?? event?.currentTarget;
+
+            if (root && typeof root.contains === 'function' && !root.contains(next)) {
+                this.open = false;
+            }
+        },
         open: false,
         _onDocumentClick: null,
 
@@ -136,7 +161,23 @@ export default function wirekitFab() {
          * Walk the actions. The arrow keys are what make this a menu rather than
          * a pile of buttons that happen to be stacked.
          */
-        move(direction) {
+        move(direction, event) {
+            // ⚠️ THE GUARD AND THE CANCELLATION ARE THE SAME DECISION, so they live in one
+            // place. They used to be split: `.prevent` on the binding canceled the default
+            // unconditionally, while `open &&` in the expression only gated the movement. A
+            // closed FAB therefore ate ArrowUp and ArrowDown — and it is `fixed z-40`, so a
+            // keyboard reader tabs to it on any page that renders one and then cannot scroll.
+            //
+            // Reading `this.open` here rather than in the template also keeps the binding
+            // inside Alpine's CSP grammar: the obvious one-line fix,
+            // `open && (move(1), $event.preventDefault())`, is a sequence expression, and an
+            // expression the CSP build cannot parse goes inert with nothing reported.
+            if (! this.open) {
+                return;
+            }
+
+            event?.preventDefault?.();
+
             const actions = this._actions();
             if (actions.length === 0) return;
 

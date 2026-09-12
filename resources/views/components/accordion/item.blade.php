@@ -132,7 +132,15 @@
             aria-controls="{{ $panelId }}"
             :aria-expanded="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }}) ? 'true' : 'false'"
             @click="toggle({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
-            class="{{ $buttonClasses }}"
+            {{-- wk-accordion-trigger is a MARKER, carried outside the class seam so an
+                 override cannot remove it: the stylesheet floors its height to the touch
+                 target under `pointer: coarse`, where it measured 37px.
+
+                 A height floor rather than `wk-touch-target`, and the difference matters for a
+                 full-width row: that class centers a 44x44 box, so on a 349px trigger the tap
+                 area would grow in the MIDDLE and stay 37px at both ends -- a T, not a
+                 rectangle. A row is not an icon. --}}
+            class="wk-accordion-trigger {{ $buttonClasses }}"
         >
             {{-- Title takes the remaining row width and wraps; min-w-0 unlocks
                  text wrapping inside a flex child (default min-content prevents

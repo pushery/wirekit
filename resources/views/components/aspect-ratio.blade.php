@@ -15,8 +15,13 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('aspect-ratio', $attributes->getAttributes());
 
-    // Parse ratio: accepts "16/9", "4/3", "1/1", or a numeric value
-    $aspectValue = is_numeric($ratio) ? $ratio : $ratio;
+    // No parsing, and the comment here claimed some: the value goes straight into the CSS
+    // `aspect-ratio` property, which accepts BOTH forms natively — the ratio notation
+    // `16/9` and a bare number alike. The line was `is_numeric($ratio) ? $ratio : $ratio`,
+    // two identical branches under a comment describing a parser, which reads as an
+    // unfinished conversion and invites someone to "finish" it into a real difference the
+    // property does not want.
+    $aspectValue = $ratio;
 
     $classes = WireKit::resolveClasses('aspect-ratio', 'base', implode(' ', [
         'relative overflow-hidden',

@@ -76,7 +76,17 @@ final class PublicCssClassInventory
         $css = (string) preg_replace('~/\*.*?\*/~s', '', (string) file_get_contents($stylesheet));
 
         preg_match_all(
-            '/(?<=^|\s|,)\.(\bwk-[a-z][a-z0-9_-]*(?:__[a-z][a-z0-9_-]*)?(?:--[a-z][a-z0-9_-]*)?)\b/m',
+            // ⚠️ `(?<![-\w])` rather than `(?<=^|\s|,)`. The old form required whitespace, a
+            // comma or a line start before the dot, so a class sitting straight after an
+            // opening paren was invisible — which is every class inside a `:where(…)`.
+            // Measured 2026-09-08 against dist/wirekit.css: `wk-footer`, `wk-hero` and
+            // `wk-main` are matched by the wider form and not by the narrow one, and all
+            // three pass today only because the Blade scan below emits them as well. A class
+            // living ONLY inside a `:where()` would be absent from the catalog AND from
+            // `/api-map.json`, and neither the guard nor the export would say a word.
+            //
+            // Widening is safe by construction: the loose set is a superset of the strict one.
+            '/(?<![-\w])\.(\bwk-[a-z][a-z0-9_-]*(?:__[a-z][a-z0-9_-]*)?(?:--[a-z][a-z0-9_-]*)?)\b/m',
             $css,
             $matches
         );

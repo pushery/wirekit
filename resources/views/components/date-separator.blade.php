@@ -40,20 +40,36 @@
     } elseif ($carbonDate->diffInDays($reference) < 7) {
         $label = $carbonDate->translatedFormat('l');
     } else {
-        $label = $carbonDate->translatedFormat('M j');
+        // Skeleton, not a format string: `translatedFormat('M j')` translated the month
+        // NAME and kept the English arrangement, so German rendered "Sep. 7" where German
+        // writes "7. Sep.". ICU derives the order from the locale instead.
+        $label = \Pushery\WireKit\Support\LocalizedDate::bySkeleton($carbonDate, 'MMMd', 'M j');
     }
 
     // Full date for screen readers
-    $fullDate = $carbonDate->translatedFormat('l, F j, Y');
+    // Same reason as the label above, and it matters more here: this is what a screen
+    // reader announces, and "Sonntag, September 7, 2026" is a sentence no German speaker
+    // writes. English output is unchanged.
+    $fullDate = \Pushery\WireKit\Support\LocalizedDate::bySkeleton($carbonDate, 'yMMMMEEEEd', 'l, F j, Y');
 
     $stickyClasses = $variantValue === 'sticky'
-        ? 'sticky top-0 z-[var(--z-wk-sticky,10)] py-[var(--space-wk-xs,0.25rem)]'
+        // No z fallback: it read `var(--z-wk-sticky,10)` while the token is 40, so any
+        // context where the token did not resolve dropped this separator four layers below
+        // where every other sticky surface sits — silently, and only in that context. A
+        // fallback that disagrees with the value it stands in for is worse than none: it
+        // turns a missing token into a WRONG one, which nothing reports.
+        ? 'sticky top-0 z-[var(--z-wk-sticky)] py-[var(--space-wk-xs,0.25rem)]'
         : 'py-[var(--space-wk-xs,0.25rem)]';
 @endphp
 
 <div
     role="separator"
+    {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
+         attributes, and the bag renders after this line — so a caller's `aria-label` was
+         parsed and then discarded. The full date is the better default and stays one. --}}
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
     aria-label="{{ $fullDate }}"
+    @endunless
     {{ $attributes->class([
         WireKit::resolveClasses('date-separator', 'base', implode(' ', [
             'flex items-center',

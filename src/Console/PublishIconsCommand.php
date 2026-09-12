@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Console;
 use Illuminate\Console\Command;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Icons\IconSourceLocator;
+use Pushery\WireKit\Support\FileWrite;
 use Pushery\WireKit\Support\SuggestSimilar;
 
 /**
@@ -108,9 +109,7 @@ class PublishIconsCommand extends Command
      */
     private function copyDirectory(string $source, string $target): void
     {
-        if (! is_dir($target)) {
-            mkdir($target, 0755, true);
-        }
+        FileWrite::ensureDirectory($target);
 
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
@@ -123,10 +122,10 @@ class PublishIconsCommand extends Command
 
             if ($item->isDir()) {
                 if (! is_dir($destPath)) {
-                    mkdir($destPath, 0755, true);
+                    FileWrite::ensureDirectory($destPath);
                 }
             } else {
-                copy($item->getPathname(), $destPath);
+                FileWrite::copy($item->getPathname(), $destPath);
             }
         }
     }

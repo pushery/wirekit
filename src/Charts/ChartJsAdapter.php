@@ -93,9 +93,15 @@ final class ChartJsAdapter implements ChartAdapter
     {
         // Chart.js has no native 'area' controller — area charts are line
         // charts with dataset.fill = true. We map the type to 'line' here
-        // and the Alpine factory's _applyThemeToDatasets sets fill:true on
-        // every dataset whenever the chart-level type is 'area' (carried
-        // through the rawConfig.data.areaIntent flag set in normalizeData).
+        // and `normalizeData()` in this same class sets `fill => true` on every dataset —
+        // per-dataset when a dataset declares `type => 'area'`, and for all of them when the
+        // chart-level type is `area`. Either way the developer's own `fill` wins.
+        //
+        // ⚠️ This used to credit the Alpine factory's `_applyThemeToDatasets`, "carried through
+        // the rawConfig.data.areaIntent flag". That method exists and does not touch `fill`;
+        // `areaIntent` does not exist anywhere in the tree. A reader following the comment
+        // would have gone looking for a client-side mechanism to change, and found nothing to
+        // change it in.
         // 'column' maps to 'bar' too (Chart.js bars are vertical by default;
         // ApexCharts splits horizontal/vertical into bar/column).
         return match ($type) {

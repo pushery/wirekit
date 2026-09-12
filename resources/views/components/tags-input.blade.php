@@ -12,6 +12,13 @@
      removed and says so, which the reader can act on because the tag is one
      keystroke away. --}}
 @props([
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
+    // complain either, because `required` is in its HTML passthrough list — so it looked like
+    // a legitimate attribute all the way down. The result was a required field that submits
+    // empty, in the same form as a plain input that behaves correctly.
+    'required' => false,
     // The Livewire method to call when the set changes. A refusal KEEPS the
     // change and says it was not saved — see the note above.
     // Extra arguments appended to the optimistic action call, after the new value.
@@ -36,7 +43,7 @@
     // stays behind a `??` rather than moving into the config stub: a literal in the stub
     // would freeze one language for every locale.
     'maxTags' => config('wirekit.components.tags-input.max-tags'),
-    'placeholder' => config('wirekit.components.tags-input.placeholder') ?? __('wirekit::Add a tag...'),
+    'placeholder' => config('wirekit.components.tags-input.placeholder') ?? __('wirekit::Add a tag…'),
     // Documented as part of this control's API since it shipped, and until now it was
     // documentation only: the attribute bag never reached the text input, so a call site
     // asking for a disabled field got a fully working one.
@@ -77,6 +84,7 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `disabled="false"` would disable the field the call site asked to leave alone.
     $disabled = BooleanProp::from($disabled, false);
+    $required = BooleanProp::from($required, false);
 
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'tags-'); // page-unique DOM id; see Support\DomId
@@ -195,7 +203,7 @@
 
 <div class="space-y-1.5 min-w-0">
     @if($label)
-        <x-wirekit::label :for="$id . '-input'">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$id . '-input'" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     <div
@@ -245,6 +253,7 @@
                  is inside. Only when a label exists: `role="group"` with no accessible
                  name adds a level to walk through and says nothing at the top of it. --}}
             @if($label) role="group" aria-label="{{ $label }}" @endif
+            @if($required) aria-required="true" @endif
             {{-- Inside the layer's scope, which the component's own wrapper is
                  not: the layer nests within it, so `isPending` does not resolve
                  out there. --}}

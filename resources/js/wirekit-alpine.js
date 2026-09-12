@@ -66,6 +66,7 @@ import wirekitPasswordInput from './components/password-input.js';
 import wirekitSegmentedControl from './components/segmented-control.js';
 import wirekitPricingTable from './components/pricing-table.js';
 import wirekitSortable from './components/sortable.js';
+import wirekitProgress from './components/progress.js';
 import wirekitReadingProgress from './components/reading-progress.js';
 import wirekitFileUpload from './components/file-upload.js';
 import wirekitTablist from './components/tablist.js';
@@ -252,6 +253,7 @@ if (hostAlpine) {
     target.data('wirekitSegmentedControl', wirekitSegmentedControl);
     target.data('wirekitPricingTable', wirekitPricingTable);
     target.data('wirekitSortable', wirekitSortable);
+    target.data('wirekitProgress', wirekitProgress);
     target.data('wirekitReadingProgress', wirekitReadingProgress);
     target.data('wirekitFileUpload', wirekitFileUpload);
     target.data('wirekitTablist', wirekitTablist);

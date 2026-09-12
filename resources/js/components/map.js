@@ -44,6 +44,15 @@ export default function wirekitMap(config = {}) {
         zoom: Number(config.zoom) || 2,
         markers: Array.isArray(config.markers) ? config.markers.map((m) => ({ ...m })) : [],
         provider: config.provider || 'maplibre',
+        // 'respect' (default) | 'ignore' — whether prefers-reduced-data withholds tiles.
+        reducedData: config.reducedData || 'respect',
+        // True when tiles were withheld for the data preference rather than missing.
+        // The template shows a "load anyway" control on this, not on `available`.
+        dataDeferred: false,
+        // The accessible NAME of a role="button" marker. Translated on the server —
+        // this file has no translator — with the English kept as the fallback so a
+        // directly-constructed factory still names its pins.
+        _markerLabel: config.markerLabel || 'Map marker',
         styleUrl: config.styleUrl || null,
         attribution: config.attribution || null,
         available: false,
@@ -64,6 +73,32 @@ export default function wirekitMap(config = {}) {
         _markers: {},
 
         init() {
+            /*
+             * Tiles are the largest network cost this library can cause, and the only
+             * one it controls at runtime.
+             *
+             * A reader who has asked their browser for less data has asked for exactly
+             * this: a map view fetches tile after tile as it settles, and does it again
+             * on every pan. Nothing else WireKit ships fetches anything — the stylesheet
+             * contains no `url()` at all — so a CSS-level answer to this preference would
+             * save precisely zero bytes and only look like an answer.
+             *
+             * The map is not broken by declining. It falls back to the accessible marker
+             * list it already shows whenever the engine is absent, so the addresses,
+             * names and links are all still there; what is withheld is the canvas. The
+             * reader gets a control to load it anyway, because withholding without a way
+             * through is a worse answer than not asking.
+             *
+             * `reducedData="ignore"` opts a specific map out — a delivery-tracking view
+             * where the canvas IS the content rather than an illustration of it.
+             */
+            if (this._prefersReducedData()) {
+                this.available = false;
+                this.dataDeferred = true;
+
+                return;
+            }
+
             this.available = this._detectProvider() !== null;
             if (!this.available) {
                 this._warnMissing();
@@ -92,6 +127,49 @@ export default function wirekitMap(config = {}) {
             }
             this._map = null;
             this._markers = {};
+        },
+
+        /**
+         * Has the reader asked their browser for less data?
+         *
+         * `prefers-reduced-data` is ABOVE this library's support baseline, which is
+         * exactly why it is safe to read: a browser that does not know the query returns
+         * `matches: false`, so the map behaves as it always has. Nothing depends on the
+         * feature — this is the progressive-enhancement shape the house rule requires,
+         * with the enhancement being a saving rather than a flourish.
+         *
+         * `matchMedia` itself is guarded because the Alpine factories are constructed in
+         * a bare Node harness where it does not exist.
+         */
+        _prefersReducedData() {
+            if (this.reducedData === 'ignore') {
+                return false;
+            }
+
+            if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+                return false;
+            }
+
+            return window.matchMedia('(prefers-reduced-data: reduce)').matches === true;
+        },
+
+        /** Load the tiles anyway, from the control the fallback shows. */
+        loadAnyway() {
+            this.dataDeferred = false;
+            this.available = this._detectProvider() !== null;
+
+            if (!this.available) {
+                this._warnMissing();
+
+                return;
+            }
+
+            try {
+                this._initLibrary();
+            } catch (e) {
+                this.available = false;
+                this._warnMissing(e);
+            }
         },
 
         // ── Provider detection ───────────────────────────────────────────
@@ -313,8 +391,32 @@ export default function wirekitMap(config = {}) {
                 if (node) {
                     node.style.cursor = 'pointer';
                     node.setAttribute('role', 'button');
-                    node.setAttribute('aria-label', m.label || 'Map marker');
+                    node.setAttribute('aria-label', m.label || this._markerLabel);
+
+                    /*
+                     * A `role="button"` is a PROMISE: focusable, and activated by Enter and
+                     * Space. The pin kept none of it — no tabindex, no key handler — so it
+                     * announced itself as a button to a reader who could then neither reach
+                     * nor press it. Inside a `role="application"` container that is worse
+                     * than usual: the browser's own fallbacks are off there, and the only
+                     * keyboard behavior is the one the component provides.
+                     *
+                     * The accessible marker LIST beside the map remains the primary path;
+                     * this makes the pin itself keep the contract it advertises.
+                     */
+                    node.setAttribute('tabindex', '0');
                     node.addEventListener('click', (e) => { e.stopPropagation(); this.selectMarker(m.id); });
+                    node.addEventListener('keydown', (e) => {
+                        if (e.key !== 'Enter' && e.key !== ' ') {
+                            return;
+                        }
+
+                        // Space scrolls the page by default, and a map is exactly the place
+                        // where that reads as the pin having done nothing.
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.selectMarker(m.id);
+                    });
                 }
                 if (this._hasTip(m) && window.maplibregl.Popup) {
                     // setHTML, not setText: the bubble carries the image / label /

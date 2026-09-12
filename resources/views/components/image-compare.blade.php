@@ -19,8 +19,8 @@
     // `name` submits nothing, so a caller writing `name="reveal"` got a figure with
     // a name attribute and a POST body without the field.
     'name' => null,
-    'beforeLabel' => 'Before',
-    'afterLabel' => 'After',
+    'beforeLabel' => __('wirekit::Before'),
+    'afterLabel' => __('wirekit::After'),
     'labels' => true,
     'decorative' => false,
     'ariaLabel' => __('wirekit::Image comparison slider'),
@@ -257,8 +257,13 @@
         aria-valuemax="100"
         aria-orientation="{{ $isVertical ? 'vertical' : 'horizontal' }}"
         @pointerdown.stop="startDrag($event)"
-        @keydown.left.prevent="orientation === 'horizontal' && stepBy(-1)"
-        @keydown.right.prevent="orientation === 'horizontal' && stepBy(1)"
+        {{-- Left decreases and Right increases on BOTH axes, which is what the APG slider
+             pattern asks for and what a swallowed key cannot deliver: `.prevent` fires
+             whatever the guard decides, so a vertical slider used to suppress the browser
+             default and then do nothing. The up/down inversion below is a different matter
+             and stays — that one has a written reason under the docs table. --}}
+        @keydown.left.prevent="stepBy(-1)"
+        @keydown.right.prevent="stepBy(1)"
         @keydown.up.prevent="orientation === 'vertical' ? stepBy(-1) : stepBy(1)"
         @keydown.down.prevent="orientation === 'vertical' ? stepBy(1) : stepBy(-1)"
         @keydown.home.prevent="setValue(0)"

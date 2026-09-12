@@ -20,6 +20,7 @@
  * Bundle cost: ~1 KB raw / ~450 B gzip.
  */
 import { prefersReducedMotion } from '../utils/motion.js';
+import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
@@ -209,6 +210,19 @@ export default (options = {}) => ({
             const clicked = this.items.findIndex((it) => it.id === id);
             if (clicked !== -1) this.activeIndex = clicked;
 
+            // The container branch RETURNED before the hash mirror below, so on a page with
+            // its own scroll container — a documentation shell, a dashboard pane, anything
+            // with an inner `overflow-y: auto` — the URL never followed the heading. The
+            // docs promise the mirror unconditionally, and a reader who copied the address
+            // bar after clicking a section got a link to the top of the page.
+            this._mirrorHash(id);
+
+            // Focus goes where the reader asked to go. `preventDefault()` above suppressed
+            // the anchor's default, and that default moves TWO things: the scroll and the
+            // sequential-navigation starting point. Only the first was replaced, so the next
+            // Tab went to the next TOC link instead of into the section.
+            focusHeading(el);
+
             return;
         }
 
@@ -224,19 +238,28 @@ export default (options = {}) => ({
         // IO catches up.
         const idx = this.items.findIndex((it) => it.id === id);
         if (idx >= 0) this.activeIndex = idx;
-        // `history.replaceState` updates the URL hash without a history-
-        // stack push so the back button still goes to the previous page.
-        // Wrapped in try/catch because iframe-srcdoc contexts have
-        // `origin: null` and reject replaceState calls against the
-        // parent page's URL with a SecurityError. The smooth-scroll has
-        // already happened by this point, so swallowing the URL-sync
-        // failure is the correct degradation — the developer still sees
-        // the visual jump, just without the URL hash mirror.
+        this._mirrorHash(id);
+        focusHeading(el);
+    },
+
+    /**
+     * Put the heading's id in the address bar, without a history entry.
+     *
+     * `replaceState` rather than a push, so the back button still goes to the previous PAGE
+     * rather than walking back up the article one heading at a time.
+     *
+     * Extracted because both scroll paths need it and only one of them had it. The
+     * try/catch is not defensive noise: an iframe-srcdoc context has `origin: null` and
+     * rejects a replaceState against the parent page's URL with a SecurityError. The scroll
+     * has already happened by then, so swallowing the URL sync is the right degradation —
+     * the reader still gets the jump, just without the mirror.
+     */
+    _mirrorHash(id) {
         try {
             history.replaceState(null, '', `#${id}`);
         } catch {
-            // Cross-origin iframe-srcdoc — URL hash mirror unavailable,
-            // accept the scroll-only behavior.
+            // Cross-origin iframe-srcdoc — URL hash mirror unavailable, and the scroll has
+            // already landed. Accept the scroll-only behavior.
         }
     },
 

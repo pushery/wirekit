@@ -9,6 +9,19 @@
     'attribution' => null,          // tile attribution HTML, e.g. '© OpenStreetMap contributors' — shown by Leaflet's attribution control; required by some tile sources (OSM)
     'height' => '24rem',            // map canvas height (CSS length)
     'ariaLabel' => __('wirekit::Map'),
+    // 'respect' (default) | 'ignore' — what to do when the reader's browser reports
+    // `prefers-reduced-data: reduce`.
+    //
+    // Tiles are the largest network cost this library can cause and the only one it
+    // controls at runtime: a map fetches tile after tile as it settles, and again on
+    // every pan. Nothing else WireKit ships fetches anything — the stylesheet contains
+    // no `url()` at all — so this is where the preference can actually be honored
+    // rather than merely acknowledged.
+    //
+    // On 'respect' the canvas is withheld and the marker list carries the content, with
+    // a control to load the map anyway. Use 'ignore' where the canvas IS the content
+    // rather than an illustration of it — a delivery-tracking view, a route editor.
+    'reducedData' => config('wirekit.components.map.reduced-data', 'respect'),
     // Heading above the marker list — and the switch that makes that list a LANDMARK.
     //
     // The visible heading is ALWAYS rendered, so the fallback survives as a resolved variable;
@@ -32,7 +45,6 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
-    use Illuminate\Support\Str;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -47,7 +59,10 @@
     $provider = WireKit::validateProp('map', 'provider', $provider, ['maplibre', 'leaflet']);
     $highlight = WireKit::validateProp('map', 'highlight', $highlight, ['ring', 'fill']);
     $highlightColor = WireKit::validateProp('map', 'highlightColor', $highlightColor, ['accent', 'success', 'warning', 'danger', 'neutral']);
-    $id = $attributes->get('id', 'map-'.Str::random(6));
+    // Counted, not random. The map mounts a JS instance against this id, and a random one
+    // meant every Livewire round trip produced an id the mounted map no longer matched — the
+    // pan and zoom the reader had set were discarded by an update elsewhere on the page.
+    $id = $attributes->get('id') ?? \Pushery\WireKit\Support\DomId::unique(null, 'map-');
     // Map-only mode: hide the visual sidebar but keep the list in the DOM (sr-only)
     // so assistive tech can still reach the locations.
     $showList = filter_var($list, FILTER_VALIDATE_BOOLEAN);
@@ -101,7 +116,7 @@
 <div
     {{ $attributes->except(['id', 'class']) }}
     id="{{ $id }}"
-    x-data="wirekitMap({ center: {{ \Pushery\WireKit\Support\AlpinePayload::from($centerArr) }}, zoom: {{ (int) $zoom }}, markers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, provider: {{ \Pushery\WireKit\Support\AlpinePayload::string($provider) }}@if($styleUrl), styleUrl: {{ \Pushery\WireKit\Support\AlpinePayload::string($styleUrl) }}@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution) }}@endif })"
+    x-data="wirekitMap({ center: {{ \Pushery\WireKit\Support\AlpinePayload::from($centerArr) }}, zoom: {{ (int) $zoom }}, markers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, provider: {{ \Pushery\WireKit\Support\AlpinePayload::string($provider) }}, reducedData: {{ \Pushery\WireKit\Support\AlpinePayload::string($reducedData) }}@if($styleUrl), styleUrl: {{ \Pushery\WireKit\Support\AlpinePayload::string($styleUrl) }}@endif @if($attribution), attribution: {{ \Pushery\WireKit\Support\AlpinePayload::from($attribution) }}@endif, markerLabel: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Map marker')) }} })"
     role="group"
     aria-label="{{ $ariaLabel }}"
     {{-- NO flex gap between canvas and list: the list's own divider border (a top
@@ -151,7 +166,17 @@
         <div x-ref="canvas" class="absolute inset-0 h-full w-full" style="min-height: {{ $height }};" role="application" aria-label="{{ __('wirekit:::label (interactive)', ['label' => $ariaLabel]) }}" tabindex="0"></div>
         <div x-show="!available" x-cloak class="absolute inset-0 flex flex-col items-center justify-center gap-1 p-[var(--padding-wk-x-md)] text-center pointer-events-none">
             <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.5 2.5V6L9 3.5m0 16.5l6 2.5m-6-2.5V3.5m6 19l5.5-2.5V2.5L15 5m0 17.5V5m0 0L9 3.5"/><circle cx="12" cy="9" r="2.5"/></svg>
-            <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">Interactive map needs a map library — the locations are listed alongside.</p>
+            <p x-show="!dataDeferred" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Interactive map needs a map library — the locations are listed alongside.') }}</p>
+            {{-- The data-saving path says something different, and offers a way through.
+                 Withholding without one is a worse answer than not asking: the reader
+                 asked for less data, not for no map ever. `pointer-events-auto` because
+                 the panel around it is deliberately transparent to the pointer. --}}
+            <template x-if="dataDeferred">
+                <div class="flex flex-col items-center gap-2 pointer-events-auto">
+                    <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Map tiles are not loaded because your browser asked for reduced data. The locations are listed alongside.') }}</p>
+                    <x-wirekit::button intent="neutral" surface="outline" size="sm" type="button" x-on:click="loadAnyway()">{{ __('wirekit::Load the map anyway') }}</x-wirekit::button>
+                </div>
+            </template>
         </div>
     </div>
 
@@ -173,7 +198,7 @@
         <p class="sticky top-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
             {{ $listLabelResolved }} (<span x-text="markerCount"></span>)
         </p>
-        <ul class="list-none divide-y divide-[var(--color-wk-border)]" style="list-style: none; margin: 0; padding: 0;">
+        <ul role="list" class="list-none divide-y divide-[var(--color-wk-border)]" style="list-style: none; margin: 0; padding: 0;">
             <template x-for="m in markers" :key="m.id">
                 <li>
                     <button
@@ -193,7 +218,7 @@
                     </button>
                 </li>
             </template>
-            <li x-show="markerCount === 0" x-cloak class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">No locations</li>
+            <li x-show="markerCount === 0" x-cloak class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No locations') }}</li>
         </ul>
     </div>
 </div>

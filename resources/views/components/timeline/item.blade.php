@@ -2,8 +2,26 @@
      Renders no interactive element, so there is no action whose result could be
      shown early. Measured rather than asserted: the guard refutes this reason for
      any file that renders one. --}}
+{{-- WHY `datetime` IS A SEPARATE PROP, AND WHY THE ELEMENT CHANGES WITHOUT IT.
+
+     HTML is explicit about this: a `<time>` without a `datetime` attribute must have text
+     content that is itself a valid datetime string. Every call site in this repository passes
+     a human phrase — "2 hours ago", "Just now", "10 min ago" — so the element was invalid in
+     every single usage, and an invalid `<time>` conveys nothing to anything reading the page.
+
+     The three sibling components that emit `<time>` all derive the attribute from a Carbon
+     instance (`countdown`, `message`, `date-separator`). This one cannot: its prop is display
+     copy, and a phrase like "Just now" has no machine value to derive.
+
+     So the attribute arrives on its own, and the element follows it. With a machine-readable
+     value the item renders `<time datetime="…">` like its siblings; without one it renders a
+     `<span>`, which is what the phrase actually is. Measured before changing it: no stylesheet
+     in this package targets the element, and no call site passes anything parseable — so the
+     `<span>` branch is what every existing caller gets, rendering identically to what an
+     invalid `<time>` already rendered. --}}
 @props([
     'time' => null,
+    'datetime' => null,
     'icon' => null,
     'variant' => 'default', // back-compat alias of `intent`
     'intent' => null,       // canonical color axis: default | success | warning | danger. null → falls back to `variant`
@@ -113,9 +131,17 @@
         @endif
 
         @if($time)
-            <time class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
-                {{ $time }}
-            </time>
+            @php
+                // One class list, two elements — so the branch below cannot drift into two
+                // different sizes for the same row.
+                $timeClasses = 'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]';
+            @endphp
+
+            @if(filled($datetime))
+                <time datetime="{{ $datetime }}" class="{{ $timeClasses }}">{{ $time }}</time>
+            @else
+                <span class="{{ $timeClasses }}">{{ $time }}</span>
+            @endif
         @endif
 
         @if($slot->isNotEmpty())

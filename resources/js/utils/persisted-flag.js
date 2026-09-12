@@ -1,8 +1,12 @@
 /**
  * A boolean that survives a reload, when storage allows it.
  *
- * Three components keep one — the sidebar rail's folded state, and the open
- * state of each of its two disclosure shapes. The mechanic used to be emitted
+ * Kept by `app-rail` and `sidebar-rail` for their folded state, and by
+ * `sidebar-disclosure` for the open state of each of its two shapes. This sentence
+ * began "Three components keep one" and named a single rail, which is how `app-rail` —
+ * added later, importing this same helper — stayed out of it. The count is gone rather
+ * than corrected: `grep -rl persisted-flag resources/js/components/` answers it in a
+ * second and cannot drift. The mechanic used to be emitted
  * as JavaScript source from PHP so all three would share it; that made it one
  * implementation, but an implementation living in a string, which Alpine's CSP
  * build cannot parse. Same idea, expressed where it can be read and tested.

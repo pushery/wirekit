@@ -22,7 +22,6 @@
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
-    use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -39,13 +38,54 @@
     // Normalize each entry to ['src','alt','caption','type','poster']. `poster`
     // is a video-only still shown before the clip paints its first frame (so the
     // surface is not blank while it buffers); null for non-video items.
+    /*
+     * An `embed` item becomes an iframe `src`, and a `javascript:` URL in an iframe `src`
+     * runs in the PARENT document's context — so an item built from a database row was a
+     * script-execution channel, not merely a bad link. `data:` is the same class one step
+     * removed: a `data:text/html` frame gets its own origin but can still paint a
+     * convincing overlay on top of the page it was opened from.
+     *
+     * Allowed: http, https, protocol-relative, and anything without a scheme (a path the
+     * application resolves itself). Everything else is dropped to an empty src, which
+     * renders an empty frame — visibly wrong, rather than quietly dangerous.
+     */
+    $safeEmbedSrc = static function (string $src): string {
+        $src = trim($src);
+
+        if ($src === '' || str_starts_with($src, '//')) {
+            return $src;
+        }
+
+        // A scheme is what precedes the first colon, and only when no slash comes first —
+        // `path/to:file` is a relative path, not a scheme.
+        $colon = strpos($src, ':');
+        $slash = strpos($src, '/');
+
+        if ($colon === false || ($slash !== false && $slash < $colon)) {
+            return $src;
+        }
+
+        return in_array(strtolower(substr($src, 0, $colon)), ['http', 'https'], true) ? $src : '';
+    };
+
     $slides = [];
     foreach ($items as $item) {
         if (is_array($item)) {
             $type = $item['type'] ?? 'image';
             $slides[] = [
-                'src' => (string) ($item['src'] ?? ''),
-                'alt' => (string) ($item['alt'] ?? ''),
+                'src' => ($type === 'embed')
+                    ? $safeEmbedSrc((string) ($item['src'] ?? ''))
+                    : (string) ($item['src'] ?? ''),
+                // An embed's `alt` becomes the iframe's `title`, and `title=""` is a NAMELESS
+                // frame — announced as an unlabeled region the reader has no way to identify.
+                // Images may legitimately be decorative, so the fallback is scoped to embeds.
+                //
+                // Resolved here rather than as a `:title="item.alt || …"` binding: that
+                // operator is outside Alpine's CSP grammar, so the expression is never
+                // evaluated on the CSP bundle and the frame loses its title there entirely.
+                'alt' => ($type === 'embed' && trim((string) ($item['alt'] ?? '')) === '')
+                    ? __('wirekit::Embedded content')
+                    : (string) ($item['alt'] ?? ''),
                 'caption' => isset($item['caption']) ? (string) $item['caption'] : null,
                 'type' => in_array($type, ['image', 'video', 'embed'], true) ? $type : 'image',
                 'poster' => isset($item['poster']) ? (string) $item['poster'] : null,
@@ -61,7 +101,11 @@
     // announcement takes.
     $positionTemplate = __('wirekit::Slide :current of :total');
 
-    $lightboxId = $name ?: 'wk-lightbox-'.Str::random(6);
+    // Counted, not random, for the nameless case. Alpine keys its component state to the
+    // element; a fresh id on every render is a fresh component to a Livewire morph, so an
+    // unrelated update closed the lightbox and lost which slide the reader was on. A caller
+    // who passes `name` was already stable — this makes the default stable too.
+    $lightboxId = $name ?: \Pushery\WireKit\Support\DomId::unique(null, 'wk-lightbox-');
     $count = count($slides);
     $backdrop = $overlay ?: 'var(--color-wk-overlay)';
 
@@ -122,7 +166,7 @@
                                 <video :src="item.src" :poster="item.poster" controls preload="metadata" class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]"></video>
                             </template>
                             <template x-if="item.type === 'embed'">
-                                <iframe :src="item.src" :title="item.alt" loading="lazy" class="aspect-video w-[90vw] max-w-[90vw] max-h-[85vh] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]" allowfullscreen></iframe>
+                                <iframe :src="item.src" :title="item.alt" loading="lazy" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox" class="aspect-video w-[90vw] max-w-[90vw] max-h-[85vh] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]" allowfullscreen></iframe>
                             </template>
                             <template x-if="! item.type || item.type === 'image'">
                                 {{-- Large images scale to fit the viewport: object-contain +

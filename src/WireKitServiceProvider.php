@@ -416,15 +416,24 @@ class WireKitServiceProvider extends ServiceProvider
                 $__wk_key = config("wirekit.theme.storage_key", "wirekit-theme");
                 $__wk_storage = config("wirekit.theme.storage", "local") === "cookie" ? "cookie" : "local";
                 $__wk_nonceAttr = $__wk_nonce ? \' nonce="\' . e($__wk_nonce) . \'"\' : "";
+                // `Js::from`, not `json_encode`, and not AlpinePayload. This string is
+                // concatenated into a `<script>` block, where HTML escaping does not apply —
+                // the package\'s own encoder docblock names that as the one place
+                // AlpinePayload must never be used, because it sets JSON_UNESCAPED_SLASHES
+                // and a payload containing `</script>` would close the block.
+                //
+                // Plain `json_encode` was safe here only by an accident of its defaults:
+                // slashes ARE escaped without that flag. `<!--` was not, and the day somebody
+                // unified this on the house encoder the accident would have gone the other way.
                 if ($__wk_storage === "cookie") {
                     // Scan document.cookie by exact name (no regex, so a key with
                     // regex-special characters cannot break the match). Mirrors the
                     // Alpine control\'s _readCookie().
                     $__wk_reader = \'var s=null,wc=(document.cookie||"").split("; ");\'
                         . \'for(var i=0;i<wc.length;i++){var we=wc[i].indexOf("="),wn=we<0?wc[i]:wc[i].slice(0,we);\'
-                        . \'if(wn===\' . json_encode($__wk_key) . \'){s=decodeURIComponent(wc[i].slice(we+1));break;}}\';
+                        . \'if(wn===\' . \Illuminate\Support\Js::from($__wk_key) . \'){s=decodeURIComponent(wc[i].slice(we+1));break;}}\';
                 } else {
-                    $__wk_reader = \'var s=localStorage.getItem(\' . json_encode($__wk_key) . \');\';
+                    $__wk_reader = \'var s=localStorage.getItem(\' . \Illuminate\Support\Js::from($__wk_key) . \');\';
                 }
                 echo \'<script\' . $__wk_nonceAttr . \'>\'
                     . \'(function(){try{\' . $__wk_reader
@@ -798,8 +807,13 @@ class WireKitServiceProvider extends ServiceProvider
      * It is CONFIGURABLE rather than simply removed, because removing it would
      * be a change with no way back. An application that hangs its own security
      * headers or HTTPS enforcement in `web` would have no way to restore them
-     * for these nine routes short of forking. `wirekit.assets.middleware` is
+     * for these asset routes short of forking. `wirekit.assets.middleware` is
      * that way back — and the default is what makes the response honest.
+     *
+     * ⚠️ This said "these nine routes" while the asset map registered TEN, plus the
+     * font route below that runs through the same group. A count in a sentence beside
+     * the array it describes is a second copy of `count()`, and it is the copy that
+     * drifts — so the sentence names the SET now, not its size.
      *
      * @return array<int, string>
      */

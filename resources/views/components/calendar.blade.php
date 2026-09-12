@@ -262,10 +262,14 @@
                         </svg>
                     </div>
                 </div>
-                <span :id="monthLabelId(0)" class="sr-only" aria-live="polite" x-text="monthLabel"></span>
+                {{-- The id is single-month only. With `months > 1` the per-month heading below already
+                     carries `monthLabelId(0)`, and a second element with that id makes the first
+                     grid's `aria-labelledby` resolve to whichever comes first in the document —
+                     the header, not its own month. Two elements, one id, and the wrong one wins. --}}
+                <span @if($months <= 1) :id="monthLabelId(0)" @endif class="sr-only" aria-live="polite" x-text="monthLabel"></span>
             </div>
         @else
-            <span :id="monthLabelId(0)" class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-md)]" x-text="monthLabel" aria-live="polite"></span>
+            <span @if($months <= 1) :id="monthLabelId(0)" @endif class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-md)]" x-text="monthLabel" aria-live="polite"></span>
         @endif
 
         <button type="button" x-on:click="nextMonth()" class="{{ $navBtnClasses }}" aria-label="{{ __('wirekit::Next month') }}">

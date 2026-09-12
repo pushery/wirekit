@@ -268,11 +268,17 @@ export function withOpacity(color, opacity) {
  * `resolveThemeColors()`'s same probe re-runs on every paint cycle.
  *
  * @param {*} node — anything; primitives + arrays + objects walk fine.
- * @param {CSSStyleDeclaration} style — getComputedStyle of an element
- *   inside the live cascade (typically the chart mount element).
+ * @param {CSSStyleDeclaration} style — getComputedStyle of an element inside the live cascade
+ *   (typically the chart mount element). READ, since 2026-09-08: it is the cheapest source for
+ *   a token's value, and it was accepted and ignored while every lookup built a DOM probe.
+ * @param {Map<string, string>} [cache] — one resolution per variable per walk. A themed config
+ *   repeats the same handful of tokens across series, annotations, gradient stops and the
+ *   heatmap scale, and nothing between two occurrences in one walk can change the answer.
+ * @param {{ctx?: CanvasRenderingContext2D}} [scratch] — one 1x1 canvas for the whole walk. It
+ *   is cheap to draw on and not cheap to create, and there used to be one per occurrence.
  * @returns {*} — the input shape with every `var(--…)` substring resolved.
  */
-export function resolveCssVarsDeep(node, style) {
+export function resolveCssVarsDeep(node, style, cache = new Map(), scratch = {}) {
     if (typeof node === 'string') {
         if (!node.includes('var(--')) return node;
         // Reuse the same canvas + probe trick the outer palette uses so
@@ -281,47 +287,78 @@ export function resolveCssVarsDeep(node, style) {
         // closure) so we can resolve multiple var()s in one string —
         // e.g. ApexCharts gradient stops carrying two var() colors.
         return node.replace(/var\((--[a-zA-Z0-9-]+)\)/g, (_match, varName) => {
-            // Same reasoning as the probe in `resolveThemeColors()` above: no <body>
-            // means no cascade to read through, and the honest answer is to hand the
-            // caller its own `var(…)` back rather than to take the page down over it.
-            if (!document.body) return _match;
+            // Resolved ONCE per variable per walk. A themed ApexCharts config repeats the
+            // same handful of tokens across series, annotations, gradient stops and the
+            // heatmap color scale, and every occurrence used to build a DOM probe, force a
+            // layout read through getComputedStyle, and allocate a fresh Canvas 2D context.
+            // The answer is identical every time — nothing between two occurrences in one
+            // walk can change it.
+            if (cache.has(varName)) return cache.get(varName);
 
-            const probe = document.createElement('div');
-            probe.style.display = 'none';
-            document.body.appendChild(probe);
-            probe.style.color = `var(${varName})`;
-            const computed = getComputedStyle(probe).color;
-            probe.remove();
+            // The caller's own computed style is the cheapest source and was already being
+            // passed in: `style` is getComputedStyle() of an element inside the live cascade,
+            // which is exactly what a var() has to resolve against. It was accepted and never
+            // read, so every lookup went the long way round instead.
+            let computed = style ? style.getPropertyValue(varName).trim() : '';
+
+            if (!computed) {
+                // Same reasoning as the probe in `resolveThemeColors()` above: no <body>
+                // means no cascade to read through, and the honest answer is to hand the
+                // caller its own `var(…)` back rather than to take the page down over it.
+                if (!document.body) return _match;
+
+                const probe = document.createElement('div');
+                probe.style.display = 'none';
+                document.body.appendChild(probe);
+                probe.style.color = `var(${varName})`;
+                computed = getComputedStyle(probe).color;
+                probe.remove();
+            }
 
             if (!computed) return _match;
 
-            // Canvas-paint-and-read to force a definitive rgb()/rgba()
-            // value (oklch literals would survive the var() resolution
-            // but break Canvas 2D / older ApexCharts release paths).
-            const canvas = document.createElement('canvas');
-            canvas.width = 1;
-            canvas.height = 1;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            // Canvas-paint-and-read to force a definitive rgb()/rgba() value (oklch literals
+            // would survive the var() resolution but break Canvas 2D / older ApexCharts
+            // release paths). ONE canvas for the whole walk, kept on the scratch object —
+            // a 1x1 context is cheap to draw on and not cheap to create.
+            scratch.ctx ??= (() => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1;
+                canvas.height = 1;
+
+                return canvas.getContext('2d', { willReadFrequently: true });
+            })();
+
+            const ctx = scratch.ctx;
+
+            // Declared without an initializer: both branches below assign it, so seeding it
+            // with `computed` is a write nothing reads.
+            let resolved;
+
             try {
                 ctx.clearRect(0, 0, 1, 1);
                 ctx.fillStyle = computed;
                 ctx.fillRect(0, 0, 1, 1);
                 const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
-                return a === 255
+                resolved = a === 255
                     ? `rgb(${r}, ${g}, ${b})`
                     : `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
             } catch {
-                return computed;
+                resolved = computed;
             }
+
+            cache.set(varName, resolved);
+
+            return resolved;
         });
     }
     if (Array.isArray(node)) {
-        return node.map((item) => resolveCssVarsDeep(item, style));
+        return node.map((item) => resolveCssVarsDeep(item, style, cache, scratch));
     }
     if (node && typeof node === 'object') {
         const out = {};
         for (const key of Object.keys(node)) {
-            out[key] = resolveCssVarsDeep(node[key], style);
+            out[key] = resolveCssVarsDeep(node[key], style, cache, scratch);
         }
         return out;
     }

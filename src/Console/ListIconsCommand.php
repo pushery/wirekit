@@ -388,13 +388,44 @@ class ListIconsCommand extends Command
         // describes WireKit's vocabulary, the audit describes the caller's use
         // of it. Sharing a command keeps them one thing to discover; sharing a
         // code path would make each one's flags noise in the other's help.
-        if ($this->option('audit') === true) {
-            return $this->auditIconNames();
-        }
-
         $presetFilter = $this->option('preset');
         $asValue = $this->option('as');
         $formatValue = $this->option('format');
+
+        if ($this->option('audit') === true) {
+            // The listing flags do not compose with the audit, so they are REJECTED
+            // rather than silently honored — the house convention `InstallCommand`
+            // states outright and `BoostSkillsCommand` follows for `--check --force`.
+            //
+            // ⚠️ This dispatched BEFORE the flags were read, which meant
+            // `--audit --as=json` printed the human report and exited 0. That is the
+            // one answer a pipeline cannot recognize: `--as=json` is the flag a script
+            // passes, and the audit is the mode a script most wants structured. A human
+            // sees the decorated text and knows; a script sees success and parses it.
+            $inapplicable = [];
+
+            if ($asValue !== null && $asValue !== '') {
+                $inapplicable[] = '--as';
+            }
+
+            if ($formatValue !== null && $formatValue !== '') {
+                $inapplicable[] = '--format';
+            }
+
+            if ($presetFilter !== null && $presetFilter !== '') {
+                $inapplicable[] = '--preset';
+            }
+
+            if ($inapplicable !== []) {
+                $this->error(implode(' and ', $inapplicable).' do'.(count($inapplicable) === 1 ? 'es' : '').' not apply to --audit.');
+                $this->line('  The audit reports on the CALLER\'s icon names; the listing options describe');
+                $this->line('  WireKit\'s own vocabulary. Run them separately.');
+
+                return self::FAILURE;
+            }
+
+            return $this->auditIconNames();
+        }
 
         if ($asValue !== null && $asValue !== '' && $formatValue !== null && $formatValue !== '' && $asValue !== $formatValue) {
             $this->error('--as and --format are aliases and must not be passed with different values.');
@@ -513,7 +544,10 @@ class ListIconsCommand extends Command
                 foreach ($presets as $preset) {
                     $total += count($preset->icons());
                 }
-                $this->line((string) $total);
+                // `write`, not `line` — see the note in ListFontsCommand: `--as=count` is
+                // contracted as a bare integer with no trailing newline, and this command
+                // is one of the two that emitted one.
+                $this->output->write((string) $total);
 
                 return self::SUCCESS;
 

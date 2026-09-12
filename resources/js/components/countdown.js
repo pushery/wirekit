@@ -37,6 +37,7 @@
  * @param {string}  config.expiredText   what to say once the deadline has passed
  * @param {Object}  config.unitPhrases   unit -> [singular, plural] with a :count placeholder
  */
+import { pauseWhileHidden } from '../utils/page-visibility.js';
 import { pluralize } from '../utils/plural.js';
 
 export default function wirekitCountdown(config = {}) {
@@ -69,7 +70,20 @@ export default function wirekitCountdown(config = {}) {
 
         init() {
             this.now = Date.now();
-            this._timer = setInterval(() => { this.now = Date.now(); }, this._tickMs());
+            this._startTicking();
+
+            /*
+             * A backgrounded tab throttles this timer but does not stop it, so a clock
+             * nobody can see went on waking the main thread once a second. Pausing is
+             * safe here precisely because the tick carries no state: it assigns
+             * `Date.now()`, so the first tick after the tab comes back is already the
+             * right time — and `_startTicking` assigns it immediately rather than
+             * waiting out an interval, so there is no stale second on return.
+             */
+            this._visibility = pauseWhileHidden({
+                onHide: () => this._stopTicking(),
+                onShow: () => this._startTicking(),
+            });
 
             const sync = () => {
                 if (! this.expired) {
@@ -107,11 +121,23 @@ export default function wirekitCountdown(config = {}) {
             });
         },
 
-        destroy() {
+        _startTicking() {
+            this._stopTicking();
+            this.now = Date.now();
+            this._timer = setInterval(() => { this.now = Date.now(); }, this._tickMs());
+        },
+
+        _stopTicking() {
             if (this._timer) {
                 clearInterval(this._timer);
                 this._timer = null;
             }
+        },
+
+        destroy() {
+            this._stopTicking();
+            this._visibility?.stop();
+            this._visibility = null;
 
             if (this._expiryTimer) {
                 clearTimeout(this._expiryTimer);

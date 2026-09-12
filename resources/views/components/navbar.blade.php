@@ -1,8 +1,9 @@
 {{-- optimistic-ui: n/a — client-only
      Whether the mobile menu is open. --}}
+{{-- wirekit:spine-participant — this component joins the page-edge content spine. See docs/extending/spine-contract.md --}}
 @props([
     'variant' => config('wirekit.components.navbar.variant', 'default'),
-    'sticky' => false,
+    'sticky' => config('wirekit.components.navbar.sticky', false),
     // When true the navbar skips the `md:` viewport-breakpoint classes and
     // renders the mobile layout unconditionally (hamburger button visible,
     // desktop item row hidden). Useful for (a) previewing the mobile state
@@ -183,7 +184,13 @@
 
 <nav
     x-data="{ mobileOpen: false }"
+    {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
+         attributes, and the bag renders after this line — so a caller's `aria-label` was
+         parsed and then discarded, silently, on the one element whose name decides how the
+         page's navigation landmarks are told apart. --}}
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
     aria-label="{{ __('wirekit::Main navigation') }}"
+    @endunless
     {{ $attributes->class([$navClasses, $variantClasses, $stickyClasses]) }}
 >
     <div class="{{ $containerClasses }}">

@@ -5,7 +5,12 @@
 {{-- DEPRECATED: superseded by the radial-progress component, which is the canonical
      radial (circular) progress — richer (threshold coloring, valueText, a required
      accessible name) and consistently named. This sub-component still renders for
-     back-compat; it will be removed in v3.0.0. New code should use radial-progress.
+     back-compat, and no removal is scheduled — what is settled is that it will not GAIN
+     anything, not when it goes. New code should use radial-progress.
+     (This comment named v3.0.0 until 2026-09-09. That version is not coming, so the line
+     promised a date to every developer who reads the shipped source. A removal here is a
+     breaking change with nothing to soften it: there is no component-level alias in this
+     package, so the tag simply stops resolving.)
      (Component tag omitted from this comment on purpose — Blade compiles component
      tags even inside comments.) --}}
 @props([
@@ -68,11 +73,23 @@
 
     // Value text font size scales with circle size — must be small enough
     // to fit "100%" inside the circle without overflowing.
+    //
+    // ⚠️ ALL FOUR WERE ABSOLUTE `rem` LITERALS, AND THAT PUT THEM OUTSIDE THE FONT SCALE.
+    // A reader who sets `--font-scale-wk` gets larger type everywhere and this one number
+    // stays put — the omission failure `FontScaleGuardTest` is written against, arriving
+    // through a Tailwind arbitrary value, which that guard reads `dist/wirekit.css` and
+    // cannot see.
+    //
+    // Two of the four have a token at exactly their size and use it, so a theme that
+    // retunes the ramp carries them. The other two are BELOW the smallest rung
+    // (`--text-wk-2xs` is 0.6875rem) and there is no token to reach for — a 40px ring has
+    // to fit "100%" — so they keep their length and multiply by the scale factor
+    // themselves, which is the same shape the tokens use one file over.
     $textSize = match ($size) {
-        'sm' => 'text-[length:0.5rem]',
-        'lg' => 'text-[length:0.75rem]',
-        'xl' => 'text-[length:1rem]',
-        default => 'text-[length:0.625rem]',
+        'sm' => 'text-[length:calc(0.5rem*var(--font-scale-wk))]',
+        'lg' => 'text-[length:var(--text-wk-xs)]',
+        'xl' => 'text-[length:var(--text-wk-lg)]',
+        default => 'text-[length:calc(0.625rem*var(--font-scale-wk))]',
     };
 
     $wrapperClasses = WireKit::resolveClasses('progress', 'circle', implode(' ', [

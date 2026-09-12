@@ -1,5 +1,5 @@
 import { resolveThemeColors, palette, withOpacity } from '../utils/chart-theme-colors.js';
-import { prefersReducedMotion } from '../utils/motion.js';
+import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 
 /**
  * WireKit Chart.js Alpine Component.
@@ -24,8 +24,7 @@ import { prefersReducedMotion } from '../utils/motion.js';
  * Maintained on `window` so the proactive-sweep sees stale instances from
  * earlier Alpine mounts on this page (a docs.wirekit.app preview-replay button can
  * replace its iframe's innerHTML in place, which detaches the old canvas
- * without firing Alpine's `destroy()` hook — Chart.js's per-chart RAF loop
- * survives
+ * without firing Alpine's `destroy()` hook — Chart.js's per-chart RAF loop survives
  * and crashes on the next frame when `chart.ctx` resolves null against the
  * detached canvas). On every fresh init, we sweep the registry and destroy
  * any chart whose canvas is no longer in the document BEFORE the new chart's
@@ -100,14 +99,171 @@ export default function wirekitChartJs(config) {
         _darkModeObserver: null,
         _darkModeDebounce: null,
 
+        // The palette the chart is currently painted with. See the dark-mode observer:
+        // it fires on class mutations that have nothing to do with the theme, and this
+        // is what tells those apart from a real one.
+        _themeSignature: null,
+
         // Track which datasets had user-provided colors at init time.
         // These datasets are excluded from dark mode re-theming.
         _manualColorIndices: new Set(),
 
+        /**
+         * Paint a visible advisory where the chart would have been.
+         *
+         * ⚠️ WITHOUT THIS, A MISSING PEER LIBRARY LOOKED LIKE A STYLING BUG. The adapter
+         * returned after a console.error, leaving an empty box that the wrapper still
+         * announces as a chart — so the page reads as broken CSS to a developer and as an
+         * empty chart to a screen reader, and the one message explaining it was in a console
+         * nobody had open. The ApexCharts adapter has painted a panel for this case all along;
+         * these two behaved differently for the same failure.
+         *
+         * The canvas is REPLACED rather than filled: a <canvas> renders no HTML children, so
+         * there is nowhere inside it to put a message. It is hidden and the panel takes its
+         * place in the flow.
+         *
+         * Inline styles only — no Tailwind utilities and no CSS-variable lookups. The
+         * developer may have a misconfiguration there too, and the fallback has to paint no
+         * matter what state the surrounding theme is in. Same reasoning, same shape, as the
+         * ApexCharts panel.
+         */
+        _renderMissingLibraryPanel() {
+            this.$nextTick(() => {
+                const canvas = this.$refs.canvas;
+                if (!canvas || !canvas.parentElement) {
+                    return;
+                }
+
+                if (canvas.parentElement.querySelector('[data-wk-chart-missing]')) {
+                    return;
+                }
+
+                // How much room the panel actually has, measured BEFORE the canvas is
+                // hidden — hiding it first collapses an inline host to zero and the
+                // measurement then says the opposite of the truth.
+                //
+                // Measured 2026-09-08 on /preview/components/sparkline/3: an inline
+                // sparkline host is 4rem (64px) wide by design, and this panel rendered
+                // inside it as a 19px-wide, 975px-tall column of three characters per
+                // line, in the middle of a running sentence. At 1280px too — the width
+                // that breaks it is the HOST's, not the viewport's, so it was never a
+                // mobile bug even though the mobile sweep is what noticed.
+                // An empty mount can measure 0 — the panel is what will give it width —
+                // so a bare `width > 0` test defaults to the FULL panel exactly where the
+                // compact one is needed. Walk out to the nearest ancestor that has a
+                // resolved width; that is the room the panel will actually get.
+                const roomFor = (el) => {
+                    let n = el;
+                    while (n && n !== document.body) {
+                        const w = Math.round(n.getBoundingClientRect().width);
+                        if (w > 0) return w;
+                        n = n.parentElement;
+                    }
+                    return 0;
+                };
+                const availablePx = roomFor(canvas.parentElement);
+                const compact = availablePx > 0 && availablePx < 240;
+
+                canvas.style.display = 'none';
+
+                const panel = document.createElement('div');
+                panel.setAttribute('data-wk-chart-missing', compact ? 'compact' : 'full');
+
+                // `role="alert"` on an element the reader can actually reach. The canvas
+                // carries aria-hidden; this panel is a sibling, so it is not inside that
+                // subtree — an alert within an aria-hidden subtree is never announced, which
+                // is a trap the ApexCharts panel had to be repaired for.
+                // The compact form exists because the instructional one cannot be made to
+                // fit: it carries a <pre> with two npm/import lines, and a code block in a
+                // 64px box is unreadable at any font size. Nothing is lost — the same
+                // instructions go to the console (deduplicated, see init()), and the
+                // visually-hidden sentence below keeps the full message on the
+                // accessibility tree, where the `role="alert"` announces it either way.
+                /*
+                 * ⚠️ THE BACKGROUND IS OPAQUE, AND THAT IS THE WHOLE FIX RATHER THAN A DETAIL.
+                 *
+                 * This panel used `background: rgba(254, 243, 199, 0.5)` with
+                 * `color: rgb(120, 53, 15)` — amber-100 at half alpha under amber-900. In LIGHT
+                 * mode that composites to a pale amber and reads fine. In DARK mode the same
+                 * half-alpha fill blends with the page behind it, axe measured the effective
+                 * background as #847f69, and amber-900 on that is 2.25:1 against a 4.5:1
+                 * threshold. Twenty previews failed the dark sweep on 2026-09-10 (pipeline
+                 * 2679), all of them this one span.
+                 *
+                 * A translucent fill has no contrast ratio of its own — it has whatever the
+                 * thing behind it makes. So the pair is now the two tokens the design system
+                 * already aligns for exactly this, and they are OPAQUE: measured with the
+                 * repository's own WcagContrast, warning-text on warning-bg is 6.24:1 in light
+                 * and 7.76:1 in dark.
+                 *
+                 * The insets keep a tint rather than a fixed white, for the same reason one
+                 * level down: `rgba(255,255,255,0.6)` is a light surface in both modes, and in
+                 * dark it put a light-mode surface under light-mode-inverted text.
+                 *
+                 * `--color-wk-border-warning` is deliberately NOT used — it is one of the two
+                 * state-border tokens this library does not ship, and the guard's
+                 * $absentByDesign list fails the build on introducing one.
+                 */
+                panel.innerHTML = compact ? `
+                    <span role="alert"
+                          style="
+                             display: inline-block;
+                             max-width: 100%;
+                             overflow: hidden;
+                             text-overflow: ellipsis;
+                             white-space: nowrap;
+                             padding: 0 0.25rem;
+                             border: 1px solid color-mix(in oklab, var(--color-wk-warning-text, #78350f) 40%, transparent);
+                             border-radius: 0.25rem;
+                             background: var(--color-wk-warning-bg, #fffbeb);
+                             color: var(--color-wk-warning-text, #78350f);
+                             font-family: system-ui, -apple-system, sans-serif;
+                             font-size: 0.6875rem;
+                             line-height: 1.4;
+                          ">
+                        <span aria-hidden="true">! Chart.js missing</span>
+                        <span style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;">Chart.js is not loaded. Install the chart.js npm package and register its built-ins; the browser console carries the commands.</span>
+                    </span>
+                ` : `
+                    <div role="alert"
+                         style="
+                            padding: 1rem 1.25rem;
+                            border: 1px solid color-mix(in oklab, var(--color-wk-warning-text, #78350f) 40%, transparent);
+                            border-left: 4px solid var(--color-wk-warning-text, #b45309);
+                            border-radius: 0.375rem;
+                            background: var(--color-wk-warning-bg, #fffbeb);
+                            color: var(--color-wk-warning-text, #78350f);
+                            font-family: system-ui, -apple-system, sans-serif;
+                            font-size: 0.8125rem;
+                            line-height: 1.5;
+                         ">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">
+                            Chart.js is not loaded.
+                        </div>
+                        <p style="margin: 0 0 0.5rem 0;">
+                            WireKit's Chart.js adapter glue is loaded, but the
+                            <code style="font-family: ui-monospace, monospace; font-size: 0.85em; padding: 0.05rem 0.25rem; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.2rem;">chart.js</code>
+                            npm package is missing or its registerables were never registered.
+                        </p>
+                        <p style="margin: 0 0 0.5rem 0;">
+                            Install it and register the built-ins:
+                        </p>
+                        <pre tabindex="0" style="margin: 0; padding: 0.625rem 0.75rem; outline-offset: 2px; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.25rem; font-family: ui-monospace, monospace; font-size: 0.75rem; line-height: 1.5; overflow-x: auto;">npm install chart.js
+
+// resources/js/app.js
+import { Chart, registerables } from 'chart.js';
+Chart.register(...registerables);</pre>
+                    </div>
+                `;
+
+                canvas.parentElement.insertBefore(panel, canvas);
+            });
+        },
+
         init() {
             // Intentional console.error — DX hint when Chart.js peer dependency is missing.
             // Deduplicated via module-scoped flag so a page with N charts emits
-            // the warning ONCE rather than N times. (v2.4.0 R5 polish.)
+            // the warning ONCE rather than N times.
             if (typeof Chart === 'undefined') {
                 if (typeof window !== 'undefined') {
                     window.__wirekit_chartjs_missing_warned__ ??= false;
@@ -122,6 +278,9 @@ export default function wirekitChartJs(config) {
                         );
                     }
                 }
+
+                this._renderMissingLibraryPanel();
+
                 return;
             }
 
@@ -226,7 +385,38 @@ export default function wirekitChartJs(config) {
                 // Set up dark mode observer AFTER chart is created.
                 // This avoids the race condition where the observer fires
                 // before $nextTick completes and this.chart is still null.
+                // Seed the theme signature from what the chart was just BUILT with, so
+                // the first unrelated class toggle after construction is a no-op rather
+                // than a full re-theme that lands on the identical palette.
+                if (this.$refs.canvas) {
+                    const initialStyle = getComputedStyle(this.$refs.canvas);
+                    this._themeSignature = (initialStyle.getPropertyValue('--font-wk-sans').trim()
+                        || 'ui-sans-serif, system-ui, sans-serif')
+                        + '|' + JSON.stringify(this._resolveThemeColors(initialStyle));
+                }
+
                 this._setupDarkModeObserver();
+            });
+
+            // Reduced motion is a LIVE preference, not a construction-time constant.
+            // It was read once at `new Chart()` and never again, so a reader who turns
+            // motion down while the page is open kept every animation — and the OS
+            // preference is not even the common case here: WireKit's own site-level
+            // toggle writes `data-reduce-motion` onto <html>, which a chart already on
+            // screen had no way to notice. `watchReducedMotion` was built for exactly
+            // this and, until now, only the carousel used it.
+            this._motionCleanup = watchReducedMotion((reduced) => {
+                if (! this.chart) {
+                    return;
+                }
+
+                this.chart.options = this.chart.options || {};
+                this.chart.options.animation = reduced ? false : undefined;
+                this.chart.options.animations = reduced ? false : undefined;
+
+                // `'none'` — repaint without animating the change itself. Animating the
+                // switch to no-animation is the one transition nobody asked for.
+                try { this.chart.update('none'); } catch { /* defensive */ }
             });
 
             // Cleanup on Livewire navigation (SPA mode)
@@ -330,6 +520,30 @@ export default function wirekitChartJs(config) {
                     const fontFamily = style.getPropertyValue('--font-wk-sans').trim()
                         || 'ui-sans-serif, system-ui, sans-serif';
 
+                    /*
+                     * Nothing below runs unless the THEME actually changed.
+                     *
+                     * The observer's only gate is "was the mutated attribute `class`",
+                     * and html/body carry a great many classes that have nothing to do
+                     * with the theme — a scroll lock, an open navigation, a Livewire
+                     * state flag, the application's own. Every one of them re-resolved
+                     * the palette, re-applied it to every dataset and ran a full
+                     * Chart.js style pass with an animated redraw, on every chart on
+                     * the page. On a dashboard that is the most expensive thing a
+                     * class toggle can cost.
+                     *
+                     * Compared on the RESOLVED values rather than on the presence of a
+                     * `.dark` class: a theme preset can change the palette without
+                     * touching that class, and a dark-flag test would call it unchanged
+                     * and leave the chart on the old colors. This costs one string
+                     * comparison and cannot miss a change the old code would have seen.
+                     */
+                    const signature = fontFamily + '|' + JSON.stringify(colors);
+                    if (signature === this._themeSignature) {
+                        return;
+                    }
+                    this._themeSignature = signature;
+
                     // Re-apply global defaults with new dark/light colors.
                     // Note: Chart.js v4 caches resolved options per chart
                     // instance at construction time, so changing Chart.defaults
@@ -382,6 +596,10 @@ export default function wirekitChartJs(config) {
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
                 this._navCleanup = null;
+            }
+            if (this._motionCleanup) {
+                this._motionCleanup();
+                this._motionCleanup = null;
             }
             if (this._wireStreamHandler) {
                 const eventName = this.$el?.dataset?.wireStreamEvent;

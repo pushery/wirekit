@@ -6,9 +6,9 @@
     'wpm' => 225,
     'showRemaining' => false,
     'perParagraph' => false,
-    'totalLabel' => 'min read',
-    'remainingLabel' => 'min remaining',
-    'paragraphLabelTemplate' => '{n} min',
+    'totalLabel' => __('wirekit::min read'),
+    'remainingLabel' => __('wirekit::min remaining'),
+    'paragraphLabelTemplate' => __('wirekit::{n} min'),
     'paragraphMinWords' => 30,
     'cjkCharsPerMinute' => 500,
     'scope' => null,
@@ -79,6 +79,11 @@
     })"
     role="status"
     aria-live="polite"
+    {{-- Without this, a polite region announces only what CHANGED — and what changes here is
+         the number. A reader scrolling heard "12", then "11", then "9": three bare integers
+         with no unit and no idea what they count. `aria-atomic` makes the region announce
+         itself whole, which is "9 min remaining". --}}
+    aria-atomic="true"
     {{ $attributes->merge(['style' => 'font-size: var(--reading-meta-text-size); color: var(--reading-meta-color);'])->class([$rootClass]) }}
 >
     <span class="wk-reading-meta__total">

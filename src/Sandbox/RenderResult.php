@@ -25,10 +25,15 @@ namespace Pushery\WireKit\Sandbox;
  *
  * Caller maps to HTTP status: 200 for success, 422 for rejection.
  *
- * Public-readable property contract — downstream developers (e.g. the docs
- * site's `SandboxController`) read `ok`, `violations`, `html`, `schema` off
- * the object via `get_object_vars()`. Any rename here is a breaking change
- * for those developers.
+ * Public-readable property contract — a caller reads `ok`, `violations`, `html`
+ * and `schema` off the object via `get_object_vars()`, so any rename here is a
+ * breaking change for them.
+ *
+ * The example that stood here named a controller class belonging to a private
+ * application, in a file that ships to Packagist. A reader who greps for it
+ * finds nothing and cannot tell whether the class was removed or their checkout
+ * is broken — and the name says something about infrastructure that is not
+ * theirs to know.
  */
 final class RenderResult
 {

@@ -46,6 +46,7 @@ import wirekitPasswordInput from './components/password-input.js';
 import wirekitSegmentedControl from './components/segmented-control.js';
 import wirekitPricingTable from './components/pricing-table.js';
 import wirekitSortable from './components/sortable.js';
+import wirekitProgress from './components/progress.js';
 import wirekitReadingProgress from './components/reading-progress.js';
 import wirekitFileUpload from './components/file-upload.js';
 import wirekitTablist from './components/tablist.js';
@@ -112,8 +113,6 @@ export function installRuntime(Alpine) {
         window.wirekitPosition = position;
     }
 
-    // Magics before components: a component's own expressions may use them.
-
     // The overlay root BEFORE anything else: every teleported panel targets it, and
     // `x-teleport` treats a selector that matches nothing as fatal.
     installOverlayRoot();
@@ -141,6 +140,7 @@ export function installRuntime(Alpine) {
     // actually in hand.
     collapse(Alpine);
 
+    // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(Alpine);
 
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
@@ -213,6 +213,7 @@ export default function (Alpine) {
     Alpine.data('wirekitSegmentedControl', wirekitSegmentedControl);
     Alpine.data('wirekitPricingTable', wirekitPricingTable);
     Alpine.data('wirekitSortable', wirekitSortable);
+    Alpine.data('wirekitProgress', wirekitProgress);
     Alpine.data('wirekitReadingProgress', wirekitReadingProgress);
     Alpine.data('wirekitFileUpload', wirekitFileUpload);
     Alpine.data('wirekitTablist', wirekitTablist);
@@ -302,6 +303,7 @@ export {
     wirekitSegmentedControl,
     wirekitPricingTable,
     wirekitSortable,
+    wirekitProgress,
     wirekitReadingProgress,
     wirekitFileUpload,
     wirekitTablist,

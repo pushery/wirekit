@@ -67,7 +67,16 @@
 
     // Container: fixed portal, stacks toasts vertically with gap
     $containerClasses = WireKit::resolveClasses('toast-region', 'base', implode(' ', [
-        'fixed z-[9999]',
+        // The scale, not a hardcoded number. The literal four-nines arbitrary value that
+        // stood here worked and could not be themed: an application layering its own chrome
+        // above WireKit's had to out-bid a value it could not read, and the stacking order
+        // documented in the token scale did not mention toasts at all.
+        //
+        // The old value is DESCRIBED rather than quoted, and that is not fussiness: Tailwind
+        // scans this file as text, so writing the arbitrary-value class in a comment emits
+        // the class — the reverse-diff guard found it in the compiled stylesheet, traceable
+        // to no source emission, one build after the fix.
+        'fixed z-[var(--z-wk-toast)]',
         'flex flex-col gap-3',
         'p-4',
         'pointer-events-none',

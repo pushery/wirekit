@@ -56,10 +56,6 @@ final class BaseLocaleJsonLoader implements Loader
     private array $catalogs = [];
 
     /**
-     * @param  Loader  $loader  The loader being decorated; every call not handled here goes to it.
-     * @param  string  $path  Directory holding this package's own `{language}.json` catalogs.
-     */
-    /**
      * The prefix every key this package ships carries.
      *
      * Laravel's JSON channel has NO namespace of its own: `FileLoader::load()`
@@ -75,6 +71,29 @@ final class BaseLocaleJsonLoader implements Loader
      * appears at the call site.
      */
     public const NAMESPACE = 'wirekit::';
+
+    /**
+     * Keys this package has RENAMED, old spelling to current.
+     *
+     * A rename is the one catalog change an application cannot see coming. Their override sits
+     * under the old key, the components ask for the new one, and the wording simply reverts to
+     * ours — no error, no failing test, and the reader notices before anyone else does. That is
+     * the same shape of failure the plain-key bridge below exists to prevent, so it gets the
+     * same answer rather than a changelog line and a shrug.
+     *
+     * The three entries here are one change: the ellipsis. `lang/en.json` is the English
+     * backstop and its value IS its key minus the prefix, so a key spelled with three dots is
+     * a `Select...` painted onto an English page while all seven other catalogs already render
+     * `Auswählen …`, `Seleccionar…`, `Selecionar…`. English was the only locale reading wrong,
+     * and the key was the reason.
+     *
+     * @var array<string, string>
+     */
+    public const RENAMED_KEYS = [
+        'wirekit::Select...' => 'wirekit::Select…',
+        'wirekit::Add a tag...' => 'wirekit::Add a tag…',
+        'wirekit::Search commands...' => 'wirekit::Search commands…',
+    ];
 
     /**
      * @param  Loader  $loader  The loader being decorated; every call not handled here goes to it.
@@ -201,7 +220,63 @@ final class BaseLocaleJsonLoader implements Loader
 
         $merged = array_merge($plain, $ours, $lines);
 
-        return $this->bridgeLegacyKeys($ours, $merged, $lines);
+        return $this->bridgeRenamedKeys($ours, $this->bridgeLegacyKeys($ours, $merged, $lines), $lines);
+    }
+
+    /**
+     * Let an application's override of a RENAMED key keep applying under its new spelling.
+     *
+     * Read in both spellings, because an override can predate either change: `wirekit::Select...`
+     * from an application that had already adopted the prefix, and a plain `Select...` from one
+     * that has not. Whichever it wrote, it wrote it about this string.
+     *
+     * ⚠️ NOT GATED ON `$legacyKeyBridge`, and the difference is deliberate. That flag governs
+     * whether a plain key is INFERRED to mean ours — an inference an application may reasonably
+     * decline, and one the docs say goes away in the next major. This is not an inference: the
+     * application named a key this package used to ship, and the only question is whether the
+     * rename takes their wording away. Tying the two together would mean an application that
+     * turned off the inference silently lost its overrides on the day of an unrelated rename.
+     *
+     * @param  array<string, string>  $ours  This package's own catalog for this locale, namespaced.
+     * @param  array<string, mixed>  $merged  The stacked result to write into.
+     * @param  array<string, mixed>  $lines  What the real loader found — the application's catalog is in here.
+     * @return array<string, mixed>
+     */
+    private function bridgeRenamedKeys(array $ours, array $merged, array $lines): array
+    {
+        foreach (self::RENAMED_KEYS as $was => $now) {
+            // The application has ADOPTED the new key, and an explicit choice outranks a
+            // carried-over one. Told apart from OUR OWN entry the same way the plain-key
+            // bridge does it — the real loader reads this package's `{locale}.json` too, so
+            // `$lines` carries our namespaced keys as well.
+            if (array_key_exists($now, $lines) && $lines[$now] !== ($ours[$now] ?? null)) {
+                continue;
+            }
+
+            // ⚠️ THE TWO SPELLINGS ANSWER TO DIFFERENT RULES, and the first draft read both
+            // unconditionally. The PREFIXED old key is not an inference — the application
+            // named a key this package used to ship, so a rename must not take it away
+            // whatever the flag says. A PLAIN old key IS the inference `$legacyKeyBridge`
+            // governs: an application that switched the flag off has said "do not read my
+            // bare keys as yours", and honoring it here anyway re-opens exactly the door
+            // they closed. Caught by the control in the bridge-off case, which expected the
+            // package's own wording and got the application's.
+            $candidates = [$was];
+
+            if ($this->legacyKeyBridge) {
+                $candidates[] = substr($was, strlen(self::NAMESPACE));
+            }
+
+            foreach ($candidates as $candidate) {
+                if (array_key_exists($candidate, $lines)) {
+                    $merged[$now] = $lines[$candidate];
+
+                    break;
+                }
+            }
+        }
+
+        return $merged;
     }
 
     /**

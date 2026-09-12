@@ -254,7 +254,7 @@
             $plainHtmlWarning = '[wirekit] table: plain thead/tbody/tr/th/td detected in slot — these inherit no styling (padding, row dividers, stripe, hover). Wrap your rows in the table.head / table.body / table.row / table.th / table.td sub-components. See https://docs.wirekit.app/components/table for the canonical composition.';
         @endphp
         @if($alpineSort)
-            x-data="wirekitTableSort({ warning: {{ $hasPlainHtmlDescendants ? \Pushery\WireKit\Support\AlpinePayload::from($plainHtmlWarning) : 'null' }} })"
+            x-data="wirekitTableSort({ warning: {{ $hasPlainHtmlDescendants ? \Pushery\WireKit\Support\AlpinePayload::from($plainHtmlWarning) : 'null' }}, locale: {{ \Pushery\WireKit\Support\AlpinePayload::string(str_replace('_', '-', app()->getLocale())) }} })"
         @elseif($hasPlainHtmlDescendants)
             x-data="wirekitDevWarning({ message: {{ \Pushery\WireKit\Support\AlpinePayload::from($plainHtmlWarning) }} })"
         @endif

@@ -373,6 +373,13 @@ class CspAuditCommand extends Command
         /** @var array<int, string> $given */
         $given = (array) $this->option('registrations');
 
+        // Absolute for the same reason `--path` is, one step over: the files read from here
+        // are recorded by the spelling they came in with, and the report later asks whether
+        // a package's own source is among them by comparing prefixes against an absolute
+        // root. A relative `--registrations` never matched, so the hint told a developer to
+        // point at the very file the run had already read.
+        $given = array_map(self::normalizePath(...), $given);
+
         $candidates = [
             // Where a Laravel application's own bundle lands, in the two shapes Vite and a
             // hand-rolled build produce.
@@ -461,9 +468,72 @@ class CspAuditCommand extends Command
             }
         }
 
-        $files = array_values(array_unique($files));
+        /*
+         * ⚠️ AND THE BLADE FILES OF THE SCANNED SURFACE, because a registration does not
+         * have to live in a `.js` file to be real.
+         *
+         * Livewire's documented way to register an Alpine component is an `@script` block
+         * in the component's own Blade view, and `Alpine.data('name', …)` inside one is a
+         * registration like any other. Reading only `.js` therefore reported a CORRECT
+         * registration as missing — and the report's own wording makes that expensive: it
+         * says the element "renders VISIBLE and dead", which sends a developer to repair
+         * something that already works.
+         *
+         * Reported twice from one application against v2.48.0.
+         *
+         * The surface is the one the audit already walks for `x-data`, so this adds no
+         * reach beyond what is being judged: a name is looked for exactly where it is used.
+         * `AlpineRegistrations::inSource()` is content-agnostic — it matches the call, not
+         * the file type — so nothing else has to change.
+         */
+        $bladeFiles = [];
 
-        return ['names' => AlpineRegistrations::inFiles($files), 'files' => $files];
+        foreach ($paths as $viewPath) {
+            if (! is_dir($viewPath)) {
+                continue;
+            }
+
+            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($viewPath));
+
+            foreach ($it as $entry) {
+                if ($entry instanceof \SplFileInfo && $entry->isFile() && str_ends_with($entry->getFilename(), '.blade.php')) {
+                    $bladeFiles[] = $entry->getPathname();
+                }
+            }
+        }
+
+        $files = array_values(array_unique($files));
+        $bladeFiles = array_values(array_unique($bladeFiles));
+
+        $names = AlpineRegistrations::inFiles($files);
+
+        /*
+         * ⚠️ ONLY THE `@script` REGIONS OF A BLADE FILE, NEVER THE WHOLE FILE — and the
+         * difference is the one the reporter warned about before this was written.
+         *
+         * `@script` is the only placement that actually registers: Livewire re-runs it when
+         * the component initializes, which is before its directives are evaluated. A bare
+         * `<script>` in a Livewire view is NOT re-executed on a DOM patch, and an
+         * `Alpine.data()` call after `alpine:init` arrives too late to register anything.
+         *
+         * Counting both alike would trade a false alarm for SILENCE, and silence is the
+         * more expensive direction: it hides exactly the class this arm exists to report —
+         * an element that renders visible and dead.
+         */
+        foreach ($bladeFiles as $bladeFile) {
+            $source = (string) file_get_contents($bladeFile);
+
+            if (preg_match_all('/@script\b(.*?)@endscript\b/s', $source, $blocks) !== false) {
+                foreach ($blocks[1] as $block) {
+                    $names = array_merge($names, AlpineRegistrations::inSource($block));
+                }
+            }
+        }
+
+        $names = array_values(array_unique($names));
+        sort($names);
+
+        return ['names' => $names, 'files' => array_merge($files, $bladeFiles)];
     }
 
     /**
@@ -479,7 +549,24 @@ class CspAuditCommand extends Command
         // is hidden by that — the namespaces outside the surface are still reported, which is
         // what makes the narrower reading safe rather than merely simpler.
         if ($given !== []) {
-            return array_values(array_filter($given, 'is_dir'));
+            // ABSOLUTE, and that is a correctness requirement rather than tidiness. Two
+            // readers downstream ask which package a path belongs to by looking for a
+            // `vendor` segment with a separator in front of it, and the spelling a
+            // developer actually types has nothing in front of it at all:
+            // `--path=vendor/acme/widgets/resources/views` begins AT `vendor`. Both readers
+            // then found no package, so its own registration source was never added and
+            // every factory it registers correctly was reported as registered by nothing —
+            // the report for a genuinely dead panel, in the same words. The same run with
+            // the absolute spelling of the same directory passed.
+            //
+            // Resolved against the working directory rather than `base_path()`, because
+            // that is what `is_dir()` on the line below just did: a relative path that
+            // survives the filter is by definition one the working directory resolves. A
+            // path that does not is dropped here and reported as no surface at all.
+            return array_map(
+                self::normalizePath(...),
+                array_values(array_filter($given, 'is_dir')),
+            );
         }
 
         /** @var array<int, string> $viewPaths */
@@ -982,6 +1069,27 @@ class CspAuditCommand extends Command
     }
 
     /**
+     * The literal a rewritten Livewire expression calls, or null when it calls none.
+     *
+     * The four names are Livewire's own SKIP list minus the ones that cannot be a callee:
+     * `this`, `$wire` and `$event` are objects and `JSON` is a real global, so calling any
+     * of them is a different question. What is left is exactly the set that parses as a
+     * call and evaluates to a non-function.
+     *
+     * The lookbehind is what keeps the recommended repair out of the findings: in
+     * `$wire['true'](1)` the name sits behind a quote, and in `a.true(…)` behind a dot —
+     * both are member access rather than a bare identifier, and both are fine.
+     */
+    private static function literalCallee(string $expression): ?string
+    {
+        if (preg_match('/(?<![\w$.\\\'"\[])(true|false|null|undefined)\s*\(/u', $expression, $m) === 1) {
+            return $m[1];
+        }
+
+        return null;
+    }
+
+    /**
      * Why this expression's verdict rests on a substitution — or null when it does not.
      *
      * A Blade COMMENT is deliberately not a reason. It is removed outright rather than
@@ -1007,27 +1115,6 @@ class CspAuditCommand extends Command
      * no hint. A guard in the package's own suite derives the claim from `Js::from()`
      * itself rather than restating it here.
      */
-    /**
-     * The literal a rewritten Livewire expression calls, or null when it calls none.
-     *
-     * The four names are Livewire's own SKIP list minus the ones that cannot be a callee:
-     * `this`, `$wire` and `$event` are objects and `JSON` is a real global, so calling any
-     * of them is a different question. What is left is exactly the set that parses as a
-     * call and evaluates to a non-function.
-     *
-     * The lookbehind is what keeps the recommended repair out of the findings: in
-     * `$wire['true'](1)` the name sits behind a quote, and in `a.true(…)` behind a dot —
-     * both are member access rather than a bare identifier, and both are fine.
-     */
-    private static function literalCallee(string $expression): ?string
-    {
-        if (preg_match('/(?<![\w$.\\\'"\[])(true|false|null|undefined)\s*\(/u', $expression, $m) === 1) {
-            return $m[1];
-        }
-
-        return null;
-    }
-
     private static function unresolvedReason(string $raw): ?string
     {
         $withoutComments = (string) preg_replace('/\{\{--.*?--\}\}/su', '', $raw);

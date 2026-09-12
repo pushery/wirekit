@@ -149,8 +149,18 @@
             >
                 @if($onSale)
                     {{-- The badge is the visual shorthand. It is NOT the accessible story:
-                         the price itself announces "was X, N% off" (see price), so this
-                         carries no meaning a screen-reader user would miss without it. --}}
+                         the price prints the old amount in a real <del> with a visually
+                         hidden "Previous price" prefix, so the pair reads as a pair rather
+                         than as two unrelated numbers. A reader hears both amounts and the
+                         relation between them; the badge adds nothing they would miss.
+
+                         ⚠️ THIS SAID the price announces "was X, N% off", AND IT DOES NOT.
+                         The card passes `:base` and never `:delta`, and `price` derives no
+                         percentage from a base — its `$formattedDelta` is guarded on an
+                         explicit `delta`. The claim was load-bearing, because it is the
+                         stated reason this badge may stay decorative, and it invited the
+                         next author to leave a discount percentage unannounced in the
+                         belief that it already reached assistive technology. --}}
                     <span data-wk-product-card-sale>
                         <x-wirekit::badge intent="danger" surface="solid" size="sm">{{ __('wirekit::Sale') }}</x-wirekit::badge>
                     </span>
@@ -213,10 +223,16 @@
         @endif
 
         @if($price !== null)
-            {{-- price already announces "€39, was €59, 34% off" and renders the
-                 old amount in a real <del>. Re-implementing the sale story here
-                 would be a second copy to keep in step — and the reason the
-                 badge above can stay decorative. --}}
+            {{-- price renders the old amount in a real <del> behind a visually hidden
+                 "Previous price" prefix — a reader hears "Previous price €59.00, €39.00".
+                 Re-implementing the sale story here would be a second copy to keep in
+                 step, and this is the reason the badge above can stay decorative.
+
+                 ⚠️ THIS QUOTED "€39, was €59, 34% off", A STRING NOTHING EMITS. `price`
+                 computes a percentage only from an explicit `:delta`, which this card does
+                 not pass. Adding one would put a discount figure on every product card
+                 that is on sale — a visible design change rather than a comment repair,
+                 and not a decision this file gets to make on its own. --}}
             <span data-wk-product-card-price class="mt-auto">
                 <x-wirekit::price
                     :amount="$price"

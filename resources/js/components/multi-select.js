@@ -243,7 +243,7 @@ export default function wirekitMultiSelect(config = {}) {
             const option = this.filteredOptions[this.highlight];
 
             if (option) {
-                this.toggle(option.value);
+                this.toggleValue(option.value);
             }
         },
 
@@ -295,8 +295,11 @@ export default function wirekitMultiSelect(config = {}) {
          * behalf — without this the marker walks off the bottom of a capped
          * panel and Enter takes an option the reader cannot see.
          *
-         * By id rather than through `$refs`: the panel is teleported out of
-         * this component's subtree, and a ref does not survive that move.
+         * By id rather than through `$refs`, for the reason `_panelElement()` spells
+         * out in full 170 lines below: with `optimistic` set the refs register into
+         * a nested scope this component cannot read, and an id is scope-free. NOT
+         * the teleport — Alpine's closest-element walk follows `_x_teleportBack`,
+         * and that same docblock records the measurement proving it.
          */
         _revealHighlight() {
             if (this._movedByPointer) {
@@ -335,12 +338,9 @@ export default function wirekitMultiSelect(config = {}) {
         },
 
         /**
-         * Toggle selection of an option.
-         */
-        /**
          * The selection this value would produce, as a NEW array.
          *
-         * The optimistic layer needs it: toggle() mutates `selected` in place
+         * The optimistic layer needs it: toggleValue() mutates `selected` in place
          * with splice/push, and an in-place mutation is invisible to a layer
          * that has to write the value itself in order to snapshot what it
          * replaced. Returning a fresh array keeps both halves honest — the
@@ -357,7 +357,7 @@ export default function wirekitMultiSelect(config = {}) {
         },
 
         /**
-         * The part of toggle() that is not the selection itself — and NOT the
+         * The part of toggleValue() that is not the selection itself — and NOT the
          * focus move.
          *
          * Split out so the optimistic layer can run it after ITS write. It runs
@@ -371,7 +371,18 @@ export default function wirekitMultiSelect(config = {}) {
             this._clampHighlight();
         },
 
-        toggle(value) {
+        /**
+         * Toggle one option in or out of the selection — the plain path.
+         *
+         * NOT called `toggle`: the optimistic layer mounts inside this component and
+         * declares `toggle()` as part of its own contract, and Alpine resolves a name to
+         * the NEAREST scope that has it. Anything under the layer's element calling
+         * `toggle(value)` would reach the layer's method, which takes no argument and
+         * flips the whole value to a boolean. Nothing calls it from there today — the
+         * optimistic path runs `run(nextWith(...))` instead — which is exactly the kind
+         * of safety that lasts until the next edit.
+         */
+        toggleValue(value) {
             const idx = this.selected.indexOf(value);
             if (idx >= 0) {
                 this.selected.splice(idx, 1);

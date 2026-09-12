@@ -12,7 +12,6 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
-    use Illuminate\Support\Str;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -42,9 +41,22 @@
     // A caller-supplied id already solved it. The default is now seeded from the trigger
     // label, which is the only stable identity a collapsible has — and the one thing
     // about it that does not change between renders.
-    $uid = $attributes->get('id') ?: \Pushery\WireKit\WireKit::stableId(
-        'wk-collapsible',
-        is_string($trigger) || $trigger instanceof \Stringable ? trim((string) $trigger) : null
+    // Stable across renders, and unique on the page — two properties one hash cannot give.
+    //
+    // `stableId()` derives the id from the TRIGGER TEXT, which is what makes it survive a
+    // Livewire morph. It also makes two disclosures with the same trigger — "Details" twice
+    // on one page, which is the ordinary case in a list — share an id, so the second
+    // trigger's `aria-controls` resolved to the FIRST one's panel: expanding one announced
+    // that the other had opened.
+    //
+    // The deduper takes the stable value as its base and appends `-2` to a repeat, so the
+    // first keeps the readable id and the second stops pointing at it.
+    $uid = \Pushery\WireKit\Support\DomId::unique(
+        $attributes->get('id') ?: \Pushery\WireKit\WireKit::stableId(
+            'wk-collapsible',
+            is_string($trigger) || $trigger instanceof \Stringable ? trim((string) $trigger) : null
+        ),
+        'wk-collapsible-'
     );
     $openBool = (bool) $open;
 

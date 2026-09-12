@@ -158,7 +158,7 @@
     <span class="shrink-0 w-4 h-4 flex items-center justify-center" aria-hidden="true">
         <span
             class="w-3.5 h-3.5 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] flex items-center justify-center transition-colors duration-[var(--transition-wk-duration)]"
-            :class="{{ $stateExpr }} ? 'border-[var(--color-wk-accent)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]' : 'border-[var(--color-wk-border)]'"
+            :class="{{ $stateExpr }} ? 'border-[var(--color-wk-accent)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]' : 'border-[var(--color-wk-border-strong)]'"
         >
             <svg x-show="{{ $stateExpr }}" x-cloak class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />

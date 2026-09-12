@@ -153,7 +153,7 @@
         utility classes for decoration, inline style for load-bearing
         layout primitives.
     --}}
-    <ol
+    <ol role="list"
         class="wk-reading-toc__list wk-scrollbar flex flex-row items-center gap-[var(--reading-toc-gap)] py-[var(--reading-toc-padding-y)] px-[var(--reading-toc-padding-x)] overflow-x-auto"
         style="list-style: none; margin: 0; display: flex; flex-direction: row; align-items: center;"
     >

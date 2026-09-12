@@ -82,7 +82,16 @@ function broadcastStackChange() {
  *     we restore both the inline styles AND scroll back to the captured
  *     position so the page reads as if nothing happened.
  */
-function lockScroll() {
+/*
+ * Exported so a component with its own overlay machinery can still share THIS counter.
+ *
+ * The count is the whole point. Two overlays open at once, each with its own idea of the
+ * body's overflow, is how a page ends up scrollable behind a modal or frozen after the last
+ * one closed — `command-palette` carries a comment about exactly that failure, from when it
+ * wrote the empty string unconditionally on close. A second, independent lock elsewhere in
+ * the codebase would reintroduce it, so the helper is shared rather than copied.
+ */
+export function lockScroll() {
     if (scrollLockCount === 0) {
         const scrollY = window.scrollY || document.documentElement.scrollTop;
         // Scrollbar width: difference between visual viewport (window.innerWidth,
@@ -113,7 +122,7 @@ function lockScroll() {
     scrollLockCount++;
 }
 
-function unlockScroll() {
+export function unlockScroll() {
     scrollLockCount = Math.max(0, scrollLockCount - 1);
     if (scrollLockCount === 0 && scrollLockSnapshot) {
         const { scrollY, bodyOverflow, bodyPosition, bodyTop, bodyWidth, bodyPaddingRight } = scrollLockSnapshot;
@@ -335,6 +344,27 @@ export function createOverlay({
 
             // Focus trap — activate after Alpine renders the panel
             this.$nextTick(() => {
+                /*
+                 * Re-check the state the tick was queued under. It was not checked at all.
+                 *
+                 * `show()` guards `if (this.open) return` at the TOP, which prevents a
+                 * second show while one is open — and says nothing about the frame in
+                 * between. Anything can close the overlay inside that tick: Escape, a
+                 * `wirekit-overlay-close` event, a Livewire morph, `wire:model` flipping
+                 * false, another overlay opening above this one. The callback then armed a
+                 * trap on a panel that is no longer shown, and nothing takes it off —
+                 * `close()` had already run and found `_trap` empty, so the trap it never
+                 * saw kept its document-level keydown listener and went on trapping Tab
+                 * inside a hidden panel.
+                 *
+                 * `_trap` is checked for the same reason: two ticks can be queued (show,
+                 * close, show again within a frame) and the second would overwrite the first
+                 * handle, orphaning a live trap the same way.
+                 */
+                if (!this.open || this._trap) {
+                    return;
+                }
+
                 const panelEl = this.$refs.panel;
                 if (panelEl) {
                     this._trap = createFocusTrap(panelEl, {

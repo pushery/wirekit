@@ -90,8 +90,10 @@ export default function wirekitSidebarListbox(config = {}) {
         /**
          * The rows, in document order, read fresh.
          *
-         * Scoped to `$el` so a nested listbox — a filter column inside a shell that also
-         * has one — cannot capture the other's rows.
+         * Scoped to `$root` so a nested listbox — a filter column inside a shell that also
+         * has one — cannot capture the other's rows. The docblock said `$el` while the code
+         * and its own comment seven lines down said `$root`, which are the same element for
+         * every caller today and stop being so the moment one moves onto a row.
          */
         listboxOptions() {
             // `$root`, not `$el`. Today every caller of this reaches it from a handler on the

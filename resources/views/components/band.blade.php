@@ -36,10 +36,17 @@
 
     $paddingClasses = match ($padding) {
         'none' => '',
-        'xs' => 'px-[var(--padding-wk-x-sm,0.5rem)] py-[var(--padding-wk-y-xs,0.25rem)]',
-        'sm' => 'px-[var(--padding-wk-x-md,0.75rem)] py-[var(--padding-wk-y-sm,0.5rem)]',
-        'md' => 'px-[var(--padding-wk-x-lg,1.25rem)] py-[var(--padding-wk-y-md,0.75rem)]',
-        'lg' => 'px-[var(--padding-wk-x-xl,2rem)] py-[var(--padding-wk-y-lg,1rem)]',
+        // No literal fallbacks. SIX of the eight here disagreed with the token they stood in
+        // for — x-sm said 0.5rem against 0.625rem, y-sm 0.5rem against 0.375rem, x-lg 1.25rem
+        // against 1rem, and so on. A fallback fires only when the token did not resolve, so
+        // one carrying a different number turns a missing value into a WRONG one, and the band
+        // renders at a padding scale nothing in the theme uses. These are core tokens declared
+        // unconditionally, so the case never arises — which is precisely why nobody noticed
+        // them drifting.
+        'xs' => 'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
+        'sm' => 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]',
+        'md' => 'px-[var(--padding-wk-x-lg)] py-[var(--padding-wk-y-md)]',
+        'lg' => 'px-[var(--padding-wk-x-xl)] py-[var(--padding-wk-y-lg)]',
         default => WireKit::validateProp('band', 'padding', $padding, ['none', 'xs', 'sm', 'md', 'lg']),
     };
 

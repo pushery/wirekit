@@ -249,16 +249,37 @@
              every other scroll region in the catalog.
 
              `filled()`, never `?:` — an interpolated caller value can arrive empty, and a
-             named container with an empty name is worth less than no role at all. --}}
-        @if(filled($label))
+             named container with an empty name is worth less than no role at all.
+
+             Unconditional means unconditional ON A CLUSTER THAT HOLDS SOMETHING. An empty
+             default slot has nothing to overflow and therefore nothing to scroll to, so a
+             tab stop on it is a keypress that lands on a 0 x 0 box and announces nothing —
+             the exact outcome `shell-bar.md` warns about under "Never pass `label` to a bar
+             whose leading cluster is empty". That warning was written as advice to the
+             caller while the markup produced the stop either way; the gate below is the
+             same rule, enforced rather than requested.
+
+             The condition lives in the attribute's VALUE, not around the attribute.
+             `ScrollRegionKeyboardModelGuardTest` strips `@if(...)...@endif` before it reads
+             the wiring, on the grounds that a tab stop behind a Blade conditional is not a
+             keyboard model — so the wrapped form would read as no `tabindex` at all. `map`
+             uses the same shape for the same reason.
+
+             `hasActualContent()`, never `isEmpty()`. `ComponentSlot::isEmpty()` is a strict
+             `=== ''`, and a caller who writes the slots on separate lines leaves a newline in
+             the default one — so every real-world empty cluster reads as full. The trimming,
+             comment-stripping variant is the one that answers the question being asked. --}}
+        @if(filled($label) && $slot->hasActualContent())
             role="group"
             aria-label="{{ $label }}"
         @endif
-        tabindex="0"
+        tabindex="{{ $slot->hasActualContent() ? '0' : '-1' }}"
         @class([
             'wk-shell-bar-strip flex min-w-0 items-center gap-[var(--gap-wk-sm,0.5rem)] overflow-x-auto',
-            // The strip is a tab stop now, so it must show that it has focus.
-            'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+            // The strip is a tab stop now, so it must show that it has focus. Behind the
+            // same gate as the `tabindex` above: a ring on something nothing can focus is
+            // dead CSS, and keeping the two together means one condition to read.
+            'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' => $slot->hasActualContent(),
             // Grows to fill, so a child that asks for the full width gets it — a workspace
             // brand in a rail's head is the case. NOT applied under `align="center"`, where
             // the whole point is that the cluster is narrower than the bar and sits in the

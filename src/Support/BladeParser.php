@@ -14,8 +14,15 @@ namespace Pushery\WireKit\Support;
  *
  * Every developer that needs to introspect Blade content (CLI commands,
  * drift audits, future schema-export pipelines) routes through here OR
- * through PropsParser. Direct regex scanning of Blade source for this
- * data should be flagged by a future drift-audit guard (next iteration).
+ * through PropsParser. Direct regex scanning of Blade source for this data is a
+ * build failure: a drift guard refuses a new regex against the props directive
+ * anywhere in `src/`, and allowlists only PropsParser itself.
+ *
+ * ⚠️ THIS SAID "should be flagged by a future drift-audit guard (next iteration)"
+ * FOR SEVERAL RELEASES AFTER THAT GUARD SHIPPED. A reader takes it at
+ * its word and concludes the rule is aspirational — which is the direction that
+ * costs something: it is an invitation to write the regex the guard would have
+ * refused, and to find out at the gate instead of at the keyboard.
  *
  * Why this exists alongside PropsParser: the parser strategies overlap
  * but the use cases differ. PropsParser parses ONE PHP-syntax block
@@ -96,9 +103,6 @@ final class BladeParser
      * the heuristic needs to widen, OR the component author should
      * use the canonical `{{ $trigger ?? '' }}` shape.
      *
-     * @return list<array{name: string, required: bool}>
-     */
-    /**
      * @param  list<string>  $additionalExcludes  Extra names to drop from the
      *                                            detected slot set. Used by the
      *                                            JSON-manifest exporter to pass

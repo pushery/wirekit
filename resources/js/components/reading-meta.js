@@ -83,6 +83,27 @@ export default function wirekitReadingMeta(config = {}) {
                 window.removeEventListener('resize', this._scrollHandler);
                 this._scrollHandler = null;
             }
+
+            // The annotations go into somebody ELSE's article, so nothing else can clean
+            // them up. Left behind, a Livewire morph re-runs init and injects a second set
+            // beside the first — and the counts on the orphans are frozen at whatever they
+            // were when their component died.
+            this._removeParagraphAnnotations();
+        },
+
+        /**
+         * Take the injected spans back out of the article.
+         *
+         * ⚠️ This component writes into a subtree it does not own — the article is the
+         * developer's, and the annotations are ours. That makes removal our job in a way it
+         * would not be for markup inside the component's own root, which Alpine tears down
+         * with the element. Nothing here is reference-counted: `_paragraphData` is the
+         * complete record of what was inserted, so it is also the complete record of what to
+         * remove.
+         */
+        _removeParagraphAnnotations() {
+            this._paragraphData.forEach(({ el }) => el?.remove?.());
+            this._paragraphData = [];
         },
 
         /**
@@ -157,6 +178,11 @@ export default function wirekitReadingMeta(config = {}) {
          * to be worth one.
          */
         _injectParagraphAnnotations(root) {
+            // Idempotent. A morph, a re-init or a second call for any reason would otherwise
+            // add a second annotation above every paragraph, and the reader would see two
+            // "4 min remaining" labels stacked with different numbers on them.
+            this._removeParagraphAnnotations();
+
             root.querySelectorAll('p').forEach((p) => {
                 const text = (p.textContent || '').trim();
                 const words = text.split(/\s+/).filter((w) => w.length > 0).length;

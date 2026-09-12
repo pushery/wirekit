@@ -18,6 +18,8 @@
  * decision is the reason the arrow keys must call preventDefault: without it the caret jumps
  * to the ends of the query while the list moves, and the two fight each other.
  */
+import { pluralize } from '../utils/plural.js';
+
 export default function wirekitScopeSwitcher(config = {}) {
     return {
         /** Current query, bound to the search input. */
@@ -479,5 +481,16 @@ export default function wirekitScopeSwitcher(config = {}) {
 
         /** Mirrors visibleCount, but only after the pause — this is what the region reads. */
         announcement: 0,
+
+        // Sample counts -> translated templates, and the app locale. The count only exists
+        // here, so the plural form is chosen here too.
+        _resultPhrases: config.resultPhrases || {},
+        _locale: config.locale || 'en',
+
+        // The live-region text. It was `announcement + 'results'` in the template — string
+        // concatenation with no separator, which said "3results", and in German "3Treffer".
+        get resultAnnouncement() {
+            return pluralize(this._resultPhrases, this.announcement, this._locale);
+        },
     };
 }

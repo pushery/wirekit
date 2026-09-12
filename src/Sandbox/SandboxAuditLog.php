@@ -22,8 +22,10 @@ final class SandboxAuditLog
         // cannot reach, and PHPStan named it the moment the return type stopped lying.
         $logDir = self::resolveLogDir();
 
-        if (! is_dir($logDir)) {
-            @mkdir($logDir, 0755, true);
+        if (! is_dir($logDir) && ! @mkdir($logDir, 0755, true) && ! is_dir($logDir)) {
+            self::reportWriteFailure(sprintf('the log directory %s could not be created', $logDir));
+
+            return;
         }
 
         $file = $logDir.'/'.date('Y-m-d').'.log';
@@ -44,7 +46,40 @@ final class SandboxAuditLog
             (string) $violationsCount,
         ]).PHP_EOL;
 
-        @file_put_contents($file, $line, FILE_APPEND | LOCK_EX);
+        $written = @file_put_contents($file, $line, FILE_APPEND | LOCK_EX);
+
+        if ($written === false || $written !== strlen($line)) {
+            self::reportWriteFailure(sprintf('%s could not be appended to', $file));
+        }
+    }
+
+    /**
+     * Say so when a security record could not be written — WITHOUT throwing.
+     *
+     * ⚠️ The failure mode this closes is the quiet one: an unwritable log directory meant
+     * every rejected render went unrecorded, and the only evidence was an audit file that
+     * stops growing. A reader checking it later sees a clean history rather than a blind one,
+     * which is the wrong way round for a security record.
+     *
+     * It does NOT throw, and that is the other half. This runs on the reject path of a
+     * sandboxed render, so an exception here would turn "the audit log is unwritable" into
+     * "the endpoint is down" — an attacker who can fill a disk could take the surface with it.
+     * The application log is the right channel: it is watched, and it does not gate the
+     * request. Laravel's logger is used when the container has it, and PHP's is the fallback
+     * so the message survives outside a booted application.
+     */
+    private static function reportWriteFailure(string $detail): void
+    {
+        $message = 'WireKit sandbox audit log is not writable — '.$detail
+            .'. Rejected renders are going unrecorded.';
+
+        if (function_exists('app') && app()->bound('log')) {
+            app('log')->warning($message);
+
+            return;
+        }
+
+        error_log($message);
     }
 
     /**

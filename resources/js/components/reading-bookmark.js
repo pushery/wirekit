@@ -37,6 +37,7 @@
  * @param {string} config.promptMessage  the offer, already translated, for the live region to speak
  */
 import { prefersReducedMotion } from '../utils/motion.js';
+import { focusHeading } from '../utils/focus-heading.js';
 
 export default function wirekitReadingBookmark(config = {}) {
     return {
@@ -119,8 +120,49 @@ export default function wirekitReadingBookmark(config = {}) {
             window.removeEventListener('storage', this._onStorage);
         },
 
+        /**
+         * Move focus out of the pill before it disappears.
+         *
+         * `resume()` and `dismiss()` both hide the pill, and the pill is where the focus IS —
+         * the reader pressed one of its two buttons. Removing the focused element sends focus
+         * to `<body>`, so a keyboard user who accepted the offer lost their place in the
+         * document entirely and had to tab from the top again. That is the opposite of what
+         * this component is for.
+         *
+         * Focus goes to the reading target, which is the place the reader just asked to be.
+         * It needs `tabindex="-1"` to accept focus programmatically — added only if it has
+         * none, so a target that is already focusable keeps its own tab stop.
+         */
+        _moveFocusToTheReadingTarget() {
+            const root = this.$el ?? null;
+            const active = typeof document !== 'undefined' ? document.activeElement : null;
+
+            // Only when focus is actually inside the pill. Stealing it otherwise would move a
+            // reader who was somewhere else entirely.
+            if (!root || !active || typeof root.contains !== 'function' || !root.contains(active)) {
+                return;
+            }
+
+            // The reading target itself, not `_internallyScrollableTarget()` — that one
+            // returns null for the ordinary case where the page scrolls rather than a
+            // container, which is exactly when focus most needs somewhere to land.
+            const target = typeof document.querySelector === 'function'
+                ? document.querySelector(this._target)
+                : null;
+
+            if (!target || typeof target.focus !== 'function') {
+                return;
+            }
+
+            // Through the shared helper: reading-toc and reading-spine had the identical
+            // gap and now answer it the same way, and a `tabindex`/`preventScroll` pair
+            // written out three times is three places for one of them to drift.
+            focusHeading(target);
+        },
+
         /** Jump back to the stored position, on the scroll root that stored it. */
         resume() {
+            this._moveFocusToTheReadingTarget();
             this.showPrompt = false;
 
             // Through the shared helper, NOT window.matchMedia directly: the
@@ -141,6 +183,7 @@ export default function wirekitReadingBookmark(config = {}) {
 
         /** Take the prompt down but KEEP the bookmark — re-offer on the next visit. */
         dismiss() {
+            this._moveFocusToTheReadingTarget();
             this.showPrompt = false;
         },
 

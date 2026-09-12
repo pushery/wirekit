@@ -152,10 +152,12 @@
             type="radio"
             id="{{ $id }}"
             @if($value !== null) value="{{ $value }}" @endif
-            class="peer sr-only"
             @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
             @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
-            {{ $attributes->except(['id']) }}
+            {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
+                 caller's own class became a second class attribute and the browser kept only
+                 this one. --}}
+            {{ $attributes->except(['id'])->class(['peer', 'sr-only']) }}
         />
 
         {{-- Visual circle — sibling of .peer, consumes peer-checked border. The
@@ -172,7 +174,13 @@
         </span>
 
         @if($label)
-            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $label }}</span>
+@php
+    // Read, not consumed: a declared `required` prop would take the attribute out of the bag,
+    // and the bag is what delivers it to the native control. A bare `required` arrives as
+    // `true`.
+    $wkRequiredMarker = (bool) $attributes->get('required', false);
+@endphp
+            <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] select-none leading-tight pt-0.5">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @endif
     </label>
 

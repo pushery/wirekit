@@ -450,24 +450,24 @@
     "zeroAdvance": "0.562012"
   },
   "sans/vt323": {
-    "ascentOverride": "89.34%",
-    "descentOverride": "22.34%",
+    "ascentOverride": "120.02%",
+    "descentOverride": "30.00%",
     "fallbackFamily": "VT323 Fallback",
     "family": "VT323",
     "lineGapOverride": "0.0%",
     "measuredFrom": "resources/fonts/sans/vt323/VT323-Regular.woff2",
     "measuredWeight": 400,
-    "reference": "Arial",
+    "reference": "Courier New",
     "referenceFont": {
-      "ascent": 1854,
-      "avgCharWidth": 0.446716,
-      "descent": -434,
-      "lineGap": 67,
+      "ascent": 1705,
+      "avgCharWidth": 0.600098,
+      "descent": -615,
+      "lineGap": 0,
       "unitsPerEm": 2048,
       "usedTypoMetrics": false,
-      "zeroAdvance": 0.556152
+      "zeroAdvance": 0.600098
     },
-    "sizeAdjust": "89.54%",
+    "sizeAdjust": "66.66%",
     "webFont": {
       "ascent": 800,
       "avgCharWidth": 0.4,

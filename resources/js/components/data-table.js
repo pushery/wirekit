@@ -38,6 +38,8 @@
  */
 const KNOWN_INTENTS = ['primary', 'accent', 'info', 'success', 'warning', 'danger', 'neutral'];
 
+import { pluralize } from '../utils/plural.js';
+
 export default function wirekitDataTable(config = {}) {
     return {
         /**
@@ -158,6 +160,17 @@ export default function wirekitDataTable(config = {}) {
             this.selected = [];
             this._emitSelection();
         },
+        // Sample counts -> translated templates, and the app locale. The selection count
+        // only exists in the browser, so the plural form is chosen here.
+        _selectionPhrases: config.selectionPhrases || {},
+        _locale: config.locale || 'en',
+
+        // The selection readout, plural-correct in the reader's locale. It shipped as a
+        // bare English word inside an aria-live region.
+        get selectionSummary() {
+            return pluralize(this._selectionPhrases, this.selectedCount, this._locale);
+        },
+
         get selectedCount() {
             return this.selected.length;
         },

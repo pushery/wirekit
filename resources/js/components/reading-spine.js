@@ -24,6 +24,7 @@
  * global @media block. The plugin itself never animates anything in JS.
  */
 import { prefersReducedMotion } from '../utils/motion.js';
+import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
@@ -487,6 +488,13 @@ export default (options = {}) => ({
         // ever enters the active zone.
         const idx = this.items.findIndex((it) => it.id === id);
         if (idx >= 0) this.activeIndex = idx;
+
+        // Focus goes where the reader asked to go. `preventDefault()` at the top suppressed
+        // the anchor's default, and that default moves TWO things: the scroll and the
+        // sequential-navigation starting point. Only the first was replaced here, so a
+        // keyboard reader who jumped to a section was returned to the spine on their very
+        // next Tab. Shared with reading-toc, which had the identical gap.
+        focusHeading(el);
     },
 
     /**

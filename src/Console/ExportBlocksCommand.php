@@ -218,7 +218,7 @@ class ExportBlocksCommand extends Command
                 // repository path: it is the exact sibling of `preview_url` above,
                 // and its visibility follows the manifest's own model, because the
                 // route 404s for a gated page. So every entry in the `--public`
-                // manifest resolves by construction, with no cross-repo work.
+                // manifest resolves by construction, with nothing to reconcile elsewhere.
                 'source_url' => WireKit::DOCS_URL.'/'.$slug.'.md',
             ];
         }

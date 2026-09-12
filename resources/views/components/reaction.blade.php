@@ -96,6 +96,13 @@
             'hover:border-[var(--color-wk-border)]',
             'hover:bg-[var(--color-wk-bg-elevated)]',
         ]);
+
+    // Page-unique, and NOT derived from the content. `md5($emoji . implode(…, $userList))`
+    // gave two identical reactions on one page the same id — the same emoji with the same
+    // people is the ordinary case, not an edge one — so the second button's
+    // `aria-describedby` resolved to the FIRST one's list, and axe reported a duplicate id.
+    // Same helper, same reason, as ticker's `$tickerId`.
+    $reactionUsersId = \Pushery\WireKit\Support\DomId::unique(null, 'reaction-users-');
 @endphp
 
 @if($reactionOptimistic)
@@ -115,7 +122,7 @@
         x-on:click="toggle()"
     @endif
     @if(count($userList) > 0)
-        aria-describedby="reaction-users-{{ md5($emoji . implode(',', $userList)) }}"
+        aria-describedby="{{ $reactionUsersId }}"
     @endif
     {{-- aria-label via merge so a caller's aria-label OVERRIDES the default —
          a hardcoded attribute plus a separate $attributes bag renders a
@@ -131,7 +138,7 @@
         <span class="font-[number:var(--font-wk-heading-weight)] tabular-nums">{{ $count }}</span>
     @endif
     @if(count($userList) > 0)
-        <span id="reaction-users-{{ md5($emoji . implode(',', $userList)) }}" class="sr-only">
+        <span id="{{ $reactionUsersId }}" class="sr-only">
             {{ implode(', ', $userList) }}
         </span>
     @endif

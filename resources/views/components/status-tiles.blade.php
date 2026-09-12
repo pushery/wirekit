@@ -1,6 +1,12 @@
 {{-- optimistic-ui: n/a — navigation
      Tiles that link somewhere. They navigate. --}}
 @props([
+    // The empty state. `empty` REPLACES the body rather than sitting beside it: the screen a
+    // new user sees FIRST is the one with no data, and a single muted sentence can only say
+    // that nothing is here — it cannot say what to do about it, which is the whole job of that
+    // screen. `emptyText` is the default, so a caller that does not care changes nothing.
+    // Same shape as data-table, which is where the reasoning was first written down.
+    'emptyText' => __('wirekit::Nothing here yet'),
     // The fleet: a list of entities to render as status tiles. Each entry:
     //   ['key' => 'app-1', 'label' => __('wirekit::shop.example'), 'intent' => 'danger', 'href' => '…', 'meta' => '2 issues']
     // intent ∈ success | warning | danger | info | neutral (anything else → neutral).
@@ -176,7 +182,20 @@
     {{-- The tile grid IS the ARIA list (role on the grid element itself, so the
          tiles are its direct listitem children). The caller's aria-label + other
          attributes forward onto it. --}}
-    <x-wirekit::grid role="list" :cols="$columns" :gap="$gap" {{ $attributes->except('class') }}>
+    @if($tiles === [])
+        {{-- The empty state REPLACES the grid rather than sitting inside it: a `role="list"`
+             with no listitem is a list that promises entries and has none, and axe reports it.
+             The container keeps the centering and padding either way, so a slot holding an
+             `<x-wirekit::empty-state>` lands where the sentence does. --}}
+        <div {{ $attributes->except('class')->class(['flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center']) }}>
+            @isset($empty)
+                {{ $empty }}
+            @else
+                <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
+            @endisset
+        </div>
+    @else
+        <x-wirekit::grid role="list" :cols="$columns" :gap="$gap" {{ $attributes->except('class') }}>
         @foreach($tiles as $tile)
             {{-- The listitem role sits on the WRAPPER, never on the <a> — an explicit
                  role on a link REPLACES its implicit `link` role, so the tile would
@@ -191,7 +210,13 @@
                                 <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
                             </span>
                             @if($tile['meta'] !== null)
-                                <span class="{{ $metaClamp }} text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
+                                {{-- Its OWN title when it clamps. The tile carries `title=label`,
+                                     so hovering a truncated meta caption surfaced the label
+                                     instead — a tooltip that answers a question the reader did
+                                     not ask, and reads as a bug rather than as a missing
+                                     feature. Only when it can actually clip: an unclamped
+                                     caption wraps and needs no tooltip at all. --}}
+                                <span class="{{ $metaClamp }} text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" @if(! $wrapMeta) title="{{ $tile['meta'] }}" @endif>{{ $tile['meta'] }}</span>
                             @endif
                             @if($showStatus)
                                 <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('wirekit::Status:') }}</span>{{ $tile['statusWord'] }}</span>
@@ -208,7 +233,13 @@
                                 <span class="truncate text-[length:var(--text-wk-sm)] font-[family-name:var(--font-wk-sans)] text-[color:var(--color-wk-text)]">{{ $tile['label'] }}</span>
                             </span>
                             @if($tile['meta'] !== null)
-                                <span class="{{ $metaClamp }} text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $tile['meta'] }}</span>
+                                {{-- Its OWN title when it clamps. The tile carries `title=label`,
+                                     so hovering a truncated meta caption surfaced the label
+                                     instead — a tooltip that answers a question the reader did
+                                     not ask, and reads as a bug rather than as a missing
+                                     feature. Only when it can actually clip: an unclamped
+                                     caption wraps and needs no tooltip at all. --}}
+                                <span class="{{ $metaClamp }} text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" @if(! $wrapMeta) title="{{ $tile['meta'] }}" @endif>{{ $tile['meta'] }}</span>
                             @endif
                             @if($showStatus)
                                 <span class="truncate text-[length:var(--text-wk-xs)] font-[family-name:var(--font-wk-sans)]" style="color: {{ $tile['color'] }}"><span class="sr-only">{{ __('wirekit::Status:') }}</span>{{ $tile['statusWord'] }}</span>
@@ -220,5 +251,6 @@
                 @endif
             </div>
         @endforeach
-    </x-wirekit::grid>
+        </x-wirekit::grid>
+    @endif
 </div>

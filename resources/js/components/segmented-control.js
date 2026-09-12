@@ -26,6 +26,9 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  */
 export default function wirekitSegmentedControl(config = {}) {
     return {
+        // Mirrors the component's `disabled` prop. See select().
+        disabled: config.disabled === true,
+
         selected: config.selected != null ? String(config.selected) : '',
 
         init() {
@@ -44,12 +47,14 @@ export default function wirekitSegmentedControl(config = {}) {
             // path a server-side change travels — which is what its own docblock
             // already claimed. The config argument still wins when given, so a
             // caller constructing this factory by hand is unaffected.
+            //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
             // here, but the ESM harness constructs each factory with a deliberately
-            // barren stub — `test-tabs.mjs` passes `{ querySelectorAll }` and nothing
-            // else, on purpose — and a factory that requires more than it uses turns
-            // that into a TypeError at init. Measured: one of 63 ESM scripts, red in
-            // CI and invisible to the PHP suite, which does not run them.
+            // barren stub — `test-segmented-control.mjs` passes `{ querySelectorAll }` and
+            // `test-server-value-seed.mjs` a lone `getAttribute`, each on purpose — and a
+            // factory that requires more than it uses turns that into a TypeError at init.
+            // Measured on 2026-08-16: one of 63 ESM scripts, red in CI and invisible to the
+            // PHP suite, which does not run them.
             if (config.selected == null) {
                 const seed = typeof this.$root?.getAttribute === 'function'
                     ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE)
@@ -101,6 +106,13 @@ export default function wirekitSegmentedControl(config = {}) {
          * see a change, which is the whole reason the input exists.
          */
         select(value) {
+            // A disabled group stays FOCUSABLE — a natively disabled radiogroup vanishes
+            // from the tab order and a reader never learns the setting exists — so the
+            // refusal has to happen here instead of at the browser level.
+            if (this.disabled) {
+                return;
+            }
+
             this.selected = String(value);
             this._notify();
         },

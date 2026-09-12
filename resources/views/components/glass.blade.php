@@ -2,7 +2,18 @@
      Renders no interactive element, so there is no action whose result could be
      shown early. Measured rather than asserted: the guard refutes this reason for
      any file that renders one. --}}
-{{-- WireKit Liquid Glass Extension — include in layout <head>.
+{{-- WireKit Liquid Glass Extension — the FIRST thing in the layout <body>.
+
+     ⚠️ This line used to point at the OTHER end of the document, and the docs page, the
+     install command's docblock and the CLI reference all spell out why that is wrong. The
+     component emits an <svg>; the HTML parser has no "in head" insertion mode for one, so it
+     terminates that section and switches to the body — and every metadata tag after it, a
+     canonical link, the Open Graph block, a layout's @stack('meta'), is reparented into the
+     body, where a crawler does not look. The page still renders, which is why the wrong
+     instruction survived here across releases.
+
+     The wrong placement is deliberately not written out as a phrase: a guard scans these
+     surfaces for it, and quoting it would trip the guard from the very comment that fixes it.
      Loads glass CSS, JS, and injects SVG filter definitions for Tier 2.
 
      Wrapped in @once, and that is a correctness requirement rather than tidiness:
@@ -17,8 +28,19 @@
      keeps both cases correct — the standalone preview still gets its filter, and
      a layout that already provides one is not duplicated. --}}
 @once
-<link rel="stylesheet" href="{{ asset('vendor/wirekit/glass/wirekit-glass.css') }}">
-<script src="{{ asset('vendor/wirekit/glass/wirekit-glass.js') }}" defer></script>
+@php
+    // The nonce, resolved the same way `fonts` and the asset directives resolve it.
+    //
+    // This component is the only one that emits EXTERNAL assets, and it was the only one
+    // with no nonce path at all. Under a `script-src 'strict-dynamic' 'nonce-…'` policy —
+    // which is the shape a nonce-based policy takes — a `<script src>` without the nonce is
+    // simply not executed, so the whole Tier-2 runtime went missing with nothing in the page
+    // to say why. The stylesheet is the same question one severity down: `style-src` with a
+    // nonce rejects an unnonced `<link rel="stylesheet">` and the surface renders unstyled.
+    $wkGlassNonce = \Pushery\WireKit\WireKit::cspNonce();
+@endphp
+<link rel="stylesheet"@if($wkGlassNonce) nonce="{{ $wkGlassNonce }}"@endif href="{{ asset('vendor/wirekit/glass/wirekit-glass.css') }}">
+<script @if($wkGlassNonce)nonce="{{ $wkGlassNonce }}"@endif src="{{ asset('vendor/wirekit/glass/wirekit-glass.js') }}" defer></script>
 
 <svg xmlns="http://www.w3.org/2000/svg"
      style="position:absolute;width:0;height:0;overflow:hidden"

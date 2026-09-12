@@ -14,6 +14,7 @@ use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
 use Pushery\WireKit\Support\DirectoryHash;
+use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\Support\TailwindVersion;
 use Pushery\WireKit\WireKit;
 
@@ -88,22 +89,62 @@ class VerifyInstallationCommand extends Command
         $this->setAliases(['wirekit:doctor']);
     }
 
+    /**
+     * The two scopes `--tier` accepts.
+     *
+     * Named rather than inlined because the value set was written out three times in one
+     * method — once in the `in_array` check, once in the message's "Available:" list, and a
+     * third time as the hint's haystack. Three copies of one list is three chances for the
+     * rejection message to name a value the check does not accept.
+     *
+     * @var list<string>
+     */
+    private const TIERS = ['package', 'environment'];
+
+    /**
+     * The severities `--fail-on` accepts, in ascending strictness.
+     *
+     * Same reason as TIERS. `wirekit:doctor-a11y` carries the identical set for the identical
+     * flag; the two are separate constants because neither command depends on the other, and
+     * a shared one would couple them for the sake of three strings.
+     *
+     * @var list<string>
+     */
+    private const FAIL_ON_LEVELS = ['error', 'warning', 'none'];
+
     private int $passed = 0;
 
     private int $warned = 0;
 
     private int $failed = 0;
 
-    /** @var string[]|null Memoized layout file paths (used by multiple checks) */
-
     /** @var string[]|null Memoized all blade file paths */
     private ?array $allBladeFiles = null;
 
     public function handle(): int
     {
+        /*
+         * Reset before anything counts, because Artisan resolves a command ONCE per process
+         * and hands the same instance to every invocation. On the CLI that is invisible —
+         * one process, one run — but `Artisan::call('wirekit:verify')` twice in an app, a
+         * scheduled task or a test reported the second run as the SUM of both: "12 passed,
+         * 8 warnings, 6 failed" over a project with six checks passing. The memoized blade
+         * list is the same hazard one step further on: a second run would audit the file
+         * list the first one saw, so a file created in between is invisible to it.
+         */
+        $this->passed = 0;
+        $this->warned = 0;
+        $this->failed = 0;
+        $this->allBladeFiles = null;
+
         $tier = $this->option('tier');
-        if ($tier !== null && ! in_array($tier, ['package', 'environment'], true)) {
-            $this->error("Unknown tier '{$tier}'. Available: package, environment.");
+        if ($tier !== null && ! in_array($tier, self::TIERS, true)) {
+            $this->error("Unknown tier '{$tier}'. Available: ".implode(', ', self::TIERS).'.');
+
+            $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein((string) $tier, self::TIERS));
+            if ($hint !== null) {
+                $this->line('  '.$hint);
+            }
 
             return self::FAILURE;
         }
@@ -112,8 +153,13 @@ class VerifyInstallationCommand extends Command
         // a whole check run that then exits on the wrong rule.
         $failOn = (string) ($this->option('fail-on') ?: 'error');
 
-        if (! in_array($failOn, ['error', 'warning', 'none'], true)) {
-            $this->error("Unknown --fail-on value '{$failOn}'. Expected one of: error, warning, none.");
+        if (! in_array($failOn, self::FAIL_ON_LEVELS, true)) {
+            $this->error("Unknown --fail-on value '{$failOn}'. Expected one of: ".implode(', ', self::FAIL_ON_LEVELS).'.');
+
+            $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein($failOn, self::FAIL_ON_LEVELS));
+            if ($hint !== null) {
+                $this->line('  '.$hint);
+            }
 
             // FAILURE, never INVALID: every wirekit:* command exits 1 on every error path,
             // including a usage error.
@@ -410,10 +456,6 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Check that resources/css/app.css has a @source directive scanning WireKit Blade templates.
-     * Without this, Tailwind v4 won't generate utility classes used by WireKit components.
-     */
-    /**
      * Strip CSS comments, ignoring comment syntax that occurs inside a quoted string.
      *
      * A Tailwind `@source` argument is a quoted path, and a glob is made of the same two
@@ -482,6 +524,10 @@ class VerifyInstallationCommand extends Command
         return $out;
     }
 
+    /**
+     * Check that resources/css/app.css has a @source directive scanning WireKit Blade templates.
+     * Without this, Tailwind v4 won't generate utility classes used by WireKit components.
+     */
     private function checkTailwindSource(): void
     {
         $cssFiles = glob(resource_path('css/*.css')) ?: [];
@@ -586,41 +632,6 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Report top-level sections the published config never learned about.
-     *
-     * A published config is a snapshot of the day it was published. WireKit now
-     * merges recursively, so a missing key still resolves and nothing breaks —
-     * but the developer's own file no longer shows the full configurable surface,
-     * and they cannot set what they cannot see. Naming the gap is the difference
-     * between "my config lists everything" and "my config lists what existed in
-     * February".
-     *
-     * Deliberately a WARN: re-publishing overwrites the developer's edits, so this
-     * is information, not an instruction.
-     *
-     * It used to be top-level-only as well, with the same reasoning — that listing
-     * every nested key would bury the signal. The reasoning was sound and the
-     * conclusion was not, because the check kept its PASS line: of the two hundred
-     * odd leaves in the shipped config it compared exactly TWO, and then told the
-     * developer their file "covers every option this version offers". Reconstructed
-     * against real tags: a config published at v2.20.0 and checked against v2.22.0
-     * prints that line while `a11y.motion_attribute` is missing from the file.
-     *
-     * The damage is pure invisibility — the runtime still resolves the missing
-     * keys, since the merge is recursive — but an application cannot configure
-     * what its own config file does not show, and it was explicitly told there
-     * was nothing to see.
-     *
-     * So the comparison is now over flattened leaf paths, and the output is
-     * grouped by owning section so a config that predates most of them reads as a
-     * handful of lines instead of a wall. Burying the signal was the right fear;
-     * the answer is to summarize it, not to stop measuring.
-     *
-     * The two tallies this paragraph used to carry are gone on purpose. Both were
-     * measured against the config of the day and both were stale within a minor,
-     * which leaves a comment about a drift carrying one of its own.
-     */
-    /**
      * Config nodes whose KEYS belong to the developer, not to this package.
      *
      * An icon alias they invent, a font family they host. The stub can document
@@ -642,8 +653,13 @@ class VerifyInstallationCommand extends Command
         // `wirekit.components.<name>.classes.<block>`, and the block names are the
         // component's own — `base`, `segment-selected`, and so on for every component in
         // the catalog. The stub cannot list them: it would have to carry a `classes` entry
-        // for all 264 components times each of their blocks, and the entry is a full class
+        // for every component times each of its blocks, and the entry is a full class
         // string a developer replaces rather than a default they tweak.
+        //
+        // ⚠️ The count that stood here was 264 and matched nothing: the registry holds 180
+        // names and the component tree 267 files. A number in a comment has no guard, so it
+        // drifts silently and then argues with the reader about a fact it gets wrong. The
+        // sentence does not need one.
         //
         // So every correct use of a supported seam was reported as an option that had been
         // removed. Measured in an adopting application: eleven `<x-wirekit::link>` and one
@@ -656,6 +672,23 @@ class VerifyInstallationCommand extends Command
         // `components.button.classes.base` and leaves `components.button.legacyRounding`
         // reportable, which is the case the counter-check next door pins.
         'components.*.classes',
+        // ⚠️ AND THE SAME SEAM ONE SEGMENT DEEPER, because a SUB-component's name is
+        // dotted. `card.header` and `sidebar.item` are single components with two-segment
+        // names, so their seam is `components.sidebar.item.classes.active` — which
+        // `components.*.classes` cannot match, since `*` is exactly one segment and that
+        // precision is deliberate.
+        //
+        // Reported twice from two applications before this line existed, and the first
+        // report was closed by the pattern above: `components.link.classes.base` and
+        // `components.segmented-control.classes.segment-selected` are flat names and were
+        // fixed, while `components.sidebar.item.classes.active` kept being called residue.
+        // A partly-repaired exemption reads as a repaired one — the second report looks
+        // like a regression rather than the half that was never covered.
+        //
+        // Two segments and no more: sub-components nest exactly one level in this catalog
+        // (measured: 179 flat names, 88 singly-dotted, maximum depth 2), so a third `*`
+        // would exempt paths that do not exist and weaken the counter-case next door.
+        'components.*.*.classes',
     ];
 
     /**
@@ -701,6 +734,41 @@ class VerifyInstallationCommand extends Command
         return false;
     }
 
+    /**
+     * Report top-level sections the published config never learned about.
+     *
+     * A published config is a snapshot of the day it was published. WireKit now
+     * merges recursively, so a missing key still resolves and nothing breaks —
+     * but the developer's own file no longer shows the full configurable surface,
+     * and they cannot set what they cannot see. Naming the gap is the difference
+     * between "my config lists everything" and "my config lists what existed in
+     * February".
+     *
+     * Deliberately a WARN: re-publishing overwrites the developer's edits, so this
+     * is information, not an instruction.
+     *
+     * It used to be top-level-only as well, with the same reasoning — that listing
+     * every nested key would bury the signal. The reasoning was sound and the
+     * conclusion was not, because the check kept its PASS line: of the two hundred
+     * odd leaves in the shipped config it compared exactly TWO, and then told the
+     * developer their file "covers every option this version offers". Reconstructed
+     * against real tags: a config published at v2.20.0 and checked against v2.22.0
+     * prints that line while `a11y.motion_attribute` is missing from the file.
+     *
+     * The damage is pure invisibility — the runtime still resolves the missing
+     * keys, since the merge is recursive — but an application cannot configure
+     * what its own config file does not show, and it was explicitly told there
+     * was nothing to see.
+     *
+     * So the comparison is now over flattened leaf paths, and the output is
+     * grouped by owning section so a config that predates most of them reads as a
+     * handful of lines instead of a wall. Burying the signal was the right fear;
+     * the answer is to summarize it, not to stop measuring.
+     *
+     * The two tallies this paragraph used to carry are gone on purpose. Both were
+     * measured against the config of the day and both were stale within a minor,
+     * which leaves a comment about a drift carrying one of its own.
+     */
     private function checkConfigDrift(): void
     {
         $publishedPath = config_path('wirekit.php');
@@ -1043,15 +1111,12 @@ class VerifyInstallationCommand extends Command
         $orderFailedFile = null;
 
         foreach ($bladeFiles as $file) {
-            $rawContent = file_get_contents($file);
-            // Strip Blade comments before scanning — otherwise a comment
-            // containing the literal text `@livewireScripts` (e.g.
-            // `{{-- Note: @livewireScripts must come AFTER @wirekitScripts --}}`)
-            // makes strpos() return the comment's position, producing a
-            // false-positive on the order check. Strip Blade comments
-            // before scanning so an inline annotation referencing the
-            // directive name doesn't mis-cue the order check.
-            $content = preg_replace('/\{\{--.*?--\}\}/s', '', $rawContent) ?? $rawContent;
+            $rawContent = (string) file_get_contents($file);
+            // Scan only the text this file would actually EXECUTE. A comment
+            // that happens to name a directive answers the check for it, which
+            // is the same failure this scan already guarded against for Blade
+            // comments and was still open for three other comment syntaxes.
+            $content = self::stripInertBladeText($rawContent);
 
             if (str_contains($content, '@wirekitStyles')) {
                 $foundStyles = true;
@@ -1217,11 +1282,6 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Warn if WireKit views have been published (vendor override).
-     * Published views override package views — after a WireKit update,
-     * the published copies may be outdated and miss new features or fixes.
-     */
-    /**
      * The generated AI catalogs (`.boost/wirekit.json`, `.wirekit-schema.json`)
      * are written ONCE and never refreshed on their own — `wirekit:boost-skills`
      * and `wirekit:install` both bail early when the file already exists unless
@@ -1306,6 +1366,11 @@ class VerifyInstallationCommand extends Command
         $this->line("  Fix (only if you wanted a delta): 'block' => fn (string \$vendor) => \$vendor.' your-classes'");
     }
 
+    /**
+     * Warn if WireKit views have been published (vendor override).
+     * Published views override package views — after a WireKit update,
+     * the published copies may be outdated and miss new features or fixes.
+     */
     private function checkPublishedViewsStaleness(): void
     {
         $publishedViewsPath = resource_path('views/vendor/wirekit');
@@ -1631,30 +1696,6 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Check optional dependencies: Chart.js adapter, QR Code package, and the
-     * editor / map front-end peer dependencies (Tiptap, MapLibre GL / Leaflet).
-     * These are INFO-level only — not required for core functionality.
-     */
-    /**
-     * Does every CONFIGURED icon preset have its composer package installed?
-     *
-     * The published config carries a commented line offering the stacked shape:
-     *
-     *     // 'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
-     *
-     * Uncommenting it on a phosphor, lucide or tabler installation trades a missing
-     * alias for a RESOLVING alias onto a glyph that is not installed — and that
-     * throws when the page renders rather than degrading to the inert placeholder.
-     * The failure therefore lands on a visitor's page, in whichever view happened to
-     * use the word, and says nothing about the config line that caused it.
-     *
-     * A WARNING rather than a failure, and rather than a boot-time abort. An abort
-     * would be a behavior change on a shipped configuration; this is purely additive
-     * and moves the discovery to a command a developer chose to run. The stricter
-     * form stays available afterwards if it turns out somebody needs it — the reverse
-     * is not as easy.
-     */
-    /**
      * Is the WireKit in `vendor/` the one this app's lockfile names?
      *
      * A developer checking whether an upstream capability has landed reads the source in
@@ -1949,9 +1990,6 @@ class VerifyInstallationCommand extends Command
      * governing WireKit, so the next reader who edits it to change a component's wording
      * changes nothing, and nothing tells them why.
      *
-     * @param  array<string, list<string>>  $ambiguous  namespaced key => locales holding both
-     */
-    /**
      * Both spellings of one key in a catalog — and only one of the two shapes is a defect.
      *
      * Holding `Home` and `wirekit::Home` with DIFFERENT wordings is the state the divergence
@@ -2131,6 +2169,25 @@ class VerifyInstallationCommand extends Command
         return $used;
     }
 
+    /**
+     * Does every CONFIGURED icon preset have its composer package installed?
+     *
+     * The published config carries a commented line offering the stacked shape:
+     *
+     *     // 'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
+     *
+     * Uncommenting it on a phosphor, lucide or tabler installation trades a missing
+     * alias for a RESOLVING alias onto a glyph that is not installed — and that
+     * throws when the page renders rather than degrading to the inert placeholder.
+     * The failure therefore lands on a visitor's page, in whichever view happened to
+     * use the word, and says nothing about the config line that caused it.
+     *
+     * A WARNING rather than a failure, and rather than a boot-time abort. An abort
+     * would be a behavior change on a shipped configuration; this is purely additive
+     * and moves the discovery to a command a developer chose to run. The stricter
+     * form stays available afterwards if it turns out somebody needs it — the reverse
+     * is not as easy.
+     */
     private function checkIconPresetPackages(): void
     {
         if (! class_exists(Factory::class)) {
@@ -2199,6 +2256,11 @@ class VerifyInstallationCommand extends Command
         }
     }
 
+    /**
+     * Check optional dependencies: Chart.js adapter, QR Code package, and the
+     * editor / map front-end peer dependencies (Tiptap, MapLibre GL / Leaflet).
+     * These are INFO-level only — not required for core functionality.
+     */
     private function checkOptionalDependencies(): void
     {
         $chartConfig = config('wirekit.charts.library');
@@ -2304,18 +2366,6 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Three-step ApexCharts adapter check:
-     *   1. Confirm the apexcharts npm package is installed (FAIL on absence —
-     *      otherwise the chart renders blank with a console.error).
-     *   2. License-tier reminder — PASS on 'commercial' / 'oem'; WARN on
-     *      'community' (confirming the value, and saying why it still speaks),
-     *      on an unrecognized value (naming it back), and when unset. Never FAIL
-     *      purely on tier choice (license compliance is the developer's
-     *      responsibility, not a config error).
-     *   3. Adapter-bundle presence — confirm dist/wirekit-apex.js was published
-     *      to the public/vendor folder. WARN on absence with a republish hint.
-     */
-    /**
      * Name the ApexCharts major in play, and say whether the adapter has been tested against it.
      *
      * The presence check above proves the package can be resolved. It says nothing about WHICH
@@ -2383,6 +2433,18 @@ class VerifyInstallationCommand extends Command
         ));
     }
 
+    /**
+     * Three-step ApexCharts adapter check:
+     *   1. Confirm the apexcharts npm package is installed (FAIL on absence —
+     *      otherwise the chart renders blank with a console.error).
+     *   2. License-tier reminder — PASS on 'commercial' / 'oem'; WARN on
+     *      'community' (confirming the value, and saying why it still speaks),
+     *      on an unrecognized value (naming it back), and when unset. Never FAIL
+     *      purely on tier choice (license compliance is the developer's
+     *      responsibility, not a config error).
+     *   3. Adapter-bundle presence — confirm dist/wirekit-apex.js was published
+     *      to the public/vendor folder. WARN on absence with a republish hint.
+     */
     private function checkApexChartsAdapter(): void
     {
         $this->reportPass('ApexCharts adapter configured');
@@ -3107,6 +3169,88 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
+     * Remove every span of a Blade file a browser would never execute.
+     *
+     * `checkBladeDirectives()` asks whether a directive is PRESENT, and it asks by searching
+     * raw text. Text that only mentions a directive answers that question just as well as text
+     * that uses one — so a note explaining the rule satisfies the check for the rule, and the
+     * doctor reports a working setup over a broken one. That is precisely the case the check
+     * exists for.
+     *
+     * The Blade half was already stripped, for exactly this reason, after a
+     * `{{-- … @livewireScripts … --}}` note mis-cued the ORDER check. Three syntaxes were left:
+     *
+     *   - an HTML comment — `<!-- @wirekitStyles goes here -->`
+     *   - a `//` or `#` line comment inside `@php … @endphp`
+     *   - the same inside a raw `<?php … ?>` island
+     *
+     * Measured in WireKit-Docs, which uses the `@import` path and no directive at all: the only
+     * surviving match was the phrase `and ``@wirekitStyles`` now links it` in a PHP comment, and
+     * the doctor printed `✓ @wirekitStyles directive found` instead of the correct PASS line for
+     * the `@import` path. Harmless there because a valid path existed; on an install with
+     * NEITHER it reports a green setup over a broken one.
+     *
+     * ⚠️ THE PHP HALF IS TOKENIZED RATHER THAN MATCHED, and that is not fastidiousness: `//`
+     * also occurs inside `'https://…'` and `#` inside `'#fff'`. A pattern that cuts at either
+     * would truncate a live line — and truncating a line is how a strip meant to remove false
+     * positives starts producing false negatives instead. `token_get_all()` is the reader PHP
+     * itself uses, so a string keeps its contents.
+     */
+    private static function stripInertBladeText(string $blade): string
+    {
+        // Neither comment form nests, so one non-greedy pass over each is exact.
+        $live = preg_replace('/\{\{--.*?--\}\}/s', '', $blade) ?? $blade;
+        $live = preg_replace('/<!--.*?-->/s', '', $live) ?? $live;
+
+        // A PHP comment can only exist inside a PHP island, so the islands are located first
+        // and only their bodies are handed to the lexer. The delimiters are kept: removing them
+        // would join the text on either side into one line and could fabricate a match.
+        return preg_replace_callback(
+            '/(@php\b)(.*?)(@endphp)|(<\?php)(.*?)(\?>)/s',
+            static function (array $m): string {
+                $isBladeIsland = $m[1] !== '';
+
+                return $isBladeIsland
+                    ? $m[1].self::stripPhpComments($m[2]).$m[3]
+                    : $m[4].self::stripPhpComments($m[5]).$m[6];
+            },
+            $live,
+        ) ?? $live;
+    }
+
+    /**
+     * Drop comment tokens from a fragment of PHP, leaving every other byte untouched.
+     *
+     * The fragment arrives without an opening tag, so one is prepended for the lexer and then
+     * skipped in the output — `token_get_all()` reports it as the first token and nothing else
+     * inside a `@php` body can produce a second one.
+     */
+    private static function stripPhpComments(string $php): string
+    {
+        $live = '';
+
+        foreach (token_get_all('<?php '.$php) as $index => $token) {
+            if ($index === 0 && is_array($token) && $token[0] === T_OPEN_TAG) {
+                continue;
+            }
+
+            if (is_array($token)) {
+                if ($token[0] === T_COMMENT || $token[0] === T_DOC_COMMENT) {
+                    continue;
+                }
+
+                $live .= $token[1];
+
+                continue;
+            }
+
+            $live .= $token;
+        }
+
+        return $live;
+    }
+
+    /**
      * Strip CSS block comments before any raw-text scan of app.css.
      *
      * Several checks grep app.css as plain text (the @import-path
@@ -3587,26 +3731,6 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Detects compiled-view staleness — the canonical reason a developer
-     * test sees "the new prop isn't there" even after their Blade source
-     * carries it. Laravel's `storage/framework/views/` retains pre-edit
-     * compiled templates whose filemtime granularity (1-second) AND
-     * filesystem-cache lag can let stale output survive a fast file-edit
-     * cycle. The first diagnostic chain a developer walks is "did I wire
-     * the prop?" — this check short-circuits that and points at
-     * `php artisan view:clear`.
-     *
-     * Threshold: 60-second buffer between newest source mtime and
-     * newest compiled-view mtime. Below the threshold = no warning
-     * (normal fast-edit window). Above = WARN with the actionable hint.
-     *
-     * False-positive mitigation: this is WARN (not FAIL), the recommended
-     * action is non-destructive, and slow filesystems (NFS / Docker on
-     * macOS) get the same advice they'd give themselves anyway. The
-     * threshold is tuned to bite on "I edited an hour ago and the test
-     * still fails" — not on "I just hit save".
-     */
-    /**
      * The newest mtime the PACKAGE itself carries — its registry plus every component view.
      *
      * A `composer update pushery/wirekit` moves this and touches nothing under
@@ -3627,6 +3751,26 @@ class VerifyInstallationCommand extends Command
         return $newest;
     }
 
+    /**
+     * Detects compiled-view staleness — the canonical reason a developer
+     * test sees "the new prop isn't there" even after their Blade source
+     * carries it. Laravel's `storage/framework/views/` retains pre-edit
+     * compiled templates whose filemtime granularity (1-second) AND
+     * filesystem-cache lag can let stale output survive a fast file-edit
+     * cycle. The first diagnostic chain a developer walks is "did I wire
+     * the prop?" — this check short-circuits that and points at
+     * `php artisan view:clear`.
+     *
+     * Threshold: 60-second buffer between newest source mtime and
+     * newest compiled-view mtime. Below the threshold = no warning
+     * (normal fast-edit window). Above = WARN with the actionable hint.
+     *
+     * False-positive mitigation: this is WARN (not FAIL), the recommended
+     * action is non-destructive, and slow filesystems (NFS / Docker on
+     * macOS) get the same advice they'd give themselves anyway. The
+     * threshold is tuned to bite on "I edited an hour ago and the test
+     * still fails" — not on "I just hit save".
+     */
     private function checkCompiledViewsFreshness(): void
     {
         $compiledDir = storage_path('framework/views');

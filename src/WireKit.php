@@ -50,11 +50,17 @@ class WireKit
      * `button` migrated to `intent` + `surface` and `input` never had a `variant`
      * at all.
      *
-     * `variant` is NOT retired in general — it is a live, declared prop on alert,
-     * card, text, checkbox, radio, timeline, tabs, cta, navbar, faq, countdown,
-     * reading-progress and theme-controller. It is retired on `button` and `badge`
-     * only, so a blanket search-and-replace across `variant=` breaks thirteen
-     * components that are correct.
+     * `variant` is NOT retired in general — it is a live, declared prop across a large
+     * part of the catalog, and it is retired on `button` and `badge` ONLY. A blanket
+     * search-and-replace across `variant=` therefore breaks every component that is
+     * correct.
+     *
+     * ⚠️ This paragraph used to enumerate thirteen of them by name. There are 34, and a
+     * reader who checked the named ones concluded they had checked — the understatement
+     * is worse than no list, because it looks like an inventory. The current set comes
+     * from the parser, which cannot drift:
+     *
+     *     grep -l "'variant'" resources/views/components/**\/*.blade.php
      *
      * @param  array<string, mixed>|Closure  $defaults
      */
@@ -292,8 +298,13 @@ class WireKit
      *
      * Public without an external caller: every call site is a Blade view in this package
      * (`tabs`, `collapsible`, `data-table`, `filter-builder`, `notification-center`,
-     * `status-matrix`), and a view cannot reach a non-public static. It is plumbing for
-     * those templates, not a promise a developer may build on.
+     * `status-matrix`, `sidebar/collapsible`, `sidebar/group`), and a view cannot reach a
+     * non-public static. It is plumbing for those templates, not a promise a developer may
+     * build on.
+     *
+     * ⚠️ The list named six for as long as there were eight. A docblock enumerating call
+     * sites is a second copy of `grep`, and the copy is the one that goes stale — read it
+     * as "which KIND of thing calls this", never as an inventory.
      *
      * A DOM id that survives a Livewire round trip.
      *
@@ -378,9 +389,6 @@ class WireKit
     }
 
     /**
-     * @param  array<int, string>  $allowed
-     */
-    /**
      * Validate a prop value against a list of allowed values.
      *
      * Delegates through `StrictnessGate` so the strict-vs-lenient
@@ -430,11 +438,6 @@ class WireKit
     }
 
     /**
-     * Resolve an icon alias to the actual Blade Icon identifier.
-     *
-     * Usage: WireKit::icon('close') -> 'heroicon-m-x-mark'
-     */
-    /**
      * The CSP nonce this request runs under, or null when it runs under none.
      *
      * WireKit emits exactly one inline `<style>` — the three font custom
@@ -476,6 +479,11 @@ class WireKit
         return is_string($vite) && $vite !== '' ? $vite : null;
     }
 
+    /**
+     * Resolve an icon alias to the actual Blade Icon identifier.
+     *
+     * Usage: WireKit::icon('close') -> 'heroicon-m-x-mark'
+     */
     public static function icon(string $alias): string
     {
         return app(IconResolver::class)->resolve($alias);

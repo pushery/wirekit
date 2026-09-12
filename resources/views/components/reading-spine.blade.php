@@ -290,7 +290,7 @@
             "no padding between dot and edge" symptom). Gap is driven by the
             CSS variable so the list density tracks `--reading-spine-gap`.
         --}}
-        <ol
+        <ol role="list"
             class="flex flex-col py-[var(--reading-spine-padding-y)] px-[var(--reading-spine-padding-x)]"
             style="list-style: none; margin: 0; padding-top: var(--reading-spine-padding-y); padding-right: var(--reading-spine-padding-x); padding-bottom: var(--reading-spine-padding-y); padding-left: var(--reading-spine-padding-x); display: flex; flex-direction: column; gap: var(--reading-spine-gap);"
         >

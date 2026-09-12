@@ -139,8 +139,8 @@ final class DocsVisibility
 
         $content = (string) file_get_contents($path);
 
-        // No frontmatter → the downstream Markdown parser defaults to
-        // guest + non-draft → publicly rendered.
+        // No frontmatter → the downstream Markdown parser applies its own defaults,
+        // which are unrestricted and non-draft → publicly rendered.
         if (! str_starts_with($content, '---')) {
             return self::STATUS_PUBLIC;
         }
@@ -152,21 +152,69 @@ final class DocsVisibility
 
         $frontmatter = substr($content, 3, $closing - 3);
 
-        // `visibility:` value on its own line. Strict shape avoids
-        // false-positives on prose mentions of the literal field name.
-        // Any value other than guest hides the page from the public.
-        if (preg_match('/^\s*visibility\s*:\s*([a-z]+)\s*$/mi', $frontmatter, $m) === 1
-            && strtolower($m[1]) !== 'guest') {
+        // `visibility:` value on its own line. Strict about the KEY, so a prose mention of
+        // the field name is not mistaken for a declaration; tolerant about the VALUE,
+        // because the failure directions are not symmetric — see readFrontmatterValue().
+        $visibility = self::readFrontmatterValue($frontmatter, 'visibility');
+
+        if ($visibility !== null && strtolower($visibility) !== 'guest') {
             return self::STATUS_STAGED;
         }
 
         // `draft: true` pages exist on disk but are not publicly
         // rendered either — the same as a page the frontmatter
         // restricts (mirrors the blocks export's public filter).
-        if (preg_match('/^\s*draft\s*:\s*true\s*$/mi', $frontmatter) === 1) {
+        $draft = self::readFrontmatterValue($frontmatter, 'draft');
+
+        if ($draft !== null && in_array(strtolower($draft), ['true', 'yes', 'on', '1'], true)) {
             return self::STATUS_STAGED;
         }
 
         return self::STATUS_PUBLIC;
+    }
+
+    /**
+     * One frontmatter scalar, read the way YAML would write it.
+     *
+     * ⚠️ THE VALUE CLASS USED TO BE `([a-z]+)`, AND THAT IS A FAIL-OPEN SHAPE. Four ordinary
+     * YAML spellings did not match it, and a non-match here does not mean "no restriction" —
+     * it means the restriction was not SEEN, and the page was reported publicly renderable.
+     * Written with a placeholder value, because naming the tiers in a source comment is
+     * itself a leak this package forbids:
+     *
+     *     key: "value"           quoted — the quotes are outside [a-z]
+     *     key: value # a note    an inline comment breaks the `\s*$` anchor
+     *     key: value-with-dash   a hyphen is outside [a-z]
+     *     draft: "true"          the same, on the other key
+     *
+     * The two directions cost differently, which is why the tolerance goes here rather than
+     * being argued about case by case. Reading a restriction that is not there hides a page
+     * from a manifest — a missing entry somebody notices. MISSING a restriction that IS
+     * there publishes a restricted page in a public artifact, which the artifact rules call
+     * an absolute ground rule. So the key stays strict and the value gets read properly.
+     */
+    private static function readFrontmatterValue(string $frontmatter, string $key): ?string
+    {
+        if (preg_match('/^\s*'.preg_quote($key, '/').'\s*:\s*(.+)$/mi', $frontmatter, $m) !== 1) {
+            return null;
+        }
+
+        $value = trim($m[1]);
+
+        // An inline comment. Only when it follows whitespace or starts the value — a `#`
+        // inside a word (a color, a fragment) is part of the value.
+        $value = (string) preg_replace('/(^|\s)#.*$/', '', $value);
+        $value = trim($value);
+
+        // Surrounding quotes, either style, only when they match each other.
+        if (strlen($value) >= 2
+            && ($value[0] === '"' || $value[0] === "'")
+            && $value[strlen($value) - 1] === $value[0]) {
+            $value = substr($value, 1, -1);
+        }
+
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
     }
 }

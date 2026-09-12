@@ -12,6 +12,7 @@
  * @param {number} config.maxValue - Initial maximum selection
  * @param {string} config.name - Input name for form submission
  */
+import { frameCoalesce } from '../utils/frame-coalesce.js';
 export default function wirekitRangeSlider(config = {}) {
     return {
         minVal: config.minValue ?? config.min ?? 0,
@@ -20,6 +21,22 @@ export default function wirekitRangeSlider(config = {}) {
         _max: config.max ?? 100,
         _step: config.step ?? 1,
         _dragging: null,
+        /*
+         * The three document-level drag listeners, held so a teardown can reach them.
+         *
+         * They used to live only in closures inside `_startDrag`, removed by the `onUp`
+         * that ends the gesture — which is fine for every drag that ENDS. A component torn
+         * down mid-gesture (a Livewire morph, a conditional render flipping, an SPA
+         * navigation) never gets that pointerup: three handlers stay on `document`, each
+         * closing over a dead scope, and the next pointer move anywhere on the page runs
+         * `_onDrag` against it.
+         *
+         * Declared here with the other state rather than assigned inside the method,
+         * because a handle that only ever appears inside a method is one nobody reading
+         * the teardown knows to look for.
+         */
+        _dragMove: null,
+        _dragEnd: null,
         // True when the two thumbs are close enough that their individual value
         // badges would overlap — the blade then shows ONE merged "min – max"
         // badge instead. Set by _measureBubbles() (measured, not a guessed %).
@@ -257,8 +274,12 @@ export default function wirekitRangeSlider(config = {}) {
             // color-picker drag optimization.
             this._dragRect = this.$refs.track ? this.$refs.track.getBoundingClientRect() : null;
 
-            const onMove = (e) => this._onDrag(e);
-            const onUp = () => {
+            // A second pointerdown before the first gesture ended would add a second set
+            // of listeners over the first, and only the newest pair would ever be removed.
+            this._releaseDragListeners();
+
+            this._dragMove = (e) => this._onDrag(e);
+            this._dragEnd = () => {
                 // The commit boundary for a drag. pointercancel lands here too,
                 // and that is not an oversight: a canceled drag still leaves
                 // the thumb somewhere, and a value on screen the server was
@@ -267,16 +288,55 @@ export default function wirekitRangeSlider(config = {}) {
 
                 this._dragging = null;
                 this._dragRect = null;
-                document.removeEventListener('pointermove', onMove);
-                document.removeEventListener('pointerup', onUp);
-                document.removeEventListener('pointercancel', onUp);
+                this._releaseDragListeners();
             };
 
             // Passive — onDrag only computes the value from pointer position;
             // it never calls preventDefault, so it must not block scroll.
-            document.addEventListener('pointermove', onMove, { passive: true });
-            document.addEventListener('pointerup', onUp);
-            document.addEventListener('pointercancel', onUp);
+            document.addEventListener('pointermove', this._dragMove, { passive: true });
+            document.addEventListener('pointerup', this._dragEnd);
+            document.addEventListener('pointercancel', this._dragEnd);
+        },
+
+        /**
+         * Drop the document-level drag listeners, from wherever the gesture ended.
+         *
+         * Idempotent on purpose: it is called by the pointerup that ends a normal drag, by
+         * a second pointerdown, and by `destroy()`, and only one of those is guaranteed to
+         * happen.
+         */
+        _releaseDragListeners() {
+            if (this._dragMove) {
+                document.removeEventListener('pointermove', this._dragMove);
+                this._dragMove = null;
+            }
+
+            if (this._dragEnd) {
+                document.removeEventListener('pointerup', this._dragEnd);
+                document.removeEventListener('pointercancel', this._dragEnd);
+                this._dragEnd = null;
+            }
+        },
+
+        /**
+         * Alpine's teardown hook. This component had none.
+         *
+         * Without it a drag interrupted by a morph or a navigation left three handlers on
+         * `document` writing into a scope nobody owns any more — and `_onDrag` reads
+         * `this.$refs.track`, so the leak is not merely idle: every pointer move on the
+         * page ran a measurement against a detached element.
+         *
+         * ⚠️ `_commit()` is deliberately NOT called here. Teardown is not a commit boundary
+         * — the component is going away, and sending a value the reader never let go of
+         * would be the optimistic layer's worst case: a write nobody asked for, on a
+         * surface that no longer exists to roll it back.
+         */
+        destroy() {
+            this._releaseDragListeners();
+            this._measureFrame?.cancel();
+            this._measureFrame = null;
+            this._dragging = null;
+            this._dragRect = null;
         },
 
         /**
@@ -362,7 +422,21 @@ export default function wirekitRangeSlider(config = {}) {
         },
 
         remeasure() {
-            this.$nextTick(() => this._measureBubbles());
+            /*
+             * Coalesced to one measurement a frame.
+             *
+             * This is reached from `x-effect`, so it fires on every write to minVal /
+             * maxVal — which during a drag is every pointermove, faster than the display
+             * refreshes. `_measureBubbles()` then does three layout reads (the track's
+             * rect and both bubbles' offsetWidth) against a DOM the same gesture is
+             * writing, which is exactly the per-event cost the drag's own `_dragRect`
+             * cache was added to remove; it was removed from one path and left on the
+             * other.
+             *
+             * A frame is also strictly later than the `$nextTick` this replaced, so the
+             * Alpine-rendered DOM being measured is current either way.
+             */
+            (this._measureFrame ??= frameCoalesce(() => this._measureBubbles())).schedule();
         },
 
         /**

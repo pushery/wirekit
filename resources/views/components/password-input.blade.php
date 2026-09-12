@@ -42,9 +42,18 @@
     'hint' => null,
     'error' => null,
     'size' => config('wirekit.components.password-input.size', 'md'),
-    'toggle' => true,
-    'strengthMeter' => false,
+    'toggle' => config('wirekit.components.password-input.toggle', true),
+    'strengthMeter' => config('wirekit.components.password-input.strength-meter', false),
     'scope' => null,
+    // WCAG 1.3.5 (Identify Input Purpose): a password field has to say WHICH password it is,
+    // or a password manager and an autofill heuristic have to guess — and they guess wrong on
+    // a change-password form, where three fields look identical and only one is the new one.
+    //
+    // The default is the sign-in case, which is the overwhelming majority of uses. A
+    // registration or change form passes `autocomplete="new-password"`, and `false` opts out
+    // entirely for a field that is not a credential at all.
+    'autocomplete' => 'current-password',
+
 ])
 
 @aware(['announceErrors' => null])
@@ -220,7 +229,11 @@
     <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
     @if($label)
-        <x-wirekit::label :for="$id" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
+             declaring it would pull `required` OUT of the bag, and the bag is what carries the
+             attribute to the native control below. A bare `required` lands in the bag as
+             `true`, so this reads it without consuming it. --}}
+        <x-wirekit::label :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 
     <div class="relative">
@@ -235,6 +248,9 @@
                  component documents. --}}
             type="password"
             :type="showPassword ? 'text' : 'password'"
+            @if($autocomplete !== null && ! \Pushery\WireKit\Support\BooleanProp::isFalse($autocomplete))
+                autocomplete="{{ $autocomplete }}"
+            @endif
             id="{{ $id }}"
             name="{{ $name }}"
             @if($strengthMeter) x-model="password" @endif
@@ -254,7 +270,13 @@
         @if($toggle)
             <button
                 type="button"
-                class="absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)]"
+                {{-- wk-touch-target: a centered, invisible 44x44 ::before under `pointer: coarse`.
+                     The button is 36px wide at phone widths -- narrower than the bar this library
+                     states for itself -- and the expander is exactly the mechanism for that: an
+                     icon button whose painted box stays small. It is OUTSIDE any class seam a
+                     developer can replace, like `wk-field`, because a floor that an override can
+                     remove is not a floor. --}}
+                class="wk-touch-target absolute inset-y-0 right-0 flex items-center px-[var(--padding-wk-x-sm)] cursor-pointer rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)]"
                 @click="showPassword = !showPassword"
                 {{-- Static aria-label and aria-pressed guard the pre-Alpine render
                      (axe scans the DOM before hydration may complete); the bound

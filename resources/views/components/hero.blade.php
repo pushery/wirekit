@@ -189,14 +189,19 @@
 
     // Gradient overlay direction is variant-aware so the effect stays visible
     // regardless of the underlying background luminance:
-    //   - default (light surface): 10 % BLACK at the bottom-right corner reads
+    //   - default (light surface): 20 % BLACK at the bottom-right corner reads
     //     as a subtle vignette darkening.
     //   - muted (subtle-tinted surface): same as default — a touch of black
     //     adds depth without competing.
     //   - dark / accent (saturated or near-black surface in WireKit's neutral
-    //     default theme): black-on-near-black is invisible. Switch to a 12 %
+    //     default theme): black-on-near-black is invisible. Switch to a 30 %
     //     WHITE overlay so the corner LIGHTENS instead, producing a
     //     comparable depth cue against dark backgrounds.
+    //
+    // The two figures are the `/20` and `/30` in the classes directly below, and they
+    // said 10 % and 12 % until this line was measured against them — a gradient bump
+    // moved the code and left the prose where it was. A percentage in a comment beside
+    // the utility that carries it is worth reading as a claim, not as decoration.
     $gradientOverlayClass = match ($variant) {
         'dark', 'accent' => 'bg-gradient-to-br from-transparent to-white/30',
         default => 'bg-gradient-to-br from-transparent to-black/20',

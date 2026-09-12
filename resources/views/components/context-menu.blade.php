@@ -10,6 +10,10 @@
     // the component root — e.g. when you're embedding the context menu inside
     // a scoped stacking container that should contain the overlay itself
     // (rare, and usually an anti-pattern).
+    // Names the panel. A `role="menu"` with no name is announced as an unnamed menu, and the
+    // panel TELEPORTS out to the overlay root — so the trigger that opened it is no longer
+    // where the reading cursor is, and there is nothing left to identify it by.
+    'label' => null,
     'teleport' => true,
     'scope' => null,
 ])
@@ -75,7 +79,29 @@
          touch long-press / hold (touch devices, which have no right-click).
          The touch listeners are passive: they never block scrolling — a
          scroll/drag cancels the pending long-press instead. --}}
+    @php
+        /*
+         * `Shift+F10` (and the platform context-menu key) fire a `contextmenu` event on the
+         * FOCUSED element, so the documented keyboard path only exists if something here can
+         * be focused. The wrapper could not: no tabindex, no role, nothing.
+         *
+         * If the caller's trigger already contains a control, that control takes the focus
+         * and the event bubbles here — adding a stop would give the same region two. When it
+         * does not, this wrapper becomes the stop, which is the only way the promise on the
+         * docs page can be kept.
+         */
+        $contextMenuTrigger = trim((string) $trigger);
+        $contextMenuTriggerIsFocusable = (bool) preg_match(
+            '/<(?:a\b[^>]*\shref|button|input|select|textarea)\b|tabindex="0"/i',
+            $contextMenuTrigger
+        );
+    @endphp
+
     <div
+        @unless($contextMenuTriggerIsFocusable)
+            tabindex="0"
+            class="focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+        @endunless
         x-on:contextmenu="openAt($event)"
         x-on:touchstart.passive="onTouchStart($event)"
         x-on:touchmove.passive="onTouchMove($event)"
@@ -127,6 +153,10 @@
             x-transition:leave-start="opacity-100 scale-100"
             x-transition:leave-end="opacity-0 scale-95"
             role="menu"
+            {{-- Same reasoning as menubar.menu, which has carried this all along: the panel
+                 teleports to the overlay root, so the trigger is no longer adjacent and the
+                 name is the only thing identifying what opened. --}}
+            aria-label="{{ filled($label) ? $label : __('wirekit::Context menu') }}"
             class="{{ $panelClasses }}"
             x-cloak
         >

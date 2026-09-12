@@ -110,7 +110,17 @@
     {{ $attributes->class(['relative inline-block']) }}
 >
     {{-- Trigger element — linked to tooltip via aria-describedby --}}
-    <div x-ref="trigger" aria-describedby="{{ $tooltipId }}" @if($focusableTrigger) tabindex="0" @endif>
+    {{-- ⚠️ The description sits on this WRAPPER, and a wrapper `<div>` is not what a reader
+         lands on. With `focusable-trigger` the wrapper takes the tab stop and carries the
+         name itself, which works. Without it — the documented shape for wrapping a caller's
+         own `<button>` — the button is what gets focused, and it has no `aria-describedby`:
+         the tooltip is announced to nobody.
+
+         Alpine puts it on the first focusable descendant at init instead, which is where the
+         reader actually arrives, and leaves it here when there is none so the wrapper case
+         is unchanged. Done in JS rather than in Blade because the trigger is the CALLER's
+         markup — this template never sees the element it needs to annotate. --}}
+    <div x-ref="trigger" data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @if($focusableTrigger) tabindex="0" @endif>
         {{ $slot }}
     </div>
 

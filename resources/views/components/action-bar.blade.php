@@ -75,12 +75,27 @@
     ]), $scope);
 @endphp
 
+{{-- The live region sits OUTSIDE the bar, and that is the whole point.
+
+     It used to live inside, and the comment below explained that a `:visible` flip swaps
+     empty text for filled text "inside a region that was already in the accessibility tree".
+     It was not: when `$visible` is false the bar carries `display: none`, and a subtree that
+     is display-none is not in the tree at all. So the region did not CHANGE on the flip — it
+     APPEARED, already populated, and a live region that appears with its text already in it
+     announces nothing. The one announcement this component exists to make could never fire.
+
+     Out here it is always in the tree, always empty until the bar is shown, and the flip is
+     the text change a live region reacts to. --}}
+<div aria-live="polite" class="sr-only">
+    @if($visible) {{ __('wirekit::Bulk actions available') }} @endif
+</div>
+
 <div
     role="group"
     aria-label="{{ __('wirekit::Bulk actions') }}"
     {{ $attributes->merge(!$visible ? ['style' => 'display: none;'] : [])->class([$classes]) }}
 >
-    {{-- Live region announcing that the bar has appeared.
+    {{-- Why the announcement is translated, and when it fires.
          The text is translated for the same reason the label above it is: this is read
          aloud to somebody, and a literal here is read aloud in English to everybody,
          inside an interface that is otherwise in their language.
@@ -92,9 +107,5 @@
          present from first paint and never changes, so nothing is announced and the
          announcement is the caller's to make; the docs page says so at the tip that
          introduces that mode. --}}
-    <div aria-live="polite" class="sr-only">
-        @if($visible) {{ __('wirekit::Bulk actions available') }} @endif
-    </div>
-
     {{ $slot }}
 </div>

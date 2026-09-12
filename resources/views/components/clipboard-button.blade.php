@@ -3,7 +3,12 @@
      nothing to anticipate and nothing to roll back. --}}
 @props([
     'value' => '',
-    'copiedText' => __('wirekit::Copied!'),
+    // `wirekit::Copied`, the key `color-picker` already uses. This asked for
+    // `wirekit::Copied!` — a second catalog key for the same visible state, and the
+    // only value of 370 carrying an exclamation mark. Two keys for one string means an
+    // application translating the kit has to find both, and the two components answer
+    // the same event in two registers.
+    'copiedText' => __('wirekit::Copied'),
     'duration' => 2000,
     // Bare icon button — no border / bg / label, just the copy glyph (muted,
     // pops green on copy). For compact action rows (a message's copy control).
@@ -79,6 +84,14 @@
          string it sits in. --}}
     x-data="wirekitClipboardButton({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, duration: {{ (int) $duration }} })"
     x-on:click="copy()"
+    {{-- An icon-only button has no text to be named by, and the prop comment above says so —
+         but nothing enforced it, so `icon-only` without an `aria-label` shipped a button a
+         screen reader announces as "button" and nothing else. A translated fallback is worse
+         than a caller's own name and far better than none, and it is only reached when the
+         caller supplied neither form of name. --}}
+    @if($iconOnly && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby'))
+        aria-label="{{ __('wirekit::Copy to clipboard') }}"
+    @endif
     {{ $attributes->class([$classes]) }}
 >
     {{-- Copy icon (shown when not copied). Muted/gray at rest — a copy affordance
@@ -123,4 +136,13 @@
 
     {{-- Screen reader announcement --}}
     <span x-show="copied" class="sr-only" role="status" aria-live="polite">{{ __('wirekit::Copied to clipboard') }}</span>
+    {{-- The deviation announcement. The success above is OPTIMISTIC — it fires before the
+         write is attempted, on purpose, because a promise that never settles would leave the
+         reader with no feedback at all. That bargain only holds if a refusal takes it back:
+         without this, "Copied to clipboard" was announced for a write the browser declined,
+         and the reader pasted nothing with no way to find out why.
+
+         `role="alert"` rather than `status`, because this one interrupts: it is correcting
+         something the reader was already told. --}}
+    <span x-show="failed" x-cloak class="sr-only" role="alert">{{ __('wirekit::Copy failed') }}</span>
 </button>

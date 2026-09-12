@@ -34,6 +34,14 @@ final class McpServer
     /** The latest MCP protocol revision this server is built against. */
     public const PROTOCOL_VERSION = '2025-06-18';
 
+    /**
+     * Every revision this server speaks, newest first. See `initializeResult()` for why the
+     * list is short and what adding to it commits us to.
+     *
+     * @var list<string>
+     */
+    private const SUPPORTED_PROTOCOL_VERSIONS = [self::PROTOCOL_VERSION];
+
     public function __construct(
         private readonly McpCatalog $catalog,
         private readonly string $version = 'dev',
@@ -74,12 +82,28 @@ final class McpServer
      */
     private function initializeResult(array $params): array
     {
-        $requested = is_string($params['protocolVersion'] ?? null)
-            ? $params['protocolVersion']
-            : self::PROTOCOL_VERSION;
+        /*
+         * ⚠️ THIS ECHOED WHATEVER ARRIVED, AND AN EMPTY STRING IS NOT A VERSION.
+         *
+         * A handshake that mirrors the client's request agrees to everything: a revision this
+         * server was never built against, a typo, `''`. Nothing fails at the handshake then —
+         * it fails later, at the first message whose shape the two sides disagree about, which
+         * is the hardest place in the protocol to read a fault.
+         *
+         * The specification puts the decision the other way round: the server answers with a
+         * version IT supports, and the client decides whether it can live with that. So an
+         * unrecognized request gets this server's own revision rather than its own words back.
+         *
+         * The list is what this server has actually been implemented against, which is why it
+         * holds one entry. Adding a revision means reading that revision's diff first — a
+         * second entry here is a claim about wire compatibility, not a courtesy.
+         */
+        $requested = $params['protocolVersion'] ?? null;
 
         return [
-            'protocolVersion' => $requested,
+            'protocolVersion' => in_array($requested, self::SUPPORTED_PROTOCOL_VERSIONS, true)
+                ? $requested
+                : self::PROTOCOL_VERSION,
             'capabilities' => ['tools' => (object) []],
             'serverInfo' => ['name' => 'wirekit', 'version' => $this->version],
         ];

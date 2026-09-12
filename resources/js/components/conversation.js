@@ -28,6 +28,7 @@
  *   Every callback null-guards `_viewport` first: browser-queued observer and
  *   scroll callbacks can fire AFTER destroy() has torn the component down.
  */
+import { frameCoalesce } from '../utils/frame-coalesce.js';
 import { prefersReducedMotion } from '../utils/motion.js';
 export default function wirekitConversation(config = {}) {
     return {
@@ -63,6 +64,13 @@ export default function wirekitConversation(config = {}) {
         _anchorDelta: 0,
         _anchorOffsetTop: 0,
 
+        // Coalescer for the scroll handler. See init() for why the work moved
+        // off the event and onto the frame.
+        _scrollFrame: null,
+
+        // Coalescer for the post-write anchor re-capture on the follow-output path.
+        _anchorFrame: null,
+
         init() {
             // The scrollable viewport — x-ref="viewport" when the component
             // wraps chrome (jump button) around the scroller; else the root.
@@ -71,12 +79,40 @@ export default function wirekitConversation(config = {}) {
             // Bind ONCE: addEventListener/removeEventListener identity-match on
             // the function reference, so an inline bind would make destroy()'s
             // removal a silent no-op and leak a listener per Livewire morph.
-            this._onScrollBound = this._onScroll.bind(this);
+            //
+            // Coalesced to one run a frame. `_onScroll` ends in `_captureAnchor()`,
+            // which walks EVERY child of the viewport reading two layout properties
+            // each — so in a long conversation the cost per scroll event grows with
+            // the transcript, and scroll events arrive faster than frames do. The
+            // work is idempotent over a burst (it answers "where are we now?"), so
+            // the last event of a frame is the only one whose answer is wanted.
+            this._scrollFrame = frameCoalesce(() => this._onScroll());
+            this._onScrollBound = () => this._scrollFrame.schedule();
             this._viewport.addEventListener('scroll', this._onScrollBound, { passive: true });
 
             // childList = a new message row; characterData = streamed tokens
             // appended into an existing bubble.
-            this._mutationObserver = new MutationObserver(() => this._onContentChange());
+            /*
+             * The records are READ, not discarded. Every path into this callback used to
+             * count as a new message, and only one of them is one.
+             *
+             * `characterData` fires once per streamed token, so a single 200-token reply
+             * counted 200 unread messages. The ResizeObserver below fires on any size change
+             * — a window resize, a phone rotating, the soft keyboard opening — and counted
+             * one more each time. The badge on the jump-to-latest button is what a reader
+             * uses to decide whether to scroll back down, and it was reporting the length of
+             * the reply and the number of times they had turned their phone.
+             *
+             * A new message is a childList mutation that ADDS an element. Everything else
+             * still runs the anchor restore and the follow-output, which is what those
+             * events are genuinely for.
+             */
+            this._mutationObserver = new MutationObserver((records) => {
+                this._onContentChange(records.some(
+                    (record) => record.type === 'childList'
+                        && [...record.addedNodes].some((node) => node.nodeType === 1)
+                ));
+            });
             this._mutationObserver.observe(this._viewport, {
                 childList: true,
                 subtree: true,
@@ -85,7 +121,9 @@ export default function wirekitConversation(config = {}) {
 
             // A streaming bubble can grow (wrap to a new line) without mutating
             // the viewport itself — size changes must drive follow-output too.
-            this._resizeObserver = new ResizeObserver(() => this._onContentChange());
+            // `false` — a size change is never a new message. A streaming bubble wrapping to
+            // a new line has to drive follow-output, and that is all it is.
+            this._resizeObserver = new ResizeObserver(() => this._onContentChange(false));
             this._resizeObserver.observe(this._viewport);
 
             this.scrollToBottom(false);
@@ -93,6 +131,10 @@ export default function wirekitConversation(config = {}) {
         },
 
         destroy() {
+            this._scrollFrame?.cancel();
+            this._scrollFrame = null;
+            this._anchorFrame?.cancel();
+            this._anchorFrame = null;
             this._mutationObserver?.disconnect();
             this._mutationObserver = null;
             this._resizeObserver?.disconnect();
@@ -196,7 +238,12 @@ export default function wirekitConversation(config = {}) {
             }
         },
 
-        _onContentChange() {
+        /**
+         * @param {boolean} [isNewMessage=false] Whether this change ADDED a message row, as
+         *   opposed to streaming tokens into an existing one or the viewport resizing. Only
+         *   a real addition may move the unread counter.
+         */
+        _onContentChange(isNewMessage = false) {
             // Null-guard: observer callbacks are browser-queued and can fire
             // after destroy() nulled the viewport.
             if (!this._viewport) {
@@ -205,8 +252,15 @@ export default function wirekitConversation(config = {}) {
 
             if (this.atBottom) {
                 // Follow-output: stay pinned to the newest content.
+                //
+                // The re-capture is deferred rather than run inline. `scrollToBottom`
+                // WRITES scrollTop and `_captureAnchor` READS offsetTop off every
+                // child — back to back that is a write between two reads, which makes
+                // the browser recompute layout synchronously before the second one can
+                // answer, on every streamed token. A frame later the same walk reads a
+                // layout the browser has already settled.
                 this.scrollToBottom(false);
-                this._captureAnchor();
+                (this._anchorFrame ??= frameCoalesce(() => this._captureAnchor())).schedule();
 
                 return;
             }
@@ -226,8 +280,10 @@ export default function wirekitConversation(config = {}) {
             // message the reader was on does not move a pixel.
             this._viewport.scrollTop = this._anchorEl.offsetTop - this._anchorDelta;
 
-            if (addedAbove <= 0) {
-                // Nothing was inserted above → this is new content further down.
+            if (addedAbove <= 0 && isNewMessage) {
+                // Nothing was inserted above → this is new content further down. And it has
+                // to BE a message: the anchor holding still is equally true of a token
+                // streaming in below and of the viewport changing size.
                 this.unread += 1;
             }
 

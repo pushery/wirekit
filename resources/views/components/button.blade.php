@@ -5,6 +5,9 @@
     'surface' => config('wirekit.components.button.surface', 'filled'),
     'size' => config('wirekit.components.button.size', 'md'),
     'type' => 'button',
+    // Let a label that a USER typed take a second line. Default false: a label the application
+    // wrote belongs on one line, and a button that wraps mid-word is the defect there.
+    'wrapLabel' => false,
     'href' => null,
     'disabled' => false,
     'loading' => false,
@@ -49,6 +52,12 @@
     $loading = BooleanProp::from($loading, false);
     $disableOnLoading = BooleanProp::from($disableOnLoading, true);
 
+    // Blade compiles an UNBOUND attribute to a string, and the string 'false' is truthy — so
+    // `wrap-label="false"` would have meant the opposite of what the call site reads as, with
+    // the page rendering either way and nothing to say so. Normalized against this prop's own
+    // default, like every other boolean on this component.
+    $wrapLabel = BooleanProp::from($wrapLabel, false);
+
     // ⚠️ `loadingTarget` IMPLIES `loading`, because there is no other reason to set it.
     //
     // Both branches below hang on `$loading`; `loadingTarget` only SCOPES a spinner that
@@ -78,7 +87,26 @@
         // spinner stacks above the text. `inline-flex` alone does not
         // prevent the inner TEXT NODE from soft-wrapping at its own
         // whitespace; `whitespace-nowrap` clamps the text to one line.
-        'inline-flex items-center justify-center gap-x-2 whitespace-nowrap',
+        // ⚠️ `wrapLabel` FLIPS ONLY THE CLAMP, and the default stays what it was. The reasoning
+        // above is right for a label the APPLICATION wrote — "Save", "Send test" — and one line
+        // is the correct answer there. It is the wrong answer for a label a USER typed: a
+        // template name, a channel label, an org login are as long as somebody made them, and a
+        // row of those ran off the edge of a card in an adopting application rather than taking
+        // a second line.
+        //
+        // `flex-nowrap` comes WITH the wrap, and it is what keeps the original reasoning true:
+        // the concern in that comment is the spinner ending up ABOVE the text, which is the flex
+        // LINE breaking rather than the text soft-wrapping. Holding the line together lets the
+        // label take a second row while the spinner stays beside it.
+        //
+        // `whitespace-normal` is emitted explicitly rather than by omission: a developer's own
+        // `class="whitespace-normal"` does not reliably win, because two Tailwind utilities for
+        // one property are decided by their order in the generated stylesheet rather than in the
+        // attribute — which is exactly why an adopting application had to wrap its labels in a
+        // `<span>` instead.
+        $wrapLabel
+            ? 'inline-flex items-center justify-center gap-x-2 whitespace-normal flex-nowrap'
+            : 'inline-flex items-center justify-center gap-x-2 whitespace-nowrap',
         // Marker for the coarse-pointer touch-target floor in dist/wirekit.css —
         // the same hook `wk-field` gives the form controls. It carries no styling
         // of its own; it exists so a stylesheet rule can reach this element with
@@ -118,46 +146,77 @@
 
     $variantClasses = \Pushery\WireKit\VariantResolver::resolve($intent, $surface);
 
-    // Size classes: height, padding, font size, radius — all from sizing tokens
+    // Size classes: padding, font size, radius — all from sizing tokens. The height
+    // is picked separately below, because it is not one value.
     $sizeClasses = match ($size) {
         'xs' => implode(' ', [
-            'h-[calc(var(--size-wk-sm)*0.875)]',
             'px-[var(--padding-wk-x-sm)]',
             'text-[length:var(--text-wk-sm)]',
             'rounded-[var(--radius-wk-sm)]',
         ]),
         'sm' => implode(' ', [
-            'h-[var(--size-wk-sm)]',
             'px-[var(--padding-wk-x-sm)]',
             'text-[length:var(--text-wk-sm)]',
             'rounded-[var(--radius-wk-sm)]',
         ]),
         'md-compact' => implode(' ', [
-            'h-[var(--size-wk-md-compact)]',
             'px-[var(--padding-wk-x-md)]',
             'text-[length:var(--text-wk-sm)]',
             'rounded-[var(--radius-wk-md)]',
         ]),
         'md' => implode(' ', [
-            'h-[var(--size-wk-md)]',
             'px-[var(--padding-wk-x-md)]',
             'text-[length:var(--text-wk-md)]',
             'rounded-[var(--radius-wk-md)]',
         ]),
         'lg' => implode(' ', [
-            'h-[var(--size-wk-lg)]',
             'px-[var(--padding-wk-x-lg)]',
             'text-[length:var(--text-wk-md)]',
             'rounded-[var(--radius-wk-md)]',
         ]),
         'xl' => implode(' ', [
-            'h-[calc(var(--size-wk-lg)*1.1)]',
             'px-[calc(var(--padding-wk-x-lg)*1.25)]',
             'text-[length:var(--text-wk-lg)]',
             'rounded-[var(--radius-wk-lg)]',
         ]),
         default => WireKit::validateProp('button', 'size', $size, ['xs', 'sm', 'md-compact', 'md', 'lg', 'xl']),
     };
+
+    // The height, and why it is TWO tables rather than one class.
+    //
+    // A clamped label is exactly one line tall, so a FIXED height is the right
+    // answer and it keeps a row of buttons aligned to the same baseline. A label
+    // that may wrap is not: measured in the browser inside a 9rem container,
+    // `wrap-label` with a user's label took FOUR line boxes while the button
+    // stayed 40px tall — the first line sat 20px ABOVE the button's top edge and
+    // the last 20px below its bottom. Letting the label wrap and then clamping
+    // the box it wraps inside is half the prop, so the wrapping variant turns the
+    // same token into a FLOOR and adds the vertical padding a second row needs.
+    //
+    // ⚠️ NEITHER SPELLING MAY BE ASSEMBLED AT RUNTIME. Tailwind scans source text
+    // for class names, so `str_replace('h-[', 'min-h-[', $sizeClasses)` yields a
+    // class nothing ever generates — the utility is absent from the stylesheet and
+    // the button silently keeps its fixed height. Both tables are written out.
+    //
+    // `$size` is already validated by the match above, so `default` here only has
+    // to be a sane value rather than a second error path.
+    $heightClasses = $wrapLabel
+        ? match ($size) {
+            'xs' => 'min-h-[calc(var(--size-wk-sm)*0.875)] py-[var(--padding-wk-y-xs)]',
+            'sm' => 'min-h-[var(--size-wk-sm)] py-[var(--padding-wk-y-xs)]',
+            'md-compact' => 'min-h-[var(--size-wk-md-compact)] py-[var(--padding-wk-y-sm)]',
+            'lg' => 'min-h-[var(--size-wk-lg)] py-[var(--padding-wk-y-md)]',
+            'xl' => 'min-h-[calc(var(--size-wk-lg)*1.1)] py-[var(--padding-wk-y-md)]',
+            default => 'min-h-[var(--size-wk-md)] py-[var(--padding-wk-y-sm)]',
+        }
+        : match ($size) {
+            'xs' => 'h-[calc(var(--size-wk-sm)*0.875)]',
+            'sm' => 'h-[var(--size-wk-sm)]',
+            'md-compact' => 'h-[var(--size-wk-md-compact)]',
+            'lg' => 'h-[var(--size-wk-lg)]',
+            'xl' => 'h-[calc(var(--size-wk-lg)*1.1)]',
+            default => 'h-[var(--size-wk-md)]',
+        };
 
     // Render as <a> when href is provided, otherwise <button>
     $tag = $href ? 'a' : 'button';
@@ -258,7 +317,7 @@
     @disabled($tag === 'button' && $isDisabled)
     @if($emitAriaBusy) aria-busy="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$baseClasses, $variantClasses, $sizeClasses, $linkDisabledClasses]) }}
+    {{ $attributes->except('rel')->class([$baseClasses, $variantClasses, $sizeClasses, $heightClasses, $linkDisabledClasses]) }}
     {{-- ⚠️ `disabled` IS INERT ON AN ANCHOR, so the link branch gets the treatment
          this component already uses for a disabled link instead. `wire:loading.attr`
          adds a `disabled` attribute, which a browser honors on a button and ignores
@@ -274,12 +333,12 @@
     {{-- Loading spinner: declarative path renders always; wire:loading
          path renders only while a Livewire request is in flight. --}}
     @if($declarativeLoading)
-        <svg class="animate-spin -ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+        <svg class="animate-spin -ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>
     @elseif($loading)
-        <svg wire:loading @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif class="animate-spin -ml-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+        <svg wire:loading @if($loadingTarget) wire:target="{{ $loadingTarget }}" @endif class="animate-spin -ms-1 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
         </svg>

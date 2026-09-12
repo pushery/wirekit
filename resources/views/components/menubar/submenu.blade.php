@@ -24,6 +24,26 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $disabled = BooleanProp::from($disabled, false);
 
+    // The panel's accessible name, carried by the trigger's own id.
+    //
+    // A `role="menu"` with no name is announced as a bare "menu": a reader who has just
+    // opened "Export As" hears nothing confirming which flyout they are in, and with two
+    // submenus open in sequence nothing tells them apart on re-entry. The sibling
+    // `menubar/menu.blade.php` states the same rule and honors it; the docs promise it for
+    // every panel ("Menu panels: role=\"menu\", aria-label from the label prop"), which is
+    // what made this the sharpest instance: the page said it was already done.
+    //
+    // `aria-labelledby` at the TRIGGER rather than `aria-label` from the prop, because the
+    // label reaches this component two ways — as a prop and as `<x-slot:label>` — and only
+    // the rendered trigger has both. It also tracks the visible text instead of restating
+    // it. The icon and the chevron inside the trigger are `aria-hidden`, so the computed
+    // name is the label and nothing else.
+    //
+    // `DomId::unique`, never a random id: this markup sits inside Livewire morphs, and a
+    // value minted per render makes the two halves stop naming each other after an update
+    // while both stay well-formed. The counted form survives a re-render.
+    $subTriggerId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-menubar-submenu-');
+
     // Parent item classes — reuse the menubar.item token key so a submenu
     // parent is visually identical to a regular item AND inherits the same
     // per-scope overrides set for menubar.item.
@@ -80,6 +100,7 @@
     <button
         type="button"
         x-ref="subTrigger"
+        id="{{ $subTriggerId }}"
         role="menuitem"
         tabindex="-1"
         aria-haspopup="menu"
@@ -120,6 +141,7 @@
         x-show="subOpen"
         x-cloak
         role="menu"
+        aria-labelledby="{{ $subTriggerId }}"
         data-wk-submenu-panel
         x-on:mouseenter="_clearCloseTimer()"
         x-on:mouseleave="scheduleClose()"

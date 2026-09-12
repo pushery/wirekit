@@ -41,6 +41,7 @@ import wirekitPasswordInput from './components/password-input.js';
 import wirekitSegmentedControl from './components/segmented-control.js';
 import wirekitPricingTable from './components/pricing-table.js';
 import wirekitSortable from './components/sortable.js';
+import wirekitProgress from './components/progress.js';
 import wirekitReadingProgress from './components/reading-progress.js';
 import wirekitFileUpload from './components/file-upload.js';
 import wirekitTablist from './components/tablist.js';
@@ -173,6 +174,7 @@ function registerComponents() {
     Alpine.data('wirekitSegmentedControl', wirekitSegmentedControl);
     Alpine.data('wirekitPricingTable', wirekitPricingTable);
     Alpine.data('wirekitSortable', wirekitSortable);
+    Alpine.data('wirekitProgress', wirekitProgress);
     Alpine.data('wirekitReadingProgress', wirekitReadingProgress);
     Alpine.data('wirekitFileUpload', wirekitFileUpload);
     Alpine.data('wirekitTablist', wirekitTablist);
@@ -242,11 +244,21 @@ if (window.Alpine?.version) {
     reportLateRegistration('wirekit.js', () => reachedByInitEvent);
 }
 
-// Positioning helper, exposed globally for components whose Alpine logic lives
-// INLINE in their Blade view and therefore has no module scope to import from —
-// combobox is the case that forced this (291 lines of inline x-data). Same shape
-// as the existing `window.wirekitEditor` factory. Without it such a component has
-// to hand-roll flip/shift positioning, and two implementations of the same
-// geometry drift apart. Assigned unconditionally so it is available whether Alpine
-// starts before or after this bundle loads.
+// Positioning helper, exposed globally so a component can ask for it WITHOUT depending on
+// it. `combobox` and `data-table-column-menu` both guard with
+// `typeof window.wirekitPosition !== 'function'` and skip the anchoring when it is absent —
+// which is what happens on the core bundle, where Floating UI is deliberately not shipped.
+// Imported directly, the dependency would follow the import into every bundle that carries
+// either component and the smallest bundle would stop being small.
+//
+// ⚠️ THIS SAID THE HELPER EXISTED FOR COMPONENTS WHOSE ALPINE LOGIC LIVES INLINE IN THEIR
+// BLADE VIEW, "combobox is the case that forced this (291 lines of inline x-data)". That was
+// true once and is not: combobox has had a module since, and its view now mounts
+// `x-data="wirekitCombobox({...})"` like every other component. Neither caller is inline, so
+// the reason a reader was given for the global no longer applied to anything — and the
+// obvious conclusion from it, that the global can go once the inline view is cleaned up, is
+// wrong.
+//
+// Assigned unconditionally so it is available whether Alpine starts before or after this
+// bundle loads.
 window.wirekitPosition = position;

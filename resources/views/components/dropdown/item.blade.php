@@ -15,6 +15,17 @@
     // surface, and a third thing that looks like those two would not tell them apart. The
     // current entry is marked by weight and text color, which survives beside either.
     'active' => false,
+    // The ARIA role, `menuitem` unless a caller asks for something else.
+    //
+    // A group of MUTUALLY EXCLUSIVE menu options is `menuitemradio` + `aria-checked` under the
+    // APG menu pattern, and no amount of `aria-current` substitutes: `aria-current` says which
+    // item is the current one within a set of related items and carries no group membership at
+    // all. A reader hears "System, current" instead of "System, radio button, checked, 1 of 3"
+    // — never told that the three are one choice, nor how many there are.
+    //
+    // Opt-in rather than inferred, because this sub-component cannot see whether its siblings
+    // form a set. The caller knows; the item does not.
+    'role' => 'menuitem',
     'scope' => null,
 ])
 
@@ -107,7 +118,7 @@
          defaults to "button". The bag's `type` is stripped below so it
          renders exactly once. --}}
     @if($tag === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
-    role="menuitem"
+    role="{{ $role }}"
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
     {{-- The state said out loud, not only drawn. `page` when the item navigates, `true` when it

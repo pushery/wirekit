@@ -15,6 +15,14 @@
     // (a light sweep). Purely additive polish: gated by prefers-reduced-motion,
     // and the bar's value/width is unchanged, so nothing depends on the motion.
     'animation' => 'none',
+    // The NAME of an Alpine property to read the value from, for a value that only
+    // exists in the browser — an upload percentage, a streamed count. `value` is a
+    // PHP prop evaluated at render time, so it cannot carry one; binding to the
+    // rendered element cannot either, because `x-bind:value` sets an attribute on a
+    // `<div>` that nothing reads. Pass the property name, not an expression:
+    // `value-expression="percent"` resolves against the surrounding `x-data`
+    // through Alpine's scope chain.
+    'valueExpression' => null,
     'scope' => null,
 ])
 
@@ -84,9 +92,12 @@
 
     // Determinate: animate width transitions for smooth updates.
     // Indeterminate: rely on .wk-progress-indeterminate keyframes (see dist/wirekit.css)
-    $fillClasses = $isIndeterminate
-        ? $fillColor . ' absolute inset-y-0 rounded-[var(--radius-wk-full)] wk-progress-indeterminate'
-        : $fillColor . ' h-full rounded-[var(--radius-wk-full)] transition-[width] duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]' . $animationClass;
+    // Both variants are needed at once in `value-expression` mode, where the state is
+    // decided in the browser rather than here.
+    $fillIndeterminate = $fillColor.' absolute inset-y-0 rounded-[var(--radius-wk-full)] wk-progress-indeterminate';
+    $fillDeterminate = $fillColor . ' h-full rounded-[var(--radius-wk-full)] transition-[width] duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]' . $animationClass;
+
+    $fillClasses = $isIndeterminate ? $fillIndeterminate : $fillDeterminate;
 
     // The id that links label → progressbar via aria-labelledby, and it has to be
     // STABLE across re-renders. It was `Str::random(6)` per render, which is a
@@ -114,7 +125,17 @@
     $attributes = $attributes->except(['aria-label', 'aria-labelledby']);
 @endphp
 
+@if($valueExpression)
+    {{-- The scope sits on the WRAPPER, not on the bar: the readout is a SIBLING above
+         the track, so a scope on the track leaves `valueText()` unresolvable there.
+         Measured in the browser — the width and `aria-valuenow` were right while the
+         readout stayed empty, which is the half the report called "not visual-only".
+         The arithmetic lives in the factory because Alpine's CSP build has no
+         expression evaluator; every binding below only names a method. --}}
+    <div x-data="wirekitProgress({ from: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueExpression) }}, max: {{ $max + 0 }}, determinate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate) }}, indeterminate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate) }} })" {{ $attributes->class(['w-full font-[family-name:var(--font-wk-sans)]']) }}>
+@else
 <div {{ $attributes->class(['w-full font-[family-name:var(--font-wk-sans)]']) }}>
+@endif
     @if($label || $showValue)
         <div class="mb-1 flex items-center justify-between gap-[var(--gap-wk-sm)] text-[length:var(--text-wk-sm)]">
             @if($label)
@@ -122,9 +143,15 @@
             @else
                 <span></span>
             @endif
-            @if($showValue && ! $isIndeterminate)
+            @if($showValue && $valueExpression)
+                <span class="text-[color:var(--color-wk-text-muted)] tabular-nums" x-text="valueText()"></span>
+            @elseif($showValue && ! $isIndeterminate)
                 <span class="text-[color:var(--color-wk-text-muted)] tabular-nums">
-                    {{ (int) $clamped }} / {{ (int) $max }}
+                    {{-- Not `(int)`. The BAR is drawn from the exact value, so truncating here
+                         made the number disagree with the thing beside it: 4.7 of 5 drew a
+                         94% bar and read "4 / 5". `+ 0` drops a trailing `.0`, so a whole
+                         value still reads as a whole one. --}}
+                    {{ $clamped + 0 }} / {{ $max + 0 }}
                 </span>
             @endif
         </div>
@@ -143,10 +170,18 @@
         @elseif($ariaLabelAttr) aria-label="{{ $ariaLabelAttr }}"
         @else aria-label="{{ __('wirekit::Progress') }}"
         @endif
-        @if(! $isIndeterminate)
-            aria-valuenow="{{ (int) $clamped }}"
+        @if($valueExpression)
+            {{-- Bound rather than printed: the value arrives after this render. The min and
+                 max are static because the RANGE is known now even when the value is not. --}}
+            x-bind:aria-valuenow="ariaValueNow()"
             aria-valuemin="0"
-            aria-valuemax="{{ (int) $max }}"
+            aria-valuemax="{{ $max + 0 }}"
+        @elseif(! $isIndeterminate)
+            {{-- Same reason as the visible readout: `aria-valuenow` is what a screen reader
+                 announces, and truncating it made the announcement disagree with the bar. --}}
+            aria-valuenow="{{ $clamped + 0 }}"
+            aria-valuemin="0"
+            aria-valuemax="{{ $max + 0 }}"
         @endif
         {{-- `wk-progress-track` / `wk-progress-fill` are the markers the stylesheet's
              forced-colors rule selects. Both sit outside the resolved class list, like
@@ -154,7 +189,16 @@
              the bar readable when the palette is forced. --}}
         class="wk-progress-track {{ $trackClasses }} {{ $heightClass }}"
     >
-        @if($isIndeterminate)
+        @if($valueExpression)
+            {{-- `wk-progress-indeterminate` is bound too, so the bar animates while there is
+                 no value yet and becomes a real bar the moment one arrives — rather than
+                 drawing 0%, which claims no work has been done instead of not knowing. --}}
+            <div
+                class="wk-progress-fill"
+                x-bind:class="fillClasses()"
+                x-bind:style="fillStyle()"
+            ></div>
+        @elseif($isIndeterminate)
             <div class="wk-progress-fill {{ $fillClasses }}"></div>
         @else
             <div class="wk-progress-fill {{ $fillClasses }}" style="width: {{ $percent }}%"></div>

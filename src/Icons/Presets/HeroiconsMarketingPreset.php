@@ -70,8 +70,9 @@ final class HeroiconsMarketingPreset implements IconPreset
             // removed here to keep the marketing extension non-overlapping.
 
             // Audience
-            // (`globe` moved to the base preset in v2.6.4; `live` stays here —
-            // no clean universal-core equivalent across icon libraries.)
+            // (`globe` moved to the base preset in v2.6.4. `live` moved there too and this
+            // line kept saying it stayed — there is no `live` entry in this file, and all four
+            // base presets define one.)
             // `users` moved to the BASE preset in v2.24.0 and is removed here, so a
             // stacked setup does not define it twice. Same glyph either way
             // (`heroicon-m-users`), so nothing a caller renders changes — this is

@@ -412,10 +412,10 @@ export default () => ({
         // Without these two, teardown leaves `_started` true and `progress` wherever it
         // stopped, while every timer and the counter itself are null. Through the Alpine
         // handle that is indistinguishable from "started, then stalled" — and telling those
-        // two apart is exactly what a reader needs when a counter is sitting on zero. It
-        // cost two rounds of cross-repo measurement: a caller re-mounting this subtree saw
-        // `_started: true` with nothing armed and reasonably read it as a stalled run, when
-        // the component had in fact been destroyed 100ms after being initialized.
+        // two apart is exactly what a reader needs when a counter is sitting on zero. It took
+        // two passes to pin down: a caller re-mounting this subtree saw `_started: true` with
+        // nothing armed and reasonably read it as a stalled run, when the component had in
+        // fact been destroyed 100ms after being initialized.
         //
         // `_destroyed` is the positive signal; resetting `_started` removes the misleading
         // one. Neither changes behavior — after teardown `replay()` already returns on the

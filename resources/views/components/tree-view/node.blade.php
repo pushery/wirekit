@@ -36,15 +36,29 @@
     // `sidebar/item.blade.php` sibling shape (same internal-element
     // visual rhythm for any list-style item inside a navigation
     // wrapper).
-    $labelClasses = implode(' ', [
+    /*
+     * A selected row is VISIBLE, not only announced.
+     *
+     * `aria-selected="true"` went out on the row and no rule painted it, so a screen reader
+     * was told which node is selected and a sighted reader was told nothing — the same fact,
+     * available to one audience. The row also takes the tree's single tab stop, so a keyboard
+     * user landed on a row that looked exactly like its neighbors.
+     *
+     * Two cues, not one. The tint alone would be information carried by color (WCAG 1.4.1),
+     * and it is also the hover color, so a selected row would be indistinguishable from
+     * whichever row the cursor happens to rest on. The heavier label is what separates them,
+     * and it survives forced-colors and grayscale, where the tint does not.
+     */
+    $labelClasses = implode(' ', array_filter([
         'flex items-center gap-1',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)]',
         'rounded-[var(--radius-wk-sm)]',
         'cursor-pointer select-none',
         'hover:bg-[var(--color-wk-bg-muted)]',
+        $selected ? 'bg-[var(--color-wk-bg-muted)] font-[number:var(--font-wk-heading-weight)]' : null,
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
-    ]);
+    ]));
 
     $hasChildren = $slot->isNotEmpty();
 

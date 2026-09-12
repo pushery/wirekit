@@ -246,7 +246,14 @@
                     stroke-linecap="round"
                     stroke-dasharray="100.53"
                     x-bind:stroke-dashoffset="100.53 - (progress / 100) * 100.53"
-                    style="transition: stroke-dashoffset 75ms ease-out;" />
+                    {{-- Half the standard duration, DERIVED from it rather than written as
+                         `75ms`. This bar tracks scroll continuously, so the full 150ms reads
+                         as lag where it does not on the sibling `progress`, whose value
+                         changes occasionally — the shorter time is deliberate. What was not
+                         deliberate is that a literal ignores the theme: Brutalist sets the
+                         duration to `0ms` so that nothing animates, and this kept animating.
+                         `calc(… / 2)` keeps the intent and follows the token. --}}
+                    style="transition: stroke-dashoffset calc(var(--transition-wk-duration) / 2) ease-out;" />
         </svg>
     </div>
 @else
@@ -294,10 +301,27 @@
              its background-color and becomes invisible. The OBJECT
              form merges with static styles via individual property
              assignment, preserving every static value. --}}
+        {{-- ⚠️ THE ORIGIN IS PINNED ONCE, IN CSS. The Tailwind origin utility that used to
+             sit in the class list below is gone, and it is NOT NAMED HERE on purpose:
+             Tailwind scans source TEXT, so a comment that spells the class regenerates
+             it — measured, the reverse drift diff went red on a utility no element
+             carries any more, emitted from this very sentence.
+             A reading bar is a direction-encoded object: it fills the way the reader
+             travels. Under `dir="rtl"` the reader travels right to left while a scaleX
+             anchored at the start edge still grows rightward, so at 10% read the filled
+             part sits at the END of the line instead of its start.
+             `transform-origin` has NO logical keyword in any shipped browser — the
+             grammar is `left | center | right | top | bottom | <length-percentage>` —
+             so the mirror is a `[dir="rtl"]` rule in the stylesheet, which is the same
+             shape `.wk-scroll-fade` already uses for its horizontal edge fade.
+             The inline declaration below carries it because the object-form binding
+             merges rather than replaces (see the note above); it stays physical on
+             purpose, and the stylesheet flips it. Two spellings of one anchor is why
+             repairing only the utility class read as "tried it, did not work". --}}
         <div
             x-bind:style="fillStyle()"
-            class="wk-reading-progress__fill h-full w-full origin-left"
-            style="height: 100%; width: 100%; transform-origin: left center; background-color: {{ $variantColor }}; transition: transform 75ms ease-out;"
+            class="wk-reading-progress__fill h-full w-full"
+            style="height: 100%; width: 100%; transform-origin: left center; background-color: {{ $variantColor }}; transition: transform calc(var(--transition-wk-duration) / 2) ease-out;"
         ></div>
     </div>
 @endif

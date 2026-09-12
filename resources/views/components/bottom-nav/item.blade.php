@@ -23,7 +23,11 @@
     // $attributes->merge() treats rel as a DEFAULT and a caller-supplied rel
     // would replace the computed value.
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = true && str_contains($targetAttr, '_blank');
+    // Unconditional, unlike the sibling in `fab.action` which gates on `$href`: this
+    // component's `href` carries a default, so it always renders the anchor. The
+    // conjunct was written as a literal `true &&` to mirror that sibling's shape and
+    // reads as an unfinished edit; the behavior is identical without it.
+    $opensNewTab = str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr.' noopener noreferrer')
@@ -108,7 +112,11 @@
 <a
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
-    aria-label="{{ $accessibleName }}"
+    {{-- `aria-label=""` is not "no label", it is an EMPTY name, and it overrides the text
+         content that would otherwise have named the link. With no `label` prop this emitted
+         exactly that, so the item became a nameless link rather than falling back to
+         anything. Omitted entirely when there is nothing to say. --}}
+    @if(filled($accessibleName)) aria-label="{{ $accessibleName }}" @endif
     data-wk-bottom-nav-item
     data-active="{{ $active ? 'true' : 'false' }}"
     @if($computedRel) rel="{{ $computedRel }}" @endif

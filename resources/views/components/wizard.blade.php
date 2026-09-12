@@ -54,6 +54,14 @@
     $announcementTemplate = $stepNames !== [] && trim($stepNames[0] ?? '') !== ''
         ? __('wirekit::Step :current of :total: :label')
         : __('wirekit::Step :current of :total');
+
+    // What a reader hears when they press Next on a step that is not finished. The button
+    // carries `aria-disabled` rather than `disabled` precisely so it stays focusable and
+    // pressable; without a sentence, pressing it did nothing at all and there was no way to
+    // tell an unfinished step from a broken button.
+    $incompleteTemplate = $stepNames !== [] && trim($stepNames[0] ?? '') !== ''
+        ? __('wirekit:::label is not complete yet.')
+        : __('wirekit::This step is not complete yet.');
 @endphp
 
 <div
@@ -61,8 +69,12 @@
         current: {{ $current }},
         total: {{ $total }},
         labels: {{ \Pushery\WireKit\Support\AlpinePayload::from($stepNames) }},
-        announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($announcementTemplate) }}
+        announcement: {{ \Pushery\WireKit\Support\AlpinePayload::from($announcementTemplate) }},
+        incompleteAnnouncement: {{ \Pushery\WireKit\Support\AlpinePayload::from($incompleteTemplate) }}
     })"
+    {{-- A single method call, not an inline expression. Alpine's CSP build parses a call and
+         nothing more, so anything richer here goes inert on that bundle without a word. --}}
+    x-init="initWizard()"
     {{ $attributes->class([$classes]) }}
 >
     @if($indicator && $stepNames !== [])

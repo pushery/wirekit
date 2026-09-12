@@ -15,6 +15,8 @@
      @param string       $size
      @param string|null  $describedBy
      @param bool         $hasError
+     @param bool         $required   forwarded to the composed primitive, which owns the
+                                     native attribute and the label asterisk
      @param bool         $actions
      @param array        $options
      @param string       $actionClasses
@@ -66,6 +68,7 @@
          numeric value still works as a minimum, so a developer who wants a fixed
          height passes `rows="3"` and gets exactly the previous behavior. --}}
     <x-wirekit::textarea
+        :required="$required ?? false"
         :id="$id"
         :size="$size"
         :rows="$rows"
@@ -86,6 +89,7 @@
          the binding a click anywhere else left the editor open with an uncommitted draft;
          in a table of inline-edit cells, several of them at once. --}}
     <x-wirekit::select
+        :required="$required ?? false"
         :id="$id"
         :size="$size"
         x-ref="control"
@@ -106,6 +110,7 @@
          deliberately does not claim them — taking ArrowUp here would stop the
          control doing the one thing it exists for. --}}
     <x-wirekit::number-input
+        :required="$required ?? false"
         :id="$id"
         :size="$size"
         x-ref="control"
@@ -119,6 +124,7 @@
     />
 @else
     <x-wirekit::input
+        :required="$required ?? false"
         :id="$id"
         :size="$size"
         x-ref="control"

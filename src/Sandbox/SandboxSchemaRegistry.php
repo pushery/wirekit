@@ -22,8 +22,16 @@ namespace Pushery\WireKit\Sandbox;
  * here. The `ComponentAllowlist` consults this registry to decide
  * whether a component name is sandbox-renderable.
  *
- * Schemas are seeded by `SandboxSchemaRegistry::seed()` (called once at
- * boot time) — see `Pushery\WireKit\WireKitServiceProvider::boot()`.
+ * Schemas are seeded LAZILY, on the first read: `ensureSeeded()` runs
+ * `seed()` once and every accessor goes through it. `register()` seeds first
+ * too, so a custom schema always lands ON TOP of the built-in of the same name
+ * — before 2026-09-10 it landed under one, and registering at boot was silently
+ * undone by the first read. There is no boot hook
+ * and no service-provider call — this line named
+ * `WireKitServiceProvider::boot()` until 2026-09-09, and the provider
+ * contains no reference to this class at all, so a reader looking for the
+ * registration found nothing and had no way to tell whether they had
+ * missed it or it was never there.
  *
  * Initial coverage (starter set):
  *   - button, badge, callout, alert, card, code, code-block, kbd
@@ -49,6 +57,19 @@ final class SandboxSchemaRegistry
      */
     public static function register(string $name, array $schema): void
     {
+        // ⚠️ SEED FIRST, or a registration made BEFORE the first read is silently
+        // discarded. The seed is lazy — it runs on the first `has()`/`get()`/`names()`
+        // — and it writes through this same method, so a caller who registered their
+        // own `button` schema at boot had it overwritten by the built-in the moment
+        // anything read the registry. Nothing failed and nothing was logged; the
+        // schema simply was not theirs.
+        //
+        // This cannot recurse: `ensureSeeded()` sets its flag BEFORE calling `seed()`,
+        // so the eleven nested `register()` calls the seed makes short-circuit here.
+        // That ordering was already re-entrancy protection; it just had no second
+        // caller until now.
+        self::ensureSeeded();
+
         self::$schemas[$name] = $schema;
     }
 

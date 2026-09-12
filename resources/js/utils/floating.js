@@ -29,8 +29,8 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  *   panel taller than the room below its trigger is pinned to the viewport edge
  *   by `shift` and then CLIPPED by the panel's own `overflow-hidden`, so the
  *   entries at the top — usually the important ones — simply disappear. Opt-in
- *   for the same reason as `crossAxisShift`: eleven components call this helper
- *   and their current geometry must not move.
+ *   for the same reason as `crossAxisShift`: most of the overlay family calls
+ *   this helper and their current geometry must not move.
  * @param {number} options.minHeight - Floor for `fitViewport`. Below this the
  *   panel stops shrinking and is allowed to overflow, because a 40px-tall menu
  *   that scrolls is worse than one that reaches past the fold.
@@ -155,7 +155,7 @@ export async function position(reference, floating, {
     // moves the write out of the observer's callback, which is the whole cause.
     let queued = 0;
 
-    const stop = autoUpdate(reference, floating, () => {
+    const stopAutoUpdate = autoUpdate(reference, floating, () => {
         if (queued) {
             return;
         }
@@ -165,6 +165,24 @@ export async function position(reference, floating, {
             run();
         });
     });
+
+    // ⚠️ THE FRAME OUTLIVES THE TEARDOWN UNLESS IT IS CANCELED, and the deferral above is
+    // what created that gap. `autoUpdate`'s own stop detaches the observers and knows
+    // nothing about a frame we queued ourselves — so a panel closed between the observer
+    // firing and the frame running gets one more `run()`: a `computePosition` against a
+    // reference that may be detached, and a style write onto an element the caller has
+    // already finished with.
+    //
+    // Returning `stopAutoUpdate` directly was correct while the recompute was synchronous.
+    // It stopped being correct in the same edit that made it deferred.
+    const stop = () => {
+        stopAutoUpdate();
+
+        if (queued) {
+            cancelAnimationFrame(queued);
+            queued = 0;
+        }
+    };
 
     return { ...result, stop };
 }

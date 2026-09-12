@@ -108,13 +108,13 @@
         @if($isBound)
             <span
                 class="w-3.5 h-3.5 rounded-full border-[length:var(--border-wk-width)] flex items-center justify-center transition-colors duration-[var(--transition-wk-duration)]"
-                :class="{{ $model }} === {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} ? 'border-[var(--color-wk-accent)]' : 'border-[var(--color-wk-border)]'"
+                :class="{{ $model }} === {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }} ? 'border-[var(--color-wk-accent)]' : 'border-[var(--color-wk-border-strong)]'"
             >
                 <span x-show="{{ $model }} === {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}" x-cloak class="w-1.5 h-1.5 rounded-full bg-[var(--color-wk-accent)]"></span>
             </span>
         @else
             {{-- Static (non-model) radio item: a plain outline ring as the affordance. --}}
-            <span class="w-3.5 h-3.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]"></span>
+            <span class="w-3.5 h-3.5 rounded-full border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)]"></span>
         @endif
     </span>
 

@@ -58,7 +58,25 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
-    $wrap = BooleanProp::from($wrap, false);
+    // TRI-STATE, not a boolean: `false` (default) · `true` · `"responsive"`.
+    //
+    // A row is `flex-row` with no wrapping, which is right for the two- or three-item rows it
+    // was designed for and wrong for the multi-item ones a phone gets: they overflow the
+    // viewport instead of breaking. The per-page cure has been to add `wrap` to each affected
+    // preview, which fixes the page and leaves every developer to rediscover it.
+    //
+    // ⚠️ AN OPT-IN RATHER THAN A NEW DEFAULT, and that is the whole decision. Flipping the
+    // default to wrap would reflow every existing multi-item row in every application that
+    // installed this package — a breaking change, and this line does not ship one. `responsive`
+    // is additive: a row that does not ask for it renders byte-identically.
+    //
+    // `toolbar`, the sibling primitive this was to be decided alongside, already wraps
+    // unconditionally, so there is no inconsistency to resolve there. `stack` is `flex-col`,
+    // where wrapping means additional COLUMNS rather than additional rows, and `badge`'s
+    // `wrap` is about a label breaking inside one badge — neither is this concept.
+    $wrapMode = is_string($wrap) && strtolower(trim($wrap)) === 'responsive'
+        ? 'responsive'
+        : (BooleanProp::from($wrap, false) ? 'always' : 'never');
 
     // Resolved before the rungs, so an unknown ladder name is reported as what
     // it is rather than silently falling through to the historical one.
@@ -115,7 +133,13 @@
         $gapClasses,
         $alignFields ? '' : $alignClasses,
         $alignFields ? '' : $justifyClasses,
-        $alignFields || ! $wrap ? '' : 'flex-wrap',
+        // Both literals are written out. Tailwind scans source TEXT, so a class assembled
+        // from `'flex-wrap md:flex-'.$x` is never generated and the binding does nothing.
+        $alignFields ? '' : match ($wrapMode) {
+            'always' => 'flex-wrap',
+            'responsive' => 'flex-wrap md:flex-nowrap',
+            default => '',
+        },
     ])), $scope);
 
     // `as` is interpolated straight into the opening tag, and Blade's escaping does

@@ -10,6 +10,13 @@
      filled, and again after a correction — which is exactly the moment a
      one-time code is normally submitted. --}}
 @props([
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
+    // complain either, because `required` is in its HTML passthrough list — so it looked like
+    // a legitimate attribute all the way down. The result was a required field that submits
+    // empty, in the same form as a plain input that behaves correctly.
+    'required' => false,
     // The Livewire method to call when the code is COMPLETE — not per keystroke.
     // A refusal keeps what was entered; see the note above. Null leaves the
     // component exactly as it has always rendered.
@@ -28,8 +35,8 @@
     'label' => null,
     'hint' => null,
     'error' => null,
-    'length' => 6,
-    'masked' => false,
+    'length' => config('wirekit.components.otp-input.length', 6),
+    'masked' => config('wirekit.components.otp-input.masked', false),
     'scope' => null,
     // Which characters a box accepts. Defaults to digits, so a call site that
     // passes nothing keeps exactly the previous behavior.
@@ -82,6 +89,7 @@
     $masked = BooleanProp::from($masked, false);
     $autofocus = BooleanProp::from($autofocus, false);
     $disabled = BooleanProp::from($disabled, false);
+    $required = BooleanProp::from($required, false);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -256,7 +264,7 @@
     @if($label)
         {{-- `-digit-0`, not `-0`. See the digit id below for why the segment is
              there; this must move with it or every otp-input loses its label. --}}
-        <x-wirekit::label :for="$id . '-digit-0'">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$id . '-digit-0'" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     {{-- Hidden input holds the combined OTP value for form submission / wire:model.
@@ -279,6 +287,7 @@
              their designed size; shrinking them would make the digits unreadable. --}}
         class="flex flex-wrap gap-2"
         role="group"
+        @if($required) aria-required="true" @endif
         aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::One-time code') }}"
         {{-- On the GROUP as well as on every box: a reader who lands on the group
              before reaching a digit has to hear that the code is not enterable. --}}

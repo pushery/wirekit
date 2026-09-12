@@ -51,8 +51,11 @@
 <div role="group" @if($label) aria-label="{{ $label }}" @endif {{ $attributes->class([$groupClasses]) }}>
     {{ $slot }}
     @if($remaining !== null && (int) $remaining > 0)
-        {{-- Overflow counter — decorative; the accessible total is conveyed by
-             the group's aria-label, so this chip is hidden from AT. --}}
-        <span class="{{ $chipClasses }}" aria-hidden="true">+{{ (int) $remaining }}</span>
+        {{-- Hidden from assistive technology ONLY when something else says the total.
+             The reasoning was right and its premise was not: `aria-label` is optional here,
+             so an unlabeled group hid the chip AND had no name — the "+3" existed for
+             sighted readers alone, and nothing conveyed how many people were not shown.
+             With a label the chip is genuinely redundant and stays hidden. --}}
+        <span class="{{ $chipClasses }}" @if(filled($label)) aria-hidden="true" @endif>+{{ (int) $remaining }}</span>
     @endif
 </div>

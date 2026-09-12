@@ -100,8 +100,14 @@
             // accessible name lives on the wrapper <div role="img"> above
             // it, so the SVG itself should be skipped. Without this,
             // axe-core flags every QR-code SVG as a separate "image without
-            // text alternative" violation. `focusable="false"` keeps it out
-            // of the keyboard tab order on legacy browsers (IE/Edge < 18).
+            // text alternative" violation.
+            //
+            // `focusable="false"` stays because it is harmless and belongs to the
+            // same decorative statement, but its REASON is no longer the one this
+            // comment gave: it justified the attribute with browsers 93 versions
+            // below the support floor. A justification a reader cannot act on is
+            // worse than none — it invites either removing something needed or
+            // keeping something for a reason that expired.
             if (str_contains($svgContent, '<svg ') && ! str_contains($svgContent, 'aria-hidden=')) {
                 $svgContent = preg_replace(
                     '/<svg\b/u',
@@ -132,7 +138,7 @@
         {{ $attributes->merge(['style' => 'width: '.((int) $size).'px; height: '.((int) $size).'px;'])->class([$classes]) }}
     >
         <div aria-hidden="true" class="flex items-center justify-center w-full h-full bg-[var(--color-wk-bg-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
-            <span>QR Code</span>
+            <span>{{ __('wirekit::QR code') }}</span>
         </div>
     </div>
 @endif

@@ -83,6 +83,26 @@ class MakeCommand extends Command
             $this->line('  Available pages: '.implode(', ', array_keys(self::TEMPLATES)));
             $this->line('  Available recipes: '.implode(', ', array_map(fn ($r) => "recipe:{$r}", self::RECIPES)));
 
+            /*
+             * The same suggestion the RECIPE branch has printed all along, eight lines below.
+             * One arm of one command offered it and the other did not, which is the shape that
+             * reads as deliberate — a developer who mistypes a page name gets a bare list and
+             * assumes the feature is not there, having seen it work for recipes.
+             *
+             * Both name sets are searched: a mistyped `recipe:dashborad` lands in the TEMPLATE
+             * branch, because the prefix check above only matches a well-formed `recipe:`.
+             */
+            $candidates = array_merge(
+                array_keys(self::TEMPLATES),
+                array_map(static fn (string $r): string => "recipe:{$r}", self::RECIPES)
+            );
+
+            $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein($template, $candidates));
+
+            if ($hint !== null) {
+                $this->line('  '.$hint);
+            }
+
             return self::FAILURE;
         }
 
@@ -270,6 +290,64 @@ class MakeCommand extends Command
         $this->info("Created: {$viewPath}");
         $this->line('  Recipe reference: '.WireKit::DOCS_URL."/blueprints/recipes/{$recipe}");
 
+        $this->reportRequiredMembers($viewBody, $className);
+
         return self::SUCCESS;
+    }
+
+    /**
+     * Name the Livewire members the scaffolded view binds and the generated class does not have.
+     *
+     * `generateClass()` emits `render()` and nothing else, so a recipe that binds
+     * `wire:model="search"` scaffolds two files, prints "Created:" twice, exits 0 — and throws
+     * `PropertyNotFoundException` on the developer's first page load. `toolbar-filter-bar`
+     * binds four members and was the only stub of the eleven that neither declared them nor
+     * mentioned them.
+     *
+     * ⚠️ Derived from the stub rather than listed per recipe, which is the whole point. A
+     * hand-kept list is a second thing to update when a stub changes, and it would be right on
+     * the day it was written and silently wrong afterwards — the failure this command's own
+     * RECIPES constant is arranged against one level up. Reading the file that was just written
+     * also means a stub added later is covered before anyone remembers this exists.
+     *
+     * Livewire diagnoses the missing member well when it throws, so this is not repairing a
+     * silent failure; it is moving a discovery from the developer's first page load to the
+     * output of the command that caused it.
+     */
+    private function reportRequiredMembers(string $viewBody, string $className): void
+    {
+        // `wire:model` and its modifier chain (`.live`, `.debounce.300ms`, `.blur`) always
+        // names a PROPERTY. Everything is captured from the written view, so a stub that stops
+        // binding something stops being reported without anyone editing this method.
+        preg_match_all('/wire:model[\w.]*="([^"(]+)"/', $viewBody, $properties);
+
+        // The action directives name a METHOD. `wire:poll` is deliberately absent: without a
+        // value it re-renders and needs nothing, and with one it is already matched here.
+        preg_match_all('/wire:(?:click|submit|change|keydown|keyup|blur|focus)[\w.]*="([^"]+)"/', $viewBody, $methods);
+
+        $needed = array_values(array_unique($properties[1]));
+        $calls = array_values(array_unique(array_map(
+            // `resetFilters` and `resetFilters()` are the same method; the parentheses are
+            // Livewire's argument syntax, not part of the name.
+            static fn (string $call): string => rtrim(strtok($call, '('), ' '),
+            $methods[1]
+        )));
+
+        if ($needed === [] && $calls === []) {
+            return;
+        }
+
+        $this->line('');
+        $this->line('  <fg=yellow>This view binds members the generated class does not declare.</>');
+        $this->line("  Add them to <fg=cyan>App\\Livewire\\{$className}</>:");
+
+        foreach ($needed as $property) {
+            // Concatenated, not interpolated: `"\$${property}"` is PHP's deprecated
+            // dollar-brace form, and the emitted text is a literal `$` followed by a name.
+            $this->line('    public $'.$property." = '';");
+        }
+        foreach ($calls as $method) {
+            $this->line("    public function {$method}(): void { /* … */ }");
+        }
     }
 }

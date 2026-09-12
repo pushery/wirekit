@@ -7,8 +7,29 @@
      guard refused it: an element carrying a keydown handler is interactive, so "renders no
      interactive element" stopped being true the moment the binding landed. The claim is
      measured against the file rather than trusted, which is the point of that arm. --}}
+{{-- WHY THE PANEL'S NAME IS A PROP, AND WHY THERE IS NO GENERIC FALLBACK.
+
+     A `role="menu"` without a name is announced as a bare "menu": a reader is told a menu
+     opened and nothing about which one. Five of this catalog's six menu panels carry a name;
+     this was the sixth.
+
+     ⚠️ NOT DERIVED FROM THE TRIGGER, which would be better and is not reachable. The three
+     submenus point `aria-labelledby` at their own trigger because trigger and panel live in
+     ONE file. Here the caller composes `<x-wirekit::dropdown.trigger>` and
+     `<x-wirekit::dropdown.panel>` as separate siblings, and this repository's parent-to-child
+     channel reads the parent's PROPS rather than a value its view computed — so the panel
+     cannot see the trigger's id at render time. Binding one at runtime is what the note
+     further down warns about.
+
+     ⚠️ NO GENERIC FALLBACK, and the sibling `context-menu` has one on purpose. "Context menu"
+     says what KIND of menu opened, so it earns its place. A dropdown falling back to "Menu" is
+     announced as "Menu, menu" — the name repeats the role, and the reader is left exactly
+     where they were, one word later. --}}
 @props([
     'width' => config('wirekit.components.dropdown.panel.width', 'auto'),
+    // The menu's accessible name. See the note above @props for why it is a prop, and why
+    // an absent one stays absent.
+    'label' => null,
     'scope' => null,
 ])
 
@@ -109,6 +130,10 @@
     x-transition:enter-end="opacity-100 scale-100"
     x-cloak
     role="menu"
+    {{-- A static attribute, not an `x-bind`. The note above about `panelId` applies to any
+         binding on this element: a Livewire morph re-evaluates it in a scope that no longer
+         holds the value, and a JavaScript error during a morph ends the pass silently. --}}
+    @if(filled($label)) aria-label="{{ $label }}" @endif
     {{ $attributes->merge($widthStyle ? ['style' => $widthStyle] : [])->class([$classes]) }}
 >
     {{ $slot }}
