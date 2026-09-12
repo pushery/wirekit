@@ -9,6 +9,13 @@
      and the boundary has to be a real event. Leaving the editor is the moment
      the writing stopped. --}}
 @props([
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
+    // complain either, because `required` is in its HTML passthrough list — so it looked like
+    // a legitimate attribute all the way down. The result was a required field that submits
+    // empty, in the same form as a plain input that behaves correctly.
+    'required' => false,
     // The Livewire method to call when you leave the editor. A refusal KEEPS
     // what you wrote — see the note above.
     // Extra arguments appended to the optimistic action call, after the new value.
@@ -57,6 +64,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $editable = BooleanProp::from($editable, true);
     $autofocus = BooleanProp::from($autofocus, false);
+    $required = BooleanProp::from($required, false);
 
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
@@ -159,6 +167,9 @@
 
     // Config handed to the wirekitEditor Alpine factory (→ window.wirekitEditor).
     $jsConfig = [
+        // The browser prompt shown when inserting a link. resources/js has no translator,
+        // and this string is a question put to the reader.
+        'linkPromptLabel' => __('wirekit::Link URL'),
         'value' => $value !== null && ! is_string($value) ? json_encode($value) : $value,
         'format' => $formatValue,
         'editable' => (bool) $editable,
@@ -208,6 +219,11 @@
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'value' => '',
         'action' => $optimistic,
+        // The field's own error region. Without it the layer's generic "Could not save"
+        // is the only thing a listener hears, and it BEATS the specific message the server
+        // sent — the whole point of the arbitration is that a specific message wins, and it
+        // cannot run against a region nobody pointed at.
+        'errorRegion' => '#'.$errorId,
         'args' => array_values((array) $optimisticArgs),
         'failure' => 'keep',
         'debug' => (bool) config('app.debug'),
@@ -222,7 +238,7 @@
 
 <div class="w-full space-y-1.5">
     @if($label)
-        <x-wirekit::label :for="$id" :id="$id.'-label'">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$id" :id="$id.'-label'" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
 @if($optimisticConfig)
@@ -270,6 +286,10 @@
             {{-- The editable host is the control. A caller's name belongs here, not on the
                  Alpine wrapper it was landing on; `label` still wins when both are given. --}}
             @if($callerLabel && ! $label) aria-label="{{ $callerLabel }}" @endif
+            {{-- On the editable host, for the same reason its name is: this element becomes
+                 the textbox. There is no native control to take a `required` attribute, so
+                 aria-required is the whole of the semantics here. --}}
+            @if($required) aria-required="true" @endif
             class="flex flex-col cursor-text [contain:inline-size] {{ $minHeight }} overflow-y-auto wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]"
             @if($maxHeight) style="max-height: {{ $maxHeight }};" @endif
         ><div data-wk-editor-seed class="wk-editor-content">{!! $initialHtml !!}</div></div>
@@ -290,6 +310,17 @@
                      editor engine actually types into, so a name that stops at the
                      wrapper never reaches them. --}}
                 aria-label="{{ $label ?? $callerLabel ?? ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor')) }}"
+                {{-- The invalid state and its description, SERVER-SIDE. Both were passed
+                     only into the Tiptap x-data payload, which editor.js applies to the
+                     contenteditable at mount — so the document the server sent carried no
+                     `aria-invalid` at all, and this textarea is the control a reader
+                     without the editor engine actually types into. A validation failure
+                     showed its message and announced nothing.
+
+                     The binding stays and takes over after init; this is the static half,
+                     the same shape the icon-only guard asks of every bound name. --}}
+                @if($hasError) aria-invalid="true" @endif
+                @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @if($autofocus) data-autofocus @endif
                 {{-- Mirror the maxHeight cap on the fallback textarea so the absent-Tiptap
                      path scrolls at the same ceiling (a textarea scrolls natively). --}}

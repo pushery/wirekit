@@ -99,6 +99,11 @@
         x-transition:leave-start="opacity-100 scale-100"
         x-transition:leave-end="opacity-0 scale-95"
         role="dialog"
+        {{-- The panel traps focus and closes on Escape, which IS the modal contract — but
+             without this attribute assistive technology is told the page behind stays
+             reachable, so a screen reader keeps offering content its own virtual cursor can
+             no longer get back out of. The two halves have to agree. --}}
+        aria-modal="true"
         aria-label="{{ $label ?? __('wirekit::Popover') }}"
         class="{{ $panelClasses }} {{ $paddingClasses }}"
         x-cloak

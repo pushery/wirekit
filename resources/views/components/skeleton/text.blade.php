@@ -35,10 +35,13 @@
     ]), $scope);
 @endphp
 
-{{-- Multi-line text placeholder. Last line is shorter for realism.
-     content-visibility: auto + contain-intrinsic-size let the browser
-     skip rendering work for off-screen instances entirely. --}}
-<div
+{{-- The off-screen skip is a PROGRESSIVE ENHANCEMENT and lives behind `@supports` in the
+     stylesheet (`.wk-skeleton-skip-offscreen`), not as an inline declaration here.
+     `content-visibility: auto` first shipped in Safari 18.0, above this library's Safari 16.4
+     floor. Nothing depends on it: without support the skeleton renders the ordinary way, which
+     is what all of them did before the optimization existed. The intrinsic-size hint travels
+     as a custom property so it stays tunable per variant. --}}
+    <div
     role="status"
     aria-live="polite"
     aria-label="{{ __('wirekit::Loading') }}"
@@ -51,12 +54,12 @@
          container whose content is still missing, which is the developer's
          element; leaving the attribute off is also what lets them put it there
          and have the shimmer's own pause rule see it. --}}
-    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: auto 80px;'])->class([$wrapperClasses]) }}
+    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto 80px;'])->class([$wrapperClasses, 'wk-skeleton-skip-offscreen']) }}
 >
     <div class="space-y-2">
         @for($i = 0; $i < $lines; $i++)
             <div class="{{ $baseShimmer }} h-3 {{ $i === $lines - 1 ? 'w-2/3' : 'w-full' }}" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
         @endfor
     </div>
-    <span class="sr-only">Loading content</span>
+    <span class="sr-only">{{ __('wirekit::Loading content') }}</span>
 </div>

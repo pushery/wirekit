@@ -39,7 +39,7 @@
         'wk-fab-action',
         // `relative` anchors the hover/focus label below, which is absolutely
         // positioned so it never affects the layout of the action column.
-        'relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-[var(--radius-wk-full)]',
+        'relative flex h-[var(--size-wk-touch-target)] w-[var(--size-wk-touch-target)] cursor-pointer items-center justify-center rounded-[var(--radius-wk-full)]',
         'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text)]',
         'shadow-[var(--shadow-wk-md)]',
@@ -76,14 +76,21 @@
         : $label;
 @endphp
 
-{{-- role="menuitem" to match the parent's role="menu": the two have to agree, or
-     a screen reader announces a popup whose contents are not menu items.
+{{-- No role. The parent is a `role="group"` now rather than a `role="menu"`, and a
+     `menuitem` outside a menu is an orphaned role — it REPLACES the link or button role the
+     element already had, which is the one a reader needs to know how to operate it.
 
-     h-11/w-11 is 44px — the touch minimum, and these are the smallest targets on
-     the screen. --}}
+     The reasoning that led here is worth keeping, and it was kept as a verbatim copy of the
+     old comment until that copy started reading as the current rule: it said "role=menuitem
+     to match the parent's role=menu, the two have to agree". They do have to agree — and the
+     way they were made to agree was to stop claiming a keyboard model neither implements,
+     not to add the role. Stated as an instruction it was an invitation to undo this.
+
+     The box is --size-wk-touch-target (44px) — the touch minimum, and these are the
+     smallest targets on the screen. It reads the token rather than a literal so the
+     floor lives in one place; a developer's own buttons sit next to these. --}}
 <{{ $tag }}
     @if($href) href="{{ $href }}" @else type="button" @endif
-    role="menuitem"
     {{-- Only emit the name when there IS one. `aria-label=""` is worse than no
          aria-label at all: it suppresses the fallback to the element's own text
          content, so an action rendering a text slot would lose the name it
@@ -107,11 +114,14 @@
          has always been fine here. A sighted person using a mouse had nothing:
          three circles, and the only way to learn what they do was to click one.
 
-         It lives INSIDE the menuitem rather than wrapping it, and that is the
-         constraint the whole shape follows from. The parent is role="menu" and
-         its children must be role="menuitem"; a wrapper element between the two
-         breaks that relationship, which is exactly why the obvious answer —
-         putting a tooltip component around the action — is not available here.
+         It lives INSIDE the action rather than wrapping it, and that is the
+         constraint the whole shape follows from — though not for the reason this
+         comment used to give. It said the parent is `role="menu"` and its children
+         must be `role="menuitem"`, so no wrapper may come between; the roles are
+         gone and the constraint is not. The action is the focusable element, and a
+         label that wraps it would put a non-focusable box between the group and the
+         control, which is why the obvious answer — putting a tooltip component
+         around the action — is still not available here.
 
          On focus as well as hover, or it is a mouse-only affordance and the
          keyboard user is back where the screen-reader user started.

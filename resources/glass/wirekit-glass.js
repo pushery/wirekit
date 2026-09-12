@@ -1,7 +1,16 @@
 /**
- * WireKit Liquid Glass Extension v1.0.0
- * Detects Tier 2 support (SVG filter in backdrop-filter) and sets a class
+ * WireKit Liquid Glass Extension
+ *
+ * No version in this banner, deliberately. The file is PUBLISHED into the developer's
+ * own application by `wirekit:glass install` and never rebuilt there, so a number here
+ * freezes at whatever it said the day it was written — it read v1.0.0 through a rewrite
+ * of the whole detection strategy. The package's version is the one that moves.
+ * Detects Tier 2 support (an SVG `filter:` reference the browser keeps) and sets a class
  * on <html> for progressive enhancement.
+ *
+ * The header said "SVG filter in backdrop-filter", which is what the detector used to test
+ * and stopped testing — the block below records why. It is the one line of this file a
+ * reader sees first, and it described the very property the fix moved away from.
  */
 (function () {
     'use strict';

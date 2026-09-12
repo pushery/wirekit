@@ -455,7 +455,7 @@
                     {{ $rail }}
                 </aside>
                 @isset($sidebar)
-                    {{-- `w-64` is the drawer width; at lg the shared
+                    {{-- The width below is the DRAWER width; at lg the shared
                          `aside.wk-app-shell-aside` rule in dist/wirekit.css takes over and
                          tracks the inner sidebar's own width, including its collapsed rail.
                          `max-lg:[&>*]:…` because below the breakpoint the sidebar is part of
@@ -463,7 +463,7 @@
                          deliberately as tall as its content and rounded, which is right for
                          a padded column and reads as a floating sheet dropped on the page
                          when it slides in over one. --}}
-                    <aside {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->merge(['role' => 'presentation'])->class(['wk-app-shell-aside max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none w-64 shrink-0']) }}>
+                    <aside {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->merge(['role' => 'presentation'])->class(['wk-app-shell-aside max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none w-[var(--size-wk-sidebar-drawer)] shrink-0']) }}>
                         {{ $sidebar }}
                     </aside>
                 @endisset
@@ -549,7 +549,8 @@
                 {{-- wk-app-shell-aside: on lg the dist/wirekit.css rule sizes this column
                      to the inner sidebar's width (var(--wk-sidebar-w,16rem)), and shrinks it
                      to the 3.5rem icon rail when the sidebar is data-collapsed, so the main
-                     content reflows instead of leaving a gap. w-64 stays the mobile overlay width.
+                     content reflows instead of leaving a gap. The drawer token stays the
+                     mobile overlay width.
                      lg:transition-[width] animates the column in sync with the sidebar's own
                      transition-[width] (compositor cost is a one-shot deliberate toggle, mirroring
                      the sidebar — kept out of dist so the shipped-CSS web-vitals guard stays clean). --}}
@@ -586,7 +587,7 @@
                      nothing collides, and a lone complementary region beside the content is a
                      reasonable thing for an application to have. Changing that silently would
                      take a landmark away from every sidebar-only shell that ships today. --}}
-                {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->class(['wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-64 transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] '.$asideInset]) }}
+                {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->class(['wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-[var(--size-wk-sidebar-drawer)] transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] '.$asideInset]) }}
                 x-cloak
             >
                 {{ $sidebar }}

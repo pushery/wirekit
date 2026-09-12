@@ -102,4 +102,10 @@
     @endif
 
     {{ $slot }}
+    {{-- The other half of the `target="_blank"` rule, and the half that was missing here.
+         `rel="noopener noreferrer"` protects the OPENER; this tells the reader what is about
+         to happen. A link that silently opens a new tab leaves a screen-reader user in a
+         document they did not ask for, with Back doing nothing — and nothing in the page
+         explains why. `link` has carried this hint all along; these did not. --}}
+    @if($opensNewTab)<span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>@endif
 </{{ $tag }}>

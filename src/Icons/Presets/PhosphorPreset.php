@@ -336,6 +336,20 @@ final class PhosphorPreset implements IconPreset
             'link' => 'phosphor-link',
             'attach' => 'phosphor-paperclip',
             'live' => 'phosphor-radio',
+            /*
+             * `video` and `emoji` — added 2026-09-08 because three blueprints were reaching
+             * for them and settling for something else. A chat header labeled "Video call"
+             * rendered a bar chart; an "Emoji" button rendered a heart. The label and the
+             * glyph contradicted each other, which is worse than a plain icon: a sighted
+             * reader trusts the picture and a screen-reader user is told the other thing.
+             *
+             * Taken only because ALL FOUR interchangeable presets ship a genuine cognate,
+             * verified by reading the SVG files rather than a website: heroicons
+             * `video-camera` / `face-smile`, lucide `video` / `smile`, phosphor
+             * `video-camera` / `smiley`, tabler `video` / `mood-smile`.
+             */
+            'video' => 'phosphor-video-camera',
+            'emoji' => 'phosphor-smiley',
             'lock-closed' => 'phosphor-lock',
             'open-source' => 'phosphor-git-branch',
             // Promoted out of the marketing extension: every set ships a real brush.

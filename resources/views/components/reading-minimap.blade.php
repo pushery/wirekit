@@ -133,6 +133,9 @@
     // tokenizer drops that backslash and keeps the letters — the selector arrives as
     // `#u00fcberschrift`, matches nothing, and the minimap renders empty in silence.
     $alpineOptions = \Pushery\WireKit\Support\AlpinePayload::from([
+        // The hover-preview iframe's title. Not exposed (aria-hidden + tabindex="-1"),
+        // but still a user-visible string, and resources/js has no translator.
+        'hoverPreviewLabel' => __('wirekit::Hover preview'),
         'target' => $target,
         'itemSelector' => $itemSelector,
         'side' => $sideValue,
@@ -181,7 +184,7 @@
          fire on its descendants (stripes, overlay) bubble up through
          it and trigger this listener. trackTooltip() short-circuits
          when no tooltipText is set, so the global capture is cheap. --}}
-    @mousemove="trackTooltip($event)"
+    @mousemove.passive="trackTooltip($event)"
     {{ $attributes->merge(['style' => 'width: '.($width).';'])->class([$rootClass]) }}
 >
     {{-- Rendered-mode iframe — only mounted after the IntersectionObserver
@@ -234,7 +237,7 @@
         :style="viewportStyle()"
         @if (filter_var($draggable, FILTER_VALIDATE_BOOL))
             @pointerdown="startDrag($event)"
-            @pointermove="moveDrag($event)"
+            @pointermove.passive="moveDrag($event)"
             @pointerup="endDrag($event)"
             @pointercancel="endDrag($event)"
             style="touch-action: none;"
@@ -260,7 +263,19 @@
     @if (filter_var($headingAnchors, FILTER_VALIDATE_BOOL))
         <nav
             class="wk-reading-minimap__anchors"
-            aria-label="{{ __('wirekit::Page sections') }}"
+            {{-- ⚠️ A DIFFERENT NAME FROM `reading-toc`, WHICH USES "Page sections". Both are
+                 <nav>, so both are navigation landmarks — and a page that renders the table of
+                 contents alongside this minimap with its heading anchors on published two
+                 landmarks with one name. In a screen reader's landmark rotor they are
+                 indistinguishable, which is the shape `never-ship.md` already forbids for
+                 `role="region"` and axe reports as `landmark-unique`.
+
+                 A separate catalog key rather than a new prop, which is the cheaper of the two
+                 routes the finding offered: a prop is public API surface and pulls a docs row,
+                 a props-table update and a catalog key along behind it. And the two names are
+                 not synonyms anyway — these anchors are a shortcut column, not the page's
+                 section list. --}}
+            aria-label="{{ __('wirekit::Section shortcuts') }}"
             data-test="reading-minimap-anchors"
         >
             <template x-for="(anchor, idx) in headingAnchorsList" :key="anchor.id">

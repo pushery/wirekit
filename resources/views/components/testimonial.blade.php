@@ -19,6 +19,13 @@
     // in text (the logo is then decoration and stays silent); pass it when the
     // logo is the ONLY attribution.
     'logoAlt' => null,
+    // Intrinsic aspect ratio of `$logo`, as `'width/height'` — e.g. `'3/1'`.
+    //
+    // Same reasoning as brand's `logoAspect`: the mark is `h-6 w-auto`, so the height is
+    // fixed and the width comes from the image. Until its bytes arrive there is nothing
+    // to derive that width from, and the attribution row re-flows when they land. The
+    // min-width floor below keeps the worst case at a square rather than at nothing.
+    'logoAspect' => null,
     // Optional star rating (0..5). Always read-only — a testimonial is a record,
     // not an input.
     'rating' => null,
@@ -32,6 +39,10 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('testimonial', $attributes->getAttributes());
+
+    // Inline rather than a utility class: the ratio is caller data, and a Tailwind class
+    // cannot be built from a runtime value.
+    $wkLogoStyle = ($logoAspect ? 'aspect-ratio: '.e($logoAspect).'; ' : '').'min-width: 1.5rem;';
 
     $ratingValue = ($rating === null || $rating === '') ? null : (float) $rating;
 
@@ -78,9 +89,14 @@
 
     <figcaption data-wk-testimonial-author class="flex items-center gap-[var(--gap-wk-sm)]">
         @if($avatar || $derivedInitials)
+            {{-- `alt=""`, not the author's name: the name is the very next thing in this
+                 figcaption, as real text. Naming the image with it made every attribution
+                 announce the person twice — "Ada Lovelace, image. Ada Lovelace" — which is
+                 the decorative-image case WCAG describes, and the image genuinely is one
+                 here because the information it carries is already present. --}}
             <x-wirekit::avatar
                 :src="$avatar"
-                :alt="$author"
+                alt=""
                 :initials="$derivedInitials"
                 :from-initials="$avatar === null"
                 size="sm"
@@ -104,6 +120,7 @@
                 alt="{{ $logoAlt ?? '' }}"
                 data-wk-testimonial-logo
                 class="h-6 w-auto shrink-0 opacity-70"
+                style="{{ $wkLogoStyle }}"
             />
         @endif
     </figcaption>

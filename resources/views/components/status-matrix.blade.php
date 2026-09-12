@@ -1,6 +1,12 @@
 {{-- optimistic-ui: n/a — client-only
      Hover and tooltip state over data the server sent. --}}
 @props([
+    // The empty state. `empty` REPLACES the body rather than sitting beside it: the screen a
+    // new user sees FIRST is the one with no data, and a single muted sentence can only say
+    // that nothing is here — it cannot say what to do about it, which is the whole job of that
+    // screen. `emptyText` is the default, so a caller that does not care changes nothing.
+    // Same shape as data-table, which is where the reasoning was first written down.
+    'emptyText' => __('wirekit::Nothing here yet'),
     'rows' => [],                   // [{key,label}] — the matrix rows (left axis)
     'columns' => [],                // [{key,label}] — the matrix columns (top axis)
     'cells' => [],                  // value map: ["rowKey:colKey" => value] OR [rowKey => [colKey => value]]
@@ -34,7 +40,6 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
-    use Illuminate\Support\Str;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -105,6 +110,14 @@
     };
     $rowList = $toAxis($rows);
     $colList = $toAxis($columns);
+
+    // The grid role needs CELLS as well as an editable cell type. Gated on the type alone,
+    // an empty `rows`/`columns` set still produced a `role="grid"` with no gridcell in it —
+    // which axe reports as `aria-required-children`, and which promises a reader a keyboard
+    // model with nothing to move between. An empty matrix is a plain `<table>`, and that is
+    // the honest answer. Computed here rather than beside the type check above, because the
+    // axes do not exist until this line.
+    $isCompositeGrid = $isCompositeGrid && $rowList !== [] && $colList !== [];
 
     // Normalize cells into a flat ["row:col" => value] lookup (accepts nested too).
     $cellsArr = $cells instanceof \Illuminate\Support\Collection ? $cells->all() : (array) $cells;
@@ -230,6 +243,20 @@
         {{-- The role is a promise of a keyboard model — see `$isCompositeGrid` above.
              Named either way: `aria-label` names a plain <table> exactly as it named
              the grid, so nothing is lost by dropping to the native semantics. --}}
+        @if($rowList === [] || $colList === [])
+            {{-- The empty state REPLACES the table. A `<table>` with a header row and no body
+                 rows reads as a broken render rather than as "nothing to show" — and the
+                 composite-grid role is already switched off for this case a hundred lines up,
+                 which is the same judgment one step earlier. The `empty` slot replaces the
+                 sentence; see data-table for why it replaces rather than accompanies it. --}}
+            <div class="flex flex-col items-center justify-center gap-1 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
+                @isset($empty)
+                    {{ $empty }}
+                @else
+                    <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
+                @endisset
+            </div>
+        @else
         <table @if($isCompositeGrid) role="grid" @endif class="w-full border-collapse" aria-label="{{ $ariaLabelResolved }}">
             <thead>
                 <tr>
@@ -345,6 +372,7 @@
                 @endforeach
             </tbody>
         </table>
+        @endif
     </div>
 
     {{-- Legend — names the cell encoding so it's never color-only. --}}
@@ -371,7 +399,11 @@
                      sentence assembled around a `<span>` in the template fixes English word
                      order for every language. `changedLabel` picks the translated form in the
                      browser, where the count lives. --}}
-                <span x-show="changedCount > 0" x-cloak x-text="changedLabel" class="text-[color:var(--color-wk-warning-text)]"></span>
+                {{-- A live region, because this number is the one piece of state the matrix holds that a
+                     reader cannot reconstruct from anywhere else on the page. It changed on screen
+                     and was announced to nobody. `polite`, not `assertive`: it follows an edit the
+                     reader just made, so it belongs after whatever the edit itself said. --}}
+                <span x-show="changedCount > 0" x-cloak role="status" aria-live="polite" x-text="changedLabel" class="text-[color:var(--color-wk-warning-text)]"></span>
             @endif
         </div>
     @endif

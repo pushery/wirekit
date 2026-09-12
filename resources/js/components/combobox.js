@@ -140,8 +140,9 @@ export default function wirekitCombobox(config = {}) {
         },
 
         // Panel ids, handed in by the Blade so `_place()` can find the panels
-        // after they teleport. See the note in _place() — a ref does not survive
-        // the move and an id does.
+        // wherever they end up. See the note in _place(): the refs land in a
+        // nested scope this component cannot read, and an id is indifferent to
+        // scope AND to the teleport.
         _listId: config.listId || null,
         _emptyId: config.emptyId || null,
         _inputId: config.inputId || null,
@@ -160,13 +161,22 @@ export default function wirekitCombobox(config = {}) {
             // Teleporting them to escape the host's stacking context made that
             // visible rather than causing it: an unpositioned fixed element at
             // `<body>` goes to the viewport origin.
-            // By ID, not by `$refs`. Alpine does not carry a ref across an
-            // `x-teleport`: measured after the panels moved to `<body>`,
+            // By ID, not by `$refs`. Measured after the panels moved to `<body>`,
             // `$refs.cbxList` is null, so this loop ran over two nulls and
             // positioned nothing at all. The symptom looked like bad arithmetic —
             // a panel at 0,1117 against a field at 12,451 — and was the absence of
             // any arithmetic: a `fixed` element with no top/left sits at its static
             // position, and getComputedStyle reports that resolved.
+            //
+            // ⚠️ THE TELEPORT IS NOT THE CAUSE, and this comment said it was for
+            // long enough to teach it. Alpine DOES carry a ref across an
+            // `x-teleport`: the directive sets `_x_teleportBack` on the clone, and
+            // `findClosest` hops that back-pointer before it walks up the DOM, so
+            // `x-ref` still registers into the scope that declared the template.
+            // Read in the installed Alpine 3.16.3 rather than inferred, and
+            // `context-menu.blade.php` says the same thing in prose while
+            // `context-menu.js` reads `this.$refs.panel` on a teleported panel and
+            // works. The real cause is the nested scope, immediately below.
             const panels = [
                 this._listId ? document.getElementById(this._listId) : this.$refs.cbxList,
                 this._emptyId ? document.getElementById(this._emptyId) : this.$refs.cbxEmpty,
@@ -215,8 +225,8 @@ export default function wirekitCombobox(config = {}) {
          * row is actually outside, so a move that stays on screen costs nothing.
          *
          * By id rather than through `$refs`, for the reason spelled out in
-         * `_place()`: the panels are teleported, and a ref does not survive the
-         * move.
+         * `_place()`: with `optimistic` set the refs register into a nested scope
+         * this component cannot read. Not the teleport — a ref survives that.
          */
         _revealHighlight() {
             if (this._movedByPointer) {
@@ -243,10 +253,27 @@ export default function wirekitCombobox(config = {}) {
 
         // ── Opening ─────────────────────────────────────────────────────────
 
-        /** Typing opens the list and restarts the highlight at the top. */
+        /**
+         * Typing opens the list and restarts the highlight at the first ENABLED option.
+         *
+         * ⚠️ THIS SET `highlight = 0` AND THAT IS NOT THE TOP, it is the first ROW. When
+         * row 0 is disabled — which typing makes ordinary, because the filter decides what
+         * lands there — `aria-activedescendant` then named an option nobody can choose:
+         * no visible highlight, because the template paints the highlight and the disabled
+         * style separately, and Enter silently doing nothing while a screen reader has
+         * just announced that option as the active one.
+         *
+         * Every other entry point already walked to an enabled option; this was the one
+         * that did not, and it is the one the user reaches by typing.
+         */
         openAndReset() {
             this.open = true;
-            this.highlight = 0;
+
+            // Seeded to "nothing" first, because `highlightFirst()` only assigns when it
+            // finds an enabled option — a list filtered down to disabled rows has to end
+            // with no active descendant rather than with the previous one.
+            this.highlight = -1;
+            this.highlightFirst();
         },
 
         /** Arrow into the list from the field. */

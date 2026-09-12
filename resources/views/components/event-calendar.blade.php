@@ -46,7 +46,6 @@
 
 @php
     use Pushery\WireKit\WireKit;
-    use Illuminate\Support\Str;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -54,7 +53,17 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('event-calendar', $attributes->getAttributes());
 
     $view = WireKit::validateProp('event-calendar', 'view', $view, ['month', 'week', 'agenda']);
-    $id = $attributes->get('id', 'event-calendar-'.Str::random(6));
+    /*
+     * `DomId::unique()`, not a fresh random per render, and the helper's own docblock names
+     * the reason: only the COUNTED form survives a re-render, which is what a `label[for]` and
+     * a Livewire morph both need.
+     *
+     * With a random id, every Livewire round trip minted a new one. Alpine keys its component
+     * state to the element, the morph saw a different id, and the calendar's view state — the
+     * month being looked at, the selection — was thrown away by an update that had nothing to
+     * do with it. Nothing errors; the calendar simply jumps back.
+     */
+    $id = $attributes->get('id') ?? \Pushery\WireKit\Support\DomId::unique(null, 'event-calendar-');
 
     $eventsArr = $events instanceof \Illuminate\Support\Collection ? $events->values()->all() : array_values((array) $events);
     $markersArr = $dayMarkers instanceof \Illuminate\Support\Collection ? $dayMarkers->values()->all() : array_values((array) $dayMarkers);
@@ -155,7 +164,7 @@
     @pointerout="tipHide($event)"
     @focusin="tipShow($event)"
     @focusout="tipHide($event)"
-    @scroll.capture="tipHide()"
+    @scroll.capture.passive="tipHide()"
     @keydown.escape.window="tipHide()"
     {{ $attributes->only('class')->class([$base]) }}
 >
@@ -213,8 +222,18 @@
                                          from the event's intent, so a muted FOREGROUND here would
                                          be a new contrast pair per intent; the week view's
                                          secondary time line solves it the same way — inherit the
-                                         color, drop a size. --}}
-                                    <span x-show="pillTime(ev)" x-cloak class="shrink-0 tabular-nums text-[length:var(--text-wk-2xs)]" x-text="pillTime(ev)"></span>
+                                         color, drop a size.
+
+                                         `max-sm:hidden` because this is the one child that cannot
+                                         shrink, and a month cell on a phone is ~51px. Measured at
+                                         393px: "10:00 AM" renders 52px, the title beside it had
+                                         already collapsed to 0px, and the pill overflowed its cell
+                                         by 17px — so the visible result was a pill showing the
+                                         time and NOT the title. Dropping the time below `sm` gives
+                                         the title the cell back. Nothing is lost to a screen
+                                         reader: the button's aria-label is `eventLabel(ev)`, which
+                                         spells out title, full date AND time regardless. --}}
+                                    <span x-show="pillTime(ev)" x-cloak class="max-sm:hidden shrink-0 tabular-nums text-[length:var(--text-wk-2xs)]" x-text="pillTime(ev)"></span>
                                 </button>
                             </template>
                             {{-- "+N more" is actionable: it jumps to the week view focused on

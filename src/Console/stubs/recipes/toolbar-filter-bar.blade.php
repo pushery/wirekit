@@ -1,5 +1,8 @@
 {{-- Recipe: Toolbar Filter Bar — search input + select filters + reset button above a data table.
-     Full reference: https://docs.wirekit.app/blueprints/recipes/toolbar-filter-bar --}}
+     Full reference: https://docs.wirekit.app/blueprints/recipes/toolbar-filter-bar
+     Pair this view with the matching Livewire class — it binds $search, $status, $category
+     and resetFilters(). The scaffold prints the same list; this line is here for whoever
+     opens the file later. --}}
 <div>
     <x-wirekit::toolbar>
         <x-wirekit::input

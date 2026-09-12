@@ -130,6 +130,13 @@
             <button
                 type="button"
                 x-on:click="interval = {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}"
+                {{-- A STATIC value as well as the bound one. Until Alpine evaluates the
+                     binding the button carries no `aria-pressed` at all, so the
+                     server-rendered document — which is what a screen reader meets first, and
+                     the only document at all under a strict CSP that blocks the bundle — says
+                     nothing about which interval is selected. The server knows: it is
+                     `$serverInterval`, the same value the factory is seeded with. --}}
+                aria-pressed="{{ (string) $intervalKey === $serverInterval ? 'true' : 'false' }}"
                 :aria-pressed="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }} ? 'true' : 'false'"
                 :class="interval === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $intervalKey) }}
                     ? {{ \Pushery\WireKit\Support\AlpinePayload::string($intervalSelectedClasses) }}

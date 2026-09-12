@@ -77,7 +77,9 @@
     @if($shortcut)
         <span class="flex items-center gap-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
             @foreach((array) $shortcut as $key)
-                <kbd class="inline-flex items-center justify-center min-w-5 px-1 py-0.5 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-muted)] font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-xs)]">{{ $key }}</kbd>
+                {{-- The component, not a copy of it — see command-palette/item for what the
+                     hand-rolled chip was dropping. --}}
+                <x-wirekit::kbd size="sm">{{ $key }}</x-wirekit::kbd>
             @endforeach
         </span>
     @endif

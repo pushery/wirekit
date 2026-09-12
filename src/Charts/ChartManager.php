@@ -84,16 +84,29 @@ final class ChartManager
         }
 
         if (class_exists($library)) {
-            $instance = new $library;
-
-            if (! $instance instanceof ChartAdapter) {
+            /*
+             * The type is checked BEFORE the class is instantiated, and the order is the whole
+             * point. `new $library` ran first, so a class that is not an adapter had its
+             * CONSTRUCTOR executed on the way to being rejected — and a constructor with
+             * required arguments threw `ArgumentCountError` instead of the documented
+             * `InvalidArgumentException`, from inside a method whose job is to produce that
+             * exception. A developer who passed the wrong class name got an error about
+             * argument counts and no mention of the adapter contract.
+             *
+             * Worse for anything with side effects: a constructor that opens a connection or
+             * registers a listener had already done it by the time the check said no.
+             *
+             * `is_subclass_of` answers the same question against the class rather than an
+             * instance, and the interface check is the same one either way.
+             */
+            if (! is_subclass_of($library, ChartAdapter::class)) {
                 throw new InvalidArgumentException(
                     "WireKit: Chart adapter '{$library}' must implement "
                     .ChartAdapter::class
                 );
             }
 
-            return $instance;
+            return new $library;
         }
 
         throw new InvalidArgumentException(

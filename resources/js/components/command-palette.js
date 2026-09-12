@@ -322,7 +322,20 @@ export default function wirekitCommandPalette(config = {}) {
          */
         _paintActive(items = this._getItems()) {
             items.forEach((el, i) => {
-                el.setAttribute('data-active', i === this._activeIndex ? 'true' : 'false');
+                const active = i === this._activeIndex;
+
+                el.setAttribute('data-active', active ? 'true' : 'false');
+                el.setAttribute('aria-selected', active ? 'true' : 'false');
+
+                // The ARIA state beside the styling hook, deliberately in the same write.
+                // `data-active` drove the highlight and nothing published it: the rows carry
+                // `role="option"`, and `aria-selected` is the state ARIA defines for that
+                // role. The list is a single-select listbox driven by `aria-activedescendant`,
+                // so the active option IS the selected one.
+                //
+                // Set HERE rather than only in the template because this method is what runs
+                // again after a Livewire morph — a static attribute alone would survive the
+                // morph and then describe whichever row was active before it.
             });
         },
 

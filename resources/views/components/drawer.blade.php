@@ -178,7 +178,9 @@
                  Leave transition intentionally omitted: pest-plugin-browser's
                  `assertDontSee()` is synchronous (no auto-wait), and any fade-out
                  (even 150ms) races against the assertion. Instant close is also
-                 better UX — matches GitHub, Linear, macOS dialogs. --}}
+                 better here in its own right: a dialog that lingers on the way out
+                 delays the thing the reader asked for, and the close is not the
+                 moment to be decorative. --}}
             <div
                 x-show="open"
                 x-transition:enter="transition ease-out duration-200"

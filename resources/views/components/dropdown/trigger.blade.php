@@ -8,7 +8,7 @@
     // label below sm). Defaults to "Open menu". Explicit aria-label /
     // aria-labelledby on the inner button or an sr-only span both win
     // over this fallback — see x-init below.
-    'ariaLabelFallback' => 'Open menu',
+    'ariaLabelFallback' => null,
 ])
 
 @php
@@ -16,6 +16,13 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('dropdown.trigger', $attributes->getAttributes());
+
+    // Resolved here rather than in @props, because a literal there is frozen for every
+    // locale: this string becomes the accessible NAME of every icon-only dropdown trigger
+    // (it is written onto the inner control by trigger-aria.js), so a non-English
+    // application would have had to pass the prop at every call site to avoid leaking an
+    // English name to screen readers — and forgetting one instance is invisible.
+    $ariaLabelFallback ??= __('wirekit::Open menu');
 
     use Pushery\WireKit\WireKit;
 
@@ -32,7 +39,7 @@
 
      Auto-aria-label: when the inner button has no accessible name (no
      aria-label, no aria-labelledby, no visible OR sr-only text content),
-     we inject `ariaLabelFallback` ("Open menu" by default). This catches
+     we inject `ariaLabelFallback` (the translated "Open menu" by default). This catches
      icon-only triggers and responsive layouts where the visible label is
      hidden below the `sm` breakpoint. Explicit developer-side labels on
      the inner button always win — the auto-inject only fires on the

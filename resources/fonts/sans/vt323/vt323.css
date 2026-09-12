@@ -19,15 +19,23 @@
 /*
  * Registers the local system font under its own name with VT323's
  * metrics, so the text painted before the swap occupies the same box as
- * the text painted after it. Measured against Arial; regenerate with
- * `python3 scripts/generate-font-fallbacks.py`.
+ * the text painted after it. Measured against Courier New. The numbers are
+ * generated from the font file rather than chosen, and the generator is part
+ * of this package's build rather than something you run.
+ *
+ * Courier New, not Arial, although VT323 sits in the SANS slot. VT323 is fixed-pitch — its
+ * average character advance and its digit-zero advance are the same 0.4em, which is the
+ * signature — and it was the only fixed-pitch face in the set falling back to a proportional
+ * one. `size-adjust` can equalize an average against a proportional reference; it cannot make
+ * the per-character advances line up, so a terminal face swapping in over Arial reflowed at
+ * every glyph. The mono presets already use this stack.
  */
 @font-face {
     font-family: 'VT323 Fallback';
-    src: local('Arial'), local('Helvetica Neue'), local('Helvetica'), local('Liberation Sans');
-    size-adjust: 89.54%;
-    ascent-override: 89.34%;
-    descent-override: 22.34%;
+    src: local('Courier New'), local('Courier'), local('Liberation Mono');
+    size-adjust: 66.66%;
+    ascent-override: 120.02%;
+    descent-override: 30.00%;
     line-gap-override: 0.0%;
 }
 

@@ -230,7 +230,18 @@
              build cannot evaluate and no locale file can reach. --}}
         <x-wirekit::dropdown placement="bottom-start">
             <x-slot:trigger>
-                <x-wirekit::button intent="neutral" surface="outline" size="sm" data-wk-theme-toggle>
+                {{-- A STATIC name, because every visible label inside this button sits in an
+                     `x-show` + `x-cloak` block. The stored mode lives in the reader's browser,
+                     so the server cannot know which of the three to show — and until Alpine
+                     boots, none of them is shown. The button was therefore nameless in the
+                     server-rendered document, which is what a screen reader meets first and
+                     what any static analysis sees.
+
+                     Naming it after the CONTROL rather than the current mode is deliberate:
+                     the mode text inside is a VALUE, the way a `<select>` shows its current
+                     option, and the thing a reader needs on arrival is what the control is
+                     for. --}}
+                <x-wirekit::button intent="neutral" surface="outline" size="sm" data-wk-theme-toggle :aria-label="$label">
                     @foreach(['light' => 'sun', 'dark' => 'moon', 'system' => 'system'] as $modeValue => $modeIcon)
                         <span x-show="theme === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }}" x-cloak class="inline-flex items-center gap-[var(--gap-wk-sm)]">
                             <x-wirekit::icon :name="$modeIcon" class="h-4 w-4" />
@@ -262,10 +273,23 @@
                      the surface and a third one would be indistinguishable from them at exactly the
                      moment it matters. Keep the two in step: if that pair changes there, it changes
                      here. Written literally rather than assembled so the Tailwind scanner sees it. --}}
+                {{-- ⚠️ `menuitemradio`, NOT `menuitem` + `aria-current`, and this row is why the
+                     item component grew a `role` prop. The three modes are mutually exclusive
+                     by construction — the loop is the whole set and `select()` writes exactly
+                     one value — which is the APG menu pattern's radio case. `aria-current` is a
+                     global attribute meaning "the current item within a set of related items";
+                     it carries no group membership, so a reader heard "System, current" instead
+                     of "System, radio button, checked, 1 of 3" and was never told the three are
+                     one choice.
+
+                     `aria-checked` is bound to `'false'`, never dropped, because a radio that
+                     omits the attribute is not an unchecked radio — it is a radio with no state
+                     at all. --}}
                 <x-wirekit::dropdown.item
+                    role="menuitemradio"
                     :icon="$modeIcon"
                     x-on:click="select({{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }})"
-                    x-bind:aria-current="theme === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'true' : null"
+                    x-bind:aria-checked="theme === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'true' : 'false'"
                     x-bind:class="theme === {{ \Pushery\WireKit\Support\AlpinePayload::string($modeValue) }} ? 'font-medium text-[color:var(--color-wk-accent-text)]' : ''"
                 >{{ $optionLabels[$modeValue] ?? $modeValue }}</x-wirekit::dropdown.item>
             @endforeach

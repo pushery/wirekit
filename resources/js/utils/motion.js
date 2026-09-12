@@ -32,12 +32,28 @@ export function prefersReducedMotion() {
     // Guard the whole path: this runs in a test environment and in SSR-adjacent
     // contexts where neither document nor matchMedia is guaranteed, and a
     // motion preference is never worth throwing over.
-    const explicit = typeof document !== 'undefined'
-        ? document.documentElement?.getAttribute(MOTION_ATTRIBUTE)
+    //
+    // The guard is on `getAttribute` being CALLABLE, not on `document` existing.
+    // `?.` only stops at null or undefined, so a stub that defines
+    // `document.documentElement` as a plain object sails past it and throws on the
+    // call — which is exactly what the ESM harness hands a factory, deliberately, and
+    // what the two chart adapters hit the moment they started watching this.
+    const root = typeof document !== 'undefined' ? document.documentElement : null;
+    const explicit = typeof root?.getAttribute === 'function'
+        ? root.getAttribute(MOTION_ATTRIBUTE)
         : null;
 
     if (explicit === 'reduce') return true;
     if (explicit === 'no-preference') return false;
+
+    // `typeof window`, not `window.matchMedia?.` — an undeclared identifier throws a
+    // ReferenceError before optional chaining ever gets a value to test, so the `?.` here
+    // protected against a missing METHOD and not against a missing window. The comment above
+    // has promised "neither document nor matchMedia is guaranteed" since the helper was
+    // written; this line was the half that did not keep it.
+    if (typeof window === 'undefined') {
+        return false;
+    }
 
     return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
@@ -63,7 +79,11 @@ export function watchReducedMotion(onChange) {
         }
     };
 
-    const query = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    // Same guard as `prefersReducedMotion()` above, and for the same reason: this runs
+    // wherever that does, and a watch is even less worth throwing over than a read.
+    const query = typeof window !== 'undefined'
+        ? window.matchMedia?.('(prefers-reduced-motion: reduce)')
+        : null;
     query?.addEventListener?.('change', emit);
 
     // The attribute lives on <html>, so observe exactly that one attribute on

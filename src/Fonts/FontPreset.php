@@ -18,11 +18,10 @@ final class FontPreset
     /**
      * The family this preset registers a metric-matched local face under.
      *
-     * The face itself is generated into the family's own CSS by
-     * `scripts/generate-font-fallbacks.py`; this is only the name both halves
-     * agree on. They are held together by `FontFallbackMetricsTest`, because a
-     * name that drifts on one side leaves a rule nothing selects — which looks
-     * exactly like the shift it was added to remove.
+     * The face itself is generated into the family's own CSS as part of this package's
+     * build; this method is only the name both halves agree on. They are held together by a
+     * build check, because a name that drifts on one side leaves a rule nothing selects —
+     * which looks exactly like the layout shift it was added to remove.
      */
     public function fallbackFamily(): string
     {

@@ -35,9 +35,58 @@ export default function wirekitTooltip(config = {}) {
         _navCleanup: null,
 
         init() {
+            this._moveDescriptionToTheFocusableTrigger();
+
             // Cleanup on SPA navigation
             this._navCleanup = () => this._forceClose();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
+        },
+
+        /**
+         * Put `aria-describedby` on the element a reader actually lands on.
+         *
+         * The template can only annotate its own wrapper `<div>`, because the trigger is the
+         * CALLER's markup — a `<button>`, a link, whatever they passed. A wrapper is not
+         * focusable and is not announced, so without `focusable-trigger` the description was
+         * attached to nothing a reader ever reaches: the tooltip existed and was announced to
+         * nobody.
+         *
+         * Moved rather than duplicated. Two elements describing themselves with the same id
+         * makes a nested pair announce the text twice, and the wrapper's copy is the one with
+         * no reader on it.
+         */
+        _moveDescriptionToTheFocusableTrigger() {
+            const root = this.$refs?.trigger;
+            if (!root || typeof root.querySelector !== 'function') {
+                return;
+            }
+
+            const id = root.getAttribute('data-wk-tooltip-describedby');
+            if (!id) {
+                return;
+            }
+
+            // The wrapper itself takes the tab stop under `focusable-trigger`; in that case
+            // it IS the element a reader lands on and the attribute is already right.
+            if (root.hasAttribute('tabindex')) {
+                return;
+            }
+
+            const focusable = root.querySelector(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            );
+
+            if (!focusable) {
+                return;
+            }
+
+            // A caller who described their own control keeps their description — replacing it
+            // would silence something they chose deliberately.
+            if (!focusable.hasAttribute('aria-describedby')) {
+                focusable.setAttribute('aria-describedby', id);
+            }
+
+            root.removeAttribute('aria-describedby');
         },
 
         destroy() {

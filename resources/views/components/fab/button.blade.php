@@ -113,7 +113,10 @@
         'wk-fab',
         $placementClass,
         'fixed z-40',
-        'flex h-14 w-14 cursor-pointer items-center justify-center',
+        // The box reads --size-wk-fab rather than a literal, because a developer laying out
+        // AROUND a fixed control needs to be able to read its size. `wk-fab-clearance` does
+        // exactly that; before the token the only way was to copy 3.5rem out of this line.
+        'flex h-[var(--size-wk-fab)] w-[var(--size-wk-fab)] cursor-pointer items-center justify-center',
         $positionClass,
         'rounded-[var(--radius-wk-full)]',
         'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
@@ -151,4 +154,10 @@
             </svg>
         @endif
     </span>
+    {{-- The other half of the `target="_blank"` rule, and the half that was missing here.
+         `rel="noopener noreferrer"` protects the OPENER; this tells the reader what is about
+         to happen. A link that silently opens a new tab leaves a screen-reader user in a
+         document they did not ask for, with Back doing nothing — and nothing in the page
+         explains why. `link` has carried this hint all along; these did not. --}}
+    @if($opensNewTab)<span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>@endif
 </{{ $tag }}>

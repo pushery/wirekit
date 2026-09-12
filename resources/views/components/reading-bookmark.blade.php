@@ -170,7 +170,7 @@
             @click="resume()"
             class="wk-reading-bookmark__resume inline-flex items-center cursor-pointer px-3 py-1 rounded-[var(--radius-wk-md)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] text-[length:var(--text-wk-xs)] font-medium hover:bg-[var(--color-wk-accent-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-[length:var(--ring-wk-offset)] focus-visible:ring-offset-[var(--color-wk-ring-offset)]"
         >
-            Resume
+            {{ __('wirekit::Resume') }}
         </button>
         <button
             type="button"

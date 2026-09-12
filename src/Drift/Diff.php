@@ -59,7 +59,7 @@ final class Diff
      *
      * @param  DiffReport  $report
      * @param  'human'|'json'  $format  Output shape:
-     *                                  - `'human'` (default): WARN-mode
+     *                                  - `'human'` (default): the readable report
      *                                  text with summary line + grouped
      *                                  sections + truncation. Verbosity
      *                                  controlled via the env var
@@ -69,8 +69,8 @@ final class Diff
      *                                  structured payload with optional
      *                                  repository / ref / tier metadata
      *                                  (passed via the `$context` arg).
-     *                                  Shape is the cross-repo aggregator
-     *                                  envelope shared with the docs site.
+     *                                  Shape is the aggregator envelope
+     *                                  shared with the documentation site.
      * @param  array{repository?: string, ref?: string, tier?: int}  $context
      *                                                                         Optional metadata included in the
      *                                                                         JSON envelope. Ignored for `'human'`.
@@ -85,7 +85,7 @@ final class Diff
     }
 
     /**
-     * JSON envelope per the cross-repo shared-fixture shape.
+     * JSON envelope per the shared-fixture shape.
      *
      * @param  DiffReport  $report
      * @param  array{repository?: string, ref?: string, tier?: int}  $context

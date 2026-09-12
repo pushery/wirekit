@@ -18,9 +18,9 @@
     // How to visually render the status:
     //   'dot'  — small colored dot in the bottom-right corner (default).
     //   'ring' — full colored ring that surrounds the avatar, separated from
-    //            the image by a thin gap in the page background color. This
-    //            is the more prominent "presence ring" look used by apps like
-    //            Slack, Discord and iMessage.
+    //            the image by a thin gap in the page background color. The
+    //            more prominent of the two: presence reads at a glance in a
+    //            dense roster, where a corner dot needs looking for.
     // Ignored when `status` is null.
     'statusVariant' => config('wirekit.components.avatar.status-variant', 'dot'),
     'scope' => null,
@@ -76,12 +76,25 @@
         default => WireKit::validateProp('avatar', 'size', $size, ['xs', 'sm', 'md', 'lg', 'xl']),
     };
 
-    // Shape: circle (default) or square with medium radius
+    // Shape: circle (default) or square with medium radius.
+    //
+    // The default arm goes through the validator, like `size` above it. `default => $shape`
+    // emitted the caller's string as a CSS CLASS, so `shape="cirlce"` produced
+    // `class="cirlce"` — no radius, no warning, and a class name that looks deliberate to
+    // anyone reading the markup.
     $shapeClasses = match ($shape) {
         'circle' => 'rounded-full',
         'square' => 'rounded-[var(--radius-wk-md)]',
-        default => $shape,
+        default => match (WireKit::validateProp('avatar', 'shape', $shape, ['circle', 'square'])) {
+            'square' => 'rounded-[var(--radius-wk-md)]',
+            default => 'rounded-full',
+        },
     };
+
+    // Same treatment for the status variant, and here the silence costs more: both places
+    // that render presence compare against the exact string, so `statusVariant="Dot"`
+    // removes the indicator AND its screen-reader label without rendering anything at all.
+    $statusVariant = WireKit::validateProp('avatar', 'statusVariant', (string) $statusVariant, ['dot', 'ring']);
 
     // Status indicator color + size scaling (dot sits on bottom-right)
     $statusSize = match ($size) {

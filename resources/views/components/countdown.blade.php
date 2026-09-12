@@ -207,7 +207,12 @@
         locale: {{ \Pushery\WireKit\Support\AlpinePayload::from($countdownLocale) }},
     })"
     role="timer"
+    {{-- Only when the caller did not name it. HTML keeps the FIRST of two identical
+         attributes, and the bag renders after this line — so a caller's `aria-label` was
+         parsed and then discarded, silently. Same shape, same fix, as navbar. --}}
+    @unless($attributes->has('aria-label') || $attributes->has('aria-labelledby'))
     aria-label="{{ __('wirekit::Deadline') }}: {{ $humanDeadline }}"
+    @endunless
     :class="expired
         ? 'text-[color:var(--color-wk-danger-text)]'
         : (urgent ? 'text-[color:var(--color-wk-warning-text)]' : 'text-[color:var(--color-wk-text)]')"
@@ -219,7 +224,15 @@
          resync, expiry event, and `done` state. Their Alpine directives resolve
          against this scope, so `remaining` (full breakdown + totalSeconds),
          `expired`, `urgent`, `done`, `srText`, and `expiredText` are all
-         available — e.g. <span x-text="`Resend in ${remaining.totalSeconds}s`">.
+         available — e.g. Resend in <span x-text="remaining.totalSeconds"></span>s.
+
+         ⚠️ THAT EXAMPLE USED TO INTERPOLATE, AND IT WAS A DEAD CONTROL WHEREVER IT WAS
+         COPIED. Its binding was a template literal, and Alpine's CSP build has none — its
+         parser answers `Unexpected token: OPERATOR` and the binding is never evaluated. Nothing throws, nothing logs, the page looks right and
+         the number never appears. An example in a docblock is the version people paste, so
+         it is API surface: the surrounding text carries the words and the binding names a
+         property. Where an interpolation is genuinely needed, compute it as a property on
+         the scope and bind THAT.
          The default sr <time>/units are intentionally NOT rendered here so the
          developer's own copy is the single source of truth. --}}
     {{ $slot }}

@@ -153,7 +153,11 @@
 
 <div class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
-        <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
+        {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
+             declaring it would pull `required` OUT of the bag, and the bag is what carries the
+             attribute to the native control below. A bare `required` lands in the bag as
+             `true`, so this reads it without consuming it. --}}
+        <x-wirekit::label :for="$id" :required="(bool) $attributes->get('required', false)">{{ $label }}</x-wirekit::label>
     @endif
 
     <input

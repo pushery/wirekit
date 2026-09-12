@@ -5,6 +5,13 @@
      the filter text is separate state and is never rolled back. The optimistic
      scope nests INSIDE this component and binds to `selected`. --}}
 @props([
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
+    // complain either, because `required` is in its HTML passthrough list — so it looked like
+    // a legitimate attribute all the way down. The result was a required field that submits
+    // empty, in the same form as a plain input that behaves correctly.
+    'required' => false,
     // Livewire method to call optimistically. It receives the FULL new
     // selection as an array. The pill appears immediately and is removed again
     // if the call fails. Absent -> this component renders exactly as before.
@@ -25,7 +32,7 @@
     'error' => null,
     'options' => [],
     'value' => [],          // option keys to pre-select on load (array or comma-separated string)
-    'placeholder' => __('wirekit::Select...'),
+    'placeholder' => config('wirekit.components.multi-select.placeholder') ?? __('wirekit::Select…'),
     'scope' => null,
     'ariaLabel' => null,
 ])
@@ -44,6 +51,10 @@
     // control — the opposite of what the call site says, with no error either way.
     // Strip such flags when their value reads as false, before the bag reaches the control.
     $attributes = BooleanProp::stripFalseHtmlFlags($attributes);
+
+    // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
+    // `required="false"` would read as TRUE and mark the field required anyway.
+    $required = BooleanProp::from($required, false);
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -205,6 +216,11 @@
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'selected',
         'after' => '_afterToggle',
+        // The field's own error region. Without it the layer's generic "Could not save"
+        // is the only thing a listener hears, and it BEATS the specific message the server
+        // sent — the whole point of the arbitration is that a specific message wins, and it
+        // cannot run against a region nobody pointed at.
+        'errorRegion' => '#'.$id.'-error',
         'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -220,7 +236,7 @@
 
 <div class="space-y-1.5 min-w-0">
     @if($label)
-        <x-wirekit::label :for="$id . '-input'">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label :for="$id . '-input'" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     {{-- `x-modelable` is what makes `wire:model` work here, and without it the control
@@ -313,6 +329,7 @@
                 @keydown.enter.prevent="{{ $optimisticConfig ? 'runIf(enterNext())' : 'onEnter()' }}"
                 :aria-activedescendant="activeDescendantId"
                 role="combobox"
+                @if($required) aria-required="true" @endif
                 aria-haspopup="listbox"
                 aria-expanded="false"
                 :aria-expanded="dropdownOpen ? 'true' : 'false'"
@@ -390,11 +407,11 @@
                          and the arrow keys leave the highlight in the same
                          place instead of each keeping their own idea of it. --}}
                     @mouseenter="hoverOption(idx)"
-                    {{-- nextWith() returns a NEW array. toggle() splices in place,
+                    {{-- nextWith() returns a NEW array. toggleValue() splices in place,
                          and an in-place mutation gives the layer nothing to
                          snapshot — the rollback would restore the array it had
                          just changed. --}}
-                    @click="{{ $optimisticConfig ? 'run(nextWith(opt.value))' : 'toggle(opt.value)' }}"
+                    @click="{{ $optimisticConfig ? 'run(nextWith(opt.value))' : 'toggleValue(opt.value)' }}"
                     @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
                 >
                     <span x-text="opt.label"></span>

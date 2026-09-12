@@ -39,7 +39,7 @@
     'size' => config('wirekit.components.number-input.size', 'md'),
     'min' => null,
     'max' => null,
-    'step' => 1,
+    'step' => config('wirekit.components.number-input.step', 1),
     'prefix' => null,
     'suffix' => null,
     'scope' => null,
@@ -163,15 +163,31 @@
         'disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed',
     ]);
 
-    $radiusLeft = match ($size) {
-        'sm' => 'rounded-l-[var(--radius-wk-sm)]',
-        'lg' => 'rounded-l-[var(--radius-wk-md)]',
-        default => 'rounded-l-[var(--radius-wk-md)]',
+    /*
+     * The stepper's weld, in LOGICAL corners.
+     *
+     * Flexbox lays this row out in reading order, so under `dir="rtl"` the decrease button
+     * moves to the visual right. Written physically, its `rounded-l-` kept rounding the LEFT
+     * corners — which inverts the weld exactly: two square ends on the outside, two rounded
+     * notches meeting at the seam in the middle.
+     *
+     * `button-group` answers the same question logically already, in `dist/wirekit.css` via
+     * `border-start-start-radius` and friends, and its docs page promises "RTL mirrors for
+     * free". Two components of one package were answering it two ways, and one of them was
+     * making that promise.
+     *
+     * The names are START and END rather than left and right on purpose: a variable called
+     * `$radiusLeft` teaches the physical reading back to whoever edits this next.
+     */
+    $radiusStart = match ($size) {
+        'sm' => 'rounded-s-[var(--radius-wk-sm)]',
+        'lg' => 'rounded-s-[var(--radius-wk-md)]',
+        default => 'rounded-s-[var(--radius-wk-md)]',
     };
-    $radiusRight = match ($size) {
-        'sm' => 'rounded-r-[var(--radius-wk-sm)]',
-        'lg' => 'rounded-r-[var(--radius-wk-md)]',
-        default => 'rounded-r-[var(--radius-wk-md)]',
+    $radiusEnd = match ($size) {
+        'sm' => 'rounded-e-[var(--radius-wk-sm)]',
+        'lg' => 'rounded-e-[var(--radius-wk-md)]',
+        default => 'rounded-e-[var(--radius-wk-md)]',
     };
 
     // Build aria-describedby from hint + error
@@ -240,7 +256,11 @@
     <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
     @if($label)
-        <x-wirekit::label :for="$id" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
+             declaring it would pull `required` OUT of the bag, and the bag is what carries the
+             attribute to the native control below. A bare `required` lands in the bag as
+             `true`, so this reads it without consuming it. --}}
+        <x-wirekit::label :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 
     <div class="flex items-center">
@@ -262,7 +282,7 @@
         <button
             type="button"
             tabindex="-1"
-            class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusLeft }} {{ $sizeClasses }}"
+            class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusStart }} {{ $sizeClasses }}"
             aria-label="{{ $decreaseLabel }}"
             aria-controls="{{ $id }}"
             :disabled="atMin"
@@ -300,7 +320,7 @@
         <button
             type="button"
             tabindex="-1"
-            class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusRight }} {{ $sizeClasses }}"
+            class="{{ $buttonClasses }} {{ $buttonPadding }} {{ $radiusEnd }} {{ $sizeClasses }}"
             aria-label="{{ $increaseLabel }}"
             aria-controls="{{ $id }}"
             :disabled="atMax"

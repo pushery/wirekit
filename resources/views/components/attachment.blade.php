@@ -90,12 +90,21 @@
     // Description line: "PDF · 2.4 MB". Only the parts we actually have.
     $descriptionParts = array_values(array_filter([$label, $sizeText]));
 
-    // The state is never color-only: each carries its own text/icon.
-    [$stateText, $stateIntent] = match ($stateValue) {
-        'uploading' => [__('wirekit::Uploading'), 'info'],
-        'done' => [__('wirekit::Uploaded'), 'success'],
-        'error' => [__('wirekit::Upload failed'), 'danger'],
-        default => [null, null],
+    /*
+     * The state is never color-only: each carries its own text, which is the whole
+     * accessibility position here (WCAG 1.4.1 — color is not the only carrier of meaning).
+     *
+     * ⚠️ THIS USED TO DESTRUCTURE A SECOND VALUE, AN INTENT PER STATE, AND NOTHING EVER READ
+     * IT. An unused value beside a rule like this one is not merely dead: it reads as a
+     * half-wired feature, and the obvious way to "finish" it is to tint the row by state —
+     * which is exactly the decision the line above was written to hold. Removed rather than
+     * kept, because there is no state in which a reader should reach for it.
+     */
+    $stateText = match ($stateValue) {
+        'uploading' => __('wirekit::Uploading'),
+        'done' => __('wirekit::Uploaded'),
+        'error' => __('wirekit::Upload failed'),
+        default => null,
     };
 
     $rootClasses = WireKit::resolveClasses('attachment', 'base', implode(' ', [

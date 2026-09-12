@@ -33,6 +33,10 @@ const TOOLBAR_COMMAND = 'button:not([disabled])';
 
 export default function wirekitEditor(config = {}) {
     return {
+        // The browser prompt a reader answers when inserting a link. Server-translated;
+        // English fallback for a directly-constructed factory.
+        _linkPromptLabel: config.linkPromptLabel || 'Link URL',
+
         editor: null,
         // Bumped on every Tiptap transaction so the toolbar's isActive() bindings
         // re-evaluate reactively (Tiptap's own state is not Alpine-reactive).
@@ -324,7 +328,7 @@ export default function wirekitEditor(config = {}) {
 
         _promptLink() {
             const previous = this.editor.getAttributes('link').href || '';
-            const url = window.prompt('Link URL', previous);
+            const url = window.prompt(this._linkPromptLabel, previous);
             if (url === null) {
                 return; // canceled
             }
@@ -366,8 +370,7 @@ export default function wirekitEditor(config = {}) {
         },
 
         // Reactive history availability — drives the undo/redo buttons' :disabled so a
-        // button with nothing to undo/redo reads as disabled instead of a dead no-op
-        // Reads
+        // button with nothing to undo/redo reads as disabled instead of a dead no-op. Reads
         // `_version` (bumped on every transaction) so the bindings re-evaluate as the
         // history stack changes. Tiptap exposes `editor.can().undo()/redo()` (booleans);
         // `?.` guards a minimal factory return or an editor wired WITHOUT the History

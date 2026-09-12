@@ -9,6 +9,23 @@
             <x-wirekit::reading-spine />
         </x-slot:sidebar>
 
+        {{-- Below `lg` this shell moves the sidebar off-canvas — a decision the shell makes,
+             not one you asked for — and the panel is then reachable ONLY through a control
+             that writes `sidebarOpen`. Without this header the spine is simply gone on a
+             phone, and nothing says so: the page renders, it just has no navigation. --}}
+        <x-slot:header>
+            <x-wirekit::shell-bar>
+                {{-- In `start`, not the default slot: the default slot SCROLLS when the bar
+                     overflows, and on a phone it overflows immediately — a burger that
+                     scrolls away is the one control a reader cannot afford to lose. --}}
+                <x-slot:start class="lg:hidden">
+                    <x-wirekit::sidebar.toggle aria-label="Open navigation" />
+                </x-slot:start>
+
+                <x-wirekit::heading level="1" size="md">Documentation</x-wirekit::heading>
+            </x-wirekit::shell-bar>
+        </x-slot:header>
+
         <main>
             <article class="prose">
                 <h1>Getting started</h1>

@@ -40,8 +40,9 @@
 /*
  * Registers the local system font under its own name with Lora's
  * metrics, so the text painted before the swap occupies the same box as
- * the text painted after it. Measured against Times New Roman; regenerate with
- * `python3 scripts/generate-font-fallbacks.py`.
+ * the text painted after it. Measured against Times New Roman. The numbers are
+ * generated from the font file rather than chosen, and the generator is part
+ * of this package's build rather than something you run.
  */
 @font-face {
     font-family: 'Lora Fallback';

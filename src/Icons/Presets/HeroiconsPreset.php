@@ -139,8 +139,10 @@ final class HeroiconsPreset implements IconPreset
             // Common semantic aliases (v2.6.4) — promoted from the heroicons-app/
             // marketing extension presets so they resolve on EVERY base preset
             // without stacking. Every base preset (heroicons/lucide/phosphor/
-            // tabler) shares this identical keyset; `live` stays marketing-specific
-            // (no clean universal-core equivalent across libraries).
+            // tabler) shares this identical keyset — `live` INCLUDED. These two lines used
+            // to say it stayed marketing-specific for want of a universal equivalent, and all
+            // four base presets carry it (signal / radio) while the marketing preset carries
+            // no `live` entry at all. The claim was exactly inverted.
             'copy' => 'heroicon-m-clipboard-document',
             'globe' => 'heroicon-m-globe-alt',
             'book' => 'heroicon-m-book-open',
@@ -361,6 +363,20 @@ final class HeroiconsPreset implements IconPreset
             // the svg files rather than against a website.
             'attach' => 'heroicon-m-paper-clip',
             'live' => 'heroicon-m-signal',
+            /*
+             * `video` and `emoji` — added 2026-09-08 because three blueprints were reaching
+             * for them and settling for something else. A chat header labeled "Video call"
+             * rendered a bar chart; an "Emoji" button rendered a heart. The label and the
+             * glyph contradicted each other, which is worse than a plain icon: a sighted
+             * reader trusts the picture and a screen-reader user is told the other thing.
+             *
+             * Taken only because ALL FOUR interchangeable presets ship a genuine cognate,
+             * verified by reading the SVG files rather than a website: heroicons
+             * `video-camera` / `face-smile`, lucide `video` / `smile`, phosphor
+             * `video-camera` / `smiley`, tabler `video` / `mood-smile`.
+             */
+            'video' => 'heroicon-m-video-camera',
+            'emoji' => 'heroicon-m-face-smile',
             'lock-closed' => 'heroicon-m-lock-closed',
             'open-source' => 'heroicon-m-code-bracket',
             // Promoted out of the marketing extension: every set ships a real brush.

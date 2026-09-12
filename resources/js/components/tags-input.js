@@ -100,13 +100,13 @@ export default function wirekitTagsInput(config = {}) {
             if (!value) return;
 
             if (this.tags.includes(value)) { // no duplicates
-                this._announce(announcements.duplicate, { name: value });
+                this._announceTag(announcements.duplicate, { name: value });
 
                 return;
             }
 
             if (this.atMaxTags) {
-                this._announce(announcements.limit, { count: String(this._maxTags) });
+                this._announceTag(announcements.limit, { count: String(this._maxTags) });
 
                 return;
             }
@@ -114,7 +114,7 @@ export default function wirekitTagsInput(config = {}) {
             this.tags.push(value);
             this._commit();
             input.value = '';
-            this._announce(announcements.added, { name: value });
+            this._announceTag(announcements.added, { name: value });
         },
 
         /**
@@ -135,7 +135,7 @@ export default function wirekitTagsInput(config = {}) {
 
             this.tags.splice(index, 1);
             this._commit();
-            this._announce(announcements.removed, { name: removed });
+            this._announceTag(announcements.removed, { name: removed });
             // Resolved HERE — synchronously, while the button that anchors the
             // scope is still in the document. The move itself waits for the tick.
             rootOf(this);
@@ -206,7 +206,7 @@ export default function wirekitTagsInput(config = {}) {
             if (event.target.value === '' && this.tags.length > 0) {
                 const removed = this.tags.pop();
                 this._commit();
-                this._announce(announcements.removed, { name: removed });
+                this._announceTag(announcements.removed, { name: removed });
             }
         },
 
@@ -236,8 +236,16 @@ export default function wirekitTagsInput(config = {}) {
          * Cleared first, then set in a microtask: writing an identical string into a
          * live region changes nothing, so pressing Enter twice on the same duplicate
          * would be answered once. Same shape, same reason, as the optimistic layer's.
+         *
+         * ⚠️ NOT called `_announce`, for the reason `tagAnnouncement` is not called
+         * `announcement`: the optimistic layer nests inside this component and declares
+         * `_announce(text)`, and Alpine resolves a name to the NEAREST scope that has it.
+         * Every caller here runs from the text field or a chip, inside the layer's
+         * element, so under that name `addTag()` reached the layer's method instead —
+         * which ignores the replacements. The raw template "Added :name" went into the
+         * layer's region and overwrote the "Saving" it had queued a moment earlier.
          */
-        _announce(template, replacements) {
+        _announceTag(template, replacements) {
             if (typeof template !== 'string' || template === '') return;
 
             const text = Object.keys(replacements).reduce(

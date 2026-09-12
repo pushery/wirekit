@@ -8,6 +8,13 @@
      POSITION, so building it on the server is correct and does not block the
      announcement the way a value-bearing label does. --}}
 @props([
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
+    // complain either, because `required` is in its HTML passthrough list — so it looked like
+    // a legitimate attribute all the way down. The result was a required field that submits
+    // empty, in the same form as a plain input that behaves correctly.
+    'required' => false,
     // The Livewire method this rating should call, when it should show the new
     // score before the server has agreed to it. Null (the default) leaves this
     // component byte-identical to what it has always rendered.
@@ -31,7 +38,7 @@
     'announceError' => null,
     'hint' => null,
     'value' => 0,
-    'max' => 5,
+    'max' => config('wirekit.components.rating.max', 5),
     'icon' => 'star',
     // Let the reader take the score back.
     //
@@ -78,6 +85,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $readonly = BooleanProp::from($readonly, false);
     $clearable = BooleanProp::from($clearable, false);
+    $required = BooleanProp::from($required, false);
 
     // The seed stays byte-identical when the feature is off. It is an attribute
     // a Livewire morph rewrites, and Alpine re-initializes on the change — so a
@@ -101,6 +109,14 @@
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'rating-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
+    /*
+     * The Laravel validation bag, which this control never consulted. Every other form
+     * control resolves `error` from `$error ?? $errors->first($name)`, so after a failed
+     * `$this->validate()` each of them showed its message and this one showed nothing — in
+     * the same form, on the same submit. The explicit prop still wins; the bag is the
+     * fallback, exactly as in input.blade.php.
+     */
+    $error ??= ($errors ?? null)?->first($name);
     // Strip the caller's `id` AND `name` from the bag: the deduped $id is rendered
     // explicitly as id="{{ $id }}", so leaving it in the bag would emit a second,
     // conflicting id attribute. `name` belongs on the hidden input below, which renders
@@ -181,6 +197,11 @@
     $optimisticConfig = ($optimistic === null || $readonly) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'rating',
         'after' => '_notify',
+        // The field's own error region. Without it the layer's generic "Could not save"
+        // is the only thing a listener hears, and it BEATS the specific message the server
+        // sent — the whole point of the arbitration is that a specific message wins, and it
+        // cannot run against a region nobody pointed at.
+        'errorRegion' => '#'.$id.'-error',
         'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -217,7 +238,12 @@
                  on the floor along with the text inside it. --}}
             <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</span>
         @else
-            <x-wirekit::label :for="$id">{{ $label }}</x-wirekit::label>
+            {{-- NO `for`, and that is the fix rather than an omission. The only element
+                 carrying `$id` is the hidden input below, and a hidden input is not a
+                 labelable element — the association resolved to nothing at all, so the
+                 visible text was an orphan while the group named itself separately.
+                 The control here is the GROUP, so the group is named BY this label. --}}
+            <x-wirekit::label id="{{ $id }}-label" :required="$required">{{ $label }}</x-wirekit::label>
         @endif
     @endif
 
@@ -273,7 +299,16 @@
             aria-label="{{ $attributes->get('aria-label') ?? __('wirekit:::value out of :max stars', ['value' => $announcedValue, 'max' => $max]) }}"
         @else
             role="radiogroup"
-            aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::Rating') }}"
+            @if($required) aria-required="true" @endif
+            {{-- `aria-labelledby` points at the visible label, so the name a reader hears is
+                 the text on the screen rather than a second copy of it. An explicit
+                 `aria-label` from the caller still wins: they know their page, and
+                 `aria-labelledby` would otherwise silently outrank what they wrote. --}}
+            @if($label && ! $attributes->get('aria-label'))
+                aria-labelledby="{{ $id }}-label"
+            @else
+                aria-label="{{ $attributes->get('aria-label') ?? $label ?? __('wirekit::Rating') }}"
+            @endif
             {{-- On the GROUP, not on each star: the message is about the rating, and
                  repeating it on five buttons would read it out five times. --}}
             @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
@@ -390,6 +425,19 @@
                     @keydown.arrow-down.prevent="stepDown()"
                     @keydown.home.prevent="selectFirst()"
                     @keydown.end.prevent="selectLast()"
+                    {{-- The roving tab stop, written TWICE on purpose — the same shape the
+                         hidden input above uses for its value, and for the same reason.
+                         `:tabindex` is an Alpine binding, so until Alpine runs there is no
+                         tabindex at all and every star is a tab stop: a reader tabbing into
+                         a five-star rating before boot passes through five controls where
+                         the pattern promises one. The static attribute makes the first paint
+                         agree with the roving model; the binding takes over the moment
+                         Alpine runs.
+
+                         `$clamped` is cast to int on this branch (a fractional value exists
+                         only in the readonly rendering, which has no radiogroup), so the two
+                         expressions compare the same way. --}}
+                    tabindex="{{ ($clamped === $i) || ($clamped === 0 && $i === 1) ? '0' : '-1' }}"
                     :tabindex="rating === {{ $i }} || (rating === 0 && {{ $i }} === 1) ? '0' : '-1'"
                     class="transition-colors duration-[var(--transition-wk-duration)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
                 >

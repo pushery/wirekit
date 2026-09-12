@@ -20,6 +20,13 @@
      and a rollback that moved only the mirror would leave the thumb where the
      server refused to put it. --}}
 @props([
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
+    // complain either, because `required` is in its HTML passthrough list — so it looked like
+    // a legitimate attribute all the way down. The result was a required field that submits
+    // empty, in the same form as a plain input that behaves correctly.
+    'required' => false,
     // The Livewire method to call when the slider should show the new value
     // before the server has agreed to it. The value is sent when the gesture
     // ends — see the note above. Null leaves the component exactly as it has
@@ -79,12 +86,28 @@
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
+    /*
+     * The Laravel validation bag, which this control never consulted. Every other form
+     * control resolves `error` from `$error ?? $errors->first($name)`, so after a failed
+     * `$this->validate()` each of them showed its message and this one showed nothing — in
+     * the same form, on the same submit. The explicit prop still wins; the bag is the
+     * fallback, exactly as in input.blade.php.
+     *
+     * ⚠️ GUARDED ON `$name`, and that guard is not defensive noise. `$errors->first(null)`
+     * returns the FIRST error in the bag whatever its key — so a slider with no name
+     * rendered `aria-invalid="true"` because some other field failed validation, and
+     * announced an error message about that field. Six sibling controls already write it
+     * this way; this one was added without the guard.
+     */
+    $error ??= $name ? ($errors ?? null)?->first($name) : null;
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, false);
     $tooltip = BooleanProp::from($tooltip, false);
     $disabled = BooleanProp::from($disabled, false);
+    $required = BooleanProp::from($required, false);
 
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
@@ -288,7 +311,7 @@
         'text-[length:var(--text-wk-sm)]',
         'text-[color:var(--color-wk-text)]',
         'min-w-[2.5ch]',
-        'text-right',
+        'text-end',
     ]), $scope);
 
     // Accessible-name fallback. WCAG 2.1 (4.1.2) — every form input must
@@ -297,7 +320,7 @@
     // attributes, derive a sr-only fallback from `name` (humanized).
     $hasExplicitAriaName = $attributes->has('aria-label') || $attributes->has('aria-labelledby');
     $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
-    $fallbackLabel = $name ? Str::headline((string) $name) : 'Slider';
+    $fallbackLabel = $name ? Str::headline((string) $name) : __('wirekit::Slider');
 
     // `bind` rather than `value`: `current` already exists on the component this
     // layer nests inside, so binding to it keeps ONE truth for the value.
@@ -311,6 +334,11 @@
     $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'current',
         'after' => 'syncToInput',
+        // The field's own error region. Without it the layer's generic "Could not save"
+        // is the only thing a listener hears, and it BEATS the specific message the server
+        // sent — the whole point of the arbitration is that a specific message wins, and it
+        // cannot run against a region nobody pointed at.
+        'errorRegion' => '#'.$sliderId.'-error',
         'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -373,7 +401,7 @@
     <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif
     @if($label)
-        <label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}</label>
+        <label for="{{ $sliderId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">{{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</label>
     @elseif($needsSrOnlyFallback)
         {{-- sr-only label fallback so the input always has an accessible
              name (axe rule "label" / WCAG 4.1.2). --}}
@@ -398,6 +426,18 @@
         <input
             type="range"
             @if($name) name="{{ $name }}" @endif
+            {{-- aria-required, NOT the native attribute.
+
+                 HTML's `required` does not apply to `type="range"`: a range always has a
+                 value, so the constraint can never fail and the browser ignores the
+                 attribute outright. Before `required` was a declared prop it reached this
+                 input through the bag, which made the slider LOOK compliant to any check
+                 asking "is there a required on an input?" while nothing was constrained —
+                 the exact trap the audit warned a naive guard would fall into.
+
+                 aria-required is the honest form: it tells assistive technology the field
+                 must be answered, which is true and trivially satisfied here. --}}
+            @if($required) aria-required="true" @endif
             {{-- On the input itself: unlike the grouped controls, this IS the single
                  element the message is about. --}}
             @if($error) aria-invalid="true" aria-describedby="{{ $sliderId }}-error" @elseif($hint) aria-describedby="{{ $sliderId }}-hint" @endif

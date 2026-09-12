@@ -79,18 +79,72 @@ final class McpCatalog
             return array_slice($this->components(), 0, $limit);
         }
 
-        $matches = array_values(array_filter(
-            $this->components(),
-            // The sub-component names are part of what a parent matches on: an
-            // agent searching "card.body" or "th" should land on the component
-            // that carries it rather than on nothing.
-            static fn (array $c): bool => str_contains(mb_strtolower($c['name']), $query)
-                || str_contains(mb_strtolower($c['category']), $query)
-                || str_contains(mb_strtolower($c['description']), $query)
-                || str_contains(mb_strtolower(implode(' ', $c['sub_components'] ?? [])), $query),
-        ));
+        // ⚠️ EVERY WORD IS ITS OWN NEEDLE, AND THE WHOLE QUERY IS ONE MORE. This used to look
+        // for the entire query as a single substring, which is fine for `card.body` and
+        // useless for the way the search is actually reached: somebody who knows the name
+        // does not need to search, and somebody who does not know it types synonyms. Measured
+        // in an adopting project -- `alert` returned two components, `alert danger error box
+        // callout` returned NOTHING, and both `alert` and `callout` are literal component
+        // names. The agent concluded there was no alert component and started writing its own
+        // markup, which is the re-implementation the adopt-first rule exists against.
+        //
+        // An empty answer is indistinguishable from "no such component", so the failure looks
+        // like a fact about the library rather than about the query.
+        $terms = array_values(array_unique(array_filter(preg_split('/\s+/', $query) ?: [])));
 
-        return array_slice($matches, 0, $limit);
+        $scored = [];
+
+        foreach ($this->components() as $component) {
+            $name = mb_strtolower($component['name']);
+            $category = mb_strtolower($component['category']);
+            $description = mb_strtolower($component['description']);
+            // The sub-component names are part of what a parent matches on: an agent searching
+            // "card.body" or "th" should land on the component that carries it.
+            $subs = mb_strtolower(implode(' ', $component['sub_components'] ?? []));
+
+            $score = 0;
+
+            // The whole query as one phrase still counts, and counts heavily -- that is what
+            // makes `card.body` land on `card` rather than on everything containing "card".
+            if (str_contains($name, $query) || str_contains($description, $query) || str_contains($subs, $query)) {
+                $score += 8;
+            }
+
+            foreach ($terms as $term) {
+                // An exact name is the strongest signal there is. Without this `alert` ranked
+                // `alert-dialog` first, so a search for a message box led to the confirmation
+                // dialog -- reported alongside the empty-result defect.
+                if ($name === $term) {
+                    $score += 100;
+
+                    continue;
+                }
+
+                if (str_contains($name, $term)) {
+                    $score += 10;
+                } elseif (str_contains($subs, $term)) {
+                    $score += 4;
+                } elseif (str_contains($description, $term)) {
+                    $score += 3;
+                } elseif (str_contains($category, $term)) {
+                    $score += 1;
+                }
+            }
+
+            if ($score > 0) {
+                $scored[] = ['score' => $score, 'component' => $component];
+            }
+        }
+
+        // Ranked by score, then by name so a tie is stable rather than left to sort order --
+        // an agent that runs the same query twice should get the same answer twice.
+        usort(
+            $scored,
+            static fn (array $a, array $b): int => $b['score'] <=> $a['score']
+                ?: strcmp($a['component']['name'], $b['component']['name']),
+        );
+
+        return array_slice(array_column($scored, 'component'), 0, $limit);
     }
 
     /**
@@ -98,7 +152,18 @@ final class McpCatalog
      * default, and the inline allowed-value comment, which is exactly what an
      * editor wants for autocomplete).
      *
-     * @return array{name: string, category: string, description: string, tag: string, props: list<array{name: string, default: ?string, comment: ?string}>}|null
+     * @return array{
+     *     name: string,
+     *     category: string,
+     *     description: string,
+     *     tag: string,
+     *     docs_url: ?string,
+     *     component_kind: 'anonymous'|'class',
+     *     props: list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>,
+     *     slots: list<array{name: string, required: bool}>,
+     *     sub_components: list<array{name: string, tag: string, props: list<array<string, mixed>>}>,
+     *     parent?: string,
+     * }|null
      */
     public function getComponent(string $name): ?array
     {
@@ -340,6 +405,7 @@ final class McpCatalog
      *     aria: list<string>,
      *     caller_supplies: list<string>,
      *     keys: list<string>,
+     *     tokens: list<string>,
      * }|null
      */
     public function accessibility(string $name): ?array
@@ -348,8 +414,20 @@ final class McpCatalog
     }
 
     /**
-     * Every `--*-wk-*` design token defined in the shipped `dist/wirekit.css`
-     * `:root` block, as name → value pairs.
+     * Every design token the shipped `dist/wirekit.css` declares, as name → value pairs.
+     *
+     * ⚠️ THIS MATCHED ONE NAMING SHAPE AND THE STYLESHEET SHIPS FOUR, which is why nothing
+     * looked wrong about the answer. The pattern was `--<segment>-wk-<rest>`; the tokens are
+     * also written `--<segment>-wk` (`--radius-wk`, the base every radius derives from),
+     * `--wk-<segment>`, and the whole `--reading-*` family, which carries no `wk` at all and is
+     * the largest documented per-component customization surface there is. Measured against the
+     * public token reference: 84 tokens it tabulates and the stylesheet declares were absent
+     * from this list, and an assistant reading it saw a theming surface that looked complete.
+     *
+     * So the shape is no longer part of the question — a custom property declared on a line of
+     * its own in the shipped stylesheet is a token, because that file IS what a developer
+     * overrides. `McpTokensCoverTheDocumentedTokenReferenceTest` holds it against the reference
+     * rather than against a count, since a count cannot say which one went missing.
      *
      * @return list<array{name: string, value: string}>
      */
@@ -361,7 +439,7 @@ final class McpCatalog
         }
 
         $css = (string) file_get_contents($cssPath);
-        if (! preg_match_all('/^\s*(--[a-z0-9]+-wk-[a-z0-9-]+)\s*:\s*([^;]+);/m', $css, $m, PREG_SET_ORDER)) {
+        if (! preg_match_all('/^\s*(--[a-z0-9-]+)\s*:\s*([^;]+);/m', $css, $m, PREG_SET_ORDER)) {
             return [];
         }
 
@@ -492,11 +570,20 @@ final class McpCatalog
     /**
      * Title, summary and docs URL, read out of the stub's own header comment.
      *
-     * Every stub opens with the same three-line block — `{{-- Recipe: <Title> — <summary>`
-     * then a `Full reference:` URL — so the metadata lives next to the code it describes
-     * rather than in a table beside it. A stub whose header does not parse is skipped rather
-     * than guessed at, and a test fails on it: a recipe listed with an empty summary reads as
-     * a recipe that has nothing to say.
+     * Every stub opens with the same TWO lines — `{{-- Recipe: <Title> — <summary>` and a
+     * `Full reference:` URL — so the metadata lives next to the code it describes rather than
+     * in a table beside it. Whatever follows inside the comment is per-stub guidance for the
+     * developer who just scaffolded the view, and this parser ignores it: six of the eleven
+     * carry some, running from one line to three.
+     *
+     * ⚠️ THIS SAID "THE SAME THREE-LINE BLOCK", WHICH WAS TRUE OF THREE STUBS. Read as a rule
+     * it would have sent an author to pad a two-line header to length, or to delete the
+     * guidance from a five-line one — and the parser cares about neither. What it needs is the
+     * `Recipe:` line with its em dash and, separately, a `Full reference:` URL anywhere in the
+     * file; a fixed line count was never part of it.
+     *
+     * A stub whose header does not parse is skipped rather than guessed at, and a test fails
+     * on it: a recipe listed with an empty summary reads as a recipe that has nothing to say.
      *
      * @return array{name: string, title: string, summary: string, docs_url: string, command: string}|null
      */

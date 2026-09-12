@@ -8,6 +8,13 @@
      The optimistic scope nests INSIDE the slider and binds to the tuple
      `['minVal', 'maxVal']`. --}}
 @props([
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
+    // complain either, because `required` is in its HTML passthrough list — so it looked like
+    // a legitimate attribute all the way down. The result was a required field that submits
+    // empty, in the same form as a plain input that behaves correctly.
+    'required' => false,
     // Livewire method to call optimistically. It receives the full range as
     // [min, max]. Absent -> this component renders exactly as it did before,
     // down to the byte.
@@ -30,9 +37,9 @@
     // an app that runs its OWN error summary would otherwise double-announce here.
     'announceError' => null,
     'hint' => null,
-    'min' => 0,
-    'max' => 100,
-    'step' => 1,
+    'min' => config('wirekit.components.range-slider.min', 0),
+    'max' => config('wirekit.components.range-slider.max', 100),
+    'step' => config('wirekit.components.range-slider.step', 1),
     'minValue' => null,
     'maxValue' => null,
     'showValues' => null,
@@ -75,6 +82,7 @@
     // `disabled="false"` would mean the opposite of what the call site reads as.
     // Normalized against the prop's own default so a cast never turns the control off.
     $disabled = BooleanProp::from($disabled, false);
+    $required = BooleanProp::from($required, false);
 
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
     // control — the opposite of what the call site says, with no error either way.
@@ -88,6 +96,14 @@
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'range-slider-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
+    /*
+     * The Laravel validation bag, which this control never consulted. Every other form
+     * control resolves `error` from `$error ?? $errors->first($name)`, so after a failed
+     * `$this->validate()` each of them showed its message and this one showed nothing — in
+     * the same form, on the same submit. The explicit prop still wins; the bag is the
+     * fallback, exactly as in input.blade.php.
+     */
+    $error ??= ($errors ?? null)?->first($name);
 
     // Compute defaults: minValue defaults to min, maxValue defaults to max
     $initialMin = $minValue ?? $min;
@@ -222,8 +238,16 @@
     // aria-labelledby) or, failing that, a caller-supplied aria-label.
     $callerAriaLabel = $attributes->get('aria-label');
     $groupLabel = $label ?? $callerAriaLabel;
-    $minThumbLabel = $groupLabel !== null ? trim((string) $groupLabel).' minimum' : 'Minimum';
-    $maxThumbLabel = $groupLabel !== null ? trim((string) $groupLabel).' maximum' : 'Maximum';
+    // The two thumbs name themselves by gluing a direction word onto the caller's label.
+    // Concatenating an English word onto a translated label produces a half-translated
+    // name in every locale AND fixes the word ORDER to English — so the direction goes
+    // through a placeholder key, which lets a locale put it wherever its grammar wants.
+    $minThumbLabel = $groupLabel !== null
+        ? __('wirekit:::label minimum', ['label' => trim((string) $groupLabel)])
+        : __('wirekit::Minimum');
+    $maxThumbLabel = $groupLabel !== null
+        ? __('wirekit:::label maximum', ['label' => trim((string) $groupLabel)])
+        : __('wirekit::Maximum');
 
     // Description targets the focusable thumbs (announced on focus): the
     // visible $hint plus any caller-supplied aria-describedby. Routing it to
@@ -265,6 +289,11 @@
     // cannot be operated.
     $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => ['minVal', 'maxVal'],
+        // The field's own error region. Without it the layer's generic "Could not save"
+        // is the only thing a listener hears, and it BEATS the specific message the server
+        // sent — the whole point of the arbitration is that a specific message wins, and it
+        // cannot run against a region nobody pointed at.
+        'errorRegion' => '#'.$id.'-error',
         'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -281,6 +310,7 @@
 
 <div
     role="group"
+    @if($required) aria-required="true" @endif
     @if($label) aria-labelledby="{{ $id }}-label" @endif
     {{-- On the GROUP rather than on either thumb: the message is about the range, and a
          thumb-level describedby would read it out on both ends of it. --}}
@@ -294,7 +324,7 @@
     {{ $attributes->class([$wrapperClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)] cursor-not-allowed' : '']) }}
 >
     @if($label)
-        <x-wirekit::label id="{{ $id }}-label">{{ $label }}</x-wirekit::label>
+        <x-wirekit::label id="{{ $id }}-label" :required="$required">{{ $label }}</x-wirekit::label>
     @endif
 
     {{-- Alpine logic inlined (no wirekit.js dependency needed).

@@ -17,6 +17,28 @@
     // (640px) — wide wordmark logos in a brand-bar typically clear sm+
     // viewports. When `$mobileLogo` is null, this prop is a no-op.
     'mobileBreakpoint' => 'sm',
+    // Intrinsic aspect ratio of `$logo` / `$darkLogo`, as `'width/height'` — e.g. `'4/1'`
+    // for a wide wordmark.
+    //
+    // Every logo here is `h-8 w-auto`: the height is fixed and the WIDTH is whatever the
+    // image turns out to be. Until its bytes arrive there is nothing to derive that width
+    // from, so the element is 0 px wide and everything beside it — the product name, the
+    // navigation, the whole header row — sits further left than it will a moment later,
+    // then jumps. On an uncached view that is a visible shift on the most prominent row
+    // of the page, and it happens on every page load rather than once.
+    //
+    // The ratio is the missing input and the only one: `width`/`height` attributes would
+    // say the same thing less directly, since the `h-8 w-auto` this component ships
+    // overrides both and leaves the browser using them for their ratio anyway.
+    //
+    // Unset is not left to shift: the images carry a min-width of one logo height, so the
+    // worst case is a square reservation rather than nothing. Almost every wordmark is
+    // wider than tall, which makes that a floor rather than an over-reservation.
+    'logoAspect' => null,
+    // Same, for `$mobileLogo`. Defaults to `$logoAspect` — a responsive pair is often the
+    // same mark at two widths — but a square app icon beside a wide wordmark is exactly
+    // the case that needs its own value.
+    'mobileLogoAspect' => null,
     'name' => null,
     'href' => '/',
     'scope' => null,
@@ -29,6 +51,16 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('brand', $attributes->getAttributes());
+
+    // `aspect-ratio` when the caller declared one, and a square floor either way. Both are
+    // inline rather than utility classes: the ratio is caller data, and a Tailwind class
+    // cannot be built from a runtime value.
+    $wkLogoAspect = $logoAspect ? 'aspect-ratio: '.e($logoAspect).'; ' : '';
+    $wkMobileAspect = ($mobileLogoAspect ?: $logoAspect)
+        ? 'aspect-ratio: '.e($mobileLogoAspect ?: $logoAspect).'; '
+        : '';
+    $wkLogoStyle = $wkLogoAspect.'min-width: 2rem;';
+    $wkMobileStyle = $wkMobileAspect.'min-width: 2rem;';
 
     // Brand — logo + name combo for header and sidebar.
     // The `wk-brand` marker class drives the doubled-class anti-prose-
@@ -131,28 +163,28 @@
              single element carrying both `{bp}:block` and `wk-dark-only` is a
              0,1,0 specificity tie decided by stylesheet load order (fragile).
              Splitting them onto the span vs the imgs keeps it deterministic. --}}
-        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" aria-hidden="true" />
+        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
         <span class="hidden {{ $bpInlineFlex }} items-center">
-            <img src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" aria-hidden="true" />
-            <img src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" aria-hidden="true" />
+            <img src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+            <img src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
         </span>
     @elseif($logo && $mobileLogo)
         {{-- Responsive logo swap: mobile-first wordmark below the breakpoint,
              full-width wordmark at + breakpoint. Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label handles the accessible name. --}}
-        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" aria-hidden="true" />
-        <img src="{{ $logo }}" alt="" class="hidden h-8 w-auto {{ $bpBlock }}" aria-hidden="true" />
+        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
+        <img src="{{ $logo }}" alt="" class="hidden h-8 w-auto {{ $bpBlock }}" style="{{ $wkLogoStyle }}" aria-hidden="true" />
     @elseif($logo && $darkLogo)
         {{-- Mode-aware logo swap: light wordmark in light mode, dark wordmark
              under the `.dark` class (via the wk-light-only / wk-dark-only
              visibility pair in dist/wirekit.css). Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label / visible name handles the accessible name. --}}
-        <img src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" aria-hidden="true" />
-        <img src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" aria-hidden="true" />
+        <img src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
     @elseif($logo)
-        <img src="{{ $logo }}" alt="" class="h-8 w-auto" aria-hidden="true" />
+        <img src="{{ $logo }}" alt="" class="h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
     @endif
     @if($name)
         {{-- Same rule as the sidebar row and the profile row beside it: in a collapsed
@@ -164,7 +196,19 @@
              one, so a brand in a header or a footer is untouched. --}}
         <span class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] wk-rail-hide">{{ $name }}</span>
     @endif
-    @if(!$logo && !$name)
+    {{-- Children render ALONGSIDE the logo and the name, not instead of them.
+         This used to be `@if(!$logo && !$name)`, which dropped them silently
+         whenever either was set — the documented use (a workspace-switcher
+         chevron, a product badge) is exactly the case that was thrown away.
+
+         It also left the link with NO accessible name: `$hasVisibleName` above
+         counts slot content, so a `logo` + children brand suppressed the
+         `aria-label` fallback and then rendered nothing to replace it. The
+         `<a>` held one `alt=""` `aria-hidden` image and nothing else.
+
+         Additive: with no logo and no name the output is byte-identical, and
+         with either set the slot rendered nothing before. --}}
+    @if(trim((string) $slot) !== '')
         {{ $slot }}
     @endif
     @if($opensNewTab)

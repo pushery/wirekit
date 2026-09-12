@@ -1,6 +1,19 @@
-/* WireKit Liquid Glass Extension v1.0.0
+/* WireKit Liquid Glass Extension
+ *
+ * No version in this banner, deliberately, and the paired .js says the same thing in the
+ * same words. Both files are PUBLISHED into the developer's own application by
+ * `wirekit:glass install` and never rebuilt there, so a number here freezes at whatever it
+ * said the day it was written — this one read v1.0.0 through a rewrite of the whole
+ * detection strategy. The package's version is the one that moves.
+ *
  * Tier 1: backdrop-filter (all modern browsers)
- * Tier 2: SVG feDisplacementMap refraction (Chrome/Chromium)
+ * Tier 2: SVG feDisplacementMap refraction
+ *
+ * ⚠️ NOT "(Chrome/Chromium)", WHICH THIS LINE SAID AND THE BODY BELOW CONTRADICTS. There is
+ * "no feature gate, deliberately" — both `filter: url()` and `backdrop-filter` sit inside
+ * the supported-browser baseline, and the enhancement is additive: where the displacement
+ * does not apply, what remains IS Tier 1. Naming one engine in the header reads as a
+ * support claim the file spends a paragraph explaining it does not make.
  * Requires: <x-wirekit::glass /> at the start of the layout body.
  *           Not the document's metadata section: the component emits an <svg>, which
  *           terminates it and reparents every tag after it.
@@ -23,7 +36,9 @@
                 inset 0 0.5px 0 rgba(255, 255, 255, 0.08);
 }
 
-/* ── Tier 2 — Base (Tier 1 fallback for non-Chrome) ──────── */
+/* ── Tier 1 — the frosted surface every browser gets ────────
+   Not a fallback in name only: the Tier 2 block further down is gated on the
+   detector class, so this survives wherever the displacement cannot paint. */
 .wk-glass-refract {
     backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
     -webkit-backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
@@ -86,7 +101,25 @@
  * one. THE PRICE: `overflow: hidden` clips descendants, so a Tier 2 panel cannot
  * host an overflowing popover. Tier 1 is unaffected and remains the default.
  */
-.wk-glass-refract {
+/*
+ * ⚠️ GATED ON THE DETECTOR CLASS, and this is a reversal worth explaining.
+ *
+ * This block strips the element's own frosted backdrop because the pseudo-element below
+ * carries it instead. Ungated, it also stripped it on every browser that cannot paint the
+ * SVG displacement — same selector, same specificity, later in the file, so it won. The
+ * "Tier 1 fallback for non-Chrome" sixty lines up was dead: what a non-supporting browser
+ * actually got was the pseudo-element's 3px blur at 0.22 opacity, not Tier 1's 20px at 0.72.
+ *
+ * The header above says the stylesheet no longer depends on `.wk-glass-tier2` because the
+ * enhancement is additive — "where the displacement does not apply, what remains is Tier 1".
+ * That was the intent and it was not what happened: what remained was a third, weaker thing
+ * that nobody designed. The dependency comes back for the opposite reason it was removed —
+ * not to gate the enhancement, but to stop it removing the fallback.
+ *
+ * The class is the only signal available. `@supports` answers "can I parse this", never
+ * "will this paint", which is the measured lesson recorded further up this file.
+ */
+.wk-glass-tier2 .wk-glass-refract {
     position: relative;
     isolation: isolate;
     overflow: hidden;
@@ -118,7 +151,9 @@
     -webkit-backdrop-filter: none;
 }
 
-.wk-glass-refract::before {
+/* Scoped alongside the block above: without the detector class the element keeps its own
+   Tier 1 backdrop, and a second translucent layer in front of it would double the tint. */
+.wk-glass-tier2 .wk-glass-refract::before {
     content: '';
     position: absolute;
     /* Overshoot, not `inset: 0` — see the note above on the rippled silhouette.
@@ -132,6 +167,87 @@
     filter: url(#wk-glass-refract);
 }
 
-.dark .wk-glass-refract::before {
+.dark .wk-glass-tier2 .wk-glass-refract::before,
+.wk-glass-tier2 .dark .wk-glass-refract::before {
     background: rgba(30, 30, 32, 0.32);
+}
+
+/* ── Reduced transparency and forced colors ──────────────────
+ *
+ * Every surface above is DEFINED by being see-through: a translucent background over a blur
+ * of whatever sits behind it. Two reader settings say, in different words, that this is not
+ * wanted — and the extension respected neither, so a reader who had asked their system for
+ * opaque interfaces got the one surface in the package that ignores them.
+ *
+ * `prefers-reduced-transparency: reduce` is the direct request. macOS "Reduce transparency"
+ * and Windows "Transparency effects: off" both set it, and both are switched on for the same
+ * reasons: text over a moving, low-contrast backdrop is hard to read, and for some readers
+ * the shifting background is a vestibular trigger.
+ *
+ * `forced-colors: active` is the stronger case. In High Contrast mode the system replaces
+ * colors outright, and a `backdrop-filter` survives that replacement — so the blur keeps
+ * painting under text the OS has just recolored for contrast, which is precisely the
+ * combination the mode exists to prevent. `Canvas` and `CanvasText` are the system keywords
+ * for the surface and its text, so the panel becomes what every other panel in that mode is.
+ *
+ * The blur is REMOVED rather than reduced, and the background made fully opaque. A weaker
+ * blur is still a blur; the setting is not a preference for less of it.
+ */
+@media (prefers-reduced-transparency: reduce) {
+    .wk-glass,
+    .wk-glass-refract {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: rgb(255, 255, 255);
+    }
+
+    .dark .wk-glass,
+    .dark .wk-glass-refract {
+        background: rgb(24, 24, 27);
+    }
+}
+
+@media (forced-colors: active) {
+    .wk-glass,
+    .wk-glass-refract {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: Canvas;
+        color: CanvasText;
+        border-color: CanvasText;
+        /* A shadow is not recolored by forced-colors, so it survives as a stray smudge
+           around a panel the OS has otherwise flattened. */
+        box-shadow: none;
+    }
+}
+
+/* ── Paper ──────────────────────────────────────────────────
+   `backdrop-filter` does not paint in paged media at all, so a glass panel prints as
+   whatever is underneath it — and what is underneath it is the two near-white values
+   this file uses to build the material: a 72%-alpha white fill and a 45%-alpha white
+   border. Browsers drop background graphics when printing unless the reader turns
+   them on, so BOTH of those vanish and the panel has no boundary left.
+
+   The failure is not that the glass looks flat on paper. It is that content the
+   surface was grouping prints as loose text with nothing around it, and a reader who
+   has the sheet in front of them cannot tell that it was ever one thing.
+
+   `currentColor` rather than a literal: the border then prints in whatever the text
+   prints in, which is the one color a print stylesheet can rely on. */
+@media print {
+    .wk-glass,
+    .wk-glass-refract {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        background: transparent;
+        border: 1px solid currentColor;
+        box-shadow: none;
+    }
+
+    /* The Tier 2 displacement layer is a second translucent sheet over the first. It
+       has nothing to displace on paper and would print as a gray rectangle over the
+       text it was refracting. */
+    .wk-glass-tier2 .wk-glass-refract::before {
+        display: none;
+    }
 }

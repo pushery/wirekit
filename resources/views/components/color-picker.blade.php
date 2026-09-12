@@ -42,6 +42,14 @@
      cases, which is exactly why a color lands in "recents" there and nowhere
      else — the boundary was already in the component, under another name. --}}
 @props([
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk.
+    'required' => false,
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk.
+    'required' => false,
     // The Livewire method to call once a color is settled — a released drag, a
     // swatch, an arrow-key nudge. A refusal KEEPS the color and says it was not
     // saved: the hex field is typed, and a rollback may never delete what the
@@ -119,6 +127,7 @@
     // boolean declaration as a literal, and the switch decides whether a touch device gets
     // the native color panel or this one.
     $nativeOnMobile = BooleanProp::from($nativeOnMobile, false);
+    $required = BooleanProp::from($required, false);
 
     use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
@@ -143,7 +152,16 @@
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
-    $pickerId = $id ?? ($name ? 'wk-color-' . $name : 'wk-color-' . Str::random(6));
+    // Page-unique. The name still shapes the id — `name="brand"` is still `wk-color-brand`,
+    // which is what makes it readable — but it goes through the deduper, so a SECOND picker
+    // bound to the same field (which is what a repeater row is) becomes `wk-color-brand-2`
+    // instead of colliding, where the second one's `<label for>` pointed at the first one's
+    // input and clicking it focused the wrong control.
+    //
+    // `Str::random(6)` for the nameless case had the opposite problem: it changed on every
+    // render, so a Livewire morph broke the association it had just made. `DomId::unique`
+    // counts instead of randomizing, which survives one.
+    $pickerId = \Pushery\WireKit\Support\DomId::unique($id ?? ($name ? 'wk-color-'.$name : null), 'wk-color-');
 
     // Explicit prop OR the Laravel validation bag, keyed by `name`. The read is
     // guarded on the name being there: `MessageBag::has(null)` falls through to
@@ -242,6 +260,9 @@
         <label for="{{ $pickerId }}" class="{{ $swatchClasses }}">
             <input
                 type="color"
+                {{-- aria-required, not the native attribute: HTML's `required` does not apply
+                     to a color input, which always carries a value. --}}
+                @if($required) aria-required="true" @endif
                 @if($name) name="{{ $name }}" @endif
                 id="{{ $pickerId }}"
                 :value="current"
@@ -277,6 +298,11 @@
             'withClear' => (bool) $withClear,
             'recentsKey' => $recentsKey,
             'nativeOnMobile' => (bool) $nativeOnMobile,
+            // The cleared readout is spoken through an aria-live region and this file is
+            // the only place with a translator, so the word travels with the config.
+            'noColorLabel' => __('wirekit::No color'),
+            'copiedLabel' => __('wirekit::Copied :value'),
+            'hexErrorLabel' => __('wirekit::Not a valid color value'),
         ];
         // With withClear on, the readout binds the displayValue getter (which
         // shows "No color" while cleared); otherwise the plain formattedValue,
@@ -362,6 +388,7 @@
                 <label for="{{ $pickerId }}-native" class="{{ $swatchClasses }}">
                     <input
                         type="color"
+                        @if($required) aria-required="true" @endif
                         id="{{ $pickerId }}-native"
                         :value="hex"
                         @input="onInput($event.target.value)"
@@ -391,7 +418,7 @@
                 type="button"
                 id="{{ $pickerId }}"
                 x-ref="trigger"
-                @click="toggle()"
+                @click="togglePanel()"
                 :aria-expanded="open ? 'true' : 'false'"
                 aria-haspopup="dialog"
                 @if($disabled) disabled @endif
@@ -406,7 +433,7 @@
                 type="button"
                 id="{{ $pickerId }}"
                 x-ref="trigger"
-                @click="toggle()"
+                @click="togglePanel()"
                 :aria-expanded="open ? 'true' : 'false'"
                 aria-haspopup="dialog"
                 aria-label="{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}"
@@ -468,6 +495,11 @@
                 @keydown.arrow-right.prevent="nudgePlane(1, 0)"
                 @keydown.arrow-up.prevent="nudgePlane(0, 1)"
                 @keydown.arrow-down.prevent="nudgePlane(0, -1)"
+                {{-- The plane announces `role="slider"`, and the hue and opacity sliders have
+                     carried Home/End since they were written. This one had neither, so a
+                     reader following the pattern the role promises got no response. --}}
+                @keydown.home.prevent="planeHome()"
+                @keydown.end.prevent="planeEnd()"
                 class="relative h-40 w-full cursor-crosshair touch-none overflow-hidden rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 :style="planeStyle"
             >
@@ -563,10 +595,19 @@
                     @change="onInput($event.target.value)"
                     aria-label="{{ __('wirekit::Color value') }}"
                     :aria-invalid="invalidInput ? 'true' : 'false'"
+                    {{-- The field said "invalid" and nothing else: no message, and nothing
+                         pointing at one. A reader heard that their value was wrong with no
+                         way to learn WHY or what a right one looks like, which is what
+                         WCAG 3.3.1 asks for in text. The region below is always present and
+                         always referenced, so the description resolves — a `describedby`
+                         pointing at a `display: none` element is ignored by assistive
+                         technology, which is why it is emptied rather than hidden. --}}
+                    aria-describedby="{{ $pickerId }}-hex-error"
                     spellcheck="false"
                     class="wk-field w-full rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] bg-[var(--color-wk-bg-input)] px-[var(--padding-wk-x-sm)] py-1 font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                     :class="invalidInput ? 'border-[var(--color-wk-border-error)]' : 'border-[var(--color-wk-border-strong)]'"
                 />
+                <span id="{{ $pickerId }}-hex-error" class="sr-only" role="alert" x-text="hexError"></span>
                 @if($withEyedropper)
                     <button
                         type="button"

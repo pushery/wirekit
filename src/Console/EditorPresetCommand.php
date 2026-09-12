@@ -6,6 +6,7 @@ namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Pushery\WireKit\Support\SuggestSimilar;
 
 /**
  * Scaffold the `window.wirekitEditor(config)` factory snippet that
@@ -58,6 +59,12 @@ class EditorPresetCommand extends Command
         if (! in_array($preset, self::PRESETS, true)) {
             $this->error("Unknown preset '{$preset}'.");
             $this->line('  Valid presets: '.implode(', ', self::PRESETS).'.');
+
+            // The same hint every other enumerating rejection in the catalog prints.
+            $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein($preset, self::PRESETS));
+            if ($hint !== null) {
+                $this->line('  '.$hint);
+            }
 
             // Invalid input is still FAILURE (exit 1), never INVALID (exit 2) —
             // strict Laravel/Artisan convention (see CliUniformityAuditTest).

@@ -36,7 +36,22 @@ final class InstallLog
      */
     public static function append(string $path, string $session): void
     {
-        file_put_contents($path, rtrim($session, "\r\n")."\n", FILE_APPEND);
+        /*
+         * Checked, because THIS file is what `--rollback` reads. A silent append failure —
+         * a read-only project root, a full disk — leaves the safety net empty, and the
+         * developer finds out at the moment they reach for it. `FILE_APPEND` needs its own
+         * call rather than `FileWrite::put()`, which replaces.
+         */
+        $line = rtrim($session, "\r\n")."\n";
+        $written = @file_put_contents($path, $line, FILE_APPEND);
+
+        if ($written === false || $written !== strlen($line)) {
+            throw new \RuntimeException(sprintf(
+                'Could not record the install session in %s, so `wirekit:install --rollback` '
+                .'would have nothing to undo. Check that the path is writable and has space.',
+                $path
+            ));
+        }
 
         self::trim($path);
     }
@@ -142,6 +157,16 @@ final class InstallLog
 
         fclose($out);
 
-        @rename($temp, $path);
+        // The rename IS the commit of the trim — unchecked, a failure leaves the shortened
+        // log in a temp file and the oversized one in place, which is the state this whole
+        // method exists to leave behind.
+        if (! @rename($temp, $path)) {
+            FileWrite::deleteBestEffort($temp);
+
+            throw new \RuntimeException(sprintf(
+                'Could not replace %s with its trimmed copy. The log is unchanged.',
+                $path
+            ));
+        }
     }
 }

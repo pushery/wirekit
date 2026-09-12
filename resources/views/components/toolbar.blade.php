@@ -60,7 +60,10 @@
     };
 
     $stickyClasses = $sticky
-        ? 'sticky top-0 z-[var(--z-wk-sticky,10)] bg-[var(--color-wk-bg)]'
+        // No z fallback: it read 10 while the token is 40, so anywhere the token did not
+        // resolve this toolbar sat four layers below every other sticky surface. Same defect,
+        // same line, as date-separator.
+        ? 'sticky top-0 z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg)]'
         : '';
 
     $baseClasses = WireKit::resolveClasses('toolbar', 'base', implode(' ', array_filter([

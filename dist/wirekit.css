@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.48.0 — MIT License
+ * WireKit CSS v2.49.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -13,9 +13,14 @@
  *      inside `:where(:root)`, no Tailwind compiler needed).
  *
  *   2. `@import` from your `resources/css/app.css` (Tailwind v4 picks up
- *      the variables automatically; you also get the `@custom-variant
- *      dark` directive so `.dark:` Tailwind variants work alongside
- *      WireKit's `.dark` selector). Either path resolves.
+ *      the variables automatically).
+ *
+ *   Both paths resolve every TOKEN, and that is what "either path works"
+ *   means here. They are not equivalent beyond that: `@custom-variant
+ *   dark` is delivered by path 2 only, so `.dark:` TAILWIND variants
+ *   compile there and nowhere else. WireKit's own `.dark` selector works
+ *   either way, which is why the difference is easy to miss until a
+ *   `dark:` utility in application markup quietly does nothing.
  *
  * To customize tokens, override CSS variables in your app.css with a
  * plain `:root` (specificity 0,1,0) — no extra tricks needed:
@@ -138,6 +143,17 @@
     --color-wk-info-text: var(--color-wk-accent-content);
     --color-wk-accent-text: var(--color-wk-accent-content);
 
+    /* The informational SERIES color, and it is a chart token rather than a surface one.
+       `chart-theme-colors.js` reads `--color-wk-info` for dataset slot 5 and falls back to a
+       hardcoded cyan when it resolves to nothing — which it always did, because the token was
+       documented on six pages and declared on none. So an application that re-toned it
+       changed no pixel, and nothing reported that: an unknown custom property is valid CSS,
+       and the chart still had a color.
+
+       The value IS the fallback the adapter already used, so this declares what was on screen
+       rather than changing it. Its only job is to make the override reachable. */
+    --color-wk-info: #67e8f9;
+
     /* ─── Neutral Colors (Backgrounds) ─── */
     --color-wk-bg: #fff;
     --color-wk-bg-elevated: #fff;
@@ -195,7 +211,7 @@
        edge (inputs fall back to the stock neutral), and a preset that darkened the
        input fill while inheriting the light borders would invert the hover
        direction. The full pasteable palette for each preset lives on its theming
-       documentation page, not in the light-touch modifier blocks; the ThemePresetContrastTest
+       documentation page, not in the light-touch modifier blocks; the preset-contrast check
        sweep verifies the accent + control-border pairs per preset, in both modes,
        across the hue range. */
     --color-wk-border-strong: oklch(66% 0 0);
@@ -258,6 +274,15 @@
     --leading-wk-relaxed: 1.625;
 
     /* ─── Motion ─── */
+    /* Seven rules in this file wrote `150ms` inline instead of reading this token. The value
+       matched, so nothing looked wrong — until a preset changed it. Brutalist sets `0ms` and
+       Minimal `100ms`, so on those themes seven transitions kept animating at the default
+       while everything around them did not, and Brutalist's whole point is that nothing
+       animates at all.
+
+       The EASING was deliberately left alone: those rules specify `ease` and `ease-out`,
+       while this token's default is a different curve, so routing them through it would have
+       been a visual change rather than a correction. */
     --transition-wk-duration: 150ms;
     --transition-wk-easing: cubic-bezier(0.4, 0, 0.2, 1);
     /* Text-glyph shimmer (<x-wirekit::shimmer>). Override any of these per
@@ -328,6 +353,26 @@
     --size-wk-md: 2.5rem;
     --size-wk-lg: 3rem;
     --size-wk-xl: 6rem;
+    /* The pointer-target floor the kit holds itself to: 44px, the WCAG 2.5.5 (AAA)
+       figure, which is the more generous of the two the spec offers -- 2.5.8 (AA)
+       asks 24. It is a token because a developer's own buttons stand next to the
+       kit's and need the same target; without one they type `h-11` and hold a
+       second copy that will not move when this one does. */
+    --size-wk-touch-target: 2.75rem;
+    /* The other floor, and the two are not interchangeable: this is WCAG 2.5.8 (AA),
+       the one a build has to meet. 2.5.5's 44px above is AAA and is what the kit
+       aims for where it can. Where a control has two targets that come close
+       together, 44 is the wrong answer -- two oversized targets on top of each other
+       are worse than two correct ones -- and this is the number to reach for. */
+    --size-wk-target-min: 1.5rem;
+    /* The floating action button's own box. It is a token because a developer cannot lay out
+       AROUND a control whose size they cannot read: a FAB is `position: fixed` over whatever
+       scrolls beneath it, so the content underneath has to keep that much space free at the
+       end — and with no token the only way to do it was to copy the number out of the Blade
+       file. Measured in an application where that happened: the FAB covered the "next page"
+       link completely, `elementFromPoint` returned the button, and the failing test reported
+       a timeout, which reads like slow CI rather than a covered control. */
+    --size-wk-fab: 3.5rem;
     /* Depth of the scroll-area edge fade (<x-wirekit::scroll-area fade="…">).
        Override globally in :root or per instance via inline style. */
     --fade-wk-size: 2rem;
@@ -414,7 +459,7 @@
      * stylesheet carries exactly ONE absolute font-size, the 16px touch-floor on form
      * controls, and that one is deliberately excluded (it exists to stop Safari zooming
      * the page on focus, so scaling it away would restore the defect it prevents).
-     * `FontScaleGuardTest` fails the build if a second absolute size appears — the
+     * the build fails if a second absolute size appears — the
      * failure mode here is omission, so the guard watches for new omissions rather than
      * re-checking the ones already known.
      */
@@ -471,6 +516,17 @@
     --z-wk-tooltip: 60;
     --z-wk-modal: 70;
     --z-wk-drawer: 70;
+
+    /* Above the modal, and that is the point: a toast reports the RESULT of something the
+       reader just did, and half the time they did it inside a dialog. Below it, the
+       confirmation of a save is hidden by the form that saved.
+
+       `toast-region` hardcoded `z-[9999]` because the scale had no step for it. That worked
+       and could not be themed: an application layering its own chrome above WireKit's had to
+       out-bid a number it could not read, and the one place the stacking order is written
+       down did not mention toasts at all. 80 keeps the ten-point spacing the rest of the
+       scale uses, so there is room for an application to sit between. */
+    --z-wk-toast: 80;
 
     /* ─── Overlay: Modal Sizing ─── */
     --size-wk-modal-sm: 24rem;
@@ -572,6 +628,13 @@
        wraps to two, which is the correct trade. Nothing is ever hidden. */
     --size-wk-rail-labeled: 5.5rem;
     --size-wk-rail-expanded: 15rem;
+    /* The app-shell's sidebar DRAWER width, below the breakpoint where the sidebar becomes
+       part of a slide-over. It was a bare `w-64` utility — 16rem, and not a step anyone could
+       reach: the drawer scale starts at 20rem and the rail scale tops out at 15rem, so an
+       application that wanted a wider mobile sidebar had to out-specify a Tailwind class
+       rather than set a variable. Same shape as the toast z-index: the value was fine, the
+       scale simply had no step for it. */
+    --size-wk-sidebar-drawer: 16rem;
 
     /* The radius of an inset content panel (<x-wirekit::app-shell panel>). Its own
        token rather than --radius-wk-lg, because the panel is the largest rounded
@@ -625,8 +688,9 @@
        overrides its target would not move it. Measured exactly that: with
        `--color-wk-rail-active-fg: var(--color-wk-rail-active-text)` the inverse tone's
        current module rendered near-black on near-black, 1.78:1, in every preset at once.
-       Every tone block therefore declares all ten roles rather than relying on a default
-       — pinned by RailToneRoleCompletenessTest. */
+       Every tone block therefore declares EVERY role rather than relying on a default
+       — pinned by the build's rail tone-role completeness check, which holds the roster
+       so this comment does not have to name a number that drifts. */
     --color-wk-rail-hover-fg: var(--color-wk-text);
     --color-wk-rail-active-fg: var(--color-wk-text);
     --color-wk-rail-border: var(--color-wk-border);
@@ -689,9 +753,25 @@
     /* Warning Background */
     --color-wk-warning-bg: oklch(32% 0.06 80);
 
-    /* Dark-mode info/accent text-on-soft-bg variants */
-    --color-wk-info-text: var(--color-wk-accent-content);
-    --color-wk-accent-text: var(--color-wk-accent-content);
+    /* ⚠️ NO DARK HALF FOR `--color-wk-info-text` / `--color-wk-accent-text`, DELIBERATELY,
+       and this comment stands where two redeclarations used to. Both are pure `var()`
+       aliases of `--color-wk-accent-content`, and neither is `@property`-registered — so the
+       note further up applies: an unregistered custom property inherits its TOKEN STREAM,
+       not its value. The `:root` declaration re-substitutes against whichever
+       `--color-wk-accent-content` wins at the element, which in dark IS the dark one.
+
+       Repeating them here changed no computed value, and it taught the wrong rule at the
+       exact place a preset author looks: the block appeared to be caring for these aliases,
+       so the pattern to copy was four more lines that also do nothing — while the tokens
+       that genuinely need a dark half, the registered rail roles, are the ones missing.
+
+       And it was not merely inert. With `.dark` on `<body>` and a developer override on
+       `:root`, the redeclaration BEAT that override for the whole body subtree; without it
+       the override inherits correctly. Deleting is the improvement, not the regression. */
+
+    /* Dark-mode informational series color — see the light-mode note. Same value the chart
+       adapter already fell back to here, so nothing on screen moves. */
+    --color-wk-info: #a5f3fc;
 
     /* Neutral Backgrounds — elevation via contrast, not blur */
     --color-wk-bg: oklch(14.5% 0 0);
@@ -708,8 +788,9 @@
     /* Neutral Text — subtle/placeholder use neutral-400 on neutral-950 for ~7.82:1.
        neutral-500 only reaches 4.18:1 on neutral-950 — below AA. */
     --color-wk-text: oklch(98.5% 0 0);  /* ~18.4:1 on neutral-950 */
-    --color-wk-code: var(--color-wk-text);
-    --color-wk-code-bg: var(--color-wk-bg-muted);
+    /* `--color-wk-code` and `--color-wk-code-bg` have no dark half either, for the reason
+       spelled out at the info/accent aliases above: pure `var()`, unregistered, so the light
+       declaration already resolves against the dark `--color-wk-text` / `--color-wk-bg-muted`. */
     /* Lifted off neutral-400 (oklch 70.8%), and the reason is a surface the old
        number was never measured against. A callout tints its background with 15%
        of the accent; in DARK the accent is near-white, so that tint makes the
@@ -717,7 +798,7 @@
        4.45:1 there while measuring a comfortable 7.63:1 on the page background
        the comment above cites. axe reported it on four tinted-callout pages at once.
        74% gives 5.00:1 on the worst tinted surface and improves every other
-       pairing. Guarded by TintedSurfaceTextContrastTest.
+       pairing. Guarded by the build's tinted-surface contrast check.
 
        subtle and placeholder deliberately STAY at neutral-400: neither is
        promised on a tinted surface (docs/theming.md scopes subtle to bg and
@@ -1167,6 +1248,26 @@
     background: radial-gradient(farthest-side at 100% 50%, var(--wk-scroll-shadow-color), transparent);
 }
 
+/* The pair positions logically and paints physically, so it needed the same counter-block
+   scroll-fade above already carries: `inset-inline-start/-end` mirror under dir="rtl", but a
+   gradient's `at <position>` does not — 0 and 100% measure from the box's physical left edge
+   in either direction. Without this, the 14px strip moved to the correct side of an Arabic or
+   Hebrew table while its dense end stayed on its own physical side: dense INWARD, fading AT
+   the scroll edge. That reads as a strip floating inside the table rather than as a shadow
+   the edge casts.
+
+   Permanent, not a stopgap ahead of the logical-property migration — CSS has no logical
+   gradient keyword, there is no `to inline-end`, so a gradient can only follow the writing
+   direction through a [dir="rtl"] rule. The block-axis pair above is unaffected: `at 50% 0`
+   and `at 50% 100%` do not mirror in the first place. */
+[dir="rtl"] .wk-scroll-shadow-start {
+    background: radial-gradient(farthest-side at 100% 50%, var(--wk-scroll-shadow-color), transparent);
+}
+
+[dir="rtl"] .wk-scroll-shadow-end {
+    background: radial-gradient(farthest-side at 0 50%, var(--wk-scroll-shadow-color), transparent);
+}
+
 /* ─── Hero / CTA muted-text-on-dark contrast fix ───────────── */
 /* When a hero or cta runs variant="dark" / "accent", a nested
    <x-wirekit::text variant="muted"> would otherwise read a --color-wk-text-muted
@@ -1188,7 +1289,7 @@
        transparency mix drops muted text below the 4.5:1 WCAG AA floor — the
        previous 72% mix landed Aurora/Cupertino at ~3.5:1. Colored surfaces
        don't have AA-safe muting room, so muted == foreground here (guaranteed
-       AA: identical to the accent-fg-on-accent pair ThemePresetContrastTest
+       AA: identical to the accent-fg-on-accent pair the preset-contrast check
        already verifies). The variant="dark" rule above still mutes for real —
        its --color-wk-text base has the contrast headroom that a colored
        accent lacks. */
@@ -1201,12 +1302,44 @@
    stops a horizontal thumb drag from scrolling the page on touch devices —
    the modern idiom for the iOS drag-vs-scroll conflict, no manual
    touchstart/touchmove listeners needed (pointer events already drive the
-   drag). 28px on coarse pointers clears the ~44px touch-target guidance once
-   the surrounding hit-slop is included. */
+   drag).
+
+   ⚠️ THE SIZE HERE IS THE POINTER TARGET, so read it as a target size rather than
+   as decoration. Measured in chromium on the shipped preview: three elements carry
+   this class — the two `role="slider"` handles, `pointer-events: auto`, 20x20, and
+   one decorative copy inside the value bubble that is `pointer-events: none`. The
+   handles are what a pointer grabs.
+
+   The sentence that used to end this comment said 28px on coarse pointers "clears
+   the ~44px touch-target guidance once the surrounding hit-slop is included". The
+   coarse half is fine. The FINE-pointer half is the gap: 20x20 is under the 24x24
+   that WCAG 2.2 SC 2.5.8 asks for as an AA criterion, and the spacing exception
+   does not rescue it — the two handles come to within 0.5px of each other at their
+   closest, measured, so a 24px circle on one contains the other. */
 .wk-range-thumb {
     width: 1.25rem;
     height: 1.25rem;
     touch-action: none;
+}
+
+/* The target, held apart from the circle that is painted.
+   The handle is drawn 20px and that is a design decision; 20px is also under the
+   24x24 of WCAG 2.5.8, and the spacing exception cannot rescue it -- measured in
+   chromium, the two handles come to within 0.5px of each other at their closest, so
+   a 24px circle centered on one contains the other.
+   A centered, invisible ::before is the kit's existing idiom for exactly this
+   (`.wk-touch-target`), at the AA number rather than the AAA one. The handle is
+   already absolutely positioned, so this resolves against it without a `position`
+   of its own. On a coarse pointer the handle itself is 28px and already larger --
+   the box wins, and this changes nothing there. */
+.wk-range-thumb::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--size-wk-target-min);
+    height: var(--size-wk-target-min);
+    transform: translate(-50%, -50%);
 }
 
 @media (pointer: coarse) {
@@ -1272,8 +1405,14 @@
     input.wk-field,
     textarea.wk-field,
     button.wk-button,
-    a.wk-button {
-        min-height: 2.75rem;
+    a.wk-button,
+    /* The accordion header is a full-width ROW, so it takes the height floor rather than the
+       centered `wk-touch-target` expander: that one adds a 44x44 patch in the middle and would
+       leave both ends of a 349px trigger at their original 37px. Measured at 375px with touch
+       emulation, which is load-bearing -- every rule in this block is behind `pointer: coarse`,
+       and a narrow viewport alone is still a fine pointer reporting the desktop size. */
+    button.wk-accordion-trigger {
+        min-height: var(--size-wk-touch-target);
     }
 
     /* min-WIDTH on the FIELDS ONLY, and the exclusion of buttons is the whole
@@ -1299,7 +1438,7 @@
     select.wk-field,
     input.wk-field,
     textarea.wk-field {
-        min-width: 2.75rem;
+        min-width: var(--size-wk-touch-target);
     }
 
     /* The own selector the note above asked for, now that a minor can carry new
@@ -1351,8 +1490,8 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        width: 2.75rem;
-        height: 2.75rem;
+        width: var(--size-wk-touch-target);
+        height: var(--size-wk-touch-target);
         transform: translate(-50%, -50%);
         /* Purely a hit area — never paints, and never eats a tap meant for the
            control's own content. */
@@ -1399,15 +1538,19 @@
     }
 
     aside.wk-app-shell-aside:has(.group\/wk-sidebar[data-collapsed]) {
-        width: var(--size-wk-rail, 3.25rem);
+        /* 3.3125rem, computed: the icon (1.25) plus two inline paddings (0.625 each), two
+           block paddings (0.375 each) and one border (0.0625). The fallback said 3.25rem —
+           a whole pixel narrow, which nothing reports because the token is declared and the
+           fallback only fires where the stylesheet is not loaded. */
+        width: var(--size-wk-rail, 3.3125rem);
     }
 }
 
 /* ─── Navigation surface tones (app-rail, sidebar tone="…") ──── */
-/* Each tone re-points the same eight role variables declared in :root. That is
+/* Each tone re-points the same role variables declared in :root. That is
    the whole mechanism: every class inside the rail and the toned sidebar reads
-   `var(--color-wk-rail-*)` and nothing else, so a tone is a change of four to
-   eight declarations rather than a parallel set of utilities per surface.
+   `var(--color-wk-rail-*)` and nothing else, so a tone is a change of declarations
+   rather than a parallel set of utilities per surface.
 
    `:where()` keeps specificity at 0 so a developer's own
    `[data-wk-tone="inverse"] { --color-wk-rail-bg: … }` (0,1,0) wins regardless
@@ -1492,7 +1635,7 @@
 
        The inversion has no percentage to get wrong: the fill IS the foreground color and
        the label is the accent, which is the guaranteed pair read backwards. Its ratio is
-       identical to accent-fg-on-accent, which ThemePresetContrastTest already proves
+       identical to accent-fg-on-accent, which the preset-contrast check already proves
        >= 4.5:1 for every bundled preset in both modes — so this holds by construction and
        keeps holding for a theme that does not exist yet.
 
@@ -1648,7 +1791,7 @@
 /* The forced twin. Same rules, keyed on the attribute alone — the application says
    reduce and the OS does not, so no media condition above can carry them. Duplicated
    rather than shared for the reason stated at the blanket rule: CSS cannot apply one
-   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   rule under two conditions. a build check compares the two halves rule
    by rule, so one can no longer gain a selector the other never hears about. */
 :root[data-reduce-motion="reduce"] :where(.wk-rail) [data-wk-rail-brand-label] {
     transition: none;
@@ -1787,7 +1930,7 @@
        WIDER than the glyph it holds and the glyph is leading-aligned inside it, so it sits
        off the module's own center wherever the column's edges happen to be. The module was
        symmetric the whole time; nothing had ever measured the glyph. The repair is in the
-       item's `justify-*` rule, and `RailGlyphsShareOneAxisTest` is the measurement. */
+       item's `justify-*` rule, and the build check is the measurement. */
     /* AND THE MODULES CENTER ON WHAT THE READER SEES, not on the column's own box.
        The panel is inset from the chrome, and that gap is chrome-colored — so it reads as
        part of the rail. A module inset by the same amount on both sides therefore LOOKS
@@ -1864,9 +2007,9 @@
        Taking it in the module's own `padding-inline` rather than in the scroller's inset is
        what makes this the only fix that costs nothing. The module's border box does not move,
        and every guard in this family measures that box: the panel gap stays 8px on all four
-       sides (`ConsoleShellGeometryTest`), the module keeps equal chrome either side
-       (`RailSpineTest`), and because a centered glyph and a leading-aligned one now land on the
-       SAME pixel, folding the rail moves nothing (`CollapsibleNoShiftTest`). Widening the
+       sides (a build check), the module keeps equal chrome either side
+       (a build check), and because a centered glyph and a leading-aligned one now land on the
+       SAME pixel, folding the rail moves nothing (a build check). Widening the
        scroller inset instead would have centered the glyph too, at the price of a 10.5px gap
        beside a panel whose other three sides stay at 8px.
 
@@ -1925,7 +2068,7 @@
 }
 
 /* ─── What a toned navigation column does to its descendants ─── */
-/* The eight roles above dress the column itself. Its CONTENTS are ordinary
+/* The rail roles above dress the column itself. Its CONTENTS are ordinary
    components — sidebar items, groups, disclosures, a profile row — and every one
    of them reads the generic neutral tokens. Without this block a dark rail would
    hold black-on-black item labels, and the alternative would be teaching every
@@ -2160,6 +2303,39 @@
 .wk-skeleton {
     position: relative;
     overflow: hidden;
+}
+
+/* ------------------------------------------------------------ */
+/* Skeleton off-screen skip — PROGRESSIVE ENHANCEMENT            */
+/*                                                              */
+/* `content-visibility: auto` lets the browser skip style,      */
+/* layout, paint and composite for a skeleton that is off       */
+/* screen. It first shipped in Safari 18.0, ABOVE this          */
+/* library's floor of Safari 16.4, so it sits behind @supports  */
+/* rather than being asserted.                                  */
+/*                                                              */
+/* Nothing depends on it: a browser without it renders every    */
+/* skeleton normally, which is what every browser did before    */
+/* the optimization existed. That is the fourth condition the   */
+/* house rule puts on an above-baseline feature, and this used  */
+/* to be an unconditional inline style on the wrapper with a    */
+/* docs page promising the saving outright.                     */
+/*                                                              */
+/* The intrinsic size travels as a custom property so the Blade */
+/* component can still tune it per variant, and so a developer  */
+/* can override it from their own stylesheet.                   */
+:root {
+    /* The size a skipped skeleton reserves while it is off screen. Declared here so the
+       drift inventory can trace the reference; every skeleton variant overrides it inline
+       with a value tuned to its shape, and a developer can override it anywhere. */
+    --wk-skeleton-intrinsic-size: auto 4rem;
+}
+
+@supports (content-visibility: auto) {
+    .wk-skeleton-skip-offscreen {
+        content-visibility: auto;
+        contain-intrinsic-size: var(--wk-skeleton-intrinsic-size, auto 4rem);
+    }
 }
 
 .wk-skeleton::after {
@@ -2647,7 +2823,7 @@
 /* a desktop window, a code editor, a phone, a tablet.                        */
 /*                                                                           */
 /* Every value is a design token, so a frame restyles with the theme instead */
-/* of being a hardcoded chrome drawing. Anti-slop: no gradient fake screens, */
+/* of being a hardcoded chrome drawing: no gradient fake screens, */
 /* no invented brand chrome — the frame is a thin neutral surround and the    */
 /* content inside is the point.                                               */
 .wk-mockup {
@@ -2924,7 +3100,7 @@
 /* The forced twin. Same rules, keyed on the attribute alone — the application says
    reduce and the OS does not, so no media condition above can carry them. Duplicated
    rather than shared for the reason stated at the blanket rule: CSS cannot apply one
-   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   rule under two conditions. a build check compares the two halves rule
    by rule, so one can no longer gain a selector the other never hears about. */
 :root[data-reduce-motion="reduce"] .wk-logo-cloud-muted img,
 :root[data-reduce-motion="reduce"] .wk-logo-cloud-muted svg {
@@ -3040,7 +3216,13 @@
     :root:not([data-reduce-motion="no-preference"]) [x-transition\:leave],
     :root:not([data-reduce-motion="no-preference"]) [x-transition\.opacity],
     :root:not([data-reduce-motion="no-preference"]) [x-transition\.opacity\.duration\.200ms],
-    :root:not([data-reduce-motion="no-preference"]) [x-transition\.origin\.top\.left] {
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\.origin\.top\.left],
+    /* `x-collapse` is not an `x-transition` spelling and was missed by the enumeration
+       above: three components animate their height with it (collapsible, tree-view,
+       sidebar.collapsible), so a reader who asked for less motion still got a sliding
+       panel. The comment above says a new modifier combination needs a line here; this is
+       a different Alpine directive entirely, which is why nobody thought to add one. */
+    :root:not([data-reduce-motion="no-preference"]) [x-collapse] {
         animation-duration: 1ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 1ms !important;
@@ -3073,7 +3255,9 @@
 :root[data-reduce-motion="reduce"] [x-transition\:leave],
 :root[data-reduce-motion="reduce"] [x-transition\.opacity],
 :root[data-reduce-motion="reduce"] [x-transition\.opacity\.duration\.200ms],
-:root[data-reduce-motion="reduce"] [x-transition\.origin\.top\.left] {
+:root[data-reduce-motion="reduce"] [x-transition\.origin\.top\.left],
+/* Same omission, same reason — see the media-query half above. */
+:root[data-reduce-motion="reduce"] [x-collapse] {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
@@ -3145,7 +3329,7 @@
    replay) restarts the animation. */
 @media (prefers-reduced-motion: no-preference) {
     .wk-radial-animate {
-        animation: wk-radial-sweep var(--motion-wk-duration-slow, 600ms) var(--motion-wk-easing-out, ease-out);
+        animation: wk-radial-sweep var(--motion-wk-duration-slow, 600ms) var(--motion-wk-easing-out, cubic-bezier(0.16, 1, 0.3, 1));
     }
 }
 
@@ -3153,7 +3337,7 @@
    never sees it — including the one who then set the attribute to say "not for this
    application". Without this the middle state releases the clamps and starts nothing. */
 :root[data-reduce-motion="no-preference"] .wk-radial-animate {
-    animation: wk-radial-sweep var(--motion-wk-duration-slow, 600ms) var(--motion-wk-easing-out, ease-out);
+    animation: wk-radial-sweep var(--motion-wk-duration-slow, 600ms) var(--motion-wk-easing-out, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
 @keyframes wk-radial-sweep {
@@ -3200,7 +3384,7 @@
 /* The forced twin. Same rules, keyed on the attribute alone — the application says
    reduce and the OS does not, so no media condition above can carry them. Duplicated
    rather than shared for the reason stated at the blanket rule: CSS cannot apply one
-   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   rule under two conditions. a build check compares the two halves rule
    by rule, so one can no longer gain a selector the other never hears about. */
 :root[data-reduce-motion="reduce"] .wk-radial::before {
     transition: none;
@@ -3357,13 +3541,34 @@
     opacity: 0;
     /* Not display:none — a hidden child must keep occupying its grid cell or the
        swap collapses to nothing mid-transition and the icon jumps. It is hidden
-       from assistive tech via aria-hidden and from the pointer here. */
+       from the pointer here. */
     pointer-events: none;
+    /* And from the KEYBOARD, which `opacity: 0` plus `aria-hidden` does not do.
+       An invisible subtree with a focusable element inside it is still tabbable, so a
+       keyboard user landed on a control they could not see — and because the branch also
+       carried `aria-hidden="true"`, a screen reader had nothing to say when they got there.
+       That combination is what axe reports as `aria-hidden-focus`.
+
+       `visibility: hidden` removes it from the tab order and the accessibility tree while
+       KEEPING its grid cell, which is the property the comment above is about. The delayed
+       transition is what preserves the cross-fade: visibility flips only once the opacity
+       transition has finished, so the outgoing branch stays visible while it fades. */
+    visibility: hidden;
+    transition:
+        opacity var(--transition-wk-duration) var(--transition-wk-easing),
+        transform var(--transition-wk-duration) var(--transition-wk-easing),
+        visibility 0s linear var(--transition-wk-duration);
 }
 
 .wk-swap[data-active="true"] > [data-wk-swap-on],
 .wk-swap[data-active="false"] > [data-wk-swap-off] {
     opacity: 1;
+    /* No delay on the way IN: the incoming branch must be visible for the whole fade. */
+    visibility: visible;
+    transition:
+        opacity var(--transition-wk-duration) var(--transition-wk-easing),
+        transform var(--transition-wk-duration) var(--transition-wk-easing),
+        visibility 0s;
 }
 
 /* Pre-hydration default for a DYNAMIC swap (expression-driven). Until Alpine
@@ -3409,7 +3614,7 @@
 /* The forced twin. Same rules, keyed on the attribute alone — the application says
    reduce and the OS does not, so no media condition above can carry them. Duplicated
    rather than shared for the reason stated at the blanket rule: CSS cannot apply one
-   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   rule under two conditions. a build check compares the two halves rule
    by rule, so one can no longer gain a selector the other never hears about. */
 :root[data-reduce-motion="reduce"] .wk-swap > [data-wk-swap-on],
 :root[data-reduce-motion="reduce"] .wk-swap > [data-wk-swap-off] {
@@ -3438,7 +3643,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* The forced twin. Same rules, keyed on the attribute alone — the application says
    reduce and the OS does not, so no media condition above can carry them. Duplicated
    rather than shared for the reason stated at the blanket rule: CSS cannot apply one
-   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   rule under two conditions. a build check compares the two halves rule
    by rule, so one can no longer gain a selector the other never hears about. */
 :root[data-reduce-motion="reduce"] .wk-theme-switch-knob {
     transition: none;
@@ -3518,9 +3723,21 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 
 /* ── FAB (speed dial) ────────────────────────────────────────────────────────
    The bar this floats above is fixed too, so the FAB has to clear it — and on a
-   phone it also has to clear the home indicator. Both are additive. */
+   phone it also has to clear the home indicator. Both are additive.
+
+   ⚠️ THE X TOKEN ON A BLOCK AXIS IS DELIBERATE, and it is the fix rather than the
+   defect. This read `--padding-wk-y-lg` and the inline axis in `fab/button.blade.php`
+   reads `--padding-wk-x-lg`, so a round button in a corner sat 16px from the side and
+   12px from the bottom — reported from an application as "pushed against the right edge
+   rather than sitting in the corner", and measured at right=16 bottom=12.
+
+   The x/y pair is an INSIDE measurement: a control is padded more generously across
+   than down, and that is right. The distance from a floating button to the VIEWPORT
+   EDGE is not padding — both axes describe one quantity there, the clearance from the
+   edge — so both read the same token. `scroll-to-top` and `reading-bookmark` already
+   did exactly this on both axes; this rule was the one that did not. */
 .wk-fab {
-    inset-block-end: calc(var(--padding-wk-y-lg, 1.5rem) + env(safe-area-inset-bottom, 0px));
+    inset-block-end: calc(var(--padding-wk-x-lg, 1rem) + env(safe-area-inset-bottom, 0px));
 }
 
 /* The other block edge. A single-action FAB may sit along the top instead —
@@ -3531,27 +3748,68 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    the button would be pinned to BOTH edges and stretch between them. And the top
    needs its own safe-area inset for the status bar and notch, the same way the
    bottom needs one for the home indicator. */
+/* ── The floating action steps down on a narrow viewport ────────────────────────────────────
+   A fixed 3.5rem is a fifth of a 320px phone's width, sitting in the corner under the thumb and
+   over the content. Reported from an application as far too large on a phone — and the same
+   button is unremarkable on a desktop, so this is a viewport question rather than a value that
+   was simply wrong.
+
+   3rem keeps four pixels of headroom over the 44px AAA target size (WCAG 2.5.5), so the step
+   down does not spend the ergonomics it is meant to improve.
+
+   ⚠️ THE TOKEN STEPS, NOT THE BUTTON'S CLASSES, and that is the whole design. `.wk-fab-clearance`
+   derives the room a scrolling container reserves from this same token, so it follows the button
+   down instead of holding desktop space open on a phone. A `size` prop on the component would
+   have separated those two again and left every application to keep them in step by hand.
+
+   Same threshold as `.wk-fab-above-nav` below — 48rem is the 768px that rule uses — so the
+   component has ONE breakpoint: at md the bottom nav goes away and the FAB takes its full size. */
+@media (width < 48rem) {
+    :root {
+        --size-wk-fab: 3rem;
+    }
+}
+
 .wk-fab-block-start {
     inset-block-end: auto;
-    inset-block-start: calc(var(--padding-wk-y-lg, 1.5rem) + env(safe-area-inset-top, 0px));
+    /* Same clearance token as every other edge offset here — see `.wk-fab` above. */
+    inset-block-start: calc(var(--padding-wk-x-lg, 1rem) + env(safe-area-inset-top, 0px));
+}
+
+/* The other direction, and it was missing entirely. `wk-fab-above-nav` moves the BUTTON out
+   of the way of something else; this keeps something else out from under the BUTTON.
+
+   Put it on the scrolling container (or on the last element inside it). It reserves the
+   button's own box, the clearance it keeps from the edge, and one step of breathing room, so
+   the last row of a long list is reachable instead of sitting behind the FAB.
+
+   Opt-in for the same reason its counterpart is, stated in that comment: the component cannot
+   see what scrolls beneath it, and reserving space unconditionally would put a gap at the
+   bottom of every page that has a FAB and nothing under it. */
+.wk-fab-clearance {
+    padding-block-end: calc(
+        var(--size-wk-fab, 3.5rem) + var(--padding-wk-x-lg, 1rem) + var(--space-wk-md, 1rem) +
+            env(safe-area-inset-bottom, 0px)
+    );
 }
 
 /* When a bottom nav is on the page, the FAB sits above it rather than on top of
    it. Opt in with the modifier: the component cannot see whether a nav exists
    elsewhere in the document, and guessing would lift every FAB off the corner. */
 .wk-fab-above-nav {
-    inset-block-end: calc(3.25rem + var(--padding-wk-y-md, 1rem) + env(safe-area-inset-bottom, 0px));
+    inset-block-end: calc(3.25rem + var(--padding-wk-y-md, 0.5rem) + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 768px) {
-    /* The nav hides at md, so the room reserved for it goes too. */
+    /* The nav hides at md, so the room reserved for it goes too — and what is left is the
+       ordinary viewport clearance, on the same token as the rest. */
     .wk-fab-above-nav:not(.wk-fab-above-nav-always) {
-        inset-block-end: calc(var(--padding-wk-y-lg, 1.5rem) + env(safe-area-inset-bottom, 0px));
+        inset-block-end: calc(var(--padding-wk-x-lg, 1rem) + env(safe-area-inset-bottom, 0px));
     }
 
     /* Same escape hatch, same reason it is declared on its own. */
     .wk-fab-above-nav-always {
-        inset-block-end: calc(3.25rem + var(--padding-wk-y-md, 1rem) + env(safe-area-inset-bottom, 0px));
+        inset-block-end: calc(3.25rem + var(--padding-wk-y-md, 0.5rem) + env(safe-area-inset-bottom, 0px));
     }
 }
 
@@ -3589,7 +3847,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* The forced twin. Same rules, keyed on the attribute alone — the application says
    reduce and the OS does not, so no media condition above can carry them. Duplicated
    rather than shared for the reason stated at the blanket rule: CSS cannot apply one
-   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   rule under two conditions. a build check compares the two halves rule
    by rule, so one can no longer gain a selector the other never hears about. */
 :root[data-reduce-motion="reduce"] .wk-fab-icon {
     transition: none;
@@ -3780,7 +4038,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* The forced twin. Same rules, keyed on the attribute alone — the application says
    reduce and the OS does not, so no media condition above can carry them. Duplicated
    rather than shared for the reason stated at the blanket rule: CSS cannot apply one
-   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   rule under two conditions. a build check compares the two halves rule
    by rule, so one can no longer gain a selector the other never hears about. */
 :root[data-reduce-motion="reduce"] .wk-progress-stripes { animation: none; }
 :root[data-reduce-motion="reduce"] .wk-progress-shimmer::after { content: none; }
@@ -4193,7 +4451,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     box-shadow:
         inset 1px 0 0 var(--color-wk-bg-subtle),
         inset -1px 0 0 var(--color-wk-bg-subtle);
-    transition: background-color 150ms ease;
+    transition: background-color var(--transition-wk-duration) ease;
     outline: none;
 }
 [data-wk-resizable] > [data-wk-resizable-handle]:hover,
@@ -4242,7 +4500,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
         radial-gradient(circle at center, var(--color-wk-text-muted) 1.25px, transparent 1.75px);
     background-size: 4px 4px;
     background-repeat: no-repeat;
-    transition: border-color 150ms ease, background-color 150ms ease;
+    transition: border-color var(--transition-wk-duration) ease, background-color var(--transition-wk-duration) ease;
 }
 
 /* Horizontal layout → grip pill is tall-and-narrow with dots    */
@@ -4307,6 +4565,22 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* Track styling: the horizontal bar the thumb slides along. */
 .wk-slider {
     height: auto;
+
+    /* ⚠️ THE POINTER TARGET IS THIS BORDER BOX, NOT THE THUMB THAT IS DRAWN ON IT.
+       `height: auto` collapses the box onto the track, so the default size measured
+       8px tall in chromium while the thumb was painted 20px and the comment further
+       up this file claimed the coarse-pointer variant cleared the touch guidance.
+       WCAG 2.2 SC 2.5.8 asks for 24x24 CSS px, and it is an AA criterion.
+
+       Padding rather than a height, because padding grows the box WITHOUT moving the
+       track: the track lays out in the content box, so symmetric block padding keeps
+       it exactly where it was and the thumb's centering margin stays correct. A
+       `min-height` would have left the track sitting at the top of a taller box.
+       The visible bar is unchanged — pinned by its own case, because growing a hit
+       area by thickening the bar is a design change no a11y assertion would notice.
+
+       One value per size, so all three land on 24 rather than only the default. */
+    padding-block: 0.5rem; /* 8px track + 2x8 = 24 */
 }
 
 /* WebKit (Chrome, Safari, Edge, Opera) */
@@ -4360,10 +4634,12 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 /* Size variants: sm track = 0.25rem, md = 0.5rem (default above), lg = 0.75rem */
+.wk-slider.h-1 { padding-block: 0.625rem; } /* 4px track + 2x10 = 24 */
 .wk-slider.h-1::-webkit-slider-runnable-track { height: 0.25rem; }
 .wk-slider.h-1::-webkit-slider-thumb { margin-top: -0.5rem; }
 .wk-slider.h-1::-moz-range-track { height: 0.25rem; }
 
+.wk-slider.h-3 { padding-block: 0.375rem; } /* 12px track + 2x6 = 24 */
 .wk-slider.h-3::-webkit-slider-runnable-track { height: 0.75rem; }
 .wk-slider.h-3::-webkit-slider-thumb { margin-top: -0.25rem; }
 .wk-slider.h-3::-moz-range-track { height: 0.75rem; }
@@ -4462,7 +4738,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     margin-block: 1.25em;
 }
 .wk-editor-content code {
-    font-family: var(--font-wk-mono, ui-monospace, monospace);
+    font-family: var(--font-wk-mono, ui-monospace, 'Fira Code', 'Cascadia Code', monospace);
     font-size: 0.9em;
     background: var(--color-wk-bg-muted);
     border-radius: var(--radius-wk-sm);
@@ -4875,7 +5151,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 
 /* .wk-autosize — a textarea that grows with its content.
  *
- * ABOVE the browser baseline: `field-sizing: content` is Chrome 123 / Safari 17.4,
+ * ABOVE the browser baseline: `field-sizing: content` is Chrome 123 / Safari 26.2,
  * against a floor of 111 / 16.4. It is here as a real rule rather than a utility
  * class on the element for one reason — a Tailwind arbitrary variant cannot be
  * wrapped in `@supports`, and the house rule requires an above-baseline feature to
@@ -4905,12 +5181,12 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 .wk-optimistic-surfaced[data-wk-optimistic-surfaced] {
     display: block;
     position: fixed;
-    inset-block-end: var(--gap-wk-lg, 1.5rem);
+    inset-block-end: var(--gap-wk-lg, 1rem);
     inset-inline-start: 50%;
     transform: translateX(-50%);
     z-index: var(--z-wk-tooltip);
     max-width: min(28rem, calc(100vw - 2rem));
-    padding: var(--padding-wk-y-sm, 0.5rem) var(--padding-wk-x-lg, 1rem);
+    padding: var(--padding-wk-y-sm, 0.375rem) var(--padding-wk-x-lg, 1rem);
     border: 1px solid color-mix(in srgb, var(--color-wk-warning) 40%, var(--color-wk-border));
     border-radius: var(--radius-wk-lg);
     background: var(--color-wk-bg-elevated);
@@ -4993,7 +5269,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 .wk-reading-spine .wk-reading-spine__label {
     opacity: 0;
-    transition: opacity 150ms ease-out 50ms;
+    transition: opacity var(--transition-wk-duration) ease-out 50ms;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -5003,7 +5279,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 .wk-reading-spine .wk-reading-spine__tick {
     background-color: var(--reading-spine-color-idle);
-    transition: background-color 150ms ease-out, width 200ms ease-out;
+    transition: background-color var(--transition-wk-duration) ease-out, width 200ms ease-out;
 }
 /* Tick width per heading level. Mirrors the Tailwind utility classes
    emitted by reading-spine.js's `tickWidthClass()` but with CSS attribute
@@ -5032,6 +5308,31 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
        is unmistakeable against the dim idle stack. */
     transform: scaleX(1.5);
     transform-origin: left center;
+}
+/* The mirror for both physical `transform-origin` anchors this stylesheet carries.
+   `transform-origin` has no logical keyword in any shipped browser — its grammar is
+   `left | center | right | top | bottom | <length-percentage>` — so a direction-encoded
+   scaleX is anchored physically and flipped here, exactly as `.wk-scroll-fade` does for
+   its horizontal edge fade further up.
+
+   Two objects, one rule: the reading bar grows the way the reader travels, and the spine's
+   active tick grows away from the rail it hangs on. Anchored left in an RTL document, the
+   bar would show its filled part at the END of the line and the tick would stretch across
+   its own label.
+
+   ⚠️ `!important` IS LOAD-BEARING ON THE FIRST SELECTOR, and leaving it off is how this
+   repair reads as "tried it, did not work". The reading bar declares the same anchor a
+   SECOND time as an inline style — deliberately, because the Alpine object-form binding
+   merges with static styles rather than replacing them, and the background color has to be
+   inline anyway since it varies per render. An inline declaration outranks every stylesheet
+   rule, so the mirror has to say so. The print block a few screens down carries `!important`
+   for the same reason and says so too. */
+[dir="rtl"] .wk-reading-progress__fill {
+    transform-origin: right center !important;
+}
+[dir="rtl"] .wk-reading-spine .wk-reading-spine__link[data-active="true"] .wk-reading-spine__tick,
+[dir="rtl"] .wk-reading-spine .wk-reading-spine__link[aria-current="location"] .wk-reading-spine__tick {
+    transform-origin: right center;
 }
 .wk-reading-spine .wk-reading-spine__link[data-active="true"] .wk-reading-spine__label,
 .wk-reading-spine .wk-reading-spine__link[aria-current="location"] .wk-reading-spine__label {
@@ -5101,7 +5402,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     margin-bottom: var(--reading-minimap-stripe-gap);
     background: var(--reading-minimap-color-idle);
     cursor: pointer;
-    transition: background-color 0.15s ease-out;
+    transition: background-color var(--transition-wk-duration) ease-out;
     /* top: <percent>% written inline by the JS controller */
 }
 .wk-reading-minimap__stripe:hover {
@@ -5235,7 +5536,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     opacity: 0;
     pointer-events: none;
     z-index: var(--z-wk-tooltip);
-    transition: opacity 150ms ease-out;
+    transition: opacity var(--transition-wk-duration) ease-out;
 }
 .wk-reading-minimap__preview[data-visible="true"] {
     opacity: 1;
@@ -5283,7 +5584,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     color: var(--reading-minimap-anchor-text-color);
     text-decoration: none;
     white-space: nowrap;
-    transition: color 150ms ease-out;
+    transition: color var(--transition-wk-duration) ease-out;
     /* top written inline (percentage) */
 }
 .wk-reading-minimap__anchor:hover,
@@ -5453,7 +5754,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
        this surface preserves the active-vs-idle contrast cleanly. */
     text-decoration: none !important;
     font-weight: 400;
-    transition: color 150ms ease-out, background-color 150ms ease-out, font-weight 0ms;
+    transition: color var(--transition-wk-duration) ease-out, background-color var(--transition-wk-duration) ease-out, font-weight 0ms;
 }
 .wk-reading-toc__link:hover {
     color: var(--reading-toc-color-active);
@@ -5475,13 +5776,107 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* want a fixed bar overprinted on the first page nor a sidebar of ticks */
 /* taking up margin space on every printed page.                         */
 @media print {
+    /* ------------------------------------------------------------ */
+    /* 1 — Chrome that has no meaning on paper.                      */
+    /*                                                              */
+    /* The reading widgets were the only thing here, and they are    */
+    /* not the only screen-only chrome the library positions         */
+    /* `fixed`. A fixed element does not scroll with the page when   */
+    /* the page becomes sheets: it lands ON the text of whichever    */
+    /* sheet it fell on, once, over content the reader wanted.       */
     .wk-reading-progress,
     .wk-reading-spine,
     .wk-reading-minimap,
     .wk-reading-toc,
     .wk-reading-bookmark,
-    .wk-reading-meta {
+    .wk-reading-meta,
+    .wk-fab,
+    .wk-overlay-fixed,
+    .wk-drawer-panel,
+    [data-wk-fab-trigger],
+    [data-wk-fab-actions] {
         display: none !important;
+    }
+
+    /* ------------------------------------------------------------ */
+    /* 2 — Reclaim the gutter the hidden spine was reserving.         */
+    /*                                                              */
+    /* `.wk-reading-content` narrows itself by 12rem above 48rem to  */
+    /* leave room for the fixed spine. With the spine hidden that    */
+    /* reserve is a blank column on every sheet, and the article is  */
+    /* set 12rem narrower than the paper for nothing.                */
+    .wk-reading-content {
+        max-width: 100% !important;
+    }
+
+    /* ------------------------------------------------------------ */
+    /* 3 — Print the fills, or print no label at all.                 */
+    /*                                                              */
+    /* Every filled intent surface pairs a saturated background with */
+    /* a `--color-wk-*-fg` label, and those are near-white by        */
+    /* construction — that is what makes them legible ON the fill.   */
+    /* Browsers drop background colors when printing unless told    */
+    /* otherwise, so the fill vanished and the white label was       */
+    /* printed onto white paper: a badge, a filled button or an      */
+    /* alert came out BLANK rather than unstyled.                    */
+    /*                                                              */
+    /* Scoped to the surfaces that carry a paired fg token rather    */
+    /* than set globally: forcing every background in a document to  */
+    /* print is a decision about the reader's ink, and this is only  */
+    /* about the places where not printing it destroys the text.     */
+    /*
+     * ⚠️ MATCHED ON THE TOKEN IN THE CLASS LIST, NOT ON A COMPONENT CLASS. The first version
+     * of this rule named `.wk-badge`, `.wk-alert`, `.wk-callout` and six others — and the
+     * components emit none of them. They compose their fills from Tailwind arbitrary values,
+     * so the only thing every filled surface genuinely has in common is the token itself.
+     *
+     * Scoped to WireKit backgrounds rather than set on the document: forcing every background
+     * in a page to print is a decision about the reader's ink, and this is only about the
+     * places where NOT printing it destroys the text.
+     *
+     * ⚠️ And the four intents are enumerated rather than matched by prefix, which cost a
+     * second correction: a `[class*="bg-[var(--color-wk-"]` selector contains the literal
+     * `var(--color-wk-`, and the drift inventory reads that as a reference to a token named
+     * `--color-wk-` — which does not exist. Naming each real token keeps the selector exact
+     * AND traceable. These four are the ones that pair with a near-white `-fg`.
+     */
+    [class*="bg-[var(--color-wk-accent)"],
+    [class*="bg-[var(--color-wk-danger)"],
+    [class*="bg-[var(--color-wk-success)"],
+    [class*="bg-[var(--color-wk-warning)"] {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* ------------------------------------------------------------ */
+    /* 4 — Page breaks. The library had no rule of any kind.          */
+    /*                                                              */
+    /* Without these a heading prints as the last line of a sheet    */
+    /* with its section overleaf, and a card or a table row is cut   */
+    /* in half across the fold. `break-inside` on the containers     */
+    /* that are meant to be read as one unit; `break-after: avoid`   */
+    /* on headings so they stay with what they introduce.            */
+    h1, h2, h3, h4 {
+        break-after: avoid;
+        break-inside: avoid;
+    }
+
+    .wk-card-body,
+    blockquote,
+    figure,
+    tr {
+        break-inside: avoid;
+    }
+
+    /* A table's header repeats on every sheet it spans — otherwise  */
+    /* the second page of a long table is a grid of unlabeled       */
+    /* columns.                                                      */
+    thead {
+        display: table-header-group;
+    }
+
+    tfoot {
+        display: table-footer-group;
     }
 }
 
@@ -5622,7 +6017,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
        transitions it was written for — but it clamps a duration rather than
        ending an animation, and it reaches this glyph only through a selector
        shape that has been narrowed once already. Every other continuous
-       :root:not([data-reduce-motion="no-preference"]) indicator here carries its own line for the same reason: skeleton,
+       indicator here carries its own line for the same reason: skeleton,
        progress-indeterminate, text-shimmer, typing-dot, countdown. A spinner
        is the same kind of thing, so it gets the same answer rather than a
        second one.
@@ -5643,7 +6038,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* The forced twin. Same rules, keyed on the attribute alone — the application says
    reduce and the OS does not, so no media condition above can carry them. Duplicated
    rather than shared for the reason stated at the blanket rule: CSS cannot apply one
-   rule under two conditions. `ReducedMotionOverrideTest` compares the two halves rule
+   rule under two conditions. a build check compares the two halves rule
    by rule, so one can no longer gain a selector the other never hears about. */
 /* Stagger: collapse all per-child delays so children animate */
 /* simultaneously (which combined with wk-animate-* duration  */
@@ -5725,7 +6120,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    transitions it was written for — but it clamps a duration rather than
    ending an animation, and it reaches this glyph only through a selector
    shape that has been narrowed once already. Every other continuous
-   :root[data-reduce-motion="reduce"] indicator here carries its own line for the same reason: skeleton,
+   indicator here carries its own line for the same reason: skeleton,
    progress-indeterminate, text-shimmer, typing-dot, countdown. A spinner
    is the same kind of thing, so it gets the same answer rather than a
    second one.
@@ -6025,7 +6420,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
  */
 .wk-sidebar[data-just-expanded] .wk-rail-hide,
 .wk-rail[data-expanded][data-just-expanded] .wk-rail-hide {
-    animation: wk-rail-label-in var(--transition-wk-duration, 200ms) var(--transition-wk-easing, ease-out) both;
+    animation: wk-rail-label-in var(--transition-wk-duration, 150ms) var(--transition-wk-easing, cubic-bezier(0.4, 0, 0.2, 1)) both;
 }
 
 /*
@@ -6038,7 +6433,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
      * Scoped so an application can opt back in. `data-reduce-motion="no-preference"` on the
      * root is this package's override for a reader whose OS says reduce and whose application
      * has a reason to animate anyway — and a reduce rule written without the prefix is simply
-     * unreachable by it. `ReducedMotionOverrideTest` fails the build on one, which is how this
+     * unreachable by it. a build check fails the build on one, which is how this
      * pair was caught on the develop gate rather than by somebody toggling a setting.
      */
     :root:not([data-reduce-motion="no-preference"]) .wk-sidebar[data-just-expanded] .wk-rail-hide,
@@ -6050,7 +6445,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* The other half, for an application that asks for less motion directly rather than
    inheriting the request from the OS. Written out rather than shared, for the reason
    stated at every other pair in this file: CSS cannot apply one rule under two
-   conditions. `ReducedMotionOverrideTest` compares the two halves rule by rule, so one
+   conditions. a build check compares the two halves rule by rule, so one
    can no longer gain a selector the other never hears about. */
 :root[data-reduce-motion="reduce"] .wk-sidebar[data-just-expanded] .wk-rail-hide,
 :root[data-reduce-motion="reduce"] .wk-rail[data-expanded][data-just-expanded] .wk-rail-hide {
@@ -6217,7 +6612,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
      * children centers the SHELL-BAR that draws the foot's rule, so in a column 81px tall
      * the rule sat 13px below the rail's — measured on `console-shell/2`, rail rule at
      * y=641, sidebar rule at y=654. Side by side the two columns then show one horizontal
-     * line broken in the middle, which is what `ShellCollapsedLegibilitySweepTest` reports.
+     * line broken in the middle, which is what the build reports.
      *
      * The sidebar's own foot zone draws no border (0px, measured); the bar inside it does.
      * So the bar has to reach the top of the band or the rule moves with it.
@@ -6249,9 +6644,9 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
      * The bar carries a fixed `h-[--size-wk-shell-bar]` (56px) while the band is whatever
      * `--wk-shell-foot-h` states (81px where two columns share a line). Leave the height
      * and one of two things is wrong: the bar sits at the top and 25px of slack lands
-     * below it (`ShellFootIsOnlyAsTallAsItsContentTest`, which allows 2), or the bar is
+     * below it (a build check, which allows 2), or the bar is
      * centered and the RULE it draws sits 13px below the rail's
-     * (`ShellCollapsedLegibilitySweepTest`). The sidebar's foot zone draws no border of
+     * (a build check). The sidebar's foot zone draws no border of
      * its own — measured 0px — so the bar's border IS the column's foot rule, and where
      * the bar starts is where the line is.
      *
@@ -6275,7 +6670,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
  * flex child is the tooltip's `relative inline-block` wrapper, and inside that sits an
  * unclassed div holding the button. Measured: the child stretches to the 56px band, the
  * button sits at its top, and the control's center lands 14px above the account entry's.
- * `FoldControlSharesTheFootLineTest` allows 2px and reported exactly that 14.
+ * a build check allows 2px and reported exactly that 14.
  *
  * So the wrapper becomes the centering box. `:has()` without a child combinator on
  * purpose: the depth between wrapper and button is the tooltip's business, not this
@@ -6291,7 +6686,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
      * is the whole reason this line exists. The bar carries a fixed `h-[--size-wk-shell-bar]`
      * (56px), while the band is whatever `--wk-shell-foot-h` states (81px on the console
      * shell). Center on the band and the control lands 12px below the account entry it is
-     * supposed to sit beside; `FoldControlSharesTheFootLineTest` allows 2px.
+     * supposed to sit beside; a build check allows 2px.
      *
      * Measured on `console-shell/2`: band 641..722 (mid 682), bar 641..697 (mid 669),
      * entry mid 670. Matching the bar's box puts the control on 669 — one line, as
@@ -6322,7 +6717,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
  * Folded, the bar gives its inline padding back to its content.
  *
  * The column is 53px and the bar carried 6px either side, leaving a 40px content box for a
- * strip whose avatar and gap measure 42 — `CollapsedColumnNeverWrapsOrScrollsTest` reports
+ * strip whose avatar and gap measure 42 — the build reports
  * that as `+2` on three strips, and a 2px clip is exactly the kind of thing that reads as a
  * rendering glitch rather than a layout decision. The column already carries its own inset;
  * a second one inside it is what leaves nothing for the content.

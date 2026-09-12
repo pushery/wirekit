@@ -28,25 +28,11 @@ use Pushery\WireKit\ComponentRegistry;
  * `wirekit.validation.throw_on_invalid` config is explicitly true. In
  * HTTP dev requests (strict + browser), the gate logs at ERROR level
  * and renders the fallback so a single prop typo doesn't 500 the whole
- * blade view. the old
- * always-throw-in-debug behavior took down the entire page on a typo
- * that was purely cosmetic.
+ * blade view. That split replaced an always-throw-in-debug behavior which
+ * took down the entire page on a typo that was purely cosmetic.
  */
 final class StrictnessGate
 {
-    /**
-     * HTML global attributes — valid on ANY element, so they can never be a
-     * prop typo. Closed set per the WHATWG HTML living standard's "global
-     * attributes" section (plus the widely-supported input-hint attributes
-     * `autocapitalize` / `autocorrect` that the spec lists as global). Splitting
-     * these out of the old ad-hoc `$reserved` grab-bag makes the rule structural:
-     * a valid HTML attribute is passthrough by definition, not by whether someone
-     * remembered to list it. `inputmode` / `enterkeyhint` sitting here is what
-     * stops `<x-wirekit::input inputmode="numeric">` — a correct, accessible
-     * mobile-keyboard hint — from logging a spurious "unknown prop" warning.
-     *
-     * @var list<string>
-     */
     /**
      * The directives whose loss is a disconnection rather than a degradation.
      *
@@ -71,6 +57,19 @@ final class StrictnessGate
      */
     private const SCOPE_DIRECTIVES = ['x-data', 'x-init', 'x-effect', 'x-model', 'x-modelable'];
 
+    /**
+     * HTML global attributes — valid on ANY element, so they can never be a
+     * prop typo. Closed set per the WHATWG HTML living standard's "global
+     * attributes" section (plus the widely-supported input-hint attributes
+     * `autocapitalize` / `autocorrect` that the spec lists as global). Splitting
+     * these out of the old ad-hoc `$reserved` grab-bag makes the rule structural:
+     * a valid HTML attribute is passthrough by definition, not by whether someone
+     * remembered to list it. `inputmode` / `enterkeyhint` sitting here is what
+     * stops `<x-wirekit::input inputmode="numeric">` — a correct, accessible
+     * mobile-keyboard hint — from logging a spurious "unknown prop" warning.
+     *
+     * @var list<string>
+     */
     public const HTML_GLOBAL_ATTRIBUTES = [
         'id', 'class', 'style', 'title', 'lang', 'dir', 'hidden', 'inert',
         'tabindex', 'accesskey', 'draggable', 'translate', 'contenteditable',

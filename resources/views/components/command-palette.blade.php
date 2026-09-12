@@ -2,8 +2,8 @@
      Its state is open state, query and highlighted entry. That is not a value a server owns, so there is
      nothing to anticipate and nothing to roll back. --}}
 @props([
-    'hotkey' => 'cmd+k',
-    'placeholder' => __('wirekit::Search commands...'),
+    'hotkey' => config('wirekit.components.command-palette.hotkey', 'cmd+k'),
+    'placeholder' => config('wirekit.components.command-palette.placeholder') ?? __('wirekit::Search commands…'),
     // When true (default) the overlay teleports out of the document flow so it sits above
     // every other stacking context. Set to false to render the overlay inline
     // inside the parent element — useful for docs previews or when embedding
@@ -28,6 +28,13 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('command-palette', $attributes->getAttributes());
+
+    // Page-unique, because two palettes on one page shared this one. The id was the literal
+    // string `wk-command-list`, so the second listbox duplicated the first one's id and the
+    // second input's `aria-controls` resolved to the FIRST palette's list — a combobox
+    // pointing at somebody else's options. Neither palette showed anything wrong; the
+    // browser simply takes the first match for a duplicate id and moves on.
+    $listId = \Pushery\WireKit\Support\DomId::unique(null, 'wk-command-list-');
 
     // A caller-supplied `aria-label` names the CONTROL, not the wrapper `{{ $attributes }}`
     // lands on. `<x-wirekit::command-palette aria-label="…">` put the name on a roleless element,
@@ -182,7 +189,7 @@
                                  NOT a name — it disappears the moment the user types. --}}
                             aria-label="{{ $callerLabel ?: __('wirekit::Search commands') }}"
                             aria-expanded="true"
-                            aria-controls="wk-command-list"
+                            aria-controls="{{ $listId }}"
                             :aria-activedescendant="activeDescendant"
                             aria-autocomplete="list"
                             placeholder="{{ $placeholder }}"
@@ -211,9 +218,17 @@
                     {{-- Command list --}}
                     <div
                         x-ref="list"
-                        id="wk-command-list"
+                        id="{{ $listId }}"
                         role="listbox"
-                        class="{{ $listClasses }}"
+                        {{-- `wk-command-list` is a MARKER CLASS, and it is documented in
+                             `public-css-api.md` as a Stable styling hook. It never existed as
+                             one: the id happened to carry the same string, and the drift guard
+                             greps templates for the literal, so a documented class contract was
+                             satisfied by an unrelated `id=`. Making the id page-unique broke
+                             the coincidence and showed the promise had no backing.
+                             The promise is kept rather than withdrawn — a developer may already
+                             be scoping overrides to it. --}}
+                        class="wk-command-list {{ $listClasses }}"
                     >
                         {{ $slot }}
                     </div>

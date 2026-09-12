@@ -29,6 +29,7 @@
  *   component prints. Supplied by the component from the application locale.
  */
 import { position } from '../utils/floating.js';
+import { pauseWhileHidden } from '../utils/page-visibility.js';
 
 export default function wirekitEventCalendar(config = {}) {
     // The APPLICATION's locale, not the browser's — the component receives it
@@ -90,13 +91,44 @@ export default function wirekitEventCalendar(config = {}) {
         _allDayLabel: config.allDayLabel || 'All day',
 
         init() {
+            this._startClock();
+
+            /*
+             * The current-time line is only worth keeping fresh while somebody can see
+             * it. A backgrounded tab throttles this timer but does not stop it, so the
+             * page went on waking once a minute to move a line nobody was looking at.
+             *
+             * Safe to pause because the tick reads the clock rather than counting its
+             * own ticks — `_startClock` sets `now` immediately, so returning to the tab
+             * shows the correct time at once instead of a minute-old one.
+             */
+            this._visibility = pauseWhileHidden({
+                onHide: () => this._stopClock(),
+                onShow: () => this._startClock(),
+            });
+        },
+
+        _startClock() {
+            this._stopClock();
+            this.now = new Date();
+
             // The current-time line only matters in week view; refresh each minute.
             this._clock = setInterval(() => {
                 if (!this._clock) return; // post-destroy guard
                 this.now = new Date();
             }, 60000);
         },
+
+        _stopClock() {
+            if (this._clock) {
+                clearInterval(this._clock);
+                this._clock = null;
+            }
+        },
         destroy() {
+            this._visibility?.stop();
+            this._visibility = null;
+
             if (this._clock) {
                 clearInterval(this._clock);
                 this._clock = null;

@@ -23,6 +23,8 @@
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/
  */
+import { frameCoalesce } from '../utils/frame-coalesce.js';
+
 export default function wirekitResizableHandle() {
     return {
         // Runtime state. All read in init() from the closest wrapper +
@@ -47,6 +49,20 @@ export default function wirekitResizableHandle() {
         defaultSize: 50,
         currentSize: 50,
         dragging: false,
+        /*
+         * The body's own inline `user-select` as it stood when THIS handle started a drag —
+         * null while it holds nothing. Declared here rather than assigned inside the
+         * pointerdown, because `_restoreBodyUserSelect()` and `destroy()` both read it, and
+         * a handle that only appears inside a method is one nobody reading the teardown
+         * knows to look for.
+         */
+        _priorBodyUserSelect: null,
+
+        // The newest pointer position, and the frame that will act on it. The
+        // handler stores coordinates and nothing else; all measuring and writing
+        // happens in the scheduled frame. See onPointerMove.
+        _pendingPointer: null,
+        _dragFrame: null,
         // Captured at pointerDown when pair-drag mode is active. Frozen
         // for the duration of the drag so mid-move clamping uses a
         // consistent reference and rounding cannot walk the pair sum.
@@ -161,6 +177,31 @@ export default function wirekitResizableHandle() {
             if (!this.dragging) {
                 return;
             }
+
+            // Store, do not measure. `pointermove` fires faster than the display
+            // refreshes, and this handler used to read two rects immediately after
+            // the PREVIOUS event had written an inline width — a read after a write
+            // is what forces the browser to recompute layout synchronously, and it
+            // paid that on every event of the drag.
+            //
+            // The frame below does the same arithmetic against the same rects, once,
+            // at a point where the layout it reads is already current.
+            this._pendingPointer = { clientX: event.clientX, clientY: event.clientY };
+
+            this._dragFrame ??= frameCoalesce(() => this._applyPointer());
+            this._dragFrame.schedule();
+        },
+
+        /** The measure-and-write half of the drag, run at most once a frame. */
+        _applyPointer() {
+            const pointer = this._pendingPointer;
+
+            // A frame can land after pointerup — or after destroy() tore the
+            // component down — and neither is an error worth reporting.
+            if (!pointer || !this.dragging || !this.wrapper || !this.panel) {
+                return;
+            }
+
             // Panel-relative drag math (NOT wrapper-relative). In a two-panel
             // layout the controlled panel's left/top edge is flush with the
             // wrapper's, so wrapper-relative math happens to work — but in a
@@ -170,13 +211,18 @@ export default function wirekitResizableHandle() {
             // overwriting the preceding panels' slots. Measuring from the
             // panel's own edge gives us exactly "cursor delta since panel
             // start" which is the panel's desired new width/height.
+            //
+            // Both rects are read fresh each frame rather than cached at
+            // pointerdown: they are viewport-relative, so a scroll or a resize
+            // during the drag moves them, and a cache would put the panel where
+            // the cursor used to be. Once a frame is cheap; once an event was not.
             const wrapperRect = this.wrapper.getBoundingClientRect();
             const panelRect = this.panel.getBoundingClientRect();
             let percent;
             if (this.direction === 'horizontal') {
-                percent = ((event.clientX - panelRect.left) / wrapperRect.width) * 100;
+                percent = ((pointer.clientX - panelRect.left) / wrapperRect.width) * 100;
             } else {
-                percent = ((event.clientY - panelRect.top) / wrapperRect.height) * 100;
+                percent = ((pointer.clientY - panelRect.top) / wrapperRect.height) * 100;
             }
             this._setSize(percent);
         },
@@ -187,18 +233,56 @@ export default function wirekitResizableHandle() {
             }
             this.dragging = false;
             this.dragPairSum = null;
+
+            // Drop a frame that has been scheduled but not yet run, so the drag
+            // cannot take one more step after the pointer was released.
+            this._dragFrame?.cancel();
+            this._pendingPointer = null;
+
             delete this.$el.dataset.dragging;
             try {
                 this.$el.releasePointerCapture(event.pointerId);
             } catch {
                 // Same Safari caveat as setPointerCapture above — safe to swallow.
             }
-            // Restore the prior body user-select value (see onPointerDown
-            // for the rationale). If the value was empty (no inline rule
-            // before the drag), we set it back to '' which removes the
-            // inline override entirely so the developer's stylesheet wins.
-            document.body.style.userSelect = this._priorBodyUserSelect ?? '';
+            // Restore the prior body user-select value — see onPointerDown for the
+            // rationale, and `_restoreBodyUserSelect` for why it is not inline here.
+            this._restoreBodyUserSelect();
+        },
+
+        /**
+         * Give the page its text selection back, once.
+         *
+         * Split out because three paths need it and only one of them used to have it:
+         * `onPointerUp` (pointerup, pointercancel and now lostpointercapture all route
+         * through it) and `destroy()`. Idempotent through the null check — restoring twice
+         * would write `''` over a value a SECOND handle had just snapshotted, and a page
+         * with two resizable panels has two of these.
+         */
+        _restoreBodyUserSelect() {
+            if (this._priorBodyUserSelect === null) {
+                return;
+            }
+
+            // '' removes the inline override entirely so the developer's stylesheet wins;
+            // a snapshot that was already '' therefore restores exactly what was there.
+            document.body.style.userSelect = this._priorBodyUserSelect;
             this._priorBodyUserSelect = null;
+        },
+
+        /**
+         * Alpine's teardown hook. This component had none.
+         *
+         * A drag interrupted by a Livewire morph or an SPA navigation never reaches a
+         * pointerup, so `body { user-select: none }` outlived the component that set it —
+         * and it is set on `document.body`, which the next page shares. The reader lands on
+         * a page where nothing can be selected or copied, with no way back but a reload.
+         */
+        destroy() {
+            this._dragFrame?.cancel();
+            this._dragFrame = null;
+            this._pendingPointer = null;
+            this._restoreBodyUserSelect();
         },
 
         onKeyDown(event) {
@@ -298,7 +382,7 @@ export default function wirekitResizableHandle() {
                 this.currentSize = clamped;
                 this.panel.style[axisKey] = clamped + '%';
                 this.nextPanel.style[axisKey] = (pairSum - clamped) + '%';
-                this.$el.setAttribute('aria-valuenow', String(Math.round(clamped)));
+                this._announceRange(lower, Math.max(lower, upper), clamped);
                 return;
             }
 
@@ -314,7 +398,32 @@ export default function wirekitResizableHandle() {
             const clamped = Math.max(this.minSize, Math.min(upper, percent));
             this.currentSize = clamped;
             this.panel.style[axisKey] = clamped + '%';
-            this.$el.setAttribute('aria-valuenow', String(Math.round(clamped)));
+            this._announceRange(this.minSize, upper, clamped);
+        },
+
+        /**
+         * Announce the range this splitter is ACTUALLY enforcing, not the one it was
+         * declared with.
+         *
+         * `aria-valuemin` and `aria-valuemax` were written once at init from `minSize` and
+         * `maxSize`, and those are not the bounds `_setSize` applies. The effective range
+         * depends on the sibling's size and on the pair sum, both of which move: in pair-drag
+         * mode the upper bound is `pairSum - nextMinSize`, in single-panel mode it is
+         * `_computeDynamicMax()` reserving space for every other panel.
+         *
+         * So a reader was told the splitter ranges 10 to 90 while it refused to go below 30 —
+         * they hear "30 percent, minimum 10" and press the arrow key again, and nothing
+         * happens. WAI-ARIA's window-splitter pattern is explicit that the value triple has
+         * to describe the operable range; the visual drag already respected the real one, and
+         * only the announcement was frozen.
+         *
+         * Rounded, because the attributes are integers and the maths is not: a `valuenow` of
+         * 30 against a `valuemin` of 30.4 announces a value below its own minimum.
+         */
+        _announceRange(lower, upper, current) {
+            this.$el.setAttribute('aria-valuemin', String(Math.round(lower)));
+            this.$el.setAttribute('aria-valuemax', String(Math.round(upper)));
+            this.$el.setAttribute('aria-valuenow', String(Math.round(current)));
         },
 
         /**

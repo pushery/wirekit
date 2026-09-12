@@ -113,9 +113,20 @@
     ]), $scope);
 @endphp
 
-<aside
+{{-- `<aside>` IS a `complementary` landmark, unconditionally and whether or not it has a
+     name. Two unnamed panels on one page are therefore two anonymous landmarks with the
+     same built-in name, which is what axe reports as `landmark-unique` — and a landmark a
+     reader cannot tell from its neighbor is worse than no landmark, because it appears in
+     the landmark list and leads nowhere identifiable.
+
+     So the landmark is opt-in, exactly as notification-center's list is: with a `label` this
+     is an `<aside>` with a name, without one a plain `<div>` that looks and behaves
+     identically. `filled()` rather than a truthiness check — an interpolated caller value can
+     arrive as an empty string, and an `<aside aria-label="">` is an anonymous landmark
+     wearing an attribute. --}}
+<{{ filled($label) ? 'aside' : 'div' }}
     {{ $attributes->merge(['style' => 'top: '.($offset).'; width: 100%; --wk-sticky-panel-w: '.($width).';'])->class([$asideClasses]) }}
-    @if($label) aria-label="{{ $label }}" @endif
+    @if(filled($label)) aria-label="{{ $label }}" @endif
 >
     <div class="{{ $componentClasses }}" style="max-height: {{ $resolvedMaxHeight }};">
         @if(isset($header))
@@ -176,4 +187,4 @@
             </div>
         @endif
     </div>
-</aside>
+</{{ filled($label) ? 'aside' : 'div' }}>

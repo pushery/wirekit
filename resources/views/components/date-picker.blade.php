@@ -163,7 +163,7 @@
     // `aria-label` always wins.
     $hasExplicitAriaName = $attributes->has('aria-label') || $attributes->has('aria-labelledby');
     $needsSrOnlyFallback = ! $label && ! $hasExplicitAriaName;
-    $fallbackLabel = $name ? Str::headline((string) $name) : 'Date';
+    $fallbackLabel = $name ? Str::headline((string) $name) : __('wirekit::Date');
 
     // ⚠️ The range arm below never rendered the attribute bag — `$attributes` reached
     // exactly one element in this file, the single-date `<input>`. So `class`, `style`,
@@ -255,7 +255,7 @@
 <div class="w-full" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         <label for="{{ $dateId }}" class="block mb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
-            {{ $label }}
+            {{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
             @if($required)<span aria-hidden="true" class="text-[color:var(--color-wk-danger-text)]">&nbsp;*</span>@endif
         </label>
     @elseif($needsSrOnlyFallback)

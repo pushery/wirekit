@@ -247,6 +247,29 @@ export default function wirekitSortable(config = {}) {
                 // The wording comes from the call site: it is read aloud, so an
                 // English literal here would be the one thing about this item a
                 // German page could not translate.
+                // ⚠️ THE ROLE COMES FIRST, AND WITHOUT IT THE LINE BELOW IS A
+                // VIOLATION RATHER THAN AN ANNOUNCEMENT. `aria-roledescription`
+                // renames a role; on an element that has none — a plain `<div>`,
+                // which is what `<x-wirekit::card>` renders and what the kanban
+                // blueprint drops in here — the implicit role is `generic`, where
+                // ARIA prohibits the attribute outright. Measured on the shipped
+                // kanban preview before this line existed: axe reported
+                // `aria-roledescription` on 16 nodes, and a bare control div took
+                // it to 17, so the sixteen were ours.
+                //
+                // `group` rather than `listitem`: the container this runs inside is
+                // already a labeled `region` (the column body, whose landmark name
+                // is what keeps six columns apart in the rotor), so `listitem`
+                // children would trade this violation for `aria-required-parent`.
+                // `group` is non-generic, needs no particular parent, and is a fair
+                // description of a card that holds several related fields.
+                //
+                // Only when the element brought none: a caller who set their own
+                // role meant it, and it is a better description than ours.
+                if (! item.hasAttribute('role')) {
+                    item.setAttribute('role', 'group');
+                }
+
                 if (! item.hasAttribute('aria-roledescription')) {
                     item.setAttribute('aria-roledescription', this._roleDescription);
                 }

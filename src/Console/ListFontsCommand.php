@@ -134,7 +134,13 @@ class ListFontsCommand extends Command
     {
         switch ($format) {
             case 'count':
-                $this->line((string) count($fonts));
+                // `write`, not `line`: `--as=count` is contracted in the CLI reference as
+                // "a single integer, no decoration, no trailing newline", and this emitted
+                // one for long enough that two of the three listing commands disagreed with
+                // the sentence their own docblocks claim to mirror. Harmless under `$(…)`,
+                // which strips it; not harmless to a `read`, a fixed-width compare, or a
+                // diff of recorded output.
+                $this->output->write((string) count($fonts));
 
                 return self::SUCCESS;
 

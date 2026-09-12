@@ -117,6 +117,11 @@
     @if($href) href="{{ $href }}" @endif
     @if($tag === 'button') type="button" @endif
     role="option"
+    {{-- The ARIA state for this role, written statically so it exists before the first
+         keystroke. `_paintActive()` in the factory keeps it in step with the highlight —
+         both are set there, so a Livewire morph that re-runs the paint restores the state
+         and the styling hook together rather than one of them. --}}
+    aria-selected="false"
     tabindex="-1"
     @if($disabled) aria-disabled="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
@@ -135,7 +140,12 @@
     @if($shortcut)
         <span class="ml-auto flex items-center gap-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" aria-hidden="true">
             @foreach((array) $shortcut as $key)
-                <kbd class="inline-flex items-center justify-center min-w-5 px-1.5 py-0.5 rounded-[var(--radius-wk-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-muted)] font-[family-name:var(--font-wk-mono)] text-[length:var(--text-wk-xs)]">{{ $key }}</kbd>
+                {{-- The component, not a copy of it. The hand-rolled chip reproduced most of
+                     kbd's classes and dropped two: `border-b-2`, which is the keycap edge that
+                     makes it read as a key, and the `resolveClasses('kbd', …)` seam a developer
+                     overrides to retheme every shortcut chip at once. Neither absence is
+                     visible next to the other chips until you put them side by side. --}}
+                <x-wirekit::kbd size="sm">{{ $key }}</x-wirekit::kbd>
             @endforeach
         </span>
     @endif

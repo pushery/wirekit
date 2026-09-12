@@ -35,7 +35,11 @@
 @endphp
 
 {{-- Card placeholder: image area + title + body text lines.
-     content-visibility: auto + intrinsic-size hint skip off-screen work. --}}
+     The off-screen skip is a PROGRESSIVE ENHANCEMENT and lives behind `@supports` in the
+     stylesheet (`.wk-skeleton-skip-offscreen`), not as an inline declaration here: the
+     property first shipped in Safari 18.0, above this library's Safari 16.4 floor. Nothing
+     depends on it — without support the skeleton renders the ordinary way. The intrinsic-size
+     hint travels as a custom property so it stays tunable per variant. --}}
 <div
     role="status"
     aria-live="polite"
@@ -49,7 +53,7 @@
          container whose content is still missing, which is the developer's
          element; leaving the attribute off is also what lets them put it there
          and have the shimmer's own pause rule see it. --}}
-    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: auto 200px;'])->class([$wrapperClasses]) }}
+    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto 200px;'])->class([$wrapperClasses, 'wk-skeleton-skip-offscreen']) }}
 >
     <div class="space-y-3">
         <div class="{{ $baseShimmer }} h-32 w-full" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
@@ -59,5 +63,5 @@
             <div class="{{ $baseShimmer }} h-3 w-5/6" {!! $animAttr !!} style="background: var(--color-wk-bg-skeleton); border-radius: var(--radius-wk-md);"></div>
         </div>
     </div>
-    <span class="sr-only">Loading content</span>
+    <span class="sr-only">{{ __('wirekit::Loading content') }}</span>
 </div>

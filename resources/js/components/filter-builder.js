@@ -94,6 +94,24 @@ export default function wirekitFilterBuilder(config = {}) {
         return rootEl;
     };
 
+    // Operator and boolean words, translated on the server and handed down. Merged over
+    // English defaults so a directly-constructed factory keeps working.
+    const WORDS = Object.assign(
+        {
+            contains: 'contains',
+            is: 'is',
+            isNot: 'is not',
+            startsWith: 'starts with',
+            endsWith: 'ends with',
+            on: 'on',
+            before: 'before',
+            after: 'after',
+            yes: 'Yes',
+            no: 'No',
+        },
+        config.words || {}
+    );
+
     return {
         /**
          * The filter tree, serialized for the hidden input a form
@@ -126,16 +144,30 @@ export default function wirekitFilterBuilder(config = {}) {
         editIndex: null, // null = adding a new filter; number = editing existing
         draft: { field: '', op: '', value: '' },
 
-        // Default operator catalog, keyed by field type. A field definition may
-        // override with its own `operators` array.
+        /**
+         * Default operator catalog, keyed by field type. A field definition may
+         * override with its own `operators` array.
+         *
+         * The words come from `config.words`, which the Blade template fills from the
+         * translation catalog — the same server-translates-then-hands-down shape
+         * status-matrix uses for its state labels. They cannot be resolved here: this
+         * file has no translator, and these strings are not decoration. Every one of
+         * them lands in `chipText()`, which IS the accessible name of a filter chip,
+         * so an untranslated word here is what a screen reader reads out.
+         *
+         * The English fallbacks stay so the factory is still usable when constructed
+         * directly — the ESM tests do exactly that.
+         */
         _operators: {
             text: [
-                { op: 'contains', label: 'contains' },
-                { op: 'equals', label: 'is' },
-                { op: 'starts', label: 'starts with' },
-                { op: 'ends', label: 'ends with' },
+                { op: 'contains', label: WORDS.contains },
+                { op: 'equals', label: WORDS.is },
+                { op: 'starts', label: WORDS.startsWith },
+                { op: 'ends', label: WORDS.endsWith },
             ],
             number: [
+                // Deliberately NOT translated: mathematical relation symbols are the
+                // same in every locale, and a "translation" of `≥` would be a mistake.
                 { op: 'eq', label: '=' },
                 { op: 'gt', label: '>' },
                 { op: 'lt', label: '<' },
@@ -143,15 +175,15 @@ export default function wirekitFilterBuilder(config = {}) {
                 { op: 'lte', label: '≤' },
             ],
             select: [
-                { op: 'is', label: 'is' },
-                { op: 'isnot', label: 'is not' },
+                { op: 'is', label: WORDS.is },
+                { op: 'isnot', label: WORDS.isNot },
             ],
             date: [
-                { op: 'on', label: 'on' },
-                { op: 'before', label: 'before' },
-                { op: 'after', label: 'after' },
+                { op: 'on', label: WORDS.on },
+                { op: 'before', label: WORDS.before },
+                { op: 'after', label: WORDS.after },
             ],
-            bool: [{ op: 'is', label: 'is' }],
+            bool: [{ op: 'is', label: WORDS.is }],
         },
 
         // ── Lookups ──────────────────────────────────────────────────────
@@ -178,7 +210,7 @@ export default function wirekitFilterBuilder(config = {}) {
         displayValue(filter) {
             const def = this.fieldDef(filter.field);
             const v = filter.value;
-            if (def && def.type === 'bool') return v ? 'Yes' : 'No';
+            if (def && def.type === 'bool') return v ? WORDS.yes : WORDS.no;
             if (Array.isArray(v)) return v.join(', ');
             if (def && Array.isArray(def.options)) {
                 const opt = def.options.find((o) => String(o.value) === String(v));

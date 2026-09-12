@@ -49,11 +49,26 @@ class ThemeCommand extends Command
         // by every other preset (so re-applying a new preset doesn't
         // accumulate stacked theme blocks). Idempotent — running the same
         // preset twice produces byte-identical output.
-        $newContent = (string) preg_replace(
+        $newContent = preg_replace(
             '/\/\* wirekit:theme start \*\/.*?\/\* wirekit:theme end \*\/\n?/s',
             '',
             $content
         );
+
+        // A PCRE failure returns null, and this line used to cast that to a
+        // string — which is '' — and then wrote it. So the one input that can
+        // break the match is also the one that empties the developer's
+        // stylesheet: an app.css carrying a start marker with no end marker
+        // exhausts the backtrack limit past roughly a megabyte, and everything
+        // they wrote is replaced by our theme block. Their file is not ours to
+        // lose, so a failed match refuses instead of guessing.
+        if ($newContent === null) {
+            $this->error('Could not scan resources/css/app.css for an existing theme block.');
+            $this->line('  '.preg_last_error_msg().' — app.css was left untouched.');
+            $this->line('  Check that the file has a matching /* wirekit:theme end */ marker.');
+
+            return self::FAILURE;
+        }
 
         $themeMeta = ThemePresetRegistry::get($preset);
         if ($themeMeta === null) {

@@ -221,10 +221,6 @@ final class Schema
     }
 
     /**
-     * Expand a bare availability token to its schema.org URL. Passing an
-     * already-expanded URL is left untouched, so both spellings work.
-     */
-    /**
      * The site itself. Pair it with `organization()` inside a `graph()` and give
      * each an `@id` so they can reference one another.
      *
@@ -359,6 +355,10 @@ final class Schema
         ))];
     }
 
+    /**
+     * Expand a bare availability token to its schema.org URL. Passing an
+     * already-expanded URL is left untouched, so both spellings work.
+     */
     private static function availabilityUrl(string $availability): string
     {
         if (str_starts_with($availability, 'http')) {

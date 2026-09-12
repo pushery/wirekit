@@ -81,6 +81,45 @@
     // choice for a year, and the config would look like it did nothing. The
     // published path needs no such suffix — there the value is baked into the
     // file, so a re-publish changes the mtime on its own.
+    /*
+     * The primary weight's URL, for a preload — or null when there is nothing safe to
+     * preload.
+     *
+     * Without one the LCP web font is discovered TWO round trips deep: the browser fetches the
+     * page, finds a `<link rel="stylesheet">`, fetches and parses that, and only then learns
+     * there is a font to download. The body text paints in the fallback for the whole of that
+     * second trip, and the swap is the layout shift the metric-matched face exists to soften
+     * rather than remove.
+     *
+     * Read out of the stylesheet rather than assembled from the key: the file is named after
+     * the FAMILY (`Inter-Regular.woff2`, `VT323-Regular.woff2`), not the preset key, and every
+     * one of the twenty-one families carries exactly one Regular face. Parsing the `src` the
+     * browser would parse anyway means the two can never disagree.
+     *
+     * ⚠️ ONLY WHEN PUBLISHED AS A STATIC FILE. The route-served fallback resolves through PHP
+     * with a cache-busting query, so a preload of it would be a second, differently-keyed
+     * request for the same bytes — the opposite of the point.
+     */
+    $preloadHref = function (FontPreset $preset): ?string {
+        $publishedCss = public_path($preset->publishedCssPath());
+
+        if (! file_exists($publishedCss)) {
+            return null;
+        }
+
+        $css = (string) file_get_contents($publishedCss);
+
+        // The FIRST `src: url(...)` is the 400 weight in every bundled stylesheet: the faces
+        // are emitted in ascending weight order by the generator.
+        if (preg_match("/src:\s*url\(['\"]?([^'\")]+\.woff2)['\"]?\)/", $css, $m) !== 1) {
+            return null;
+        }
+
+        $file = dirname($preset->publishedCssPath()).'/'.basename($m[1]);
+
+        return file_exists(public_path($file)) ? asset($file) : null;
+    };
+
     $fontHref = function (FontPreset $preset) use ($fontDisplay): string {
         $published = public_path($preset->publishedCssPath());
 
@@ -97,7 +136,15 @@
 
 {{-- Font CSS files — only loaded for activated AND published fonts --}}
 @if($sansPreset)
-    <link rel="stylesheet" href="{{ $fontHref($sansPreset) }}">
+    {{-- The body face, and ONLY the body face. Preloading the serif and mono presets would
+         fetch two fonts a given page may never use, which is the classic preload mistake: it
+         costs bandwidth and, worse, competes with the one font the reader is actually waiting
+         on. `crossorigin` is not optional even same-origin — a font preload without it is
+         ignored and the font is fetched a second time. --}}
+    @if($preloadSans = $preloadHref($sansPreset))
+        <link rel="preload" as="font" type="font/woff2" href="{{ $preloadSans }}" crossorigin>
+    @endif
+    <link rel="stylesheet"@if($wkNonce) nonce="{{ $wkNonce }}"@endif href="{{ $fontHref($sansPreset) }}">
     @if($warnMissing($sansPreset))
     <!-- WireKit: Font '{{ $fontConfig['sans'] }}' is served through PHP because it was never published. It works, but a static file is faster. Run: php artisan wirekit:publish-fonts -->
     @endif
@@ -107,7 +154,7 @@
 @endif
 
 @if($serifPreset)
-    <link rel="stylesheet" href="{{ $fontHref($serifPreset) }}">
+    <link rel="stylesheet"@if($wkNonce) nonce="{{ $wkNonce }}"@endif href="{{ $fontHref($serifPreset) }}">
     @if($warnMissing($serifPreset))
     <!-- WireKit: Font '{{ $fontConfig['serif'] }}' is served through PHP because it was never published. It works, but a static file is faster. Run: php artisan wirekit:publish-fonts -->
     @endif
@@ -117,7 +164,7 @@
 @endif
 
 @if($monoPreset)
-    <link rel="stylesheet" href="{{ $fontHref($monoPreset) }}">
+    <link rel="stylesheet"@if($wkNonce) nonce="{{ $wkNonce }}"@endif href="{{ $fontHref($monoPreset) }}">
     @if($warnMissing($monoPreset))
     <!-- WireKit: Font '{{ $fontConfig['mono'] }}' is served through PHP because it was never published. It works, but a static file is faster. Run: php artisan wirekit:publish-fonts -->
     @endif
@@ -164,15 +211,34 @@
             continue;
         }
 
+        // The family NAME is narrowed exactly like the local names above, and for the same
+        // reason — it reaches the same `<style>` block. It was not, and the paragraph above
+        // explaining why narrowing beats escaping sat directly over the one value that got
+        // neither. Blade's `{{ }}` is worse than nothing here: inside `<style>` the browser
+        // does not decode HTML entities, so an escaped quote stays the literal `&#039;` and
+        // breaks the rule, while `;`, `{` and `}` pass through untouched.
+        $safeFamily = trim((string) preg_replace('/[^A-Za-z0-9 _-]/', '', (string) $family));
+
+        if ($safeFamily === '') {
+            continue;
+        }
+
+        // The four overrides are CSS <percentage> or <number> values and nothing else, so
+        // they are VALIDATED rather than filtered: a value that is not one is dropped, not
+        // cleaned up into something that still ends up in the rule. `105%; } body {
+        // display: none } @font-face {` is the shape this refuses.
+        $overrides = array_filter([
+            'size-adjust' => $spec['sizeAdjust'] ?? null,
+            'ascent-override' => $spec['ascentOverride'] ?? null,
+            'descent-override' => $spec['descentOverride'] ?? null,
+            'line-gap-override' => $spec['lineGapOverride'] ?? null,
+        ], static fn ($v): bool => $v !== null && $v !== ''
+            && preg_match('/^-?(?:\d+\.?\d*|\.\d+)%?$/', (string) $v) === 1);
+
         $customFallbacks[] = [
-            'family' => (string) $family,
+            'family' => $safeFamily,
             'src' => implode(', ', array_map(static fn (string $n): string => "local('".$n."')", $locals)),
-            'overrides' => array_filter([
-                'size-adjust' => $spec['sizeAdjust'] ?? null,
-                'ascent-override' => $spec['ascentOverride'] ?? null,
-                'descent-override' => $spec['descentOverride'] ?? null,
-                'line-gap-override' => $spec['lineGapOverride'] ?? null,
-            ], static fn ($v): bool => $v !== null && $v !== ''),
+            'overrides' => $overrides,
         ];
     }
 @endphp
@@ -181,7 +247,7 @@
     {{-- Registers a local system font under "<family> Fallback" with the measured
          metrics of the developer's own face, so the text painted before the swap
          occupies the same box as the text painted after it. --}}
-    <style @if($wkNonce) nonce="{{ $wkNonce }}" @endif>
+    <style @if($wkNonce)nonce="{{ $wkNonce }}"@endif>
         @font-face {
             font-family: '{{ $fallback['family'] }} Fallback';
             src: {!! $fallback['src'] !!};
@@ -216,7 +282,7 @@
      there is no gradual transition — the block is either nonced or discarded. The
      discard is silent: the page renders and the typography falls back to the
      system font, which passes every HTML comparison and every header assertion. --}}
-<style @if($wkNonce) nonce="{{ $wkNonce }}" @endif>
+<style @if($wkNonce)nonce="{{ $wkNonce }}"@endif>
     :root {
         @if($sansPreset)--font-wk-sans: {!! $sansPreset->fontFamily() !!};@endif
         {{-- Serif is the exception, and it is a fact about the stylesheet rather

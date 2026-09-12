@@ -2,9 +2,13 @@
  * WireKit Core Bundle (IIFE).
  *
  * Contains the chart and image-compare Alpine components plus the one
- * directive the zero-JS form primitives need — no overlay dependencies. For
- * projects that only use the core form components, charts and the
- * before/after slider.
+ * directive the zero-JS form primitives need. For projects that only use the
+ * core form components, charts and the before/after slider.
+ *
+ * No overlay COMPONENTS, but it does install the overlay ROOT — see the call in
+ * registerCoreComponents(). A missing teleport target throws and takes the page
+ * down, where an unregistered component is merely inert, so the empty container
+ * is here to make the wrong bundle choice survivable.
  *
  * Keep this list in step with what registerCoreComponents() below actually
  * registers: this docblock and the bundle table in dist/README.md are the two
@@ -16,6 +20,7 @@ import wirekitChartJs from './components/chart.js';
 import wirekitImageCompare from './components/image-compare.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { reportLateRegistration } from './utils/late-registration.js';
+import { installOverlayRoot } from './utils/overlay-root.js';
 
 // Image compare has no Floating UI / focus-trap deps so it ships in the
 // lighter "core" bundle too — a landing-page staple that form-heavy apps
@@ -36,6 +41,27 @@ function registerCoreComponents() {
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitImageCompare', wirekitImageCompare);
+
+    /*
+     * The teleport target, on the bundle that teleports nothing.
+     *
+     * Nothing core registers uses it, and that is exactly the failure. `x-teleport` THROWS
+     * when its selector matches nothing, and a throw during Alpine's walk takes the whole
+     * page down — not the one component. So a developer who picks "the smallest bundle" and
+     * then writes a `<x-wirekit::dropdown>` got a blank page rather than a dropdown that
+     * quietly does not open.
+     *
+     * The two failures are not comparable. An unregistered `x-data` is a no-op: the markup
+     * renders, nothing initializes, and the developer sees a control that does not respond.
+     * A missing teleport target is fatal, and the stack trace points at Alpine rather than at
+     * the bundle choice that caused it.
+     *
+     * `installOverlayRoot` is idempotent and costs one empty `<div>`, which is a small price
+     * for turning a page-killing throw into an inert component. It is also the argument the
+     * helper's own docblock already makes for building it from JavaScript at all: "built here
+     * it cannot be missing."
+     */
+    installOverlayRoot();
 }
 
 let reachedByInitEvent = false;

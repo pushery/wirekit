@@ -2,9 +2,15 @@
  * WireKit color conversion utilities — shared by the popover color picker.
  *
  * The picker holds its state as HSV (the natural space for a saturation/value
- * plane + hue slider) plus an alpha channel, and converts to/from RGB, HEX, and
- * HSL for display and parsing. All channels: h ∈ [0,360], s/v/l ∈ [0,100],
- * r/g/b ∈ [0,255], a ∈ [0,1].
+ * plane + hue slider) plus an alpha channel, and converts to/from RGB, HEX, HSL and
+ * OKLCH for display and parsing. All channels: h ∈ [0,360], s/v/l ∈ [0,100],
+ * r/g/b ∈ [0,255], a ∈ [0,1]; OKLCH carries its own ranges (L ∈ [0,1], C unitless,
+ * H in degrees) and is documented at its converters below.
+ *
+ * OKLCH was missing from this list while `parseColor` accepted it, `rgbToOklch` and
+ * `oklchToRgb` implemented it, and the shipped picker offered it as a fourth output
+ * format — so the one paragraph a reader consults to learn what this module speaks
+ * named three of the four.
  */
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));

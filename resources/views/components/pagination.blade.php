@@ -156,10 +156,33 @@
     @if($variant === 'simple' || $variant === 'mini')
         {{-- Simple: prev + next only (optionally with a "page X of Y" label) --}}
         <div class="flex items-center gap-2">
+            {{-- A boundary edge is a link that cannot be followed, and this package has
+                 already decided how one of those is announced: `button` withholds the href
+                 and adds `role="link"` + `aria-disabled="true"` so the control is heard as
+                 the disabled link it is "rather than as anonymous text" (its own words).
+                 `dropdown.item` uses the same shape on its <a> branch.
+
+                 These four edges did the opposite. `aria-hidden="true"` removes the element
+                 from the accessibility tree entirely, so a reader on page 1 is not told that
+                 there is no previous page — the dimmed control they would see is simply not
+                 there. Two of the four carried an `aria-label` as well, which was dead twice
+                 over: the element is not in the tree, and a bare <span> is role `generic`,
+                 which PROHIBITS a name. The scanner cannot report the second problem either,
+                 because it skips what is hidden from assistive technology.
+
+                 The glyphs are ornament beside a word that already says everything, so they
+                 are hidden and the name is the word alone. Without that the `simple` and
+                 `mini` controls computed "« Previous" while `full` computed "Previous" —
+                 one component answering to two names for one control. `full` needs no such
+                 wrapper: its aria-label already overrides content.
+
+                 The ellipsis separator below keeps its `aria-hidden` on purpose. It carries
+                 no state — the numbers on either side already say a range was elided — so it
+                 is the one span here that really is decoration. --}}
             @if($paginator->onFirstPage())
-                <span class="{{ $buttonDisabled }}" aria-hidden="true">&larr; {{ $previousText }}</span>
+                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true"><span aria-hidden="true">&laquo;</span> {{ $previousText }}</span>
             @else
-                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}">&larr; {{ $previousText }}</a>
+                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}"><span aria-hidden="true">&laquo;</span> {{ $previousText }}</a>
             @endif
         </div>
 
@@ -175,9 +198,9 @@
 
         <div class="flex items-center gap-2">
             @if($paginator->hasMorePages())
-                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}">{{ $nextText }} &rarr;</a>
+                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}">{{ $nextText }} <span aria-hidden="true">&raquo;</span></a>
             @else
-                <span class="{{ $buttonDisabled }}" aria-hidden="true">{{ $nextText }} &rarr;</span>
+                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true">{{ $nextText }} <span aria-hidden="true">&raquo;</span></span>
             @endif
         </div>
     @else
@@ -230,15 +253,20 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-1">
+            {{-- Glyph-only, so the name has to come from the label — see the note on the
+                 simple variant above for why the label needs a role that admits one. --}}
             @if($paginator->onFirstPage())
-                <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="{{ $previousText }}">&larr;</span>
+                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" aria-label="{{ $previousText }}">&laquo;</span>
             @else
-                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" aria-label="{{ $previousText }}">&larr;</a>
+                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" aria-label="{{ $previousText }}">&laquo;</a>
             @endif
 
             {{-- Numbered links: linkCollection() returns {url, label, active} per entry.
-                 We skip the framework-generated prev/next (we render our own above) by
-                 filtering out entries whose label matches &laquo; / &raquo; glyphs.
+                 We skip the framework-generated prev/next (we render our own above)
+                 POSITIONALLY, with `->slice(1, -1)` on the line below — not by matching
+                 their labels. Worth being exact about: this file now renders &laquo; and
+                 &raquo; itself, so a reader who believed the label-matching story would
+                 expect our own glyphs to be filtered out, and they are not.
 
                  The `label` field is unescaped via {!! !!} below — safe because
                  Laravel's paginator constructs `label` as a numeric page-index
@@ -261,9 +289,9 @@
             @endforeach
 
             @if($paginator->hasMorePages())
-                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" aria-label="{{ $nextText }}">&rarr;</a>
+                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" aria-label="{{ $nextText }}">&raquo;</a>
             @else
-                <span class="{{ $buttonDisabled }}" aria-hidden="true" aria-label="{{ $nextText }}">&rarr;</span>
+                <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" aria-label="{{ $nextText }}">&raquo;</span>
             @endif
         </div>
     @endif

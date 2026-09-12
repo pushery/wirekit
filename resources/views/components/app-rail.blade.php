@@ -135,7 +135,11 @@
     // is what that bought and what was reported. So the RULES overflow the column now, and
     // the column keeps the one width every other rail has. See dist/wirekit.css.
     $restingWidth = match ($labels) {
-        'below' => 'w-[calc(var(--size-wk-rail-labeled,4.75rem)_+_var(--wk-rail-gutter,0px))]',
+        // `--size-wk-rail-labeled` without its literal: the fallback said 4.75rem against a
+        // declared 5.5rem, so the labeled rail would have come out three quarters of a rem
+        // narrow. `--wk-rail-gutter` keeps ITS fallback — that one is component-local and 0px
+        // is the deliberate "not set" value, which is a different kind of fallback entirely.
+        'below' => 'w-[calc(var(--size-wk-rail-labeled)_+_var(--wk-rail-gutter,0px))]',
         'inline' => 'w-[calc(var(--size-wk-rail-expanded,15rem)_+_var(--wk-rail-gutter,0px))]',
         default => 'w-[calc(var(--size-wk-rail,3.25rem)_+_var(--wk-rail-gutter,0px))]',
     };

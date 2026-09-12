@@ -13,10 +13,30 @@ namespace Pushery\WireKit\Sandbox;
  *   2. Each prop value's type matches the schema's declared type.
  *   3. String values cap at 10KB (denial-of-service defense).
  *   4. Nested arrays cap at depth 5 (prevent recursion bombs).
- *   5. String values stripped of `<script>` / closing `</script>`
- *      sequences via `htmlspecialchars()` — Blade's `{{ }}` will
- *      double-escape downstream, but defense-in-depth here closes
- *      the gap if a slot ever receives raw output by mistake.
+ *   5. A value is rejected when the schema declares `allowed_values`
+ *      and the value is not one of them — the enum case.
+ *   6. A string is rejected when the schema declares `allowed_schemes`
+ *      and its URL scheme is not one of them. MANDATORY on every prop
+ *      whose value reaches an `href` / `src` / `action` attribute: the
+ *      check normalizes the way a BROWSER does before comparing, so
+ *      `java\nscript:` and `java\0script:` cannot walk past it.
+ *   7. String values HTML-escaped via `htmlspecialchars()` — Blade's
+ *      `{{ }}` escapes again downstream, so this is defense in depth
+ *      for the case where a slot receives raw output by mistake.
+ *
+ * ⚠️ THIS LIST READ AS FIVE RULES UNTIL 2026-09-09, AND THE TWO IT LEFT OUT
+ * WERE THE VALUE-LEVEL ONES. Rule 6 is a security control, not a formatting
+ * nicety: `SandboxSchemaRegistry` records that without it
+ * `javascript:alert(document.domain)` reached a rendered href verbatim through
+ * the endpoint documented as the boundary for untrusted payloads. This
+ * summary is what a reviewer reads before deciding a new schema entry is
+ * safe — so a URL-bearing prop could be added with no `allowed_schemes` key
+ * and nothing here would suggest one was needed. That is how the hole was
+ * opened the first time. `SandboxUrlSchemeTest` now pins the invariant.
+ *
+ * ⚠️ Rule 7 also said the wrong thing: `htmlspecialchars()` ESCAPES, it does
+ * not strip. A reviewer who believes tags are removed reasons differently
+ * about what reaches a slot.
  *
  * Returns a `ValidationResult` carrying either the sanitized payload
  * or a list of violations. Never throws — the caller decides whether

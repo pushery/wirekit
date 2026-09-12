@@ -6,16 +6,16 @@ story.
 
 | File | Format | Contents | Size (gzip ≈) | When to load |
 |---|---|---|---|---|
-| `wirekit.min.css` | CSS | The same stylesheet, minified. **This is what `@wirekitStyles` links** — a page that uses the directive ships this file and not the one below | 14 KB gzip (84 KB raw) | Always, and you get it automatically: `@wirekitStyles` emits the `<link>` for you |
-| `wirekit.css` | CSS | Design tokens (`--color-wk-*`, `--radius-wk-*`, …), shared utility classes, global keyframes — the readable reference for what a token means | 93 KB gzip (317 KB raw) | When you are reading or overriding tokens by hand, or bundling the stylesheet yourself. Budget from the minified row above, not this one — the difference is a factor of six |
-| `wirekit.js` | IIFE | Every WireKit Alpine component (chart, dropdown, tooltip, modal, drawer, toast, …) registered as plugins. **Does NOT bundle Alpine itself.** | 76 KB gzip (270 KB raw) | When your app already runs Alpine and you register WireKit plugins yourself (the usual Laravel + Livewire setup) |
-| `wirekit.core.js` | IIFE | Chart and image-compare components only — no overlay deps, no Floating-UI / focus-trap | 5 KB gzip (14 KB raw) | When you only need `<x-wirekit-chart>` / `<x-wirekit::image-compare>` and want the smallest possible bundle |
-| `wirekit-apex.js` | IIFE | ApexCharts adapter glue — does **NOT** contain ApexCharts itself (developer's separate npm install) | 7 KB gzip (22 KB raw) | When using `<x-wirekit-chart>` with `'charts.library' => 'apexcharts'` config |
+| `wirekit.min.css` | CSS | The same stylesheet, minified. **This is what `@wirekitStyles` links** — a page that uses the directive ships this file and not the one below | 14 KB gzip (86 KB raw) | Always, and you get it automatically: `@wirekitStyles` emits the `<link>` for you |
+| `wirekit.css` | CSS | Design tokens (`--color-wk-*`, `--radius-wk-*`, …), shared utility classes, global keyframes — the readable reference for what a token means | 99 KB gzip (337 KB raw) | When you are reading or overriding tokens by hand, or bundling the stylesheet yourself. Budget from the minified row above, not this one — the difference is a factor of six |
+| `wirekit.js` | IIFE | Every WireKit Alpine component (chart, dropdown, tooltip, modal, drawer, toast, …) registered as plugins. **Does NOT bundle Alpine itself.** | 81 KB gzip (285 KB raw) | When your app already runs Alpine and you register WireKit plugins yourself (the usual Laravel + Livewire setup) |
+| `wirekit.core.js` | IIFE | Chart and image-compare components, plus the `x-indeterminate` directive the zero-JS form primitives need — no overlay deps, no Floating-UI / focus-trap. Installs the empty overlay ROOT even so, because a missing teleport target throws and takes the page down where an unregistered component is merely inert | 6 KB gzip (19 KB raw) | When you only need `<x-wirekit-chart>` / `<x-wirekit::image-compare>` and want the smallest possible bundle |
+| `wirekit-apex.js` | IIFE | ApexCharts adapter glue — does **NOT** contain ApexCharts itself (developer's separate npm install) | 8 KB gzip (25 KB raw) | When using `<x-wirekit-chart>` with `'charts.library' => 'apexcharts'` config |
 | `wirekit-tiptap.js` | IIFE | Tiptap editor adapter glue (`wirekitEditor` factory) — does **NOT** contain Tiptap itself (developer's separate npm install) | 3 KB gzip (8 KB raw) | When using `<x-wirekit::editor>` alongside `wirekit.core.js` (the full bundle already includes the editor) |
 | `wirekit-optimistic.js` | IIFE | Optimistic UI factory (`wirekitOptimistic`) — shows an action's result before the server has confirmed it, then confirms or rolls back | 3 KB gzip (8 KB raw) | When you want optimistic updates. **Deliberately not in any other bundle**: loading this file is how you opt into its announcement behavior, so apps that don't use it pay nothing. Load it alongside whichever bundle you already picked |
-| `wirekit-alpine.js` | IIFE | Alpine.js core + every WireKit Alpine plugin + auto-`Alpine.start()`. **Self-contained drop-in.** | 95 KB gzip (323 KB raw) | When you want one bundle that gives you Alpine + every WireKit primitive in a single tag (docs site iframe srcdoc, isolated preview surfaces, sample landing pages) |
-| `wirekit-alpine.csp.js` | IIFE | The same self-contained drop-in built against Alpine's CSP variant, so no directive evaluates a string expression at runtime | 99 KB gzip (338 KB raw) | When your Content-Security-Policy forbids `unsafe-eval`. Selected by config — `'scripts' => ['bundle' => 'csp']`, see the table below |
-| `wirekit.esm.js` | ESM | Every WireKit Alpine component as an ES module. **Does NOT bundle Alpine itself.** Default export is an Alpine plugin — `Alpine.plugin(WireKit)` — and each factory is also a named export | 77 KB gzip (271 KB raw) | When you bundle WireKit yourself (Vite, Rollup, esbuild) and want tree-shaking or your own registration order. This one is an `import`, not a `<script src>` |
+| `wirekit-alpine.js` | IIFE | Alpine.js core + every WireKit Alpine plugin + auto-`Alpine.start()`. **Self-contained drop-in.** | 99 KB gzip (338 KB raw) | When you want one bundle that gives you Alpine + every WireKit primitive in a single tag (docs site iframe srcdoc, isolated preview surfaces, sample landing pages) |
+| `wirekit-alpine.csp.js` | IIFE | The same self-contained drop-in built against Alpine's CSP variant, so no directive evaluates a string expression at runtime | 103 KB gzip (354 KB raw) | When your Content-Security-Policy forbids `unsafe-eval`. Selected by config — `'scripts' => ['bundle' => 'csp']`, see the table below |
+| `wirekit.esm.js` | ESM | Every WireKit Alpine component as an ES module. **Does NOT bundle Alpine itself.** Default export is an Alpine plugin — `Alpine.plugin(WireKit)` — and each factory is also a named export | 81 KB gzip (286 KB raw) | When you bundle WireKit yourself (Vite, Rollup, esbuild) and want tree-shaking or your own registration order. This one is an `import`, not a `<script src>` |
 
 ## Pick exactly one of `wirekit.js` OR `wirekit-alpine.js`
 
@@ -103,9 +103,10 @@ through a plain tag.
 
 ## License notes
 
-- `wirekit.js`, `wirekit.core.js`, `wirekit-alpine.js` — MIT
-  (WireKit's code) bundled with **MIT** dependencies (`@floating-ui/dom`,
-  `focus-trap`, `tabbable`, plus Alpine.js in the alpine bundle).
+- `wirekit.js`, `wirekit.core.js`, `wirekit.esm.js`, `wirekit-alpine.js`,
+  `wirekit-alpine.csp.js`, `wirekit-optimistic.js` — MIT (WireKit's code)
+  bundled with **MIT** dependencies (`@floating-ui/dom`, `focus-trap`,
+  `tabbable`, plus Alpine.js in the two alpine bundles).
 - `wirekit-apex.js` — MIT adapter glue only. ApexCharts itself is
   **NOT MIT** (Community License under $2M USD revenue, Commercial
   License above). Adapter does NOT contain ApexCharts code; developer

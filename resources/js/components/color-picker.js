@@ -60,6 +60,24 @@ export default function wirekitColorPicker(config = {}) {
         invalidInput: false,
         recents: [],
         _recentsKey: config.recentsKey || 'wk-color-picker-recents',
+        // The cleared readout, translated on the server. This file has no translator and
+        // the string is spoken through an aria-live region, so it travels with the config.
+        // The English fallback keeps a directly-constructed factory working.
+        _noColorLabel: config.noColorLabel || 'No color',
+        _copiedLabel: config.copiedLabel || 'Copied :value',
+        _hexErrorLabel: config.hexErrorLabel || 'Not a valid color value',
+
+        /**
+         * The text of the hex field's error region.
+         *
+         * A getter rather than a template expression: the region has to be ALWAYS present and
+         * always referenced by `aria-describedby` — a description pointing at a `display:
+         * none` element is ignored — so it is emptied rather than hidden, and the emptying is
+         * a value rather than a `x-show`.
+         */
+        get hexError() {
+            return this.invalidInput ? this._hexErrorLabel : '';
+        },
         _drag: null,
         _moveHandler: null,
         _upHandler: null,
@@ -129,8 +147,16 @@ export default function wirekitColorPicker(config = {}) {
 
         // ── Open / close ──────────────────────────────────────────────
 
-        /** Trigger toggle. Closing goes through close() so focus is handed back. */
-        toggle() {
+        /**
+         * Trigger toggle. Closing goes through close() so focus is handed back.
+         *
+         * NOT called `toggle`: this component can sit inside the optimistic layer, which
+         * declares `toggle()` as part of its own contract, and the two then share one
+         * merged Alpine scope. Today this one wins inside its own markup and the layer
+         * never calls the name itself, so nothing misfires — a guarantee that holds only
+         * until either side moves.
+         */
+        togglePanel() {
             if (this.open) {
                 this.close();
 
@@ -287,7 +313,7 @@ export default function wirekitColorPicker(config = {}) {
         // value; withClear off keeps cleared false, so this always returns the
         // formatted value (byte-identical to before withClear existed).
         get displayValue() {
-            return this.cleared ? 'No color' : this.formattedValue;
+            return this.cleared ? this._noColorLabel : this.formattedValue;
         },
 
         // Popover value-field text. Like displayValue but BLANK (not "No color")
@@ -394,6 +420,22 @@ export default function wirekitColorPicker(config = {}) {
             this.v = clamp(this.v + dy, 0, 100);
             this._sync();
         },
+        /**
+         * Home / End on the saturation-brightness plane.
+         *
+         * The hue and opacity sliders have had these since they were written — the comment
+         * below says why, and it applies here identically: the plane announces `role="slider"`,
+         * and a reader who follows that pattern and gets no response has been told something
+         * untrue. It was the one of the three without them.
+         *
+         * They move the SATURATION axis and leave brightness alone. A plane has two ranges and
+         * one Home key, so it has to pick: saturation is the axis the left and right arrows
+         * already drive, and jumping both at once would move the color somewhere the reader
+         * did not ask for.
+         */
+        planeHome() { this.s = 0; this._sync(); },
+        planeEnd() { this.s = 100; this._sync(); },
+
         nudgeHue(d) { this.h = clamp(this.h + d, 0, 360); this._sync(); },
         nudgeAlpha(d) { this.a = +clamp(this.a + d, 0, 1).toFixed(2); this._sync(); },
 
@@ -452,7 +494,10 @@ export default function wirekitColorPicker(config = {}) {
                 this.copied = true;
                 clearTimeout(this._copyTimer);
                 this._copyTimer = setTimeout(() => { this.copied = false; }, 1500);
-                this.$dispatch('wirekit-toast', { message: 'Copied ' + this.formattedValue, variant: 'success' });
+                // Not `'Copied ' + value`: concatenation freezes the word order to English,
+                // and several locales put the value first. The template comes from the server
+                // with a `:value` placeholder the locale can move.
+                this.$dispatch('wirekit-toast', { message: this._copiedLabel.replace(':value', this.formattedValue), variant: 'success' });
             } catch {
                 // clipboard blocked — no-op
             }

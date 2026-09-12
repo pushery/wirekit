@@ -9,6 +9,10 @@
     'deltaFormat' => 'percent',
     'intent' => null,
     'trend' => null,
+    // Names the sparkline in the default slot. Opt-in, and null by default: a graphic
+    // that already carries its own name must not be given a second, worse one — see the
+    // block that renders the slot.
+    'trendLabel' => null,
     'size' => config('wirekit.components.ticker.size', 'md'),
     'scope' => null,
 ])
@@ -144,8 +148,30 @@
          assistive technology announces it and then has nothing to say — applied to
          the label and not to this. Twenty-two blueprint previews were passing `trend`
          self-closing and getting exactly that. --}}
-    @if($trend !== null && $slot->isNotEmpty())
-        <span role="img" aria-label="{{ __('wirekit::Trend visualization') }}" class="h-8 w-full">
+    @if($trend !== null && $slot->hasActualContent())
+        {{-- `role="img"` PRUNES everything inside it: the subtree becomes one graphic with
+             one name, and whatever the slot content called itself is discarded. The wrapper
+             carried that role plus a fixed "Trend visualization" unconditionally, so a
+             `<x-wirekit-chart aria-label="Revenue, last 24 hours">` in the slot lost the
+             name the caller wrote and every ticker on a page announced the same sentence.
+             The chart names itself — it falls back to `role="img" aria-label="Chart"` when
+             nobody supplies one — so the wrapper's job is layout, and it does only that.
+
+             `trendLabel` is the way back in, for a slot whose content cannot name itself: a
+             bare `<svg>`, a canvas, an image sprite. Given one, the wrapper becomes the
+             graphic and the name is the CALLER's rather than an invented one.
+
+             `hasActualContent()`, not `isNotEmpty()`, and this one is belt-and-braces rather
+             than a fix: `isNotEmpty()` is a strict `!== ''` and does not trim, which bit
+             `shell-bar` in this same campaign. It was measured here and does NOT bite — Blade
+             trims a default slot holding only whitespace before the component sees it, in
+             both the `Blade::render` and the test-helper path, with a blank line and with a
+             named-slot-only call. The trimming variant simply answers the question the line
+             is asking, so it does not depend on that staying true. --}}
+        <span
+            @if(filled($trendLabel)) role="img" aria-label="{{ $trendLabel }}" @endif
+            class="h-8 w-full"
+        >
             {{ $slot }}
         </span>
     @endif

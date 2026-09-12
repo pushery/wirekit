@@ -20,6 +20,7 @@
  *   Callbacks null-guard `_body` first: browser-queued observer callbacks can
  *   fire AFTER destroy() has torn the component down.
  */
+import { frameCoalesce } from '../utils/frame-coalesce.js';
 export default function wirekitAssistantMessage(config = {}) {
     return {
         // 'sentence' | 'all' | 'off'
@@ -50,7 +51,23 @@ export default function wirekitAssistantMessage(config = {}) {
                 return;
             }
 
-            this._observer = new MutationObserver(() => this._onBodyChange());
+            /*
+             * Coalesced to one derivation a frame.
+             *
+             * `_onBodyChange` calls `_text()`, which reads `textContent` over the WHOLE
+             * body and runs a whitespace regex across the result. Wired to every mutation,
+             * that re-derives the entire answer once per streamed token — the main-thread
+             * cost grows quadratically with the length of the response, and a long answer
+             * is exactly when it is least affordable.
+             *
+             * The work is idempotent over a burst: it asks "what does the body say now,
+             * and how much of it have I announced?". Running it once per frame instead of
+             * once per token loses nothing and announces in slightly larger pieces, which
+             * a live region prefers anyway — a screen reader coalesces rapid updates by
+             * dropping them, so fewer, whole-sentence announcements is the better shape.
+             */
+            this._changeFrame = frameCoalesce(() => this._onBodyChange());
+            this._observer = new MutationObserver(() => this._changeFrame.schedule());
             this._observer.observe(this._body, {
                 childList: true,
                 subtree: true,
@@ -59,6 +76,8 @@ export default function wirekitAssistantMessage(config = {}) {
         },
 
         destroy() {
+            this._changeFrame?.cancel();
+            this._changeFrame = null;
             this._observer?.disconnect();
             this._observer = null;
             this._body = null;
@@ -74,6 +93,14 @@ export default function wirekitAssistantMessage(config = {}) {
             if (!this._body) {
                 return;
             }
+
+            // The explicit end of the stream supersedes any frame the last few tokens
+            // scheduled. Dropping it is not required for correctness — `_onBodyChange`
+            // re-reads the body and would find nothing left to announce — but it keeps
+            // the final announcement this method makes the last word rather than one of
+            // two racing ones.
+            this._changeFrame?.cancel();
+
             const text = this._text();
             this._resync(text);
             const rest = text.slice(this._consumed.length).trim();

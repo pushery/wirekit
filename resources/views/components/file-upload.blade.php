@@ -1,6 +1,13 @@
 {{-- optimistic-ui: n/a — passthrough
      Livewire owns the upload itself, including its own progress and error reporting. An optimistic layer here would duplicate a protocol that already reports what it is doing — and a file cannot be shown as stored before it is stored. --}}
 @props([
+    // `required` — DECLARED rather than left to the attribute bag. Undeclared, Blade folded it
+    // into the bag and it landed on a wrapper div, where it is invalid HTML that nothing
+    // reads: no native constraint, no aria-required, no asterisk. StrictnessGate did not
+    // complain either, because `required` is in its HTML passthrough list — so it looked like
+    // a legitimate attribute all the way down. The result was a required field that submits
+    // empty, in the same form as a plain input that behaves correctly.
+    'required' => false,
     // A11y: render the error message in a polite live region by default so a
     // server-side validation error that appears after submit (when focus is
     // elsewhere) is announced. Mirrors the input component. Set false to opt out.
@@ -9,6 +16,13 @@
     'id' => null,
     'multiple' => config('wirekit.components.file-upload.multiple', false),
     'accept' => config('wirekit.components.file-upload.accept', null),
+    // `capture` is its OWN attribute, not a token inside `accept`. The docs table used
+    // to sell camera capture as `accept="image/*;capture=camera"`, which is a legacy
+    // Android spelling that no current browser reads and which sets a MIME filter no
+    // file matches. It could not have worked from the caller's side either: this input
+    // takes named attributes and `wire:model*` only, never the whole bag, so a
+    // developer passing `capture` themselves got nothing on the element.
+    'capture' => config('wirekit.components.file-upload.capture', null),
     'size' => config('wirekit.components.file-upload.size', 'md'),
     // Shape, not chrome. `default` is the full drop AREA — a block-level dashed
     // rectangle that fills its container, which is right for a field in a form.
@@ -53,6 +67,7 @@
     // the input and whether the field posts as `name[]`, so an unbound `multiple="false"`
     // changed the shape of the submitted payload as well as the picker.
     $multiple = BooleanProp::from($multiple, false);
+    $required = BooleanProp::from($required, false);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -107,6 +122,14 @@
     // described by less than the markup claims — or, with only a hint set, by
     // nothing at all. Compose from what this render actually emits.
     $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($showsError ? $errorId : ''));
+
+    // The HTML spec's two values. `camera` and `camcorder` were an Android-era spelling
+    // and are not in it; accepting them silently would put an attribute on the element that
+    // the browser ignores, which is the failure the docs row already made once.
+    $captureValue = match ($capture) {
+        null, 'user', 'environment' => $capture,
+        default => WireKit::validateProp('file-upload', 'capture', $capture, ['user', 'environment']),
+    };
 
     $variantValue = match ($variant) {
         'default', 'compact' => $variant,
@@ -280,7 +303,7 @@
         {{-- `sr-only` rather than omitted when compact carries no caller label:
              the <label> must still name the input, and a control whose only
              content is an aria-hidden icon has no accessible name at all. --}}
-        <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}">{{ $labelText }}</span>
+        <span class="{{ $labelIsVisible ? $labelClasses : 'sr-only' }}">{{ $labelText }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
 
         {{-- Hidden native input — click on label triggers it, drag-drop replaces files. --}}
         <input
@@ -289,7 +312,11 @@
             @if($name) name="{{ $multiple ? $name . '[]' : $name }}" @endif
             id="{{ $uploadId }}"
             @if($multiple) multiple @endif
+            {{-- Native, on the file input itself: it is a real form control, so the browser's
+                 own constraint validation is the strongest carrier available. --}}
+            @if($required) required aria-required="true" @endif
             @if($accept) accept="{{ $accept }}" @endif
+            @if($captureValue) capture="{{ $captureValue }}" @endif
             @if($disabled) disabled @endif
             @if($hasError) aria-invalid="true" @endif
             @if($attributes->get('aria-label')) aria-label="{{ $attributes->get('aria-label') }}" @endif
@@ -313,7 +340,7 @@
          load wirekit.css so the CSS variable resolves). The class-based
          `mt-[var(--padding-wk-y-sm)]` in $listClasses is now redundant but kept
          for documentation parity. Enforced by ListStyleAntiDriftTest. --}}
-    <ul class="{{ $listClasses }}" style="list-style: none; padding: 0; margin: var(--padding-wk-y-sm) 0 0 0;" x-show="files.length > 0" x-cloak>
+    <ul role="list" class="{{ $listClasses }}" style="list-style: none; padding: 0; margin: var(--padding-wk-y-sm) 0 0 0;" x-show="files.length > 0" x-cloak>
         <template x-for="(file, index) in files" :key="file.name">
             <li class="{{ $fileItemClasses }}">
                 {{-- Filename — flex-1 grows to fill available space so the size + X get
@@ -327,7 +354,9 @@
                 {{-- The visible chip stays small (p-0.5 + a 14px X), but a centered
                      44x44 ::before expands the CLICKABLE target to the WCAG 2.5.5 AAA
                      size — `relative` anchors it, `before:content-['']` renders it,
-                     h-11/w-11 = 44px. The hover background + focus ring stay on the
+                     and it takes its size from --size-wk-touch-target rather than a
+                     literal, so a project that moves the floor moves this with it.
+                     The hover background + focus ring stay on the
                      small visual chip; only the pointer/touch target is enlarged. --}}
                 <button
                     type="button"
@@ -339,7 +368,7 @@
                          enough that nobody notices it is the wrong somewhere. --}}
                     data-wk-file-remove
                     @click="removeFile(index)"
-                    class="relative shrink-0 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer before:absolute before:left-1/2 before:top-1/2 before:h-11 before:w-11 before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
+                    class="relative shrink-0 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors duration-[var(--transition-wk-duration)] cursor-pointer before:absolute before:left-1/2 before:top-1/2 before:h-[var(--size-wk-touch-target)] before:w-[var(--size-wk-touch-target)] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']"
                     :aria-label="removeLabel.replace(':name', file.name)"
                 >
                     {{-- X icon — decorative, label is on the button. Matches the

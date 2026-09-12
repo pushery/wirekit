@@ -181,11 +181,54 @@
 
     // Trend color + arrow glyph — mapped to semantic tokens
     [$trendColor, $trendIcon, $trendLabel] = match ($trend) {
-        'up' => ['text-[color:var(--color-wk-success-text)]', '▲', 'increased'],
-        'down' => ['text-[color:var(--color-wk-danger-text)]', '▼', 'decreased'],
-        'neutral' => ['text-[color:var(--color-wk-text-muted)]', '→', 'unchanged'],
+        // The third slot is the sr-only expansion of the arrow glyph — the ONLY way a
+        // non-visual reader learns the direction, so it goes through the catalog exactly
+        // as the sibling ticker's `wirekit::Change: …` labels do.
+        'up' => ['text-[color:var(--color-wk-success-text)]', '▲', __('wirekit::increased')],
+        'down' => ['text-[color:var(--color-wk-danger-text)]', '▼', __('wirekit::decreased')],
+        'neutral' => ['text-[color:var(--color-wk-text-muted)]', '→', __('wirekit::unchanged')],
         default => [null, null, null],
     };
+
+    /*
+     * ⚠️ `trend` IS A SENTIMENT IN THIS COMPONENT, AND THE ANNOUNCEMENT ABOVE READ IT AS A
+     * DIRECTION. `stat.md` tells callers so in as many words — "for metrics where down is
+     * good (churn, errors, bounce rate), flip the semantics" — and its own preview passes
+     * `trend="down"` beside `change="+0.3%"`, because rising churn is bad. That is the
+     * documented model, and it is fine for the two things `trend` really drives: the red
+     * and the arrow, both of which a sighted reader takes in beside the visible "+0.3%".
+     *
+     * The sr-only expansion is not those. It states a fact — "decreased" — and a listener
+     * has nothing to reconcile it against, so the tile reads out "Churn, 2.4%, decreased,
+     * +0.3%". Eight tiles across the catalog said the opposite of their own number.
+     *
+     * So the direction is taken from the CHANGE, which is where the direction lives, and
+     * `trend` keeps the color and the glyph.
+     *
+     * ⚠️ It requires an EXPLICIT SIGN, and that is the whole subtlety. A bare "12%" is a
+     * magnitude, not a direction — the caller who writes it is leaning on `trend` to say
+     * which way, and reading it as positive would silently overrule them. Only a leading
+     * `+` or `-`, or a change that is plainly zero, carries a direction of its own; a word,
+     * an unsigned figure or anything unparseable leaves the trend word standing, because
+     * there is then nothing for it to contradict.
+     */
+    $changeDirection = null;
+
+    if ($change !== null) {
+        $changeTrimmed = ltrim((string) $change);
+        $changeNumber = (float) preg_replace('/[^\d.\-]/', '', $changeTrimmed);
+
+        $changeDirection = match (true) {
+            str_starts_with($changeTrimmed, '-') => __('wirekit::decreased'),
+            str_starts_with($changeTrimmed, '+') && $changeNumber !== 0.0 => __('wirekit::increased'),
+            // "0", "0%", "0.0" — no sign needed, and nothing a caller could have meant
+            // differently by it.
+            $changeTrimmed !== '' && $changeNumber === 0.0 && preg_match('/\d/', $changeTrimmed) === 1 => __('wirekit::unchanged'),
+            default => null,
+        };
+    }
+
+    $trendLabel = $changeDirection ?? $trendLabel;
 @endphp
 
 @if($needsEntranceWrapper)

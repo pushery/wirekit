@@ -273,7 +273,18 @@ export default function wirekitTreeView() {
         },
 
         /**
-         * Select the currently focused node (dispatch custom event).
+         * Activate the currently focused node.
+         *
+         * ⚠️ This used to dispatch `tree-node-select` itself, which made the event
+         * KEYBOARD-ONLY: a leaf row carries no click handler at all, and a branch row's
+         * handler only toggles. So `@tree-node-select` — the documented way to respond to a
+         * selection — never fired for a mouse user, on a control whose primary gesture is a
+         * click. Nothing reported it: the tree renders, the row highlights, and the developer's
+         * handler simply is not called.
+         *
+         * Both gestures now go through ONE path. `click()` bubbles to the tree root, whose
+         * handler dispatches exactly once, so the keyboard cannot fire the event twice on a
+         * branch node the way a naive fix would.
          */
         selectFocused() {
             const focused = document.activeElement;
@@ -282,14 +293,25 @@ export default function wirekitTreeView() {
             const treeitem = focused.closest('[role="treeitem"]');
             if (!treeitem) return;
 
-            // If it has children, toggle expansion
-            if (treeitem.hasAttribute('aria-expanded')) {
-                focused.click();
+            treeitem.click();
+        },
+
+        /**
+         * The one place `tree-node-select` is dispatched, delegated from the tree root so a
+         * click on a row, on its chevron, or on its label all resolve to the same node.
+         */
+        selectClicked(event) {
+            const treeitem = event.target.closest('[role="treeitem"]');
+            if (!treeitem) return;
+
+            // The roving tabindex follows the pointer, which is the APG model: a click is an
+            // entry point, and tabbing away and back must return to the row that was used.
+            if (treeitem !== document.activeElement) {
+                treeitem.focus();
             }
 
-            // Dispatch selection event for developers
             this.$dispatch('tree-node-select', {
-                label: focused.querySelector('span.truncate')?.textContent?.trim(),
+                label: treeitem.querySelector('span.truncate')?.textContent?.trim(),
             });
         },
     };

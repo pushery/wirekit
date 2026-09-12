@@ -218,7 +218,7 @@
     A consuming project measured its compiled app.css shrinking by 533 bytes
     across the upgrade and attributed it: 1114 selectors before, 1108 after,
     six removed and none added. Exactly six of these classes appear in NO Blade
-    view, and they are not decoration — `border-b-[3px]` / `border-r-[3px]` ARE
+    view, and they are not decoration — `border-b-[3px]` / `border-e-[3px]` ARE
     the active-tab indicator, and the negative margins pull it onto the
     container edge. The bar renders, the tabs work, ARIA is correct, and the
     selected tab is simply not marked. Nothing throws.
@@ -229,7 +229,7 @@
     a future view deletion would quietly end.
 
     -mb-[length:var(--border-wk-width)]
-    -mr-[length:var(--border-wk-width)]
+    -me-[length:var(--border-wk-width)]
     bg-[var(--color-wk-accent)]
     bg-[var(--color-wk-bg-elevated)]
     bg-[var(--color-wk-bg-muted)]
@@ -238,8 +238,8 @@
     border-[var(--color-wk-border)]
     border-b-[3px]
     border-b-[length:var(--border-wk-width)]
-    border-r-[3px]
-    border-r-[length:var(--border-wk-width)]
+    border-e-[3px]
+    border-e-[length:var(--border-wk-width)]
     border-transparent
     cursor-pointer
     disabled:cursor-not-allowed
@@ -259,7 +259,7 @@
     items-stretch
     justify-start
     last:border-b-0
-    last:border-r-0
+    last:border-e-0
     max-w-full
     overflow-hidden
     overflow-x-auto

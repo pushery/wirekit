@@ -140,10 +140,47 @@ export default function wirekitSubmenu(config = {}) {
         scheduleClose() {
             this._clearCloseTimer();
             this._closeTimer = setTimeout(() => {
-                this.subOpen = false;
                 this._closeTimer = null;
+
+                /*
+                 * Not while the reader is INSIDE it.
+                 *
+                 * The pointer leaving is a statement about the pointer, and the two devices
+                 * are independent: a keyboard user opens the flyout with ArrowRight, starts
+                 * arrowing through it, and the mouse is wherever it was left — often not on
+                 * the trigger, because it never had to be. The hover-out then fired and hid
+                 * the panel under their focus. `x-show` sets `display: none`, and focus on a
+                 * hidden element is dropped to `<body>`, so the next Tab restarted at the
+                 * top of the page.
+                 *
+                 * Nothing reported it: the menu is in a valid state afterwards, the focus is
+                 * in a valid place, and only the reader knows they were somewhere else.
+                 */
+                if (this._focusIsInsideThePanel()) {
+                    return;
+                }
+
+                this.subOpen = false;
                 this._resetTypeAhead();
             }, HOVER_CLOSE_DELAY_MS);
+        },
+
+        /**
+         * Is the reader's focus currently inside the flyout?
+         *
+         * Guarded rather than assumed: this runs from a timer, so the panel can be gone by
+         * the time it fires, and `document` is not something a unit harness has to provide
+         * for every other method on this object.
+         */
+        _focusIsInsideThePanel() {
+            const panel = this.$refs?.subPanel;
+            const active = typeof document !== 'undefined' ? document.activeElement : null;
+
+            if (! panel || ! active || typeof panel.contains !== 'function') {
+                return false;
+            }
+
+            return panel.contains(active);
         },
 
         _clearCloseTimer() {

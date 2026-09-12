@@ -29,7 +29,12 @@ use RecursiveIteratorIterator;
 final class IconSourceLocator
 {
     /**
-     * The deepest directory under the package that actually holds `.svg` files.
+     * The directory under the package holding the MOST `.svg` files.
+     *
+     * Not the deepest one, which is what this line used to say while the code beside
+     * `arsort()` said the opposite. The distinction is the whole reason the method exists:
+     * several of these packages ship a secondary set beside the main one — Lucide's `lab`
+     * folder — and depth does not tell them apart.
      *
      * Returns null when the package is absent or ships no SVGs at all — a caller needs to
      * tell "not installed" apart from "installed and empty", and both are null here only

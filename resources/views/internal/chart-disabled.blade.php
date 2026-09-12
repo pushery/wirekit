@@ -29,10 +29,26 @@
     $tag = $inline ?? false ? 'span' : 'div';
 @endphp
 
+{{-- ⚠️ NO `role="region"`, AND NO `aria-label`. It carried both, and each was wrong for its
+     own reason.
+
+     The role made a debug placeholder a page LANDMARK — something a reader navigates BY, and
+     something axe reports as `landmark-unique` the moment a page renders two charts. This
+     package's rule for a generic region is that the role waits for a name the CALLER chose;
+     there is no caller-supplied name reaching here at all, because `Chart::render()` hands this
+     view no data and the element merges no attribute bag.
+
+     The label was worse than redundant: an `aria-label` on a container REPLACES its contents in
+     the accessible-name computation, so the one thing a reader needed — the two lines below
+     naming the config key to set — was the thing it hid, behind an English string that no
+     catalog translates.
+
+     Nothing is owed in their place. The visible text is a complete sentence, it is read
+     normally without a name, and the element is not scrollable, so WCAG 2.1.1 asks for no
+     `tabindex` either. This view is reached only under `APP_DEBUG`, and what a developer needs
+     from it is the instruction, not a landmark. --}}
 <{{ $tag }}
     class="wk-chart wk-chart-disabled"
-    role="region"
-    aria-label="Chart placeholder — adapter not configured"
     style="
         height: {{ $height ?? '380px' }};
         display: {{ $inline ?? false ? 'inline-flex' : 'flex' }};

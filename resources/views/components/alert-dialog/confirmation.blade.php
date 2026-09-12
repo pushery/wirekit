@@ -43,7 +43,11 @@
     ]), $scope);
 
     $phraseClasses = WireKit::resolveClasses('alert-dialog.confirmation', 'phrase', implode(' ', [
-        'font-mono font-semibold text-[var(--color-wk-text)]',
+        // The mono TOKEN, as every other monospace surface in the catalog uses — code,
+        // code-block, kbd, color-picker. Bare `font-mono` resolves to Tailwind's stack and
+        // ignores the family the developer configured, so this confirmation phrase was the
+        // one place their type choice did not reach.
+        'font-[family-name:var(--font-wk-mono,ui-monospace,monospace)] font-semibold text-[var(--color-wk-text)]',
     ]), $scope);
 @endphp
 

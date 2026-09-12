@@ -228,7 +228,6 @@
             type="checkbox"
             id="{{ $id }}"
             name="{{ $name }}"
-            class="peer sr-only"
             {{-- ALWAYS emitted, in both states. `indeterminate` is a DOM property with no
                  HTML attribute, so the server cannot render it — and the old form
                  (`x-init="$el.indeterminate = true"`, emitted only when true) ran once and
@@ -247,7 +246,10 @@
                 x-on:change="commitFromControl()"
             @endif
             @if($describedBy !== null) aria-describedby="{{ $describedBy }}" @endif
-            {{ $attributes->except(['id', 'name', 'aria-describedby']) }}
+            {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
+                 caller's own class became a second class attribute and the browser kept only
+                 this one. --}}
+            {{ $attributes->except(['id', 'name', 'aria-describedby'])->class(['peer', 'sr-only']) }}
         />
 
         {{-- Visual box — sibling of .peer (consumes peer-checked bg/border). The
@@ -278,7 +280,13 @@
             {{-- Slot-based label: supports rich HTML (links, formatting) for use cases like GDPR consent --}}
             <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $slot }}</span>
         @elseif($label)
-            <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}</span>
+@php
+    // Read, not consumed: a declared `required` prop would take the attribute out of the bag,
+    // and the bag is what delivers it to the native control. A bare `required` arrives as
+    // `true`.
+    $wkRequiredMarker = (bool) $attributes->get('required', false);
+@endphp
+            <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @endif
     </label>
 

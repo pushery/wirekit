@@ -37,15 +37,18 @@
 
     // Vary column widths for realism (percentage values for inline styles)
     $colWidths = ['100%', '75%', '50%', '66%', '83%', '33%'];
-    // content-visibility intrinsic size hint scales with row count.
+    // The intrinsic-size hint scales with row count; see the wrapper below for where the
+    // off-screen skip itself lives.
     $intrinsicHeight = max(80, ($rows + 1) * 28).'px';
 @endphp
 
-{{-- Table placeholder: header row + N body rows, each with M cells.
-     Uses inline styles for sizing/layout to ensure rendering in all environments.
-     content-visibility: auto + contain-intrinsic-size let the browser skip
-     rendering for off-screen instances entirely. --}}
-<div
+{{-- The off-screen skip is a PROGRESSIVE ENHANCEMENT and lives behind `@supports` in the
+     stylesheet (`.wk-skeleton-skip-offscreen`), not as an inline declaration here.
+     `content-visibility: auto` first shipped in Safari 18.0, above this library's Safari 16.4
+     floor. Nothing depends on it: without support the skeleton renders the ordinary way, which
+     is what all of them did before the optimization existed. The intrinsic-size hint travels
+     as a custom property so it stays tunable per variant. --}}
+    <div
     role="status"
     aria-live="polite"
     aria-label="{{ __('wirekit::Loading') }}"
@@ -58,7 +61,7 @@
          container whose content is still missing, which is the developer's
          element; leaving the attribute off is also what lets them put it there
          and have the shimmer's own pause rule see it. --}}
-    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; content-visibility: auto; contain-intrinsic-size: auto '.($intrinsicHeight).';'])->class([$wrapperClasses]) }}
+    {{ $attributes->merge(['style' => 'width: 100%; min-width: 12rem; --wk-skeleton-intrinsic-size: auto '.($intrinsicHeight).';'])->class([$wrapperClasses, 'wk-skeleton-skip-offscreen']) }}
 >
     <div style="display: flex; flex-direction: column; gap: 0.75rem;">
         {{-- Header row — slightly taller, full-width --}}
@@ -80,5 +83,5 @@
             </div>
         @endfor
     </div>
-    <span class="sr-only">Loading content</span>
+    <span class="sr-only">{{ __('wirekit::Loading content') }}</span>
 </div>

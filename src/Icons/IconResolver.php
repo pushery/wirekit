@@ -76,23 +76,6 @@ final class IconResolver
     }
 
     /**
-     * The composer package each CONFIGURED preset needs, keyed by the configured entry.
-     *
-     * Exists for `wirekit:doctor`, and the shape is deliberately narrow: it answers
-     * "what does this installation's icon configuration depend on" without handing out
-     * the preset objects or the built-in map. A stacked extension preset resolves an
-     * alias onto an identifier of ITS family, so a config that names one whose package
-     * is absent fails at RENDER time, in whichever page happened to use the word —
-     * blade-icons throws rather than degrading. Asking here moves that from a page a
-     * visitor loads to a command a developer runs.
-     *
-     * Keyed by the configured entry rather than by package: two presets can share a
-     * package (`heroicons` and `heroicons-marketing` both need blade-heroicons), and
-     * the developer needs to be told which line of their config is the problem.
-     *
-     * @return array<string, string> configured entry => composer package
-     */
-    /**
      * One real identifier per configured preset, for a check that wants to RESOLVE rather than
      * ask whether a package is installed.
      *

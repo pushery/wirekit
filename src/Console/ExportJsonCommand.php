@@ -5,11 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
-use Pushery\WireKit\ComponentRegistry;
-use Pushery\WireKit\Support\DocsVisibility;
-use Pushery\WireKit\Support\PropsParser;
-use Pushery\WireKit\Support\VersionResolver;
-use Pushery\WireKit\WireKit;
+use Pushery\WireKit\Support\ComponentManifest;
 
 /**
  * components.json export.
@@ -20,8 +16,7 @@ use Pushery\WireKit\WireKit;
  * references). Designed to be consumed by the docs site's
  * /components.json endpoint, AI tooling, and design-system audits.
  *
- * The docs site's wrapper (BuildComponentsJsonCommand) calls us twice:
- * once with --pretty, once without. We support both by accepting --pretty
+ * The docs site's build wrapper calls us twice: once with --pretty, once without. We support both by accepting --pretty
  * and pretty-printing whenever it's set; without the flag we emit
  * minified JSON. Either way: stdout-only, exit 0 on success, JSON
  * decodable.
@@ -50,105 +45,14 @@ class ExportJsonCommand extends Command
 
     public function handle(): int
     {
-        $components = [];
-
-        foreach (ComponentRegistry::all() as $name => $meta) {
-            $pageStatus = DocsVisibility::componentPageStatus($name);
-
-            // --public: a component whose page exists but is not
-            // publicly rendered is omitted ENTIRELY — never merely
-            // docs_url=null. MISSING is deliberately kept: a page-less
-            // sub-component (toast-region, glass, reading-*) is
-            // documented on a parent page.
-            if ($this->option('public') && $pageStatus === DocsVisibility::STATUS_STAGED) {
-                continue;
-            }
-
-            // ComponentRegistry::extractProps() is THE single source of
-            // truth for prop extraction. It routes anonymous components
-            // through PropsParser (reads @props([...])) and class-based
-            // components (chart) through ClassPropsExtractor (Reflection
-            // on the constructor signature). Both paths return the same
-            // shape so this caller doesn't branch.
-            $props = ComponentRegistry::extractProps($name);
-            // Class-based components (chart) expose public properties (e.g.
-            // `$alpineComponent`, `$chartConfig`, `$mountElement`) that the
-            // Blade template references as `{{ $name }}` — without filtering
-            // these out, BladeParser surfaces them as required `<x-slot:...>`
-            // entries in the manifest. Pass the class's public-property names
-            // as additional excludes so the emitted slots array reflects only
-            // genuine template slots.
-            $componentClass = ComponentRegistry::componentClass($name);
-            // Slots and sub-component descriptions both live on the registry now.
-            // They were private here, which is why the MCP catalog simply had no
-            // answer for either — a second implementation was the only way to get
-            // one, and a second implementation is how the Blade-path resolvers
-            // came to disagree in the first place.
-            $slots = ComponentRegistry::slotsOf($name);
-            $subComponents = ComponentRegistry::describeSubComponentsOf($name);
-
-            // docs_url resolves to a publicly visitable page on
-            // docs.wirekit.app. When the component's dedicated docs page
-            // has no publicly-rendered surface, the field is null so AI
-            // tooling clients don't fetch a URL that returns nothing
-            // useful. In the FULL manifest the component entry remains
-            // (it's still a callable Blade tag) with the URL nulled;
-            // under --public a non-public entry was already dropped above.
-            $docsUrl = $pageStatus === DocsVisibility::STATUS_PUBLIC
-                ? WireKit::DOCS_URL."/components/{$name}"
-                : null;
-
-            $tagAlias = ComponentRegistry::tagAlias($name);
-            $entry = [
-                'name' => $name,
-                'tag' => ComponentRegistry::tag($name),
-            ];
-            // For class-based
-            // components whose canonical tag uses the single-hyphen
-            // form (`<x-wirekit-chart>`), also emit the double-colon
-            // alias (`<x-wirekit::chart>`) so tool integrators that
-            // were grepping against the historical shape still match.
-            // Normal anonymous components have no alias — field
-            // omitted entirely in that case.
-            if ($tagAlias !== null) {
-                $entry['tag_alias'] = $tagAlias;
-            }
-            $entry['category'] = $meta['category'];
-            $entry['description'] = $meta['description'];
-            $entry['docs_url'] = $docsUrl;
-            $entry['props'] = $props;
-            // Slot-kind disambiguation, since v2.4.0. Downstream LLM and
-            // IDE-extension tooling needs to know how a component
-            // exposes its API: anonymous Blade components carry props
-            // via @props([...]) blocks AND can accept named template
-            // slots; class-based components carry props via constructor
-            // signature reflection AND typically have NO developer-
-            // facing template slots (their composition surface is
-            // chart-class internals, not <x-slot:...> nesting).
-            // The `component_kind` field on every manifest entry surfaces
-            // this so a developer agent can generate the right wrapping
-            // shape without re-deriving from prop names.
-            $entry['component_kind'] = $componentClass !== null ? 'class' : 'anonymous';
-            $components[] = $entry + [
-                'slots' => $slots,
-                'sub_components' => $subComponents,
-            ];
-        }
-
-        $document = [
-            'version' => $this->packageVersion(),
-            // The newest RELEASED version, which is a different question from
-            // `version` above: that one is the build installed here, and on a
-            // deployment pinned to a development branch it is literally that branch
-            // name. So it cannot be compared against a version a page claims to
-            // show. This field is the comparable half — it exists because a
-            // documentation page served a changelog frozen four minors back and no
-            // artifact anywhere carried both sides of a comparison that would have
-            // said so out loud.
-            'released_version' => VersionResolver::released(),
-            'generated_at' => date('c'),
-            'components' => $components,
-        ];
+        /*
+         * The manifest is built in `ComponentManifest` rather than here, because it is
+         * published by two artifacts and used to be built by two loops. `wirekit:install`
+         * writes the same document to `.wirekit-schema.json`, three documented places call the
+         * two "the same manifest", and the second loop had quietly lost `component_kind`,
+         * `tag_alias` and `released_version` and was emitting `sub_components` as bare strings.
+         */
+        $document = ComponentManifest::document((bool) $this->option('public'));
 
         // JSON_HEX_TAG is non-negotiable — `/components.json` is consumed by
         // AI tooling and may be embedded in a <script type="application/ld+json">
@@ -174,40 +78,5 @@ class ExportJsonCommand extends Command
         $this->output->writeln('');
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Parse named-slot references from a Blade file. Returns the
-     * metadata-rich shape (`list<array{name, required}>`) per slot so
-     * the schema can flag required slots — popover / hover-card /
-     * context-menu's `trigger` slot, for example. Without the
-     * `required` boolean, the manifest reports them as default-slot
-     * only and silently hides the bug class where developers omit the
-     * trigger and get `Undefined variable $trigger`.
-     *
-     * @return list<array{name: string, required: bool}>
-     */
-
-    /**
-     * Discover sub-components by scanning the sibling directory
-     * `resources/views/components/<name>/`. Skips `index.blade.php`
-     * (Laravel's anonymous-component index file — the parent's own
-     * default render path, not a separate sub-component).
-     *
-     * Returns dot-separated qualified names (e.g. `card.body`,
-     * `dropdown.item`, `modal.footer`) so AI / IDE tooling can match
-     * them against `<x-wirekit::parent.child>` usage patterns.
-     *
-     * @return list<string>
-     */
-
-    /**
-     * Resolve the running WireKit version. Delegates to VersionResolver so
-     * `wirekit:export-json` / `wirekit:export-api-map` / `wirekit:export-blocks`
-     * stay in lockstep — see VersionResolver for the priority order.
-     */
-    private function packageVersion(): string
-    {
-        return VersionResolver::resolve();
     }
 }

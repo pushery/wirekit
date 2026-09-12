@@ -37,7 +37,12 @@
     ]), $scope);
 @endphp
 
-<ol {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }} data-wk-timeline="{{ $variant }}" >
+{{-- `role="list"` is not the redundancy it looks like on an `<ol>` that removes its
+     markers. WebKit drops list semantics from a list whose `list-style` is `none` —
+     deliberately, so a decorative list is not announced — and the consequence for a list
+     that IS one is that VoiceOver stops saying "list, N items" and stops offering list
+     navigation. No other engine shows it. --}}
+<ol role="list" {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }} data-wk-timeline="{{ $variant }}" >
     {{-- Optional "before" continuation line — indicates earlier events exist --}}
     @if($before)
         <li aria-hidden="true" style="display: flex; justify-content: center; width: var(--size-wk-xs, 1.5rem);">

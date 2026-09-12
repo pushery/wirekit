@@ -24,15 +24,16 @@ use Pushery\WireKit\Contracts\IconPreset;
  * If it ever gains an alias again, the same rule applies as everywhere else: a name is
  * only taken when all four interchangeable presets have a genuine glyph for it.
  *
- * All identifiers use the Mini (heroicon-m-*) style to match HeroiconsPreset
- * and HeroiconsMarketingPreset.
- *
  * Activate by adding to wirekit.icons.presets in config/wirekit.php:
  *
  *     'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
  *
- * Aliases here have zero overlap with both the base preset AND the
- * marketing preset — verified by anti-drift tests in IconSystemTest.
+ * ⚠️ Two guarantees used to stand here and both were about an empty set: that all identifiers
+ * use the Mini style, and that the aliases do not overlap the base or marketing presets. There
+ * are no identifiers and no aliases. A promise nothing can break reads as a property of the
+ * class, so the next reader looks for the entries it describes. If this file gains an alias
+ * again, both rules apply — and the rule that matters is stated above: a name is only taken
+ * when all four interchangeable presets have a genuine glyph for it.
  *
  * @see https://heroicons.com
  */
@@ -40,19 +41,11 @@ final class HeroiconsAppPreset implements IconPreset
 {
     public function icons(): array
     {
-        return [
-            // Sort order (table headers)
-
-            // Close-with-emphasis (vs. plain `close` from base preset)
-
-            // Sharing / clipboard
-            // (`book` / `lightbulb` / `copy` moved to the base preset in v2.6.4 —
-            // they resolve on every base preset now, no stacking required.)
-
-            // Security states
-
-            // Notifications
-        ];
+        // Deliberately empty — see the class docblock. The five group headings that used to
+        // sit in here (sort order, close-with-emphasis, sharing, security, notifications)
+        // described entries that no longer exist, so the array read as one somebody had
+        // half-deleted rather than as an intentional no-op.
+        return [];
     }
 
     public function requires(): string

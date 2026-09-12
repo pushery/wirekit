@@ -93,10 +93,10 @@
         @endisset
     </div>
 
-    {{-- Jump-to-latest. Only offered while the reader is scrolled away; the
-         count tells them how much they missed (the Slack / Discord affordance),
-         not just "there is more". x-cloak keeps it hidden until Alpine
-         evaluates atBottom, so it never flashes on load. --}}
+    {{-- Jump-to-latest. Only offered while the reader is scrolled away, and the
+         count is the point: "4 new" tells them how much they missed, where "there
+         is more" leaves them scrolling to find out. x-cloak keeps it hidden until
+         Alpine evaluates atBottom, so it never flashes on load. --}}
     <x-wirekit::button
         type="button"
         size="sm"

@@ -58,12 +58,15 @@ export default function wirekitRating(config = {}) {
             // Reading it here keeps the attribute byte-identical across renders,
             // so the scope survives and the observer below is the single path a
             // server-side change travels — which is what its own comment claims.
+            //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
             // here, but the ESM harness constructs each factory with a deliberately
-            // barren stub — `test-tabs.mjs` passes `{ querySelectorAll }` and nothing
-            // else, on purpose — and a factory that requires more than it uses turns
-            // that into a TypeError at init. Measured: one of 63 ESM scripts, red in
-            // CI and invisible to the PHP suite, which does not run them.
+            // barren stub. This factory has no script of its own, so the one that boots
+            // it is `test-server-value-seed.mjs`: a `$root` answering `getAttribute` and
+            // nothing else, plus one case that answers nothing at all. A factory needing
+            // more than it uses turns that into a TypeError at init. Measured on
+            // 2026-08-16: one of 63 ESM scripts, red in CI and invisible to the PHP
+            // suite, which does not run them.
             if (config.value == null) {
                 const seed = typeof this.$root?.getAttribute === 'function'
                     ? this.$root.getAttribute(WK_SERVER_VALUE_ATTRIBUTE)

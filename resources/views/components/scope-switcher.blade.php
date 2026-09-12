@@ -51,6 +51,13 @@
     $searchLabel = $searchPlaceholder ?? __('wirekit::Search :label…', ['label' => $labelText]);
     $emptyLabel = $emptyText ?? __('wirekit::No results.');
 
+    // Translated plural forms for the result counter, chosen in the browser because the
+    // count only exists there.
+    $resultPhrases = \Pushery\WireKit\Support\AlpinePayload::from(
+        \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count result|[2,*] :count results')
+    );
+    $resultLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale()));
+
     // Fold accents ONCE, on the server, so a reader typing `munchen` finds `München`.
     // Per keystroke in the browser this would be the same work repeated for every character
     // typed, over every row.
@@ -248,7 +255,7 @@
     <div
         class="flex flex-col"
         style="width: {{ $width }}; max-width: calc(100vw - 2rem);"
-        x-data="wirekitScopeSwitcher({ idPrefix: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }} })"
+        x-data="wirekitScopeSwitcher({ idPrefix: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, resultPhrases: {{ $resultPhrases }}, locale: {{ $resultLocale }} })"
         {{-- Reset from the popover's own state, not from an event.
              The overlay event vocabulary has show/close pairs for modal, drawer,
              alert-dialog and toast — the popover is not among them, so there is no
@@ -340,7 +347,7 @@
                         {{-- pointermove, not mouseenter: scrolling the list under a resting
                              cursor fires mouseenter on every row that passes beneath it, and
                              the highlight would chase the scroll instead of the reader. --}}
-                        x-on:pointermove="setActive({{ \Pushery\WireKit\Support\AlpinePayload::string($row['key']) }}, false)"
+                        x-on:pointermove.passive="setActive({{ \Pushery\WireKit\Support\AlpinePayload::string($row['key']) }}, false)"
                         data-label="{{ $row['label'] }}"
                         x-on:click="onItemClick($event, {{ $isCurrent ? 'true' : 'false' }})"
                         class="{{ $itemClasses }}"
@@ -404,7 +411,12 @@
         {{-- The count, for a reader who cannot see the list shrink. Throttled in the plugin
              so a fast typist is not read out letter by letter. --}}
         <x-wirekit::visually-hidden role="status" aria-live="polite">
-            <span x-text="announcement === 1 ? {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::1 result')) }} : announcement + {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::results')) }}"></span>
+            {{-- Was `announcement + 'results'` — JavaScript concatenation with no separator, so
+                 the live region said "3results", and "3Treffer" in German. Gluing a number to a
+                 word also fixes the ORDER to English, which several locales do not share. The
+                 server renders every plural form and `Intl.PluralRules` picks, the same shape
+                 status-matrix and data-table use for their counters. --}}
+            <span x-text="resultAnnouncement"></span>
         </x-wirekit::visually-hidden>
 
         @if($create)

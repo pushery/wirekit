@@ -85,6 +85,16 @@ final class ApexChartsAdapter implements ChartAdapter
 
     public function defaultOptions(string $type): array
     {
+        /*
+         * The funnel shape, since `mapType()` turns this type into a plain `bar`. Set here
+         * rather than in the mapping because a developer's own `options` are merged over these
+         * with `array_replace_recursive` — so `isFunnel` is a DEFAULT they can still turn off,
+         * and the bar radius and orientation stay theirs to change.
+         */
+        $funnelDefaults = $type === 'funnel'
+            ? ['plotOptions' => ['bar' => ['horizontal' => true, 'borderRadius' => 0, 'isFunnel' => true]]]
+            : [];
+
         // Static defaults — the dynamic CSS-var-driven theming happens
         // client-side in the wirekitApexChart Alpine factory.
         //
@@ -164,7 +174,9 @@ final class ApexChartsAdapter implements ChartAdapter
             $base['stroke'] = $stroke;
         }
 
-        return $base;
+        // Merged last, and recursively, so it composes with anything the base already put
+        // under `plotOptions` rather than replacing that key wholesale.
+        return array_replace_recursive($base, $funnelDefaults);
     }
 
     public function alpineComponent(): string
@@ -217,15 +229,23 @@ final class ApexChartsAdapter implements ChartAdapter
             // to `bar` and the developer sets plotOptions.bar.horizontal: false
             // (the default, so most demos require no extra options).
             'column' => 'bar',
+            /*
+             * ApexCharts has no `funnel` chart type either: its funnel is a horizontal bar
+             * with `plotOptions.bar.isFunnel`. `funnel` was listed as supported and passed
+             * straight through, so `type="funnel"` handed ApexCharts a type it does not know —
+             * measured, the emitted config carried `"type":"funnel"` and no `isFunnel` at all.
+             * The documentation page advertising the type demonstrates the hand-rolled
+             * `bar` + `isFunnel` composition instead, so the advertised route had zero
+             * coverage AND did not work.
+             *
+             * The plotOptions half is supplied by `defaultOptions()`, which is where every
+             * other type-specific default lives and where a developer override still wins.
+             */
+            'funnel' => 'bar',
             default => $type,
         };
     }
 
-    /**
-     * Type-specific stroke defaults. Lines/areas get a smooth curve; bars
-     * get no stroke (default). Developer overrides win via array_replace_recursive
-     * in the Chart component.
-     */
     /**
      * Type-aware tooltip defaults. Uniform STYLING (marker shape, font, etc.)
      * across every chart type — `shared` / `intersect` BEHAVIOR is per-type.
@@ -310,7 +330,13 @@ final class ApexChartsAdapter implements ChartAdapter
         return $base;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * Type-specific stroke defaults. Lines/areas get a smooth curve; bars
+     * get no stroke (default). Developer overrides win via array_replace_recursive
+     * in the Chart component.
+     *
+     * @return array<string, mixed>
+     */
     private function defaultStroke(string $type): array
     {
         return match ($this->mapType($type)) {

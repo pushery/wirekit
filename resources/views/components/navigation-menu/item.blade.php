@@ -94,9 +94,18 @@
          get a working link. --}}
     <a
         href="{{ $href }}"
-        class="{{ $triggerClasses }}"
         @if($computedRel) rel="{{ $computedRel }}" @endif
-        {{ $attributes->except('rel') }}
+        {{-- Through ->class(), not as a hardcoded attribute beside the bag. A caller's own
+             class used to arrive as a SECOND class attribute here, which the browser
+             discards — so their styling vanished with nothing to see. The sibling anchor
+             twelve lines down already merged correctly.
+
+             No utility class is NAMED in this comment on purpose. Tailwind scans Blade
+             comments too, so an illustrative one here compiles into the stylesheet as a real
+             rule that the drift reverse-diff cannot trace to any emission — measured: the
+             first draft of this comment used a margin utility as its example and reddened
+             the Drift suite by itself. --}}
+        {{ $attributes->except('rel')->class($triggerClasses) }}
     >
         {{ trim((string) $slot) !== '' ? $slot : $trigger }}
         @if($opensNewTab)

@@ -300,13 +300,17 @@ return [
         'empty-state' => ['variant' => 'default'],
         'progress' => ['variant' => 'accent', 'size' => 'md', 'circle-size' => 'md'],
         'usage-meter' => ['warn' => 0.8, 'danger' => 1.0],
-        'filter-builder' => ['searchable' => false, 'search-placeholder' => 'Search…', 'add-label' => 'Add filter'],
+        // The two string defaults are null on purpose. A literal here WINS over the
+        // component's `__()` fallback — `config(key, default)` never reaches its second
+        // argument once the key exists — so an English word in this file silently made
+        // the catalog unreachable for every application that did not override it.
+        'filter-builder' => ['searchable' => false, 'search-placeholder' => null, 'search-debounce' => 300, 'add-label' => null],
         'status-matrix' => ['cell-type' => 'status', 'legend' => true],
         'notification-center' => ['group-by' => 'none', 'filters' => false],
-        'data-table' => ['density' => 'comfortable', 'selectable' => false, 'searchable' => false],
+        'data-table' => ['density' => 'comfortable', 'selectable' => false, 'searchable' => false, 'search-debounce' => 300],
         'event-calendar' => ['view' => 'month', 'week-starts-on' => 1],
         'calendar' => ['week-starts-on' => 1],
-        'map' => ['provider' => 'maplibre', 'zoom' => 2, 'highlight' => 'ring', 'highlight-color' => 'accent'],
+        'map' => ['provider' => 'maplibre', 'zoom' => 2, 'highlight' => 'ring', 'highlight-color' => 'accent', 'reduced-data' => 'respect'],
         'stat' => ['animate' => false],
 
         // Layout primitives. These read a config default but were absent from the
@@ -351,6 +355,9 @@ return [
         'tooltip' => ['placement' => 'top', 'offset' => 6, 'delay-show' => 300, 'delay-hide' => 100],
         'modal' => ['size' => 'md', 'dismissible' => true],
         'drawer' => ['position' => 'right', 'size' => 'md', 'dismissible' => true],
+        // `placeholder` is null rather than a literal so the component keeps resolving
+        // its own translated default; the hotkey is app-wide by nature.
+        'command-palette' => ['hotkey' => 'cmd+k', 'placeholder' => null],
 
         // Navigation components
         'tabs' => ['variant' => 'underline'],
@@ -369,21 +376,23 @@ return [
         // displayed format is the viewer's locale by specification and is not settable
         // by the page. The key shipped for a while and could never have had an effect.
         'date-picker' => ['size' => 'md'],
-        'file-upload' => ['size' => 'md', 'multiple' => false, 'accept' => null],
+        'file-upload' => ['size' => 'md', 'multiple' => false, 'accept' => null, 'capture' => null],
         'combobox' => ['size' => 'md', 'placeholder' => null],
+        'multi-select' => ['placeholder' => null],
+        'otp-input' => ['length' => 6, 'masked' => false],
         // `placeholder` is null rather than a literal so the component keeps resolving its
         // own translated default; set a string here to override it in every locale at once.
         'tags-input' => ['max-tags' => null, 'placeholder' => null],
         'slider' => ['size' => 'md', 'min' => 0, 'max' => 100, 'step' => 1],
-        'range-slider' => ['show_values' => true],
+        'range-slider' => ['show_values' => true, 'min' => 0, 'max' => 100, 'step' => 1],
         'color-picker' => ['size' => 'md', 'format' => 'hex', 'native-on-mobile' => false],
-        'number-input' => ['size' => 'md'],
-        'password-input' => ['size' => 'md'],
+        'number-input' => ['size' => 'md', 'step' => 1],
+        'password-input' => ['size' => 'md', 'toggle' => true, 'strength-meter' => false],
         'time-picker' => ['size' => 'md'],
 
         // Additional components
-        'navbar' => ['variant' => 'default', 'max' => 'xl'],
-        'rating' => ['size' => 'md'],
+        'navbar' => ['variant' => 'default', 'max' => 'xl', 'sticky' => false],
+        'rating' => ['size' => 'md', 'max' => 5],
         'callout' => ['variant' => 'info'],
         'data-list' => ['layout' => 'horizontal'],
         'segmented-control' => ['size' => 'md'],
@@ -403,7 +412,7 @@ return [
             'client_filter_max' => 300,
         ],
         'scroll-to-top' => ['size' => 'md'],
-        'alert-dialog' => ['dismissible' => false],
+        'alert-dialog' => ['dismissible' => false, 'close-on-confirm' => false],
         'toast-region' => ['position' => 'top-right', 'duration' => 5000, 'max' => 5],
 
         // Activity-row kind → dot-color token map. Merged over the
@@ -647,12 +656,29 @@ return [
     |
     | Choose which JavaScript bundle @wirekitScripts loads.
     |
-    | 'full' — All Alpine components including overlays (~74 KB gzip)
+    | 'full' — All Alpine components including overlays.
     |          Includes Floating UI + focus-trap, bundled.
     |          Current measured sizes: docs.wirekit.app/dependencies.
     |
-    | 'core' — Only chart Alpine component (~4 KB gzip)
-    |          For projects that only use form components + charts.
+    | 'core' — The chart and image-compare Alpine components, plus the one
+    |          directive the zero-JS form primitives need.
+    |          For projects that only use the form components, charts and the
+    |          before/after slider. It installs the overlay ROOT but registers no
+    |          overlay component: `x-teleport` throws when its target is missing
+    |          and takes the page down, where an unregistered component is merely
+    |          inert.
+    |          ⚠️ No kilobyte figure here on purpose. The pointer above is the
+    |          measured source; a number copied into this block has nothing behind
+    |          it and rots. It said "~4 KB gzip" while the bundle measured 6.51 KB
+    |          — 63% out — and the file is published, so that copy is frozen in the
+    |          application at whatever it said on install day.
+    |
+    |          ⚠️ This block said "Only chart Alpine component" while
+    |          image-compare had been in the bundle for several releases —
+    |          `resources/js/wirekit.core.js` records that, and the two other
+    |          places a developer looks were corrected without this one. This
+    |          file is published by `vendor:publish`, so a wrong line here is
+    |          frozen into the application and never updated again.
     |
     | 'csp'  — For a Content-Security-Policy without `script-src 'unsafe-eval'`.
     |

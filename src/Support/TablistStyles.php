@@ -43,7 +43,7 @@ final class TablistStyles
             // border for underline, and a full-width pill or segment otherwise.
             $vertical && $variant === 'pills' => 'flex flex-col gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)]',
             $vertical && $variant === 'bordered' => 'flex flex-col border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden',
-            $vertical => 'flex flex-col items-stretch border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
+            $vertical => 'flex flex-col items-stretch border-e-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
             // Horizontal (default).
             $variant === 'pills' => 'inline-flex items-center gap-1 p-1 rounded-[var(--radius-wk-lg)] bg-[var(--color-wk-bg-muted)] max-w-full overflow-x-auto overflow-y-hidden',
             $variant === 'bordered' => 'inline-flex items-center border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] overflow-hidden max-w-full overflow-x-auto',
@@ -67,10 +67,10 @@ final class TablistStyles
             // inline-end edge.
             $vertical && $variant === 'pills' => 'justify-start p-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-md)]',
             $vertical && $variant === 'bordered' => 'justify-start p-[var(--padding-wk-x-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] last:border-b-0',
-            $vertical => 'justify-start p-[var(--padding-wk-x-sm)] -mr-[length:var(--border-wk-width)] border-r-[3px] border-transparent',
+            $vertical => 'justify-start p-[var(--padding-wk-x-sm)] -me-[length:var(--border-wk-width)] border-e-[3px] border-transparent',
             // Horizontal (default).
             $variant === 'pills' => 'p-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-md)]',
-            $variant === 'bordered' => 'p-[var(--padding-wk-x-sm)] border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)] last:border-r-0',
+            $variant === 'bordered' => 'p-[var(--padding-wk-x-sm)] border-e-[length:var(--border-wk-width)] border-[var(--color-wk-border)] last:border-e-0',
             default => 'p-[var(--padding-wk-x-sm)] -mb-[length:var(--border-wk-width)] border-b-[3px] border-transparent',
         };
 

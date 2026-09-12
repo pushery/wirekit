@@ -239,7 +239,10 @@
     @if($href) href="{{ $href }}" @endif
     @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->merge($scrollKeyboardModel)->class([$baseClasses, $variantClasses, $interactiveClasses]) }}
+    {{-- Same rule as link: see that component for why the value is read out of the bag
+         instead of written before it. --}}
+    @if($tag === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
+    {{ $attributes->except($tag === 'button' ? ['rel', 'type'] : ['rel'])->merge($scrollKeyboardModel)->class([$baseClasses, $variantClasses, $interactiveClasses]) }}
 >
     {{ $slot }}
     @if($opensNewTab)

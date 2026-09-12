@@ -13,11 +13,15 @@ namespace Pushery\WireKit\Support;
  * correction bias — a short-name typo usually meant a short name).
  *
  * Cross-cutting use sites:
- *  - Console: ShowComponentCommand, ThemeCommand, ListComponentsCommand,
- *    PublishIconsCommand, ComponentMakeCommand
- *  - Runtime: WireKit::validateProp() error messages
- *  - Drift audits: "unknown component referenced in docs" reporters
- *  - Sandbox: "unknown schema for component X" reporters
+ *  - Console: thirteen commands, from `wirekit:show` to `wirekit:install` — the current set
+ *    is `grep -rl SuggestSimilar src/`, which cannot go stale the way a list does
+ *  - Runtime: `WireKit::validateProp()` error messages, and `IconResolver`
+ *
+ * ⚠️ This list used to name five commands plus "Drift audits" and "Sandbox" reporters. The
+ * five were a subset of thirteen, and NEITHER of the last two exists — nothing under
+ * `src/Drift/` or `src/Sandbox/` references this class. A caller list in a docblock is read
+ * as the blast radius of a change, so understating it by eight and inventing two is the worst
+ * of both directions: a reader checking the named ones concludes they have checked.
  *
  * Performance note: levenshtein() over ~120 strings is ~120 microseconds
  * on a modern CPU. Negligible for CLI / one-shot use. Do NOT call inside

@@ -4,6 +4,17 @@
      any file that renders one. --}}
 @props([
     'data' => [],
+
+    // A CSP nonce for the JSON-LD block below. Left out, it resolves itself from
+    // the container binding or Vite — see WireKit::cspNonce(). Pass one explicitly
+    // when the application mints a value per response and publishes it nowhere.
+    //
+    // A JSON-LD block is data rather than code, and it is still a <script> element:
+    // `script-src` is specified over the ELEMENT, not over its type, so a
+    // nonce-based policy can reject it and take the page's structured data with it —
+    // silently, because nothing on the page looks different. The attribute costs one
+    // string when a nonce exists and nothing at all when it does not.
+    'nonce' => null,
 ])
 
 @php
@@ -11,6 +22,8 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('structured-data', $attributes->getAttributes());
+
+    $wkNonce = $nonce ?? \Pushery\WireKit\WireKit::cspNonce();
 
     // The `Schema` builders return bare `@type` fragments, so nesting an Offer
     // inside a Product needs no repeated context to strip. The context belongs
@@ -39,7 +52,7 @@
     PHP array and serializes it safely.
 
     Security:
-      JSON_HEX_TAG encodes `<` and `>` as < / > so a value
+      JSON_HEX_TAG encodes `<` and `>` as \u003C / \u003E so a value
       containing `</script>` cannot break out of the JSON-LD block.
       This is mandatory — without it, user-controlled string values would
       open an XSS vector.
@@ -59,6 +72,6 @@
           'name'     => 'WireKit',
       ]" />
 --}}
-<script type="application/ld+json">
+<script type="application/ld+json"@if($wkNonce) nonce="{{ $wkNonce }}"@endif>
 {!! json_encode($payload, JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
 </script>

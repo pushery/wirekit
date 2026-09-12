@@ -9,6 +9,7 @@ use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontPreset;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Support\DirectoryHash;
+use Pushery\WireKit\Support\FileWrite;
 
 /**
  * Publish exactly the font families the app has configured.
@@ -42,6 +43,16 @@ class PublishFontsCommand extends Command
 
     protected $description = 'Publish the font families named in config/wirekit.php (not the whole 5.8 MB tree)';
 
+    /**
+     * The `fonts.*` config keys that named something `FontRegistry` does not carry.
+     *
+     * Collected rather than counted, because the message has to name the key: "one of your
+     * three font keys is wrong" sends the developer to read all three.
+     *
+     * @var list<string>
+     */
+    private array $unresolvable = [];
+
     public function handle(): int
     {
         $targets = $this->option('all')
@@ -49,6 +60,32 @@ class PublishFontsCommand extends Command
             : $this->configuredPresets();
 
         if ($targets === []) {
+            /*
+             * TWO different states reach this branch, and it used to absorb both.
+             *
+             * Nothing configured is a legitimate setup — an application may be serving its own
+             * faces — and the comment below rightly justifies exit 0 for it. A key that NAMES a
+             * family which is not bundled is the opposite: it is the misconfiguration this
+             * command exists to prevent, and "nothing published" is the failure, not the
+             * answer. This file's own docblock describes that outcome — the files are missing
+             * and the page silently falls back to system fonts.
+             *
+             * Merged, the run printed "config fonts.sans names 'x', which is not a bundled
+             * family" and then "No font families are configured." — two statements that
+             * contradict each other — and exited 0. A developer who reads the second goes
+             * looking at an empty config that is not empty. And the reference page recommends
+             * hanging this command off `composer post-autoload-dump`, where nobody reads either
+             * line; there, the exit code is the whole message.
+             */
+            if ($this->unresolvable !== []) {
+                $this->error(count($this->unresolvable) === 1
+                    ? sprintf('%s names a family that is not bundled — nothing was published.', $this->unresolvable[0])
+                    : sprintf('%s name families that are not bundled — nothing was published.', implode(' / ', $this->unresolvable)));
+                $this->line('  Fix the key, or publish everything: php artisan wirekit:publish-fonts --all');
+
+                return self::FAILURE;
+            }
+
             $this->warn('No font families are configured.');
             $this->line('  config/wirekit.php → fonts.sans / fonts.serif / fonts.mono');
             $this->line('  Or publish everything: php artisan wirekit:publish-fonts --all');
@@ -127,6 +164,7 @@ class PublishFontsCommand extends Command
             $preset = FontRegistry::get((string) $key);
 
             if ($preset === null) {
+                $this->unresolvable[] = "fonts.{$category}";
                 $this->warn("config fonts.{$category} names '{$key}', which is not a bundled family — skipped.");
                 $this->line('  Available: '.implode(', ', array_map(
                     static fn ($p) => $p->key,
@@ -184,9 +222,7 @@ class PublishFontsCommand extends Command
      */
     private function copyDirectory(string $source, string $target, callable $transform): void
     {
-        if (! is_dir($target)) {
-            mkdir($target, 0755, true);
-        }
+        FileWrite::ensureDirectory($target);
 
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
@@ -198,9 +234,7 @@ class PublishFontsCommand extends Command
             $destination = $target.DIRECTORY_SEPARATOR.$relative;
 
             if ($item->isDir()) {
-                if (! is_dir($destination)) {
-                    mkdir($destination, 0755, true);
-                }
+                FileWrite::ensureDirectory($destination);
 
                 continue;
             }
@@ -210,7 +244,7 @@ class PublishFontsCommand extends Command
             // the package ships. Everything else — the woff2 payloads — is copied
             // byte for byte.
             $contents = (string) file_get_contents($item->getPathname());
-            file_put_contents($destination, $transform($relative, $contents));
+            FileWrite::put($destination, $transform($relative, $contents));
         }
     }
 
@@ -222,9 +256,13 @@ class PublishFontsCommand extends Command
         );
 
         foreach ($iterator as $item) {
-            $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
+            FileWrite::delete($item->getPathname());
         }
 
-        rmdir($dir);
+        // The directory itself, after its contents. Unchecked, a prune that could not finish
+        // left an empty published family behind while the command reported it pruned — and
+        // the next run skips it, because the check above is `in_array($relative, $keep)`
+        // rather than "is it still on disk".
+        FileWrite::delete($dir);
     }
 }

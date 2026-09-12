@@ -116,7 +116,7 @@
     // </a>. Newlines inside the tag would render as a trailing space and
     // extend the underline past the link text.
     $extLink = $external
-        ? '<svg class="inline-block h-3.5 w-3.5 ml-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>'
+        ? '<svg class="inline-block h-3.5 w-3.5 ms-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>'
         : '';
     $newTabHint = $opensNewTab ? '<span class="sr-only">'.e(__('wirekit::(opens in new tab)')).'</span>' : '';
 @endphp
@@ -125,5 +125,18 @@
     @if($href) href="{{ $href }}" @endif
     @if($external) target="_blank" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $attributes->except('rel')->class([$classes]) }}
+    {{-- `type` on a button, and ONLY on a button.
+
+         HTML puts a `<button>` with no `type` in the SUBMIT state, so a link-styled action
+         inside a form — "Resend code", "Cancel" — submitted it on click and on Enter. Silent
+         data loss for anyone who followed the prose rather than copying the `type="button"`
+         out of the docs example.
+
+         ⚠️ RESOLVED THROUGH THE BAG RATHER THAN EMITTED BEFORE IT, and the difference is the
+         whole fix. A hardcoded `type="button"` here would come FIRST, and HTML keeps the first
+         occurrence of a repeated attribute — so it would silently beat a caller's own
+         `type="submit"`. Reading the bag and excluding `type` from it emits exactly one
+         attribute, and the caller's value wins when they gave one. --}}
+    @if($as === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
+    {{ $attributes->except($as === 'button' ? ['rel', 'type'] : ['rel'])->class([$classes]) }}
 >{{ $slot }}{!! $extLink !!}{!! $newTabHint !!}</{{ $as }}>

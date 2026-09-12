@@ -29,7 +29,7 @@ use JsonException;
  *
  * ## The two escaping traps, both measured rather than assumed
  *
- * **Unicode must stay literal.** `json_encode` escapes non-ASCII as `ü` by
+ * **Unicode must stay literal.** `json_encode` escapes non-ASCII as `\u00fc` by
  * default, and Alpine's CSP tokenizer understands only `\n`, `\t`, `\r`, `\\`
  * and the quote — every other backslash is dropped, keeping the letters. So
  * `Grüße` arrives as `Gru00fce`: not an error, just quietly wrong text.

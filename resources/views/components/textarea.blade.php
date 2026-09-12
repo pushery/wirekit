@@ -121,8 +121,11 @@
     // the control scrolls and stays resizable, and we never emit `rows="auto"`
     // (invalid HTML) — auto falls back to a 2-row minimum. What a reader on a
     // baseline browser does NOT get is the growing, which is the thing the prop is
-    // named after. Recorded in BrowserBaselineGuardTest's accepted-use register
-    // with that degradation spelled out.
+    // named after. The declaration sits behind the `@supports (field-sizing: content)`
+    // rule in dist/wirekit.css that the `wk-autosize` class below opts into — so it IS
+    // feature-detected, where it lives. This template ships no arbitrary variant for
+    // it, and the pointer that used to stand here, at an accepted-use row in
+    // BrowserBaselineGuardTest, named a row that had never existed.
     $autosize = $rows === 'auto' || $rows === true;
     $minRows = $autosize ? 2 : (int) $rows;
 
@@ -214,7 +217,11 @@
 
 <div class="space-y-1.5 min-w-0" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
-        <x-wirekit::label :for="$id" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
+        {{-- The asterisk flag is READ from the bag rather than declared as a prop, deliberately:
+             declaring it would pull `required` OUT of the bag, and the bag is what carries the
+             attribute to the native control below. A bare `required` lands in the bag as
+             `true`, so this reads it without consuming it. --}}
+        <x-wirekit::label :for="$id" :required="(bool) $attributes->get('required', false)" :class="$hideLabel ? 'sr-only' : ''">{{ $label }}</x-wirekit::label>
     @endif
 
     <textarea

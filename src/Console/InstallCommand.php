@@ -7,17 +7,13 @@ namespace Pushery\WireKit\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use InvalidArgumentException;
-use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontPreset;
 use Pushery\WireKit\Fonts\FontRegistry;
-use Pushery\WireKit\Support\BladeParser;
-use Pushery\WireKit\Support\ClassPropsExtractor;
-use Pushery\WireKit\Support\DocsVisibility;
+use Pushery\WireKit\Support\ComponentManifest;
+use Pushery\WireKit\Support\FileWrite;
 use Pushery\WireKit\Support\InstallLog;
-use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\Support\TailwindVersion;
-use Pushery\WireKit\Support\VersionResolver;
 use Pushery\WireKit\Theming\ThemePresetRegistry;
 use Pushery\WireKit\WireKit;
 
@@ -514,6 +510,38 @@ class InstallCommand extends Command
     }
 
     /**
+     * Is this absolute path inside the project root?
+     *
+     * The comparison is on RESOLVED paths, so `..` segments, a symlinked parent and a
+     * `/private/var` vs `/var` divergence on macOS all collapse to the same answer. A string
+     * prefix check on the unresolved path answers a different question — whether the path was
+     * WRITTEN to look local — which is exactly what an attacker controls.
+     *
+     * The trailing separator matters: without it `/project-evil` passes a prefix test against
+     * `/project`.
+     */
+    private function pathStaysInsideTheProject(string $absolutePath): bool
+    {
+        $root = realpath(base_path());
+
+        if ($root === false) {
+            return false;
+        }
+
+        // The file itself may not exist on the restore branch, so the PARENT is resolved and
+        // the basename appended back.
+        $parent = realpath(dirname($absolutePath));
+
+        if ($parent === false) {
+            return false;
+        }
+
+        $resolved = $parent.DIRECTORY_SEPARATOR.basename($absolutePath);
+
+        return $resolved === $root || str_starts_with($resolved, $root.DIRECTORY_SEPARATOR);
+    }
+
+    /**
      * Reverse the most-recent install session by replaying its
      * before_snapshot for every tracked file. Errors during rollback are
      * non-fatal per-file — we report what we couldn't restore and
@@ -574,7 +602,48 @@ class InstallCommand extends Command
         $restored = 0;
         $failed = 0;
         foreach ($lastSession['actions'] as $action) {
+            /*
+             * The path is CONFINED to the project before anything is written or deleted.
+             *
+             * ⚠️ `$action['file']` comes out of `.wirekit-install.log`, a JSON file in the
+             * project root — so it is data this command reads, not data it produced in this
+             * process. `base_path('../../.ssh/authorized_keys')` resolves outside the project
+             * happily, and the two branches below are `File::delete()` and `File::put()`. A
+             * log that arrives with a repository, or that anything else with write access to
+             * the project root has touched, therefore turns `--rollback` into an arbitrary
+             * overwrite the moment a developer runs the command to UNDO something.
+             *
+             * `realpath()` on the parent rather than the file itself: the file may legitimately
+             * not exist yet on the restore branch, and a non-existent path has no realpath.
+             */
+            /*
+             * ⚠️ THE SHAPE IS CHECKED BEFORE THE KEY IS READ, AND THIS LINE SITS OUTSIDE THE
+             * `try` BELOW — so an entry without a `file` key did not fail this one entry, it
+             * threw out of the loop and ended the whole rollback. Laravel's error handler
+             * turns an undefined-index warning into an `ErrorException`, and the `catch` that
+             * would have contained it starts eight lines further down.
+             *
+             * That is the worst moment for an abort: earlier entries have already been
+             * restored, so the project is left half-undone with no record of where it stopped.
+             * Refusing the one malformed entry and continuing is what every other failure in
+             * this loop already does.
+             */
+            if (! is_string($action['file'] ?? null) || ! array_key_exists('before_snapshot', $action)) {
+                $this->line('  <fg=red>✗</> Refused a log entry that is missing its file or snapshot');
+                $failed++;
+
+                continue;
+            }
+
             $absolutePath = base_path($action['file']);
+
+            if (! $this->pathStaysInsideTheProject($absolutePath)) {
+                $this->line('  <fg=red>✗</> Refused '.$action['file'].': the log points outside the project');
+                $failed++;
+
+                continue;
+            }
+
             try {
                 if ($action['before_snapshot'] === null) {
                     // File didn't exist before — remove if it exists now.
@@ -795,10 +864,21 @@ class InstallCommand extends Command
     }
 
     /**
-     * Routes each `--font*` flag through the font-override injector.
+     * Record the developer's chosen ApexCharts license tier in the published config.
      *
-     * Centralized here so future multi-font flags (`--font-serif`,
-     * `--font-mono`) can be added by extending the categories array.
+     * Returns SUCCESS when the flag is absent — the tier is opt-in, and an installer run
+     * without it is not a failure. An unknown tier is a FAILURE with the allowed values
+     * named, because a typo here would otherwise be written into the config silently.
+     *
+     * ⚠️ THE NOTICE IS PRINTED BEFORE THE CONFIG IS TOUCHED, and that order is the point:
+     * the flag records acceptance, it does not gate the notice. A developer who skips the
+     * installer still meets it on the chart docs page and from `wirekit:doctor`.
+     *
+     * ⚠️ This method carried the docblock of `processFontFlags()` — "Routes each `--font*`
+     * flag through the font-override injector" — which is a description of a different
+     * method a hundred lines further down, and one that already has its own. `src/` ships to
+     * Packagist, so that sentence was what an editor showed a developer hovering a method
+     * that writes a license tier.
      */
     private function processApexLicenseFlag(): int
     {
@@ -933,7 +1013,34 @@ class InstallCommand extends Command
             return;
         }
 
-        @file_put_contents($configPath, $replaced);
+        /*
+         * Tracked BEFORE the write, so `--rollback` can undo it.
+         *
+         * ⚠️ It was not, and this is the mutation most worth undoing: `--apex-license` edits
+         * `config/wirekit.php`, a file the developer owns and may have hand-tuned. Every other
+         * config-touching step in this command records a before-snapshot; this one wrote and
+         * said nothing, so a rollback restored the rest of the install and left the chart
+         * adapter switched. The developer is then looking at a config they did not write, in
+         * a file the command told them it had reset.
+         *
+         * The snapshot is $contents — the copy read at the top of this method, before the
+         * `preg_replace` ran. Re-reading the file here would capture whatever else has
+         * happened in the meantime and record it as the pre-install state.
+         */
+        $this->trackInstallAction('apex-license', $configPath, $contents);
+
+        /*
+         * Checked, and it was not. `@file_put_contents` discards the warning AND the return
+         * value, so a read-only `config/wirekit.php` — the ordinary case on a deployed tree,
+         * or after a `chmod` somebody forgot — produced "Set charts.library => apexcharts"
+         * and exit 0 over a file that never changed. The developer then looks for the reason
+         * their charts still use the other adapter, in a config that says what they expect.
+         */
+        try {
+            FileWrite::put($configPath, $replaced);
+        } catch (\RuntimeException $e) {
+            $this->components->error($e->getMessage());
+        }
     }
 
     /**
@@ -1419,12 +1526,13 @@ CSS;
     /**
      * Writes `.wirekit-schema.json` at the developer project root.
      *
-     * The schema is the same JSON manifest emitted by `wirekit:export-json`
-     * — every component's name, tag, category, description, full prop
-     * records (with default expressions + inline comments), and slot
-     * names. Drop-in for IDE extensions, AI tooling, and editor
-     * autocomplete plugins that want a single zero-configuration
-     * entry-point for "what does WireKit offer?".
+     * The schema is the same JSON manifest emitted by `wirekit:export-json`, built by the same
+     * `ComponentManifest` and not by a second loop with the same intent: every component's
+     * name, tag and tag alias, category, description, docs URL, full prop records (with default
+     * expressions and inline comments), the kind of component it is, its slot names and its
+     * sub-component records — under a header carrying the installed and the released version.
+     * Drop-in for IDE extensions, AI tooling, and editor autocomplete plugins that want a
+     * single zero-configuration entry-point for "what does WireKit offer?".
      *
      * Re-running `wirekit:install` regenerates the file (the manifest
      * changes with every package upgrade). Developers can either commit
@@ -1443,55 +1551,21 @@ CSS;
         $targetPath = base_path('.wirekit-schema.json');
 
         try {
-            // Build the schema directly via the registry + parser helpers.
-            // Same output shape as `wirekit:export-json --pretty`, single
-            // source of truth, no duplicated work — invoking the artisan
-            // command separately would walk the same registry twice.
-            $components = [];
-            foreach (ComponentRegistry::all() as $name => $meta) {
-                $bladePath = $this->resolveBladePathForSchema($name);
-                // Single source of truth — handles both anonymous-Blade
-                // (PropsParser) and class-based (ClassPropsExtractor)
-                // components uniformly.
-                $props = ComponentRegistry::extractProps($name);
-                $componentClass = ComponentRegistry::componentClass($name);
-                $classPublicProps = $componentClass !== null
-                    ? ClassPropsExtractor::publicPropertyNames($componentClass)
-                    : [];
-                $slots = $bladePath !== null
-                    ? BladeParser::extractSlotsWithMetadataFromSource(
-                        (string) file_get_contents($bladePath),
-                        $bladePath,
-                        $classPublicProps
-                    )
-                    : [];
-                $subComponents = $this->discoverSubComponentsForSchema($name);
-                $components[] = [
-                    'name' => $name,
-                    'tag' => ComponentRegistry::tag($name),
-                    'category' => $meta['category'],
-                    'description' => $meta['description'],
-                    // Nulled for a component with no published page of its own, the
-                    // same way `wirekit:export-json` does it. Sixteen registry
-                    // entries are documented on a parent page rather than their
-                    // own — the reading-* parts, `glass`, `toast-region`,
-                    // `kanban-column` and their kind — and this file lands in the
-                    // developer's project root as an editor/AI feed. A URL that
-                    // 404s there is worse than no URL: the tool follows it.
-                    'docs_url' => DocsVisibility::componentPageStatus($name) === DocsVisibility::STATUS_PUBLIC
-                        ? WireKit::DOCS_URL."/components/{$name}"
-                        : null,
-                    'props' => $props,
-                    'slots' => $slots,
-                    'sub_components' => $subComponents,
-                ];
-            }
-
-            $document = [
-                'version' => VersionResolver::resolve(),
-                'generated_at' => date('c'),
-                'components' => $components,
-            ];
+            /*
+             * ⚠️ THIS BUILT THE MANIFEST A SECOND TIME, AND THE TWO HAD DRIFTED APART.
+             *
+             * The loop that stood here mirrored `wirekit:export-json` — its own comment said
+             * "same output shape, single source of truth" — and re-derived slots and
+             * sub-components through private helpers of this class. By the time anyone
+             * compared them, the feeder had lost `component_kind` and `tag_alias` from every
+             * entry and `released_version` from the document, and was writing `sub_components`
+             * as bare dotted strings where the export writes `{name, tag, props}` records.
+             *
+             * Three documented places tell an integrator the two files are the same manifest.
+             * One builder is what makes that true; a comment claiming it is what stopped
+             * anyone checking.
+             */
+            $document = ComponentManifest::document();
 
             $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_PRETTY_PRINT;
             $json = json_encode($document, $flags);
@@ -1510,53 +1584,5 @@ CSS;
             // runtime dependency. Log the cause and move on.
             $this->line('  <fg=yellow>!</> Skipped .wirekit-schema.json — '.$e->getMessage());
         }
-    }
-
-    /**
-     * Resolve the package-relative Blade path for a component name.
-     * Handles flat names + dotted sub-component shapes.
-     */
-    private function resolveBladePathForSchema(string $name): ?string
-    {
-        $base = __DIR__.'/../../resources/views/components/';
-        $flat = $base.$name.'.blade.php';
-        if (file_exists($flat)) {
-            return $flat;
-        }
-        $dotted = $base.str_replace('.', '/', $name).'.blade.php';
-        if (file_exists($dotted)) {
-            return $dotted;
-        }
-
-        return null;
-    }
-
-    /**
-     * Mirror of ExportJsonCommand::discoverSubComponents() — kept
-     * inline here so the .wirekit-schema.json writer doesn't have to
-     * spawn a sub-process. Same heuristic: scan the sibling
-     * `resources/views/components/<name>/` directory, skip
-     * `index.blade.php`, return sorted dot-separated qualified names.
-     *
-     * @return list<string>
-     */
-    private function discoverSubComponentsForSchema(string $name): array
-    {
-        $subDir = __DIR__.'/../../resources/views/components/'.$name;
-        if (! is_dir($subDir)) {
-            return [];
-        }
-        $subFiles = glob($subDir.'/*.blade.php') ?: [];
-        $subs = [];
-        foreach ($subFiles as $file) {
-            $subName = basename($file, '.blade.php');
-            if ($subName === 'index') {
-                continue;
-            }
-            $subs[] = $name.'.'.$subName;
-        }
-        sort($subs);
-
-        return $subs;
     }
 }

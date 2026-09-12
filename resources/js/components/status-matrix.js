@@ -187,7 +187,47 @@ export default function wirekitStatusMatrix(config = {}) {
             e.preventDefault();
             nr = Math.max(0, Math.min(this.rowCount - 1, nr));
             nc = Math.max(0, Math.min(this.colCount - 1, nc));
-            this.$root.querySelector(`[data-r="${nr}"][data-c="${nc}"]`)?.focus();
+
+            const target = this.$root.querySelector(`[data-r="${nr}"][data-c="${nc}"]`);
+
+            if (! target) {
+                return;
+            }
+
+            /*
+             * MOVE the tab stop, do not just move focus. This only did the second half.
+             *
+             * The template nails `tabindex="0"` to cell (0,0) and gives every other cell
+             * `-1`, which is the correct starting state and was also the permanent one:
+             * arrowing to a cell focused it and left the stop where it was. So a reader who
+             * navigated to the middle of a permission matrix, tabbed out to check something,
+             * and tabbed back landed at (0,0) and had to cross the whole grid again — one
+             * keypress per column, which is exactly the cost the Home/End comment above
+             * describes as the reason those keys exist.
+             *
+             * The comment on this handler calls it "roving focus", and the roving half was
+             * the part that was missing. Nothing could see it: the focus lands correctly,
+             * the grid is in a valid state, and only leaving and returning shows the loss.
+             */
+            this._moveTabStopTo(target);
+            target.focus();
+        },
+
+        /**
+         * Make `el` the grid's single tab stop.
+         *
+         * The whole point of the pattern is that a composite widget takes ONE stop, so the
+         * previous holder has to give it up in the same breath — two cells at `0` is two tab
+         * stops in a grid the reader is told has one.
+         */
+        _moveTabStopTo(el) {
+            const previous = this.$root.querySelector('[data-r][data-c][tabindex="0"]');
+
+            if (previous && previous !== el) {
+                previous.setAttribute('tabindex', '-1');
+            }
+
+            el.setAttribute('tabindex', '0');
         },
 
         _emit() {

@@ -10,6 +10,11 @@ scripts, the linter configuration and `package.json` are all stripped from the d
 command block here would resolve to nothing for every reader who has one, and the repository carries
 its own setup guide next to the tooling it describes — which is where it stays correct.
 
+Everything below addresses somebody working in that repository, so the paths it names —
+`docs/components/`, `scripts/`, `tests/` — are repository paths and are **not** present in the
+installed package. If you are reading this from `vendor/pushery/wirekit`, clone the repository
+first; the instructions are correct there and only there.
+
 Issues and pull requests go to [github.com/pushery/wirekit](https://github.com/pushery/wirekit).
 
 ## Before Committing

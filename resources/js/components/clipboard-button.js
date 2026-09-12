@@ -22,6 +22,10 @@
 export default function wirekitClipboardButton(config = {}) {
     return {
         copied: false,
+        // Set when the write was REFUSED, so the template can take back the success the
+        // optimistic flip announced. Separate from `copied` because they are three states,
+        // not two: idle, copied, failed.
+        failed: false,
         _value: config.value == null ? '' : String(config.value),
         _duration: Number(config.duration) || 2000,
         _resetTimer: null,
@@ -44,8 +48,35 @@ export default function wirekitClipboardButton(config = {}) {
             // writeText rejects when the permission is denied. Neither belongs
             // in the developer's console as an uncaught error.
             if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(this._value).catch(() => {});
+                navigator.clipboard.writeText(this._value).catch(() => this._announceFailure());
+            } else {
+                // No clipboard API at all — outside a secure context, or an old engine. The
+                // optimistic flip above already told the reader it worked, so it has to be
+                // taken back here too, not only on a rejected promise.
+                this._announceFailure();
             }
+        },
+
+        /**
+         * Take back the success the optimistic flip announced.
+         *
+         * Flipping first is right — the label swap and the live region are the reader's only
+         * feedback and must not wait on a promise that may never settle. What was missing is
+         * the other half of that bargain: when the write is REFUSED, "Copied to clipboard"
+         * has been announced and nothing corrects it, so the reader believes they have
+         * something they do not, pastes nothing, and has no way to find out why.
+         *
+         * One announcement on the success path, a second only on deviation — the same shape
+         * the optimistic-UI contract in this package uses everywhere else.
+         */
+        _announceFailure() {
+            this.copied = false;
+            this.failed = true;
+
+            clearTimeout(this._resetTimer);
+            this._resetTimer = setTimeout(() => {
+                this.failed = false;
+            }, this._duration);
         },
 
         _scheduleReset() {

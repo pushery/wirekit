@@ -165,9 +165,9 @@ export default function wirekitSidebarRail(config = {}) {
                 this._settleFallback = null;
             }
 
-            // The arrival marker's own timer, and it is here because the sweep caught it
-            // missing on the develop gate: every timeout a plugin opens is released on
-            // teardown, or it fires into a scope that no longer exists.
+            // The arrival marker's own timer, and it is here for the rule every timer in this
+            // package follows: a timeout a component opens is released on teardown, or it
+            // fires into a scope that no longer exists.
             if (this._arrivalTimer) {
                 clearTimeout(this._arrivalTimer);
                 this._arrivalTimer = null;

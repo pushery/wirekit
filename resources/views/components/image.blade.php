@@ -8,7 +8,13 @@
     'src' => null,
     // Accessible name. REQUIRED for a content image; pass an empty string ONLY
     // for a purely decorative image (renders alt="" so screen readers skip it).
-    'alt' => '',
+    //
+    // The default is null rather than '' so the two cases can be told apart. With ''
+    // as the default, "the developer marked this decorative" and "the developer forgot"
+    // produced byte-identical markup — and the forgotten one is a content image that
+    // announces nothing, which no automated check can see either, because `alt=""` IS
+    // valid HTML and IS the correct answer for the other case.
+    'alt' => null,
     // Optional visible caption — renders a <figcaption> under the image.
     'caption' => null,
     // Optional intrinsic aspect-ratio ("16/9", "4/3", "1/1", or a number). Sizes
@@ -33,6 +39,19 @@
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('image', $attributes->getAttributes());
+
+    // A content image with no name is the failure this component cannot see for itself, so
+    // it says so where a developer will read it. Debug only, and a log line rather than an
+    // exception: nine of this repo's own twenty-two call sites omit `alt` on decorative
+    // images, and throwing would make the correct decorative case unusable to make the
+    // incorrect one visible.
+    if ($src !== null && $alt === null && config('app.debug')) {
+        \Illuminate\Support\Facades\Log::warning(
+            'WireKit [image]: no `alt` given, so the image renders as decorative (alt=""). '
+            .'Pass alt="…" for a content image, or alt="" to say decorative on purpose. '
+            .'src: '.(string) $src
+        );
+    }
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
@@ -66,7 +85,7 @@
 <figure {{ $attributes->class([$figureClasses]) }}>
     <img
         src="{{ $src }}"
-        alt="{{ $alt }}"
+        alt="{{ $alt ?? '' }}"
         loading="{{ $loading }}"
         decoding="async"
         @if($ratio) style="aspect-ratio: {{ $ratio }}" @endif

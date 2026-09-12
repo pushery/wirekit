@@ -14,8 +14,29 @@
     'columnManager' => false,       // show/hide-columns dropdown
     'hidden' => [],                 // initially-hidden column keys
     'server' => false,              // server-driven: stop local sort/filter, emit events only
-    'searchPlaceholder' => 'Search…',
+    // Milliseconds to wait after the last keystroke before announcing `search-change`.
+    //
+    // Only the OUTBOUND event waits. `x-model` still updates on every keystroke, so the
+    // client-side filter stays instant and the box never feels laggy — what this delays
+    // is the round trip a server-mode table makes, which was one request per CHARACTER.
+    // Typing an eight-letter name asked the application eight questions and threw away
+    // the first seven answers, each of them a query.
+    //
+    // Configurable because the right value is a property of the BACKEND, not of the
+    // table: a local index wants it short, a rate-limited third-party search wants it
+    // long. 0 disables the wait entirely, for a developer who throttles on their own side.
+    'searchDebounce' => config('wirekit.components.data-table.search-debounce', 300),
+    'searchPlaceholder' => __('wirekit::Search…'),
     'emptyText' => __('wirekit::No results'),
+    // Whether a server round trip is in flight. Server mode exists for datasets whose round
+    // trip is SLOW, and every sort click and every keystroke in the search field starts one —
+    // meanwhile the table keeps showing the previous page's rows with nothing to say a query
+    // is on its way. A sighted reader cannot tell a slow query from an ignored click, and a
+    // screen-reader user gets no WCAG 4.1.3 status until the rows change.
+    //
+    // A prop rather than something derived: only the application knows a request is out.
+    // Drive it from `wire:loading` — see the server-mode recipe on the docs page.
+    'loading' => false,
     'caption' => null,              // accessible table caption / name
     // Accessible name for the bulk-action bar, and the switch that makes it a LANDMARK.
     //
@@ -36,18 +57,30 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
-    use Illuminate\Support\Str;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('data-table', $attributes->getAttributes());
 
+    // The selection readout is a COUNT that only exists in the browser, so the plural form
+    // has to be chosen there: the server renders every form and `Intl.PluralRules` picks.
+    // It shipped as `<span x-text="selectedCount"></span> selected` — a bare English word
+    // inside an `aria-live` region, which is the one string in this toolbar a non-visual
+    // reader is guaranteed to hear.
+    $selectionPhrases = \Pushery\WireKit\Support\AlpinePayload::from(
+        \Pushery\WireKit\Support\PluralPhrases::from('wirekit::{1} :count selected|[2,*] :count selected')
+    );
+
+    // BCP-47 for `Intl.PluralRules` — the APPLICATION's locale, not the browser's.
+    $pluralLocale = \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale()));
+
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $columnManager = BooleanProp::from($columnManager, false);
     $server = BooleanProp::from($server, false);
+    $loading = BooleanProp::from($loading, false);
     // Same contract for the two whose default is spelled as a `config()` fallback rather
     // than a literal. Both gate whole regions of the table — the checkbox column and the
     // search field — so an unbound `selectable="false"` rendered the very column it asked
@@ -167,7 +200,7 @@
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitDataTable({ rows: {{ \Pushery\WireKit\Support\AlpinePayload::from($rowsArr) }}, columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }}, avatarTints: {{ \Pushery\WireKit\Support\AlpinePayload::from($avatarTints) }}, prominenceClasses: {{ \Pushery\WireKit\Support\AlpinePayload::from($prominenceClasses) }} })"
+    x-data="wirekitDataTable({ rows: {{ \Pushery\WireKit\Support\AlpinePayload::from($rowsArr) }}, columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }}, avatarTints: {{ \Pushery\WireKit\Support\AlpinePayload::from($avatarTints) }}, prominenceClasses: {{ \Pushery\WireKit\Support\AlpinePayload::from($prominenceClasses) }}, selectionPhrases: {{ $selectionPhrases }}, locale: {{ $pluralLocale }} })"
     {{ $attributes->only('class')->class([$base]) }}
 >
     @if($selectable && $name)
@@ -187,7 +220,7 @@
                     <input
                         type="search"
                         x-model="search"
-                        @input="onSearch()"
+                        @input{{ (int) $searchDebounce > 0 ? '.debounce.'.((int) $searchDebounce).'ms' : '' }}="onSearch()"
                         placeholder="{{ $searchPlaceholder }}"
                         aria-label="{{ $searchPlaceholder }}"
                         {{-- Search input is a form control (WCAG 1.4.11): its border
@@ -203,8 +236,8 @@
                 {{ $toolbar ?? '' }}
                 {{-- Density toggle --}}
                 <div class="inline-flex rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] overflow-hidden" role="group" aria-label="{{ __('wirekit::Row density') }}">
-                    <button type="button" @click="setDensity('comfortable')" :aria-pressed="density === 'comfortable'" :class="density === 'comfortable' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">Comfortable</button>
-                    <button type="button" @click="setDensity('compact')" :aria-pressed="density === 'compact'" :class="density === 'compact' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">Compact</button>
+                    <button type="button" @click="setDensity('comfortable')" :aria-pressed="density === 'comfortable'" :class="density === 'comfortable' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Comfortable') }}</button>
+                    <button type="button" @click="setDensity('compact')" :aria-pressed="density === 'compact'" :class="density === 'compact' ? 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-muted)]'" class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset">{{ __('wirekit::Compact') }}</button>
                 </div>
                 @if($columnManager)
                     {{-- Column manager — a self-contained popover (nested scope; inherits
@@ -236,7 +269,7 @@
                     <div x-data="wirekitDataTableColumnMenu()" @click.outside="open = false" @keydown.escape="open = false" class="relative">
                         <button type="button" id="{{ $columnsButtonId }}" x-ref="colBtn" @click="open = !open" :aria-expanded="open" aria-controls="{{ $columnsPanelId }}" class="{{ $iconBtn }}">
                             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
-                            Columns
+                            {{ __('wirekit::Columns') }}
                         </button>
                         <div x-show="open" x-cloak x-ref="colMenu" id="{{ $columnsPanelId }}" role="group" aria-labelledby="{{ $columnsButtonId }}" class="fixed z-[var(--z-wk-dropdown)] w-[12rem] max-h-[70vh] overflow-y-auto p-[var(--padding-wk-x-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]">
                             <template x-for="col in columns" :key="col.key">
@@ -261,10 +294,15 @@
          outcomes, since it reads as named to the markup and as nothing to the reader. --}}
     @if($selectable)
         <div x-show="selectedCount > 0" x-cloak @if(filled($bulkActionsLabel)) role="region" aria-label="{{ $bulkActionsLabel }}" @endif class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-muted)] rounded-[var(--radius-wk-md)]">
-            <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" aria-live="polite"><span x-text="selectedCount"></span> selected</span>
+            {{-- `aria-atomic="true"`, because the region holds ONE sentence that only makes sense
+                     whole. Without it a polite region announces the part that changed, and the part
+                     that changes here is the number — so going from "3 rows selected" to "4 rows
+                     selected" could be read out as "4", with the noun the count belongs to left
+                     behind. Every other live region in this catalog carries the pair. --}}
+                <span class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" aria-live="polite" aria-atomic="true" x-text="selectionSummary"></span>
             <div class="flex items-center gap-[var(--space-wk-sm)]">
                 {{ $bulkActions ?? '' }}
-                <button type="button" @click="clearSelection()" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">Clear</button>
+                <button type="button" @click="clearSelection()" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">{{ __('wirekit::Clear') }}</button>
             </div>
         </div>
     @endif
@@ -276,7 +314,7 @@
          dashboard were three identical rotor entries, and axe reports that as
          `landmark-unique`. With a caption the region points at it (`aria-labelledby`), which is
          a name the reader chose; without one there is no landmark to be ambiguous about. --}}
-    <div @if(filled($caption)) role="region" aria-labelledby="{{ $captionId }}" @endif tabindex="0" class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+    <div @if(filled($caption)) role="region" aria-labelledby="{{ $captionId }}" @endif @if($loading) aria-busy="true" @endif tabindex="0" class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
         <table class="w-full border-collapse text-[length:var(--text-wk-sm)]">
             @if($caption)
                 <caption id="{{ $captionId }}" class="sr-only">{{ $caption }}</caption>
@@ -474,6 +512,15 @@
              It also stays out of the `empty` slot's way: a slot holding a whole
              `<x-wirekit::empty-state>` would otherwise have its heading, its illustration
              and its call to action read out as one status message. --}}
-        <p class="sr-only" role="status" aria-live="polite" x-text="emptyAnnouncement"></p>
+        {{-- The pending sentence goes through the SAME region as the empty announcement, and
+             wins while a request is out: two live regions competing would announce in an order
+             nobody controls, and "loading" is the more urgent of the two. Rendered as static
+             text rather than through Alpine, because `loading` is a server-rendered prop — the
+             morph that flips it is what makes the announcement happen. --}}
+        @if($loading)
+            <p class="sr-only" role="status" aria-live="polite">{{ __('wirekit::Loading results') }}</p>
+        @else
+            <p class="sr-only" role="status" aria-live="polite" x-text="emptyAnnouncement"></p>
+        @endif
     </div>
 </div>

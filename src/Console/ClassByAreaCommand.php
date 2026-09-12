@@ -36,6 +36,15 @@ class ClassByAreaCommand extends Command
     protected $description = 'Inventory + diff classes across the five WireKit source layers';
 
     /**
+     * Whether the compiled stylesheet was found and read.
+     *
+     * A property rather than a return value because `collectAreas()` already returns the
+     * inventory, and threading a second value out of it would mean a tuple that every caller
+     * has to destructure for a fact only the JSON renderer reads.
+     */
+    private bool $compiledCssMeasured = true;
+
+    /**
      * The five area keys, in report order.
      *
      * Named once so the `--area` vocabulary, the `Available:` line and the suggestion
@@ -60,6 +69,21 @@ class ClassByAreaCommand extends Command
         // would yield summary text instead of the JSON asked for.
         if (! in_array($format, ['summary', 'full', 'json'], true)) {
             $this->error("Unknown --format value: {$format}. Available: summary, full, json");
+
+            /*
+             * The Levenshtein hint, which `--area` below has and this arm did not — while the
+             * comment above it cites `--format` as the example every sibling follows. So the
+             * flag held up as the reference was the one missing the behavior, and a developer
+             * who typed `--format=jsom` got a list where `--area` would have said "Did you
+             * mean json?".
+             */
+            $hint = SuggestSimilar::format(
+                SuggestSimilar::byLevenshtein($format, ['summary', 'full', 'json'])
+            );
+
+            if ($hint !== null) {
+                $this->line('  '.$hint);
+            }
 
             return self::FAILURE;
         }
@@ -100,7 +124,7 @@ class ClassByAreaCommand extends Command
             $projectRoot = dirname(__DIR__, 2);
         }
 
-        $areas = $this->collectAreas($projectRoot);
+        $areas = $this->collectAreas($projectRoot, $format);
 
         // ⚠️ `--area` says which rows are ASKED FOR. It must never say which operands EXIST.
         //
@@ -142,7 +166,7 @@ class ClassByAreaCommand extends Command
     /**
      * @return array<string, array<int, string>>
      */
-    private function collectAreas(string $projectRoot): array
+    private function collectAreas(string $projectRoot, string $format): array
     {
         $inventory = new ClassInventory(
             projectRoot: $projectRoot,
@@ -167,13 +191,29 @@ class ClassByAreaCommand extends Command
             $compiled = CompiledCssParser::extractGeneratedSelectors($compiledCss);
             sort($compiled);
         } else {
-            // Say so. An empty compiled column and a compiled column that was never read
-            // look identical in the output, and the second one silently reports every
-            // class as un-emitted.
-            $this->components->warn(
-                'No compiled CSS found, so the compiled column is empty rather than measured. '.
-                'Run your asset build first (it is looked for at public/build/assets/*.css).'
-            );
+            $this->compiledCssMeasured = false;
+
+            /*
+             * Say so — an empty compiled column and a compiled column that was never read look
+             * identical in the output, and the second one silently reports every class as
+             * un-emitted.
+             *
+             * ⚠️ NOT ON THE JSON PATH. Laravel's console components write to STDOUT, so this
+             * line landed in front of the document `renderJson()` emits four steps later, and
+             * `jq` aborts on it while the command still exits 0. The reference page sells
+             * `--format=json` for CI dashboards and audit-history pipelines, and the condition
+             * that triggers this is the ordinary state of a fresh checkout — the exact moment
+             * somebody wires the report up for the first time.
+             *
+             * The absence is not dropped, it MOVES: `compiled_measured` travels in the
+             * document, which is the shape the diff rows already use one layer further out.
+             */
+            if ($format !== 'json') {
+                $this->components->warn(
+                    'No compiled CSS found, so the compiled column is empty rather than measured. '.
+                    'Run your asset build first (it is looked for at public/build/assets/*.css).'
+                );
+            }
         }
 
         $wirekitCssSelectors = $this->extractCustomCssSelectors($projectRoot.'/dist/wirekit.css');
@@ -349,6 +389,10 @@ class ClassByAreaCommand extends Command
     private function renderJson(array $areas, array $scope): int
     {
         $report = [
+            // Whether the compiled column was READ, not whether it was empty. The two are
+            // indistinguishable downstream, and one of them means every class looks
+            // un-emitted. Carries the same fact the human formats get as a warning line.
+            'compiled_measured' => $this->compiledCssMeasured,
             'areas' => array_map(
                 fn (array $classes) => ['count' => count($classes), 'classes' => $classes],
                 $this->scopedAreas($areas, $scope),

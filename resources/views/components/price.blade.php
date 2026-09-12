@@ -145,8 +145,12 @@
 
     {{-- Delta badge --}}
     @if($formattedDelta !== null)
+        {{-- <bdi> like the two amounts above, and for a sharper reason: the delta carries a
+             LEADING SIGN. A `+` or `-` next to a number takes its direction from the
+             surrounding paragraph, so in a right-to-left line the sign jumps to the other
+             end and "+12%" reads as "12%+" — or worse, as a minus in the reader's eye. --}}
         <span class="{{ $deltaClasses }} text-[length:var(--text-wk-xs)]">
-            {{ $formattedDelta }}
+            <bdi>{{ $formattedDelta }}</bdi>
         </span>
     @endif
 
@@ -165,7 +169,7 @@
          requires was hidden behind a name nothing guarantees is spoken. --}}
     @if($formattedUnitPrice !== null)
         <span class="text-[color:var(--color-wk-text-muted)] text-[length:var(--text-wk-sm)]">
-            ({{ $formattedUnitPrice }} / {{ $unitMeasure }})
+            (<bdi>{{ $formattedUnitPrice }}</bdi> / {{ $unitMeasure }})
         </span>
     @endif
 </span>

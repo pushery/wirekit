@@ -44,6 +44,32 @@ final class ClassInventory
     ];
 
     /**
+     * Files scanned for classes even though a prefix above skips their directory.
+     *
+     * The skip list is coarse on purpose — it names whole directories because
+     * the strict filter cannot tell a component slug from a utility class by
+     * shape. That coarseness has one cost: the day a single file inside a
+     * skipped directory starts emitting real classes, the choice is between
+     * opening the directory wholesale and losing the file.
+     *
+     * `Support\TablistStyles` is that file. It became "the one place a tab bar's
+     * appearance is decided" and moved twelve class literals out of three Blade
+     * views into PHP. Six of them exist nowhere else, so with `src/Support/`
+     * skipped AND the safelist skipped, the compiled CSS carried five selectors
+     * the reverse-diff could trace to nothing — a build-diff failure whose cause
+     * was the scanner's blind spot, not drift.
+     *
+     * The skip docblock above already prescribes the remedy ("REMOVE its prefix
+     * here in the same commit"). This is that, made file-granular so every other
+     * file in `src/Support/` keeps its exemption.
+     *
+     * @var list<string>
+     */
+    public const ALWAYS_SCAN_PATHS_FOR_CLASS_EXTRACTION = [
+        'src/Support/TablistStyles.php',
+    ];
+
+    /**
      * Path prefixes skipped for CLASS extraction. Matched via
      * str_starts_with() — a value ending in `/` matches every file under
      * that directory; a non-slash value matches the literal path only.
@@ -83,6 +109,12 @@ final class ClassInventory
      *   src/Sandbox/                        → preview-renderer wiring
      *   src/Support/                        → version metadata + utilities
      *   src/WireKit.php                     → animation / icon registrations
+     *   src/Theming/                        → preset registry + token maps. It carries
+     *                                         COLOR VALUES and preset keys, never class
+     *                                         strings — and it was the one prefix in the
+     *                                         constant that this list did not name, so a
+     *                                         reader counting sixteen against seventeen
+     *                                         entries had no way to learn why
      *   src/WireKitServiceProvider.php      → publish-tag names + boot wiring
      *   resources/js/                       → Alpine factory string literals
      *                                         (Floating-UI placements, ARIA
@@ -97,32 +129,6 @@ final class ClassInventory
      *                                         same commit + add a regression
      *                                         test that fails without it.
      */
-    /**
-     * Files scanned for classes even though a prefix above skips their directory.
-     *
-     * The skip list is coarse on purpose — it names whole directories because
-     * the strict filter cannot tell a component slug from a utility class by
-     * shape. That coarseness has one cost: the day a single file inside a
-     * skipped directory starts emitting real classes, the choice is between
-     * opening the directory wholesale and losing the file.
-     *
-     * `Support\TablistStyles` is that file. It became "the one place a tab bar's
-     * appearance is decided" and moved twelve class literals out of three Blade
-     * views into PHP. Six of them exist nowhere else, so with `src/Support/`
-     * skipped AND the safelist skipped, the compiled CSS carried five selectors
-     * the reverse-diff could trace to nothing — a build-diff failure whose cause
-     * was the scanner's blind spot, not drift.
-     *
-     * The skip docblock above already prescribes the remedy ("REMOVE its prefix
-     * here in the same commit"). This is that, made file-granular so every other
-     * file in `src/Support/` keeps its exemption.
-     *
-     * @var list<string>
-     */
-    public const ALWAYS_SCAN_PATHS_FOR_CLASS_EXTRACTION = [
-        'src/Support/TablistStyles.php',
-    ];
-
     public const DEFAULT_SKIP_PATH_PREFIXES_FOR_CLASS_EXTRACTION = [
         'resources/views/_safelist.blade.php',
         'resources/js/',
@@ -621,33 +627,6 @@ final class ClassInventory
     }
 
     /**
-     * Extract class strings from PHP `match()` arms inside Blade files.
-     * Focused on the most common shape where dispatcher keys map to
-     * Tailwind class strings:
-     *
-     *   $position = match ($p) {
-     *     'left' => 'inset-y-0 left-0',
-     *     'top'  => 'inset-x-0 top-0',
-     *   };
-     *
-     * Captures ONLY the right-hand-side string-literal values (keys
-     * and any non-string values like variable references are skipped).
-     * Each captured value is whitespace-split and run through the
-     * strict class-shape filter; non-Tailwind hyphenated identifiers
-     * (component names, slot names, animation presets) are rejected
-     * by the looksLikeTailwindClass() filters.
-     *
-     * Without this scan Tailwind v4's raw-text source scan still reads
-     * the @php-block content and generates rules — but the audit's
-     * reverse-diff would flag them as "compiled classes without
-     * source" because the static analyzer couldn't reach them. This
-     * focused scan closes that gap for the most common shape (match
-     * arms) without re-introducing the false-positive flood that a
-     * blanket "scan every quoted string" produced.
-     *
-     * @param  Inventory  $inventory
-     */
-    /**
      * Extract class strings from `implode(' ', [...])` calls inside Blade
      * files. The canonical shape for class-string concatenation in WireKit
      * components:
@@ -910,7 +889,33 @@ final class ClassInventory
         }
     }
 
-    /** @param  array<string, mixed>  $inventory */
+    /**
+     * Extract class strings from PHP `match()` arms inside Blade files.
+     * Focused on the most common shape where dispatcher keys map to
+     * Tailwind class strings:
+     *
+     *   $position = match ($p) {
+     *     'left' => 'inset-y-0 left-0',
+     *     'top'  => 'inset-x-0 top-0',
+     *   };
+     *
+     * Captures ONLY the right-hand-side string-literal values (keys
+     * and any non-string values like variable references are skipped).
+     * Each captured value is whitespace-split and run through the
+     * strict class-shape filter; non-Tailwind hyphenated identifiers
+     * (component names, slot names, animation presets) are rejected
+     * by the looksLikeTailwindClass() filters.
+     *
+     * Without this scan Tailwind v4's raw-text source scan still reads
+     * the @php-block content and generates rules — but the audit's
+     * reverse-diff would flag them as "compiled classes without
+     * source" because the static analyzer couldn't reach them. This
+     * focused scan closes that gap for the most common shape (match
+     * arms) without re-introducing the false-positive flood that a
+     * blanket "scan every quoted string" produced.
+     *
+     * @param  Inventory  $inventory
+     */
     private function harvestMatchArmClassStrings(string $contents, string $file, array &$inventory): void
     {
         /*
@@ -1126,18 +1131,6 @@ final class ClassInventory
     }
 
     /**
-     * Lightweight class-shape filter that mirrors Tailwind v4's heuristic:
-     * candidates start with [a-z], are at least 2 chars long, and contain
-     * only Tailwind-legal characters. Operators, interpolation, and prose
-     * are rejected.
-     *
-     * Strict mode (used for PHP/JS source) additionally requires the
-     * candidate to either contain a `[…]` arbitrary-value bracket OR be
-     * a hyphenated multi-segment class. This rejects identifier-style
-     * strings like 'primary', 'neutral', 'success' which would otherwise
-     * be flagged as drift on every PR.
-     */
-    /**
      * Replace every balanced `[…]` span with a single-character placeholder.
      *
      * Depth-tracked rather than a regex, because the spans nest:
@@ -1186,6 +1179,18 @@ final class ClassInventory
         return $depth === 0 ? $out : $candidate;
     }
 
+    /**
+     * Lightweight class-shape filter that mirrors Tailwind v4's heuristic:
+     * candidates start with [a-z], are at least 2 chars long, and contain
+     * only Tailwind-legal characters. Operators, interpolation, and prose
+     * are rejected.
+     *
+     * Strict mode (used for PHP/JS source) additionally requires the
+     * candidate to either contain a `[…]` arbitrary-value bracket OR be
+     * a hyphenated multi-segment class. This rejects identifier-style
+     * strings like 'primary', 'neutral', 'success' which would otherwise
+     * be flagged as drift on every PR.
+     */
     private function looksLikeTailwindClass(string $candidate, bool $strict = false): bool
     {
         if (strlen($candidate) < 2) {

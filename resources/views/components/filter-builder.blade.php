@@ -5,20 +5,43 @@
     'value' => [],                  // active filters [{field,op,value}] (two-way via wire:model bridge)
     'name' => null,                 // hidden-input name for plain-form submission
     'searchable' => config('wirekit.components.filter-builder.searchable', false), // free-text search box
-    'searchPlaceholder' => config('wirekit.components.filter-builder.search-placeholder', 'Search…'),
-    'addLabel' => config('wirekit.components.filter-builder.add-label', 'Add filter'),
+    // Milliseconds to wait after the last keystroke before announcing `search-change`.
+    //
+    // Same reasoning, same default and same escape as data-table's `searchDebounce`:
+    // this input dispatches straight to whatever the host wired the event to, and the
+    // documented wiring is a Livewire round trip. Without the wait that is one request
+    // per CHARACTER, and every answer but the last is discarded. 0 disables it.
+    'searchDebounce' => config('wirekit.components.filter-builder.search-debounce', 300),
+    'searchPlaceholder' => config('wirekit.components.filter-builder.search-placeholder') ?? __('wirekit::Search…'),
+    'addLabel' => config('wirekit.components.filter-builder.add-label') ?? __('wirekit::Add filter'),
     'scope' => null,
 ])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
-    use Illuminate\Support\Str;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('filter-builder', $attributes->getAttributes());
+
+    // Operator and boolean words for the Alpine factory. `resources/js` has no translator
+    // and these strings are not decoration: every one of them ends up in `chipText()`,
+    // which is the accessible name of a filter chip. Same server-translates-then-hands-down
+    // shape status-matrix uses for its state labels.
+    $filterWords = \Pushery\WireKit\Support\AlpinePayload::from([
+        'contains' => __('wirekit::contains'),
+        'is' => __('wirekit::is'),
+        'isNot' => __('wirekit::is not'),
+        'startsWith' => __('wirekit::starts with'),
+        'endsWith' => __('wirekit::ends with'),
+        'on' => __('wirekit::on'),
+        'before' => __('wirekit::before'),
+        'after' => __('wirekit::after'),
+        'yes' => __('wirekit::Yes'),
+        'no' => __('wirekit::No'),
+    ]);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `searchable="false"` used to mean the opposite of what the call site reads as. The
@@ -106,7 +129,7 @@
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitFilterBuilder({ fields: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldsArr) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueArr) }}, announcements: {{ $filterAnnouncements }} })"
+    x-data="wirekitFilterBuilder({ fields: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldsArr) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueArr) }}, announcements: {{ $filterAnnouncements }}, words: {{ $filterWords }} })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
          escape stays here (window-scoped, teleport-agnostic). --}}
     x-on:keydown.escape.window="open && close(true)"
@@ -141,7 +164,7 @@
                 x-ref="search"
                 placeholder="{{ $searchPlaceholder }}"
                 aria-label="{{ $searchPlaceholder }}"
-                @input="$dispatch('search-change', { value: $event.target.value })"
+                @input{{ (int) $searchDebounce > 0 ? '.debounce.'.((int) $searchDebounce).'ms' : '' }}="$dispatch('search-change', { value: $event.target.value })"
                 class="wk-field {{ $control }} max-w-[16rem]"
             />
         @endif
@@ -219,7 +242,7 @@
 
                 {{-- Field --}}
                 <label class="block">
-                    <span class="{{ $controlLabel }}">Field</span>
+                    <span class="{{ $controlLabel }}">{{ __('wirekit::Field') }}</span>
                     <div class="relative">
                         <select x-ref="fieldSelect" x-model="draft.field" @change="onFieldChange()" class="wk-field {{ $selectControl }}">
                             <template x-for="f in fields" :key="f.key">
@@ -234,7 +257,7 @@
 
                 {{-- Operator (typed by field) --}}
                 <label class="block">
-                    <span class="{{ $controlLabel }}">Condition</span>
+                    <span class="{{ $controlLabel }}">{{ __('wirekit::Condition') }}</span>
                     <div class="relative">
                         <select x-model="draft.op" class="wk-field {{ $selectControl }}">
                             <template x-for="o in operatorsFor(draft.field)" :key="o.op">
@@ -249,11 +272,11 @@
 
                 {{-- Value editor (typed by field) --}}
                 <label class="block">
-                    <span class="{{ $controlLabel }}">Value</span>
+                    <span class="{{ $controlLabel }}">{{ __('wirekit::Value') }}</span>
                     <template x-if="draftValueType() === 'select'">
                         <div class="relative">
                             <select x-model="draft.value" class="wk-field {{ $selectControl }}">
-                                <option value="" disabled>Choose…</option>
+                                <option value="" disabled>{{ __('wirekit::Choose…') }}</option>
                                 <template x-for="opt in draftOptions()" :key="opt.value">
                                     <option :value="opt.value" x-text="opt.label"></option>
                                 </template>
@@ -271,8 +294,8 @@
                                  chip shows "Yes" and the emitted JSON carries a string, not a
                                  boolean. apply() also coerces as a defensive net. --}}
                             <select x-model.boolean="draft.value" class="wk-field {{ $selectControl }}">
-                                <option :value="true">Yes</option>
-                                <option :value="false">No</option>
+                                <option :value="true">{{ __('wirekit::Yes') }}</option>
+                                <option :value="false">{{ __('wirekit::No') }}</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
                                 <svg class="h-4 w-4 text-[color:var(--color-wk-text-subtle)]" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd" /></svg>
@@ -306,7 +329,7 @@
             x-cloak
             @click="clearAll()"
             class="px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] rounded-[var(--radius-wk-md)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
-        >Clear all</button>
+        >{{ __('wirekit::Clear all') }}</button>
     </div>
 
     {{-- Optional result-count / status slot — wrap it in aria-live in your app

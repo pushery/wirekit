@@ -55,17 +55,36 @@ class ShowComponentCommand extends Command
             return self::FAILURE;
         }
 
+        /*
+         * `--as` and `--validate-against` are two different jobs, and the flag order in this
+         * method used to decide which one silently won.
+         *
+         * `--as=json` prints a schema and exits 0. `--validate-against` reads a developer's
+         * Blade file and exits 1 on a finding — it is sold in the signature for pre-commit
+         * hooks. Passed together, the `--as` branch below returned first, so the hook printed
+         * a schema, validated nothing, and reported success. A linter that answers "clean" on
+         * a file it never opened is worse than one that is missing.
+         *
+         * Rejected rather than resolved by precedence: either choice would be a guess about
+         * which flag the developer meant, and a guess that exits 0 is the same failure with
+         * an extra step. Exit 1 for a usage error is the catalog's convention.
+         */
+        if ($this->option('validate-against') !== null && (string) $this->option('as') !== '') {
+            $this->error('--as and --validate-against cannot be combined.');
+            $this->line('  --as prints the component schema; --validate-against lints a Blade file and exits 1 on a finding.');
+            $this->line('  Run them as two commands.');
+
+            return self::FAILURE;
+        }
+
         // Machine-readable JSON output. Skips the human-
         // facing pretty output entirely; emits only the structured
         // schema to stdout so developers can pipe to `jq`.
         if ($this->option('as') === 'json') {
             return $this->emitJson($name, $meta);
         }
-        if ($this->option('as') !== null && $this->option('as') !== '') {
-            $this->error("Unknown --as format: {$this->option('as')}");
-            $this->line('  Available: json (default = human-readable table)');
-
-            return self::FAILURE;
+        if (($rejected = $this->rejectUnknownAsFormat()) !== null) {
+            return $rejected;
         }
 
         // Validate-against mode. Reads the developer's
@@ -73,7 +92,11 @@ class ShowComponentCommand extends Command
         // each attribute against the prop list. Emits warnings for
         // unknown attributes + the suggested closest prop.
         if ($this->option('validate-against') !== null) {
-            return $this->validateAgainst($name, (string) $this->option('validate-against'));
+            return $this->validateAgainst(
+                $name,
+                (string) $this->option('validate-against'),
+                $this->acceptedAttributeNames($name)
+            );
         }
 
         $this->info("Component: {$name}");
@@ -227,9 +250,50 @@ class ShowComponentCommand extends Command
             $bladePath = $index;
         }
 
+        return $this->slotsFromBlade($bladePath);
+    }
+
+    /**
+     * The slot schema of one Blade file.
+     *
+     * Split out of `extractSlots()` so the SUB-component path can reach it. That path already
+     * knows its own file — what it lacked was any way to ask this question, because
+     * `extractSlots()` resolves a top-level name and a sub-component has none: `card.body`
+     * resolves to neither `card.body.blade.php` nor `card.body/index.blade.php`, so it
+     * returned the empty list for all 87 of them. 68 have a slot contract.
+     *
+     * @return list<array{name: string, required: bool}>
+     */
+    private function slotsFromBlade(string $bladePath): array
+    {
         return BladeParser::extractSlotsWithMetadataFromSource(
             (string) file_get_contents($bladePath),
             $bladePath,
+        );
+    }
+
+    /**
+     * Every attribute name the component answers to — `@props` UNION `@aware`.
+     *
+     * The two are deliberately separate everywhere else: `ComponentRegistry::extractProps()`
+     * means "the props this component declares", and an `@aware` key is a value the PARENT
+     * owns. Folding them together would widen the JSON manifest, the API map and the docs
+     * pipeline with names those surfaces do not mean.
+     *
+     * The unknown-attribute question is the one place they belong together, because Blade
+     * accepts either spelling on the tag — and this package answers that question TWICE.
+     * `StrictnessGate` (the runtime warning) unions them; `--validate-against` did not. So
+     * `<x-wirekit::input announce-errors="false">` rendered clean at runtime and was reported
+     * as an unknown attribute by the pre-commit linter, on a name 37 components accept and
+     * this library's own form documentation teaches.
+     *
+     * @return list<string>
+     */
+    private function acceptedAttributeNames(string $name): array
+    {
+        return array_map(
+            static fn (array $p): string => $p['name'],
+            [...ComponentRegistry::extractProps($name), ...ComponentRegistry::extractAwareProps($name)]
         );
     }
 
@@ -254,8 +318,15 @@ class ShowComponentCommand extends Command
      * Exit code: 0 on clean validation, 1 on any unknown-attribute
      * warning. Lets developers wire `wirekit:show foo --validate-against=resources/views/page.blade.php`
      * into pre-commit hooks.
+     *
+     * The accepted names arrive as a PARAMETER rather than being looked up here, because the
+     * two callers resolve them from different places: a top-level component reads its
+     * `@props` and `@aware` through the registry, a sub-component reads them straight off the
+     * nested Blade file the registry does not track.
+     *
+     * @param  list<string>  $knownProps
      */
-    private function validateAgainst(string $name, string $developerBladePath): int
+    private function validateAgainst(string $name, string $developerBladePath, array $knownProps): int
     {
         if (! file_exists($developerBladePath)) {
             $this->error("Developer Blade file not found: {$developerBladePath}");
@@ -264,8 +335,6 @@ class ShowComponentCommand extends Command
         }
 
         $content = (string) file_get_contents($developerBladePath);
-        $props = ComponentRegistry::extractProps($name);
-        $knownProps = array_map(fn ($p) => $p['name'], $props);
 
         $totalUsages = 0;
         $issues = [];
@@ -375,6 +444,48 @@ class ShowComponentCommand extends Command
     }
 
     /**
+     * Refuse an `--as` value that is not a format we emit.
+     *
+     * Shared because it was not, and the two paths drifted: the top-level branch
+     * rejected an unknown format and exited 1, and the dotted sub-component branch
+     * — which returns from `handle()` before ever reaching it — silently ignored
+     * the flag and exited 0. `wirekit:show card --as=bogus` failed; the same typo
+     * on `card.header` printed the human table and reported success, so a script
+     * branching on the exit code read a typo as a clean run.
+     *
+     * Returns null when there is nothing to reject, so a caller reads as
+     * "if this answered, return its answer".
+     */
+    private function rejectUnknownAsFormat(): ?int
+    {
+        $as = $this->option('as');
+
+        if ($as === null || $as === '' || $as === 'json') {
+            return null;
+        }
+
+        $this->error("Unknown --as format: {$as}");
+        $this->line('  Available: json (default = human-readable table)');
+
+        /*
+         * `wirekit:list-fonts`, `wirekit:list-components` and `wirekit:list-icons` all
+         * suggest on THIS flag name. A developer who has seen it work there reads the
+         * bare list here as "too far off to match" rather than as a missing feature.
+         *
+         * The accepted set is one entry, and that is still worth a hint: `--as=jsn`
+         * scores a distance of 1 and gets answered instead of enumerated.
+         */
+        $hint = SuggestSimilar::format(
+            SuggestSimilar::byLevenshtein((string) $as, ['json'])
+        );
+        if ($hint !== null) {
+            $this->line('  '.$hint);
+        }
+
+        return self::FAILURE;
+    }
+
+    /**
      * Handles dotted sub-component
      * names like `card.body`, `timeline.item`, `alert-dialog.cancel`.
      *
@@ -421,6 +532,36 @@ class ShowComponentCommand extends Command
 
         // Parse props from the nested Blade file.
         $props = PropsParser::parseBlade($bladePath);
+        $slots = $this->slotsFromBlade($bladePath);
+
+        /*
+         * The same two flags the top-level path resolves, resolved the same way. Both were
+         * dropped here: `handleSubComponent()` returns from `handle()` before either is
+         * consulted, so `wirekit:show card.body --validate-against=page.blade.php` printed the
+         * sub-component's props and exited 0 without opening the file it was handed.
+         */
+        if ($this->option('validate-against') !== null && (string) $this->option('as') !== '') {
+            $this->error('--as and --validate-against cannot be combined.');
+            $this->line('  --as prints the component schema; --validate-against lints a Blade file and exits 1 on a finding.');
+            $this->line('  Run them as two commands.');
+
+            return self::FAILURE;
+        }
+
+        if ($this->option('validate-against') !== null) {
+            return $this->validateAgainst(
+                $name,
+                (string) $this->option('validate-against'),
+                array_map(
+                    static fn (array $p): string => $p['name'],
+                    [...$props, ...PropsParser::parseAwareBlade($bladePath)]
+                )
+            );
+        }
+
+        if (($rejected = $this->rejectUnknownAsFormat()) !== null) {
+            return $rejected;
+        }
 
         if ($this->option('as') === 'json') {
             $payload = [
@@ -429,6 +570,7 @@ class ShowComponentCommand extends Command
                 'child' => $child,
                 'tag' => "<x-wirekit::{$name}>",
                 'props' => $props,
+                'slots' => $slots,
                 'sub_component' => true,
             ];
             $this->line((string) json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
@@ -455,6 +597,20 @@ class ShowComponentCommand extends Command
             }
         } else {
             $this->line('  <fg=yellow>Props:</> (slot-only, no declared @props)');
+        }
+
+        /*
+         * The line above has always been able to say "slot-only" — and the slots themselves
+         * were never printed, in either output. Naming the concept and omitting the data is
+         * the worst of the two: a developer reads "slot-only" as a complete answer.
+         */
+        if ($slots !== []) {
+            $this->line('');
+            $this->line('  <fg=yellow>Slots:</>');
+            foreach ($slots as $slot) {
+                $req = $slot['required'] ? '<fg=red>(required)</>' : '<fg=gray>(optional)</>';
+                $this->line("    <fg=green>{$slot['name']}</> {$req}");
+            }
         }
 
         return self::SUCCESS;

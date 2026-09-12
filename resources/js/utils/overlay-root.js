@@ -1,11 +1,12 @@
 /**
  * The landmark container every teleported overlay panel lives in.
  *
- * Twenty-four components teleport their panel to `<body>` — dropdowns, tooltips, popovers,
- * comboboxes, menus, the command palette. That is correct positioning (a panel inside an
- * `overflow: hidden` ancestor is clipped by it) and it puts the panel OUTSIDE every landmark
- * on the page: not in `<main>`, not in `<nav>`, not in anything. axe reports `region` for
- * each one, and a developer auditing their own app cannot fix it — the markup belongs to us.
+ * The overlay family teleports its panel out of the document flow — dropdowns, tooltips,
+ * popovers, comboboxes, menus, the command palette. That is correct positioning: a panel
+ * inside an `overflow: hidden` ancestor is clipped by it. Before this file they went to
+ * `<body>`, which also put every panel OUTSIDE every landmark on the page — not in
+ * `<main>`, not in `<nav>`, not in anything. axe reported `region` for each one, and a
+ * developer auditing their own app could not fix it, because the markup belongs to us.
  *
  * A screen-reader user meets the same problem the audit describes: content that exists in no
  * region at all, reachable by tabbing into it and then unmoored from the page structure.
@@ -13,6 +14,12 @@
  * So the panels teleport into a named region instead. `role="region"` with a label is the
  * smallest correct answer: it is a landmark, it does not claim to be navigation or a main,
  * and it says what it holds.
+ *
+ * ⚠️ NO COUNT HERE, DELIBERATELY, and the same note stands in `dev-warning.js` for the same
+ * reason. This said "Twenty-four components" — which was the number of teleport SITES, six
+ * components carrying two — so the sentence was wrong about its own subject on the day it
+ * was written, and would have drifted from the tree besides. The set is greppable in one
+ * command; a number in a shipped comment is a second copy that nothing keeps honest.
  *
  * CREATED FROM JAVASCRIPT rather than emitted by a Blade directive, and that is deliberate.
  * `x-teleport` throws when its selector matches nothing, so a container that depended on a

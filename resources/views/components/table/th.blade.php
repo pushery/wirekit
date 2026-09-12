@@ -118,14 +118,24 @@
         // or — where the button did not reach the cell edges — advertise a pointer over a
         // dead zone. A sortable header with NO button (Livewire-sort without `sortAction`,
         // where the developer supplies the control) keeps the pointer on the cell.
-        $sortable ? ($padOnButton ? 'select-none hover:text-[color:var(--color-wk-text)]' : 'cursor-pointer select-none hover:text-[color:var(--color-wk-text)]') : '',
+        $padOnButton ? 'select-none hover:text-[color:var(--color-wk-text)]' : '',
     ]), $scope);
 
-    // ARIA: sortable columns expose their current sort state
+    // ARIA: sortable columns expose their current sort state.
+    //
+    // ⚠️ `$sortable` ALONE is not a sortable column. Both operable shapes need something to
+    // sort BY — Alpine mode needs `column`, Livewire mode needs `sortAction` — and with
+    // neither the header rendered `aria-sort="none"`, a cursor-pointer and a hover state
+    // while emitting no button at all. That is the precise combination WCAG 2.1.1 is about:
+    // the cell ANNOUNCES a sort order and a keyboard or switch user can hear it and never
+    // change it, while the pointer affordance says they should be able to.
+    //
+    // `$padOnButton` already computes exactly this condition for a layout reason; it is
+    // reused rather than recomputed so the two cannot drift apart.
     $ariaSort = match ($sortDirection) {
         'asc' => 'ascending',
         'desc' => 'descending',
-        default => $sortable ? 'none' : null,
+        default => $padOnButton ? 'none' : null,
     };
 @endphp
 

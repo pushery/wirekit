@@ -4,7 +4,7 @@
      any file that renders one. --}}
 @props([
     // The slide's accessible name. `role="group"` conformance does not require one, but
-    // `aria-roledescription="slide"` is what makes a screen reader say "slide" instead of
+    // `aria-roledescription` is what makes a screen reader say "slide" instead of
     // "group" — and it is unreliable on an element that has no name at all, so a track of
     // unnamed slides reads as N identical groups with nothing to tell them apart.
     //
@@ -48,7 +48,7 @@
 <div
     data-wk-carousel-slide
     role="group"
-    aria-roledescription="slide"
+    aria-roledescription="{{ __('wirekit::slide') }}"
     {{-- `filled()`, never `??`: an interpolated caller value over a record with no title
          arrives as an empty string, and `aria-label=""` is not a name — it leaves the group
          nameless while looking wired. Same gate, same reason, as every named region here.

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
+use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\Theming\WcagContrast;
 
 /**
@@ -47,6 +48,18 @@ use Pushery\WireKit\Theming\WcagContrast;
  */
 class DoctorA11yCommand extends Command
 {
+    /**
+     * The severities `--fail-on` accepts, in ascending strictness.
+     *
+     * The set was written out four times in this file — the `in_array` check, the `--fail-on`
+     * description in the signature, the reachable rejection's "Allowed:" list and the
+     * defensive `match` arm's. A rejection message that names a value the check does not
+     * accept is the failure that shape invites, and it is invisible until someone types it.
+     *
+     * @var list<string>
+     */
+    private const FAIL_ON_LEVELS = ['error', 'warning', 'none'];
+
     protected $signature = 'wirekit:doctor:a11y
         {path? : Path to scan (defaults to resources/views in the host app)}
         {--path=* : Directory to scan, repeatable and ADDITIVE to the default ground set. Same shape as wirekit:csp-audit.}
@@ -87,8 +100,13 @@ class DoctorA11yCommand extends Command
         $path = implode(', ', $roots);
 
         $failOn = (string) ($this->option('fail-on') ?: 'error');
-        if (! in_array($failOn, ['error', 'warning', 'none'], true)) {
-            $this->error("Invalid --fail-on value: {$failOn}. Allowed: error / warning / none.");
+        if (! in_array($failOn, self::FAIL_ON_LEVELS, true)) {
+            $this->error("Invalid --fail-on value: {$failOn}. Allowed: ".implode(' / ', self::FAIL_ON_LEVELS).'.');
+
+            $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein($failOn, self::FAIL_ON_LEVELS));
+            if ($hint !== null) {
+                $this->line('  '.$hint);
+            }
 
             return self::FAILURE;
         }
@@ -192,11 +210,6 @@ class DoctorA11yCommand extends Command
     }
 
     /**
-     * Opt-in theme-contrast stage. Runs AFTER the blade scan so the
-     * static findings always surface first; if either stage fails,
-     * the overall command exits non-zero.
-     */
-    /**
      * Whether the opt-in theme-contrast stage will run.
      *
      * Read in two places now — once to decide whether an empty template walk is
@@ -212,6 +225,10 @@ class DoctorA11yCommand extends Command
     }
 
     /**
+     * Opt-in theme-contrast stage. Runs AFTER the blade scan so the
+     * static findings always surface first; if either stage fails,
+     * the overall command exits non-zero.
+     *
      * @param  array<int, string>  $bladeFiles
      */
     private function maybeRunThemeContrast(int $bladeExit, string $failOn, array $bladeFiles = []): int
@@ -235,8 +252,7 @@ class DoctorA11yCommand extends Command
      * `dist/wirekit.css` when the developer hasn't overridden a token),
      * computes WCAG 2.1 ratios for the canonical pairings, and prints
      * a PASS / WARN / FAIL report.
-     */
-    /**
+     *
      * @param  array<int, string>  $bladeFiles
      */
     private function runThemeContrastAudit(string $failOn, array $bladeFiles = []): int
@@ -440,10 +456,14 @@ class DoctorA11yCommand extends Command
         }
         $css = (string) preg_replace('!/\*.*?\*/!s', '', $css);
 
-        $extract = function (string $selector) use ($css): array {
+        // Which presentation each block actually describes, before any of it is read as a
+        // token table. See splitByPresentation() for the defect this answers.
+        $byPresentation = self::splitByPresentation($css);
+
+        $extract = function (string $selector, string $source): array {
             $escaped = preg_quote($selector, '/');
             $pattern = '/(?<![\w-])(?::where\(\s*)?'.$escaped.'(?:\s*\))?\s*\{([^}]*)\}/u';
-            preg_match_all($pattern, $css, $matches);
+            preg_match_all($pattern, $source, $matches);
             $tokens = [];
             foreach ($matches[1] ?? [] as $body) {
                 // Capture EVERY custom property (not just --color-wk-*) so that
@@ -461,8 +481,22 @@ class DoctorA11yCommand extends Command
             return $tokens;
         };
 
-        $light = $extract(':root');
-        $dark = $extract('.dark');
+        $light = $extract(':root', $byPresentation['screen']);
+
+        // A theme can express dark two ways, and both are legitimate: the `.dark` class the
+        // kit's own toggler writes, and `@media (prefers-color-scheme: dark)` for a theme
+        // that follows the system with no toggle of its own. The second used to land in the
+        // LIGHT table, because a `:root` block is a `:root` block wherever it sits -- so a
+        // theme written that way had its light mode audited against its dark colors, which
+        // is the worse direction of the two: light is the mode people spot-check.
+        //
+        // The class wins where both declare the same token. It is the documented switch,
+        // and it is what is actually on the element when the toggler has run.
+        $dark = array_merge(
+            $extract(':root', $byPresentation['dark']),
+            $extract('.dark', $byPresentation['dark']),
+            $extract('.dark', $byPresentation['screen']),
+        );
 
         // Resolve var(--other-token) aliases within the same block.
         // Bounded recursion: max 5 hops per token to avoid cycles.
@@ -487,6 +521,140 @@ class DoctorA11yCommand extends Command
             'light' => $resolve($light),
             'dark' => $resolve($dark),
         ];
+    }
+
+    /**
+     * The stylesheet split by the presentation each block actually applies to.
+     *
+     * ⚠️ AN AT-RULE IS INVISIBLE TO A SELECTOR PATTERN, AND THAT IS THE WHOLE DEFECT. The
+     * extractor above finds `:root` and `.dark` wherever they stand; an `@media` wrapper is
+     * just text in between. So a print sheet written exactly as it should be --
+     *
+     *     @media print {
+     *         :root,
+     *         .dark { --color-wk-bg: #fff; --color-wk-text: #000; }
+     *     }
+     *
+     * -- was read as a description of the screen, and being the LAST `.dark` match in the
+     * file it replaced the entire dark table. Measured in a developer stylesheet: the audit
+     * reported 21.00:1 for text on bg in dark mode -- pure black on pure white, the highest
+     * ratio that exists -- where the real navy surface measures 18.27:1, plus one FAIL and
+     * two WARN on border pairings whose real ratios all pass.
+     *
+     * ⚠️ Light was untouched, and that is a trap rather than a clue: `:root,` ends in a
+     * comma, and the selector pattern needs a brace. A reader who takes "light is correct"
+     * as evidence looks for a bug in the dark PATH, and there is none -- that path resolves
+     * an inherited `:root` custom property and an embedded `var()` correctly, both proven
+     * separately. The difference is which half of one print selector happened to match.
+     *
+     * ⚠️ AN UNRECOGNIZED PRELUDE STAYS WHERE IT IS. Dropping a block this classifier does
+     * not understand would narrow the audit silently, and a narrower audit reports fewer
+     * findings -- which reads exactly like a cleaner theme.
+     *
+     * @return array{screen: string, dark: string}
+     */
+    private static function splitByPresentation(string $css): array
+    {
+        $screen = '';
+        $dark = '';
+        $offset = 0;
+
+        while (($at = strpos($css, '@media', $offset)) !== false) {
+            $braceAt = strpos($css, '{', $at);
+
+            if ($braceAt === false) {
+                break;
+            }
+
+            $end = self::matchingBrace($css, $braceAt);
+
+            if ($end === null) {
+                break;
+            }
+
+            $screen .= substr($css, $offset, $at - $offset);
+
+            $prelude = substr($css, $at + 6, $braceAt - $at - 6);
+            $body = substr($css, $braceAt + 1, $end - $braceAt - 1);
+
+            match (self::presentationOf($prelude)) {
+                // Flattened rather than kept wrapped, which is equivalent here: the
+                // extractor reads declaration blocks and never the at-rule around them.
+                'screen' => $screen .= $body,
+                'dark' => $dark .= $body,
+                // Paper, speech and the alternative-preference themes describe something
+                // this audit does not claim to measure.
+                default => null,
+            };
+
+            $offset = $end + 1;
+        }
+
+        $screen .= substr($css, $offset);
+
+        return ['screen' => $screen, 'dark' => $dark];
+    }
+
+    /**
+     * Which of the audited presentations an `@media` prelude describes.
+     *
+     * Deliberately a short list of things that are definitely NOT the default screen,
+     * rather than an attempt at a media-query parser: the cost of the two directions is not
+     * symmetric. Misreading a block as screen puts a wrong number in a report somebody can
+     * check against their own page; dropping one they meant makes a finding disappear.
+     */
+    private static function presentationOf(string $prelude): string
+    {
+        $prelude = strtolower(trim($prelude));
+
+        // `not print` is every medium EXCEPT paper, so the word alone decides nothing. A
+        // negated query is left where it is rather than guessed at.
+        if (preg_match('/(?<![\w-])not(?![\w-])/', $prelude) === 1) {
+            return 'screen';
+        }
+
+        if (preg_match('/prefers-color-scheme\s*:\s*dark/', $prelude) === 1) {
+            return 'dark';
+        }
+
+        // The media TYPE, which is a bare word rather than a feature in parentheses.
+        if (preg_match('/(^|[\s,(])(print|speech)(?![\w-])/', $prelude) === 1) {
+            return 'drop';
+        }
+
+        // Alternative themes a user preference switches on. Each is a real surface and each
+        // deserves its own audit; what none of them is, is the default one.
+        if (preg_match('/prefers-contrast|forced-colors|inverted-colors/', $prelude) === 1) {
+            return 'drop';
+        }
+
+        return 'screen';
+    }
+
+    /**
+     * The index of the `}` closing the `{` at $open, or null when the file is unbalanced.
+     *
+     * An unbalanced stylesheet ends the walk rather than guessing, so a truncated file is
+     * read as far as it is trustworthy and no further.
+     */
+    private static function matchingBrace(string $css, int $open): ?int
+    {
+        $depth = 0;
+        $length = strlen($css);
+
+        for ($i = $open; $i < $length; $i++) {
+            if ($css[$i] === '{') {
+                $depth++;
+            } elseif ($css[$i] === '}') {
+                $depth--;
+
+                if ($depth === 0) {
+                    return $i;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -749,7 +917,12 @@ class DoctorA11yCommand extends Command
      */
     private function reportUnknownFailOn(string $failOn): int
     {
-        $this->error("Unknown --fail-on value '{$failOn}'. Expected one of: error, warning, none.");
+        $this->error("Unknown --fail-on value '{$failOn}'. Expected one of: ".implode(', ', self::FAIL_ON_LEVELS).'.');
+
+        $hint = SuggestSimilar::format(SuggestSimilar::byLevenshtein($failOn, self::FAIL_ON_LEVELS));
+        if ($hint !== null) {
+            $this->line('  '.$hint);
+        }
 
         return self::FAILURE;
     }

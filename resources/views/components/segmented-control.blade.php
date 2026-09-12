@@ -135,6 +135,11 @@
     $optimisticConfig = ($optimistic === null || $disabled) ? null : \Pushery\WireKit\Support\AlpinePayload::from([
         'bind' => 'selected',
         'after' => '_notify',
+        // The field's own error region. Without it the layer's generic "Could not save"
+        // is the only thing a listener hears, and it BEATS the specific message the server
+        // sent — the whole point of the arbitration is that a specific message wins, and it
+        // cannot run against a region nobody pointed at.
+        'errorRegion' => '#'.$id.'-error',
         'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -181,7 +186,7 @@
              alone, which makes `data-wk-server-value` + observeServerValue the one
              update path it was always meant to be. The seed now comes from that
              same attribute at init. --}}
-        x-data="wirekitSegmentedControl()"
+        x-data="wirekitSegmentedControl({ disabled: {{ $disabled ? 'true' : 'false' }} })"
         {{-- Without the optimistic layer the radiogroup IS this element, exactly
              as before. With it, the role moves one level in — because the layer
              carries a live region, and a live region is not a radio. A
@@ -241,7 +246,19 @@
             <button
                 type="button"
                 role="radio"
-                @disabled($disabled)
+                {{-- `aria-disabled`, and NOT the native attribute.
+
+                     A natively disabled button is removed from the tab order, and a
+                     radiogroup whose every item is removed disappears from keyboard
+                     navigation completely — a reader tabbing through the form never meets
+                     it and cannot discover that the setting exists, let alone that it is
+                     unavailable. `aria-disabled` says "here, and not operable", which is
+                     the thing worth telling them. This is the APG's guidance for a
+                     composite widget, and the reason the whole group also carries the same
+                     attribute rather than a `fieldset[disabled]`.
+
+                     The tabindex line below keeps ONE stop for the group, and the click and
+                     key handlers gate on `disabled` so nothing is selectable. --}}
                 aria-disabled="{{ $disabled ? 'true' : 'false' }}"
                 aria-checked="{{ $selected === $optValue ? 'true' : 'false' }}"
                 {{-- AlpinePayload::from, not a hand-quoted '{{ … }}': an option value
@@ -249,7 +266,10 @@
                      close the JS string mid-expression and break every binding
                      on this button. Same defect class already fixed on calendar. --}}
                 :aria-checked="selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }} ? 'true' : 'false'"
-                tabindex="{{ $disabled ? '-1' : ($selected === $optValue ? '0' : '-1') }}"
+                {{-- One tab stop even when disabled: the group has to be REACHABLE to be
+                     announced as unavailable. It sits on the selected item, which is where
+                     it sits when the group is live. --}}
+                tabindex="{{ $selected === $optValue ? '0' : '-1' }}"
                 @if(! $disabled)
                     :tabindex="selected === {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $optValue) }} ? '0' : '-1'"
                     {{-- run(), not select(): the layer snapshots, writes `selected`

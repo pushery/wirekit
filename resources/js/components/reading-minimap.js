@@ -1,3 +1,4 @@
+import { frameCoalesce } from '../utils/frame-coalesce.js';
 import { sanitizeMinimapHtml } from '../utils/sanitize-minimap-html.js';
 import { accessibleText } from '../utils/accessible-text.js';
 import { prefersReducedMotion } from '../utils/motion.js';
@@ -55,6 +56,11 @@ const RENDERED_MUTATION_DEBOUNCE_MS = 250;
 const IDLE_RESET_EVENTS = ['pointermove', 'scroll', 'pointerdown'];
 
 export default (options = {}) => ({
+    // The hover-preview iframe's `title`. It carries `aria-hidden` and `tabindex="-1"`
+    // so it is not exposed, but a title is still a user-visible string and costs nothing
+    // to route. Server-translated, with the English kept as the fallback.
+    _hoverPreviewLabel: options.hoverPreviewLabel || 'Hover preview',
+
     target: options.target || null,
     itemSelector: options.itemSelector || 'a, h2, h3, [data-minimap-item]',
     side: options.side === 'left' ? 'left' : 'right',
@@ -135,12 +141,27 @@ export default (options = {}) => ({
         }
 
         if (typeof ResizeObserver !== 'undefined') {
-            this._resizeObserver = new ResizeObserver(() => {
+            /*
+             * Coalesced to one pass a frame.
+             *
+             * A ResizeObserver fires once per frame for as long as a window is being
+             * dragged, and this callback ran a full `querySelectorAll` over the article
+             * plus a rect read per item — 41 headings on the documentation page itself —
+             * and then WROTE `this.items`, a reactive array whose change re-renders the
+             * minimap that the second observer is watching.
+             *
+             * The asymmetry was inside this one callback: `_scheduleRebuild` already
+             * debounces by 250 ms and the scroll path is already frame-batched, while
+             * these two ran raw. All four are idempotent re-measurements, so the last
+             * event of a frame is the only one whose answer reaches the screen.
+             */
+            this._resizeFrame = frameCoalesce(() => {
                 this.collectItems();
                 this.updateViewport();
                 if (this._renderedReady) this._scheduleRebuild();
                 if (this.headingAnchors) this._collectHeadingAnchors();
             });
+            this._resizeObserver = new ResizeObserver(() => this._resizeFrame.schedule());
             this._resizeObserver.observe(this._scrollHost);
             // Also observe the minimap wrapper itself so a viewport
             // resize that changes the minimap's available height
@@ -205,11 +226,18 @@ export default (options = {}) => ({
         if (!this._scrollHost) return;
         const matches = this._scrollHost.querySelectorAll(this.itemSelector);
         const hostScrollHeight = this._scrollHost.scrollHeight;
+
+        // Hoisted out of the loop below. Neither the host's own rect nor its scroll
+        // position changes while this walk runs — the walk writes nothing — so reading
+        // them per item asked the same question once per heading in the document and
+        // threw away every answer but the last.
+        const hostRect = this._scrollHost.getBoundingClientRect();
+        const hostScrollTop = this._scrollHost.scrollTop;
+
         const items = [];
         matches.forEach((el) => {
             const rect = el.getBoundingClientRect();
-            const hostRect = this._scrollHost.getBoundingClientRect();
-            const top = rect.top - hostRect.top + this._scrollHost.scrollTop;
+            const top = rect.top - hostRect.top + hostScrollTop;
             const label = el.dataset?.minimapLabel || accessibleText(el).slice(0, 80);
             // heightFraction — only used in stripe-mode `itemStyle="block"`.
             // The Blade template reads it inline to render each stripe as a
@@ -347,6 +375,7 @@ export default (options = {}) => ({
 
     showTooltip(item, event) {
         this.tooltipText = item.label;
+        this._armTooltipDismiss();
         // Position the tooltip next to the cursor's actual Y, then keep
         // it tracking via trackTooltip() on mousemove. Cursor-Y is the
         // most intuitive behavior — the tooltip appears next to whatever
@@ -376,6 +405,42 @@ export default (options = {}) => ({
 
     hideTooltip() {
         this.tooltipText = '';
+        this._disarmTooltipDismiss();
+    },
+
+    /**
+     * WCAG 1.4.13 — content shown on hover has to be DISMISSIBLE without moving the pointer.
+     *
+     * The stripe tooltip was hover-triggered and had no way out but moving the mouse. That is
+     * the criterion's own example of what fails it: a reader who magnifies the page, or whose
+     * pointer is imprecise, can end up with the tooltip covering the very thing they were
+     * trying to read and no way to clear it without losing their place.
+     *
+     * The hover PREVIEW in this same component already had an Escape handler. This is the
+     * other surface, and it now uses the same shape — a window listener, armed only while the
+     * tooltip is up, so nothing accumulates and nothing fires for a component that is idle.
+     */
+    _armTooltipDismiss() {
+        if (this._tooltipEscapeHandler) {
+            return;
+        }
+
+        this._tooltipEscapeHandler = (event) => {
+            if (event.key === 'Escape') {
+                this.hideTooltip();
+            }
+        };
+
+        window.addEventListener('keydown', this._tooltipEscapeHandler);
+    },
+
+    _disarmTooltipDismiss() {
+        if (!this._tooltipEscapeHandler) {
+            return;
+        }
+
+        window.removeEventListener('keydown', this._tooltipEscapeHandler);
+        this._tooltipEscapeHandler = null;
     },
 
     /**
@@ -503,6 +568,11 @@ export default (options = {}) => ({
         // canvas walks every text node + builds a Range per node, so the
         // cost is O(textNodes) rather than O(htmlSize). 5000-tag threshold
         // ports from the iframe-clone path; comparable enough.
+        //
+        // Counted off the LIVE DOM, not through `countTags()` in sanitize-minimap-html.js:
+        // that one weighs an HTML string before anything has parsed it, and here the source
+        // element is already in the document. The two are not interchangeable, and that
+        // helper's own docblock claimed this call site until it was corrected.
         const tagCount = source.querySelectorAll('*').length;
         if (tagCount > RENDERED_MAX_TAGS) {
              
@@ -947,7 +1017,7 @@ export default (options = {}) => ({
             frame.setAttribute('aria-hidden', 'true');
             frame.setAttribute('tabindex', '-1');
             frame.setAttribute('sandbox', 'allow-same-origin');
-            frame.setAttribute('title', 'Hover preview');
+            frame.setAttribute('title', this._hoverPreviewLabel);
             frame.style.cssText = 'border:0;width:100%;height:100%;pointer-events:none;background:transparent';
             frame.srcdoc = srcdoc;
             preview.appendChild(frame);
@@ -1011,6 +1081,13 @@ export default (options = {}) => ({
     },
 
     destroy() {
+        this._resizeFrame?.cancel();
+        this._resizeFrame = null;
+        // The tooltip's Escape listener lives on `window`, so it outlives this component
+        // unless it is taken down here — the same reason every other handle in this method
+        // is listed.
+        this._disarmTooltipDismiss();
+
         if (this._scrollHandler && this._scrollHost) {
             this._scrollHost.removeEventListener('scroll', this._scrollHandler);
             if (this._scrollHost === document.documentElement) {

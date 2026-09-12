@@ -72,6 +72,19 @@
     x-on:click.capture="blockUnlessConfirmed($event)"
     x-on:keydown.enter.capture="blockUnlessConfirmed($event)"
     x-on:keydown.space.capture="blockUnlessConfirmed($event)"
+    {{-- And the counterpart, in the BUBBLE phase, which is what makes the ordering work
+         without a second condition: a blocked activation never reaches here, because
+         `blockUnlessConfirmed` calls `stopPropagation()`. So this fires only on an
+         activation that actually went through.
+
+         It is declared here rather than as a listener the dialog attaches to itself,
+         because the panel is TELEPORTED to `#wk-overlay-root` — it is no longer inside the
+         dialog's own element, so `$el.addEventListener` in the factory would watch a
+         subtree the confirm control has left. The Alpine SCOPE survives the teleport;
+         the DOM containment does not. --}}
+    x-on:click="confirmed()"
+    x-on:keydown.enter="confirmed()"
+    x-on:keydown.space="confirmed()"
     x-effect="syncConfirmControlState($el, $id('alert-confirm-reason'))"
     {{ $attributes->class([$classes]) }}
 >

@@ -28,8 +28,8 @@ export default function wirekitDropdown(config = {}) {
         _coordination: null,
         // Floating UI autoUpdate teardown handle (set in show(), called in close()
         // + destroy()). Keeping the panel pinned to its trigger on scroll/resize
-        // attaches ancestor-scroll + resize listeners; so every teardown path must call stop() or they leak
-        // they MUST be torn down on every close path or they leak.
+        // attaches ancestor-scroll + resize listeners; they MUST be torn down on every
+        // close path or they leak.
         _stopAutoUpdate: null,
 
         // Type-ahead state. The buffer is what the reader has typed so far; the timer is

@@ -284,6 +284,8 @@ final class PropsParser
         $current = self::freshEntry();
         $depth = 0;  // tracks nesting INSIDE the array body
         $i = $arrayStart + 1;
+        /** @var list<string> $pendingBlock the run of standalone `//` lines above the next prop */
+        $pendingBlock = [];
 
         while ($i < $len) {
             $token = $tokens[$i];
@@ -291,6 +293,15 @@ final class PropsParser
             // Closing `]` at outer depth = end of array.
             if ($token === ']' && $depth === 0) {
                 if ($current['name'] !== null) {
+                    // The last prop may carry no trailing comma, so it reaches finalization
+                    // here rather than at the comma branch — and it owes its block comment
+                    // just the same. Leaving this out would document every prop except the
+                    // last one, which is the shape nobody notices until it is the last one
+                    // that matters.
+                    if (($current['comment'] === null || $current['comment'] === '') && $pendingBlock !== []) {
+                        $current['comment'] = self::joinBlockComment($pendingBlock);
+                    }
+
                     $entries[] = self::finalizeEntry($current);
                 }
                 break;
@@ -340,8 +351,18 @@ final class PropsParser
                     if ($newIndex !== null) {
                         $i = $newIndex;
                     }
+
+                    // The trailing form WINS where both exist. A prop that has a same-line
+                    // comment is documented in the shape this parser has always read, and a
+                    // block above it in that case is more likely to belong to the group than
+                    // to this one key.
+                    if (($current['comment'] === null || $current['comment'] === '') && $pendingBlock !== []) {
+                        $current['comment'] = self::joinBlockComment($pendingBlock);
+                    }
+
                     $entries[] = self::finalizeEntry($current);
                 }
+                $pendingBlock = [];
                 $current = self::freshEntry();
                 $i++;
 
@@ -354,6 +375,12 @@ final class PropsParser
             if (is_array($token) && $token[0] === T_WHITESPACE) {
                 if ($current['state'] === 'expect-value') {
                     $current['default_tokens'][] = $token;
+                } elseif (substr_count($token[1], "\n") > 1) {
+                    // A BLANK line ends the run. A comment separated from the prop by an empty
+                    // line is a section heading for what follows, not documentation of the
+                    // next key — and attaching it would put a paragraph about grouping into
+                    // one arbitrary prop's schema entry.
+                    $pendingBlock = [];
                 }
                 $i++;
 
@@ -364,6 +391,18 @@ final class PropsParser
                     // Tokens inside the value's expression — preserve in
                     // the raw default; strip from normalized.
                     $current['default_tokens'][] = $token;
+                } elseif ($current['state'] === 'expect-key') {
+                    // ⚠️ A STANDALONE COMMENT ABOVE A PROP IS THAT PROP'S DOCUMENTATION, and
+                    // this branch used to drop it on the floor. Only the trailing same-line
+                    // form was captured, so the moment a prop's docs outgrew one line the
+                    // schema export lost them — measured on `data-table.columns`, whose
+                    // comment became `null` in the export in the same release that made it
+                    // richer. The documentation got better and its visibility got worse, and
+                    // nothing went red: the export runs green either way.
+                    //
+                    // Collected here rather than looked up later because the token stream is
+                    // already at the right place; a second pass would have to re-find it.
+                    $pendingBlock[] = $token[1];
                 }
                 $i++;
 
@@ -496,6 +535,32 @@ final class PropsParser
             'comment' => $current['comment'],
             'examples' => self::extractExamples($current['comment']),
         ];
+    }
+
+    /**
+     * One string from a run of standalone `//` lines above a prop.
+     *
+     * Each line loses its `//` and its own indentation; the lines are then joined with single
+     * spaces, because the reader of this field is a JSON schema and an editor tooltip, and
+     * neither renders a newline usefully. What is preserved is the ORDER and every word.
+     *
+     * @param  list<string>  $lines
+     */
+    private static function joinBlockComment(array $lines): string
+    {
+        $cleaned = [];
+
+        foreach ($lines as $line) {
+            // `//` and `#` are both line comments in PHP; `/* … */` arrives as one token and
+            // is handled by the same trim because its markers are stripped positionally.
+            $text = trim(preg_replace('#^\s*(?://+|\#+|/\*+|\*+/?)|\*+/\s*$#', '', $line) ?? $line);
+
+            if ($text !== '') {
+                $cleaned[] = $text;
+            }
+        }
+
+        return implode(' ', $cleaned);
     }
 
     /**

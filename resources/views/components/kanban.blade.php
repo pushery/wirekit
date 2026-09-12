@@ -27,9 +27,39 @@
         default => WireKit::validateProp('kanban', 'orientation', $orientation, ['horizontal', 'vertical']),
     };
 
-    $layoutClasses = $orientationValue === 'horizontal'
-        ? 'wk-scrollbar flex flex-row overflow-x-auto scroll-snap-x-mandatory gap-[var(--space-wk-md,1rem)]'
-        : 'flex flex-col gap-[var(--space-wk-md,1rem)]';
+    /*
+     * A `match` rather than a ternary, and the reason is the Drift inventory: its Blade
+     * class extractor harvests match ARMS and `implode([...])` arrays, not the branches of
+     * a ternary assignment. `contain-paint` below is the one class in this file that
+     * appears nowhere else in the library, so it was the first to expose the gap — the
+     * reverse diff reported a compiled selector it could not trace to any source.
+     */
+    $layoutClasses = match ($orientationValue) {
+        // `contain-paint` is what keeps the board's scrollable width off the PAGE.
+        //
+        // A horizontal scroller clips its own painting, but its scrollable overflow still
+        // counted toward the document's, so on a phone the whole page could be panned
+        // sideways past the board. Measured on a 393px viewport: the kanban blueprint's
+        // document was 926px wide, 533px of it off-screen, and the reader panned the page
+        // instead of the columns. Six candidate fixes were tried live in the browser
+        // (max-width, width, flex-none, overflow-x:hidden on the card body and on body);
+        // `contain: paint` is the only one that changed anything, and it took the document
+        // straight back to 393.
+        //
+        // Safe below the support floor — Chrome 52 / Safari 15.4 / Firefox 69, well under
+        // the Tailwind v4 baseline this library pins to — and visually a no-op, because a
+        // scroll container already clips what it paints. It is NOT applied to the vertical
+        // orientation, which does not scroll and would only gain a clip it never wanted.
+        //
+        // `snap-x snap-mandatory`, which is what Tailwind actually ships. This read
+        // `scroll-snap-x-mandatory` — the CSS PROPERTY name with a dash in front, not a
+        // utility — so Tailwind compiled nothing for it and the container had no snap type
+        // at all. The `snap-start` on every kanban-column then had nothing to align against
+        // and did nothing either: a two-file feature, silently absent, with both halves
+        // looking present in the source. attachment-group and carousel write the real pair.
+        'horizontal' => 'wk-scrollbar flex flex-row overflow-x-auto contain-paint snap-x snap-mandatory gap-[var(--space-wk-md,1rem)]',
+        default => 'flex flex-col gap-[var(--space-wk-md,1rem)]',
+    };
 
     $baseClasses = WireKit::resolveClasses('kanban', 'base', implode(' ', [
         $layoutClasses,

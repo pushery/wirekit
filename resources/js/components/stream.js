@@ -19,7 +19,7 @@
  * supplies the URL and renders `text`; the library owns the state machine and the
  * a11y. The state machine is intentionally decoupled from `EventSource` (all
  * transitions go through `_push` / `_finish` / `_fail`) so it is unit-testable in
- * node without a DOM (see scripts/test-stream.mjs).
+ * node without a DOM, which is how it is unit-tested.
  *
  * Cleanup contract: the only cleanup-requiring resource is the `EventSource`
  * (`_source`). It is opened in `_open()`, closed in `_close()`, and `_close()` runs

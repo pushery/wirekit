@@ -47,9 +47,17 @@
     data-wk-resizable-handle
     x-data="wirekitResizableHandle"
     x-on:pointerdown="onPointerDown($event)"
-    x-on:pointermove="onPointerMove($event)"
+    x-on:pointermove.passive="onPointerMove($event)"
     x-on:pointerup="onPointerUp($event)"
     x-on:pointercancel="onPointerUp($event)"
+    {{-- `lostpointercapture` was named in the component's own comment as one of the two
+         events that restore the page's text selection, and it was bound nowhere. Capture is
+         lost without a pointerup whenever the handle is removed mid-drag, when another
+         element takes the capture, or under the same Safari caveat `setPointerCapture` is
+         already wrapped in — and the drag sets `body { user-select: none }`, so the page
+         keeps it. Not for the gesture: for the rest of its life. Nothing on the page can be
+         selected or copied again until a reload, and nothing reports it. --}}
+    x-on:lostpointercapture="onPointerUp($event)"
     x-on:keydown="onKeyDown($event)"
     @if($needsName) aria-label="{{ $label ?? __('wirekit::Resize panel') }}" @endif
     {{ $attributes->class([$classes]) }}

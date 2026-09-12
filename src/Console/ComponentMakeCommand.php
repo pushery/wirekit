@@ -136,7 +136,28 @@ class ComponentMakeCommand extends Command
     {
         $explicit = $this->option('base');
         if ($explicit !== null && $explicit !== '') {
-            return (string) $explicit;
+            $explicit = (string) $explicit;
+
+            // `name` has been validated since this command shipped and `--base`
+            // never was, and the two feed the same kind of path: `name` names a
+            // file we CREATE under views/components/custom/, `--base` names one
+            // we READ. Unvalidated, its dots and slashes are just path — so
+            // `--base=../../../../resources/views/admin/panel` walks out of the
+            // package's component tree and copies an application's own Blade
+            // file into a new one. Measured, not reasoned about: it resolves.
+            //
+            // A dot here is a SUB-COMPONENT separator (`card.header`,
+            // `table.th`), never a path segment, which is why `..` cannot be a
+            // legal value — both halves of it would have to be component names.
+            // All 267 shipped components match this shape.
+            if (! preg_match('/^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/', $explicit)) {
+                $this->error("Invalid base component '{$explicit}'. Use a component name (e.g. 'button' or 'card.header').");
+                $this->line('  Run `php artisan wirekit:list` to see all top-level components.');
+
+                return null;
+            }
+
+            return $explicit;
         }
 
         // 1. Self-derivation: name itself IS a valid component. Common case:

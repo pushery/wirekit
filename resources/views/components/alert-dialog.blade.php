@@ -14,6 +14,20 @@
     // dialog falls back to the nearest ancestor of the trigger that survived.
     'focusReturnTo' => null,
     'scope' => null,
+    // Close the dialog once the destructive action has fired.
+    //
+    // ⚠️ DEFAULT FALSE, and that is back-compat rather than a recommendation. Leaving it
+    // false is what every dialog shipped before this prop did, and a caller who wants the
+    // close today writes `x-on:click="close()"` on their own control — which works, because
+    // `close()` is in this component's Alpine scope, and is exactly the line this prop
+    // exists to stop everyone from writing.
+    //
+    // ⚠️ `alert-dialog.confirm` IS NOT THE SAME THING, whatever its name suggests. That
+    // component is a PHRASE GUARD: it refuses an activation until the confirmation string
+    // is typed. It fires nothing and closes nothing, so swapping a hand-written
+    // `x-on:click="close()"` for it removes the close and takes the announcement defect
+    // back — on a part whose name promises the opposite.
+    'closeOnConfirm' => config('wirekit.components.alert-dialog.close-on-confirm', false),
     // The exact string a developer must type before `alert-dialog.confirm` will fire —
     // the brake in front of an action nobody can undo. Unset (the default), nothing about
     // this component changes: no field renders and the confirm control is never held back.
@@ -33,6 +47,12 @@
     // `alert-dialog.description`, where the attribute otherwise ships a permanently
     // unresolvable reference. Default `null` keeps the documented behavior, so nothing
     // that composes the description changes.
+    //
+    // Read through BooleanProp below, and that is the whole of this prop's history: the
+    // check was a bare `!== false`, so only the BOUND spelling `:describedby="false"`
+    // worked. `describedby="false"` compiles to the STRING "false", which is not `false`
+    // and is truthy besides, so the unresolvable reference the prop exists to remove
+    // shipped anyway — silently, in the spelling a reader is most likely to write.
     'describedby' => null,
 ])
 
@@ -52,6 +72,16 @@
     // (the Alpine seed and the two backdrop handlers), so the string turned every one of
     // them back on and a destructive-confirmation dialog dismissed on a backdrop click.
     $dismissible = BooleanProp::from($dismissible, false);
+    // Same reason as `dismissible` above: an unbound `close-on-confirm="false"` is the string
+    // 'false', which is truthy, so the dialog would have kept closing on confirm for a caller
+    // who wrote the opposite.
+    $closeOnConfirm = BooleanProp::from($closeOnConfirm, config('wirekit.components.alert-dialog.close-on-confirm', false));
+
+    // Default TRUE: an unset `describedby` keeps the documented behavior, and only an
+    // explicit false in any spelling drops the attribute. `BooleanProp::from` reads the
+    // bound `false`, the string "false", "0" and an empty attribute alike — the three
+    // spellings the docs advertise, of which one used to work.
+    $describedbyEnabled = BooleanProp::from($describedby, true);
 
     // Alert Dialog — specialized confirmation dialog for destructive actions.
     // Uses role="alertdialog" (not "dialog") to signal urgency to screen readers.
@@ -98,7 +128,7 @@
 @endphp
 
 <div
-    x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }}, confirmationPhrase: {{ \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase) }} })"
+    x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }}, confirmationPhrase: {{ \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase) }}, closeOnConfirm: {{ $closeOnConfirm ? 'true' : 'false' }} })"
     {{ $attributes }}
 >
     {{-- Trigger slot — clicking opens the alert dialog --}}
@@ -148,7 +178,7 @@
                     @else
                         aria-labelledby="{{ $titleId }}"
                     @endif
-                    @if($describedby !== false) aria-describedby="{{ $descId }}" @endif
+                    @if($describedbyEnabled) aria-describedby="{{ $descId }}" @endif
                     class="{{ $panelClasses }}"
                     x-on:click.stop
                     data-wk-title-id="{{ $titleId }}"

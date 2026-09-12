@@ -13,6 +13,7 @@
  * drive it.
  */
 import { createFocusTrap } from '../utils/focus-trap.js';
+import { lockScroll, unlockScroll } from '../utils/overlay.js';
 
 /**
  * @param {Object} config
@@ -77,6 +78,10 @@ export default function wirekitLightbox(config = {}) {
             return label ? `${position}. ${label}` : position;
         },
         _trap: null,
+        // Whether THIS lightbox is currently holding the shared scroll lock. Not a
+        // boolean about the page — several overlays can hold it at once, and the count
+        // lives in `overlay.js`.
+        _holdsScrollLock: false,
         _openHandler: null,
 
         init() {
@@ -96,17 +101,68 @@ export default function wirekitLightbox(config = {}) {
                 return;
             }
             this.current = Math.max(0, Math.min(index, this.count - 1));
+
+            /*
+             * Already open? Then this is a NAVIGATION, not an opening.
+             *
+             * Called on a viewer that is already up — a second thumbnail clicked behind the
+             * overlay, a `wirekit-lightbox-open` event fired twice, a developer calling
+             * `openAt()` to jump — this built a SECOND focus trap over the same container
+             * and assigned it over `this._trap`. The first stayed active with nobody holding
+             * it: `close()` deactivates one trap, so the orphan kept its document-level
+             * keydown listener and went on trapping Tab inside markup the reader had already
+             * left. The only way out was a reload.
+             *
+             * The index is set above, before this returns, so the navigation still happens —
+             * it is only the arming that is skipped, because it has already been done.
+             */
+            if (this.open && this._trap) {
+                return;
+            }
+
             this.open = true;
+
+            /*
+             * Hold the page still. This is `role="dialog" aria-modal="true"` and it took no
+             * scroll lock at all, so the page scrolled behind it — a wheel or a swipe over
+             * the backdrop moved the article underneath, and on iOS the rubber-band ran the
+             * whole document while the viewer stayed put.
+             *
+             * `aria-modal="true"` is the part that makes it a defect rather than a nicety:
+             * the attribute tells assistive technology that everything outside is inert,
+             * and the page behind was still both scrollable and, to a pointer, live.
+             *
+             * The REFERENCE-COUNTED helper from `overlay.js`, not a private `body.style`
+             * write. A lightbox opens from inside a modal readily enough, and two components
+             * each holding their own idea of the body's overflow is how a page ends up
+             * frozen after the last one closes — `command-palette` carries a comment about
+             * exactly that, from when it did keep its own.
+             */
+            this._holdsScrollLock = true;
+            lockScroll();
+
             this.$nextTick(() => {
                 const container = this.$refs.stage;
                 if (!container) {
                     return;
                 }
+
+                // The state can have changed inside the tick — Escape during the frame, a
+                // Livewire morph, a close from anywhere. Arming here would put a trap on an
+                // overlay that is no longer shown, and nothing would ever take it off.
+                if (!this.open || this._trap) {
+                    return;
+                }
+
                 this._trap = createFocusTrap(container, {
                     escapeDeactivates: true,
                     // Escape / programmatic deactivate tears down + flips the flag
                     // so x-show hides the overlay; focus returns to the trigger.
                     onDeactivate: () => {
+                        // Escape lands here without passing through `close()`, so the
+                        // release has to be on this path too — it was the commonest way out
+                        // of the viewer and would have left the page locked for good.
+                        this._releaseScrollLock();
                         this.open = false;
                         this._trap = null;
                     },
@@ -116,10 +172,28 @@ export default function wirekitLightbox(config = {}) {
         },
 
         close() {
+            this._releaseScrollLock();
+
             if (this._trap) {
                 this._trap.deactivate();
             } else {
                 this.open = false;
+            }
+        },
+
+        /**
+         * Give the page back, once.
+         *
+         * Idempotent through `_holdsScrollLock`, because the close paths overlap: Escape
+         * reaches `onDeactivate`, a backdrop click reaches `close()`, and a teardown reaches
+         * `destroy()`. The count in `overlay.js` is shared with every other overlay, so
+         * releasing twice would decrement somebody else's lock and unfreeze a page a modal
+         * is still holding.
+         */
+        _releaseScrollLock() {
+            if (this._holdsScrollLock) {
+                this._holdsScrollLock = false;
+                unlockScroll();
             }
         },
 
@@ -157,6 +231,12 @@ export default function wirekitLightbox(config = {}) {
                 this._trap.deactivate();
                 this._trap = null;
             }
+
+            // And never leave the page locked. A teardown while the viewer is open is the
+            // one path where nothing else releases: `close()` is not called, and the trap's
+            // `onDeactivate` fires into a scope that is going away. The count is shared, so
+            // an unreleased hold freezes the page for every overlay that comes after.
+            this._releaseScrollLock();
         },
     };
 }

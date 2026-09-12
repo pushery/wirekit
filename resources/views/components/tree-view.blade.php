@@ -2,6 +2,8 @@
      Its state is expansion and keyboard focus. That is not a value a server owns, so there is
      nothing to anticipate and nothing to roll back. --}}
 @props([
+    // Names the tree. A `role="tree"` is announced by its name and nothing else.
+    'label' => null,
     'scope' => null,
 ])
 
@@ -43,6 +45,18 @@
 {{-- No x-cloak needed — tree has no hidden/shown toggle; Alpine only handles keyboard nav --}}
 <ul
     role="tree"
+    {{-- A `role="tree"` is announced by its name and by nothing else, and this component had
+         no way to give it one: no `label` prop, no default, and nothing in the props table.
+         Two file trees on a page were two identical "tree"s.
+
+         The caller's own name wins in either form; the catalog default is a floor rather than
+         a preference. Unlike a landmark, a tree has no uniqueness rule, so a shared default
+         name costs nothing that an unnamed tree does not cost more. --}}
+    @if(filled($label))
+        aria-label="{{ $label }}"
+    @elseif(! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby'))
+        aria-label="{{ __('wirekit::Tree') }}"
+    @endif
     x-data="wirekitTreeView()"
     {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }}
     {{-- Roving tabindex: the factory's init seeds one tab stop, and this keeps it under
@@ -55,6 +69,7 @@
     @keydown.arrow-left.prevent="collapseOrParent()"
     @keydown.home.prevent="focusFirst()"
     @keydown.end.prevent="focusLast()"
+    @click="selectClicked($event)"
     @keydown.enter.prevent="selectFocused()"
     @keydown.space.prevent="selectFocused()"
     {{-- Type-ahead, the last row of the documented keyboard table. Bound unfiltered
