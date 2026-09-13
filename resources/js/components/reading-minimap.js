@@ -31,9 +31,10 @@ import { prefersReducedMotion } from '../utils/motion.js';
  *                      line at the saved offset percentage.
  *   headingAnchors   — walks the source DOM for h2/h3 (configurable),
  *                      emits real <a href="#id"> anchors on the
- *                      outboard edge. Density-guard collapses
- *                      overlapping labels (< 16 px gap) to avoid
- *                      visual noise; collapsed labels surface on
+ *                      outboard edge — or inside, when the outboard
+ *                      edge has no room for them. Density-guard
+ *                      collapses overlapping labels (< 16 px gap) to
+ *                      avoid visual noise; collapsed labels surface on
  *                      minimap hover.
  *   autoFadeIdle     — fades to --reading-minimap-idle-opacity after
  *                      3 s of inactivity. Hover overrides.
@@ -49,6 +50,20 @@ import { prefersReducedMotion } from '../utils/motion.js';
  *   - Hover stripe (non-touch) → tooltip with item title.
  *   - In rendered mode, click anywhere on the canvas → scroll to the
  *     proportional position.
+ *
+ * Lifecycle resources held on `this`, every one released in destroy():
+ *   - _resizeFrame (frameCoalesce) — canceled.
+ *   - _anchorPlacementRaf (requestAnimationFrame) — canceled; the
+ *     callback also null-guards the anchor nav, because a frame queued
+ *     before teardown can still land after it.
+ *   - _resizeObserver, _minimapResizeObserver, _intersectionObserver,
+ *     _mutationObserver — disconnected.
+ *   - _mutationDebounceTimer, _idleTimer (setTimeout) — cleared.
+ *   - _scrollHandler on the scroll host (and on window when the host is
+ *     the document), _idleResetHandler, _bookmarkStorageHandler,
+ *     _bookmarkEventHandler, _hoverPreviewEscapeHandler and the tooltip's
+ *     Escape listener on window, _hoverPreviewHandler and
+ *     _hoverPreviewLeaveHandler on the root — removed.
  */
 
 const RENDERED_MAX_TAGS = 5000;
@@ -94,6 +109,12 @@ export default (options = {}) => ({
 
     // Heading anchors
     headingAnchorsList: [],
+    // Which side the anchor strip paints on, and the width a label is held to. The strip
+    // stays outboard unless that side has no room — see _placeHeadingAnchors(). `null`
+    // means no clamp: a label is only narrowed when the widest one would not fit.
+    anchorsInboard: false,
+    anchorRoom: null,
+    _anchorPlacementRaf: 0,
 
     // Auto-fade idle
     idle: false,
@@ -345,7 +366,11 @@ export default (options = {}) => ({
     },
 
     anchorStyle(anchor) {
-        return `top: ${anchor.fraction * 100}%;`;
+        // The clamp is inline because it is a measured number, not a state a class could name.
+        // It is only present when the side the strip sits on is narrower than its widest label.
+        const clamp = this.anchorRoom === null ? '' : ` max-width: ${this.anchorRoom}px;`;
+
+        return `top: ${anchor.fraction * 100}%;${clamp}`;
     },
 
     anchorHref(anchor) {
@@ -912,6 +937,54 @@ export default (options = {}) => ({
                 };
             });
         this.headingAnchorsList = anchors;
+
+        // Only a rendered label has a width, and the labels render on Alpine's next flush;
+        // a frame later is after that flush. Guarded rather than assumed: the ESM harness
+        // constructs this factory in Node, where no animation frame exists.
+        if (typeof requestAnimationFrame !== 'function') return;
+        if (this._anchorPlacementRaf) cancelAnimationFrame(this._anchorPlacementRaf);
+        this._anchorPlacementRaf = requestAnimationFrame(() => {
+            this._anchorPlacementRaf = 0;
+            this._placeHeadingAnchors();
+        });
+    },
+
+    /**
+     * Puts the anchor strip on the side that has room for it.
+     *
+     * The strip belongs on the outboard edge, and a minimap pinned against the viewport has
+     * no outboard edge to speak of: measured at 390px, every label painted from x=382 to as
+     * far as 479 — up to 89px off the screen, in Chromium and WebKit alike. Rendered mode
+     * pins the minimap to the viewport on every screen, so the same labels left a desktop too.
+     *
+     * Both sides are measured. The strip moves inside only when the outboard side cannot hold
+     * the widest label AND the inboard side holds more. A label is narrowed — to the room its
+     * side really has, ending in an ellipsis — only when even that side is too small.
+     * `scrollWidth` is a label's natural width whatever clamp it carries, so a label held to
+     * yesterday's room never reports that room as its own width, and the placement cannot
+     * oscillate between two frames.
+     */
+    _placeHeadingAnchors() {
+        // Null-guard: the frame that calls this can land after teardown.
+        const nav = this.$el?.querySelector?.('.wk-reading-minimap__anchors');
+        if (!nav || this.headingAnchorsList.length === 0) return;
+
+        const viewport = document.documentElement.clientWidth;
+        const box = this.$el.getBoundingClientRect();
+        const style = getComputedStyle(nav);
+        // The strip sits 0.5rem off the minimap on whichever side it is on: one of the two
+        // margins is that gap and the other is zero.
+        const gap = Math.max(parseFloat(style.marginLeft) || 0, parseFloat(style.marginRight) || 0);
+        const widest = Array.from(nav.querySelectorAll('.wk-reading-minimap__anchor'))
+            .reduce((max, anchor) => Math.max(max, anchor.scrollWidth), 0);
+
+        const outboardRoom = (this.side === 'left' ? box.left : viewport - box.right) - gap;
+        const inboardRoom = (this.side === 'left' ? viewport - box.right : box.left) - gap;
+
+        this.anchorsInboard = widest > outboardRoom && inboardRoom > outboardRoom;
+
+        const room = Math.floor(this.anchorsInboard ? inboardRoom : outboardRoom);
+        this.anchorRoom = widest > room ? Math.max(0, room) : null;
     },
 
     _slugifyHeading(text) {
@@ -1083,6 +1156,8 @@ export default (options = {}) => ({
     destroy() {
         this._resizeFrame?.cancel();
         this._resizeFrame = null;
+        if (this._anchorPlacementRaf) cancelAnimationFrame(this._anchorPlacementRaf);
+        this._anchorPlacementRaf = 0;
         // The tooltip's Escape listener lives on `window`, so it outlives this component
         // unless it is taken down here — the same reason every other handle in this method
         // is listed.

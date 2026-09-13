@@ -220,6 +220,7 @@
                         x-ref="list"
                         id="{{ $listId }}"
                         role="listbox"
+                        aria-label="{{ $callerLabel ?: __('wirekit::Search commands') }}"
                         {{-- `wk-command-list` is a MARKER CLASS, and it is documented in
                              `public-css-api.md` as a Stable styling hook. It never existed as
                              one: the id happened to carry the same string, and the drift guard

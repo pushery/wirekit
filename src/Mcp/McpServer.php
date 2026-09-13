@@ -20,6 +20,15 @@ namespace Pushery\WireKit\Mcp;
  * everything it serves ships in the Packagist tarball, so a developer-hosted
  * local server is always version-matched to their installed WireKit.
  *
+ * It also exposes four RESOURCES — `wirekit://catalog`, `wirekit://themes`,
+ * `wirekit://recipes` and `wirekit://changelog`. A resource is the same shipped
+ * data addressed by URI instead of by call: an assistant attaches the catalog to a
+ * conversation once instead of asking for it on every turn, and a client that lists
+ * resources shows a developer what this server knows without a round trip per
+ * question. Each one is a whole set rather than a single item, because a URI per
+ * component would put a hundred and eighty entries in a resource picker, which is a
+ * menu nobody reads; the per-item questions are what the tools are for.
+ *
  * Nothing is read from `docs/` at runtime, which is not a detail: `docs/` is
  * export-ignored, so it is absent in a real install. The worked examples are
  * extracted from it at BUILD time into a file that ships, and a test fails when
@@ -72,6 +81,8 @@ final class McpServer
             'ping' => $this->ok($id, (object) []),
             'tools/list' => $this->ok($id, ['tools' => $this->toolDefinitions()]),
             'tools/call' => $this->handleToolCall($id, $params),
+            'resources/list' => $this->ok($id, ['resources' => $this->resourceDefinitions()]),
+            'resources/read' => $this->readResource($id, $params),
             default => $this->error($id, -32601, "Method not found: {$method}"),
         };
     }
@@ -104,7 +115,10 @@ final class McpServer
             'protocolVersion' => in_array($requested, self::SUPPORTED_PROTOCOL_VERSIONS, true)
                 ? $requested
                 : self::PROTOCOL_VERSION,
-            'capabilities' => ['tools' => (object) []],
+            // Both halves are announced, and a client that sees neither asks for neither: the
+            // handshake is where a server says what it has, so an unannounced capability is an
+            // unused one however completely it is implemented.
+            'capabilities' => ['tools' => (object) [], 'resources' => (object) []],
             'serverInfo' => ['name' => 'wirekit', 'version' => $this->version],
         ];
     }
@@ -211,6 +225,122 @@ final class McpServer
                 ],
             ],
         ];
+    }
+
+    /**
+     * The resources this server exposes, each a whole set addressed by one URI.
+     *
+     * @return list<array<string, string>>
+     */
+    private function resourceDefinitions(): array
+    {
+        return [
+            [
+                'uri' => 'wirekit://catalog',
+                'name' => 'Component catalog',
+                'description' => 'Every WireKit component with its category, description and prop signature — the same data `list_components` and `get_component` answer from.',
+                'mimeType' => 'application/json',
+            ],
+            [
+                'uri' => 'wirekit://themes',
+                'name' => 'Theme presets',
+                'description' => 'Every shipped theme preset with the design-token values it sets, light and dark.',
+                'mimeType' => 'application/json',
+            ],
+            [
+                'uri' => 'wirekit://recipes',
+                'name' => 'Recipes',
+                'description' => 'The recipe library `wirekit:make` can scaffold, with the purpose of each.',
+                'mimeType' => 'application/json',
+            ],
+            [
+                'uri' => 'wirekit://changelog',
+                'name' => 'Changelog — newest version',
+                'description' => "The newest version's section of CHANGELOG.md, which is what changed in the version installed here. The whole file is several hundred kilobytes and a resource is attached whole, so this is deliberately one section rather than all of them.",
+                'mimeType' => 'text/markdown',
+            ],
+        ];
+    }
+
+    /**
+     * Read one resource.
+     *
+     * @param  array<string, mixed>  $params
+     * @return array<string, mixed>
+     */
+    private function readResource(int|string|null $id, array $params): array
+    {
+        $uri = is_string($params['uri'] ?? null) ? $params['uri'] : '';
+
+        if ($uri === 'wirekit://changelog') {
+            $text = $this->changelogSection();
+
+            // -32603 rather than the unknown-resource error below: the resource is one this
+            // server offers, and the install is missing the file it reads. Those are different
+            // faults and a developer chasing them looks in different places.
+            return $text === null
+                ? $this->error($id, -32603, 'CHANGELOG.md is not present in this install.')
+                : $this->ok($id, $this->resourceContents($uri, 'text/markdown', $text));
+        }
+
+        $payload = match ($uri) {
+            'wirekit://catalog' => $this->catalog->components(),
+            'wirekit://themes' => $this->catalog->presets(),
+            'wirekit://recipes' => $this->catalog->recipes(),
+            default => null,
+        };
+
+        if ($payload === null) {
+            // -32602 (invalid params) rather than -32601 (method not found): `resources/read`
+            // exists, and it is the URI that does not.
+            return $this->error($id, -32602, "Unknown resource: {$uri}");
+        }
+
+        return $this->ok($id, $this->resourceContents(
+            $uri,
+            'application/json',
+            (string) json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)
+        ));
+    }
+
+    /**
+     * The `contents` envelope the protocol expects — a list, because one URI may resolve to
+     * several parts.
+     *
+     * @return array<string, mixed>
+     */
+    private function resourceContents(string $uri, string $mimeType, string $text): array
+    {
+        return ['contents' => [['uri' => $uri, 'mimeType' => $mimeType, 'text' => $text]]];
+    }
+
+    /**
+     * The newest version's section of the shipped CHANGELOG, or null when the file is absent.
+     *
+     * Cut at the next `## [` heading rather than served whole: the file is several hundred
+     * kilobytes and grows with every release, and a resource is attached in full. What a
+     * developer wants from an assistant here is what changed in the version they have.
+     */
+    private function changelogSection(): ?string
+    {
+        $path = dirname(__DIR__, 2).'/CHANGELOG.md';
+
+        if (! is_file($path)) {
+            return null;
+        }
+
+        $contents = (string) file_get_contents($path);
+
+        if (preg_match('/^## \[.*?(?=^## \[)/ms', $contents, $match) === 1) {
+            return rtrim($match[0]);
+        }
+
+        // One section in the whole file, or a shape this cut does not recognize. Handing back
+        // everything is wrong at this size, so the honest answer is the part that is certainly
+        // a section: from the first heading to the end.
+        $from = strpos($contents, '## [');
+
+        return $from === false ? null : rtrim(substr($contents, $from));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.49.0 — MIT License
+ * WireKit CSS v2.50.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -2161,6 +2161,52 @@
     border: 0;
 }
 
+/* ─── Message group: one sender, one header ────────────────── */
+/* <x-wirekit::message-group> prints the sender's avatar and name ONCE and holds a
+   run of that sender's messages. Each message still renders its own header — it
+   has to, because a message outside a group is complete on its own — so the
+   repeats are silenced here rather than through a second rendering path in the
+   Blade.
+
+   The NAME is hidden, not removed. A screen reader that lands on the third
+   message of a run still has to be able to say who wrote it, and `display: none`
+   would take it out of the accessibility tree along with the pixels. The avatar
+   does go: its accessible name is that same name, so a second copy is noise
+   rather than information.
+
+   The inner corners round tighter, so a run reads as one block instead of three
+   separate bubbles. Logical properties, so a right-to-left thread mirrors
+   without a second rule. A corner tightens where its bubble faces another
+   message, read from the siblings rather than from a position in the column:
+   the group paints the sender's name at the top of that same column, so the
+   first message is not its first child, and `:first-child` would tighten the
+   corner that opens the run. */
+.wk-message-group [data-wk-message-avatar] {
+    display: none;
+}
+
+.wk-message-group [data-wk-message-author] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.wk-message-group [data-wk-message] + [data-wk-message] [data-wk-message-bubble] {
+    border-start-start-radius: var(--radius-wk-sm);
+    border-start-end-radius: var(--radius-wk-sm);
+}
+
+.wk-message-group [data-wk-message]:has(+ [data-wk-message]) [data-wk-message-bubble] {
+    border-end-start-radius: var(--radius-wk-sm);
+    border-end-end-radius: var(--radius-wk-sm);
+}
+
 /* ─── Table-aware cell padding for raw <td>/<th> ───────────── */
 /* <x-wirekit::table> only styles the outer <table>; padding lives on the
    table.td / table.th sub-components. A developer who drops a raw
@@ -3888,7 +3934,11 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     position: relative;
 }
 
-.wk-avatar-group > * + * {
+/* `:not(template)` on both sides: a stack rendered by Alpine's `x-for` carries the
+   `<template>` element as its FIRST child, and with `* + *` the first visible avatar
+   followed it and was pulled over whatever sits before the group. The general sibling
+   `~` still reaches every avatar after the first, template or not in between. */
+.wk-avatar-group > :not(template) ~ :not(template) {
     margin-inline-start: -0.6rem;
 }
 
@@ -5002,10 +5052,16 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     --reading-minimap-bookmark-marker-color: var(--color-wk-accent);
     --reading-minimap-bookmark-marker-height: 2px;
 
-    /* Heading anchors on the outboard edge */
+    /* Heading anchors — outboard by default, inboard when the outboard edge has no room */
     --reading-minimap-anchor-text-color: var(--color-wk-text-muted);
     --reading-minimap-anchor-text-color-hover: var(--color-wk-text);
     --reading-minimap-anchor-font-size: 0.625rem;
+    /* An inboard label lies on the article. It carries the page background, so the text  */
+    /* under it is covered rather than crossed: invisible where nothing is beneath it,     */
+    /* legible where something is.                                                         */
+    --reading-minimap-anchor-inboard-bg: var(--color-wk-bg);
+    --reading-minimap-anchor-inboard-padding: 0 var(--padding-wk-x-xs);
+    --reading-minimap-anchor-inboard-radius: var(--radius-wk-sm);
 
     /* Auto-fade idle */
     --reading-minimap-idle-opacity: 0.3;
@@ -5577,6 +5633,24 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     margin-right: 0.5rem;
     align-items: flex-end;
 }
+/* No room on the outboard edge. A minimap pinned against the viewport — rendered mode on */
+/* any screen, or a phone that keeps the minimap — left the labels no pixel to paint in,  */
+/* and every one of them ran off the screen. The controller measures both sides and       */
+/* moves the strip inside when that is the side with room (data-anchors="inboard").        */
+.wk-reading-minimap[data-side="right"][data-anchors="inboard"] .wk-reading-minimap__anchors {
+    left: auto;
+    right: 100%;
+    margin-left: 0;
+    margin-right: 0.5rem;
+    align-items: flex-end;
+}
+.wk-reading-minimap[data-side="left"][data-anchors="inboard"] .wk-reading-minimap__anchors {
+    right: auto;
+    left: 100%;
+    margin-right: 0;
+    margin-left: 0.5rem;
+    align-items: flex-start;
+}
 .wk-reading-minimap__anchor {
     position: absolute;
     font-size: var(--reading-minimap-anchor-font-size);
@@ -5584,8 +5658,20 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     color: var(--reading-minimap-anchor-text-color);
     text-decoration: none;
     white-space: nowrap;
+    /* A label is held to the room its side really has — max-width written inline by the */
+    /* controller, only when the widest label would not fit — and ends in an ellipsis.    */
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: color var(--transition-wk-duration) ease-out;
     /* top written inline (percentage) */
+}
+/* An inboard label lies on the article, so it carries a backdrop of its own. Without one it */
+/* crosses whatever text is beneath it: the placement keeps the label on the screen, and     */
+/* only this rule keeps it readable there.                                                   */
+.wk-reading-minimap[data-anchors="inboard"] .wk-reading-minimap__anchor {
+    background: var(--reading-minimap-anchor-inboard-bg);
+    padding: var(--reading-minimap-anchor-inboard-padding);
+    border-radius: var(--reading-minimap-anchor-inboard-radius);
 }
 .wk-reading-minimap__anchor:hover,
 .wk-reading-minimap__anchor:focus-visible {

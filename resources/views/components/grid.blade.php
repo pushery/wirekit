@@ -19,6 +19,13 @@
     // week grid — are neither equal nor expressible as a count.
     'template' => null, // @example "14rem 1fr 18rem" @example "4.5rem repeat(7, minmax(0, 1fr))"
     'gap' => config('wirekit.components.grid.gap', 'md'),
+    // Which spacing ladder `gap` names a rung on: `space`, what this prop has always read, or
+    // `gap`, the tighter ladder WireKit's own components use inside themselves. The two share
+    // the rung names `xs`…`2xl` and differ from `md` up, so a card grid written against
+    // `--gap-wk-md` could not become this component without every gap growing by a third.
+    // `row` and `stack` have had the same prop since it was first reported for them; the
+    // grids were left behind only because that report came from a repository using those two.
+    'scale' => 'space',
     'align' => null,
     'as' => 'div',
     'scope' => null,
@@ -133,16 +140,34 @@
             ->map(fn (string $token) => $colsMap[$token] ?? WireKit::validateProp('grid', 'cols', $token, array_keys($colsMap)))
             ->implode(' ');
 
-    $gapClasses = match ($gap) {
-        'none' => '',
-        'xs' => 'gap-[var(--space-wk-xs,0.25rem)]',
-        'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
-        'md' => 'gap-[var(--space-wk-md,1rem)]',
-        'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
-        'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
-        '2xl' => 'gap-[var(--space-wk-2xl,4rem)]',
-        default => WireKit::validateProp('grid', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
-    };
+    // Resolved before the rungs, so an unknown ladder name is reported as what it is rather
+    // than silently falling through to the historical one.
+    $scale = WireKit::validateProp('grid', 'scale', (string) $scale, ['space', 'gap']);
+
+    // Two maps written out rather than one with a token name assembled at runtime: Tailwind
+    // generates an arbitrary utility only from a literal it can read, and a composed class
+    // would render a gap that silently does nothing.
+    $gapClasses = $scale === 'gap'
+        ? match ($gap) {
+            'none' => '',
+            'xs' => 'gap-[var(--gap-wk-xs,0.25rem)]',
+            'sm' => 'gap-[var(--gap-wk-sm,0.5rem)]',
+            'md' => 'gap-[var(--gap-wk-md,0.75rem)]',
+            'lg' => 'gap-[var(--gap-wk-lg,1rem)]',
+            'xl' => 'gap-[var(--gap-wk-xl,1.5rem)]',
+            '2xl' => 'gap-[var(--gap-wk-2xl,2rem)]',
+            default => WireKit::validateProp('grid', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
+        }
+        : match ($gap) {
+            'none' => '',
+            'xs' => 'gap-[var(--space-wk-xs,0.25rem)]',
+            'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
+            'md' => 'gap-[var(--space-wk-md,1rem)]',
+            'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
+            'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
+            '2xl' => 'gap-[var(--space-wk-2xl,4rem)]',
+            default => WireKit::validateProp('grid', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
+        };
 
     $alignClasses = match ($align) {
         'start' => 'items-start',

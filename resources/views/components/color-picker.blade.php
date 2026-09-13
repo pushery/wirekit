@@ -179,6 +179,10 @@
     // default swatch button. Spelling the wiring out four times is how three of them
     // end up out of step with the fourth.
     $controlDescribedBy = $hasError ? $pickerId.'-error' : ($hint ? $pickerId.'-hint' : null);
+    // A caller's aria-describedby joins this list, because the control is what it describes
+    // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
+    // ids first, then the caller's.
+    $controlDescribedBy = trim(((string) $controlDescribedBy).' '.((string) $attributes->get('aria-describedby', ''))) ?: null;
 
     $swatchSize = match ($size) {
         'sm' => 'w-8 h-8',
@@ -270,7 +274,7 @@
                 @if($disabled) disabled @endif
                 @if($hasError) aria-invalid="true" @endif
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
-                {{ $attributes->class([$inputClasses]) }}
+                {{ $attributes->except('aria-describedby')->class([$inputClasses]) }}
             />
             @if(trim((string) $slot) !== '')
                 <span class="sr-only">{{ $slot }}</span>
@@ -694,7 +698,7 @@
 @endif
 
 {{-- One region, the error winning over the hint — the same shape every sibling
-     control renders, and the reason `$controlDescribedBy` names only one id. It sits
+     control renders, and the reason `$controlDescribedBy` names only one id of its own. It sits
      OUTSIDE the optimistic wrapper deliberately: the rejected-state outline in the
      stylesheet selects that wrapper's own children, and the field's error paragraph is
      not part of what the optimistic layer withdrew. --}}

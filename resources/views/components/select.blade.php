@@ -108,6 +108,13 @@
     // stringly-false spellings without collapsing a real success message.
     $hasSuccess = ! $hasError && $success !== null && ! BooleanProp::isFalse($success);
     $successMessage = is_string($success) ? $success : null;
+    // One description list for the control: the component's own id first, then a caller's
+    // aria-describedby. Written as separate attributes, the parser kept only the first copy,
+    // so a caller's description was dropped or pushed the component's own out.
+    $describedBy = trim(
+        ($hasError ? $id.'-error' : ($hasSuccess && $successMessage ? $id.'-success' : ($hint ? $id.'-hint' : '')))
+        .' '.((string) $attributes->get('aria-describedby', ''))
+    );
 
     // Base classes: all values reference design tokens — no hardcoded colors or sizes
     $selectClasses = WireKit::resolveClasses('select', 'base', implode(' ', [
@@ -202,16 +209,15 @@
         <select
             id="{{ $id }}"
             name="{{ $name }}"
-            @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
+            @if($hasError) aria-invalid="true" @endif
             @if($optimisticConfig)
                 x-ref="control"
                 x-bind:aria-busy="isPending"
                 x-on:change="commitFromControl()"
             @endif
-            @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
-            @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
+            @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             {{-- wk-field: lifts font-size to the 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->class(['wk-field', $selectClasses, $stateClasses, $sizeClasses]) }}
+            {{ $attributes->except('aria-describedby')->class(['wk-field', $selectClasses, $stateClasses, $sizeClasses]) }}
         >
             @if($placeholder)
                 {{-- The placeholder only pre-selects itself when nothing else is

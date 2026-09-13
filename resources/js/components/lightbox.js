@@ -14,6 +14,15 @@
  */
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { lockScroll, unlockScroll } from '../utils/overlay.js';
+import { FOCUSABLE } from '../utils/first-control.js';
+
+/**
+ * The focusable control an event came from, or null. Duck-typed rather than `instanceof Element`,
+ * so a dispatch on `window` (whose target is the window) and the Node harness both answer null.
+ */
+function focusableFrom(target) {
+    return target && typeof target.closest === 'function' ? target.closest(FOCUSABLE) : null;
+}
 
 /**
  * @param {Object} config
@@ -83,6 +92,16 @@ export default function wirekitLightbox(config = {}) {
         // lives in `overlay.js`.
         _holdsScrollLock: false,
         _openHandler: null,
+        // The control that opened the viewer, and where focus goes back when it closes.
+        // focus-trap returns focus to whatever was focused when it activated, and in Safari
+        // that is <body>: a mouse click does not focus a button there. Measured in WebKit,
+        // focus sat on <body> after the click and again after Escape, for a gallery thumbnail
+        // and a standalone trigger alike, while Chromium returned it to the button. So the
+        // opener is noted from the click, or from the open event's target, and handed to the
+        // trap as its return target.
+        _pendingTrigger: null,
+        _returnTo: null,
+        _triggerNoter: null,
 
         init() {
             // Page-level open: any control can dispatch
@@ -90,10 +109,23 @@ export default function wirekitLightbox(config = {}) {
             this._openHandler = (e) => {
                 const d = e.detail || {};
                 if ((d.name || '') === this._name) {
+                    // `$dispatch` fires from the control itself, so the event's target is the
+                    // opener. A dispatch on `window` has none, and the trap's default stands.
+                    this._pendingTrigger = focusableFrom(e.target);
                     this.openAt(d.index || 0);
                 }
             };
             window.addEventListener('wirekit-lightbox-open', this._openHandler);
+
+            // Note the control a click inside this component came from. Capture phase, so it is
+            // noted before that control's own `openAt()` runs; cleared once the click has finished
+            // dispatching, so a click that opened nothing cannot stand in for a later programmatic
+            // open. Clicks inside the viewer never reach it: the viewer is teleported out of here.
+            this._triggerNoter = (e) => {
+                this._pendingTrigger = focusableFrom(e.target);
+                setTimeout(() => { this._pendingTrigger = null; }, 0);
+            };
+            this.$el?.addEventListener?.('click', this._triggerNoter, true);
         },
 
         openAt(index) {
@@ -119,6 +151,10 @@ export default function wirekitLightbox(config = {}) {
             if (this.open && this._trap) {
                 return;
             }
+
+            // Whoever opened it gets focus back when it closes; see `_returnTo`.
+            this._returnTo = this._pendingTrigger;
+            this._pendingTrigger = null;
 
             this.open = true;
 
@@ -156,6 +192,9 @@ export default function wirekitLightbox(config = {}) {
 
                 this._trap = createFocusTrap(container, {
                     escapeDeactivates: true,
+                    // Back to the opener while it is still in the page; otherwise the library's
+                    // own choice, which is whatever was focused when the trap activated.
+                    setReturnFocus: (previous) => (this._returnTo && this._returnTo.isConnected ? this._returnTo : previous),
                     // Escape / programmatic deactivate tears down + flips the flag
                     // so x-show hides the overlay; focus returns to the trigger.
                     onDeactivate: () => {
@@ -225,6 +264,11 @@ export default function wirekitLightbox(config = {}) {
                 window.removeEventListener('wirekit-lightbox-open', this._openHandler);
                 this._openHandler = null;
             }
+            if (this._triggerNoter) {
+                this.$el?.removeEventListener?.('click', this._triggerNoter, true);
+                this._triggerNoter = null;
+            }
+            this._returnTo = null;
             // Never leave an active trap behind on teardown (SPA nav, Livewire
             // morph) — it would keep focus locked to a detached node.
             if (this._trap) {

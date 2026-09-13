@@ -13,7 +13,9 @@ use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
+use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\DirectoryHash;
+use Pushery\WireKit\Support\LayoutShells;
 use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\Support\TailwindVersion;
 use Pushery\WireKit\WireKit;
@@ -179,6 +181,7 @@ class VerifyInstallationCommand extends Command
             $this->checkTailwindSource();
             $this->checkConfigPublished();
             $this->checkBladeDirectives();
+            $this->checkPageShellsLoadWireKit();
             $this->checkAlpineJs();
             $this->checkBundleConfig();
             $this->checkPublishedViewsStaleness();
@@ -1091,7 +1094,7 @@ class VerifyInstallationCommand extends Command
         // files found" WARN because the empty-views-dir case is a
         // strict subset of "no canonical layout".
         if (! $this->hasAnyLayoutFile() && ! $this->hasWirekitCssImportInAppCss()) {
-            $this->reportInfo('No app layout yet — run `php artisan wirekit:install`: it creates `resources/views/components/layouts/app.blade.php` via Livewire\'s `livewire:layout` and injects @wirekitStyles + @wirekitScripts (before @livewireScripts). Or create it yourself with `php artisan livewire:layout`, then re-run install.');
+            $this->reportInfo('No app layout yet — run `php artisan wirekit:install`: it creates `resources/views/layouts/app.blade.php` via Livewire\'s `livewire:layout` and injects @wirekitStyles + @wirekitScripts (before @livewireScripts). Or create it yourself with `php artisan livewire:layout`, then re-run install.');
 
             return;
         }
@@ -1116,7 +1119,7 @@ class VerifyInstallationCommand extends Command
             // that happens to name a directive answers the check for it, which
             // is the same failure this scan already guarded against for Blade
             // comments and was still open for three other comment syntaxes.
-            $content = self::stripInertBladeText($rawContent);
+            $content = BladeParser::liveText($rawContent);
 
             if (str_contains($content, '@wirekitStyles')) {
                 $foundStyles = true;
@@ -1137,6 +1140,11 @@ class VerifyInstallationCommand extends Command
                 }
             }
         }
+
+        // Remembered for checkPageShellsLoadWireKit(), which only speaks where this check found a
+        // directive somewhere: where it found none, the FAIL below has already said everything.
+        $this->stylesFoundAnywhere = $foundStyles;
+        $this->scriptsFoundAnywhere = $foundScripts;
 
         // The @wirekitStyles directive is one of two valid setup paths;
         // the OTHER valid path is `@import 'wirekit.css'` in app.css.
@@ -1171,6 +1179,79 @@ class VerifyInstallationCommand extends Command
         } elseif ($foundScripts) {
             $this->reportPass('@wirekitScripts is before @livewireScripts (or no explicit @livewireScripts)');
         }
+    }
+
+    /** Whether checkBladeDirectives() found each directive in any Blade file at all. */
+    private bool $stylesFoundAnywhere = false;
+
+    private bool $scriptsFoundAnywhere = false;
+
+    /**
+     * Does every page shell the app and auth layouts render actually load WireKit?
+     *
+     * The check above answers "is the directive somewhere?", and a directive can be somewhere
+     * and still reach no page. The Livewire starter kit is the measured case: its
+     * `layouts/app.blade.php` hands the page to `layouts/app/sidebar.blade.php`, keeps
+     * `layouts/app/header.blade.php` beside it, and switching between the two is a one-word
+     * edit. Wired into the sidebar alone, a project passes the check above on every page and
+     * loses WireKit on all of them the day somebody makes that edit.
+     *
+     * A WARN rather than a FAIL: a directive pushed through a stack, a section a child view
+     * fills, or a view composer is invisible to the walk, so "not found from here" is not
+     * "absent".
+     */
+    private function checkPageShellsLoadWireKit(): void
+    {
+        // Where the check above found no directive at all, its FAIL already said everything —
+        // repeating it once per shell would bury the one line that matters.
+        if (! $this->stylesFoundAnywhere && ! $this->scriptsFoundAnywhere) {
+            return;
+        }
+
+        $shells = LayoutShells::forApplication();
+        $stylesCovered = ! $this->stylesFoundAnywhere || $this->hasWirekitCssImportInAppCss();
+        $missing = [];
+        $inspected = 0;
+
+        foreach (array_filter([$shells->appLayout(), $shells->authLayout()]) as $layout) {
+            $found = $shells->shellsOf($layout);
+
+            foreach ($found['head'] as $file) {
+                $inspected++;
+
+                if (! $stylesCovered && ! $shells->carries($file, 'wirekitStyles')) {
+                    $missing[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file).' — no @wirekitStyles in its <head>';
+                }
+            }
+
+            foreach ($found['body'] as $file) {
+                $inspected++;
+
+                if ($this->scriptsFoundAnywhere && ! $shells->carries($file, 'wirekitScripts')) {
+                    $missing[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file).' — no @wirekitScripts before its </body>';
+                }
+            }
+        }
+
+        // No layout it could follow: nothing to report either way, and a PASS would claim a
+        // result for a check that never ran.
+        if ($inspected === 0) {
+            return;
+        }
+
+        if ($missing === []) {
+            $this->reportPass('Every page shell your layouts render loads WireKit');
+
+            return;
+        }
+
+        $this->reportWarn('A page shell your layouts render does not load WireKit');
+
+        foreach (array_values(array_unique($missing)) as $line) {
+            $this->line('  '.$line);
+        }
+
+        $this->line('  Fix: php artisan wirekit:install — it follows each layout to these files. Loading WireKit through a @stack or a section instead is fine; this check cannot see those.');
     }
 
     /**
@@ -2289,12 +2370,13 @@ class VerifyInstallationCommand extends Command
 
         // Front-end peer dependencies for <x-wirekit::editor> and <x-wirekit::map>.
         // These are browser globals (window.wirekitEditor / window.maplibregl /
-        // window.L), so a PHP command can't probe whether they're loaded — they
+        // window.L) or an engine handed over through registerMapEngine(), so a PHP
+        // command can't probe whether they're loaded — they
         // surface as a contextual INFO reminder, not a pass/fail check. Listed
         // here so the onboarding doctor mentions them, not just the component
         // pages. Each component degrades gracefully if its dependency is absent.
         $this->reportInfo('<x-wirekit::editor> needs a ProseMirror editor (optional — Tiptap recommended: npm install @tiptap/core @tiptap/starter-kit and expose window.wirekitEditor; only if you use the editor)');
-        $this->reportInfo('<x-wirekit::map> needs a map engine (optional — npm install maplibre-gl or leaflet and load it before WireKit; only if you use the map)');
+        $this->reportInfo('<x-wirekit::map> needs a map engine (optional — npm install maplibre-gl, 6.4.1 or newer, or leaflet, and hand it to WireKit through window.maplibregl, window.L or registerMapEngine(); only if you use the map)');
     }
 
     /**
@@ -3169,88 +3251,6 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Remove every span of a Blade file a browser would never execute.
-     *
-     * `checkBladeDirectives()` asks whether a directive is PRESENT, and it asks by searching
-     * raw text. Text that only mentions a directive answers that question just as well as text
-     * that uses one — so a note explaining the rule satisfies the check for the rule, and the
-     * doctor reports a working setup over a broken one. That is precisely the case the check
-     * exists for.
-     *
-     * The Blade half was already stripped, for exactly this reason, after a
-     * `{{-- … @livewireScripts … --}}` note mis-cued the ORDER check. Three syntaxes were left:
-     *
-     *   - an HTML comment — `<!-- @wirekitStyles goes here -->`
-     *   - a `//` or `#` line comment inside `@php … @endphp`
-     *   - the same inside a raw `<?php … ?>` island
-     *
-     * Measured in WireKit-Docs, which uses the `@import` path and no directive at all: the only
-     * surviving match was the phrase `and ``@wirekitStyles`` now links it` in a PHP comment, and
-     * the doctor printed `✓ @wirekitStyles directive found` instead of the correct PASS line for
-     * the `@import` path. Harmless there because a valid path existed; on an install with
-     * NEITHER it reports a green setup over a broken one.
-     *
-     * ⚠️ THE PHP HALF IS TOKENIZED RATHER THAN MATCHED, and that is not fastidiousness: `//`
-     * also occurs inside `'https://…'` and `#` inside `'#fff'`. A pattern that cuts at either
-     * would truncate a live line — and truncating a line is how a strip meant to remove false
-     * positives starts producing false negatives instead. `token_get_all()` is the reader PHP
-     * itself uses, so a string keeps its contents.
-     */
-    private static function stripInertBladeText(string $blade): string
-    {
-        // Neither comment form nests, so one non-greedy pass over each is exact.
-        $live = preg_replace('/\{\{--.*?--\}\}/s', '', $blade) ?? $blade;
-        $live = preg_replace('/<!--.*?-->/s', '', $live) ?? $live;
-
-        // A PHP comment can only exist inside a PHP island, so the islands are located first
-        // and only their bodies are handed to the lexer. The delimiters are kept: removing them
-        // would join the text on either side into one line and could fabricate a match.
-        return preg_replace_callback(
-            '/(@php\b)(.*?)(@endphp)|(<\?php)(.*?)(\?>)/s',
-            static function (array $m): string {
-                $isBladeIsland = $m[1] !== '';
-
-                return $isBladeIsland
-                    ? $m[1].self::stripPhpComments($m[2]).$m[3]
-                    : $m[4].self::stripPhpComments($m[5]).$m[6];
-            },
-            $live,
-        ) ?? $live;
-    }
-
-    /**
-     * Drop comment tokens from a fragment of PHP, leaving every other byte untouched.
-     *
-     * The fragment arrives without an opening tag, so one is prepended for the lexer and then
-     * skipped in the output — `token_get_all()` reports it as the first token and nothing else
-     * inside a `@php` body can produce a second one.
-     */
-    private static function stripPhpComments(string $php): string
-    {
-        $live = '';
-
-        foreach (token_get_all('<?php '.$php) as $index => $token) {
-            if ($index === 0 && is_array($token) && $token[0] === T_OPEN_TAG) {
-                continue;
-            }
-
-            if (is_array($token)) {
-                if ($token[0] === T_COMMENT || $token[0] === T_DOC_COMMENT) {
-                    continue;
-                }
-
-                $live .= $token[1];
-
-                continue;
-            }
-
-            $live .= $token;
-        }
-
-        return $live;
-    }
-
-    /**
      * Strip CSS block comments before any raw-text scan of app.css.
      *
      * Several checks grep app.css as plain text (the @import-path
@@ -3534,7 +3534,16 @@ class VerifyInstallationCommand extends Command
                 // optional-chaining form on the line itself, or a guard on `this._…`
                 // within the few lines above it. A heuristic, deliberately — but one
                 // whose failure mode is a warning rather than silence.
-                if ($hasObserver && $this->hasUnguardedDisconnect($source)) {
+                //
+                // And only in a file that builds its observer PER INSTANCE, the same
+                // discriminator as the destroy() finding above. The TypeError the guard
+                // prevents comes from a callback queued before destroy() nulls the
+                // reference; a module-level observer is built once, never nulled, and has
+                // no destroy() to race. Flagged anyway, it left two ways out, both worse
+                // than the check: decorating a never-null value with `?.`, or the per-file
+                // opt-out, which would also hide a per-instance observer added to the same
+                // file later.
+                if ($hasObserver && $perInstance && $this->hasUnguardedDisconnect($source)) {
                     $issues[$relativePath][] = 'disconnect-without-null-guard';
                 }
             }

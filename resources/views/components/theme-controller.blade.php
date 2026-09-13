@@ -228,7 +228,8 @@
              the markup where a translator and a CSP evaluator can both see it; building the
              label from `theme` would put copy inside an Alpine expression, which the CSP
              build cannot evaluate and no locale file can reach. --}}
-        <x-wirekit::dropdown placement="bottom-start">
+        {{-- The menu takes the control's name, the way a submenu takes its trigger's. --}}
+        <x-wirekit::dropdown placement="bottom-start" :label="$label">
             <x-slot:trigger>
                 {{-- A STATIC name, because every visible label inside this button sits in an
                      `x-show` + `x-cloak` block. The stored mode lives in the reader's browser,

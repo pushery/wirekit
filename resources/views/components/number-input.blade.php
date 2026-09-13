@@ -192,6 +192,23 @@
 
     // Build aria-describedby from hint + error
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+    // A caller's aria-describedby joins this list, because the control is what it describes
+    // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
+    // ids first, then the caller's.
+    $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
+
+    // ── A caller's model on the field ────────────────────────────────────
+    //
+    // The stepper keeps its own value, seeded from `value` and otherwise from `min`. With a
+    // `wire:model` (or an Alpine `x-model`) on the field, that value and the bound one are two
+    // models of one input, and they disagreed from the first render on: the field showed the
+    // minimum while the component held the bound value, so an untouched submit applied a number
+    // nobody saw. An application measured it on an account lock that read "1" day and locked
+    // for 7. The bound model therefore owns the field, and the stepper's value only mirrors it.
+    //
+    // The model stays on the input rather than moving to the wrapper: Livewire debounces
+    // `.live` only on a real input, and a `.blur` bound to a wrapper never fires.
+    $boundModel = $attributes->whereStartsWith(['wire:model', 'x-model'])->isNotEmpty();
 
     // Stepper accessible names — scoped to the field whenever it has a label.
     //
@@ -244,7 +261,7 @@
      did nothing. --}}
 <div
     class="space-y-1.5 min-w-0"
-    x-data="wirekitNumberInput({ value: {{ $attributes->get('value', $min ?? 0) }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }} })"
+    x-data="wirekitNumberInput({ value: {{ $attributes->get('value', $min ?? 0) }}, min: {{ $min !== null ? $min : 'null' }}, max: {{ $max !== null ? $max : 'null' }}, step: {{ $step }}, bound: {{ $boundModel ? 'true' : 'false' }} })"
 >
 @if($optimisticConfig)
     {{-- The layer nests INSIDE the component that owns the value: a nested Alpine
@@ -292,13 +309,19 @@
             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="currentColor"><path d="M3 8h10" stroke="currentColor" stroke-width="2" fill="none"/></svg>
         </button>
 
-        {{-- Number input — x-model keeps Alpine state and native input in sync --}}
+        {{-- Number input. Unbound, x-model keeps Alpine state and the native input in sync.
+             Bound, the caller's model owns the input and the state follows it. --}}
         <input
             type="number"
             id="{{ $id }}"
             name="{{ $name }}"
-            x-model.number="value"
-            @blur="value = clamp(value)"
+            @if($boundModel)
+                x-on:input="syncFromInput()"
+                x-on:blur="clampInput()"
+            @else
+                x-model.number="value"
+                @blur="value = clamp(value)"
+            @endif
             @if($optimisticConfig)
                 x-bind:aria-busy="isPending"
                 {{-- `change`, not `input`: typing fires input per keystroke, and
@@ -313,7 +336,7 @@
             @if($hasError) aria-invalid="true" @endif
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
+            {{ $attributes->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
         />
 
         {{-- Increase button — disabled at max boundary --}}

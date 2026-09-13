@@ -178,7 +178,7 @@ class MakeCommand extends Command
             'page:dashboard' => <<<'BLADE'
             <div>
                 <x-wirekit::heading level="1">Dashboard</x-wirekit::heading>
-                <x-wirekit::text variant="muted">Welcome to your dashboard.</x-wirekit::text>
+                <x-wirekit::text intent="muted">Welcome to your dashboard.</x-wirekit::text>
 
                 <x-wirekit::divider />
 
@@ -193,7 +193,7 @@ class MakeCommand extends Command
             'page:settings' => <<<'BLADE'
             <div>
                 <x-wirekit::heading level="1">Settings</x-wirekit::heading>
-                <x-wirekit::text variant="muted">Manage your account settings.</x-wirekit::text>
+                <x-wirekit::text intent="muted">Manage your account settings.</x-wirekit::text>
 
                 <x-wirekit::divider />
 

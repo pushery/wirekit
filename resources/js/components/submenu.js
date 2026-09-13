@@ -98,7 +98,8 @@ export default function wirekitSubmenu(config = {}) {
                     placement: this._subPlacement,
                     offset: this._subOffset,
                 });
-                if (focusFirst) this._focusFirstSubItem();
+                // Not when the reader already moved into the flyout while it was being positioned.
+                if (focusFirst && ! this._focusIsInsideThePanel()) this._focusFirstSubItem();
             }
         },
 

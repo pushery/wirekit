@@ -28,7 +28,8 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
-import { position } from '../utils/floating.js';
+import { focusIsWithin, position } from '../utils/floating.js';
+import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 
 /**
  * What counts as focusable inside a flyout panel. Same selector app-shell's
@@ -49,6 +50,8 @@ export default function wirekitNavigationMenu() {
         // Cross-close channel — see utils/overlay-coordination.js. Two navigation
         // menus on one page could each hold a panel open, and they overlap.
         _coordination: null,
+        // Where the open item's trigger stood when its panel opened — see utils/scroll-anchor.js.
+        _anchorAt: null,
 
         init() {
             this._navCleanup = () => { this.activeItem = null; };
@@ -69,6 +72,8 @@ export default function wirekitNavigationMenu() {
                 if (panel && event.target instanceof Node && panel.contains(event.target)) {
                     return;
                 }
+                // Only a scroll that moved the open item's trigger has stranded anything.
+                if (!anchorMoved(this._anchorAt, this._getTrigger(this.activeItem))) return;
                 this.closeAll();
             };
             window.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
@@ -133,6 +138,7 @@ export default function wirekitNavigationMenu() {
         async open(name) {
             clearTimeout(this._hideTimer);
             this.activeItem = name;
+            this._anchorAt = anchorSnapshot(this._getTrigger(name));
             this._coordination?.announce();
 
             await this.$nextTick();
@@ -239,6 +245,10 @@ export default function wirekitNavigationMenu() {
          */
         async openAndFocus(name) {
             await this.open(name);
+
+            // Not when the reader already moved into the panel while it was being positioned.
+            if (focusIsWithin(this.$refs[`panel-${name}`])) return;
+
             this._getPanelFocusables(name)[0]?.focus({ preventScroll: true });
         },
 

@@ -35,7 +35,15 @@
     // opens the lightbox; interactive controls inside the overlay opt back in with
     // `pointer-events-auto`. Return a view or HtmlString for HTML (a plain string is
     // escaped). Null → no overlay (galleries without it are byte-identical to before).
+    // It covers the THUMBNAIL only; the zoom view takes `zoomOverlay` below.
     'itemOverlay' => null,
+    // The zoom view's own overlay: the same `fn($item, $i)` shape as itemOverlay, laid over the
+    // image in the lightbox instead of over the thumbnail. A separate callback because the two
+    // surfaces differ (an overlay written for a square tile can sit wrong over a full-screen
+    // photo) and itemOverlay never reached the zoom view. A label that has to travel with the
+    // image, an "AI-generated" marking or a license note, goes to both. Ignored on a static grid,
+    // which has no zoom view. Null → no overlay.
+    'zoomOverlay' => null,
     'scope' => null,
 ])
 
@@ -91,6 +99,13 @@
         $items,
     );
 
+    // The zoom overlay reaches the lightbox as its per-slide callback, handed the gallery's own
+    // item rather than the lightbox's slide, so both overlays receive the same `$item`: the
+    // thumbnail in `src`, the zoom address in `full`.
+    $slideOverlay = is_callable($zoomOverlay)
+        ? static fn (array $slide, int $i) => $zoomOverlay($items[$i], $i)
+        : null;
+
     // Counted rather than random: a fresh id on every render is a fresh Alpine component to
     // a Livewire morph, so an unrelated update discarded the open lightbox and the scroll
     // position. See DomId::unique()'s docblock — it exists for exactly this.
@@ -118,7 +133,7 @@
          openAt(i) directly. The dialog / focus-trap / keyboard / captions all
          come from the shared <x-wirekit::lightbox> component — the gallery no
          longer carries its own overlay markup. --}}
-    <x-wirekit::lightbox :name="$galleryId" :items="$lightboxItems" {{ $attributes->class([$wrapperClasses]) }}>
+    <x-wirekit::lightbox :name="$galleryId" :items="$lightboxItems" :slide-overlay="$slideOverlay" {{ $attributes->class([$wrapperClasses]) }}>
         <x-wirekit::grid :cols="$columns" :gap="$gap">
             @foreach($items as $i => $item)
                 {{-- Each thumbnail is a real button so the lightbox is

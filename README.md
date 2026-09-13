@@ -105,6 +105,7 @@ A wide catalog of components organized by category. Browse, search, and try ever
 | **Reading** | reading-progress, reading-spine, reading-toc, reading-minimap, reading-bookmark, reading-meta, reading-shell |
 | **Animation** | reveal, replay-button |
 | **Feedback** | toast-region |
+| **Chat & AI** | message, message-group, message-typing, quick-replies, conversation, assistant-message, chat-marker, attachment, stream, shimmer |
 
 ## Theming & Customization
 

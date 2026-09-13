@@ -5,6 +5,7 @@
  * and event-based show/close via 'wirekit-modal-show' / 'wirekit-modal-close'.
  */
 import { createOverlay } from '../utils/overlay.js';
+import { firstControl } from '../utils/first-control.js';
 
 /**
  * @param {Object} config - Modal configuration from Blade
@@ -17,6 +18,8 @@ export default function wirekitModal(config = {}) {
         dismissible: config.dismissible !== false,
         showEvent: 'wirekit-modal-show',
         closeEvent: 'wirekit-modal-close',
+        // Start on the first CONTROL, not on the scrolling body — utils/first-control.js.
+        initialFocus: (panelEl) => firstControl(panelEl, 'data-wk-modal-body'),
     });
 
     return {

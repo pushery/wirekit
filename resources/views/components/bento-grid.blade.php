@@ -8,6 +8,9 @@
     // than a wall of loose headings.
     'label' => null,
     'gap' => config('wirekit.components.bento-grid.gap', 'md'),
+    // Which spacing ladder `gap` names a rung on: `space` (the default) or the tighter `gap`
+    // ladder. The same choice, and the same reason, as on the grid this component extends.
+    'scale' => 'space',
     'scope' => null,
 ])
 
@@ -25,20 +28,32 @@
     // allowed value — a bad gap should land on the normal gap, not on none.
     $gap = WireKit::validateProp('bento-grid', 'gap', $gap, ['md', 'none', 'xs', 'sm', 'lg', 'xl', '2xl']);
 
-    // The same --space-wk-* ladder (and the same inline fallbacks) the grid uses.
-    // This component extends that grid, so a second spacing vocabulary here would
-    // mean two gap ladders that drift apart. Static strings, one per arm: the
-    // drift auditor harvests class names out of match arms and cannot follow an
-    // interpolated token.
-    $gapClass = match ($gap) {
-        'none' => 'gap-0',
-        'xs' => 'gap-[var(--space-wk-xs,0.25rem)]',
-        'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
-        'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
-        'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
-        '2xl' => 'gap-[var(--space-wk-2xl,4rem)]',
-        default => 'gap-[var(--space-wk-md,1rem)]',
-    };
+    $scale = WireKit::validateProp('bento-grid', 'scale', (string) $scale, ['space', 'gap']);
+
+    // The same two ladders (and the same inline fallbacks) the grid offers. This
+    // component extends that grid, so a spacing vocabulary of its own here would
+    // mean ladders that drift apart. Static strings, one per arm: the drift
+    // auditor harvests class names out of match arms and cannot follow an
+    // interpolated token, and Tailwind cannot either.
+    $gapClass = $scale === 'gap'
+        ? match ($gap) {
+            'none' => 'gap-0',
+            'xs' => 'gap-[var(--gap-wk-xs,0.25rem)]',
+            'sm' => 'gap-[var(--gap-wk-sm,0.5rem)]',
+            'lg' => 'gap-[var(--gap-wk-lg,1rem)]',
+            'xl' => 'gap-[var(--gap-wk-xl,1.5rem)]',
+            '2xl' => 'gap-[var(--gap-wk-2xl,2rem)]',
+            default => 'gap-[var(--gap-wk-md,0.75rem)]',
+        }
+        : match ($gap) {
+            'none' => 'gap-0',
+            'xs' => 'gap-[var(--space-wk-xs,0.25rem)]',
+            'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
+            'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
+            'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
+            '2xl' => 'gap-[var(--space-wk-2xl,4rem)]',
+            default => 'gap-[var(--space-wk-md,1rem)]',
+        };
 
     $classes = WireKit::resolveClasses('bento-grid', 'base', implode(' ', [
         'grid',

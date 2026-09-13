@@ -1,6 +1,17 @@
 import { prefersReducedMotion } from '../utils/motion.js';
 
 /**
+ * What a reader can type into, and what can take focus at all.
+ *
+ * Two lists, because the first focusable element of a composite control is often not
+ * where a reader expects to land: the editor's toolbar buttons precede its editing
+ * surface in the DOM, and opening a rich-text field onto its Bold button would be
+ * wrong. So an element that takes text wins, and anything focusable is the fallback.
+ */
+const TEXT_ENTRY = 'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled]), [contenteditable]:not([contenteditable="false"])';
+const FOCUSABLE = `${TEXT_ENTRY}, button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])`;
+
+/**
  * WireKit Inline Edit Alpine Component.
  *
  * A read mode that turns into an editor in place, and back. The library does
@@ -12,7 +23,8 @@ import { prefersReducedMotion } from '../utils/motion.js';
  * ---------------------------------------------------------------------------
  * Resources held: `_previous` (a value snapshot, no listener), `_exclusiveHandler`
  * (window listener for the exclusive-open protocol), `_saveTimeout` (the
- * no-answer fallback), `_pointerDownAt` (drag-threshold bookkeeping).
+ * no-answer fallback), `_focusFrame` (a pending animation frame that places focus
+ * once the editor is revealed), `_pointerDownAt` (drag-threshold bookkeeping).
  * Every one of them is released in destroy(); every callback that touches one
  * null-guards first, because a Livewire morph can tear the host down while a
  * save is still in flight.
@@ -38,6 +50,7 @@ export default function wirekitInlineEdit(config = {}) {
         _exclusiveHandler: null,
         _beforeUnload: null,
         _saveTimeout: null,
+        _focusFrame: null,
         _pointerDownAt: null,
 
         /**
@@ -153,6 +166,10 @@ export default function wirekitInlineEdit(config = {}) {
                 clearTimeout(this._saveTimeout);
                 this._saveTimeout = null;
             }
+            if (this._focusFrame && typeof cancelAnimationFrame === 'function') {
+                cancelAnimationFrame(this._focusFrame);
+            }
+            this._focusFrame = null;
             this._pointerDownAt = null;
         },
 
@@ -173,42 +190,120 @@ export default function wirekitInlineEdit(config = {}) {
                 detail: { source: this.$root, name: config.name },
             }));
 
-            this.$nextTick(() => {
-                const control = this.$refs.control;
+            this.$nextTick(() => this._placeFocus());
+        },
 
-                // The documented contract for a slot-supplied control, checked
-                // rather than hoped for. Without the ref the focus choreography
-                // has nothing to aim at and simply does nothing — a silent
-                // failure, and silent is what makes it expensive. One library
-                // detects a brought-your-own control against a hand-kept list of
-                // twelve component names; a control whose name is missing or
-                // minified there gets the wrong treatment and never saves. That
-                // failure class is not worth importing.
-                if (!control) {
-                    if (config.debug && config.hasSlotEditor) {
-                        console.warn(
-                            '[WireKit] inline-edit: the editor slot has no element with x-ref="control", '
-                            + 'so focus cannot be placed and the control cannot be read. '
-                            + 'See docs.wirekit.app/components/inline-edit#bringing-your-own-control'
-                        );
-                    }
+        /**
+         * Focus the control once it is on screen, and wire its description.
+         *
+         * `x-show` reveals the editor on an animation frame, and `$nextTick` does not
+         * wait for one, so which runs first is up to the engine. Measured after a real
+         * click on the trigger: Chromium revealed the editor 6ms after the click and
+         * focused 1ms later; WebKit focused 1ms after the click, on a control that was
+         * still `display: none`, and revealed it 10ms after that. Focus on a hidden
+         * element does nothing, so in WebKit, which is every browser on an iPhone,
+         * opening an editor left focus on the body. A control that is not displayed yet
+         * gets the frames that reveal it: a bounded number, and only while the editor
+         * is still open. After that the attempt is made anyway, as it always was.
+         */
+        _placeFocus(framesLeft = 10) {
+            if (!this.editing) return;
 
-                    return;
+            const control = this._control();
+
+            // The documented contract for a slot-supplied control, checked
+            // rather than hoped for. Without the ref the focus choreography
+            // has nothing to aim at and simply does nothing — a silent
+            // failure, and silent is what makes it expensive. One library
+            // detects a brought-your-own control against a hand-kept list of
+            // twelve component names; a control whose name is missing or
+            // minified there gets the wrong treatment and never saves. That
+            // failure class is not worth importing.
+            if (!control) {
+                if (config.debug && config.hasSlotEditor) {
+                    console.warn(
+                        '[WireKit] inline-edit: the editor slot has no element with x-ref="control", '
+                        + 'so focus cannot be placed and the control cannot be read. '
+                        + 'See docs.wirekit.app/components/inline-edit#bringing-your-own-control'
+                    );
                 }
 
-                // Blade cannot add attributes to slot content, so the wiring the
-                // built-in path gets declaratively is applied here instead —
-                // same attributes, one place, so the two paths cannot drift.
-                if (config.describedBy && !control.getAttribute('aria-describedby')) {
-                    control.setAttribute('aria-describedby', config.describedBy);
-                }
+                return;
+            }
 
-                control.focus();
-                // Select rather than place a caret: the common intent is to
-                // replace a short value, and a caret at position 0 makes the
-                // user clear it by hand first.
-                control.select?.();
-            });
+            const hidden = typeof control.getClientRects === 'function' && control.getClientRects().length === 0;
+
+            if (hidden && framesLeft > 0 && typeof requestAnimationFrame === 'function') {
+                // One pending frame at a time: an open, a cancel and a second open in
+                // quick succession would otherwise leave two, and destroy() release one.
+                if (this._focusFrame && typeof cancelAnimationFrame === 'function') {
+                    cancelAnimationFrame(this._focusFrame);
+                }
+                this._focusFrame = requestAnimationFrame(() => {
+                    this._focusFrame = null;
+                    this._placeFocus(framesLeft - 1);
+                });
+
+                return;
+            }
+
+            // Blade cannot add attributes to slot content, so the wiring the
+            // built-in path gets declaratively is applied here instead —
+            // same attributes, one place, so the two paths cannot drift.
+            // On the element that takes focus: that is the one announced.
+            const target = this._focusTarget(control);
+
+            if (config.describedBy && !target.getAttribute('aria-describedby')) {
+                target.setAttribute('aria-describedby', config.describedBy);
+            }
+
+            target.focus();
+            // Select rather than place a caret: the common intent is to
+            // replace a short value, and a caret at position 0 makes the
+            // user clear it by hand first.
+            target.select?.();
+        },
+
+        /**
+         * The element carrying `x-ref="control"`.
+         *
+         * `$refs` alone missed every WireKit component placed in the editor slot.
+         * Alpine files a ref under the CLOSEST component root, and an element with
+         * its own `x-data` is its own closest root, so on a tags-input, a combobox
+         * or an editor the ref lands on THAT component. `$refs` read from here walks
+         * upward and never sees it. The attribute is still in the document, so the
+         * lookup falls back to it.
+         *
+         * The built-in controls still resolve through `$refs`: their ref sits on a
+         * plain element whose closest root is this component.
+         */
+        _control() {
+            return this.$refs.control ?? this.$root?.querySelector?.('[x-ref="control"]') ?? null;
+        },
+
+        /**
+         * Where focus goes inside the control.
+         *
+         * The control itself when it can take focus, which every built-in control
+         * can. The root of a composite control is usually a wrapper that cannot, and
+         * `focus()` on it does nothing at all, so the first visible element inside it
+         * that takes text is used instead, then anything focusable. A hidden element
+         * does not count: the editor keeps a `hidden` form field beside its surface.
+         */
+        _focusTarget(control) {
+            if (typeof control.matches === 'function' && control.matches(FOCUSABLE)) {
+                return control;
+            }
+
+            if (typeof control.querySelectorAll !== 'function') {
+                return control;
+            }
+
+            const visible = (el) => typeof el.getClientRects !== 'function' || el.getClientRects().length > 0;
+
+            return [...control.querySelectorAll(TEXT_ENTRY)].find(visible)
+                ?? [...control.querySelectorAll(FOCUSABLE)].find(visible)
+                ?? control;
         },
 
         /**

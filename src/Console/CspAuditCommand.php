@@ -363,6 +363,15 @@ class CspAuditCommand extends Command
      * The reporting side names the surface for the same reason the view surface is named:
      * "nothing unregistered" and "nothing looked at" have to be different sentences.
      *
+     * ⚠️ AT LEAST ONE TOOL OUTSIDE THIS PACKAGE RECOVERS THIS METHOD'S DEFAULT REGISTRATION
+     * SET BY MATCHING THE SIGNATURE OUT OF THIS FILE, WITH A REGEX. Renaming it, or changing
+     * its visibility or parameter list, therefore breaks readers that no reference here can
+     * point at — adding the `$paths` parameter already did, against a pattern that expected
+     * empty parentheses. Nothing in this repository can test for that and nothing should
+     * try; the coupling belongs to the reader. The note exists so the blast radius is
+     * visible to whoever reshapes the method, rather than being discovered elsewhere as a
+     * failure that is not about that code at all.
+     *
      * @param  array<int, string>  $paths  The view directories this run is scanning. A package
      *                                     whose views are in there contributes its own
      *                                     registration source; see below.
@@ -1476,16 +1485,53 @@ class CspAuditCommand extends Command
         // `x-cloak` regardless. The panel is VISIBLE with every control in it dead — so the
         // symptom points at the stylesheet and the cause is a missing script.
         if ($unregistered !== []) {
-            $this->line('');
-            $this->error(sprintf(
-                '%d `x-data` expression(s) name a factory nothing registers:',
-                count($unregistered),
+            // ⚠️ TWO DIFFERENT SENTENCES, AND ONLY ONE OF THEM JUSTIFIES A TICKET.
+            //
+            // "`x` is not registered" is a claim about the world: no scope, so the panel
+            // renders visible and dead. "`x` was not among the registrations I read" is a
+            // claim about this RUN. They looked identical here, and the cost is measured: a
+            // run pointed at a package's views reported three registered factories as
+            // unregistered, and that report became a ticket in the package's own tracker
+            // that had to be refuted there.
+            //
+            // The hint block below already tells these apart per package. It sits under a
+            // headline that has already said "nothing registers", though, and the line a
+            // reader quotes into a ticket is the offender line — so the distinction has to
+            // be where the reader is looking.
+            $unverified = array_values(array_filter(
+                $unregistered,
+                fn (array $hit): bool => ! $this->registrationsCoverPackageOf((string) $hit['file'], $registrationScan),
             ));
+
+            $confirmed = count($unregistered) - count($unverified);
+
             $this->line('');
+            $this->error($unverified === []
+                ? sprintf('%d `x-data` expression(s) name a factory nothing registers:', count($unregistered))
+                : sprintf(
+                    '%d `x-data` expression(s) name a factory this run could not account for '
+                    .'(%d unregistered, %d not covered by any registration source read here):',
+                    count($unregistered),
+                    $confirmed,
+                    count($unverified),
+                ));
+            $this->line('');
+
+            $unverifiedKeys = [];
+
+            foreach ($unverified as $hit) {
+                $unverifiedKeys[$hit['file'].':'.$hit['line'].':'.$hit['name']] = true;
+            }
 
             foreach (array_slice($unregistered, 0, 20) as $hit) {
                 $this->line(sprintf('  %s:%d', $hit['file'], $hit['line']));
-                $this->line(sprintf('    x-data="%s" — `%s` is not registered.', $hit['expression'], $hit['name']));
+                $this->line(isset($unverifiedKeys[$hit['file'].':'.$hit['line'].':'.$hit['name']])
+                    ? sprintf(
+                        '    x-data="%s" — `%s` is not in the registrations this run read. Its package\'s own source was not among them.',
+                        $hit['expression'],
+                        $hit['name'],
+                    )
+                    : sprintf('    x-data="%s" — `%s` is not registered.', $hit['expression'], $hit['name']));
             }
 
             if (count($unregistered) > 20) {
@@ -1580,6 +1626,43 @@ class CspAuditCommand extends Command
         $this->line('set: delete false in instanceof new null true typeof undefined void.');
 
         return self::FAILURE;
+    }
+
+    /**
+     * Did this run read a registration source for the package this file belongs to?
+     *
+     * `false` means the run cannot answer "is it registered" for that file — not that the
+     * answer is no. The two are the same words in a report and opposite in meaning, which is
+     * the whole reason this exists.
+     *
+     * A file OUTSIDE any package is `true`: the application's own bundles and sources are in
+     * the default candidate set, so a name missing from them really is missing. The uncertain
+     * case is a package, whose registrations live in its own tree and reach this run only if
+     * `registrationSourceIn()` found them and the scan then read them.
+     *
+     * @param  array{files: array<int, string>, names: array<int, string>}  $registrationScan
+     */
+    private function registrationsCoverPackageOf(string $file, array $registrationScan): bool
+    {
+        if (preg_match('#^(.*/vendor/[^/]+/[^/]+)/#', $file, $match) !== 1) {
+            return true;
+        }
+
+        $source = $this->registrationSourceIn($match[1]);
+
+        if ($source === null) {
+            return false;
+        }
+
+        $prefix = rtrim($source, '/').'/';
+
+        foreach ($registrationScan['files'] as $read) {
+            if ($read === $source || str_starts_with($read, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -5,7 +5,7 @@
  * click-outside closing, and ARIA menu pattern.
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
-import { position } from '../utils/floating.js';
+import { focusIsWithin, position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 
 /**
@@ -151,8 +151,11 @@ export default function wirekitDropdown(config = {}) {
                 });
                 this._stopAutoUpdate = stop;
 
-                // Focus first menu item for keyboard users
-                this._focusFirstItem();
+                // Focus the first menu item for keyboard users, unless the reader already moved
+                // into the panel while it was being positioned (see focusIsWithin()).
+                if (! focusIsWithin(panel)) {
+                    this._focusFirstItem();
+                }
             }
         },
 

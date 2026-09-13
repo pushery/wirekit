@@ -40,7 +40,8 @@
  * @param {Object} [config.announcements] - Translated templates: `removed` (takes `:name`)
  *   and `cleared`.
  */
-import { position } from '../utils/floating.js';
+import { focusIsWithin, position } from '../utils/floating.js';
+import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 
 /**
  * What counts as focusable inside the popover. Same selector hover-card and
@@ -224,6 +225,8 @@ export default function wirekitFilterBuilder(config = {}) {
 
         // ── Lifecycle ────────────────────────────────────────────────────
         _onScroll: null,
+        // Where the trigger stood when the popover opened — see utils/scroll-anchor.js.
+        _anchorAt: null,
         _onResize: null,
         init() {
             // Close on page scroll / viewport resize. The popover is teleported +
@@ -237,6 +240,8 @@ export default function wirekitFilterBuilder(config = {}) {
                     if (!this.open) return;
                     const panel = this.$refs.panel;
                     if (panel && e.target instanceof Node && panel.contains(e.target)) return;
+                    // Only a scroll that moved the trigger has stranded anything — utils/scroll-anchor.js.
+                    if (!anchorMoved(this._anchorAt, this.$refs.trigger)) return;
                     this.close();
                 };
                 window.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
@@ -261,12 +266,14 @@ export default function wirekitFilterBuilder(config = {}) {
             const first = this.fields[0];
             this.draft = { field: first ? first.key : '', op: '', value: '' };
             this._syncDraftDefaults();
+            this._anchorAt = anchorSnapshot(this.$refs.trigger);
             this.open = true;
             this._focusFirstControl();
         },
         openEdit(i) {
             this.editIndex = i;
             this.draft = { ...this.filters[i] };
+            this._anchorAt = anchorSnapshot(this.$refs.trigger);
             this.open = true;
             this._focusFirstControl();
         },
@@ -548,7 +555,10 @@ export default function wirekitFilterBuilder(config = {}) {
                         crossAxisShift: true,
                     });
                 }
-                this.$refs.fieldSelect?.focus();
+                // Not when the reader already moved into the panel while it was being positioned.
+                if (! focusIsWithin(this.$refs.panel)) {
+                    this.$refs.fieldSelect?.focus();
+                }
             });
         },
     };

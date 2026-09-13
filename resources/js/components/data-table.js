@@ -11,11 +11,18 @@
  * input; sort + search emit `sort-change` / `search-change` so server mode can
  * re-query.
  *
- * Lifecycle resources held on `this`: NONE. Pure reactive state — no observers,
- * timers, rAF loops, or document listeners, so no destroy() hook is required.
+ * What a render changes (the rows, their avatar tints, the sort and the filter the
+ * server applied) arrives through a `<template data-wk-data-table-state>` carrier
+ * rather than through `x-data`, so a Livewire render does not rebuild the component
+ * and take the browser-only state with it. The carrier is read on init and after
+ * every Livewire commit.
+ *
+ * Lifecycle resources held on `this`: `_unhookServerState`, the Livewire commit hook, and
+ * `_expectingTimer`, the bound on waiting for a round trip to start; both are released in
+ * destroy(). No observers or rAF loops.
  *
  * @param {Object} config
- * @param {Array}  config.rows    - row objects (client mode)
+ * @param {Array}  config.rows    - row objects, used when there is no state carrier
  * @param {Array}  config.columns - [{key,label,sortable?,align?,cellType?,
  *   subKey?,intentKey?,avatarKey?}] — the three optional keys let a ROW name its
  *   own second line, its own intent, and its own avatar.
@@ -57,7 +64,9 @@ export default function wirekitDataTable(config = {}) {
         rowKey: config.rowKey || 'id',
         mode: config.mode || 'client',
         sortKey: config.sortKey || null,
-        sortDir: config.sortDir || 'asc',
+        // Two directions exist. Anything else used to pass straight through, and ariaSort()
+        // reads every value but "asc" as descending.
+        sortDir: config.sortDir === 'desc' ? 'desc' : 'asc',
         search: '',
         selected: [],
         density: config.density || 'comfortable',
@@ -74,6 +83,171 @@ export default function wirekitDataTable(config = {}) {
         // outside that grammar is never evaluated on the CSP bundle — the binding goes inert
         // and nothing reports it.
         prominenceClasses: config.prominenceClasses && typeof config.prominenceClasses === 'object' ? config.prominenceClasses : {},
+
+        // ── State from the server ────────────────────────────────────────
+        // The last state read from the carrier, and its raw text, for the comparison below.
+        _serverState: null,
+        _serverStateRaw: null,
+        _unhookServerState: null,
+
+        // ── Waiting on the server ────────────────────────────────────────
+        // The translated sentence the status region speaks while the table waits.
+        loadingText: typeof config.loadingText === 'string' ? config.loadingText : '',
+        // A wait the server declared through the `loading` prop.
+        _serverBusy: false,
+        // Round trips this table started and has not seen come back.
+        _requestsOut: 0,
+        // A sort or search was just sent out; the next commit of the table's component carries it.
+        _expectingServer: false,
+        _expectingTimer: null,
+
+        init() {
+            this._readServerState();
+
+            if (typeof window !== 'undefined' && window.Livewire?.hook) {
+                this._unhookServerState = window.Livewire.hook('commit', ({ component, succeed, fail }) => {
+                    // The commit that carries a sort or search this table just sent: the first one
+                    // of the Livewire component the table sits in. Any other commit only brings
+                    // state, and must not make the table announce a wait it did not start.
+                    const carriesOurs = this._expectingServer && component?.el?.contains?.(this.$root) === true;
+
+                    if (carriesOurs) {
+                        this._expectingServer = false;
+                        clearTimeout(this._expectingTimer);
+                        this._expectingTimer = null;
+                        this._requestsOut++;
+                    }
+
+                    succeed(() => queueMicrotask(() => {
+                        this._readServerState();
+
+                        if (carriesOurs) {
+                            this._roundTripBack();
+                        }
+                    }));
+
+                    // An error or a canceled request ends the wait just as a response does.
+                    if (carriesOurs) {
+                        fail(() => queueMicrotask(() => this._roundTripBack()));
+                    }
+                });
+            }
+        },
+
+        destroy() {
+            if (this._unhookServerState) {
+                this._unhookServerState();
+                this._unhookServerState = null;
+            }
+            clearTimeout(this._expectingTimer);
+            this._expectingTimer = null;
+        },
+
+        /**
+         * Whether the table is waiting on the server.
+         *
+         * `loading` was the only source of this, and it is read when the server renders. A
+         * Livewire response is rendered after the wait is over, so from a render the prop was
+         * false for the whole wait, or, as the documented recipe had it, true for good. The
+         * table knows when a round trip it started is out, so that is the half it now tracks
+         * itself; the prop remains for a wait only the server knows about.
+         */
+        get busy() {
+            return this._serverBusy || this._requestsOut > 0;
+        },
+
+        /** `aria-busy` while waiting, and no attribute at all otherwise. */
+        ariaBusy() {
+            return this.busy ? 'true' : null;
+        },
+
+        /** What the one status region says: the wait wins over the empty result. */
+        get statusAnnouncement() {
+            return this.busy ? this.loadingText : this.emptyAnnouncement;
+        },
+
+        /**
+         * A sort or search was just sent out. In server mode the next commit of the table's own
+         * component carries it; a listener that starts no round trip at all must not leave the
+         * table expecting one, so the expectation lapses if no commit starts shortly.
+         */
+        _expectRoundTrip() {
+            if (this.mode !== 'server') {
+                return;
+            }
+
+            this._expectingServer = true;
+            clearTimeout(this._expectingTimer);
+            this._expectingTimer = setTimeout(() => {
+                this._expectingServer = false;
+                this._expectingTimer = null;
+            }, 1000);
+        },
+
+        _roundTripBack() {
+            this._requestsOut = Math.max(0, this._requestsOut - 1);
+        },
+
+        /**
+         * Take what the server rendered into the state carrier.
+         *
+         * The rows and their avatar tints are the server's outright. The sort and the filter
+         * are shared with the reader, so each is taken only when the server moved it AND the
+         * local value still equals what the server said last time. Otherwise the reader has
+         * moved on while the round trip was out: a query typed one letter further than the
+         * results that just arrived, or a second click on a header. Overwriting that would
+         * throw away input, and the reader's own change is already on its way to the server.
+         */
+        _readServerState() {
+            const carrier = this.$root?.querySelector?.(':scope > template[data-wk-data-table-state]');
+            const raw = carrier ? carrier.getAttribute('data-wk-data-table-state') : null;
+
+            if (raw === null || raw === this._serverStateRaw) {
+                return;
+            }
+
+            let next;
+
+            try {
+                next = JSON.parse(raw);
+            } catch {
+                return;
+            }
+
+            const previous = this._serverState;
+            this._serverState = next;
+            this._serverStateRaw = raw;
+
+            this.rows = Array.isArray(next.rows) ? next.rows.map((r) => ({ ...r })) : [];
+            this.avatarTints = next.avatarTints && typeof next.avatarTints === 'object' ? next.avatarTints : {};
+            this._serverBusy = next.loading === true;
+
+            const sortKey = next.sortKey || null;
+            const sortDir = next.sortDir === 'desc' ? 'desc' : 'asc';
+
+            if (previous === null) {
+                this.sortKey = sortKey;
+                this.sortDir = sortDir;
+            } else {
+                const previousKey = previous.sortKey || null;
+                const previousDir = previous.sortDir === 'desc' ? 'desc' : 'asc';
+                const serverMoved = sortKey !== previousKey || sortDir !== previousDir;
+                const readerStill = this.sortKey === previousKey && this.sortDir === previousDir;
+
+                if (serverMoved && readerStill) {
+                    this.sortKey = sortKey;
+                    this.sortDir = sortDir;
+                }
+            }
+
+            if (typeof next.search === 'string') {
+                const previousSearch = previous && typeof previous.search === 'string' ? previous.search : null;
+
+                if (previousSearch === null || (next.search !== previousSearch && this.search === previousSearch)) {
+                    this.search = next.search;
+                }
+            }
+        },
 
         // ── Columns ──────────────────────────────────────────────────────
         get visibleColumns() {
@@ -119,9 +293,12 @@ export default function wirekitDataTable(config = {}) {
                 this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
             } else {
                 this.sortKey = key;
-                this.sortDir = 'asc';
+                // A column picks its own first direction. A column of counts is clicked to see
+                // the most first, so `sortStart: 'desc'` saves that second click every time.
+                this.sortDir = col.sortStart === 'desc' ? 'desc' : 'asc';
             }
             this.$dispatch('sort-change', { key: this.sortKey, dir: this.sortDir });
+            this._expectRoundTrip();
         },
         ariaSort(key) {
             if (this.sortKey !== key) return 'none';
@@ -129,6 +306,7 @@ export default function wirekitDataTable(config = {}) {
         },
         onSearch() {
             this.$dispatch('search-change', { value: this.search });
+            this._expectRoundTrip();
         },
 
         // ── Selection ────────────────────────────────────────────────────
@@ -211,6 +389,50 @@ export default function wirekitDataTable(config = {}) {
         cellText(row, col) {
             const v = row[col.key];
             return v === null || v === undefined ? '' : String(v);
+        },
+        /**
+         * The URL a link cell points at, or '' for a row without one.
+         *
+         * Only a URL that cannot run script comes back. Rows are data, often data somebody typed,
+         * and a `javascript:` value bound to an href runs on the click. Browsers drop tabs and
+         * newlines anywhere in a URL, and control characters and spaces before it, before they
+         * read the scheme, so the scheme is read here the same way; a check on the raw string
+         * lets `java\tscript:` through.
+         */
+        cellHref(row, col) {
+            if (col.cellType !== 'link' || ! col.hrefKey) {
+                return '';
+            }
+
+            const raw = row[col.hrefKey];
+            const href = raw === null || raw === undefined ? '' : String(raw).trim();
+            let start = 0;
+
+            while (start < href.length && href.charCodeAt(start) <= 0x20) {
+                start++;
+            }
+
+            const scheme = href.slice(start).replace(/[\t\n\r]/g, '').match(/^([a-z][a-z0-9+.-]*):/i);
+
+            if (scheme && ! ['http', 'https', 'mailto', 'tel'].includes(scheme[1].toLowerCase())) {
+                return '';
+            }
+
+            return href;
+        },
+        /**
+         * Whether a cell draws as plain text: a text column, a link column whose row has no URL,
+         * and a column whose type this table does not know. That last case used to match no
+         * branch of the template at all, so the cell rendered EMPTY — which is exactly how a
+         * `cellType: 'link'` column looked before the link cell existed, and how a typo still
+         * would.
+         */
+        isPlainCell(row, col) {
+            if (col.cellType === 'link') {
+                return this.cellHref(row, col) === '';
+            }
+
+            return ! ['badge', 'badges', 'number', 'code'].includes(col.cellType);
         },
         /**
          * The quieter second line of a cell, when the column asks for one.
@@ -392,8 +614,13 @@ export default function wirekitDataTable(config = {}) {
         _emitSelection() {
             this.$dispatch('selection-change', { selected: this.selected });
             if (this.$refs.selModel) {
+                // The field keeps its JSON for a plain form post, and the model gets the list
+                // itself. `wire:model` compiles to Alpine's x-model, which reads `detail` from a
+                // CustomEvent and the field's value from any other event. With a plain event the
+                // bound property received the JSON string, a property declared `array` refused
+                // it, and Livewire answered 419 to every request after the first selection.
                 this.$refs.selModel.value = JSON.stringify(this.selected);
-                this.$refs.selModel.dispatchEvent(new Event('input', { bubbles: true }));
+                this.$refs.selModel.dispatchEvent(new CustomEvent('input', { detail: [...this.selected], bubbles: true }));
             }
         },
     };

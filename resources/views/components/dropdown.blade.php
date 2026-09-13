@@ -20,6 +20,12 @@
     // would have to be overridden, and two conflicting utilities resolve by stylesheet
     // order rather than by which one the caller wrote.
     'block' => false,
+    // The menu's accessible name, handed to the panel the quick form composes. That panel
+    // is written by this file, not by the caller, so nothing on the call site can reach it
+    // except a prop of the parent — without this one, a quick-form menu could not be named
+    // at all. In the explicit form the caller writes the panel and gives it `label` there;
+    // the note above the panel's @props says why there is no generic fallback.
+    'label' => null,
     'scope' => null,
 ])
 
@@ -143,13 +149,21 @@
             {{-- Already a panel. Wrapping it again is the defect. --}}
             {!! $slotHtml !!}
         @else
-            <x-wirekit::dropdown.panel>{!! $slotHtml !!}</x-wirekit::dropdown.panel>
+            <x-wirekit::dropdown.panel :label="$label">{!! $slotHtml !!}</x-wirekit::dropdown.panel>
         @endif
     @else
         {{-- Explicit form: developer nests <x-wirekit::dropdown.trigger>
              and <x-wirekit::dropdown.panel> children directly. The default
              slot passes through unchanged — the explicit sub-components
              carry their own ARIA wiring. --}}
+        @if(filled($label) && config('app.debug'))
+            @php
+                // `label` reaches only a panel this file composes, and here the caller composed
+                // it. Dropped in silence, the menu stays unnamed while the call site reads as
+                // named — the one outcome worse than a warning in the development log.
+                logger()->warning('[wirekit] dropdown: `label` names the menu only in the quick form. This call site nests its own <x-wirekit::dropdown.panel>, which the dropdown cannot reach — put `label` on that panel instead.');
+            @endphp
+        @endif
         {{ $slot }}
     @endisset
 </div>

@@ -2,10 +2,12 @@
      Sorting, filtering and paging are query round trips. Nobody can show rows nobody has fetched; only the intent could be acknowledged, and that is a different state machine. --}}
 @props([
     'rows' => [],                   // row objects (client mode)
-    // [{key,label,sortable?,align?,cellType?,intents?,subKey?,intentKey?,avatarKey?,prominence?}]
-    //   cellType: text|number|badge|badges|code · intents: value -> success|warning|danger|neutral
+    // [{key,label,sortable?,sortStart?,align?,cellType?,hrefKey?,intents?,subKey?,intentKey?,avatarKey?,prominence?}]
+    //   cellType: text|number|badge|badges|code|link · intents: value -> success|warning|danger|neutral
+    //   hrefKey: for a link column, the ROW field holding the URL. A row without one reads as text.
     //   subKey / intentKey / avatarKey: the ROW names its second line, its intent, its avatar.
     //   prominence: strong|muted — how loud the column reads. Absent is the middle.
+    //   sortStart: asc|desc — the direction of the column's first click. Absent is asc.
     'columns' => [],
     'rowKey' => 'id',               // unique id field for selection + morph keying
     'selectable' => config('wirekit.components.data-table.selectable', false), // per-row + header selection checkboxes
@@ -14,6 +16,15 @@
     'columnManager' => false,       // show/hide-columns dropdown
     'hidden' => [],                 // initially-hidden column keys
     'server' => false,              // server-driven: stop local sort/filter, emit events only
+    // The order the table starts in: a column key and a direction. In server mode, the order the
+    // server already applied, so `aria-sort` and the arrow describe the rows on screen. Without
+    // them every column read "none" over a sorted table, and a screen reader said so.
+    'sortKey' => null,
+    'sortDir' => 'asc',
+    // The filter the server applied, for a server-mode table. It fills the search field on the
+    // first render (a page opened as `?q=…` shows its filter) and whenever the server changes it
+    // on its own, such as a "clear filters" control. Null leaves the field to the reader.
+    'search' => null,
     // Milliseconds to wait after the last keystroke before announcing `search-change`.
     //
     // Only the OUTBOUND event waits. `x-model` still updates on every keystroke, so the
@@ -28,14 +39,16 @@
     'searchDebounce' => config('wirekit.components.data-table.search-debounce', 300),
     'searchPlaceholder' => __('wirekit::Search…'),
     'emptyText' => __('wirekit::No results'),
-    // Whether a server round trip is in flight. Server mode exists for datasets whose round
-    // trip is SLOW, and every sort click and every keystroke in the search field starts one —
-    // meanwhile the table keeps showing the previous page's rows with nothing to say a query
-    // is on its way. A sighted reader cannot tell a slow query from an ignored click, and a
-    // screen-reader user gets no WCAG 4.1.3 status until the rows change.
+    // A wait the server declares. Server mode exists for datasets whose round trip is SLOW, and
+    // every sort click and every keystroke in the search field starts one — meanwhile the table
+    // keeps showing the previous page's rows with nothing to say a query is on its way. A sighted
+    // reader cannot tell a slow query from an ignored click, and a screen-reader user gets no
+    // WCAG 4.1.3 status until the rows change.
     //
-    // A prop rather than something derived: only the application knows a request is out.
-    // Drive it from `wire:loading` — see the server-mode recipe on the docs page.
+    // The table marks itself busy for the round trips it starts (a sort, a search), from the
+    // moment the commit that carries one is sent until it comes back. This prop is for a wait
+    // the table cannot see: a server-side process the page is waiting on. A render that passes
+    // `true` holds the table busy until a render passes `false`.
     'loading' => false,
     'caption' => null,              // accessible table caption / name
     // Accessible name for the bulk-action bar, and the switch that makes it a LANDMARK.
@@ -80,6 +93,13 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $columnManager = BooleanProp::from($columnManager, false);
     $server = BooleanProp::from($server, false);
+
+    // The initial sort. Two directions exist, and an empty key is no key: a value the factory
+    // cannot use must not reach it looking like one.
+    $sortKey = filled($sortKey) ? (string) $sortKey : null;
+    $sortDir = $sortDir === 'desc' ? 'desc' : 'asc';
+    // Null stays null: "not passed" and "the server applied no filter" are two different things.
+    $search = $search === null ? null : (string) $search;
     $loading = BooleanProp::from($loading, false);
     // Same contract for the two whose default is spelled as a `config()` fallback rather
     // than a literal. Both gate whole regions of the table — the checkbox column and the
@@ -95,6 +115,8 @@
     // Seeded from `name`, not re-randomized per render: Livewire's morph matches on the
     // id, so a fresh one each render means destroy-and-rebuild — and the Alpine-only
     // state (sort order, hidden columns, open panels) goes with it on the next round trip.
+    // Necessary and not sufficient: the `x-data` expression has to stay the same too, which is
+    // why the rows no longer travel in it (see the state carrier below the root).
     $id = $attributes->get('id', \Pushery\WireKit\WireKit::stableId('data-table', $name ?? $attributes->get('name')));
     $name = $name ?? $attributes->get('name');
     $captionId = $id.'-caption';
@@ -173,6 +195,23 @@
 
     $pillClass = 'inline-flex items-center px-[var(--padding-wk-x-sm)] py-0.5 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-xs)] capitalize';
 
+    // The link cell wears the link component's own default look, resolved through the link
+    // component's personalization key, so a developer who restyled links restyles these too.
+    // No focus ring of its own, like the link: the browser's focus indicator stays. The cell is
+    // cloned per row by Alpine, so the component itself cannot render here.
+    // DataTableLinkCellTest renders a default link and checks every one of its classes is on the
+    // cell's anchor, which is what keeps this list and link.blade.php from drifting apart.
+    $linkClass = WireKit::resolveClasses('link', 'base', implode(' ', [
+        'font-[family-name:var(--font-wk-sans)]',
+        'cursor-pointer',
+        'transition-colors',
+        'duration-[var(--transition-wk-duration)]',
+        'ease-[var(--transition-wk-easing)]',
+        'hover:opacity-80',
+        'text-[color:var(--color-wk-accent-text)]',
+        'underline underline-offset-2',
+    ]), $scope);
+
     $badgeClasses = [
         'primary' => 'bg-[color-mix(in_srgb,var(--color-wk-accent)_12%,var(--color-wk-bg))] text-[color:var(--color-wk-accent-content)]',
         'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
@@ -200,9 +239,23 @@
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitDataTable({ rows: {{ \Pushery\WireKit\Support\AlpinePayload::from($rowsArr) }}, columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }}, avatarTints: {{ \Pushery\WireKit\Support\AlpinePayload::from($avatarTints) }}, prominenceClasses: {{ \Pushery\WireKit\Support\AlpinePayload::from($prominenceClasses) }}, selectionPhrases: {{ $selectionPhrases }}, locale: {{ $pluralLocale }} })"
+    x-data="wirekitDataTable({ columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }}, loadingText: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Loading results')) }}, prominenceClasses: {{ \Pushery\WireKit\Support\AlpinePayload::from($prominenceClasses) }}, selectionPhrases: {{ $selectionPhrases }}, locale: {{ $pluralLocale }} })"
     {{ $attributes->only('class')->class([$base]) }}
 >
+    {{-- What changes from one render to the next travels HERE, not in `x-data`.
+
+         The rows used to be part of the `x-data` expression. A Livewire render changes them,
+         the morph writes the changed expression onto the same element, and Alpine re-evaluates
+         it into a fresh component: measured across a search round trip, the element kept its
+         identity and the scope did not. Every value only the browser holds went back to its
+         start with it, the text in the search field, the density, the hidden columns, the
+         selection. The expression above now carries only what a render does not change, and the
+         factory reads this carrier when it starts and after every Livewire commit.
+
+         A `<template>` so it has no box at all, and an attribute so Blade's own escaping
+         applies. --}}
+    <template data-wk-data-table-state="{{ \Pushery\WireKit\Support\AlpinePayload::from(['rows' => $rowsArr, 'avatarTints' => $avatarTints, 'sortKey' => $sortKey, 'sortDir' => $sortDir, 'search' => $search, 'loading' => $loading]) }}"></template>
+
     @if($selectable && $name)
         {{-- Selection bridge for wire:model / form submission. --}}
         {{-- Static value as well as the bound one: the field is empty until Alpine
@@ -314,8 +367,28 @@
          dashboard were three identical rotor entries, and axe reports that as
          `landmark-unique`. With a caption the region points at it (`aria-labelledby`), which is
          a name the reader chose; without one there is no landmark to be ambiguous about. --}}
-    <div @if(filled($caption)) role="region" aria-labelledby="{{ $captionId }}" @endif @if($loading) aria-busy="true" @endif tabindex="0" class="w-full overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
-        <table class="w-full border-collapse text-[length:var(--text-wk-sm)]">
+    {{-- A table that scrolls sideways shows a shadow at the edge it continues toward. On a phone
+         there is no scrollbar until a drag is already underway, so a table cut off between two
+         columns looked complete. The machinery is `table`'s: two one-pixel sentinels at the
+         inline edges of the scroll content, an IntersectionObserver over them in
+         `wirekitStickyPanelShadows`, and the `wk-scroll-shadow-start` / `-end` overlays.
+
+         Its own component on a wrapper, not members of this one. Every name it adds lives in
+         the shadow factory, none collides with this factory's, and a method called from inside
+         still reaches the hidden selection input: `$refs` gathers the refs of every ancestor
+         component. `w-full min-w-0` keeps a wide table from widening the page, as in `table`. --}}
+    <div class="relative w-full min-w-0" x-data="wirekitStickyPanelShadows()">
+    <div x-ref="scroller" @if(filled($caption)) role="region" aria-labelledby="{{ $captionId }}" @endif @if($loading) aria-busy="true" @endif x-bind:aria-busy="ariaBusy()" tabindex="0" class="w-full min-w-0 overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+        {{-- The sentinels need the table's inline edges, and this scroller also holds the empty
+             state and the status region below the table, so the flex row is a wrapper around
+             the table alone rather than the scroller itself. `w-fit min-w-full` sizes it the
+             way the table sized itself before: the full width when the table fits, the
+             table's own minimum width when it does not. Each sentinel is one real pixel taken
+             back by a logical negative margin on the side facing the table, so the observer
+             has an area to intersect and the layout pays nothing, in either writing direction. --}}
+        <div class="flex w-fit min-w-full">
+        <div x-ref="startSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -me-px"></div>
+        <table class="w-full shrink-0 border-collapse text-[length:var(--text-wk-sm)]">
             @if($caption)
                 <caption id="{{ $captionId }}" class="sr-only">{{ $caption }}</caption>
             @endif
@@ -452,7 +525,29 @@
                                         </span>
                                     </span>
                                 </template>
-                                <template x-if="(!col.cellType || col.cellType === 'text') && ! rowIntent(row, col)">
+                                {{-- A link to the row's own page: the value as the text, the URL from the
+                                     row field `hrefKey` names. A real anchor and nothing else, no click
+                                     handler and no row navigation in JavaScript, so middle-click, the
+                                     context menu and "copy link" work. The URL comes through cellHref(),
+                                     which gives nothing for a row without one or for one that would run
+                                     script, and that row falls through to the plain branch below. --}}
+                                <template x-if="col.cellType === 'link' && cellHref(row, col) && ! rowIntent(row, col)">
+                                    <span :class="avatarText(row, col) ? 'inline-flex items-center gap-[var(--gap-wk-sm)]' : ''">
+                                        <template x-if="avatarText(row, col)">
+                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-6 h-6 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
+                                        </template>
+                                        <span>
+                                            <a :href="cellHref(row, col)" class="block w-fit {{ $linkClass }}" x-text="cellText(row, col)"></a>
+                                            <template x-if="subText(row, col)">
+                                                <span class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
+                                            </template>
+                                        </span>
+                                    </span>
+                                </template>
+                                {{-- The plain branch is also the fallback: a link row without a URL, and a
+                                     cellType this table does not know. Before isPlainCell() an unknown type
+                                     matched no branch at all and the cell rendered empty. --}}
+                                <template x-if="isPlainCell(row, col) && ! rowIntent(row, col)">
                                     <span :class="avatarText(row, col) ? 'inline-flex items-center gap-[var(--gap-wk-sm)]' : ''">
                                         <template x-if="avatarText(row, col)">
                                             <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-6 h-6 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
@@ -476,6 +571,8 @@
                 </template>
             </tbody>
         </table>
+        <div x-ref="endSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -ms-px"></div>
+        </div>
 
         {{-- Empty state.
 
@@ -514,13 +611,18 @@
              and its call to action read out as one status message. --}}
         {{-- The pending sentence goes through the SAME region as the empty announcement, and
              wins while a request is out: two live regions competing would announce in an order
-             nobody controls, and "loading" is the more urgent of the two. Rendered as static
-             text rather than through Alpine, because `loading` is a server-rendered prop — the
-             morph that flips it is what makes the announcement happen. --}}
-        @if($loading)
-            <p class="sr-only" role="status" aria-live="polite">{{ __('wirekit::Loading results') }}</p>
-        @else
-            <p class="sr-only" role="status" aria-live="polite" x-text="emptyAnnouncement"></p>
-        @endif
+             nobody controls, and "loading" is the more urgent of the two.
+
+             Bound through Alpine rather than rendered as static text. Static text would wait for
+             the render that flips `loading`, and a Livewire response is rendered after the wait
+             is over, so that render always arrives too late to announce it. The table knows when
+             a round trip it started is out, and `loading` adds a wait the server declares. The
+             static text below is only the first paint of a table rendered busy. --}}
+        <p class="sr-only" role="status" aria-live="polite" x-text="statusAnnouncement">@if($loading){{ __('wirekit::Loading results') }}@endif</p>
+    </div>
+    {{-- aria-hidden: the shadows are for the eye. The scroller itself is focusable, and named
+         when there is a caption. --}}
+    <div aria-hidden="true" x-cloak x-show="startShadow" x-transition.opacity class="wk-scroll-shadow-start"></div>
+    <div aria-hidden="true" x-cloak x-show="endShadow" x-transition.opacity class="wk-scroll-shadow-end"></div>
     </div>
 </div>

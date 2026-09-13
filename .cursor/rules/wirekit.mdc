@@ -73,7 +73,7 @@ Common tokens:
 - `--color-wk-border`, `--color-wk-border-subtle`, `--color-wk-border-hover`, `--color-wk-border-strong`, `--color-wk-border-strong-hover` (form controls MUST use the `strong` pair — the communicating border, WCAG 1.4.11, ≥3:1), `--color-wk-border-error`, `--color-wk-border-success`
 - `--color-wk-accent` (fill), `--color-wk-accent-text` (accent-toned text on bg — alias of `--color-wk-accent-content`), `--color-wk-accent-fg` (text on an accent fill)
 - `--space-wk-xs|sm|md|lg|xl|2xl` (+ `--space-wk-section-sm|md|lg`)
-- `--gap-wk-xs|sm|md|lg|xl|2xl` (the full `xs`…`2xl` internal layout-gap ladder). Note: the `<x-wirekit::stack|row|grid>` `gap` prop maps to `--space-wk-*`, not these — the `--gap-wk-*` tokens are used internally by composed components (`brand`, `header`, `cta`, `hero`, `navbar`, …).
+- `--gap-wk-xs|sm|md|lg|xl|2xl` (the full `xs`…`2xl` internal layout-gap ladder). Note: the `gap` prop of `<x-wirekit::stack|row|grid|bento-grid|feature-grid>` maps to `--space-wk-*` by default and to these only with `scale="gap"` — the `--gap-wk-*` tokens are used internally by composed components (`brand`, `header`, `cta`, `hero`, `navbar`, …).
 - `--padding-wk-x-xs|sm|md|lg|xl` and `--padding-wk-y-xs|sm|md|lg|xl` (axis-split — no axis-less shorthand)
 - `--radius-wk-sm|md|lg|xl|full`
 - `--shadow-wk-sm|md|lg`

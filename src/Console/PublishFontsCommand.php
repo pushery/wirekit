@@ -134,8 +134,11 @@ class PublishFontsCommand extends Command
             $published[] = $relative;
         }
 
-        if ($this->option('prune')) {
-            $this->prune($published);
+        if ($this->option('prune') && $this->prune($published) !== []) {
+            // A refused family is one the developer has to look at, so the exit code says so:
+            // the reference page hangs this command off `composer post-autoload-dump`, where
+            // nobody reads the output and the exit code is the whole message.
+            return self::FAILURE;
         }
 
         return self::SUCCESS;
@@ -187,14 +190,20 @@ class PublishFontsCommand extends Command
      * weight nobody thinks to look for, and the reason a "slim" publish can end up
      * larger than the all-or-nothing one after a few changes.
      *
+     * A directory this command did not publish — a link, or one that resolves outside
+     * the font root — is refused rather than deleted, and named; see deleteDirectory().
+     * The refusal is per family, so the stale families this command did publish still go.
+     *
      * @param  list<string>  $keep  relative directories that must survive
+     * @return list<string> the families that were refused
      */
-    private function prune(array $keep): void
+    private function prune(array $keep): array
     {
         $root = public_path('vendor/wirekit/fonts');
+        $refused = [];
 
         if (! is_dir($root)) {
-            return;
+            return $refused;
         }
 
         foreach (['sans', 'serif', 'mono'] as $category) {
@@ -211,10 +220,18 @@ class PublishFontsCommand extends Command
                     continue;
                 }
 
-                $this->deleteDirectory((string) $dir);
+                if (! $this->deleteDirectory((string) $dir, $root)) {
+                    $refused[] = $relative;
+                    $this->error("  Did not prune {$relative}: it is a link, or it resolves outside public/vendor/wirekit/fonts. This command deletes only what it published; remove it by hand if it should go.");
+
+                    continue;
+                }
+
                 $this->line("  Pruned {$relative} — no longer configured");
             }
         }
+
+        return $refused;
     }
 
     /**
@@ -248,8 +265,34 @@ class PublishFontsCommand extends Command
         }
     }
 
-    private function deleteDirectory(string $dir): void
+    /**
+     * Delete one family this command published, and refuse anything else.
+     *
+     * ⚠️ THIS CHECK IS WHAT STANDS BETWEEN ONE MUTANT AND A DELETE OF EVERY TOP-LEVEL
+     * DIRECTORY. The path comes from `glob($categoryDir.'/*')` in prune(), and a mutation run
+     * removes the left operand of that concatenation as a matter of course: `glob('/*')` lists
+     * the whole filesystem root, and this method used to walk whatever it was handed. A mutant
+     * changes one place, so this check still stands when the concatenation falls — and the
+     * mutant dies on a refusal instead of on the machine running the suite.
+     *
+     * The same walk escaped without any mutant: a family directory that is a LINK was walked
+     * like any other, deleting the files at the link's target, and a linked CATEGORY directory
+     * made every family inside it resolve somewhere else. So two refusals, both on resolved
+     * paths, the doctrine the install rollback's containment check follows: the link itself,
+     * and a directory whose resolved path is not inside the resolved root. The trailing
+     * separator keeps a sibling such as `fonts-old` from passing a prefix test against `fonts`.
+     *
+     * @return bool false when the directory was refused, in which case nothing was touched
+     */
+    private function deleteDirectory(string $dir, string $root): bool
     {
+        $resolved = realpath($dir);
+        $base = realpath($root);
+
+        if (is_link($dir) || $resolved === false || $base === false || ! str_starts_with($resolved, $base.DIRECTORY_SEPARATOR)) {
+            return false;
+        }
+
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::CHILD_FIRST
@@ -264,5 +307,7 @@ class PublishFontsCommand extends Command
         // the next run skips it, because the check above is `in_array($relative, $keep)`
         // rather than "is it still on disk".
         FileWrite::delete($dir);
+
+        return true;
     }
 }

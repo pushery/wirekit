@@ -195,14 +195,21 @@
         : \Pushery\WireKit\Support\DomId::unique(null, 'message-');
 @endphp
 
+{{-- The three `data-wk-message-*` markers are how `x-wirekit::message-group` reaches in: a
+     run of messages from one sender prints the avatar and the name ONCE, and the stylesheet
+     silences the repeats and rounds the stack's inner corners. They are attributes rather
+     than classes so a caller's own class list cannot collide with them, and they render
+     unconditionally — a marker that appears only inside a group would make the group's
+     stylesheet depend on a state the markup does not carry. --}}
 <article
     role="article"
+    data-wk-message
     aria-labelledby="{{ $messageId }}-header"
     {{ $attributes->class([$baseClasses]) }}
 >
     {{-- Avatar --}}
     @if($authorAvatar || $authorName)
-        <div class="shrink-0">
+        <div data-wk-message-avatar class="shrink-0">
             <x-wirekit::avatar
                 :src="$authorAvatar"
                 :alt="$authorName"
@@ -215,7 +222,7 @@
     <div class="flex flex-col {{ $textAlign }} gap-[var(--space-wk-xs,0.25rem)] min-w-0 max-w-[42ch]">
         {{-- Header: name + timestamp --}}
         <span id="{{ $messageId }}-header" class="flex items-center gap-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-sm)]">
-            <span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] truncate">
+            <span data-wk-message-author class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)] truncate">
                 {{ $authorName }}
             </span>
             @if($authorRole)
@@ -236,7 +243,7 @@
 
         {{-- Body bubble — border color comes from $bubbleClasses (intent-tinted for
              non-neutral, neutral border for plain chat bubbles). --}}
-        <div class="{{ $bubbleClasses }} rounded-[var(--radius-wk-lg)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)]">
+        <div data-wk-message-bubble class="{{ $bubbleClasses }} rounded-[var(--radius-wk-lg)] px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)]">
             {{ $slot }}
         </div>
 

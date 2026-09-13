@@ -21,6 +21,12 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  * Navigation is written against the segments themselves rather than sibling
  * traversal, which is what made the hidden input reachable in the first place.
  *
+ * Lifecycle resources held on `this`, every one released in destroy():
+ *   - _stopServerSync (the server-value observer) — stopped.
+ *   - _trackResizeObserver (ResizeObserver, on the track and on every segment) —
+ *     disconnected, and null-guarded inside its callback against a notification
+ *     queued before teardown.
+ *
  * @param {Object} config
  * @param {string} config.selected  the option value selected at render time
  */
@@ -30,6 +36,8 @@ export default function wirekitSegmentedControl(config = {}) {
         disabled: config.disabled === true,
 
         selected: config.selected != null ? String(config.selected) : '',
+
+        _trackResizeObserver: null,
 
         init() {
             // Seed from the server attribute when the caller passed nothing.
@@ -74,6 +82,38 @@ export default function wirekitSegmentedControl(config = {}) {
             // a value the server already had.
             this._writeHiddenInput();
 
+            // A selected option past the edge of a scrolling track is a choice the reader cannot
+            // see was made, so the track scrolls it into view — whenever a size changes, not
+            // once at init. Measured: at init the track did not overflow yet. Livewire starts
+            // Alpine before the page's stylesheets apply, so the track still measured its full
+            // content width, and a reveal written for that moment returned without scrolling;
+            // the same call made a second later scrolled by 120px. The track's size changes when
+            // the stylesheet applies and again whenever its column does, and a notification is
+            // what arrives at exactly those moments.
+            //
+            // The segments are observed as well, because a label can widen while the track,
+            // capped by its column, keeps its box. The web font does exactly that, and in more
+            // than one batch: the regular weight settled `document.fonts.ready`, which this code
+            // used to wait for, and the medium weight arrived after it and left the selected
+            // segment past the edge. Invisible on a machine whose fallback face is metric-matched
+            // to the web font, 2px out on one where it is not. A segment's own box changes with
+            // its label, whatever changed the label.
+            if (typeof ResizeObserver === 'function' && typeof this.$root?.getBoundingClientRect === 'function') {
+                this._trackResizeObserver = new ResizeObserver(() => {
+                    // Null-guard: a notification queued before destroy() can still arrive after it.
+                    if (!this._trackResizeObserver) {
+                        return;
+                    }
+
+                    this._revealSelected();
+                });
+                this._trackResizeObserver.observe(this.$root);
+
+                if (typeof this.$root.querySelectorAll === 'function') {
+                    this.$root.querySelectorAll('[role="radio"]').forEach((segment) => this._trackResizeObserver.observe(segment));
+                }
+            }
+
             // A value the server changed has to reach the segments. Alpine read
             // `selected` once, here, and will not look at the seed again — so
             // without this the control keeps showing whatever it was born with
@@ -90,12 +130,16 @@ export default function wirekitSegmentedControl(config = {}) {
 
                 this.selected = value;
                 this._writeHiddenInput();
+                this._scheduleReveal();
             });
         },
 
         destroy() {
             // The observer outlives the scope otherwise, and fires into it.
             this._stopServerSync?.();
+
+            this._trackResizeObserver?.disconnect();
+            this._trackResizeObserver = null;
         },
 
         /**
@@ -190,6 +234,62 @@ export default function wirekitSegmentedControl(config = {}) {
 
             target.focus();
             target.click();
+        },
+
+        /**
+         * Reveal the selected segment after Alpine's next flush.
+         *
+         * A selection the server changed reaches `aria-checked` in that flush, so a
+         * measurement taken before it would reveal the previous segment. No-op where the
+         * magic is missing, as in the ESM harness.
+         */
+        _scheduleReveal() {
+            if (typeof this.$nextTick === 'function') {
+                this.$nextTick(() => this._revealSelected());
+            }
+        },
+
+        /**
+         * Scroll the selected segment into the visible part of the track.
+         *
+         * Only the track moves. `scrollIntoView()` would scroll every scrollable ancestor as
+         * well, the page included, and a page that jumps sideways on load is the defect the
+         * track's own scroll exists to prevent. The arithmetic uses rectangles rather than
+         * `offsetLeft`, so it does not depend on the writing direction: `scrollLeft` counts
+         * from the other edge in a right-to-left track, and a rectangle delta does not care.
+         */
+        _revealSelected() {
+            const track = this.$root;
+
+            // Capability-checked like init(): a harness stub has no layout, and nothing to reveal.
+            if (typeof track?.getBoundingClientRect !== 'function' || typeof track.querySelector !== 'function') {
+                return;
+            }
+
+            // A track that does not scroll has nothing outside its visible part.
+            if (track.scrollWidth <= track.clientWidth) {
+                return;
+            }
+
+            const segment = track.querySelector('[role="radio"][aria-checked="true"]');
+
+            if (!segment) {
+                return;
+            }
+
+            const trackBox = track.getBoundingClientRect();
+            const box = segment.getBoundingClientRect();
+            // The track's scroll padding is the margin a segment scrolled into view keeps from the
+            // edge, so its focus ring is not cut off there. The reveal keeps the same margin.
+            const inset = typeof getComputedStyle === 'function'
+                ? parseFloat(getComputedStyle(track).scrollPaddingLeft) || 0
+                : 0;
+
+            if (box.left - inset < trackBox.left) {
+                track.scrollLeft -= trackBox.left - (box.left - inset);
+            } else if (box.right + inset > trackBox.right) {
+                track.scrollLeft += box.right + inset - trackBox.right;
+            }
         },
 
         /** Writes the value and returns the input, or null when there is none. */

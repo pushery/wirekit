@@ -1,5 +1,6 @@
 import { resolveThemeColors, palette, resolveCssVarsDeep } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
+import { awaitPeer } from '../utils/await-peer.js';
 
 /**
  * Unified tooltip renderer for every ApexCharts type. Emits ApexCharts'
@@ -258,6 +259,8 @@ export default function wirekitApexChart(config) {
         // other handles for the reason the comment above gives: a handle that only ever
         // appears inside a method is one nobody reading the teardown knows to look for.
         _motionCleanup: null,
+        // Stops the wait for a library that was not on the page at init() — utils/await-peer.js.
+        _stopAwaitingLibrary: null,
         _manualColorIndices: new Set(),
 
         init() {
@@ -273,133 +276,163 @@ export default function wirekitApexChart(config) {
             // bug). The on-screen panel surfaces the install command, the
             // license reminder, and a link to apexcharts.com/license so
             // the developer can act without opening DevTools first.
-            if (typeof ApexCharts === 'undefined') {
-                // Deduplicate the console.error so N apex charts on the same
-                // page emit ONE warning instead of N. The in-DOM fallback
-                // panel still renders per-chart (each chart needs its own
-                // visible advisory).
-                if (typeof window !== 'undefined' && !window.__wirekit_apexcharts_missing_warned__) {
-                    window.__wirekit_apexcharts_missing_warned__ = true;
-                    console.error(
-                        'WireKit: ApexCharts is not loaded. Install it via npm:\n' +
-                        '  npm install apexcharts\n' +
-                        'And import it in your app.js:\n' +
-                        '  import ApexCharts from "apexcharts";\n' +
-                        '  window.ApexCharts = ApexCharts;\n' +
-                        '\nLicense reminder: ApexCharts is non-MIT.\n' +
-                        'See https://apexcharts.com/license/ for terms.'
-                    );
+            // Asked until it can be answered — utils/await-peer.js. The library may land after
+            // Alpine has mounted this chart (a lazily imported apexcharts), so the panel and the
+            // console hint wait for the load plus a grace period instead of speaking at once.
+            this._stopAwaitingLibrary = awaitPeer({
+                isReady: () => typeof ApexCharts !== 'undefined',
+                onReady: () => {
+                    this._clearMissingLibraryPanel();
+                    this._boot();
+                },
+                onMissing: () => {
+                    this._warnMissingLibrary();
+                    this._renderMissingLibraryPanel();
+                },
+            });
+        },
+
+        _warnMissingLibrary() {
+            // Deduplicate the console.error so N apex charts on the same
+            // page emit ONE warning instead of N. The in-DOM fallback
+            // panel still renders per-chart (each chart needs its own
+            // visible advisory).
+            if (typeof window !== 'undefined' && !window.__wirekit_apexcharts_missing_warned__) {
+                window.__wirekit_apexcharts_missing_warned__ = true;
+                console.error(
+                    'WireKit: ApexCharts is not loaded. Install it via npm:\n' +
+                    '  npm install apexcharts\n' +
+                    'And import it in your app.js:\n' +
+                    '  import ApexCharts from "apexcharts";\n' +
+                    '  window.ApexCharts = ApexCharts;\n' +
+                    '\nLicense reminder: ApexCharts is non-MIT.\n' +
+                    'See https://apexcharts.com/license/ for terms.'
+                );
+            }
+        },
+
+        _renderMissingLibraryPanel() {
+            this.$nextTick(() => {
+                const mount = this.$refs.mount;
+                if (!mount) {
+                    return;
                 }
 
-                this.$nextTick(() => {
-                    const mount = this.$refs.mount;
-                    if (!mount) {
-                        return;
+                // Inline styles only — no Tailwind utilities, no CSS-
+                // variable lookups (the developer might have a misconfig
+                // there too; the fallback must paint reliably no matter
+                // what state the surrounding theme is in). Reads as a
+                // muted-yellow advisory panel on light backgrounds and
+                // adapts to dark mode via CSS color-scheme inheritance.
+                // ⚠️ The panel goes into the mount, and the mount carries `aria-hidden`
+                // (see _removeHiddenTabStop). A `role="alert"` inside an aria-hidden subtree
+                // is never announced — the browser does not walk into it — so the one
+                // message that exists to reach a reader when the chart cannot render was
+                // reaching nobody. The attribute is lifted for as long as the fallback is
+                // the only thing in there; the guard puts it back when a chart renders.
+                mount.removeAttribute('aria-hidden');
+
+                // Same host-width branch as the Chart.js panel, and for the same
+                // reason: `sparkline` is in this adapter's supportedTypes(), so an
+                // inline sparkline on the ApexCharts engine puts this panel in a 4rem
+                // box. The Chart.js side was measured doing exactly that — a 19px-wide,
+                // 975px-tall column of three characters per line inside a sentence.
+                // This half is proven by forcing `window.ApexCharts` away in a probe
+                // rather than by a preview, because the sample loads ApexCharts.
+                // An empty mount can measure 0 — the panel is what will give it width —
+                // so a bare `width > 0` test defaults to the FULL panel exactly where the
+                // compact one is needed. Walk out to the nearest ancestor that has a
+                // resolved width; that is the room the panel will actually get.
+                const roomFor = (el) => {
+                    let n = el;
+                    while (n && n !== document.body) {
+                        const w = Math.round(n.getBoundingClientRect().width);
+                        if (w > 0) return w;
+                        n = n.parentElement;
                     }
+                    return 0;
+                };
+                const availablePx = roomFor(mount);
+                const compact = availablePx > 0 && availablePx < 240;
+                mount.setAttribute('data-wk-chart-missing', compact ? 'compact' : 'full');
 
-                    // Inline styles only — no Tailwind utilities, no CSS-
-                    // variable lookups (the developer might have a misconfig
-                    // there too; the fallback must paint reliably no matter
-                    // what state the surrounding theme is in). Reads as a
-                    // muted-yellow advisory panel on light backgrounds and
-                    // adapts to dark mode via CSS color-scheme inheritance.
-                    // ⚠️ The panel goes into the mount, and the mount carries `aria-hidden`
-                    // (see _removeHiddenTabStop). A `role="alert"` inside an aria-hidden subtree
-                    // is never announced — the browser does not walk into it — so the one
-                    // message that exists to reach a reader when the chart cannot render was
-                    // reaching nobody. The attribute is lifted for as long as the fallback is
-                    // the only thing in there; the guard puts it back when a chart renders.
-                    mount.removeAttribute('aria-hidden');
-
-                    // Same host-width branch as the Chart.js panel, and for the same
-                    // reason: `sparkline` is in this adapter's supportedTypes(), so an
-                    // inline sparkline on the ApexCharts engine puts this panel in a 4rem
-                    // box. The Chart.js side was measured doing exactly that — a 19px-wide,
-                    // 975px-tall column of three characters per line inside a sentence.
-                    // This half is proven by forcing `window.ApexCharts` away in a probe
-                    // rather than by a preview, because the sample loads ApexCharts.
-                    // An empty mount can measure 0 — the panel is what will give it width —
-                    // so a bare `width > 0` test defaults to the FULL panel exactly where the
-                    // compact one is needed. Walk out to the nearest ancestor that has a
-                    // resolved width; that is the room the panel will actually get.
-                    const roomFor = (el) => {
-                        let n = el;
-                        while (n && n !== document.body) {
-                            const w = Math.round(n.getBoundingClientRect().width);
-                            if (w > 0) return w;
-                            n = n.parentElement;
-                        }
-                        return 0;
-                    };
-                    const availablePx = roomFor(mount);
-                    const compact = availablePx > 0 && availablePx < 240;
-                    mount.setAttribute('data-wk-chart-missing', compact ? 'compact' : 'full');
-
-                    mount.innerHTML = compact ? `
-                        <span role="alert"
-                              style="
-                                 display: inline-block;
-                                 max-width: 100%;
-                                 overflow: hidden;
-                                 text-overflow: ellipsis;
-                                 white-space: nowrap;
-                                 padding: 0 0.25rem;
-                                 border: 1px solid color-mix(in oklab, var(--color-wk-warning-text, #78350f) 40%, transparent);
-                                 border-radius: 0.25rem;
-                                 background: var(--color-wk-warning-bg, #fffbeb);
-                                 color: var(--color-wk-warning-text, #78350f);
-                                 font-family: system-ui, -apple-system, sans-serif;
-                                 font-size: 0.6875rem;
-                                 line-height: 1.4;
-                              ">
-                            <span aria-hidden="true">! ApexCharts missing</span>
-                            <span style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;">ApexCharts is not loaded. Install the apexcharts npm package and expose it on window.ApexCharts; the browser console carries the commands.</span>
-                        </span>
-                    ` : `
-                        <div role="alert"
-                             style="
-                                padding: 1rem 1.25rem;
-                                border: 1px solid color-mix(in oklab, var(--color-wk-warning-text, #78350f) 40%, transparent);
-                                border-left: 4px solid var(--color-wk-warning-text, #b45309);
-                                border-radius: 0.375rem;
-                                background: var(--color-wk-warning-bg, #fffbeb);
-                                color: var(--color-wk-warning-text, #78350f);
-                                font-family: system-ui, -apple-system, sans-serif;
-                                font-size: 0.8125rem;
-                                line-height: 1.5;
-                             ">
-                            <div style="font-weight: 600; margin-bottom: 0.5rem;">
-                                ApexCharts is not loaded.
-                            </div>
-                            <p style="margin: 0 0 0.5rem 0;">
-                                WireKit's ApexCharts adapter glue is loaded, but the
-                                <code style="font-family: ui-monospace, monospace; font-size: 0.85em; padding: 0.05rem 0.25rem; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.2rem;">apexcharts</code>
-                                npm package is missing or not exposed on
-                                <code style="font-family: ui-monospace, monospace; font-size: 0.85em; padding: 0.05rem 0.25rem; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.2rem;">window.ApexCharts</code>.
-                            </p>
-                            <p style="margin: 0 0 0.5rem 0;">
-                                Install it and expose it globally:
-                            </p>
-                            <pre tabindex="0" style="margin: 0 0 0.5rem 0; padding: 0.625rem 0.75rem; outline-offset: 2px; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.25rem; font-family: ui-monospace, monospace; font-size: 0.75rem; line-height: 1.5; overflow-x: auto;">npm install apexcharts
+                mount.innerHTML = compact ? `
+                    <span role="alert"
+                          style="
+                             display: inline-block;
+                             max-width: 100%;
+                             overflow: hidden;
+                             text-overflow: ellipsis;
+                             white-space: nowrap;
+                             padding: 0 0.25rem;
+                             border: 1px solid color-mix(in oklab, var(--color-wk-warning-text, #78350f) 40%, transparent);
+                             border-radius: 0.25rem;
+                             background: var(--color-wk-warning-bg, #fffbeb);
+                             color: var(--color-wk-warning-text, #78350f);
+                             font-family: system-ui, -apple-system, sans-serif;
+                             font-size: 0.6875rem;
+                             line-height: 1.4;
+                          ">
+                        <span aria-hidden="true">! ApexCharts missing</span>
+                        <span style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;">ApexCharts is not loaded. Install the apexcharts npm package and expose it on window.ApexCharts; the browser console carries the commands.</span>
+                    </span>
+                ` : `
+                    <div role="alert"
+                         style="
+                            padding: 1rem 1.25rem;
+                            border: 1px solid color-mix(in oklab, var(--color-wk-warning-text, #78350f) 40%, transparent);
+                            border-left: 4px solid var(--color-wk-warning-text, #b45309);
+                            border-radius: 0.375rem;
+                            background: var(--color-wk-warning-bg, #fffbeb);
+                            color: var(--color-wk-warning-text, #78350f);
+                            font-family: system-ui, -apple-system, sans-serif;
+                            font-size: 0.8125rem;
+                            line-height: 1.5;
+                         ">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">
+                            ApexCharts is not loaded.
+                        </div>
+                        <p style="margin: 0 0 0.5rem 0;">
+                            WireKit's ApexCharts adapter glue is loaded, but the
+                            <code style="font-family: ui-monospace, monospace; font-size: 0.85em; padding: 0.05rem 0.25rem; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.2rem;">apexcharts</code>
+                            npm package is missing or not exposed on
+                            <code style="font-family: ui-monospace, monospace; font-size: 0.85em; padding: 0.05rem 0.25rem; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.2rem;">window.ApexCharts</code>.
+                        </p>
+                        <p style="margin: 0 0 0.5rem 0;">
+                            Install it and expose it globally:
+                        </p>
+                        <pre tabindex="0" style="margin: 0 0 0.5rem 0; padding: 0.625rem 0.75rem; outline-offset: 2px; background: color-mix(in oklab, var(--color-wk-warning-text, #78350f) 12%, transparent); border-radius: 0.25rem; font-family: ui-monospace, monospace; font-size: 0.75rem; line-height: 1.5; overflow-x: auto;">npm install apexcharts
 
 // resources/js/app.js
 import ApexCharts from 'apexcharts';
 window.ApexCharts = ApexCharts;</pre>
-                            <p style="margin: 0; font-size: 0.75rem; opacity: 0.9;">
-                                <strong>License reminder:</strong> ApexCharts is non-MIT.
-                                See <a href="https://apexcharts.com/license/"
-                                       target="_blank"
-                                       rel="noopener noreferrer"
-                                       style="color: var(--color-wk-warning-text, #78350f); text-decoration: underline;">apexcharts.com/license</a>
-                                for terms (Community free under $2M USD revenue, Commercial above).
-                            </p>
-                        </div>
-                    `;
-                });
+                        <p style="margin: 0; font-size: 0.75rem; opacity: 0.9;">
+                            <strong>License reminder:</strong> ApexCharts is non-MIT.
+                            See <a href="https://apexcharts.com/license/"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   style="color: var(--color-wk-warning-text, #78350f); text-decoration: underline;">apexcharts.com/license</a>
+                            for terms (Community free under $2M USD revenue, Commercial above).
+                        </p>
+                    </div>
+                `;
+            });
+        },
 
-                return;
-            }
+        /**
+         * The library arrived after the panel. The boot clears the mount before it renders, so
+         * only the marker has to go — and the marker is the one thing that says the mount is
+         * showing a panel rather than a chart.
+         */
+        _clearMissingLibraryPanel() {
+            const mount = this.$refs.mount;
+            if (!mount || typeof mount.removeAttribute !== 'function') return;
 
+            mount.removeAttribute('data-wk-chart-missing');
+        },
+
+        /** Build the chart — at once when the library is on the page, or the moment it lands. */
+        _boot() {
             this.$nextTick(() => {
                 const mount = this.$refs.mount;
                 if (!mount) return;
@@ -602,9 +635,20 @@ window.ApexCharts = ApexCharts;</pre>
                     // with hyphens (rangebar / rangearea), NOT camelCase
                     // (the chart-type config key IS camelCase: rangeBar,
                     // rangeArea — different convention).
-                    const cellShapeSelectorByType = {
+                    //
+                    // The element pointer tracking records per type: the
+                    // data point under the cursor. For the cell-shape types
+                    // it is the cell, and their tooltip is `intersect: true`,
+                    // so it is only active over one. For radar it is the
+                    // marker, which resolveActiveElement() prefers over the
+                    // title lookup. Radar was missing from this map once, so
+                    // that preferred route never ran and the title carried
+                    // every hover: on two axes named alike it pinned the
+                    // tooltip to the LAST one.
+                    const pointerSelectorByType = {
                         heatmap: '.apexcharts-heatmap-rect',
                         treemap: '.apexcharts-treemap-rect',
+                        radar: '.apexcharts-marker',
                         rangeBar: '.apexcharts-rangebar-area',
                         rangeArea: '.apexcharts-rangearea-area',
                     };
@@ -644,14 +688,15 @@ window.ApexCharts = ApexCharts;</pre>
                         // Per-type "which data element is hovered?" resolver.
                         //
                         // For radar: prefer the marker the cursor is OVER
-                        // (pointerTarget). Title-based lookup is the
-                        // fallback for the case where the cursor moved off
-                        // the marker into the polygon fill — ApexCharts
-                        // keeps the tooltip active via its proximity
-                        // detection but pointerTarget points at the
-                        // polygon `<path>` (caught + cached by onActivity
-                        // when `.apexcharts-marker` matches; null when the
-                        // cursor is over the polygon only).
+                        // (pointerTarget, recorded by onActivity whenever
+                        // the pointer crosses a marker and kept until it
+                        // leaves the chart). The title lookup is the
+                        // fallback for a tooltip no pointer opened, and it
+                        // cannot tell two axes named alike apart. Keeping
+                        // the last marker is safe: off the markers
+                        // ApexCharts hides a radar tooltip (measured at the
+                        // chart's center), so a kept marker is never paired
+                        // with another vertex's tooltip.
                         const resolveRadarMarkerByTitle = () => {
                             const title = tooltipEl.querySelector('.apexcharts-tooltip-title')?.textContent?.trim();
                             if (!title) return null;
@@ -798,7 +843,7 @@ window.ApexCharts = ApexCharts;</pre>
                         // because synthetic test events sometimes only
                         // dispatch one variant and we want to be robust
                         // both in tests and in real browsers.
-                        const pointerSelector = cellShapeSelectorByType[apexType];
+                        const pointerSelector = pointerSelectorByType[apexType];
                         const onActivity = (evt) => {
                             if (pointerSelector) {
                                 const el = evt.target?.closest?.(pointerSelector);
@@ -1257,6 +1302,10 @@ window.ApexCharts = ApexCharts;</pre>
          * is nulled after the first destroy so the second call is a no-op.
          */
         destroy() {
+            // A library that lands after this chart is gone must not build it.
+            this._stopAwaitingLibrary?.();
+            this._stopAwaitingLibrary = null;
+
             if (this._hiddenTabStopRaf) {
                 cancelAnimationFrame(this._hiddenTabStopRaf);
                 this._hiddenTabStopRaf = null;

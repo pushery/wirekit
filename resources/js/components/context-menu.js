@@ -14,7 +14,8 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menu/
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
-import { position } from '../utils/floating.js';
+import { focusIsWithin, position } from '../utils/floating.js';
+import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 
 // Long-press tuning. 500ms is the platform-conventional touch-hold threshold
 // (matches iOS/Android long-press); a 10px movement budget distinguishes a
@@ -64,6 +65,8 @@ export default function wirekitContextMenu() {
         _pressTimer: null,
         _pressStartX: 0,
         _pressStartY: 0,
+        // Where the trigger stood when the menu opened — see _anchorMoved().
+        _anchorAt: null,
 
         init() {
             this._navCleanup = () => this._forceClose();
@@ -89,6 +92,8 @@ export default function wirekitContextMenu() {
                 if (!this.open) return;
                 const panel = this.$refs.panel;
                 if (panel && e.target instanceof Node && panel.contains(e.target)) return;
+                // Only a scroll that actually moved the trigger has stranded anything.
+                if (!this._anchorMoved()) return;
                 this._forceClose();
             };
             window.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
@@ -128,6 +133,8 @@ export default function wirekitContextMenu() {
             // while this one renders. The helper carries the identity that keeps
             // this instance from closing itself on its own announcement.
             this._coordination?.announce();
+
+            this._rememberAnchor();
 
             this.open = true;
 
@@ -171,8 +178,9 @@ export default function wirekitContextMenu() {
             // menu that highlights its first entry is the platform convention, and it is
             // the only shape in which the next keypress has somewhere to start from.
             // `preventScroll` so a menu opened near the fold does not jump the page.
+            // Not when the reader already moved into the menu while it was being positioned.
             const items = this._getItems();
-            if (items.length) {
+            if (items.length && ! focusIsWithin(panel)) {
                 items[0].focus({ preventScroll: true });
             }
         },
@@ -291,6 +299,19 @@ export default function wirekitContextMenu() {
          */
         _forceClose() {
             this.open = false;
+        },
+
+        /**
+         * Remember where the trigger stands at the moment the menu opens — utils/scroll-anchor.js
+         * says why a scroll only closes the menu once the trigger has moved since.
+         */
+        _rememberAnchor() {
+            this._anchorAt = anchorSnapshot(this.$refs.trigger);
+        },
+
+        /** Has the trigger moved since the menu opened? */
+        _anchorMoved() {
+            return anchorMoved(this._anchorAt, this.$refs.trigger);
         },
 
         /**

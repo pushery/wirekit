@@ -19,11 +19,21 @@
  *   1.88, which rounds to 1.9 and skips 1.8 entirely. Snapping matches the W3C
  *   contract for a native <input type="number">.
  *
+ * A caller's model on the field (`wire:model`, `x-model`) owns the input, and `value` then
+ * only mirrors it: read when the model has written the field, after every keystroke, and
+ * after every Livewire commit, because a value the server sets arrives as a property write
+ * with no event. The steppers write through to the input and fire what a native stepper
+ * fires, so the model hears them.
+ *
+ * CLEANUP CONTRACT: `_unhookResync` (the Livewire commit hook, bound fields only) is
+ * released in destroy().
+ *
  * @param {Object}  config
  * @param {number}  config.value  starting value
  * @param {?number} config.min    lower bound, or null for unbounded
  * @param {?number} config.max    upper bound, or null for unbounded
  * @param {number}  config.step   grid spacing
+ * @param {boolean} config.bound  the field carries a caller's model
  */
 export default function wirekitNumberInput(config = {}) {
     return {
@@ -34,6 +44,85 @@ export default function wirekitNumberInput(config = {}) {
         min: config.min ?? null,
         max: config.max ?? null,
         step: config.step ?? 1,
+        bound: config.bound === true,
+        _unhookResync: null,
+
+        init() {
+            if (!this.bound) {
+                return;
+            }
+
+            // The caller's model writes the field while Alpine starts the elements below
+            // this one, which is after this runs, so the first read waits a tick.
+            this.$nextTick(() => this.syncFromInput());
+
+            // The same signal the slider resyncs on: a server-side change is a property
+            // write on the element, which fires no event and mutates no attribute.
+            if (typeof window !== 'undefined' && window.Livewire?.hook) {
+                this._unhookResync = window.Livewire.hook('commit', ({ succeed }) => {
+                    succeed(() => queueMicrotask(() => this.syncFromInput()));
+                });
+            }
+        },
+
+        destroy() {
+            if (this._unhookResync) {
+                this._unhookResync();
+                this._unhookResync = null;
+            }
+        },
+
+        /**
+         * The field. Looked up rather than referenced: with the optimistic layer the
+         * input sits inside that layer's own Alpine root, where a ref would register on
+         * the layer and never reach this component.
+         */
+        _input() {
+            return this.$root?.querySelector?.('input[type="number"]') ?? null;
+        },
+
+        /** Mirror what the field holds. An empty or unreadable field keeps the last number. */
+        syncFromInput() {
+            const el = this._input();
+
+            if (!el || el.value === '') {
+                return;
+            }
+
+            const next = Number(el.value);
+
+            if (!Number.isNaN(next) && next !== this.value) {
+                this.value = next;
+            }
+        },
+
+        /**
+         * Write the stepper's value to a bound field, and fire what a native stepper
+         * fires: `input` for a model that listens to it, `change` for one bound to change.
+         */
+        _writeThrough() {
+            const el = this.bound ? this._input() : null;
+
+            if (!el || el.value === String(this.value)) {
+                return;
+            }
+
+            el.value = String(this.value);
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        },
+
+        /** Clamp a bound field on leaving it, and tell the model only if that changed it. */
+        clampInput() {
+            const el = this._input();
+
+            if (!el) {
+                return;
+            }
+
+            this.value = this.clamp(el.value);
+            this._writeThrough();
+        },
 
         /**
          * Decimal places implied by the step. `5` → 0, `0.1` → 1, `0.01` → 2,
@@ -77,6 +166,7 @@ export default function wirekitNumberInput(config = {}) {
             const next = this.round(origin + prevSteps * this.step);
 
             this.value = this.min !== null ? Math.max(this.min, next) : next;
+            this._writeThrough();
             this._commit();
         },
 
@@ -88,6 +178,7 @@ export default function wirekitNumberInput(config = {}) {
             const next = this.round(origin + nextSteps * this.step);
 
             this.value = this.max !== null ? Math.min(this.max, next) : next;
+            this._writeThrough();
             this._commit();
         },
 

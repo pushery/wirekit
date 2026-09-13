@@ -62,4 +62,18 @@ export function registerIndeterminateDirective(Alpine) {
 
         cleanup(() => observer.disconnect());
     });
+
+    // A directive only runs inside a tree Alpine initializes: under an `x-data`, a Livewire
+    // component, or an `x-init`. A checkbox in a plain form has none of those, so the directive
+    // never ran there and the third state never showed. Measured on a page with no Alpine root:
+    // the input carried the attribute and `indeterminate` stayed false, while a manual
+    // `Alpine.initTree()` on the same input set it at once.
+    //
+    // `x-init`, which the component used before, initializes itself outside `x-data`. Registering
+    // the attribute as an init selector gives the directive that same reach, without an `x-data`
+    // of its own (see above for why not). Guarded, because not every Alpine a page brings has the
+    // method; without it the directive still works wherever an Alpine root encloses the checkbox.
+    if (typeof Alpine.addInitSelector === 'function') {
+        Alpine.addInitSelector(() => '[x-wk-indeterminate]');
+    }
 }

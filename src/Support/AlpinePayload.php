@@ -32,8 +32,12 @@ use JsonException;
  * **Unicode must stay literal.** `json_encode` escapes non-ASCII as `\u00fc` by
  * default, and Alpine's CSP tokenizer understands only `\n`, `\t`, `\r`, `\\`
  * and the quote — every other backslash is dropped, keeping the letters. So
- * `Grüße` arrives as `Gru00fce`: not an error, just quietly wrong text.
- * `JSON_UNESCAPED_UNICODE` is therefore not a preference.
+ * `Grüße` arrives as `Gru00fce`: not an error, just quietly wrong text. That
+ * describes @alpinejs/csp 3.16.3. The 3.17.2 tokenizer decodes a four-digit
+ * escape of that kind, and still drops the backslash of a hex or a code-point
+ * escape. A page runs whichever Alpine its Livewire bundles, which this package
+ * does not pin, so this emits the one form every tokenizer measured reads back:
+ * the literal character. `JSON_UNESCAPED_UNICODE` is therefore not a preference.
  *
  * **The quotes are HTML's problem, not JavaScript's.** The result contains `"`,
  * which would end the attribute it sits in — so it MUST be echoed through

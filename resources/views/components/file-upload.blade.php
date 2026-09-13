@@ -122,6 +122,10 @@
     // described by less than the markup claims — or, with only a hint set, by
     // nothing at all. Compose from what this render actually emits.
     $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($showsError ? $errorId : ''));
+    // A caller's aria-describedby joins this list, because the control is what it describes
+    // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
+    // ids first, then the caller's.
+    $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
 
     // The HTML spec's two values. `camera` and `camcorder` were an Android-era spelling
     // and are not in it; accepting them silently would put an attribute on the element that
@@ -273,7 +277,7 @@
          would hand back exactly the line the variant exists to give up, so it
          becomes an inline column that hugs its content — the file list, hint and
          error still stack beneath the control, just no wider than they need. --}}
-    {{ $attributes->except('aria-label')->whereDoesntStartWith('wire:model')->class([
+    {{ $attributes->except(['aria-label', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([
         'w-full' => $variantValue !== 'compact',
         'inline-flex max-w-full flex-col items-start align-middle' => $variantValue === 'compact',
     ]) }}

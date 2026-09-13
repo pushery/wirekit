@@ -124,6 +124,13 @@
     // a valid attribute at all and does nothing but fail a validator.
     $attributes = $attributes->except(['id', 'name']);
 
+    // One description list for the control: the component's own id first, then a caller's
+    // aria-describedby. Written as separate attributes, the parser kept only the first copy,
+    // so a caller's description was dropped or pushed the component's own out.
+    // A readonly rating describes nothing of its own, so a caller's list goes on its image alone.
+    $callerDescribedBy = trim((string) $attributes->get('aria-describedby', ''));
+    $describedBy = trim(($error ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.$callerDescribedBy);
+
     $wrapperClasses = WireKit::resolveClasses('rating', 'base', implode(' ', [
         'inline-flex flex-col gap-1',
         'font-[family-name:var(--font-wk-sans)]',
@@ -216,7 +223,7 @@
 @endphp
 
 <div
-    {{ $attributes->except('aria-label')->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }}
+    {{ $attributes->except(['aria-label', 'aria-describedby'])->whereDoesntStartWith('wire:model')->class([$wrapperClasses]) }}
     {{-- The server's own channel — see segmented-control for why this is a
          plain attribute rather than the hidden input this component binds. --}}
     data-wk-server-value="{{ $clamped }}"
@@ -297,6 +304,7 @@
 
                  An explicit aria-label still wins: the caller knows their page. --}}
             aria-label="{{ $attributes->get('aria-label') ?? __('wirekit:::value out of :max stars', ['value' => $announcedValue, 'max' => $max]) }}"
+            @if($callerDescribedBy !== '') aria-describedby="{{ $callerDescribedBy }}" @endif
         @else
             role="radiogroup"
             @if($required) aria-required="true" @endif
@@ -311,7 +319,8 @@
             @endif
             {{-- On the GROUP, not on each star: the message is about the rating, and
                  repeating it on five buttons would read it out five times. --}}
-            @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
+            @if($error) aria-invalid="true" @endif
+            @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
         @endif
         class="inline-flex gap-0.5"
     >

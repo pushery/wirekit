@@ -12,6 +12,7 @@ use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Support\ComponentManifest;
 use Pushery\WireKit\Support\FileWrite;
 use Pushery\WireKit\Support\InstallLog;
+use Pushery\WireKit\Support\LayoutShells;
 use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\Support\TailwindVersion;
 use Pushery\WireKit\Theming\ThemePresetRegistry;
@@ -728,14 +729,21 @@ class InstallCommand extends Command
             $this->line('    <fg=cyan>~</> resources/css/app.css (would inject theme preset '.$preset.')');
         }
 
-        // Layout file — Blade directives. Report the path the REAL install would
-        // resolve (the first existing candidate), or, if none exist yet, the full
-        // candidate list it probes — so the dry-run never names a narrower path
-        // than the actual install touches.
+        // Layout files — Blade directives. Report the files the REAL install would edit: the
+        // shells the layout hands its page to, from the same directiveTargets() the install
+        // uses — or, when no layout exists yet, the full candidate list it probes. A dry run
+        // that names a different file than the install then touches is worse than none.
         $layout = $this->resolveLayoutFile();
         if ($layout !== null) {
-            $rel = str_replace(base_path().DIRECTORY_SEPARATOR, '', $layout);
-            $this->line("    <fg=cyan>~</> {$rel} (would inject @wirekitStyles + @wirekitScripts if missing)");
+            $targets = $this->directiveTargets($layout, LayoutShells::forApplication());
+
+            foreach (array_values(array_unique([...$targets['head'], ...$targets['body']])) as $file) {
+                $this->line('    <fg=cyan>~</> '.$this->projectRelativePath($file).' (would inject @wirekitStyles + @wirekitScripts if missing)');
+            }
+
+            foreach ($targets['unplaced'] as $unplaced) {
+                $this->line('    <fg=yellow>!</> '.$this->projectRelativePath($unplaced).' (renders no <head> or </body> the install can find — would ask you to add the directives by hand)');
+            }
         } else {
             // Name every candidate the real install probes (never a narrower path
             // than addBladeDirectives() would touch), and describe the new
@@ -1393,11 +1401,10 @@ CSS;
      */
     private function layoutCandidates(): array
     {
-        return [
-            resource_path('views/components/layouts/app.blade.php'),
-            resource_path('views/layouts/app.blade.php'),
-            resource_path('views/components/layout.blade.php'),
-        ];
+        return array_map(
+            static fn (string $relative): string => resource_path('views/'.$relative),
+            LayoutShells::APP_LAYOUTS,
+        );
     }
 
     /**
@@ -1442,40 +1449,119 @@ CSS;
             return;
         }
 
-        $contentBefore = (string) file_get_contents($layoutFile);
+        $shells = LayoutShells::forApplication();
+        $targets = $this->directiveTargets($layoutFile, $shells);
+
+        foreach ($targets['unplaced'] as $layout) {
+            // Never "already present" for a file this could not read. That sentence is the one
+            // a developer believes, and here it would be false.
+            $this->line('  <fg=yellow>!</> '.$this->projectRelativePath($layout).' renders no <head> or </body> this install can find.');
+            $this->line('    Add <fg=cyan>@wirekitStyles</> inside the <head> your pages render and <fg=cyan>@wirekitScripts</> just before its </body>, then run <fg=cyan>wirekit:doctor</>.');
+        }
+
+        foreach (array_values(array_unique([...$targets['head'], ...$targets['body']])) as $file) {
+            $this->wireDirectivesInto(
+                $file,
+                in_array($file, $targets['head'], true),
+                in_array($file, $targets['body'], true),
+                $shells,
+            );
+        }
+    }
+
+    /**
+     * Where the two directives go, for the app layout and — when the project has one — the
+     * auth layout: the files that close `<head>` and `<body>` for the pages they render, and
+     * the alternative shells the Livewire starter kit keeps beside the one in use.
+     *
+     * One answer for the install and for the `--diff` preview, so the preview can never name a
+     * different file than the install then edits.
+     *
+     * @return array{head: list<string>, body: list<string>, unplaced: list<string>}
+     */
+    private function directiveTargets(string $appLayout, LayoutShells $shells): array
+    {
+        $head = [];
+        $body = [];
+        $unplaced = [];
+
+        foreach (array_values(array_unique(array_filter([$appLayout, $shells->authLayout()]))) as $layout) {
+            $found = $shells->shellsOf($layout, alternatives: true);
+
+            if ($found['head'] === [] && $found['body'] === []) {
+                $unplaced[] = $layout;
+
+                continue;
+            }
+
+            array_push($head, ...$found['head']);
+            array_push($body, ...$found['body']);
+        }
+
+        return [
+            'head' => array_values(array_unique($head)),
+            'body' => array_values(array_unique($body)),
+            'unplaced' => $unplaced,
+        ];
+    }
+
+    /**
+     * Add whichever directive `$file` is missing: the stylesheet where it closes a `<head>`, the
+     * script where it closes a `<body>`. "Missing" counts what the file includes — a stylesheet
+     * the starter kit's `partials/head` already carries is in every head.
+     */
+    private function wireDirectivesInto(string $file, bool $closesHead, bool $closesBody, LayoutShells $shells): void
+    {
+        $contentBefore = (string) file_get_contents($file);
         $content = $contentBefore;
-        $modified = false;
+        $added = [];
 
-        if (! str_contains($content, '@wirekitStyles')) {
-            // Add before </head>.
-            if (str_contains($content, '</head>')) {
-                $content = str_replace('</head>', "    @wirekitStyles\n</head>", $content);
-                $modified = true;
-            }
+        if ($closesHead && ! $shells->carries($file, 'wirekitStyles')) {
+            $content = self::insertDirectiveBefore($content, '</head>', '@wirekitStyles', nested: true);
+            $added[] = '@wirekitStyles';
         }
 
-        if (! str_contains($content, '@wirekitScripts')) {
-            // Critical order: @wirekitScripts registers WireKit's Alpine plugins on
-            // the alpine:init event, which MUST run before @livewireScripts boots
-            // Alpine. The Livewire layout stub always emits @livewireScripts, so when
-            // it's present insert @wirekitScripts immediately BEFORE it; otherwise
-            // fall back to just before </body>.
-            if (str_contains($content, '@livewireScripts')) {
-                $content = str_replace('@livewireScripts', "@wirekitScripts\n        @livewireScripts", $content);
-                $modified = true;
-            } elseif (str_contains($content, '</body>')) {
-                $content = str_replace('</body>', "    @wirekitScripts\n</body>", $content);
-                $modified = true;
-            }
+        if ($closesBody && ! $shells->carries($file, 'wirekitScripts')) {
+            // Critical order: @wirekitScripts registers WireKit's Alpine plugins on the
+            // alpine:init event, which MUST run before Livewire boots Alpine. Where the layout
+            // emits @livewireScripts, the directive goes immediately BEFORE it. Otherwise just
+            // before </body> — Livewire injects its own script at the end of the body, after
+            // everything the template put there, so the order holds either way.
+            $content = str_contains($content, '@livewireScripts')
+                ? self::insertDirectiveBefore($content, '@livewireScripts', '@wirekitScripts', nested: false)
+                : self::insertDirectiveBefore($content, '</body>', '@wirekitScripts', nested: true);
+            $added[] = '@wirekitScripts';
         }
 
-        if ($modified) {
-            $this->trackInstallAction('add-blade-directives', $layoutFile, $contentBefore);
-            File::put($layoutFile, $content);
-            $this->line('  <fg=green>✓</> Added Blade directives to '.basename($layoutFile));
-        } else {
-            $this->line('  <fg=yellow>!</> Blade directives already present in layout');
+        if ($added === []) {
+            $this->line('  <fg=yellow>!</> Blade directives already present in '.$this->projectRelativePath($file));
+
+            return;
         }
+
+        $this->trackInstallAction('add-blade-directives', $file, $contentBefore);
+        File::put($file, $content);
+        $this->line('  <fg=green>✓</> Added '.implode(' + ', $added).' to '.$this->projectRelativePath($file));
+    }
+
+    /**
+     * Put `$directive` on a line of its own in front of the first `$anchor`, at the anchor's
+     * indentation — one level deeper when the anchor is a closing tag the directive sits
+     * inside, so a nested template still reads as nested after the edit.
+     */
+    private static function insertDirectiveBefore(string $content, string $anchor, string $directive, bool $nested): string
+    {
+        return preg_replace_callback(
+            '/([ \t]*)'.preg_quote($anchor, '/').'/',
+            static fn (array $m): string => $m[1].($nested ? '    ' : '').$directive."\n".$m[1].$anchor,
+            $content,
+            1,
+        ) ?? $content;
+    }
+
+    private function projectRelativePath(string $path): string
+    {
+        return str_replace(base_path().DIRECTORY_SEPARATOR, '', $path);
     }
 
     /**

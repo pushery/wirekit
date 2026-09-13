@@ -17,6 +17,12 @@
     // Backdrop color / opacity for THIS instance (any CSS color). Null → the
     // themeable --color-wk-overlay token.
     'overlay' => null,
+    // Per-slide overlay render-callback: a closure `fn($slide, $i)` returning markup to lay
+    // OVER the media of slide #$i in the viewer (a label, a watermark, a report control), shown
+    // only while that slide is. The wrapper is pointer-events-none; interactive controls inside
+    // opt back in with `pointer-events-auto`. Return a view or HtmlString for HTML (a plain
+    // string is escaped). Null → no overlay.
+    'slideOverlay' => null,
     'scope' => null,
 ])
 
@@ -160,44 +166,59 @@
                     x-transition:enter-end="opacity-100 scale-100"
                     class="relative z-10 m-0 flex max-h-[90vh] max-w-[92vw] flex-col items-center gap-[var(--space-wk-sm)]"
                 >
-                    <template x-for="(item, idx) in {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}" :key="idx">
-                        <div x-show="current === idx" class="flex items-center justify-center">
-                            <template x-if="item.type === 'video'">
-                                <video :src="item.src" :poster="item.poster" controls preload="metadata" class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]"></video>
-                            </template>
-                            <template x-if="item.type === 'embed'">
-                                <iframe :src="item.src" :title="item.alt" loading="lazy" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox" class="aspect-video w-[90vw] max-w-[90vw] max-h-[85vh] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]" allowfullscreen></iframe>
-                            </template>
-                            <template x-if="! item.type || item.type === 'image'">
-                                {{-- Large images scale to fit the viewport: object-contain +
-                                     max-h-[85vh] (vertical cap) + max-w-[90vw] (horizontal
-                                     cap) keeps the aspect ratio for BOTH very tall and very
-                                     wide images, using most of the screen (not a fixed box).
-                                     Off-screen slides load lazily (loading="lazy"); a spinner
-                                     shows while a large image downloads, then the image
-                                     fades in on load. --}}
-                                <div class="relative flex items-center justify-center" x-data="{ loaded: false }" :class="! loaded ? 'min-h-[10rem] min-w-[10rem]' : ''">
-                                    <span x-show="! loaded" x-cloak class="absolute inset-0 flex items-center justify-center" aria-hidden="true">
-                                        <svg class="h-8 w-8 animate-spin text-[color:var(--color-wk-bg)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                                        </svg>
-                                    </span>
-                                    <img
-                                        :src="item.src"
-                                        :alt="item.alt"
-                                        loading="lazy"
-                                        decoding="async"
-                                        x-init="loaded = $el.complete && $el.naturalWidth > 0"
-                                        x-on:load="loaded = true"
-                                        x-on:error="loaded = true"
-                                        :class="loaded ? 'opacity-100' : 'opacity-0'"
-                                        class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] object-contain shadow-[var(--shadow-wk-lg)] transition-opacity duration-[var(--transition-wk-duration)]"
-                                    />
+                    {{-- The media box: exactly the visible slide, so an overlay laid over it covers the
+                         media and not the caption below. --}}
+                    <div data-wk-lightbox-media class="relative">
+                        <template x-for="(item, idx) in {{ \Pushery\WireKit\Support\AlpinePayload::from($slides) }}" :key="idx">
+                            <div x-show="current === idx" class="flex items-center justify-center">
+                                <template x-if="item.type === 'video'">
+                                    <video :src="item.src" :poster="item.poster" controls preload="metadata" class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]"></video>
+                                </template>
+                                <template x-if="item.type === 'embed'">
+                                    <iframe :src="item.src" :title="item.alt" loading="lazy" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox" class="aspect-video w-[90vw] max-w-[90vw] max-h-[85vh] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]" allowfullscreen></iframe>
+                                </template>
+                                <template x-if="! item.type || item.type === 'image'">
+                                    {{-- Large images scale to fit the viewport: object-contain +
+                                         max-h-[85vh] (vertical cap) + max-w-[90vw] (horizontal
+                                         cap) keeps the aspect ratio for BOTH very tall and very
+                                         wide images, using most of the screen (not a fixed box).
+                                         Off-screen slides load lazily (loading="lazy"); a spinner
+                                         shows while a large image downloads, then the image
+                                         fades in on load. --}}
+                                    <div class="relative flex items-center justify-center" x-data="{ loaded: false }" :class="! loaded ? 'min-h-[10rem] min-w-[10rem]' : ''">
+                                        <span x-show="! loaded" x-cloak class="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+                                            <svg class="h-8 w-8 animate-spin text-[color:var(--color-wk-bg)]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                            </svg>
+                                        </span>
+                                        <img
+                                            :src="item.src"
+                                            :alt="item.alt"
+                                            loading="lazy"
+                                            decoding="async"
+                                            x-init="loaded = $el.complete && $el.naturalWidth > 0"
+                                            x-on:load="loaded = true"
+                                            x-on:error="loaded = true"
+                                            :class="loaded ? 'opacity-100' : 'opacity-0'"
+                                            class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] object-contain shadow-[var(--shadow-wk-lg)] transition-opacity duration-[var(--transition-wk-duration)]"
+                                        />
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                        @if(is_callable($slideOverlay))
+                            {{-- One overlay per slide, rendered on the server and shown only while its
+                                 slide is: the callback's markup cannot live inside the client-side x-for.
+                                 pointer-events-none like the gallery's thumbnail overlay; a control inside
+                                 opts back in and sits in the dialog's focus trap. --}}
+                            @foreach($slides as $i => $slide)
+                                <div data-wk-slide-overlay="{{ $i }}" x-show="current === {{ $i }}" class="pointer-events-none absolute inset-0">
+                                    {{ $slideOverlay($slide, $i) }}
                                 </div>
-                            </template>
-                        </div>
-                    </template>
+                            @endforeach
+                        @endif
+                    </div>
 
                     @if($showCaptions)
                         {{-- Caption sits on a semi-transparent dark scrim (the themeable

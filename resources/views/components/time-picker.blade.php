@@ -131,6 +131,10 @@
 
     // Build aria-describedby
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+    // A caller's aria-describedby joins this list, because the control is what it describes
+    // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
+    // ids first, then the caller's.
+    $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
 @endphp
 
 @php
@@ -176,7 +180,7 @@
             @endif
         @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
         {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-        {{ $attributes->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
+        {{ $attributes->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
     />
 
     @if($optimisticConfig)

@@ -134,13 +134,17 @@
     $hintId = "{$id}-hint";
     $errorId = "{$id}-error";
     $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($hasError ? $errorId : ''));
+    // A caller's aria-describedby joins this list, because the control is what it describes
+    // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
+    // ids first, then the caller's.
+    $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
 
     // Route wire:model to the <textarea x-ref="input"> (the element the editor writes to
     // and fires its input event on), NOT the wrapper div — otherwise Livewire binds to a
     // div that never emits input and the value is silently lost. Modifiers (.live / .blur
-    // / .debounce) are preserved; everything else still lands on the wrapper.
+    // / .debounce) are preserved; everything else but the description lands on the wrapper.
     $wireModel = $attributes->whereStartsWith('wire:model');
-    $rest = $attributes->whereDoesntStartWith('wire:model');
+    $rest = $attributes->except('aria-describedby')->whereDoesntStartWith('wire:model');
 
     // Toolbar preset → command vocabulary. A passed <x-slot:toolbar> (a ComponentSlot)
     // selects the 'custom' path so the caller's toolbar actually renders — otherwise the
@@ -193,9 +197,18 @@
         // correct — one string, two writes, and only one of them was translated.
         // `Str::headline($name)` stays untranslated on purpose: it is derived from a
         // developer-supplied name, not a string this package ships.
-        'ariaLabel' => $label ? null : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor')),
+        //
+        // The caller's own `aria-label` comes before either fallback. It used to be written
+        // onto the content host instead, and the host is never the textbox: with an engine
+        // the textbox is the surface the engine builds inside it, without one the host is
+        // hidden. So `aria-label="Release notes"` produced a textbox announced as
+        // "Rich text editor", on a page whose visible label said "Release notes".
+        'ariaLabel' => $label ? null : (filled($callerLabel) ? $callerLabel : ($name ? Str::headline((string) $name) : __('wirekit::Rich text editor'))),
         'ariaDescribedby' => $describedBy !== '' ? $describedBy : null,
         'ariaInvalid' => (bool) $hasError,
+        // The same misplacement, one attribute over: the host carried `aria-required`, which
+        // a generic element may not carry, and the textbox was never announced as required.
+        'ariaRequired' => (bool) $required,
         // Plumbed to the Tiptap path too (not just the textarea fallback's
         // data-autofocus) — editor.js focuses the editor in onCreate when set.
         'autofocus' => (bool) $autofocus,
@@ -256,6 +269,12 @@
 @endif
     <div
         x-data="wirekitEditor({{ \Pushery\WireKit\Support\AlpinePayload::from($jsConfig) }})"
+        {{-- A caller's `x-model` binds to the document through this, in both directions.
+             Without it the model sat on this div as a plain Alpine model and read the
+             editing surface's own input events, whose target has no `value`, so the bound
+             value turned `undefined` on every keystroke. `wire:model` is unaffected: it is
+             routed to the form field below. --}}
+        x-modelable="content"
         @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
         {{ $rest->class(['w-full', $wrapperClasses]) }}
     >
@@ -283,13 +302,10 @@
         <div
             x-ref="content"
             id="{{ $id }}"
-            {{-- The editable host is the control. A caller's name belongs here, not on the
-                 Alpine wrapper it was landing on; `label` still wins when both are given. --}}
-            @if($callerLabel && ! $label) aria-label="{{ $callerLabel }}" @endif
-            {{-- On the editable host, for the same reason its name is: this element becomes
-                 the textbox. There is no native control to take a `required` attribute, so
-                 aria-required is the whole of the semantics here. --}}
-            @if($required) aria-required="true" @endif
+            {{-- No name and no `aria-required` here. This host is never the textbox: with an
+                 engine the textbox is the surface the engine builds inside it, and that surface
+                 takes both from `ariaLabel` and `ariaRequired` in the config above; without one
+                 the host is hidden and the form field below is the control. --}}
             class="flex flex-col cursor-text [contain:inline-size] {{ $minHeight }} overflow-y-auto wk-scrollbar px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]"
             @if($maxHeight) style="max-height: {{ $maxHeight }};" @endif
         ><div data-wk-editor-seed class="wk-editor-content">{!! $initialHtml !!}</div></div>
@@ -321,6 +337,9 @@
                      the same shape the icon-only guard asks of every bound name. --}}
                 @if($hasError) aria-invalid="true" @endif
                 @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+                {{-- `aria-required`, never the native attribute: while the engine runs this
+                     field is hidden, and a hidden required control stops the form submitting. --}}
+                @if($required) aria-required="true" @endif
                 @if($autofocus) data-autofocus @endif
                 {{-- Mirror the maxHeight cap on the fallback textarea so the absent-Tiptap
                      path scrolls at the same ceiling (a textarea scrolls natively). --}}

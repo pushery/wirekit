@@ -1,4 +1,18 @@
 /**
+ * The pointer drag in progress, if any.
+ *
+ * ⚠️ MODULE STATE, NOT INSTANCE STATE, because a drag can end in a list that never
+ * started it. `dragend` fires on the dragged node and bubbles through the list the
+ * node sits in AT THAT MOMENT — after a move between columns that is the target
+ * column, whose instance knew nothing about the drag — and the column it left would
+ * keep pointing at a card it no longer holds. One pointer drags one thing at a time,
+ * so one slot per page is enough.
+ *
+ * @type {{ item: Element, list: Element, index: number } | null}
+ */
+let activeDrag = null;
+
+/**
  * Reorder a list — by pointer, and by keyboard, because one of those is not
  * optional.
  *
@@ -43,12 +57,21 @@
  * announcement. The English fallbacks here are for a developer who mounts the
  * factory by hand; the component passes the catalog string.
  *
+ * BETWEEN LISTS, ONLY WHERE A BOARD ASKS FOR IT. Inside an element marked
+ * `data-sortable-connected` — `<x-wirekit::kanban sortable cross-column>` — a card
+ * can leave its list for another one on the same board: dragged onto it, or moved
+ * with ArrowLeft/ArrowRight while lifted, Up/Down still moving it within. Outside
+ * such a board the arrows keep the meaning they always had, so a list that did not
+ * ask for this behaves exactly as before. A move between lists reports once, as
+ * `wirekit:sortable:moved` with both lists' new order; a move within one list still
+ * reports `wirekit:sortable:reordered`.
+ *
  * @param {Object} config
  * @param {string} config.itemSelector  which children are sortable
  * @param {string} [config.roleDescription]  what one item is called, translated
- * @param {Object} [config.messages]  { grabbed, moved, dropped, canceled } —
- *                                    already translated, with `:position` and
- *                                    `:total` placeholders
+ * @param {Object} [config.messages]  { grabbed, grabbedAcross, moved, movedToColumn,
+ *                                    dropped, canceled } — already translated, with
+ *                                    `:position`, `:total` and `:column` placeholders
  */
 export default function wirekitSortable(config = {}) {
     return {
@@ -68,7 +91,9 @@ export default function wirekitSortable(config = {}) {
          */
         _messages: {
             grabbed: config.messages?.grabbed || 'Grabbed. Position :position of :total. Use the arrow keys to move it.',
+            grabbedAcross: config.messages?.grabbedAcross || 'Grabbed. Position :position of :total. Use up and down to move it, left and right to change the column.',
             moved: config.messages?.moved || 'Position :position of :total.',
+            movedToColumn: config.messages?.movedToColumn || 'Moved to :column. Position :position of :total.',
             dropped: config.messages?.dropped || 'Dropped at position :position of :total.',
             canceled: config.messages?.canceled || 'Reorder canceled. Back at position :position of :total.',
         },
@@ -85,8 +110,21 @@ export default function wirekitSortable(config = {}) {
         /** Where the lifted item started, so Escape can put it back exactly. */
         _liftedFrom: null,
 
-        /** The item being dragged by pointer. */
-        _dragging: null,
+        /**
+         * The list and index a lifted card started from, which survives a move into another
+         * list: Escape returns the card THERE, and the drop reports a move from THERE. Without
+         * it the list a card was handed to would know only where the card is, and would put
+         * it back at a position in the wrong column.
+         *
+         * @type {{ list: Element, index: number } | null}
+         */
+        _liftOrigin: null,
+
+        /** The `receive` listener, kept so `destroy()` can take it off again. */
+        _receiver: null,
+
+        // The pointer drag is not here: it lives in the module-level `activeDrag`, because a
+        // drag can end in a list that never started it.
 
         // The DIRECT CHILDREN of the list, unless the call site says otherwise.
         //
@@ -108,10 +146,17 @@ export default function wirekitSortable(config = {}) {
             // reported as "sometimes".
             this._observer = new MutationObserver(() => this._wire());
             this._observer.observe(this.$root, { childList: true, subtree: true });
+
+            // A card handed over by another list on a connected board arrives through this
+            // event, see `_handOver()`. Registered on every list: a list cannot tell whether a
+            // board around it connects, and a listener nobody triggers costs nothing.
+            this._receiver = (event) => this._receive(event.detail);
+            this.$root.addEventListener?.('wirekit:sortable:receive', this._receiver);
         },
 
         destroy() {
             this._observer?.disconnect();
+            this.$root.removeEventListener?.('wirekit:sortable:receive', this._receiver);
 
             // Only the one this factory made: a region the call site rendered is
             // the call site's to remove, and taking it away here would delete
@@ -131,8 +176,50 @@ export default function wirekitSortable(config = {}) {
          * offered as something to reorder, tab to and drop cards onto.
          */
         _items() {
-            return Array.from(this.$root.querySelectorAll(this._itemSelector))
+            return this._itemsOf(this.$root);
+        },
+
+        /** The sortable children of ANY list on the board — this one, or one a card came from. */
+        _itemsOf(list) {
+            return Array.from(list.querySelectorAll(this._itemSelector))
                 .filter((el) => ! el.hasAttribute('data-wk-sortable-announcer'));
+        },
+
+        /**
+         * The connected board this list sits on, or null.
+         *
+         * `data-sortable-connected` is opt-in — `<x-wirekit::kanban sortable cross-column>` —
+         * and everything that lets a card leave its list asks here first. Without the marker a
+         * list behaves exactly as it did before cards could leave at all.
+         */
+        _board() {
+            return this.$root.closest?.('[data-sortable-connected]') ?? null;
+        },
+
+        /** Every sortable list on the board, in reading order — the order ArrowLeft/Right walk. */
+        _lists() {
+            const board = this._board();
+
+            return board ? Array.from(board.querySelectorAll('[data-sortable-items]')) : [this.$root];
+        },
+
+        /**
+         * What the APPLICATION calls a list: its column's `column-id`, or its position among the
+         * board's lists when it has none — the same honesty rule as a card without an id.
+         */
+        _column(list = this.$root) {
+            const named = list.closest?.('[data-sortable-column]')?.getAttribute('data-sortable-column');
+
+            return named || String(this._lists().indexOf(list));
+        },
+
+        /**
+         * What a READER calls a list: its accessible name. The column body carries its column's
+         * label as `aria-label`; an unnamed one falls back to the column id, which beats
+         * announcing a move to nowhere.
+         */
+        _columnName(list = this.$root) {
+            return list.getAttribute?.('aria-label') || this._column(list);
         },
 
         /**
@@ -178,10 +265,14 @@ export default function wirekitSortable(config = {}) {
          * `position` is 1-based, because it is read by a person rather than used
          * as an index.
          */
-        _say(template, position, total) {
+        _say(template, position, total, column = '') {
+            // The column name goes in LAST: it is the one value that comes from the page, and a
+            // label that happened to contain ":total" would otherwise be rewritten by the step
+            // meant for the number.
             this.announcement = template
                 .replace(':position', String(position))
-                .replace(':total', String(total));
+                .replace(':total', String(total))
+                .replace(':column', column);
 
             // A morph can replace the subtree this region sits in, and a
             // detached node speaks to nobody — so the reference is checked
@@ -294,6 +385,99 @@ export default function wirekitSortable(config = {}) {
             }));
         },
 
+        /**
+         * Say what happened across two lists, once: which card, from where, to where, and the
+         * new order of BOTH, so an application can persist the whole move in one statement.
+         *
+         * Dispatched from the list the card ended in, and it bubbles, so a listener anywhere
+         * above the board hears it: `wire:wirekit:sortable:moved="moveCard($event.detail)"`.
+         */
+        _announceMove(item, origin, to) {
+            this.$root.dispatchEvent(new CustomEvent('wirekit:sortable:moved', {
+                detail: {
+                    id: item.getAttribute('data-sortable-id'),
+                    from: {
+                        column: this._column(origin.list),
+                        index: origin.index,
+                        order: this._itemsOf(origin.list).map((el) => el.getAttribute('data-sortable-id')),
+                    },
+                    to: { column: this._column(), index: to, order: this._order() },
+                },
+                bubbles: true,
+            }));
+        },
+
+        /**
+         * Give a card to another list on the board, which inserts, announces and focuses it.
+         *
+         * An event rather than a call into the other instance: the two lists share a board and
+         * nothing else, and only the receiving factory knows its own items, its own live region
+         * and its own column name. Not bubbling — it is addressed to that one list.
+         */
+        _handOver(list, item, index, origin, mode) {
+            list.dispatchEvent(new CustomEvent('wirekit:sortable:receive', {
+                detail: { item, index, origin, mode },
+            }));
+        },
+
+        /**
+         * Take a card another list handed over: as a LIFTED card that keeps moving
+         * (`mode: 'lift'`), or as one Escape sent back to the list it started in
+         * (`mode: 'cancel'`).
+         */
+        _receive({ item, index, origin, mode }) {
+            const items = this._items();
+            const at = Math.max(0, Math.min(index, items.length));
+
+            // Before the card now at that index, or — past the last card — before this list's
+            // own live region, so a card is never reached only after a hidden node.
+            const reference = items[at] ?? (this._announcer?.parentNode === this.$root ? this._announcer : null);
+
+            this.$root.insertBefore(item, reference);
+
+            const now = this._items();
+            const position = now.indexOf(item) + 1;
+
+            if (mode === 'cancel') {
+                this._say(this._messages.canceled, position, now.length);
+            } else {
+                this._lifted = item;
+                this._liftOrigin = origin;
+                item.setAttribute('data-sortable-lifted', 'true');
+                this._say(this._messages.movedToColumn, position, now.length, this._columnName());
+            }
+
+            // A focused node that is re-inserted can lose focus, and this one just changed
+            // lists — the reason the arrow branch re-focuses after a move within one list.
+            item.focus();
+        },
+
+        /**
+         * Carry a lifted card into the previous or next list on the board.
+         *
+         * At the first or last list there is nowhere to go, and the answer to "did that work"
+         * is where the card still is — the rule an arrow press at the end of a list follows.
+         */
+        _moveAcross(item, direction) {
+            const lists = this._lists();
+            const target = lists[lists.indexOf(this.$root) + direction];
+
+            if (! target) {
+                const items = this._items();
+
+                this._say(this._messages.moved, items.indexOf(item) + 1, items.length);
+                item.focus();
+
+                return;
+            }
+
+            const index = this._items().indexOf(item);
+            const origin = this._liftOrigin ?? { list: this.$root, index: this._liftedFrom };
+
+            this._release(item);
+            this._handOver(target, item, index, origin, 'lift');
+        },
+
         /** Move an element to a new index among its siblings. */
         _moveTo(item, index) {
             const items = this._items();
@@ -320,8 +504,7 @@ export default function wirekitSortable(config = {}) {
                 return;
             }
 
-            this._dragging = item;
-            this._dragFrom = this._items().indexOf(item);
+            activeDrag = { item, list: this.$root, index: this._items().indexOf(item) };
             item.setAttribute('data-sortable-dragging', 'true');
 
             // Firefox refuses to start a drag at all without data on the
@@ -329,8 +512,30 @@ export default function wirekitSortable(config = {}) {
             event.dataTransfer?.setData('text/plain', item.getAttribute('data-sortable-id') ?? '');
         },
 
+        /**
+         * The drag this list may take part in: its own, or — on a connected board — one that
+         * started in another list of the same board. A drag whose card has left the page, a
+         * morph having replaced it mid-drag, is nobody's: accepting it would move a card that
+         * no longer exists.
+         */
+        _acceptedDrag() {
+            if (! activeDrag || ! activeDrag.item.isConnected) {
+                return null;
+            }
+
+            if (activeDrag.list === this.$root) {
+                return activeDrag;
+            }
+
+            const board = this._board();
+
+            return board && board.contains(activeDrag.list) ? activeDrag : null;
+        },
+
         dragover(event) {
-            if (! this._dragging) {
+            const drag = this._acceptedDrag();
+
+            if (! drag) {
                 return;
             }
 
@@ -340,7 +545,18 @@ export default function wirekitSortable(config = {}) {
 
             const over = this._itemFrom(event.target);
 
-            if (! over || over === this._dragging) {
+            if (over === drag.item) {
+                return;
+            }
+
+            // Over the list's own empty space, which is the only way into an EMPTY column at
+            // all. Only for a card from another list: a card of this list already sits in it,
+            // and the gap below the last card is not a position.
+            if (! over) {
+                if (drag.item.parentNode !== this.$root) {
+                    this.$root.insertBefore(drag.item, this._announcer?.parentNode === this.$root ? this._announcer : null);
+                }
+
                 return;
             }
 
@@ -349,22 +565,34 @@ export default function wirekitSortable(config = {}) {
             const box = over.getBoundingClientRect();
             const after = event.clientY > box.top + box.height / 2;
 
-            over.parentNode.insertBefore(this._dragging, after ? over.nextSibling : over);
+            over.parentNode.insertBefore(drag.item, after ? over.nextSibling : over);
         },
 
         dragend() {
-            if (! this._dragging) {
+            const drag = activeDrag;
+
+            activeDrag = null;
+
+            if (! drag) {
                 return;
             }
 
-            const item = this._dragging;
+            const { item } = drag;
             const to = this._items().indexOf(item);
 
             item.removeAttribute('data-sortable-dragging');
-            this._dragging = null;
 
-            if (to !== this._dragFrom) {
-                this._announceOrder(item.getAttribute('data-sortable-id'), this._dragFrom, to);
+            // Reached through the list the card ENDED in, which is the one that reports: a card
+            // from another list is a move, a card of this one a reorder, and no change at all
+            // says nothing.
+            if (to === -1) {
+                return;
+            }
+
+            if (drag.list !== this.$root) {
+                this._announceMove(item, { list: drag.list, index: drag.index }, to);
+            } else if (to !== drag.index) {
+                this._announceOrder(item.getAttribute('data-sortable-id'), drag.index, to);
             }
         },
 
@@ -389,7 +617,22 @@ export default function wirekitSortable(config = {}) {
             if (key === 'Escape' && this._lifted === item) {
                 event.preventDefault();
 
-                const back = this._liftedFrom;
+                const origin = this._liftOrigin ?? { list: this.$root, index: this._liftedFrom };
+
+                // A card carried in from another column goes home, and the column it started in
+                // takes it back and says so: only that list knows its own positions and owns the
+                // live region a reader of that column is listening to. Focus follows the card
+                // inside `_receive()`.
+                if (origin.list !== this.$root) {
+                    this._release(item);
+                    this._handOver(origin.list, item, origin.index, null, 'cancel');
+
+                    return;
+                }
+
+                // The ORIGIN's index rather than `_liftedFrom`: a card that went to another column
+                // and came back was released on the way out, and its start survives only there.
+                const back = origin.index;
 
                 this._moveTo(item, back);
                 this._release(item);
@@ -412,7 +655,16 @@ export default function wirekitSortable(config = {}) {
                 return;
             }
 
-            const delta = (key === 'ArrowDown' || key === 'ArrowRight') ? 1
+            // On a connected board the horizontal arrows change the column — and only there, so a
+            // list that did not ask for this keeps the meaning those two keys always had.
+            if ((key === 'ArrowLeft' || key === 'ArrowRight') && this._board()) {
+                event.preventDefault();
+                this._moveAcross(item, key === 'ArrowRight' ? 1 : -1);
+
+                return;
+            }
+
+            const delta =(key === 'ArrowDown' || key === 'ArrowRight') ? 1
                 : (key === 'ArrowUp' || key === 'ArrowLeft') ? -1
                     : 0;
 
@@ -441,20 +693,28 @@ export default function wirekitSortable(config = {}) {
 
             this._lifted = item;
             this._liftedFrom = items.indexOf(item);
+            this._liftOrigin = null;
             item.setAttribute('data-sortable-lifted', 'true');
-            this._say(this._messages.grabbed, this._liftedFrom + 1, items.length);
+
+            // On a connected board the instructions name the second pair of arrows, because it
+            // now does something a reader could not guess from the first.
+            this._say(this._board() ? this._messages.grabbedAcross : this._messages.grabbed, this._liftedFrom + 1, items.length);
         },
 
         _drop(item) {
             const items = this._items();
             const to = items.indexOf(item);
-            const from = this._liftedFrom;
+            const origin = this._liftOrigin ?? { list: this.$root, index: this._liftedFrom };
 
             this._release(item);
             this._say(this._messages.dropped, to + 1, items.length);
 
-            if (to !== from) {
-                this._announceOrder(item.getAttribute('data-sortable-id'), from, to);
+            // A card that started in another column is a MOVE, reported once with both columns'
+            // order; one that stayed in this column is the reorder it always was.
+            if (origin.list !== this.$root) {
+                this._announceMove(item, origin, to);
+            } else if (to !== origin.index) {
+                this._announceOrder(item.getAttribute('data-sortable-id'), origin.index, to);
             }
         },
 
@@ -462,6 +722,7 @@ export default function wirekitSortable(config = {}) {
             item.removeAttribute('data-sortable-lifted');
             this._lifted = null;
             this._liftedFrom = null;
+            this._liftOrigin = null;
         },
     };
 }

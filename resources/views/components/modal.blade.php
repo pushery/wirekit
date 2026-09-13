@@ -91,24 +91,48 @@
         'bg-[var(--color-wk-overlay)]',
     ]), $scope);
 
-    // Container classes — centers the dialog on screen
+    // Container classes — positions the dialog on screen.
+    //
+    // ⚠️ `items-start` HERE AND `my-auto` ON THE PANEL, NOT `items-center`. A flex item taller
+    // than its scroll container is pushed past the START of the scrollable area by
+    // `items-center`: `scrollTop: 0` already sits below the panel's top edge and there is no
+    // negative scroll, so the header and the first lines of a long dialog were unreachable —
+    // the text began mid-sentence. Auto margins center the panel exactly as before while it
+    // fits and resolve to zero once it does not, which keeps its top inside the scrollable
+    // area. The panel's own cap below makes that case rare; this keeps it reachable when a
+    // caller overrides the cap.
     $containerClasses = WireKit::resolveClasses('modal', 'container', implode(' ', [
         'wk-overlay-fixed fixed inset-0',
         'wk-overlay-layer-modal z-[var(--z-wk-modal)]',
-        'flex items-center justify-center',
+        'flex items-start justify-center',
         'p-[var(--padding-wk-y-xl)]',
         'wk-scrollbar overflow-y-auto',
     ]), $scope);
 
-    // Panel classes — the dialog surface with shadow and rounded corners
+    // Panel classes — the dialog surface with shadow and rounded corners.
+    //
+    // ⚠️ CAPPED TO THE VIEWPORT, AND A COLUMN. The panel had no height limit, so it grew with
+    // its content, and `overflow-hidden` limited nothing: it only clips what overflows a box
+    // whose height the content itself decides. The cap is the viewport minus the container's
+    // padding on both edges, in `dvh` so a mobile browser's toolbars cannot eat the bottom
+    // edge — the drawer caps itself the same way. `flex-col` lets the header and footer keep
+    // their height while modal.body, which may shrink, scrolls between them.
+    //
+    // The panel scrolls too, as the fallback for a dialog built WITHOUT modal.body: clipped,
+    // its overflow would simply be gone. With a body the body absorbs the overflow and the
+    // panel never needs its own scrollbar. It carries `role="dialog"`, so the scroll region
+    // already has an owner for its keyboard model.
     $panelClasses = WireKit::resolveClasses('modal', 'panel', implode(' ', [
         'relative w-full',
+        'my-auto',
+        'flex flex-col',
+        'max-h-[calc(100dvh-2*var(--padding-wk-y-xl))]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',
         'rounded-[var(--radius-wk-xl)]',
         'shadow-[var(--shadow-wk-lg)]',
-        'overflow-hidden',
+        'overflow-x-hidden overflow-y-auto wk-scrollbar',
     ]), $scope);
 
     // Size mapping to modal width tokens

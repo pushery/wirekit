@@ -204,7 +204,9 @@
     $errorId = $showsError ? $id.'-error' : null;
     // Composed, and never emitted empty: an empty aria-describedby is a
     // dangling reference, which some screen readers announce as a blank.
-    $describedBy = trim(implode(' ', array_filter([$hintId, $errorId]))) ?: null;
+    // A caller's aria-describedby joins the list after the component's own ids: the list goes
+    // to the control, while the attribute bag goes to the root, where it describes nothing.
+    $describedBy = trim(implode(' ', array_filter([$hintId, $errorId, trim((string) $attributes->get('aria-describedby', ''))]))) ?: null;
 
     // ── Read mode shows the READABLE value ───────────────────────────────
     //
@@ -219,7 +221,33 @@
     }
     $resolvedDisplay ??= $value;
 
-    $hasValue = trim((string) $resolvedDisplay) !== '';
+    // ── A display value that is markup ───────────────────────────────────
+    //
+    // Rich text reaches read mode as an Htmlable, `str($html)->toHtmlString()`. Rendered
+    // into the span below, its paragraphs and lists sat inside an inline element, which is
+    // invalid markup, and they read in the page's reset typography while the open editor
+    // showed the same document with bullets and spacing, so the document changed its look
+    // the moment it was opened. Markup renders in a block, in the editor's typography.
+    $displayIsMarkup = $resolvedDisplay instanceof \Illuminate\Contracts\Support\Htmlable;
+
+    if ($displayIsMarkup) {
+        // An empty document is still markup: the editor serializes one as `<p></p>`, which
+        // is not an empty string, and read mode showed a blank box where `emptyText` belongs.
+        // Empty means no text once the tags are gone, a no-break space counting as none, and
+        // nothing embedded that stands on its own. Unreadable UTF-8 counts as a value rather
+        // than hiding whatever it is behind `emptyText`.
+        $displayMarkup = (string) $resolvedDisplay->toHtml();
+        $displayText = preg_replace(
+            '/[\s\x{00A0}\x{200B}]+/u',
+            '',
+            html_entity_decode(strip_tags($displayMarkup), ENT_QUOTES | ENT_HTML5, 'UTF-8')
+        );
+        $hasValue = $displayText === null
+            || $displayText !== ''
+            || preg_match('/<(img|svg|video|audio|iframe|picture|canvas|object|embed)\b/i', $displayMarkup) === 1;
+    } else {
+        $hasValue = trim((string) $resolvedDisplay) !== '';
+    }
 
     $triggerLabel = $context !== null && $context !== ''
         ? __('wirekit::Edit :field of :context', ['field' => $label ?? $name, 'context' => $context])
@@ -265,7 +293,7 @@
 @endphp
 
 <div
-    {{ $attributes->class([$rootClasses]) }}
+    {{ $attributes->except('aria-describedby')->class([$rootClasses]) }}
     x-data="wirekitInlineEdit({
         name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }},
         value: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $value) }},
@@ -316,7 +344,11 @@
                 x-on:click="onValueClick($event)"
             @endif
         >
-            @if($hasValue)
+            @if($hasValue && $displayIsMarkup)
+                {{-- `wk-editor-content` is the editor's own typography, so read mode and the
+                     open editor show the same document the same way. --}}
+                <div class="wk-editor-content text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]">{{ $resolvedDisplay }}</div>
+            @elseif($hasValue)
                 <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]">{{ $resolvedDisplay }}</span>
             @else
                 <span class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text-muted)] italic">

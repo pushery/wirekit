@@ -93,7 +93,7 @@ import wirekitStatusMatrix from './components/status-matrix.js';
 import wirekitNotificationCenter from './components/notification-center.js';
 import wirekitDataTable from './components/data-table.js';
 import wirekitEventCalendar from './components/event-calendar.js';
-import wirekitMap from './components/map.js';
+import wirekitMap, { registerMapEngine } from './components/map.js';
 import wirekitStickyPanelShadows from './components/sticky-panel.js';
 import wirekitStream from './components/stream.js';
 
@@ -351,6 +351,8 @@ export {
     wirekitDataTable,
     wirekitEventCalendar,
     wirekitMap,
+    // Not a factory: how a bundled app hands `<x-wirekit::map>` its engine without a global.
+    registerMapEngine,
     wirekitStickyPanelShadows,
     wirekitStream,
 };

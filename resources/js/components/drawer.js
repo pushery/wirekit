@@ -5,6 +5,7 @@
  * Differs in transitions (slide vs scale) and sizing (position-dependent).
  */
 import { createOverlay } from '../utils/overlay.js';
+import { firstControl } from '../utils/first-control.js';
 
 /**
  * @param {Object} config - Drawer configuration from Blade
@@ -17,6 +18,10 @@ export default function wirekitDrawer(config = {}) {
         dismissible: config.dismissible !== false,
         showEvent: 'wirekit-drawer-show',
         closeEvent: 'wirekit-drawer-close',
+        // drawer.body is a tab stop so a drawer of plain text can be scrolled from the keyboard,
+        // and it wraps everything inside the drawer — start on the first CONTROL instead, and
+        // on the body only when there is none. utils/first-control.js.
+        initialFocus: (panelEl) => firstControl(panelEl, 'data-wk-drawer-body'),
     });
 
     return {

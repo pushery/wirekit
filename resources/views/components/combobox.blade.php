@@ -458,6 +458,7 @@
         id="{{ $listId }}"
         x-ref="cbxList"
         role="listbox"
+        aria-label="{{ $resolvedAriaLabel }}"
         class="{{ $listClasses }}"
         style="list-style: none; margin: 0; padding: 0;"
         x-show="open && filtered.length > 0"

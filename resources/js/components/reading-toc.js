@@ -3,25 +3,33 @@
  *
  * Drives the `<x-wirekit::reading-toc>` Blade component. Builds a flat TOC
  * from headings inside a target container, renders them as a horizontal
- * strip of links, and tracks the active heading via IntersectionObserver.
+ * strip of links, and keeps the active heading marked as the page scrolls.
  *
- * Sibling to wirekitReadingSpine — same data-collection + activation model,
- * different rendered shape and different defaults (single level, no
- * hover-expand, no per-section fill, no numbering).
+ * Sibling to wirekitReadingSpine — same data-collection model, different
+ * rendered shape and different defaults (single level, no hover-expand,
+ * no per-section fill, no numbering).
  *
  * Options:
  *   target — CSS selector for the container to scan (default 'main, article')
  *   levels — array of heading levels to include (default [2])
- *   offset — pixels of viewport-top "active" detection offset (default 0)
+ *   offset — pixels of developer chrome above the strip (default 0)
+ *
+ * Lifecycle resources held on `this`:
+ *   - _onScroll (document `scroll` in the capture phase, window `resize`) —
+ *     removed in destroy(), and null-guarded in the handler and in its frame
+ *     callback against a fire the browser queued before the teardown.
+ *   - _onReaderMove (window `wheel`, `touchstart`, `pointerdown`, `keydown`,
+ *     capture) — removed in destroy(). It only clears `_held`, so a late fire
+ *     touches nothing that is still in use.
+ *   - _scrollRaf (a requestAnimationFrame id) — canceled in destroy().
  *
  * Honors `prefers-reduced-motion: reduce` — the scrollTo handler picks
  * 'auto' over 'smooth' when the OS preference is set.
- *
- * Bundle cost: ~1 KB raw / ~450 B gzip.
  */
 import { prefersReducedMotion } from '../utils/motion.js';
 import { focusHeading } from '../utils/focus-heading.js';
 import { accessibleText } from '../utils/accessible-text.js';
+import { scrollRootOf } from '../utils/scroll-root.js';
 export default (options = {}) => ({
     target: options.target || 'main, article',
     levels: Array.isArray(options.levels) ? options.levels : [2],
@@ -30,11 +38,15 @@ export default (options = {}) => ({
     items: [],
     activeIndex: -1,
 
-    _observer: null,
+    _onScroll: null,
+    _onReaderMove: null,
+    _scrollRaf: 0,
     _seq: 0,
-    // Timestamp until which IO-driven activeIndex recomputes are gated.
-    // Set by `scrollTo()` to `Date.now() + 600` during smooth-scroll.
-    _programmaticScrollUntil: 0,
+    // True from a jump until the reader moves the page themselves. A jump says which section the
+    // reader wants, and it holds for as long as they have not said anything else. It used to hold
+    // for 600 ms, which a long smooth scroll outlasts on a busy machine, and which was the only
+    // reason the wrong active line went unnoticed on a fast one.
+    _held: false,
 
     init() {
         this.items = this.collectHeadings();
@@ -103,142 +115,173 @@ export default (options = {}) => ({
     },
 
     /**
-     * Active heading = the LAST heading whose top is at or above the
-     * viewport-top offset line. Same logic as reading-spine. Tall
-     * sections (taller than viewport) become active as the user scrolls
-     * past their first paragraph rather than waiting for the next
-     * heading to enter the viewport.
+     * Keep `activeIndex` on the section the reader is in, recomputed as the page scrolls.
+     *
+     * ⚠️ THIS USED TO BE AN IntersectionObserver WITH A 600 MS TIMER, and both halves were
+     * wrong. Its band sat at the top of the WINDOW, while `scrollTo()` stands a heading
+     * below the strip and inside whatever region actually scrolls, so a clicked heading landed
+     * below the line it was measured against, and the previous section came back the moment
+     * anything recomputed. An observer also fires only when a heading crosses ITS band, so a
+     * heading crossing the right line said nothing at all. The timer hid it on a fast machine.
+     *
+     * Now every scroll in the document is a reason to look, at most once a frame. The listener
+     * sits on `document` in the capture phase: a scroll event does not bubble, and capture is
+     * how one listener hears an inner region as well as the page.
      */
     observeActive() {
-        const rootMargin = `-${this.offset}px 0px -90% 0px`;
-        this._observer = new IntersectionObserver(() => {
-            // Suppress intermediate flips during a click-driven smooth-scroll.
-            // Without this gate the clicked link briefly de-activates as the
-            // IO fires for each heading the scroll passes through — visible
-            // as a 150-ms flicker on the clicked item.
-            if (Date.now() < this._programmaticScrollUntil) return;
-            const above = this.items
-                .map((it, i) => ({ i, top: it.el.getBoundingClientRect().top }))
-                .filter((it) => it.top < this.offset + 1);
-            const next = above.length ? above[above.length - 1].i : 0;
-            if (next !== this.activeIndex) {
-                this.activeIndex = next;
-            }
-        }, { rootMargin, threshold: 0 });
-        this.items.forEach((item) => this._observer.observe(item.el));
+        this._onScroll = () => {
+            // A scroll the browser queued before destroy() can arrive after it.
+            if (! this._onScroll || this._scrollRaf) return;
+
+            this._scrollRaf = requestAnimationFrame(() => {
+                this._scrollRaf = 0;
+                if (this._onScroll) this.recomputeActive();
+            });
+        };
+
+        // The reader moving the page themselves ends the hold a jump put on its section.
+        this._onReaderMove = () => {
+            this._held = false;
+        };
+
+        document.addEventListener('scroll', this._onScroll, { capture: true, passive: true });
+        window.addEventListener('resize', this._onScroll, { passive: true });
+        window.addEventListener('wheel', this._onReaderMove, { capture: true, passive: true });
+        window.addEventListener('touchstart', this._onReaderMove, { capture: true, passive: true });
+        window.addEventListener('pointerdown', this._onReaderMove, { capture: true, passive: true });
+        window.addEventListener('keydown', this._onReaderMove, { capture: true, passive: true });
+
+        this.recomputeActive();
+    },
+
+    /**
+     * The active section is the LAST heading at or above the jump line.
+     *
+     * A tall section becomes active once the reader scrolls past its first paragraph, rather than
+     * waiting for the next heading. At the end of the scroller the last heading in view wins: a
+     * short final section can never scroll up to the line, and the reader looking at it is in
+     * it. A region that cannot scroll at all is at its start, not at its end.
+     */
+    recomputeActive() {
+        if (this._held || this.items.length === 0) return;
+
+        const root = this._scrollRoot(this.items[0].el);
+        const line = this._line(root) + 1;
+        const tops = this.items.map((item) => item.el.getBoundingClientRect().top);
+        let next = 0;
+
+        tops.forEach((top, i) => {
+            if (top <= line) next = i;
+        });
+
+        if (this._atEnd(root)) {
+            const bottom = root ? root.getBoundingClientRect().bottom : window.innerHeight;
+
+            tops.forEach((top, i) => {
+                if (top < bottom) next = Math.max(next, i);
+            });
+        }
+
+        if (next !== this.activeIndex) this.activeIndex = next;
+    },
+
+    /**
+     * The viewport line a jump stands a heading on, and the line a heading has to reach to be the
+     * active one. One answer to both questions is the whole fix: they used to differ by the
+     * strip's height plus 24px, and by the distance from the window's top to the region's.
+     *
+     * The strip covers `offset` plus its own height at the top of the region, unless it is pinned
+     * to the bottom, where it covers nothing up here. The 24px keeps a heading from sitting fused
+     * to the strip's edge.
+     */
+    _line(root) {
+        const top = root ? root.getBoundingClientRect().top : 0;
+        const atTop = this.$el?.dataset?.position !== 'bottom';
+        const strip = atTop ? this.offset + (this.$el ? this.$el.offsetHeight : 0) : 0;
+
+        return top + strip + 24;
+    },
+
+    /** Whether the reader has scrolled as far as the region goes, having scrolled at all. */
+    _atEnd(root) {
+        if (root) {
+            return root.scrollTop > 0 && root.scrollTop + root.clientHeight >= root.scrollHeight - 2;
+        }
+
+        return window.scrollY > 0
+            && window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
     },
 
     destroy() {
-        this._observer?.disconnect();
-    },
-
-    /**
-     * Smooth-scroll to a heading and replace the URL hash without
-     * pushing a new history entry. Honors prefers-reduced-motion.
-     *
-     * Target math accounts for:
-     *   - `offset` prop — pixels of developer chrome ABOVE the TOC
-     *     (e.g. a fixed top nav). Empty by default.
-     *   - The TOC's OWN height — the strip is `position: sticky;
-     *     top: offset`, so it occupies the viewport band from
-     *     `offset` to `offset + tocHeight`. A heading scrolled to
-     *     viewport-top would land BEHIND the strip; we have to push
-     *     the target down by the TOC's own bottom edge.
-     *   - A 24px breathing buffer between the TOC bottom and the
-     *     heading's top edge. Smaller values (8-16px) read as cramped
-     *     — the heading visually fused with the
-     *     strip's bottom border. 24px gives the heading typographic
-     *     breathing room without scrolling past the section start.
-     *
-     * Earlier versions used `... - this.offset + 8` (overshoot — the
-     * heading landed 8px ABOVE the viewport-top line) and ignored the
-     * TOC's own height entirely. Both scrolled too far and left the
-     * target heading hidden behind the strip.
-     */
-    /**
-     * The element that actually scrolls, or null when the window does.
-     *
-     * `scrollTo` used to move the WINDOW unconditionally, which works only for a page that
-     * scrolls as a whole. An application that owns its scroll region — and WireKit's own
-     * `<x-wirekit::main>` is one, it carries `overflow-y-auto` — got nothing: the window has
-     * nowhere to go, so clicking a heading did nothing at all and there was no error to see.
-     *
-     * Detected rather than configured. A `scroll-root` prop would put the burden on the
-     * developer to describe their own layout to a component that can look, and the answer it
-     * would be given is exactly what this walk finds.
-     *
-     * Both conditions matter: an ancestor may declare `overflow-y: auto` and have nothing to
-     * scroll, in which case it is not the container the user is moving through and scrolling it
-     * would move nothing while the real one stays put.
-     */
-    _scrollRoot(el) {
-        let node = el.parentElement;
-
-        while (node && node !== document.body && node !== document.documentElement) {
-            const overflowY = getComputedStyle(node).overflowY;
-
-            if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
-                return node;
-            }
-
-            node = node.parentElement;
+        if (this._onScroll) {
+            document.removeEventListener('scroll', this._onScroll, { capture: true });
+            window.removeEventListener('resize', this._onScroll);
+            this._onScroll = null;
         }
 
-        return null;
+        if (this._onReaderMove) {
+            window.removeEventListener('wheel', this._onReaderMove, { capture: true });
+            window.removeEventListener('touchstart', this._onReaderMove, { capture: true });
+            window.removeEventListener('pointerdown', this._onReaderMove, { capture: true });
+            window.removeEventListener('keydown', this._onReaderMove, { capture: true });
+            this._onReaderMove = null;
+        }
+
+        if (this._scrollRaf) {
+            cancelAnimationFrame(this._scrollRaf);
+            this._scrollRaf = 0;
+        }
     },
 
+    /**
+     * The element that actually scrolls, or null when the window does. The walk and the reasoning
+     * behind it live in `utils/scroll-root.js`, shared with reading-spine: the spine never had
+     * this walk, and in a page with its own scroll region it scrolled the window instead.
+     */
+    _scrollRoot(el) {
+        return scrollRootOf(el);
+    },
+
+    /**
+     * Smooth-scroll to a heading and replace the URL hash without pushing a history entry.
+     * Honors prefers-reduced-motion.
+     *
+     * The target is the jump line from `_line()`: below the developer's chrome (`offset`), below
+     * the strip's own height while the strip sits at the top, plus 24px of breathing room — a
+     * heading 8-16px under the strip read as fused to its border. Earlier versions used
+     * `... - this.offset + 8`, which landed the heading 8px ABOVE the line, and ignored the
+     * strip's own height, which left the target heading hidden behind the strip.
+     */
     scrollTo(id, event) {
         if (event) event.preventDefault();
         const el = document.getElementById(id);
         if (!el) return;
-        const tocHeight = this.$el ? this.$el.offsetHeight : 0;
         const reduced = prefersReducedMotion();
         const root = this._scrollRoot(el);
 
-        if (root) {
-            // Relative to the container's own scroll origin. `window.scrollY` is meaningless
-            // here — the page is not what moved — so the heading's offset inside the container
-            // is its position minus the container's, plus how far the container is scrolled.
-            const top = el.getBoundingClientRect().top
-                - root.getBoundingClientRect().top
-                + root.scrollTop
-                - this.offset - tocHeight - 24;
+        // The heading's distance below the jump line, added to how far its scroller has already
+        // moved. In a region that is `root.scrollTop`: `window.scrollY` means nothing there,
+        // because the page is not what moves, and `_line()` already stands on the region's top.
+        const top = el.getBoundingClientRect().top - this._line(root) + (root ? root.scrollTop : window.scrollY);
 
-            root.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
-            this._programmaticScrollUntil = Date.now() + 600;
+        (root ?? window).scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
 
-            const clicked = this.items.findIndex((it) => it.id === id);
-            if (clicked !== -1) this.activeIndex = clicked;
+        // The jump holds its section until the reader moves the page themselves, so the scroll it
+        // starts cannot walk the mark through every section on the way.
+        this._held = true;
 
-            // The container branch RETURNED before the hash mirror below, so on a page with
-            // its own scroll container — a documentation shell, a dashboard pane, anything
-            // with an inner `overflow-y: auto` — the URL never followed the heading. The
-            // docs promise the mirror unconditionally, and a reader who copied the address
-            // bar after clicking a section got a link to the top of the page.
-            this._mirrorHash(id);
+        const clicked = this.items.findIndex((it) => it.id === id);
+        if (clicked !== -1) this.activeIndex = clicked;
 
-            // Focus goes where the reader asked to go. `preventDefault()` above suppressed
-            // the anchor's default, and that default moves TWO things: the scroll and the
-            // sequential-navigation starting point. Only the first was replaced, so the next
-            // Tab went to the next TOC link instead of into the section.
-            focusHeading(el);
-
-            return;
-        }
-
-        const top = el.getBoundingClientRect().top + window.scrollY - this.offset - tocHeight - 24;
-        window.scrollTo({ top, behavior: reduced ? 'auto' : 'smooth' });
-        // Suppress IO-driven activeIndex flips during the smooth-scroll
-        // window so the clicked link stays active without flickering
-        // through every heading between origin and destination. 600 ms
-        // covers the typical smooth-scroll settle time.
-        this._programmaticScrollUntil = Date.now() + 600;
-        // Force the visual activeIndex to match the clicked item up-front
-        // so the user sees the click register immediately even before the
-        // IO catches up.
-        const idx = this.items.findIndex((it) => it.id === id);
-        if (idx >= 0) this.activeIndex = idx;
+        // Both kinds of scroller mirror the hash. The region branch used to RETURN before this
+        // line, so on a page with its own scroll container the URL never followed the heading,
+        // and a reader who copied the address bar after a jump got a link to the top of the page.
         this._mirrorHash(id);
+
+        // Focus goes where the reader asked to go. `preventDefault()` above suppressed the
+        // anchor's default, and that default moves TWO things: the scroll and the
+        // sequential-navigation starting point. Only the first was replaced, so the next Tab
+        // went to the next TOC link instead of into the section.
         focusHeading(el);
     },
 
