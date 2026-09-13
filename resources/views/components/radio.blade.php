@@ -110,6 +110,10 @@
 
     // Error detection: explicit prop OR Laravel validation bag (grouped by name)
     $hasError = $error || ($errors ?? null)?->has($nameAttr ?? '');
+    // One description list for the control: the component's own id first, then a caller's
+    // aria-describedby. Written as separate attributes, the parser kept only the first copy,
+    // so a caller's description was dropped or pushed the component's own out.
+    $describedBy = trim(($hasError ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.((string) $attributes->get('aria-describedby', '')));
     $errorMessage = $error ?? ($errors ?? null)?->first($nameAttr ?? '');
 
     // Visual circle — sibling of the peer input, reacts via peer-checked/focus/disabled
@@ -129,6 +133,11 @@
         'peer-hover:border-[var(--color-wk-border-strong-hover)]',
         'bg-[var(--color-wk-bg-input)]',
         'peer-checked:border-[var(--color-wk-accent)]',
+        // A selected radio keeps its accent ring under the pointer. The hover border above is a
+        // LATER rule of the same specificity, so on its own it turned the ring of a selected radio
+        // gray, and the circle that marks "this one" did so only while the pointer was elsewhere.
+        // The compound variant outranks it exactly when both states hold, as in checkbox.
+        'peer-checked:peer-hover:border-[var(--color-wk-accent)]',
         'peer-focus-visible:ring-[length:var(--ring-wk-width)]',
         'peer-focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'peer-focus-visible:ring-[var(--color-wk-ring)]',
@@ -152,12 +161,12 @@
             type="radio"
             id="{{ $id }}"
             @if($value !== null) value="{{ $value }}" @endif
-            @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
-            @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
+            @if($hasError) aria-invalid="true" @endif
+            @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
                  caller's own class became a second class attribute and the browser kept only
                  this one. --}}
-            {{ $attributes->except(['id'])->class(['peer', 'sr-only']) }}
+            {{ $attributes->except(['id', 'aria-describedby'])->class(['peer', 'sr-only']) }}
         />
 
         {{-- Visual circle — sibling of .peer, consumes peer-checked border. The

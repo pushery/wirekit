@@ -58,19 +58,33 @@ class VariantResolver
 
     private static function filled(string $intent): string
     {
+        // The border is TRANSPARENT on every intent, and the fill shows through it: a filled
+        // button keeps the one-pixel box the outline surface has, without drawing a second shape.
+        // It used to be the fill's own color, which made two things to keep in step where one
+        // does the job:
+        //
+        // - A border recolored BY HAND alongside the fill. Three of the six intents changed the
+        //   fill on hover and left the border behind, so a hovered neutral, success or warning
+        //   button wore a ring of its resting color. Measured in both engines.
+        // - A separately anti-aliased shape on top of the fill. Where two shapes meet along a
+        //   rounded corner, the page can show between them, and a capture from an adopting
+        //   application showed exactly that: a light seam at the corners of a filled button.
+        //   With no border color there is no second shape to meet.
+        //
+        // NOT `background-clip: padding-box`, the other way to keep a border and a fill apart: it
+        // produces that seam, measured in both engines.
         return match ($intent) {
             'primary' => implode(' ', [
                 'bg-[var(--color-wk-accent)]',
                 'text-[color:var(--color-wk-accent-fg)]',
-                'border-[var(--color-wk-accent)]',
+                'border-transparent',
                 'hover:bg-[var(--color-wk-accent-hover)]',
-                'hover:border-[var(--color-wk-accent-hover)]',
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             'neutral' => implode(' ', [
                 'bg-[var(--color-wk-bg-muted)]',
                 'text-[color:var(--color-wk-text)]',
-                'border-[var(--color-wk-bg-muted)]',
+                'border-transparent',
                 // The pairing `soft()`'s comment measures and rejects, fixed here rather than
                 // only described there: muted (L=0.972) hovering to subtle (L=0.985) moves 1.3
                 // points BRIGHTER, which reads as fading out. Mixing toward the text moves away
@@ -81,23 +95,22 @@ class VariantResolver
             'success' => implode(' ', [
                 'bg-[var(--color-wk-success)]',
                 'text-[color:var(--color-wk-success-fg)]',
-                'border-[var(--color-wk-success)]',
+                'border-transparent',
                 'hover:bg-[var(--color-wk-success-hover)]',
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             'warning' => implode(' ', [
                 'bg-[var(--color-wk-warning)]',
                 'text-[color:var(--color-wk-warning-fg)]',
-                'border-[var(--color-wk-warning)]',
+                'border-transparent',
                 'hover:bg-[var(--color-wk-warning-hover)]',
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             'danger' => implode(' ', [
                 'bg-[var(--color-wk-danger)]',
                 'text-[color:var(--color-wk-danger-fg)]',
-                'border-[var(--color-wk-danger)]',
+                'border-transparent',
                 'hover:bg-[var(--color-wk-danger-hover)]',
-                'hover:border-[var(--color-wk-danger-hover)]',
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             // 'info' is a visual synonym of 'primary' — both tint with the
@@ -109,9 +122,8 @@ class VariantResolver
             'info' => implode(' ', [
                 'bg-[var(--color-wk-accent)]',
                 'text-[color:var(--color-wk-accent-fg)]',
-                'border-[var(--color-wk-accent)]',
+                'border-transparent',
                 'hover:bg-[var(--color-wk-accent-hover)]',
-                'hover:border-[var(--color-wk-accent-hover)]',
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             default => '',

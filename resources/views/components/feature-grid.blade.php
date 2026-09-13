@@ -5,6 +5,9 @@
 @props([
     'cols' => config('wirekit.components.feature-grid.cols', '1 sm:2 lg:3'),
     'gap' => 'lg',
+    // Which spacing ladder `gap` names a rung on: `space` (the default) or the tighter `gap`
+    // ladder, as on `grid`. The rungs offered stay the ones this prop has always had.
+    'scale' => 'space',
     // Cascade entrance animations across direct children.
     // null = no stagger (default — each child animates simultaneously)
     // true = enable with default 75ms step
@@ -42,14 +45,27 @@
         ->map(fn (string $token) => $colsMap[$token] ?? WireKit::validateProp('feature-grid', 'cols', $token, array_keys($colsMap)))
         ->implode(' ');
 
-    $gapClasses = match ($gap) {
-        'none' => '',
-        'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
-        'md' => 'gap-[var(--space-wk-md,1rem)]',
-        'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
-        'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
-        default => WireKit::validateProp('feature-grid', 'gap', $gap, ['none', 'sm', 'md', 'lg', 'xl']),
-    };
+    $scale = WireKit::validateProp('feature-grid', 'scale', (string) $scale, ['space', 'gap']);
+
+    // Both ladders as literal maps, for the reason `grid` gives: a class assembled at runtime
+    // is never generated.
+    $gapClasses = $scale === 'gap'
+        ? match ($gap) {
+            'none' => '',
+            'sm' => 'gap-[var(--gap-wk-sm,0.5rem)]',
+            'md' => 'gap-[var(--gap-wk-md,0.75rem)]',
+            'lg' => 'gap-[var(--gap-wk-lg,1rem)]',
+            'xl' => 'gap-[var(--gap-wk-xl,1.5rem)]',
+            default => WireKit::validateProp('feature-grid', 'gap', $gap, ['none', 'sm', 'md', 'lg', 'xl']),
+        }
+        : match ($gap) {
+            'none' => '',
+            'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
+            'md' => 'gap-[var(--space-wk-md,1rem)]',
+            'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
+            'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
+            default => WireKit::validateProp('feature-grid', 'gap', $gap, ['none', 'sm', 'md', 'lg', 'xl']),
+        };
 
     // Stagger logic — see dist/wirekit.css `.wk-stagger` rules. The Blade
     // wrapper sets the per-step ms value via inline custom property; CSS

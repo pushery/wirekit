@@ -160,6 +160,10 @@
     ]);
 
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+    // A caller's aria-describedby joins this list, because the control is what it describes
+    // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
+    // ids first, then the caller's.
+    $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
 
     /*
      * What the live region says, as TEMPLATES rather than sentences built in JavaScript.
@@ -216,8 +220,9 @@
              chips confirmed the choice while the server never heard about it. --}}
         x-modelable="tags"
         {{-- The whole bag, not just `class`: everything else the caller wrote --
-             `wire:model`, `data-*`, `aria-describedby` -- used to be dropped here. --}}
-        {{ $attributes }}
+             `wire:model`, `data-*` -- used to be dropped here. `aria-describedby` is the
+             exception: it describes the text input, so it joins that input's list. --}}
+        {{ $attributes->except('aria-describedby') }}
     >
         {{-- The set's own live region, OUTSIDE the optimistic wrapper below.
              Unconditional and starting empty, for the reason the optimistic announcer

@@ -5,6 +5,10 @@
 @props([
     'icon' => null,
     'title' => null,
+    // The canonical color axis, the one button, badge, progress, alert and callout all
+    // spell: primary | neutral | info | success | warning | danger. `tone` below is its
+    // back-compat alias and keeps working unchanged.
+    'intent' => null,
     'tone' => null,
     'size' => null,
     // Optional reveal animation when the feature card scrolls into view.
@@ -37,7 +41,11 @@
     ]), $scope);
 
     // Resolved defaults: prop > config('wirekit.components.feature.{key}') > component default.
-    $tone ??= config('wirekit.components.feature.tone', 'accent');
+    // `intent` first: it is the name the kit's vocabulary is moving to, and a call site that
+    // sets both is half migrated. Preferring the older name there would make that call site
+    // look finished to whoever is doing the migration.
+    $axis = $intent !== null ? 'intent' : 'tone';
+    $tone = $intent ?? $tone ?? config('wirekit.components.feature.tone', 'accent');
     $size ??= config('wirekit.components.feature.size', 'md');
 
     // Tone map. accent uses the auto-switching --color-wk-accent-fg foreground (replaces the
@@ -69,7 +77,9 @@
 
     $validTone = isset($toneMap[$tone])
         ? $tone
-        : WireKit::validateProp('feature', 'tone', $tone, array_keys($toneMap));
+        // Named after the prop the CALL SITE used. A message about `tone` sends a developer
+        // who wrote `intent` looking for a prop they did not set.
+        : WireKit::validateProp('feature', $axis, $tone, array_keys($toneMap));
     $toneClasses = $toneMap[$validTone];
 
     // Size map → [chipDimensionClasses, iconSizeProp].

@@ -20,9 +20,11 @@ namespace Pushery\WireKit\Sandbox;
  *      whose value reaches an `href` / `src` / `action` attribute: the
  *      check normalizes the way a BROWSER does before comparing, so
  *      `java\nscript:` and `java\0script:` cannot walk past it.
- *   7. String values HTML-escaped via `htmlspecialchars()` — Blade's
- *      `{{ }}` escapes again downstream, so this is defense in depth
- *      for the case where a slot receives raw output by mistake.
+ *   7. String values HTML-escaped via `htmlspecialchars()` in the result's
+ *      `clean` view, for a value that is echoed raw — the renderer's slot.
+ *      The `values` view carries the same validated values unescaped, for a
+ *      value passed to a component as a prop: the component escapes it on
+ *      output, and escaping it here as well put the escape on the page.
  *
  * ⚠️ THIS LIST READ AS FIVE RULES UNTIL 2026-09-09, AND THE TWO IT LEFT OUT
  * WERE THE VALUE-LEVEL ONES. Rule 6 is a security control, not a formatting
@@ -38,7 +40,7 @@ namespace Pushery\WireKit\Sandbox;
  * not strip. A reviewer who believes tags are removed reasons differently
  * about what reaches a slot.
  *
- * Returns a `ValidationResult` carrying either the sanitized payload
+ * Returns a `ValidationResult` carrying either the validated payload
  * or a list of violations. Never throws — the caller decides whether
  * to render or 422.
  */
@@ -56,6 +58,9 @@ final class PropsValidator
     {
         $violations = [];
         $clean = [];
+        // The same values unescaped, for a value a component receives as a prop and escapes
+        // itself. See ValidationResult for why the two views exist.
+        $values = [];
 
         // Reject any prop name not in the schema.
         foreach ($payload as $key => $value) {
@@ -74,7 +79,11 @@ final class PropsValidator
                     continue;
                 }
                 if (array_key_exists('default', $spec)) {
+                    // A default is schema-authored, not payload, and both views carry it: the
+                    // renderer binds a prop from `values`, and a default missing there would be
+                    // a prop the snippet shows and the render does not receive.
                     $clean[$name] = $spec['default'];
+                    $values[$name] = $spec['default'];
                 }
 
                 continue;
@@ -117,10 +126,12 @@ final class PropsValidator
             $sanitized = self::sanitize($value, $name, $violations);
             if ($sanitized !== null || $value === null) {
                 $clean[$name] = $sanitized;
+                // Every check above ran on this value; only the escaping did not.
+                $values[$name] = $value;
             }
         }
 
-        return new ValidationResult($clean, $violations);
+        return new ValidationResult($clean, $violations, $values);
     }
 
     /** mixed: accepts any PHP value — the purpose of this method is to check that ANY value satisfies a named type spec. */
@@ -191,10 +202,11 @@ final class PropsValidator
                 return null;
             }
 
-            // Defense-in-depth: HTML-escape every string. The renderer's
-            // Blade interpolation does this too, but a slot that mistakenly
-            // uses `{!! !!}` would let raw values through. Escape here so
-            // the worst case is double-escaped output, not XSS.
+            // Escaped for the `clean` view, which is for a value echoed raw: the renderer's
+            // slot. A value passed to a component as a prop takes the `values` view instead,
+            // because the component escapes it on output. Handing props this view escaped every
+            // one of them twice. That no sandbox component echoes a string prop raw is asserted
+            // over the whole registry by `SandboxRendersWhatAnApplicationRendersTest`.
             return htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5, 'UTF-8');
         }
 

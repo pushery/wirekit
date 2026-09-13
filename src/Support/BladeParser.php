@@ -1185,4 +1185,86 @@ final class BladeParser
 
         return $usages;
     }
+
+    /**
+     * Remove every span of a Blade file a browser would never execute.
+     *
+     * A question about what a template DOES — does it use a directive, render a component,
+     * close `<head>` — is answered just as well by text that only MENTIONS the thing. A note
+     * explaining a rule satisfies a search for the rule, and a check built on raw text then
+     * reports a working setup over a broken one, which is precisely the case such a check
+     * exists for.
+     *
+     * The Blade half was stripped first, after a `{{-- … @livewireScripts … --}}` note mis-cued
+     * the doctor's ORDER check. Three syntaxes were left:
+     *
+     *   - an HTML comment — `<!-- @wirekitStyles goes here -->`
+     *   - a `//` or `#` line comment inside `@php … @endphp`
+     *   - the same inside a raw `<?php … ?>` island
+     *
+     * Measured in WireKit-Docs, which uses the `@import` path and no directive at all: the only
+     * surviving match was the phrase `and ``@wirekitStyles`` now links it` in a PHP comment, and
+     * the doctor printed `✓ @wirekitStyles directive found` instead of the correct PASS line for
+     * the `@import` path. Harmless there because a valid path existed; on an install with
+     * NEITHER it reports a green setup over a broken one.
+     *
+     * ⚠️ THE PHP HALF IS TOKENIZED RATHER THAN MATCHED, and that is not fastidiousness: `//`
+     * also occurs inside `'https://…'` and `#` inside `'#fff'`. A pattern that cuts at either
+     * would truncate a live line — and truncating a line is how a strip meant to remove false
+     * positives starts producing false negatives instead. `token_get_all()` is the reader PHP
+     * itself uses, so a string keeps its contents.
+     */
+    public static function liveText(string $blade): string
+    {
+        // Neither comment form nests, so one non-greedy pass over each is exact.
+        $live = preg_replace('/\{\{--.*?--\}\}/s', '', $blade) ?? $blade;
+        $live = preg_replace('/<!--.*?-->/s', '', $live) ?? $live;
+
+        // A PHP comment can only exist inside a PHP island, so the islands are located first
+        // and only their bodies are handed to the lexer. The delimiters are kept: removing them
+        // would join the text on either side into one line and could fabricate a match.
+        return preg_replace_callback(
+            '/(@php\b)(.*?)(@endphp)|(<\?php)(.*?)(\?>)/s',
+            static function (array $m): string {
+                $isBladeIsland = $m[1] !== '';
+
+                return $isBladeIsland
+                    ? $m[1].self::stripPhpComments($m[2]).$m[3]
+                    : $m[4].self::stripPhpComments($m[5]).$m[6];
+            },
+            $live,
+        ) ?? $live;
+    }
+
+    /**
+     * Drop comment tokens from a fragment of PHP, leaving every other byte untouched.
+     *
+     * The fragment arrives without an opening tag, so one is prepended for the lexer and then
+     * skipped in the output — `token_get_all()` reports it as the first token and nothing else
+     * inside a `@php` body can produce a second one.
+     */
+    private static function stripPhpComments(string $php): string
+    {
+        $live = '';
+
+        foreach (token_get_all('<?php '.$php) as $index => $token) {
+            if ($index === 0 && is_array($token) && $token[0] === T_OPEN_TAG) {
+                continue;
+            }
+
+            if (is_array($token)) {
+                if ($token[0] === T_COMMENT || $token[0] === T_DOC_COMMENT) {
+                    continue;
+                }
+
+                $live .= $token[1];
+
+                continue;
+            }
+
+            $live .= $token;
+        }
+
+        return $live;
+    }
 }

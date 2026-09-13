@@ -162,19 +162,23 @@ final class SandboxSchemaRegistry
         // feature; until then the title is intentionally not addressable.
         // Note: Alert.title IS a real `@props` (different shape) — its
         // schema below correctly carries the title prop.
+        // The prop editor offers the CANONICAL spelling of the axis, the same one button and
+        // badge already offer. `variant` still works on the component and is deliberately not
+        // a second control: two controls for one axis let a developer set both, and the schema
+        // is read as the API — it should show the name the kit asks people to write.
         self::register('callout', [
-            'variant' => ['type' => 'string', 'default' => 'info', 'allowed_values' => $intentValues],
+            'intent' => ['type' => 'string', 'default' => 'info', 'allowed_values' => $intentValues],
             'body' => ['type' => 'string', 'default' => 'Callout body'],
         ]);
 
         self::register('alert', [
-            'variant' => ['type' => 'string', 'default' => 'info', 'allowed_values' => $intentValues],
+            'intent' => ['type' => 'string', 'default' => 'info', 'allowed_values' => $intentValues],
             'title' => ['type' => 'string', 'default' => 'Heads up'],
             'body' => ['type' => 'string', 'default' => 'Alert body'],
             'dismissible' => ['type' => 'bool', 'default' => false],
         ]);
 
-        // The Card primitive accepts `variant` (outlined / elevated / flat),
+        // The Card primitive accepts ONE surface prop (outline / elevated / flat),
         // NOT separate padded / bordered / elevated booleans — earlier schema
         // iterations declared three booleans that the Card component never
         // read, producing a no-padding bare-pill render in both static and
@@ -182,8 +186,11 @@ final class SandboxSchemaRegistry
         // `<x-wirekit::card.body>` sub-component for proper padding; the
         // SandboxRenderer's BODY_WRAPPERS map handles that wrap automatically
         // for this schema entry.
+        // `surface`, spelled the way button spells it, with `outline` rather than `outlined` —
+        // the one pair in the catalog that renames the VALUE as well as the prop. The component
+        // accepts all four spellings; the editor offers the canonical one.
         self::register('card', [
-            'variant' => ['type' => 'string', 'default' => 'outlined', 'allowed_values' => ['outlined', 'elevated', 'flat']],
+            'surface' => ['type' => 'string', 'default' => 'outline', 'allowed_values' => ['outline', 'elevated', 'flat']],
             'body' => ['type' => 'string', 'default' => 'Card body'],
         ]);
 

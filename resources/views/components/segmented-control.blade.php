@@ -63,11 +63,27 @@
     $disabled = BooleanProp::from($disabled, false);
 
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'segmented-'); // page-unique DOM id; see Support\DomId
+    // One description list for the control: the component's own id first, then a caller's
+    // aria-describedby. Written as separate attributes, the parser kept only the first copy,
+    // so a caller's description was dropped or pushed the component's own out.
+    $describedBy = trim(($error ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.((string) $attributes->get('aria-describedby', '')));
     $name = $attributes->get('name', $id);
 
     // Container wrapping the pill-style segments
+    //
+    // `max-w-full overflow-x-auto overflow-y-hidden`: when the options are wider than the column,
+    // the TRACK scrolls. It had no rule for that case at all, so the nearest ancestor that could
+    // scroll did it instead — a whole page's `main` sliding sideways with nothing on screen saying
+    // so — and a layout with no such ancestor clipped the last segment. This is the shape `tabs`
+    // already uses for the same problem, including the reason `overflow-y-hidden` is spelled out:
+    // a bare `overflow-x-auto` computes `overflow-y` to `auto`, and a phantom vertical scrollbar
+    // appears. Keyboard access needs nothing extra: the radiogroup owns its arrow-key model, and a
+    // focused segment scrolls into view natively. `scroll-px-1` keeps that segment a little
+    // inside the edge, so the track does not cut off its focus ring. Where the options fit,
+    // nothing changes — `inline-flex` still sizes the bar to its content.
     $containerClasses = WireKit::resolveClasses('segmented-control', 'base', implode(' ', [
         'inline-flex',
+        'max-w-full overflow-x-auto overflow-y-hidden scroll-px-1',
         'rounded-[var(--radius-wk-md)]',
         'bg-[var(--color-wk-bg-muted)]',
         'p-0.5',
@@ -104,8 +120,22 @@
     ]), $scope);
 
     // Individual segment button classes
+    //
+    // ⚠️ THE HEIGHT HAS A FLOOR. It used to come from padding plus line height and nothing
+    // else — both values a host re-themes — so the target of a primary control depended on
+    // the host's typography: shrink `--text-wk-sm` and the `sm` segments fell below 24px
+    // without a sound. `--size-wk-target-min` is the WCAG 2.5.8 floor the kit holds itself
+    // to; at the default tokens the segments measure above it, so nothing visible moves.
+    // `inline-flex` + centering keep the label in the middle once the floor is what sets
+    // the height.
     $segmentClasses = implode(' ', [
         'relative',
+        'inline-flex items-center justify-center',
+        // Inside a track that scrolls, a segment allowed to shrink wraps its label instead, and
+        // the bar loses its single height — measured in an application at 54px where one label wrapped.
+        // `tabs` gives its triggers the same rule.
+        'shrink-0 whitespace-nowrap',
+        'min-h-[var(--size-wk-target-min)]',
         'cursor-pointer',
         'rounded-[var(--radius-wk-sm)]',
         'transition-all duration-[var(--transition-wk-duration)]',
@@ -159,7 +189,7 @@
     @endif
 
     <div
-        {{ $attributes->whereDoesntStartWith('wire:model')->class([$containerClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)]' : '']) }}
+        {{ $attributes->except('aria-describedby')->whereDoesntStartWith('wire:model')->class([$containerClasses, $disabled ? 'opacity-[var(--opacity-wk-disabled)]' : '']) }}
         {{-- Selection, the hidden-input mirror and the whole keyboard model live
              in the factory (resources/js/components/segmented-control.js). The
              handlers cannot be inline: Alpine's CSP build parses neither the
@@ -197,7 +227,8 @@
             @if($label) aria-label="{{ $label }}" @endif
             {{-- On the GROUP: the message is about the choice, and repeating it on every
                  segment would have it read out once per option. --}}
-            @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
+            @if($error) aria-invalid="true" @endif
+            @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
         @endunless
     >
         {{-- Hidden input inside x-data scope so $refs.hiddenInput resolves correctly.
@@ -235,7 +266,8 @@
                          beneath it that nothing pointed at, and no `aria-invalid` at all.
                          Same reasoning as the group above — one region for the choice,
                          not one per segment. --}}
-                    @if($error) aria-invalid="true" aria-describedby="{{ $id }}-error" @elseif($hint) aria-describedby="{{ $id }}-hint" @endif
+                    @if($error) aria-invalid="true" @endif
+                    @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 >
         @endif
 

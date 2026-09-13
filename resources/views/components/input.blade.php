@@ -143,6 +143,13 @@
     // stringly-false spellings without collapsing a real success message.
     $hasSuccess = ! $hasError && $success !== null && ! BooleanProp::isFalse($success);
     $successMessage = is_string($success) ? $success : null;
+    // One description list for the control: the component's own id first, then a caller's
+    // aria-describedby. Written as separate attributes, the parser kept only the first copy,
+    // so a caller's description was dropped or pushed the component's own out.
+    $describedBy = trim(
+        ($hasError ? $id.'-error' : ($hasSuccess && $successMessage ? $id.'-success' : ($hint ? $id.'-hint' : '')))
+        .' '.((string) $attributes->get('aria-describedby', ''))
+    );
 
     // Base classes: all values reference design tokens — no hardcoded colors or sizes
     //
@@ -338,9 +345,8 @@
                 @if($readonly) readonly @endif
                 @if($autocomplete !== null) autocomplete="{{ $autocomplete }}" @endif
                 @if($placeholder !== null) placeholder="{{ $placeholder }}" @endif
-                @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
-                @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
-                @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
+                @if($hasError) aria-invalid="true" @endif
+                @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 @if($hasAffordances) x-ref="wkField" @endif
                 @if($optimisticConfig)
                     x-bind:aria-busy="isPending"
@@ -349,7 +355,7 @@
                          field. --}}
                     x-on:change="run($event.target.value)"
                 @endif
-                {{ $attributes->class([
+                {{ $attributes->except('aria-describedby')->class([
                     'wk-field', // 16px iOS-zoom floor on phones (dist/wirekit.css)
                     'block w-full h-full bg-transparent border-none shadow-none',
                     $fontFamilyClass,
@@ -432,15 +438,14 @@
             @if($readonly) readonly @endif
             @if($autocomplete !== null) autocomplete="{{ $autocomplete }}" @endif
             @if($placeholder !== null) placeholder="{{ $placeholder }}" @endif
-            @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
-            @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
-            @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
+            @if($hasError) aria-invalid="true" @endif
+            @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             @if($optimisticConfig)
                 x-bind:aria-busy="isPending"
                 x-on:change="run($event.target.value)"
             @endif
             {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-            {{ $attributes->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
+            {{ $attributes->except('aria-describedby')->class(['wk-field', $inputClasses, $stateClasses, $sizeClasses]) }}
         />
     @endif
 

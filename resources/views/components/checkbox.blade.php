@@ -188,6 +188,12 @@
         'peer-checked:border-[var(--color-wk-accent)]',
         'peer-indeterminate:bg-[var(--color-wk-accent)]',
         'peer-indeterminate:border-[var(--color-wk-accent)]',
+        // A checked or indeterminate box keeps its accent border under the pointer. The hover
+        // border above is a LATER rule of the same specificity, so on its own it recolored the
+        // border of a checked box too, and a gray ring stood around the accent fill. These
+        // compound variants outrank it exactly when both states hold.
+        'peer-checked:peer-hover:border-[var(--color-wk-accent)]',
+        'peer-indeterminate:peer-hover:border-[var(--color-wk-accent)]',
         'peer-focus-visible:ring-[length:var(--ring-wk-width)]',
         'peer-focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'peer-focus-visible:ring-[var(--color-wk-ring)]',

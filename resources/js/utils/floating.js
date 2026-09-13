@@ -49,6 +49,32 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  *   scroll+resize listeners are cheap; a per-frame rAF loop would burn CPU here.
  * @returns {Promise<{x: number, y: number, placement: string, stop?: () => void}>}
  */
+/**
+ * Is focus already inside `container`?
+ *
+ * Every overlay that places focus after awaiting `position()` needs this answer first. The panel
+ * is visible and operable from the frame Alpine reveals it, and positioning resolves later, so a
+ * reader who moves into the panel in between, with the keyboard, a screen reader or a script,
+ * would otherwise have focus taken back to wherever the component meant to put it. Measured on
+ * the dropdown: its second row had a box two frames after opening, and focus placed on that row
+ * there was moved to the first row two milliseconds later, in ten runs out of ten.
+ *
+ * Guarded rather than assumed: a unit harness does not have to provide `document`, and a panel
+ * that is gone by the time a promise resolves is no reason to throw.
+ *
+ * @param {Element|null|undefined} container
+ * @returns {boolean}
+ */
+export function focusIsWithin(container) {
+    const active = typeof document !== 'undefined' ? document.activeElement : null;
+
+    if (! container || ! active || typeof container.contains !== 'function') {
+        return false;
+    }
+
+    return container.contains(active);
+}
+
 export async function position(reference, floating, {
     placement = 'bottom-start',
     offset = 8,

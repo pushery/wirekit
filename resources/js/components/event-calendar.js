@@ -19,6 +19,14 @@
  * @param {Object} config
  * @param {Array}  config.events - [{id,title,start,end,allDay?,intent?}]
  * @param {Array}  config.dayMarkers - [{date,label,type?,blocked?}] day-level markers
+ * @param {boolean} [config.selectableDays] - month day numbers become buttons that emit `wirekit:event-calendar-day-select`
+ * @param {boolean} [config.dayDetail] - a built-in list of the pressed day's events under the
+ *   month grid; implies `selectableDays`, because the list needs a day to show
+ * @param {boolean} [config.filterable] - one toggle per event `category`, above the views
+ * @param {string} [config.filterStatusText] - the announced count after a toggle, translated;
+ *   `:count` and `:total` are replaced
+ * @param {string} [config.withNamesText] - what joins an event's attendees onto its accessible
+ *   name, translated; `:names` is replaced by the list, joined in the calendar's locale
  * @param {string} config.view   - 'month' | 'week' | 'agenda'
  * @param {string} config.date   - ISO date the calendar opens on
  * @param {number} config.weekStartsOn - 0 (Sun) .. 1 (Mon, default)
@@ -60,6 +68,9 @@ export default function wirekitEventCalendar(config = {}) {
     const timeFormat = new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' });
     const agendaDayFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'short', day: 'numeric' });
     const fullDateFormat = new Intl.DateTimeFormat(locale, { weekday: 'long', month: 'long', day: 'numeric' });
+    // Joins attendee names the way the locale joins a list — "A, B, and C", "A, B und C" — so
+    // the one word the catalog has to supply is the "with" in front of it.
+    const listFormat = new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' });
 
     return {
         events: Array.isArray(config.events) ? config.events.map((e) => ({ ...e })) : [],
@@ -89,6 +100,26 @@ export default function wirekitEventCalendar(config = {}) {
         // language is being translated — falls back to the English rather than to an
         // empty string, because a time slot with no word at all reads as a missing value.
         _allDayLabel: config.allDayLabel || 'All day',
+
+        // Day selection, opt-in. `selectableDays` turns each month day number into a button
+        // that tells the host which day was pressed (`wirekit:event-calendar-day-select`); `dayDetail` adds a built-in
+        // list of that day's events under the grid and implies the first. Off by default: a
+        // button in every cell is 35 to 42 extra tab stops, which a calendar that never asked
+        // for them should not pay.
+        selectableDays: !!config.selectableDays || !!config.dayDetail,
+        dayDetail: !!config.dayDetail,
+        // The day the built-in detail shows, at local midnight; null while none is open.
+        selectedDate: null,
+
+        // Category filter, opt-in. What is stored is the HIDDEN set rather than the shown one,
+        // so every category starts visible, including one that only arrives with later data.
+        filterable: !!config.filterable,
+        hiddenCategories: [],
+        // Empty until the first toggle: a status that spoke on load would announce a count
+        // nobody asked for.
+        filterStatus: '',
+        _filterStatusText: config.filterStatusText || 'Showing :count of :total events',
+        _withNamesText: config.withNamesText || 'with :names',
 
         init() {
             this._startClock();
@@ -160,8 +191,43 @@ export default function wirekitEventCalendar(config = {}) {
         _eventEnd(e) {
             return e.end ? new Date(e.end) : new Date(new Date(e.start).getTime() + 3600000);
         },
+        // The events every view reads. An event without a `category` is never filtered: it
+        // belongs to no chip, so no toggle could bring it back.
+        get visibleEvents() {
+            if (!this.filterable || this.hiddenCategories.length === 0) {
+                return this.events;
+            }
+
+            return this.events.filter((e) => !e.category || !this.hiddenCategories.includes(e.category));
+        },
+        // Every category the events carry, in first-appearance order: the order a reader met
+        // them in, rather than an alphabet that moves a chip when a new category arrives.
+        get categories() {
+            const seen = [];
+            this.events.forEach((e) => {
+                if (e.category && !seen.includes(e.category)) {
+                    seen.push(e.category);
+                }
+            });
+
+            return seen;
+        },
+        isCategoryShown(category) {
+            return !this.hiddenCategories.includes(category);
+        },
+        // Hide or show one category, and announce what is left. Every getter above reads
+        // `visibleEvents`, so the month overflow, the week columns and the agenda follow
+        // without a recompute of their own.
+        toggleCategory(category) {
+            this.hiddenCategories = this.isCategoryShown(category)
+                ? [...this.hiddenCategories, category]
+                : this.hiddenCategories.filter((c) => c !== category);
+            this.filterStatus = this._filterStatusText
+                .replace(':count', String(this.visibleEvents.length))
+                .replace(':total', String(this.events.length));
+        },
         _eventsOnDay(day) {
-            return this.events
+            return this.visibleEvents
                 .filter((e) => this._sameDay(this._eventStart(e), day))
                 .sort((a, b) => this._eventStart(a) - this._eventStart(b));
         },
@@ -242,9 +308,11 @@ export default function wirekitEventCalendar(config = {}) {
             }
         },
         today() {
+            this.selectedDate = null;
             this.focusedDate = new Date();
         },
         prev() {
+            this.selectedDate = null;
             this.focusedDate = this.view === 'week'
                 ? this._addDays(this.focusedDate, -7)
                 : this.view === 'agenda'
@@ -252,6 +320,7 @@ export default function wirekitEventCalendar(config = {}) {
                     : new Date(this.focusedDate.getFullYear(), this.focusedDate.getMonth() - 1, 1);
         },
         next() {
+            this.selectedDate = null;
             this.focusedDate = this.view === 'week'
                 ? this._addDays(this.focusedDate, 7)
                 : this.view === 'agenda'
@@ -326,7 +395,7 @@ export default function wirekitEventCalendar(config = {}) {
         // so they render in the dedicated all-day band, not the hour grid. Before
         // this band existed they were silently dropped from week view entirely.
         _allDayFor(day) {
-            return this.events
+            return this.visibleEvents
                 .filter((e) => e.allDay && this._sameDay(this._eventStart(e), day))
                 .sort((a, b) => this._eventStart(a) - this._eventStart(b));
         },
@@ -406,7 +475,7 @@ export default function wirekitEventCalendar(config = {}) {
                 if (!byDay.has(key)) byDay.set(key, { events: [], markers: [] });
                 return byDay.get(key);
             };
-            this.events
+            this.visibleEvents
                 .filter((e) => {
                     const s = this._eventStart(e);
                     return s >= start && s < end;
@@ -445,6 +514,36 @@ export default function wirekitEventCalendar(config = {}) {
             const time = e.allDay ? this._allDayLabel : timeFormat.format(s);
             return `${e.title}, ${fullDateFormat.format(s)}, ${time}`;
         },
+        // An event's attendees, normalized: a name alone or `{ name, avatar }`, blank names
+        // dropped, initials from the first two words for the disc that has no picture.
+        _attendeesOf(e) {
+            return (Array.isArray(e.attendees) ? e.attendees : [])
+                .map((a) => (typeof a === 'string' ? { name: a } : (a || {})))
+                .map((a) => ({ name: String(a.name || '').trim(), avatar: a.avatar || null }))
+                .filter((a) => a.name !== '')
+                .map((a) => ({
+                    ...a,
+                    initials: a.name.split(/\s+/).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join(''),
+                }));
+        },
+        // At most three faces beside a row: past that, a stack stops saying who and only
+        // says "many", which the count beside it says better.
+        attendeeStack(e) {
+            return this._attendeesOf(e).slice(0, 3);
+        },
+        attendeeOverflow(e) {
+            return Math.max(0, this._attendeesOf(e).length - 3);
+        },
+        // The accessible name of an agenda or day-detail row: the event's own label, then EVERY
+        // attendee. The stack beside the title is decoration for sighted readers; a screen
+        // reader hears the names here, all of them, rather than three faces and a number.
+        rowLabel(e) {
+            const names = this._attendeesOf(e).map((a) => a.name);
+
+            return names.length === 0
+                ? this.eventLabel(e)
+                : `${this.eventLabel(e)}, ${this._withNamesText.replace(':names', listFormat.format(names))}`;
+        },
         // The spoken form of one day, for the month view's "+N more" control.
         //
         // A method rather than an inline `toLocaleDateString` in the template: the
@@ -474,9 +573,81 @@ export default function wirekitEventCalendar(config = {}) {
         // Month "+N more" → jump to the week view focused on that day so the
         // hidden events become visible. A read-focused calendar needs no popover
         // infra for this; switching to the hour grid reveals every event.
+        //
+        // With the day detail built in, the hidden events have a place in the month view
+        // itself, so "+N more" opens that day there instead of leaving the view. It OPENS
+        // rather than toggles: the control promises more events, and a second press that hid
+        // them again would contradict its own name.
         showMore(date) {
+            if (this.dayDetail) {
+                if (!this.isSelectedDay(date)) {
+                    this.selectDay(date);
+                }
+
+                return;
+            }
             this.focusedDate = new Date(date);
             this.setView('week');
+        },
+
+        // ── Day selection (opt-in) ───────────────────────────────────────
+        // A day as the host would write it: YYYY-MM-DD from the LOCAL date parts.
+        // `toISOString()` is UTC, and names the previous day for any reader east of UTC
+        // at local midnight — the drift `dayMarkers` already parses around.
+        _isoDay(date) {
+            const d = this._startOfDay(date);
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+
+            return `${d.getFullYear()}-${month}-${day}`;
+        },
+        // Tell the host which day was pressed, and open it in the built-in detail when there
+        // is one. A second press on the open day closes it WITHOUT a second event: closing is
+        // not a selection, and a host listening for `wirekit:event-calendar-day-select` should not have to tell the
+        // two apart.
+        selectDay(date) {
+            const day = this._startOfDay(new Date(date));
+
+            if (this.dayDetail && this.isSelectedDay(day)) {
+                this.selectedDate = null;
+
+                return;
+            }
+            this.selectedDate = this.dayDetail ? day : null;
+            this.$dispatch('wirekit:event-calendar-day-select', {
+                date: this._isoDay(day),
+                eventIds: this._eventsOnDay(day).map((e) => e.id),
+            });
+        },
+        isSelectedDay(date) {
+            return this.selectedDate !== null && this._sameDay(this.selectedDate, date);
+        },
+        // The open day, shaped for the built-in detail, or null. Month view only: the week
+        // and agenda views already show every event of a day, so a detail there would
+        // repeat them.
+        get selectedDay() {
+            if (!this.dayDetail || this.selectedDate === null || this.view !== 'month') {
+                return null;
+            }
+
+            return {
+                date: this.selectedDate,
+                label: fullDateFormat.format(this.selectedDate),
+                events: this._eventsOnDay(this.selectedDate).map((e) => ({
+                    ...e,
+                    timeLabel: e.allDay ? this._allDayLabel : timeFormat.format(this._eventStart(e)),
+                })),
+            };
+        },
+        // What the template reads. Getters that are an empty list and an empty string when
+        // nothing is open, rather than `selectedDay ? selectedDay.events : []` in the
+        // template: the binding stays one member access, well inside the grammar Alpine's
+        // CSP build evaluates.
+        get selectedDayEvents() {
+            return this.selectedDay ? this.selectedDay.events : [];
+        },
+        get selectedDayLabel() {
+            return this.selectedDay ? this.selectedDay.label : '';
         },
 
         // ── Truncated-title tooltip (one shared bubble) ──────────────────

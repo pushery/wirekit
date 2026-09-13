@@ -90,11 +90,15 @@
     // Container classes — styled like an input field, wraps pills + filter input.
     // py-y-sm (0.375rem ≈ 6px) for visually balanced top/bottom padding around
     // the wrapped pills — py-1 (4px) reads as too tight against the
-    // px-x-md (12px) horizontal padding on the sides.
+    // px-x-md (12px) horizontal padding on the sides. The sides take the same
+    // inline token as select (md) and the combobox input, so a filter row of
+    // the three starts its text on one line. This line once read `p-` with the
+    // vertical token, which put the placeholder half as far from the border as
+    // the text in the fields beside it.
     $containerClasses = WireKit::resolveClasses('multi-select', 'base', implode(' ', [
         'flex flex-wrap items-center gap-1',
         'min-h-[var(--size-wk-md)]',
-        'p-[var(--padding-wk-y-sm)]',
+        'py-[var(--padding-wk-y-sm)] px-[var(--padding-wk-x-md)]',
         'font-[family-name:var(--font-wk-sans)]',
         'bg-[var(--color-wk-bg-input)]',
         'rounded-[var(--radius-wk-md)]',
@@ -161,6 +165,10 @@
     ]);
 
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+    // A caller's aria-describedby joins this list, because the control is what it describes
+    // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
+    // ids first, then the caller's.
+    $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
 
     // Encode options for Alpine — convert to array of {value, label} objects.
     //
@@ -257,7 +265,7 @@
          the listbox as `Gru00fce`. Nothing throws; the option a reader picks from is simply
          spelled wrong. --}}
     <div
-        {{ $attributes->class(['relative']) }}
+        {{ $attributes->except('aria-describedby')->class(['relative']) }}
         x-modelable="selected"
         x-data="wirekitMultiSelect({ options: {{ \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }} })"
         @click.away="dropdownOpen = false"
@@ -382,6 +390,7 @@
             x-ref="panel"
             id="{{ $id }}-listbox"
             role="listbox"
+            aria-label="{{ $resolvedAriaLabel }}"
             aria-multiselectable="true"
             class="fixed z-[var(--z-wk-dropdown)] overflow-y-auto rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-lg)] wk-scrollbar"
             x-cloak

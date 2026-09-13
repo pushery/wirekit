@@ -175,6 +175,10 @@
     data-auto-fade="{{ $autoFadeFlag }}"
     {{-- Idle-state attribute toggled by the controller (E4). Starts false. --}}
     x-bind:data-idle="idle ? 'true' : 'false'"
+    {{-- Which side of the minimap the heading anchors paint on. Outboard by default; the
+         controller moves them inside when the outboard side has no room, which is every
+         minimap pinned against the viewport edge. --}}
+    x-bind:data-anchors="anchorsInboard ? 'inboard' : 'outboard'"
     {{-- Catch mousemove on the wrapper rather than on each <li> stripe.
          The viewport-overlay rectangle (z-index: 1) sits on top of the
          stripes, so a listener on <li> never fires while the cursor is

@@ -111,6 +111,13 @@
     // stringly-false spellings without collapsing a real success message.
     $hasSuccess = ! $hasError && $success !== null && ! BooleanProp::isFalse($success);
     $successMessage = is_string($success) ? $success : null;
+    // One description list for the control: the component's own id first, then a caller's
+    // aria-describedby. Written as separate attributes, the parser kept only the first copy,
+    // so a caller's description was dropped or pushed the component's own out.
+    $describedBy = trim(
+        ($hasError ? $id.'-error' : ($hasSuccess && $successMessage ? $id.'-success' : ($hint ? $id.'-hint' : '')))
+        .' '.((string) $attributes->get('aria-describedby', ''))
+    );
 
     // Auto-size: `rows="auto"` grows the textarea with its content via CSS
     // `field-sizing: content`, which is ABOVE the WireKit browser baseline —
@@ -228,9 +235,8 @@
         id="{{ $id }}"
         name="{{ $name }}"
         rows="{{ $minRows }}"
-        @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
-        @if($hasSuccess && $successMessage && !$hasError) aria-describedby="{{ $id }}-success" @endif
-        @if($hint && !$hasError && !($hasSuccess && $successMessage)) aria-describedby="{{ $id }}-hint" @endif
+        @if($hasError) aria-invalid="true" @endif
+        @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
         @if($optimisticConfig)
             x-ref="control"
             x-bind:aria-busy="isPending"
@@ -240,7 +246,7 @@
             x-on:change="commitFromControl()"
         @endif
         {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
-        {{ $attributes->class(['wk-field', $textareaClasses, $stateClasses, $sizeClasses, $resize ? 'resize-y' : 'resize-none', 'wk-autosize' => $autosize]) }}
+        {{ $attributes->except('aria-describedby')->class(['wk-field', $textareaClasses, $stateClasses, $sizeClasses, $resize ? 'resize-y' : 'resize-none', 'wk-autosize' => $autosize]) }}
     >{{ $slot }}</textarea>
 
     {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}

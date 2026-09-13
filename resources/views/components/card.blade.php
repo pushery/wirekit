@@ -1,6 +1,9 @@
 {{-- optimistic-ui: n/a — client-only
      Its only Alpine is a development-time warning about misuse. --}}
 @props([
+    // The canonical surface axis, spelled as on button: outline | elevated | flat. `variant`
+    // below is its back-compat alias and keeps working unchanged.
+    'surface' => null,
     'variant' => config('wirekit.components.card.variant', 'outlined'),
     'as' => 'div',
     'href' => null,
@@ -80,6 +83,12 @@
     // muscle-memory parity across the two components. The canonical
     // spelling stays `outlined` for card so existing developer code
     // keeps working.
+    // `surface` first: it is the name the kit's vocabulary is moving to, and a call site that
+    // sets both is half migrated. Preferring the older name there would make that call site
+    // look finished to whoever is doing the migration.
+    $axis = $surface !== null ? 'surface' : 'variant';
+    $variant = $surface ?? $variant;
+
     $variantAliases = ['outline' => 'outlined'];
     $variant = $variantAliases[$variant] ?? $variant;
 
@@ -116,7 +125,12 @@
             'border-[length:var(--border-wk-width)]',
             'border-transparent',
         ]),
-        default => WireKit::validateProp('card', 'variant', $variant, ['outlined', 'elevated', 'flat']),
+        // Named after the prop the CALL SITE used, and listing the values in that prop's own
+        // spelling: a developer who wrote `surface` is told about `outline`, which is what
+        // button takes, rather than about a `variant` they never set.
+        default => WireKit::validateProp('card', $axis, $variant, $axis === 'surface'
+            ? ['outline', 'elevated', 'flat']
+            : ['outlined', 'elevated', 'flat']),
     }, $scope);
 
     // The interactive treatment is keyed on whether the card DOES something when it is

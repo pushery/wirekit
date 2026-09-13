@@ -19,7 +19,8 @@
  * @param {string} config.groupBy - 'none' | 'time' | 'type'
  * @param {string} config.realtimeEvent - optional window event name to listen for new items
  */
-import { position } from '../utils/floating.js';
+import { focusIsWithin, position } from '../utils/floating.js';
+import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 
 /**
  * What counts as a tab stop, for the two edges of the teleported panel.
@@ -91,6 +92,8 @@ export default function wirekitNotificationCenter(config = {}) {
         open: !!config.open, // start open (inline embeds, docs demos)
         _rt: null,
         _onScroll: null,
+        // Where the bell stood when the panel opened — see utils/scroll-anchor.js.
+        _anchorAt: null,
         _onResize: null,
 
         init() {
@@ -113,6 +116,8 @@ export default function wirekitNotificationCenter(config = {}) {
                     if (!this.open) return;
                     const panel = this.$refs.panel;
                     if (panel && e.target instanceof Node && panel.contains(e.target)) return;
+                    // Only a scroll that moved the bell has stranded anything — utils/scroll-anchor.js.
+                    if (!anchorMoved(this._anchorAt, this.$refs.bell)) return;
                     this.close();
                 };
                 window.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
@@ -172,9 +177,11 @@ export default function wirekitNotificationCenter(config = {}) {
         toggle() {
             this.open = !this.open;
             if (this.open) {
+                this._anchorAt = anchorSnapshot(this.$refs.bell);
                 this.$nextTick(async () => {
                     await this._anchor();
-                    this.$refs.panel?.focus();
+                    // Not when the reader already moved into the panel while it was being positioned.
+                    if (! focusIsWithin(this.$refs.panel)) this.$refs.panel?.focus();
                 });
             }
         },

@@ -47,41 +47,43 @@
     filled() — six intents
     ────────────────────────────────────────────────────────────────────────
 
+    Every filled intent draws a TRANSPARENT border: the fill shows through it,
+    so there is no second color to keep in step on hover and no second shape
+    to meet the fill along the rounded corner. See filled() for the why.
+
     primary:
       bg-[var(--color-wk-accent)]
       text-[color:var(--color-wk-accent-fg)]
-      border-[var(--color-wk-accent)]
+      border-transparent
       hover:bg-[var(--color-wk-accent-hover)]
-      hover:border-[var(--color-wk-accent-hover)]
       shadow-[var(--shadow-wk-sm)]
 
     neutral:
       bg-[var(--color-wk-bg-muted)]
       text-[color:var(--color-wk-text)]
-      border-[var(--color-wk-bg-muted)]
-      hover:bg-[var(--color-wk-bg-subtle)]
+      border-transparent
+      hover:bg-[color-mix(in_srgb,var(--color-wk-text)_6%,var(--color-wk-bg-muted))]
       shadow-[var(--shadow-wk-sm)]
 
     success:
       bg-[var(--color-wk-success)]
       text-[color:var(--color-wk-success-fg)]
-      border-[var(--color-wk-success)]
+      border-transparent
       hover:bg-[var(--color-wk-success-hover)]
       shadow-[var(--shadow-wk-sm)]
 
     warning:
       bg-[var(--color-wk-warning)]
       text-[color:var(--color-wk-warning-fg)]
-      border-[var(--color-wk-warning)]
+      border-transparent
       hover:bg-[var(--color-wk-warning-hover)]
       shadow-[var(--shadow-wk-sm)]
 
     danger:
       bg-[var(--color-wk-danger)]
       text-[color:var(--color-wk-danger-fg)]
-      border-[var(--color-wk-danger)]
+      border-transparent
       hover:bg-[var(--color-wk-danger-hover)]
-      hover:border-[var(--color-wk-danger-hover)]
       shadow-[var(--shadow-wk-sm)]
 
     info: aliases primary — uses the accent token chain, no info-specific

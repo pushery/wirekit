@@ -9,7 +9,7 @@
                      measures the article's own text and renders the time-to-read from
                      it. Author and date are yours to render however your model spells
                      them. --}}
-                <x-wirekit::text variant="muted" as="p">By Jane Doe · Published 2026-05-21</x-wirekit::text>
+                <x-wirekit::text intent="muted" as="p">By Jane Doe · Published 2026-05-21</x-wirekit::text>
                 <x-wirekit::reading-meta :showRemaining="true" />
             </header>
 

@@ -5,6 +5,11 @@
 @props([
     'orientation' => 'horizontal',
     'sortable' => false,
+    // Cards may move BETWEEN sortable columns: dragged onto another one, or moved with
+    // ArrowLeft/ArrowRight while lifted. Opt-in, because it changes what those two keys do
+    // on this board — without it they move a lifted card within its own column, which is
+    // what every board shipped so far has taught its users.
+    'crossColumn' => false,
     'scope' => null,
 ])
 
@@ -21,6 +26,7 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sortable = BooleanProp::from($sortable, false);
+    $crossColumn = BooleanProp::from($crossColumn, false);
 
     $orientationValue = match ($orientation) {
         'horizontal', 'vertical' => $orientation,
@@ -73,6 +79,9 @@
 <div
     role="list"
     @if($sortable) data-sortable @endif
+    {{-- The marker every column's sortable looks for before it lets a card leave. Only on a
+         sortable board: a board that does not sort has nothing to connect. --}}
+    @if($sortable && $crossColumn) data-sortable-connected @endif
     {{ $attributes->class([$baseClasses]) }}
 >
     {{ $slot }}

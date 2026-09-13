@@ -80,6 +80,10 @@
 
     // Error detection: explicit prop OR Laravel validation bag
     $hasError = $error || ($errors ?? null)?->has($name);
+    // One description list for the control: the component's own id first, then a caller's
+    // aria-describedby. Written as separate attributes, the parser kept only the first copy,
+    // so a caller's description was dropped or pushed the component's own out.
+    $describedBy = trim(($hasError ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.((string) $attributes->get('aria-describedby', '')));
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
 
     // Size scale: track width/height + knob offset distance
@@ -211,12 +215,12 @@
                     x-bind:aria-busy="isPending"
                     x-on:change="toggle()"
                 @endif
-                @if($hasError) aria-invalid="true" aria-describedby="{{ $id }}-error" @endif
-                @if($hint && !$hasError) aria-describedby="{{ $id }}-hint" @endif
+                @if($hasError) aria-invalid="true" @endif
+                @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
                 {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
                      caller's own class became a second class attribute and the browser kept
                      only this one. --}}
-                {{ $attributes->except(['id', 'name'])->class(['peer', 'sr-only']) }}
+                {{ $attributes->except(['id', 'name', 'aria-describedby'])->class(['peer', 'sr-only']) }}
             />
 
             {{-- Track: sibling of .peer, background color flips via peer-checked --}}

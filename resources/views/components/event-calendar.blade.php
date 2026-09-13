@@ -16,6 +16,17 @@
 @props([
     'events' => [],                 // [{id,title,start,end?,allDay?,intent?}]
     'dayMarkers' => [],             // [{date,label,type?,blocked?}] day-level holiday/working/note markers
+    // Day selection, opt-in. `selectableDays` makes each month day number a button that
+    // dispatches `wirekit:event-calendar-day-select` with the day (YYYY-MM-DD) and the ids of
+    // its events; `dayDetail`
+    // adds a built-in list of that day's events under the month grid and implies the first.
+    // Both default off: a button in every cell is a tab stop in every cell.
+    'selectableDays' => false,
+    'dayDetail' => false,
+    // One toggle per event `category`, above the views. Events without a category are never
+    // filtered. Off by default, and rendered only when the events carry two categories or more:
+    // a single chip filters nothing.
+    'filterable' => false,
     'view' => config('wirekit.components.event-calendar.view', 'month'), // month | week | agenda
     'date' => null,                 // ISO date the calendar opens on (default today)
     'weekStartsOn' => config('wirekit.components.event-calendar.week-starts-on', 1), // 0 Sun .. 1 Mon
@@ -45,6 +56,7 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -53,6 +65,15 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('event-calendar', $attributes->getAttributes());
 
     $view = WireKit::validateProp('event-calendar', 'view', $view, ['month', 'week', 'agenda']);
+
+    // Blade compiles an unbound attribute to a string, and 'false' is truthy — so
+    // `day-detail="false"` would otherwise switch the detail ON. Normalized the way every
+    // other boolean prop here is.
+    $dayDetail = BooleanProp::from($dayDetail, false);
+    $selectableDays = BooleanProp::from($selectableDays, false) || $dayDetail;
+    // One level below the calendar's own title, which is the heading this list sits under.
+    $detailLevel = min(6, max(1, (int) $level) + 1);
+    $filterable = BooleanProp::from($filterable, false);
     /*
      * `DomId::unique()`, not a fresh random per render, and the helper's own docblock names
      * the reason: only the COUNTED form survives a re-render, which is what a `label[for]` and
@@ -121,6 +142,20 @@
 
     $base = WireKit::resolveClasses('event-calendar', 'base', 'w-full font-[family-name:var(--font-wk-sans)] space-y-[var(--space-wk-sm)]', $scope);
 
+    // State styling, resolved HERE and interpolated into the `:class` ternaries below rather than
+    // written into them. A literal inside `:class` is decided in the browser at runtime, where
+    // WireKit::scope() cannot reach it, so a theme could restyle neither "today" nor a hidden
+    // category. Resolving each branch at render time keeps the runtime behavior identical and makes
+    // every state personalizable, the shape segmented-control uses. The day number has ONE set of
+    // keys for both of its forms, the selectable button and the plain number, so a theme restyles
+    // "today" once.
+    $dayNumberToday = WireKit::resolveClasses('event-calendar', 'day-number-today', 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-text-inverse)] font-[number:var(--font-wk-heading-weight)]', $scope);
+    $dayNumberSelected = WireKit::resolveClasses('event-calendar', 'day-number-selected', 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)] font-[number:var(--font-wk-heading-weight)]', $scope);
+    $dayNumberInMonth = WireKit::resolveClasses('event-calendar', 'day-number', 'text-[color:var(--color-wk-text)]', $scope);
+    $dayNumberOutside = WireKit::resolveClasses('event-calendar', 'day-number-outside', 'text-[color:var(--color-wk-text-subtle)]', $scope);
+    $categoryShown = WireKit::resolveClasses('event-calendar', 'category-shown', 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]', $scope);
+    $categoryHidden = WireKit::resolveClasses('event-calendar', 'category-hidden', 'text-[color:var(--color-wk-text-muted)] line-through', $scope);
+
     $navBtn = 'inline-flex items-center justify-center h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-[var(--radius-wk-md)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer transition-colors';
     $viewTab = 'px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors';
 
@@ -153,7 +188,7 @@
          JavaScript, which cannot reach the catalog at all. Left to the factory's own
          fallback the two halves disagree in every language but English — one band
          reading "Ganztägig" over a list announced as "All day". --}}
-    x-data="wirekitEventCalendar({ events: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventsArr) }}, dayMarkers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, view: {{ \Pushery\WireKit\Support\AlpinePayload::string($view) }}, @if($date) date: {{ \Pushery\WireKit\Support\AlpinePayload::string($date) }}, @endif weekStartsOn: {{ (int) $weekStartsOn }}, locale: {{ $eventCalendarLocale }}, allDayLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} })"
+    x-data="wirekitEventCalendar({ events: {{ \Pushery\WireKit\Support\AlpinePayload::from($eventsArr) }}, dayMarkers: {{ \Pushery\WireKit\Support\AlpinePayload::from($markersArr) }}, view: {{ \Pushery\WireKit\Support\AlpinePayload::string($view) }}, @if($date) date: {{ \Pushery\WireKit\Support\AlpinePayload::string($date) }}, @endif weekStartsOn: {{ (int) $weekStartsOn }}, selectableDays: {{ $selectableDays ? 'true' : 'false' }}, dayDetail: {{ $dayDetail ? 'true' : 'false' }}, filterable: {{ $filterable ? 'true' : 'false' }}, filterStatusText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Showing :count of :total events')) }}, withNamesText: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::with :names')) }}, locale: {{ $eventCalendarLocale }}, allDayLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::All day')) }} })"
     role="group"
     aria-label="{{ $ariaLabel }}"
     {{-- Delegated truncated-title tooltip: every [data-wk-tip] pill/chip/row shares
@@ -192,6 +227,21 @@
         </div>
     </div>
 
+    @if($filterable)
+        {{-- Category filter (opt-in): one pressed toggle per category the events carry, in the
+             order a reader met them. Pressed means SHOWN, so the resting state is all pressed and
+             a toggle reads as "hide". Hidden while there is only one category, because one chip
+             filters nothing. --}}
+        <div x-show="categories.length > 1" x-cloak role="group" aria-label="{{ __('wirekit::Filter by category') }}" class="flex flex-wrap items-center gap-[var(--gap-wk-xs)]">
+            <template x-for="c in categories" :key="'cat-' + c">
+                <button type="button" @click="toggleCategory(c)" :aria-pressed="isCategoryShown(c) ? 'true' : 'false'" class="inline-flex items-center min-h-6 px-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] cursor-pointer focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="isCategoryShown(c) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryShown) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($categoryHidden) }}" x-text="c"></button>
+            </template>
+        </div>
+        {{-- Outside the group on purpose: the count must still be announced when the group
+             itself is hidden by the one-category rule above. --}}
+        <p class="sr-only" role="status" aria-live="polite" x-text="filterStatus"></p>
+    @endif
+
     {{-- ── Month view ──────────────────────────────────────────────── --}}
     <div x-show="view === 'month'" class="border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] overflow-hidden">
         <div class="grid grid-cols-7 bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
@@ -204,7 +254,16 @@
                 <template x-for="day in week" :key="day.date.toISOString()">
                     <div class="min-h-[5.5rem] p-1 border-b-[length:var(--border-wk-width)] border-r-[length:var(--border-wk-width)] border-[var(--color-wk-border)]" :class="day.inMonth ? 'bg-[var(--color-wk-bg)]' : 'bg-[var(--color-wk-bg-subtle)]'">
                         <div class="flex justify-end">
-                            <span class="inline-flex items-center justify-center h-5 min-w-5 px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-text-inverse)] font-[number:var(--font-wk-heading-weight)]' : (day.inMonth ? 'text-[color:var(--color-wk-text)]' : 'text-[color:var(--color-wk-text-subtle)]')" x-text="day.label"></span>
+                            @if($selectableDays)
+                                {{-- The day NUMBER is the button, not the cell: the cell also holds the event pills,
+                                     which are buttons of their own, and a button inside a button is neither valid
+                                     markup nor operable. Named with the full date, because "8" alone does not say
+                                     which month it belongs to. 24px rather than the plain number's 20px: it is a
+                                     target now, and the first pill sits too close for the spacing exception. --}}
+                                <button type="button" @click="selectDay(day.date)" :aria-label="longDate(day.date)" @if($dayDetail) :aria-pressed="isSelectedDay(day.date) ? 'true' : 'false'" @endif :aria-current="day.isToday ? 'date' : false" class="inline-flex items-center justify-center h-6 min-w-6 px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)] cursor-pointer hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (isSelectedDay(day.date) ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberSelected) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }}))" x-text="day.label"></button>
+                            @else
+                                <span class="inline-flex items-center justify-center h-5 min-w-5 px-1 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-full)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberToday) }} : (day.inMonth ? {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberInMonth) }} : {{ \Pushery\WireKit\Support\AlpinePayload::string($dayNumberOutside) }})" x-text="day.label"></span>
+                            @endif
                         </div>
                         {{-- Day-marker band: full-width label at the top of the cell, above
                              the event pills. blocked → muted + hatch + sr-only "unavailable". --}}
@@ -239,13 +298,47 @@
                             {{-- "+N more" is actionable: it jumps to the week view focused on
                                  that day so the hidden events become visible (showMore). A plain
                                  span gave no affordance — the overflow count read as dead text. --}}
-                            <button type="button" x-show="day.overflow > 0" x-cloak @click="showMore(day.date)" :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit:::count more events on :date, open week view')) }}.replace(':count', day.overflow).replace(':date', longDate(day.date))" class="block w-full text-left px-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"><span x-text="day.overflow"></span> {{ __('wirekit::more') }}</button>
+                            <button type="button" x-show="day.overflow > 0" x-cloak @click="showMore(day.date)" :aria-label="{{ \Pushery\WireKit\Support\AlpinePayload::from($dayDetail ? __('wirekit:::count more events on :date') : __('wirekit:::count more events on :date, open week view')) }}.replace(':count', day.overflow).replace(':date', longDate(day.date))" class="block w-full text-left px-1 text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"><span x-text="day.overflow"></span> {{ __('wirekit::more') }}</button>
                         </div>
                     </div>
                 </template>
             </div>
         </template>
     </div>
+
+    @if($dayDetail)
+        {{-- The built-in day detail (opt-in): the pressed day's events, under the grid. The rows
+             are the agenda's rows — same button, same accessible name, same `event-click` — so a
+             day read here and the same day read in the agenda are one thing, not two. A labeled
+             group rather than a live region: the day button already says "pressed", and
+             announcing the whole list on top of that would read it twice. --}}
+        <div x-show="selectedDay" x-cloak role="group" :aria-label="selectedDayLabel" class="mt-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)]">
+            <h{{ $detailLevel }} class="mb-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" x-text="selectedDayLabel"></h{{ $detailLevel }}>
+            <div class="flex flex-col gap-[var(--gap-wk-xs)]">
+                <template x-for="ev in selectedDayEvents" :key="'dd-' + ev.id">
+                    <button type="button" @click="selectEvent(ev)" :aria-label="rowLabel(ev)" :data-wk-tip="ev.title" class="w-full flex items-center gap-[var(--gap-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-md)] text-start hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
+                        <span class="shrink-0 w-2 h-2 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventDot) }}[ev.intent || 'accent']"></span>
+                        <span class="shrink-0 text-end text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums" style="width: var(--wk-agenda-time, 5rem);" x-text="ev.timeLabel"></span>
+                        <span class="min-w-0 flex-1 truncate text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="ev.title"></span>
+                        {{-- Attendees: at most three faces and a count. aria-hidden, because the row's own
+                             name (`rowLabel`) already carries every name — the stack is the sighted half of
+                             that, not a second announcement. `.wk-avatar-group` is the same overlap and ring
+                             the avatar group component uses. --}}
+                        <span x-show="attendeeStack(ev).length > 0" aria-hidden="true" class="wk-avatar-group shrink-0">
+                            <template x-for="(a, ai) in attendeeStack(ev)" :key="'at-' + ev.id + '-' + ai">
+                                <span class="inline-flex items-center justify-center shrink-0 w-6 h-6 overflow-hidden rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text)]">
+                                    <template x-if="a.avatar"><img :src="a.avatar" alt="" class="w-full h-full object-cover"></template>
+                                    <span x-show="!a.avatar" x-text="a.initials"></span>
+                                </span>
+                            </template>
+                            <span x-show="attendeeOverflow(ev) > 0" class="inline-flex items-center justify-center shrink-0 w-6 h-6 rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text-muted)]" x-text="'+' + attendeeOverflow(ev)"></span>
+                        </span>
+                    </button>
+                </template>
+            </div>
+            <p x-show="selectedDayEvents.length === 0" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No events on this day') }}</p>
+        </div>
+    @endif
 
     {{-- ── Week view (time grid) ───────────────────────────────────── --}}
     <div x-show="view === 'week'" x-cloak @if(filled($weekLabel)) role="region" aria-label="{{ $weekLabel }}" @endif tabindex="0" class="max-h-[30rem] overflow-y-auto wk-scrollbar border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
@@ -382,7 +475,7 @@
                 </template>
                 <div class="space-y-1">
                     <template x-for="ev in day.events" :key="ev.id">
-                        <button type="button" @click="selectEvent(ev)" :aria-label="eventLabel(ev)" :data-wk-tip="ev.title" class="w-full flex items-center gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-sm)] py-1 rounded-[var(--radius-wk-md)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
+                        <button type="button" @click="selectEvent(ev)" :aria-label="rowLabel(ev)" :data-wk-tip="ev.title" class="w-full flex items-center gap-[var(--space-wk-sm)] px-[var(--padding-wk-x-sm)] py-1 rounded-[var(--radius-wk-md)] text-left hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
                             <span class="shrink-0 w-2 h-2 rounded-full" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($eventDot) }}[ev.intent || 'accent']"></span>
                             {{-- Time column: right-aligned + tabular-nums so the colon and
                                  the AM/PM stack into vertical columns. Width is SHARED and
@@ -394,6 +487,19 @@
                             <span class="shrink-0 text-right text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)] tabular-nums" style="width: var(--wk-agenda-time, 5rem);"><span data-agenda-time class="whitespace-nowrap" x-text="ev.timeLabel"></span></span>
                             {{-- pl gives the title a small, even gap from the time column. --}}
                             <span class="min-w-0 flex-1 pl-[var(--space-wk-sm)] truncate text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]" x-text="ev.title"></span>
+                            {{-- Attendees: at most three faces and a count. aria-hidden, because the row's own
+                                 name (`rowLabel`) already carries every name — the stack is the sighted half of
+                                 that, not a second announcement. `.wk-avatar-group` is the same overlap and ring
+                                 the avatar group component uses. --}}
+                            <span x-show="attendeeStack(ev).length > 0" aria-hidden="true" class="wk-avatar-group shrink-0">
+                                <template x-for="(a, ai) in attendeeStack(ev)" :key="'at-' + ev.id + '-' + ai">
+                                    <span class="inline-flex items-center justify-center shrink-0 w-6 h-6 overflow-hidden rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text)]">
+                                        <template x-if="a.avatar"><img :src="a.avatar" alt="" class="w-full h-full object-cover"></template>
+                                        <span x-show="!a.avatar" x-text="a.initials"></span>
+                                    </span>
+                                </template>
+                                <span x-show="attendeeOverflow(ev) > 0" class="inline-flex items-center justify-center shrink-0 w-6 h-6 rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text-muted)]" x-text="'+' + attendeeOverflow(ev)"></span>
+                            </span>
                         </button>
                     </template>
                 </div>

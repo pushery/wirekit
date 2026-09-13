@@ -10,43 +10,36 @@ use Illuminate\View\ComponentSlot;
 /**
  * Reads the attribute bag of a Blade slot that may not be a slot object at all.
  *
- * How a slot is WRITTEN decides its TYPE, and nothing at the call site suggests
- * that it would:
+ * One character after the closing tag decides the slot's TYPE, and nothing at the
+ * call site suggests that it would:
  *
  *     <x-wirekit::shell-bar><x-slot:start>Brand</x-slot:start>body</x-wirekit::shell-bar>
  *         → $start is a string
  *
- *     <x-wirekit::shell-bar>
- *         <x-slot:start>Brand</x-slot:start>
- *         body
- *     </x-wirekit::shell-bar>
+ *     <x-wirekit::shell-bar><x-slot:start>Brand</x-slot:start> body</x-wirekit::shell-bar>
  *         → $start is an Illuminate\View\ComponentSlot
  *
- * The cause is one missing call, and it is worth naming exactly because the obvious
- * explanation is wrong. Both forms compile to the SAME opening call —
- * `$__env->slot('sidebar', null, [])`, three arguments — so the two-argument branch
- * of `ManagesComponents::slot()` is not what separates them. Measured with
- * `Blade::compileString()`:
- *
- *     inline  →  slot() x1,  endSlot() x0
- *     block   →  slot() x1,  endSlot() x1
- *
- * `slot()` seeds the entry with an empty STRING and opens an output buffer, and only
- * `endSlot()` replaces that string with the `ComponentSlot`. The inline form never
- * emits it, so the placeholder survives — and the buffer stays open, which is the
- * "did not close its own output buffers" warning that accompanies it. It holds for
- * slot content with markup in it too.
+ * Blade's component compiler rewrites every `</x-slot…>` to ` @endslot`, with a space
+ * before and nothing after. Glued to `body`, that becomes `@endslotbody`, which the
+ * directive compiler reads as ONE unknown directive and leaves in the page as text, so
+ * `endSlot()` never runs. `slot()` seeds the entry with an empty STRING and opens an
+ * output buffer, and only `endSlot()` replaces that string with the `ComponentSlot`.
+ * Without it the placeholder survives, the buffer stays open — the "did not close its
+ * own output buffers" warning in a test — and the slot's content lands in the DEFAULT
+ * slot, next to the literal `@endslotbody`. A line break after the closing tag
+ * separates the two just as a space does, which is why this reads like a
+ * one-line-versus-block difference and is not one.
  *
  * So `$start->attributes` is a fatal — "Attempt to read property attributes on
- * string" — at the shortest and most ordinary way to write the call. This is the
- * same shape as {@see BooleanProp}: Blade hands the view a string where the view
- * expected something richer, and the spelling that breaks is the terse one.
+ * string" — on a spelling that looks entirely ordinary. This class keeps the page from
+ * crashing. It cannot bring the slot's content back: Blade moved it before the
+ * component ran. Same shape as {@see BooleanProp} — Blade hands the view a string where
+ * the view expected something richer.
  *
- * ⚠️ A test suite is close to blind to it. Test Blade is nearly always written in
- * a `<<<'BLADE'` heredoc, where every slot already sits on its own line — which is
- * the route that yields the object. Five sites across two components shipped this
- * way and exactly one had a red test, from the single inline-written line in the
- * corpus. A red proof for this class MUST be written on one line.
+ * ⚠️ A test suite is close to blind to it. Test Blade is nearly always written in a
+ * `<<<'BLADE'` heredoc, where a line break follows every closing tag. Five sites across
+ * two components shipped reading `->attributes` directly, and exactly one had a red
+ * test. A red proof for this class MUST glue the closing tag to the text after it.
  */
 final class SlotAttributes
 {

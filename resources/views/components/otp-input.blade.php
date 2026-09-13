@@ -223,6 +223,10 @@
     ]), $scope);
 
     $describedBy = trim(($hint && !$hasError ? $id . '-hint' : '') . ' ' . ($hasError ? $id . '-error' : ''));
+    // A caller's aria-describedby joins this list, because the control is what it describes
+    // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
+    // ids first, then the caller's.
+    $describedBy = trim($describedBy.' '.((string) $attributes->get('aria-describedby', '')));
 
     // `failure: 'keep'` — the keep-on-refusal exit, and where it matters most. A
     // rollback would clear the boxes, and a one-time code cannot simply be

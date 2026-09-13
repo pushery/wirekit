@@ -14,13 +14,18 @@ use Illuminate\Support\Facades\Blade;
  *      components with a 422-shaped result.
  *   2. PropsValidator::validate(schema, payload) — strip non-allowlisted
  *      props, type-check, sanitize string/array values.
- *   3. Render via Blade with the sanitized payload as data.
+ *   3. Render via Blade with the validated payload as data.
  *   4. Audit-log the outcome.
  *
  * The renderer NEVER receives raw user input directly — every value
- * funnels through the validator. The validator HTML-escapes every
- * string defense-in-depth, so even a slot using `{!! !!}` cannot
- * surface raw payload content.
+ * funnels through the validator first, which hands back two views of the
+ * same payload. The slot is echoed raw, so it takes the escaped view. A
+ * prop takes the value as given, because the component escapes it on
+ * output the way it does in any application, and a second escape reaches
+ * the page as text: a title reading `&amp;`, a query string with a
+ * parameter called `amp;b`. That no component in the sandbox echoes a
+ * string prop raw is asserted over the whole schema registry by
+ * `SandboxRendersWhatAnApplicationRendersTest`, not assumed.
  *
  * SSTI defense: developer values are bound as runtime DATA and referenced
  * from the assembled template through Blade expressions — they are NEVER
@@ -81,7 +86,7 @@ final class SandboxRenderer
         $source = '';
 
         try {
-            $html = self::doRender($component, $result->clean, $source);
+            $html = self::doRender($component, $result->values, $result->clean, $source);
         } catch (\Throwable $e) {
             SandboxAuditLog::record('error:render', $component, $ipAddress, 1);
 
@@ -98,26 +103,26 @@ final class SandboxRenderer
     }
 
     /**
-     * @param  array<string, mixed>  $props
+     * @param  array<string, mixed>  $props  the validated values as given — what a bound prop receives
+     * @param  array<string, mixed>  $escaped  the same values HTML-escaped — what the raw slot echo receives
      */
     // `$source` is written on every path, never left null — the nullable by-ref type made
     // callers guard against a state this method does not produce.
-    private static function doRender(string $component, array $props, string &$source = ''): string
+    private static function doRender(string $component, array $props, array $escaped, string &$source = ''): string
     {
         // Build: <x-wirekit::{component} :prop="$__wk_pN" …>{!! $__wk_body !!}</…>
         //
         // SECURITY (SSTI/RCE): every developer-controlled value is bound as
         // runtime DATA (the `$data` map below) and referenced from the template
         // through a Blade expression — NEVER concatenated into the template
-        // source. This is the load-bearing defense: `PropsValidator::sanitize`
-        // HTML-escapes `<>&"'` but does NOT neutralize Blade's own compile
-        // tokens (`{{ … }}`, `{!! … !!}`, `@directive`). Previously the values
-        // were string-concatenated straight into the Blade source, so a prop
-        // value of `{{ 7*7 }}` (or `{{ system(chr(105).chr(100)) }}` for a
-        // no-quote RCE) reached the Blade compiler intact and executed. Binding
-        // the values as data instead means their content is echoed literally at
-        // render time and never re-parsed as Blade — there is no token blacklist
-        // to bypass.
+        // source. This is the load-bearing defense: HTML escaping does NOT
+        // neutralize Blade's own compile tokens (`{{ … }}`, `{!! … !!}`,
+        // `@directive`). Previously the values were string-concatenated
+        // straight into the Blade source, so a prop value of `{{ 7*7 }}` (or
+        // `{{ system(chr(105).chr(100)) }}` for a no-quote RCE) reached the
+        // Blade compiler intact and executed. Binding the values as data
+        // instead means their content is echoed literally at render time and
+        // never re-parsed as Blade — there is no token blacklist to bypass.
         $tag = 'x-wirekit::'.$component;
         $body = '';
         $attrs = '';
@@ -127,8 +132,9 @@ final class SandboxRenderer
 
         foreach ($props as $key => $value) {
             if ($key === 'body') {
-                // Convention: 'body' prop becomes the slot content.
-                $body = is_string($value) ? $value : '';
+                // Convention: 'body' prop becomes the slot content. The slot is echoed raw
+                // below, so it takes the ESCAPED view — never the value a bound prop receives.
+                $body = is_string($escaped['body'] ?? null) ? $escaped['body'] : '';
 
                 continue;
             }
@@ -148,6 +154,11 @@ final class SandboxRenderer
                 // Bind the value to a generated variable and reference it as a
                 // bound attribute. The value travels as data, so its content is
                 // never compiled as template source.
+                //
+                // It is bound as given, not escaped. The component escapes a prop
+                // when it echoes it, exactly as it does in an application, so an
+                // escape here is a second one, and a second escape reaches the page
+                // as text.
                 $var = '__wk_p'.$i++;
                 $data[$var] = $value;
                 $attrs .= ' :'.$key.'="$'.$var.'"';
@@ -164,7 +175,7 @@ final class SandboxRenderer
                 // first `=== 4` added anywhere would turn every quoted snippet
                 // into a silent miss, and the reader would have pasted it.
                 $sourceAttrs .= is_string($value)
-                    ? ' '.$key.'="'.$value.'"'
+                    ? ' '.self::snippetAttribute($key, $value)
                     : ' :'.$key.'="'.$value.'"';
 
                 continue;
@@ -201,7 +212,7 @@ final class SandboxRenderer
         // This is the whole point of returning it at all: a sandbox preview is
         // interactive, so the code to show is whatever the CURRENT props amount
         // to, and only this function knows that.
-        $sourceBody = $body === '' ? '' : $body;
+        $sourceBody = $body === '' ? '' : self::snippetSlotText($body);
 
         if ($sourceBody !== '' && isset(self::BODY_WRAPPERS[$component])) {
             $wrapTag = 'x-wirekit::'.self::BODY_WRAPPERS[$component];
@@ -220,5 +231,61 @@ final class SandboxRenderer
         }
 
         return (string) Blade::render($blade, $data);
+    }
+
+    /**
+     * One string prop as an attribute a developer can paste, rendering the value exactly as given.
+     *
+     * Blade reads a static attribute value as a PHP string literal: it compiles `{{ }}`,
+     * `{!! !!}` and `@directives` inside it, a backslash can escape the quote that closes it,
+     * and neither quote character can appear inside the quotes that delimit it. So the ordinary
+     * value is written as it is — between single quotes when it carries a double quote — and a
+     * value the grammar would reinterpret is written as a bound PHP string with every sensitive
+     * character spelled as an escape sequence, which nothing downstream reads as syntax.
+     */
+    private static function snippetAttribute(string $key, string $value): string
+    {
+        $reinterpreted = str_contains($value, '\\')
+            || str_contains($value, '{{')
+            || str_contains($value, '{!!')
+            || str_contains($value, '<?')
+            || preg_match('/(?<!\w)@(?=[@\w])/', $value) === 1
+            || (str_contains($value, '"') && str_contains($value, "'"));
+
+        if (! $reinterpreted) {
+            return str_contains($value, '"')
+                ? $key."='".$value."'"
+                : $key.'="'.$value.'"';
+        }
+
+        $literal = strtr($value, [
+            '\\' => '\\\\',
+            '$' => '\\$',
+            '"' => '\\x22',
+            "'" => '\\x27',
+            '{' => '\\x7b',
+            '@' => '\\x40',
+            '<' => '\\x3c',
+        ]);
+
+        return ':'.$key.'=\'"'.$literal.'"\'';
+    }
+
+    /**
+     * Slot text a developer can paste. It arrives HTML-escaped, which is right for a slot; what
+     * is left is Blade's own syntax, which COMPILES in the template it is pasted into. A `{`
+     * that starts an echo and an `@` that Blade would read as a directive are spelled as
+     * entities, which render as the character and which Blade does not read.
+     */
+    private static function snippetSlotText(string $escaped): string
+    {
+        return (string) preg_replace_callback(
+            '/\{(?=[{!])|(?<!\w)@(?=[@\w])/',
+            /** @param  array<int, string>  $match */
+            static function (array $match): string {
+                return $match[0] === '{' ? '&#123;' : '&#64;';
+            },
+            $escaped,
+        );
     }
 }

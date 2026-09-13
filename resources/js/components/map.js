@@ -13,7 +13,10 @@
  *
  * Lifecycle resources held on `this`:
  *   - _map (the library map instance) — destroyed (remove()) in destroy().
- *   No observers / timers / document listeners.
+ *   - _resizeObserver — disconnected in destroy().
+ *   - while no engine is present: a `wirekit:map-engine` listener on window, and the
+ *     missing-engine hint's `load` listener or timer. All released in destroy(), and
+ *     the moment an engine boots the map.
  *
  * @param {Object} config
  * @param {Array}  config.center   - [lat, lng]
@@ -25,6 +28,64 @@
  *   in Leaflet's attribution control). Required by some tile sources (e.g. OSM).
  */
 import { prefersReducedMotion } from '../utils/motion.js';
+
+/**
+ * Map engines the host handed over, keyed by provider name.
+ *
+ * MapLibre GL 6 is published as an ES module only, and an ES module sets no global:
+ * `import * as maplibregl from 'maplibre-gl'` leaves `window.maplibregl` undefined,
+ * which was the only place this adapter looked. A bundled app passes the module here
+ * instead and needs no global at all. The window globals stay the fallback, so a page
+ * that assigns `window.maplibregl` itself — or loads Leaflet's classic build, which
+ * sets `window.L` — works exactly as before.
+ */
+const engines = {};
+
+/** Dispatched on `window` by registerMapEngine(), so a map that mounted first can boot. */
+const ENGINE_EVENT = 'wirekit:map-engine';
+
+/**
+ * How long after the page has loaded a map waits for its engine before the missing-engine
+ * hint speaks. Long enough for a lazily imported engine on an ordinary connection; a map
+ * whose engine arrives even later still boots — the hint is then merely early.
+ */
+const MISSING_ENGINE_GRACE_MS = 3000;
+
+/**
+ * Hand a map engine to every `<x-wirekit::map>` on the page — including maps that mounted
+ * before it arrived, which boot the moment it does.
+ *
+ * @param {'maplibre'|'leaflet'} name
+ * @param {object} engine  the module namespace: `import * as maplibregl from 'maplibre-gl'`
+ */
+export function registerMapEngine(name, engine) {
+    // Thrown rather than tolerated: an engine filed under a name nothing looks up, or a
+    // default export that is not the library, would read as registered and leave every map
+    // on its fallback list with nothing in the console to say why.
+    if (name !== 'maplibre' && name !== 'leaflet') {
+        throw new TypeError(`registerMapEngine: unknown engine "${name}" — expected "maplibre" or "leaflet".`);
+    }
+
+    const entry = name === 'maplibre' ? 'Map' : 'map';
+
+    if (!engine || typeof engine[entry] !== 'function') {
+        throw new TypeError(`registerMapEngine: the "${name}" engine has no ${entry}() — pass the module namespace (import * as …), not its default export.`);
+    }
+
+    engines[name] = engine;
+
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function') {
+        window.dispatchEvent(new CustomEvent(ENGINE_EVENT, { detail: { name } }));
+    }
+}
+
+/** The engine behind a provider name: a registered one first, then the classic window global. */
+function engineFor(name) {
+    if (engines[name]) return engines[name];
+    if (typeof window === 'undefined') return null;
+
+    return (name === 'maplibre' ? window.maplibregl : window.L) || null;
+}
 export default function wirekitMap(config = {}) {
     return {
         /**
@@ -71,6 +132,12 @@ export default function wirekitMap(config = {}) {
         // id → library marker instance, so realtime upsert/remove and selection can
         // reach the rendered pins (not just the reactive `markers` array / the list).
         _markers: {},
+        // While no engine is present: the `wirekit:map-engine` listener that boots this map
+        // when one is registered, and the missing-engine hint's `load` listener or timer.
+        // All three are released by _stopAwaitingEngine().
+        _onEngine: null,
+        _hintOnLoad: null,
+        _hintTimer: null,
 
         init() {
             /*
@@ -99,22 +166,12 @@ export default function wirekitMap(config = {}) {
                 return;
             }
 
-            this.available = this._detectProvider() !== null;
-            if (!this.available) {
-                this._warnMissing();
-                return;
-            }
-            // Defer the actual library init to a hook the integration can call;
-            // wrapped in try/catch so a misconfigured tile/style never breaks the
-            // page — the list-alternative still works.
-            try {
-                this._initLibrary();
-            } catch (e) {
-                this.available = false;
-                this._warnMissing(e);
-            }
+            this._boot();
         },
         destroy() {
+            // An engine that arrives after this map is gone must not boot it, and a pending
+            // missing-engine hint must not speak for a map that no longer exists.
+            this._stopAwaitingEngine();
             // Disconnect the ResizeObserver BEFORE tearing the map down so a final
             // resize callback can't fire against a removed map — defensive observer
             // cleanup; a callback after teardown would break browser tests.
@@ -156,13 +213,26 @@ export default function wirekitMap(config = {}) {
         /** Load the tiles anyway, from the control the fallback shows. */
         loadAnyway() {
             this.dataDeferred = false;
+            this._boot();
+        },
+
+        /**
+         * Draw the map if an engine is here, otherwise wait for one.
+         *
+         * One path for init() and loadAnyway(), so the two cannot drift. The library init
+         * is wrapped in try/catch so a misconfigured tile source or style never breaks the
+         * page — the marker list still works.
+         */
+        _boot() {
             this.available = this._detectProvider() !== null;
 
             if (!this.available) {
-                this._warnMissing();
+                this._awaitEngine();
 
                 return;
             }
+
+            this._stopAwaitingEngine();
 
             try {
                 this._initLibrary();
@@ -172,14 +242,86 @@ export default function wirekitMap(config = {}) {
             }
         },
 
+        /**
+         * No engine yet: boot the moment one is registered, and only later call it missing.
+         *
+         * A bundled app registers MapLibre from its own entry, and that entry can run after
+         * Alpine has mounted this map — a route-level entry, a dynamic import(). Saying
+         * "missing" on the spot would print an error on a page that is about to work, and a
+         * developer who gates a browser suite on a clean console would get a red run from a
+         * correct setup. So the hint waits for the page to finish loading and a grace period
+         * after that, and never comes if an engine arrives first.
+         */
+        _awaitEngine() {
+            if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') {
+                this._warnMissing();
+
+                return;
+            }
+
+            if (!this._onEngine) {
+                this._onEngine = () => {
+                    if (this.available || this.dataDeferred) return;
+                    if (this._detectProvider() !== null) this._boot();
+                };
+                window.addEventListener(ENGINE_EVENT, this._onEngine);
+            }
+
+            this._scheduleMissingHint();
+        },
+
+        _scheduleMissingHint() {
+            if (this._hintTimer || this._hintOnLoad) return;
+
+            // No document to wait for — the factory is also built in a bare Node harness.
+            if (typeof document === 'undefined' || typeof setTimeout !== 'function') {
+                this._warnMissing();
+
+                return;
+            }
+
+            const arm = () => {
+                this._hintOnLoad = null;
+                this._hintTimer = setTimeout(() => {
+                    this._hintTimer = null;
+                    if (!this.available && !this.dataDeferred) this._warnMissing();
+                }, MISSING_ENGINE_GRACE_MS);
+            };
+
+            if (document.readyState === 'complete') {
+                arm();
+
+                return;
+            }
+
+            this._hintOnLoad = arm;
+            window.addEventListener('load', arm, { once: true });
+        },
+
+        /** Release everything _awaitEngine() set up. Safe to call when it set up nothing. */
+        _stopAwaitingEngine() {
+            if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
+                if (this._onEngine) window.removeEventListener(ENGINE_EVENT, this._onEngine);
+                if (this._hintOnLoad) window.removeEventListener('load', this._hintOnLoad);
+            }
+
+            this._onEngine = null;
+            this._hintOnLoad = null;
+
+            if (this._hintTimer) {
+                clearTimeout(this._hintTimer);
+                this._hintTimer = null;
+            }
+        },
+
         // ── Provider detection ───────────────────────────────────────────
         _detectProvider() {
             if (typeof window === 'undefined') return null;
-            if (this.provider === 'leaflet' && window.L) return 'leaflet';
-            if (this.provider === 'maplibre' && window.maplibregl) return 'maplibre';
+            if (this.provider === 'leaflet' && engineFor('leaflet')) return 'leaflet';
+            if (this.provider === 'maplibre' && engineFor('maplibre')) return 'maplibre';
             // Fall back to whichever is present.
-            if (window.maplibregl) return 'maplibre';
-            if (window.L) return 'leaflet';
+            if (engineFor('maplibre')) return 'maplibre';
+            if (engineFor('leaflet')) return 'leaflet';
             return null;
         },
 
@@ -188,21 +330,24 @@ export default function wirekitMap(config = {}) {
             if (!el) return;
             const which = this._detectProvider();
             this._resolved = which;
+            // Resolved per call rather than kept on `this`: Alpine deep-proxies component
+            // state, and the engine is a module namespace nothing here should wrap.
+            const engine = engineFor(which);
             let map = null;
             if (which === 'maplibre') {
-                map = new window.maplibregl.Map({
+                map = new engine.Map({
                     container: el,
                     style: this.styleUrl || 'https://demotiles.maplibre.org/style.json',
                     center: [this.center[1], this.center[0]], // maplibre is [lng, lat]
                     zoom: this.zoom,
                 });
             } else if (which === 'leaflet') {
-                map = window.L.map(el).setView(this.center, this.zoom);
+                map = engine.map(el).setView(this.center, this.zoom);
                 // Pass attribution through to Leaflet's tileLayer so the tile
                 // source's required credit (e.g. OSM's '© OpenStreetMap
                 // contributors') shows in the attribution control.
                 if (this.styleUrl) {
-                    const layer = window.L.tileLayer(
+                    const layer = engine.tileLayer(
                         this.styleUrl,
                         this.attribution ? { attribution: this.attribution } : undefined,
                     );
@@ -235,8 +380,8 @@ export default function wirekitMap(config = {}) {
             // otherwise has no zoom buttons). Guarded for a stubbed/older
             // build without NavigationControl.
             if (which === 'maplibre' && this._map && typeof this._map.addControl === 'function'
-                && typeof window.maplibregl.NavigationControl === 'function') {
-                this._map.addControl(new window.maplibregl.NavigationControl());
+                && typeof engine.NavigationControl === 'function') {
+                this._map.addControl(new engine.NavigationControl());
             }
             // A blank canvas must self-diagnose: when the style/tiles fail to load
             // (CSP connect-src/img-src block, cert interception, network), the
@@ -366,7 +511,7 @@ export default function wirekitMap(config = {}) {
             const svg = '<svg viewBox="0 0 24 36" width="24" height="36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
                 + '<path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="' + color + '"/>'
                 + '</svg>';
-            return window.L.divIcon({
+            return engineFor('leaflet').divIcon({
                 html: svg,
                 className: 'wk-map-pin',
                 iconSize: [24, 36],
@@ -381,10 +526,11 @@ export default function wirekitMap(config = {}) {
         _addMarker(m) {
             if (!this._map || !m || m.id === undefined) return;
             const color = this._intentColor(m.intent);
+            const engine = engineFor(this._resolved);
             if (this._resolved === 'maplibre') {
                 // Don't rely on chained return values (robust + mockable): construct,
                 // then position + attach. `color` empty → the library default pin.
-                const marker = new window.maplibregl.Marker(color ? { color } : undefined);
+                const marker = new engine.Marker(color ? { color } : undefined);
                 marker.setLngLat([m.lng, m.lat]);
                 marker.addTo(this._map);
                 const node = typeof marker.getElement === 'function' ? marker.getElement() : null;
@@ -418,11 +564,11 @@ export default function wirekitMap(config = {}) {
                         this.selectMarker(m.id);
                     });
                 }
-                if (this._hasTip(m) && window.maplibregl.Popup) {
+                if (this._hasTip(m) && engine.Popup) {
                     // setHTML, not setText: the bubble carries the image / label /
                     // muted `body` line (_tipHtml escapes all three). Bare-label
                     // pins get no popup — the label is already the aria-label + list row.
-                    const popup = new window.maplibregl.Popup({ offset: 24, closeButton: false }).setHTML(this._tipHtml(m));
+                    const popup = new engine.Popup({ offset: 24, closeButton: false }).setHTML(this._tipHtml(m));
                     marker.setPopup(popup);
                     // Open on HOVER. MapLibre's setPopup toggles the popup on marker
                     // CLICK, but our click is reserved for selectMarker (pan + emit) —
@@ -442,7 +588,7 @@ export default function wirekitMap(config = {}) {
                 }
                 this._markers[m.id] = marker;
             } else if (this._resolved === 'leaflet') {
-                const marker = window.L.marker([m.lat, m.lng], color ? { icon: this._leafletIcon(color) } : undefined);
+                const marker = engine.marker([m.lat, m.lng], color ? { icon: this._leafletIcon(color) } : undefined);
                 if (typeof marker.addTo === 'function') {
                     marker.addTo(this._map);
                 }
@@ -548,10 +694,18 @@ export default function wirekitMap(config = {}) {
             if (window.__wirekit_map_missing_warned__) return;
             window.__wirekit_map_missing_warned__ = true;
              
+            // The message names BOTH ways in, because the one it used to name alone — a global —
+            // is exactly what MapLibre GL 6 no longer sets on its own. It also says which bundle each
+            // way belongs to: registerMapEngine() is exported by the ESM build only, and the classic
+            // bundle `@wirekitScripts` loads carried that name in this sentence and nowhere else, so
+            // a page without a bundler was first told to do something it cannot do. Assigning the
+            // global works from every bundle, so it comes first.
             console.error(
-                '[wirekit::map] No supported map library found on window. Install a '
-                + 'peer dependency (MapLibre GL or Leaflet) and load it before WireKit. '
-                + 'The accessible marker list still renders.',
+                '[wirekit::map] No supported map library found: none is on window (window.maplibregl, '
+                + 'window.L), and none was registered with registerMapEngine() from wirekit.esm.js. '
+                + 'MapLibre GL 6 is an ES module and sets no global of its own — assign it yourself '
+                + '(window.maplibregl = maplibregl), or, when your bundler imports wirekit.esm.js, pass it '
+                + 'to registerMapEngine(\'maplibre\', maplibregl). The accessible marker list still renders.',
                 error || '',
             );
         },

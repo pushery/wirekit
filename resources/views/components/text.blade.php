@@ -10,6 +10,7 @@
     'align' => null,
     'truncate' => false,
     'lineClamp' => null,
+    'break' => null,        // where an unbroken token may wrap: normal | anywhere | all. null → the default rules, no class
     'as' => 'p',
     'scope' => null,
 ])
@@ -102,6 +103,23 @@
         default => WireKit::validateProp('text', 'lineClamp', (string) $lineClamp, ['1', '2', '3', '4', '5', '6']),
     };
 
+    // An unbroken token — a checksum, a key, a long URL — has no space to wrap at, so it widens
+    // its container instead, and `truncate` would hide characters a reader may need in full.
+    //
+    // Arbitrary PROPERTIES rather than named utilities: Tailwind generates one from the literal
+    // class on every v4 release, where the named utilities for `overflow-wrap` only arrived in
+    // 4.1, and a class with no rule behind it fails silently — the lineClamp comment above is
+    // that failure, measured. Literal arms for the same reason. `anywhere` also counts toward
+    // the element's min-content width, which is what lets it wrap inside a flex row, where
+    // `break-word` would not.
+    $breakClasses = match ($break === null ? null : (string) $break) {
+        'normal' => '[overflow-wrap:normal] [word-break:normal]',
+        'anywhere' => '[overflow-wrap:anywhere]',
+        'all' => '[word-break:break-all]',
+        null => '',
+        default => WireKit::validateProp('text', 'break', (string) $break, ['normal', 'anywhere', 'all']),
+    };
+
     $classes = WireKit::resolveClasses('text', 'base', implode(' ', array_filter([
         'font-[family-name:var(--font-wk-sans)]',
         'tracking-[var(--font-wk-letter-spacing)]',
@@ -112,6 +130,7 @@
         $alignClasses,
         $truncateClasses,
         $lineClampClasses,
+        $breakClasses,
     ])), $scope);
 
     // `as` is interpolated straight into the opening tag, and Blade's escaping does

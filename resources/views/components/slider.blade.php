@@ -127,6 +127,10 @@
     // arrow-key support, drag handling, and accessibility for free; we only
     // need to style the track + thumb via CSS variables.
     $sliderId = $id ?? ($name ? 'wk-slider-' . $name : 'wk-slider-' . Str::random(6));
+    // One description list for the control: the component's own id first, then a caller's
+    // aria-describedby. Written as separate attributes, the parser kept only the first copy,
+    // so a caller's description was dropped or pushed the component's own out.
+    $describedBy = trim(($error ? $sliderId.'-error' : ($hint ? $sliderId.'-hint' : '')).' '.((string) $attributes->get('aria-describedby', '')));
     $currentValue = $value ?? $min;
 
     // Normalize marks to [['value'=>, 'label'=>, 'pct'=>], ...]. A LIST (`[0, 25, 50]`)
@@ -440,7 +444,8 @@
             @if($required) aria-required="true" @endif
             {{-- On the input itself: unlike the grouped controls, this IS the single
                  element the message is about. --}}
-            @if($error) aria-invalid="true" aria-describedby="{{ $sliderId }}-error" @elseif($hint) aria-describedby="{{ $sliderId }}-hint" @endif
+            @if($error) aria-invalid="true" @endif
+            @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
             id="{{ $sliderId }}"
             min="{{ $min }}"
             max="{{ $max }}"
@@ -477,7 +482,7 @@
             @if($disabled) disabled @endif
             {{-- class / style are consumed by the wrapper above; everything
                  else (wire:model, aria-*, data-*) stays on the input. --}}
-            {{ $attributes->except(['class', 'style'])->class([$inputClasses]) }}
+            {{ $attributes->except(['class', 'style', 'aria-describedby'])->class([$inputClasses]) }}
         />
 
         @if(! empty($normalizedMarks))

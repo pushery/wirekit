@@ -13,7 +13,8 @@
  *
  * Responsibilities: mount the engine on the content element, mirror the document
  * into a hidden <input> (debounced) so `wire:model` + native form submit keep
- * working, wire the toolbar commands, and tear the instance down on destroy.
+ * working, keep a caller's `x-model` in step in both directions (the `content`
+ * accessor below), wire the toolbar commands, and tear the instance down on destroy.
  *
  * The factory name is engine-neutral by design: the glue treats the returned
  * Editor as opaque and only calls the shared ProseMirror-editor interface, so it
@@ -41,6 +42,13 @@ export default function wirekitEditor(config = {}) {
         // Bumped on every Tiptap transaction so the toolbar's isActive() bindings
         // re-evaluate reactively (Tiptap's own state is not Alpine-reactive).
         _version: 0,
+        // Bumped only when the DOCUMENT changes, not the selection, so the `content`
+        // accessor is re-read when there is something new to read and not on every
+        // caret move.
+        _docVersion: 0,
+        // The fallback textarea's input listener, when there is no engine. Released in
+        // destroy().
+        _fallbackInput: null,
         _syncTimer: null,
         _format: config.format === 'json' ? 'json' : 'html',
         _editable: config.editable !== false,
@@ -121,6 +129,7 @@ export default function wirekitEditor(config = {}) {
                         ...(config.ariaLabel ? { 'aria-label': config.ariaLabel } : {}),
                         ...(config.ariaDescribedby ? { 'aria-describedby': config.ariaDescribedby } : {}),
                         ...(config.ariaInvalid ? { 'aria-invalid': 'true' } : {}),
+                        ...(config.ariaRequired ? { 'aria-required': 'true' } : {}),
                     },
                 },
                 onCreate: () => { this._version++; this._writeOut(); this._updateCount(); },
@@ -132,7 +141,7 @@ export default function wirekitEditor(config = {}) {
                 // timer wearing an event's name, and the boundary has to be a
                 // real event. Blur is the moment the writing stopped.
                 onBlur: () => { this._commitOptimistic(); },
-                onUpdate: () => { this._version++; this._scheduleSync(); this._updateCount(); },
+                onUpdate: () => { this._version++; this._docVersion++; this._scheduleSync(); this._updateCount(); },
                 onSelectionUpdate: () => { this._version++; },
                 onTransaction: () => { this._version++; },
             });
@@ -173,6 +182,10 @@ export default function wirekitEditor(config = {}) {
         destroy() {
             clearTimeout(this._syncTimer);
             clearTimeout(this._announceTimer);
+            if (this._fallbackInput) {
+                this.$refs.input?.removeEventListener?.('input', this._fallbackInput);
+                this._fallbackInput = null;
+            }
             if (this.editor) {
                 this.editor.destroy();
                 this.editor = null;
@@ -215,7 +228,15 @@ export default function wirekitEditor(config = {}) {
         // ── Output sync ──────────────────────────────────────────────
 
         _initialContent() {
-            const value = config.value;
+            return this._parseContent(config.value ?? '');
+        },
+
+        /**
+         * A serialized value turned into what the engine accepts: the object for a JSON
+         * editor, the string for an HTML one. A JSON string that does not parse is handed
+         * over as it is, which is what the first mount always did.
+         */
+        _parseContent(value) {
             if (this._format === 'json' && typeof value === 'string' && value !== '') {
                 try {
                     return JSON.parse(value);
@@ -224,7 +245,14 @@ export default function wirekitEditor(config = {}) {
                 }
             }
 
-            return value ?? '';
+            return value;
+        },
+
+        /** The document in the configured format: HTML, or JSON as a string. */
+        _serialize() {
+            return this._format === 'json'
+                ? JSON.stringify(this.editor.getJSON())
+                : this.editor.getHTML();
         },
 
         _scheduleSync() {
@@ -237,20 +265,107 @@ export default function wirekitEditor(config = {}) {
             if (!this.editor || !this.$refs.input) {
                 return;
             }
-            this.$refs.input.value = this._format === 'json'
-                ? JSON.stringify(this.editor.getJSON())
-                : this.editor.getHTML();
+            this.$refs.input.value = this._serialize();
             // input → Livewire wire:model; change → legacy listeners.
             this.$refs.input.dispatchEvent(new Event('input', { bubbles: true }));
             this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
         },
 
+        // ── Two-way x-model ──────────────────────────────────────────
+
+        /**
+         * The document as the form field carries it (HTML, or a JSON string). A caller's
+         * `x-model` binds to this through `x-modelable`.
+         *
+         * Without it an `x-model` here was a plain Alpine model on a `div`, listening to
+         * every `input` event that bubbled up. The editing surface's own input events are
+         * among them, and Alpine read `event.target.value`, which is `undefined` on a
+         * contenteditable: the bound value became `undefined` on every keystroke until
+         * the debounced sync wrote HTML again. Nothing flowed the other way either, so a
+         * value set from outside (a cancel restoring a draft) never reached the surface.
+         * `x-modelable` removes that listener and routes both directions through here.
+         *
+         * Read from the engine rather than from the debounced form field, so a value read
+         * right after a keystroke (a commit on a shortcut, a click on a save button)
+         * contains that keystroke.
+         */
+        get content() {
+            // Read for the dependency alone: the binding re-reads this accessor when the
+            // document changes, and not on every caret move.
+            this._docVersion;
+
+            return this._currentContent();
+        },
+
+        set content(value) {
+            const next = value == null ? '' : String(value);
+
+            if (next === this._currentContent()) {
+                return;
+            }
+
+            // The document was built from exactly this value and has not changed since.
+            // Alpine hands the bound value in once when the binding starts, and applying
+            // it again would re-parse the document on every page load for nothing.
+            if (this._docVersion === 0 && next === String(config.value ?? '')) {
+                return;
+            }
+
+            this._applyContent(next);
+        },
+
+        _currentContent() {
+            if (this.editor) {
+                return this._serialize();
+            }
+
+            // Without an engine the form field is the editor.
+            if (this.$refs.input && typeof this.$refs.input.value === 'string') {
+                return this.$refs.input.value;
+            }
+
+            return String(config.value ?? '');
+        },
+
+        /**
+         * Replace the document with a value set from outside.
+         *
+         * Not an undo step: an undo straight after a cancel would bring back exactly
+         * what the cancel discarded. The form field follows at once, so a native submit
+         * and a `wire:model` on the same editor agree with what the surface shows.
+         */
+        _applyContent(next) {
+            if (!this.editor) {
+                if (this.$refs.input) {
+                    this.$refs.input.value = next;
+                }
+
+                return;
+            }
+
+            const content = this._parseContent(next);
+
+            // Guarded like every other engine call here, for a factory that returns a
+            // minimal stub rather than a full editor.
+            if (typeof this.editor.chain === 'function') {
+                this.editor.chain().setMeta('addToHistory', false).setContent(content).run();
+            } else if (typeof this.editor.commands?.setContent === 'function') {
+                this.editor.commands.setContent(content);
+            } else {
+                return;
+            }
+
+            this._docVersion++;
+            this._writeOut();
+            this._updateCount();
+        },
+
         /**
          * Hand the content to the optimistic layer, if one is nested here.
          *
-         * Reads the value the same way _writeOut does, through the configured
-         * format — a JSON editor must not commit HTML, and the two would drift
-         * apart if this built its own.
+         * Reads the value through `_serialize()`, the same as _writeOut and the
+         * `content` accessor: a JSON editor must not commit HTML, and three copies
+         * of the format switch would drift apart.
          *
          * No `mark()`: this component takes `failure: 'keep'`, so a refusal never
          * writes back and the baseline is never read.
@@ -263,9 +378,7 @@ export default function wirekitEditor(config = {}) {
                 return;
             }
 
-            this.run(this._format === 'json'
-                ? JSON.stringify(this.editor.getJSON())
-                : this.editor.getHTML());
+            this.run(this._serialize());
         },
 
         // ── Toolbar command dispatch ─────────────────────────────────
@@ -501,6 +614,14 @@ export default function wirekitEditor(config = {}) {
             if (this.$refs.input) {
                 this.$refs.input.removeAttribute('hidden');
                 this.$refs.input.removeAttribute('aria-hidden');
+
+                // The form field is the editor now, so what is typed into it is the
+                // document. `x-modelable` removed the model's own input listener, so
+                // without this a bound value would never move off its first value.
+                if (typeof this.$refs.input.addEventListener === 'function' && !this._fallbackInput) {
+                    this._fallbackInput = () => { this._docVersion++; };
+                    this.$refs.input.addEventListener('input', this._fallbackInput);
+                }
             }
             if (this.$refs.content) {
                 this.$refs.content.setAttribute('hidden', '');

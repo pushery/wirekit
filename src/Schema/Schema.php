@@ -198,26 +198,74 @@ final class Schema
     }
 
     /**
-     * A breadcrumb trail. Pass a name => url map, in order.
+     * A breadcrumb trail. Pass a name => url map, in order; a step with no page of its own
+     * takes `null`.
      *
-     * @param  array<string, string>  $items
+     * @param  array<string, string|null>  $items
      * @param  array<string, mixed>  $extra
      * @return array<string, mixed>
      */
     public static function breadcrumbList(array $items, array $extra = []): array
     {
-        $elements = [];
-        $position = 1;
+        $steps = [];
 
         foreach ($items as $name => $url) {
-            $elements[] = self::node('ListItem', [
-                'position' => $position++,
-                'name' => (string) $name,
-                'item' => $url,
-            ]);
+            $steps[] = ['name' => (string) $name, 'url' => $url];
         }
 
-        return self::node('BreadcrumbList', ['itemListElement' => $elements], $extra);
+        return self::node('BreadcrumbList', ['itemListElement' => self::breadcrumbItems($steps)], $extra);
+    }
+
+    /**
+     * The `ListItem`s of a breadcrumb trail, built the way a search engine accepts them.
+     *
+     * Every entry but the last needs an `item` URL, and ONE entry without it makes Google
+     * discard the whole list — the result page then shows a bare URL instead of the trail. So
+     * a step with no page of its own (a navigation group) stays in the visible trail and is
+     * left out here, and the positions are counted over what remains. Consecutive steps that
+     * point at the same URL are one step to a crawler; the first name wins.
+     *
+     * The last step is the page the reader is on and may go without a URL.
+     *
+     * One rule for every producer: the breadcrumb component and `breadcrumbList()` above both
+     * build their trail here, so the two cannot answer the question differently.
+     *
+     * ⚠️ @internal — public only so `breadcrumb.blade.php` can reach it from another
+     * namespace, which is a PHP visibility necessity rather than an API promise. The
+     * entry point a developer builds a trail with is `breadcrumbList()` above, and it
+     * is the one the docs name.
+     *
+     * @internal
+     *
+     * @param  list<array{name: string, url: string|null}>  $steps
+     * @return list<array<string, mixed>>
+     */
+    public static function breadcrumbItems(array $steps): array
+    {
+        $elements = [];
+        $previousUrl = null;
+        $last = array_key_last($steps);
+
+        foreach ($steps as $index => $step) {
+            $url = $step['url'] !== null && $step['url'] !== '' ? $step['url'] : null;
+
+            if ($url === null && $index !== $last) {
+                continue;
+            }
+
+            if ($url !== null && $url === $previousUrl) {
+                continue;
+            }
+
+            $elements[] = self::node('ListItem', [
+                'position' => count($elements) + 1,
+                'name' => $step['name'],
+                'item' => $url,
+            ]);
+            $previousUrl = $url;
+        }
+
+        return $elements;
     }
 
     /**

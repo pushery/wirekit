@@ -24,15 +24,22 @@
     // title sits on the start and the close button on the end. Without the
     // close button the original single-child layout is preserved.
     $classes = WireKit::resolveClasses('modal.header', 'base', implode(' ', [
-        'px-[var(--padding-wk-x-lg)]',
-        'py-[var(--padding-wk-y-md)]',
+        // ⚠️ ONE TOKEN ON ALL FOUR SIDES. The top used to get `--padding-wk-y-md` (0.5rem)
+        // against `--padding-wk-x-lg` (1rem) at the sides: compact under a one-line title,
+        // cramped the moment the header grows — an avatar, a name and a subtitle read as text
+        // stuck to the top edge while the sides kept their air. Equal padding is the
+        // requirement, so it is ONE token, and a theme cannot pull the sides apart.
+        'p-[var(--padding-wk-x-lg)]',
         'border-b',
         'border-[var(--color-wk-border-subtle)]',
         'text-[length:var(--text-wk-lg)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
-        'flex items-center justify-between',
+        // ⚠️ `items-start`, NOT `items-center`: the close button belongs in the top corner,
+        // however tall the header grows. Centered, it drifted to half the height of a header
+        // carrying an avatar and a three-line subtitle.
+        'flex items-start justify-between',
         'gap-[var(--gap-wk-md)]',
     ]), $scope);
 
@@ -49,12 +56,17 @@
     // element-qualified to .wk-field / .wk-button and this carries neither. A
     // comment asserting a property nothing implements is worse than no comment:
     // it is exactly what stops the next reader from checking.
+    //
+    // It sits exactly in the corner the header's padding defines, top and end alike, so its
+    // glyph is inset by the same distance from both edges. It used to be pulled into the end
+    // padding by a negative margin, which only read right while the button was vertically
+    // centered — anchored to the top, the same pull put the glyph closer to the side than
+    // to the top.
     $closeClasses = WireKit::resolveClasses('modal.header', 'close', implode(' ', [
         'relative shrink-0',
         'inline-flex items-center justify-center',
         'h-[var(--size-wk-sm)] w-[var(--size-wk-sm)]',
         "before:absolute before:left-1/2 before:top-1/2 before:h-[var(--size-wk-touch-target)] before:w-[var(--size-wk-touch-target)] before:-translate-x-1/2 before:-translate-y-1/2 before:content-['']",
-        '-me-[var(--padding-wk-x-sm)]',
         'rounded-[var(--radius-wk-sm)]',
         'cursor-pointer',
         'text-[color:var(--color-wk-text-muted)]',

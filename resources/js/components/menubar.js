@@ -33,7 +33,7 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menubar/
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
-import { position } from '../utils/floating.js';
+import { focusIsWithin, position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 
 /**
@@ -361,6 +361,9 @@ export default function wirekitMenubar() {
             const items = this._getActiveItems();
 
             if (! items.length) return;
+
+            // Not when the reader already moved into the menu while it was being positioned.
+            if (focusIsWithin(this.$refs[`panel-${name}`])) return;
 
             const item = edge === 'last' ? items[items.length - 1] : items[0];
 

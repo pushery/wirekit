@@ -45,7 +45,10 @@
     // list-none + m-0 + p-0 strip the browser-default <ol> decimal markers
     // and the marker-indent (browser default ~40px). Without these the
     // breadcrumb would render "1. Home / 2. Section / 3. Item".
-    $listClasses = WireKit::resolveClasses('breadcrumb', 'list', 'list-none m-0 p-0 flex items-center gap-[var(--padding-wk-x-xs)] text-[length:var(--text-wk-sm)]', $scope);
+    // `flex-wrap`, so a trail that does not fit breaks between items rather than inside them. Without
+    // it each item shrank to its longest word, wrapped its own label, and a long trail still ran
+    // past a phone's edge.
+    $listClasses = WireKit::resolveClasses('breadcrumb', 'list', 'list-none m-0 p-0 flex flex-wrap items-center gap-[var(--padding-wk-x-xs)] text-[length:var(--text-wk-sm)]', $scope);
 
     // Link classes (for non-final items with href).
     $linkClasses = WireKit::resolveClasses('breadcrumb', 'link', implode(' ', [
@@ -79,6 +82,13 @@
 
     // Current page: rendered as <span> with aria-current, slightly emphasized.
     $currentClasses = WireKit::resolveClasses('breadcrumb', 'current', 'text-[color:var(--color-wk-text)] font-[number:var(--font-wk-body-weight)]', $scope);
+
+    // A step with no page of its own — a navigation group between the home page and this one.
+    // It reads as plain text like the current page, but it is NOT the current page, and it
+    // used to borrow that block: the trail then showed two crumbs in the emphasis color, and
+    // personalizing `current` restyled both. Muted like the links around it, without the
+    // hover and focus a link carries, because there is nothing to activate.
+    $ancestorClasses = WireKit::resolveClasses('breadcrumb', 'ancestor', 'text-[color:var(--color-wk-text-muted)]', $scope);
 
     // A control that belongs to the trail without being a step in it.
     //
@@ -152,8 +162,10 @@
                          text and carries no aria-current, because only one crumb in a
                          trail can be where the reader is. This branch was folded into
                          the one above, so a trail like ['Home', 'Docs' => /docs, 'Page']
-                         announced "Home, current page" on a crumb two levels up. --}}
-                    <span class="{{ $currentClasses }} {{ $iconWrap }}">
+                         announced "Home, current page" on a crumb two levels up. Its
+                         classes are the `ancestor` block's rather than the current
+                         page's, for the same reason. --}}
+                    <span class="{{ $ancestorClasses }} {{ $iconWrap }}">
                         @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />@endif
                         {{ $label }}
                     </span>
@@ -187,27 +199,22 @@
      structured-data component bakes JSON_HEX_TAG in. --}}
 @if($schema && count($items) > 0)
     @php
+        // Built by Schema::breadcrumbItems(), the one rule every producer shares: a step with no
+        // page of its own stays in the visible trail above but not in here, because Google
+        // discards a whole BreadcrumbList over one ListItem without a URL that is not the last.
+        // Consecutive steps at the same URL fold into one, and the positions are counted over
+        // what remains.
         $breadcrumbLdData = [
             '@context' => 'https://schema.org',
             '@type' => 'BreadcrumbList',
-            'itemListElement' => [],
+            'itemListElement' => \Pushery\WireKit\Schema\Schema::breadcrumbItems(array_values(array_map(
+                static fn ($item): array => [
+                    'name' => is_array($item) ? (string) ($item['label'] ?? '') : (string) $item,
+                    'url' => is_array($item) && ! empty($item['href']) ? (string) $item['href'] : null,
+                ],
+                $items,
+            ))),
         ];
-        foreach ($items as $i => $item) {
-            $itemLabel = is_array($item) ? ($item['label'] ?? '') : (string) $item;
-            $itemHref = is_array($item) ? ($item['href'] ?? null) : null;
-            $entry = [
-                '@type' => 'ListItem',
-                'position' => $i + 1,
-                'name' => $itemLabel,
-            ];
-            // The LAST crumb is the current page, and it deliberately carries no `item`.
-            // Google's guidance: the page one is already on is named but not linked, so a
-            // trail whose final entry has a URL reads as pointing somewhere else.
-            if ($itemHref) {
-                $entry['item'] = $itemHref;
-            }
-            $breadcrumbLdData['itemListElement'][] = $entry;
-        }
     @endphp
     <x-wirekit::structured-data :data="$breadcrumbLdData" />
 @endif

@@ -1,5 +1,6 @@
 import { resolveThemeColors, palette, withOpacity } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
+import { awaitPeer } from '../utils/await-peer.js';
 
 /**
  * WireKit Chart.js Alpine Component.
@@ -103,6 +104,9 @@ export default function wirekitChartJs(config) {
         // it fires on class mutations that have nothing to do with the theme, and this
         // is what tells those apart from a real one.
         _themeSignature: null,
+
+        // Stops the wait for a library that was not on the page at init() — utils/await-peer.js.
+        _stopAwaitingLibrary: null,
 
         // Track which datasets had user-provided colors at init time.
         // These datasets are excluded from dark mode re-theming.
@@ -261,29 +265,53 @@ Chart.register(...registerables);</pre>
         },
 
         init() {
-            // Intentional console.error — DX hint when Chart.js peer dependency is missing.
-            // Deduplicated via module-scoped flag so a page with N charts emits
-            // the warning ONCE rather than N times.
-            if (typeof Chart === 'undefined') {
-                if (typeof window !== 'undefined') {
-                    window.__wirekit_chartjs_missing_warned__ ??= false;
-                    if (!window.__wirekit_chartjs_missing_warned__) {
-                        window.__wirekit_chartjs_missing_warned__ = true;
-                        console.error(
-                            'WireKit: Chart.js is not loaded. Install it via npm:\n' +
-                            '  npm install chart.js\n' +
-                            'And import it in your app.js:\n' +
-                            '  import { Chart, registerables } from "chart.js";\n' +
-                            '  Chart.register(...registerables);'
-                        );
-                    }
+            // Asked until it can be answered — utils/await-peer.js. The library may land after
+            // Alpine has mounted this chart (a lazily imported chart.js), so the panel and the
+            // console hint wait for the load plus a grace period instead of speaking at once.
+            this._stopAwaitingLibrary = awaitPeer({
+                isReady: () => typeof Chart !== 'undefined',
+                onReady: () => {
+                    this._clearMissingLibraryPanel();
+                    this._boot();
+                },
+                onMissing: () => {
+                    this._warnMissingLibrary();
+                    this._renderMissingLibraryPanel();
+                },
+            });
+        },
+
+        /**
+         * The one-time console hint — DX signal when the Chart.js peer dependency is missing.
+         * Deduplicated through a window flag, so a page with N charts says it once.
+         */
+        _warnMissingLibrary() {
+            if (typeof window !== 'undefined') {
+                window.__wirekit_chartjs_missing_warned__ ??= false;
+                if (!window.__wirekit_chartjs_missing_warned__) {
+                    window.__wirekit_chartjs_missing_warned__ = true;
+                    console.error(
+                        'WireKit: Chart.js is not loaded. Install it via npm:\n' +
+                        '  npm install chart.js\n' +
+                        'And import it in your app.js:\n' +
+                        '  import { Chart, registerables } from "chart.js";\n' +
+                        '  Chart.register(...registerables);'
+                    );
                 }
-
-                this._renderMissingLibraryPanel();
-
-                return;
             }
+        },
 
+        /** The library arrived after the panel: take the panel down and show the canvas again. */
+        _clearMissingLibraryPanel() {
+            const canvas = this.$refs.canvas;
+            if (!canvas || !canvas.parentElement) return;
+
+            canvas.parentElement.querySelector('[data-wk-chart-missing]')?.remove();
+            canvas.style.display = '';
+        },
+
+        /** Build the chart — at once when the library is on the page, or the moment it lands. */
+        _boot() {
             // One-shot prototype patch — defensive race-condition guard.
             patchChartDrawOnce();
 
@@ -586,6 +614,10 @@ Chart.register(...registerables);</pre>
          * Safe to call multiple times (idempotent).
          */
         destroy() {
+            // A library that lands after this chart is gone must not build it.
+            this._stopAwaitingLibrary?.();
+            this._stopAwaitingLibrary = null;
+
             // Clear debounce timer first to prevent stale callbacks
             clearTimeout(this._darkModeDebounce);
 

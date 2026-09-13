@@ -6,6 +6,12 @@
     'intent' => 'neutral',
     'limit' => null,
     'sortable' => false,
+    // What the application calls this column when a card moves between columns on a
+    // `cross-column` board: it arrives as `from.column` / `to.column` in
+    // `wirekit:sortable:moved`. Without one the column is named by its position among the
+    // board's sortable columns — honest, and only usable by a server that addresses columns
+    // positionally, the same rule a card without a `data-sortable-id` follows.
+    'columnId' => null,
     'scope' => null,
 ])
 
@@ -45,7 +51,10 @@
     // board with two "Blocked" columns named the second one after the first one's header.
     // A random id would have been unique and worse: it changes on every render, so a
     // Livewire morph replaces the node instead of patching it.
-    $columnId = \Pushery\WireKit\Support\DomId::unique(null, 'kanban-column-');
+    //
+    // `$domId`, not `$columnId`: that name belongs to the `column-id` prop, and an assignment
+    // here would write this internal id over the value the application gave its column.
+    $domId = \Pushery\WireKit\Support\DomId::unique(null, 'kanban-column-');
 
     // The name of a list item has to come from something that EXISTS.
     //
@@ -82,10 +91,18 @@
         @if($hasCustomHeader)
             aria-label="{{ $label }}"
         @else
-            aria-labelledby="{{ $columnId }}-label"
+            aria-labelledby="{{ $domId }}-label"
         @endif
     @endif
-    @if($sortable) data-sortable-column @endif
+    {{-- The marker stays bare without a `column-id`, so a column that does not name itself
+         renders exactly as before; the sortable then falls back to the column's position. --}}
+    @if($sortable)
+        @if(filled($columnId))
+            data-sortable-column="{{ $columnId }}"
+        @else
+            data-sortable-column
+        @endif
+    @endif
     {{ $attributes->class([$baseClasses]) }}
 >
     {{-- Column header. Same flag the naming above branches on, so the two can never
@@ -97,7 +114,7 @@
         <div class="flex items-center justify-between px-[var(--space-wk-md,1rem)] py-[var(--space-wk-sm,0.5rem)]">
             <span class="flex items-center gap-[var(--space-wk-sm,0.5rem)]">
                 <span
-                    id="{{ $columnId }}-label"
+                    id="{{ $domId }}-label"
                     class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]"
                 >
                     {{ $label }}
@@ -143,12 +160,19 @@
                  They travel as TEMPLATES with `:position` / `:total` rather than as
                  finished sentences, because the numbers are only known in the browser and
                  ":position of :total" is not the word order every language uses. Same
-                 shape as the carousel's slide announcement and stream's status messages. --}}
+                 shape as the carousel's slide announcement and stream's status messages.
+
+                 The two cross-column sentences travel on every sortable column, and the
+                 factory only uses them on a board marked `data-sortable-connected`: the
+                 column cannot see its board's props, and a few bytes of payload are cheaper
+                 than a second source of truth about whether the board connects. --}}
             x-data="wirekitSortable({{ \Pushery\WireKit\Support\AlpinePayload::from([
                 'roleDescription' => __('wirekit::Sortable item'),
                 'messages' => [
                     'grabbed' => __('wirekit::Grabbed. Position :position of :total. Use the arrow keys to move it.'),
+                    'grabbedAcross' => __('wirekit::Grabbed. Position :position of :total. Use up and down to move it, left and right to change the column.'),
                     'moved' => __('wirekit::Position :position of :total.'),
+                    'movedToColumn' => __('wirekit::Moved to :column. Position :position of :total.'),
                     'dropped' => __('wirekit::Dropped at position :position of :total.'),
                     'canceled' => __('wirekit::Reorder canceled. Back at position :position of :total.'),
                 ],

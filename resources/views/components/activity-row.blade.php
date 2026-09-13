@@ -8,6 +8,10 @@
     // via `config('wirekit.components.activity-row.kinds')`. Unknown kinds
     // fall back to the muted dot (no error — the map is intentionally open).
     'kind' => 'system',
+    // What a screen reader hears for the kind, in place of the dot's color.
+    // The six built-in kinds are announced from the translation catalog; any
+    // other kind is announced by its key unless this names it.
+    'kindLabel' => null,
     // Optional actor name, rendered bold at the start of the line.
     'actor' => null,
     // Optional relative timestamp ("2 hours ago"), right-aligned + muted.
@@ -35,6 +39,21 @@
         'user' => 'var(--color-wk-accent)',
     ], (array) config('wirekit.components.activity-row.kinds', []));
     $dotColor = $kinds[$kind] ?? 'var(--color-wk-text-muted)';
+
+    // The kind's spoken name — the text the dot's color stands in for (WCAG 1.4.1). A caller's
+    // `kindLabel` wins. The built-in kinds come from the catalog, so a page in another language
+    // announces its own word instead of the key, which used to be the one untranslated word in
+    // the row. Any other kind falls back to its key: the one name the developer gave it. The keys
+    // are written out literally, so a search for a catalog entry finds where it is used.
+    $kindText = $kindLabel ?? match ($kind) {
+        'commit' => __('wirekit::Commit'),
+        'merge' => __('wirekit::Merge'),
+        'deploy' => __('wirekit::Deployment'),
+        'comment' => __('wirekit::Comment'),
+        'system' => __('wirekit::System'),
+        'user' => __('wirekit::User'),
+        default => $kind,
+    };
 
     $classes = WireKit::resolveClasses('activity-row', 'base', implode(' ', [
         'flex items-start gap-3',
@@ -73,6 +92,15 @@
         @endisset
 
         {{-- Accessible kind label — the textual equivalent of the dot color. --}}
-        <span class="sr-only">{{ $kind }}</span>
+        <span class="sr-only">{{ $kindText }}</span>
+
+        {{-- Block content under the line: a list of changed fields, a quoted comment. The default
+             slot sits in an inline <span> beside the actor and cannot hold a block, so this is a
+             <div> in the content column, flush with the text above it. --}}
+        @isset($detail)
+            <div class="mt-1 min-w-0">
+                {{ $detail }}
+            </div>
+        @endisset
     </div>
 </div>
