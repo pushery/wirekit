@@ -304,7 +304,7 @@
                 {{ $value }}
             </div>
         @endif
-    @elseif(trim($slot->toHtml()) !== '')
+    @elseif($slot->hasActualContent())
         {{-- Fallback: slot allows rich value rendering (e.g. mixed currency + icon) --}}
         <div class="text-[length:var(--text-wk-2xl)] leading-[var(--font-wk-heading-line-height,1.25)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $slot }}

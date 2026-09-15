@@ -19,6 +19,16 @@
     // True while tokens are still landing. Marks the turn aria-busy and shows
     // the streaming affordance.
     'streaming' => false,
+    // The sources this answer cites, as numbered chips under the body. Takes whatever the
+    // retrieval layer produced: titles, arrays with label/href/snippet, or the application's
+    // own models — `CitationList` normalizes all three and drops an entry with no label,
+    // because a chip a screen reader announces as nothing is worse than no chip.
+    'citations' => [],
+    // Seconds the model spent reasoning, for the disclosure's summary once the stream
+    // has ended: "Thought for 12s". The APPLICATION owns that number — it knows when
+    // the stream started, and a stopwatch in the browser would disagree with it the
+    // moment the page re-renders from the server. Null keeps the plain label.
+    'reasoningSeconds' => null,
     // How streamed output reaches assistive technology:
     //   sentence — flush each finished sentence (default; the readable choice)
     //   all      — flush once, when streaming stops
@@ -40,6 +50,41 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $streaming = BooleanProp::from($streaming, false);
+
+    /*
+     * The disclosure's label follows the stream. While tokens land it says the model is
+     * thinking and shimmers with them; afterwards it settles into how long that took, when
+     * the application says so, and otherwise back to the plain label.
+     *
+     * A non-numeric value is no label at all rather than a cast: `reasoning-seconds="soon"`
+     * would otherwise read as "Thought for 0s", which is worse than saying nothing.
+     */
+    $citationList = \Pushery\WireKit\Support\CitationList::from($citations);
+
+    $reasoningSecondsValue = is_numeric($reasoningSeconds) ? (int) $reasoningSeconds : null;
+
+    $reasoningLabel = match (true) {
+        $streaming => __('wirekit::Thinking…'),
+        $reasoningSecondsValue !== null => __('wirekit::Thought for :seconds s', ['seconds' => $reasoningSecondsValue]),
+        default => __('wirekit::Reasoning'),
+    };
+
+    // The chip is a button the size of a footnote marker, and it carries the state a reader
+    // needs to see it as one: a quiet surface, a full radius, and a focus ring that is the same
+    // ring every other control here uses. The touch floor is in the stylesheet's coarse-pointer
+    // block rather than here — a 44px chip on a mouse-driven page would read as a tag, not a
+    // marker.
+    $citationChipClasses = WireKit::resolveClasses('assistant-message', 'citation', implode(' ', [
+        // `cursor-pointer` because Tailwind's preflight gives a button `cursor: default`, and a
+        // chip that opens its source has to read as something you can press.
+        'inline-flex cursor-pointer items-center justify-center',
+        'min-w-[1.5rem] px-[var(--padding-wk-x-xs)] py-[var(--padding-wk-y-xs)]',
+        'rounded-[var(--radius-wk-full)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-subtle)]',
+        'bg-[var(--color-wk-bg-subtle)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]',
+        'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
+        'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
+        'wk-transition',
+    ]), $scope);
 
     $roleValue = in_array($role, ['assistant', 'user', 'system'], true)
         ? $role
@@ -122,10 +167,20 @@
             @endif
         </span>
 
-        {{-- Reasoning disclosure — collapsed by default; the answer is the point. --}}
+        {{-- Reasoning disclosure — open while the model is still thinking, collapsed once the
+             answer is there, because the answer is the point.
+
+             The `wire:key` carries the streaming state on purpose. A disclosure's open state is
+             Alpine's, and Livewire MORPHS this element when the turn re-renders — which would
+             preserve the open state and leave the reasoning hanging open under a finished answer.
+             A key that changes makes the morph replace the element instead, so the disclosure
+             comes back closed with the summary on it. --}}
         @isset($reasoning)
-            <div data-wk-assistant-reasoning>
-                <x-wirekit::collapsible :trigger="__('wirekit::Reasoning')">
+            <div data-wk-assistant-reasoning wire:key="wk-assistant-reasoning-{{ $streaming ? 'streaming' : 'settled' }}">
+                <x-wirekit::collapsible :open="$streaming">
+                    <x-slot:trigger>
+                        <x-wirekit::shimmer :active="$streaming" data-wk-assistant-reasoning-label>{{ $reasoningLabel }}</x-wirekit::shimmer>
+                    </x-slot:trigger>
                     {{ $reasoning }}
                 </x-wirekit::collapsible>
             </div>
@@ -160,6 +215,49 @@
             class="sr-only"
             x-text="announced"
         ></span>
+
+        {{-- Sources, as numbered chips: the marker a reader follows back to where an answer came
+             from. Each chip opens a popover carrying the passage and, when there is somewhere to
+             go, a link to it — a citation the reader cannot check is decoration.
+
+             The number follows the rendered LIST rather than the caller's index, so an entry
+             without a label (dropped upstream) never leaves a hole in the count a reader would
+             read as a missing source. --}}
+        @if($citationList !== [])
+            <ol
+                data-wk-prose-skip
+                data-wk-assistant-citations
+                role="list"
+                aria-label="{{ __('wirekit::Sources') }}"
+                class="flex list-none flex-wrap items-center gap-[var(--space-wk-xs,0.25rem)] p-0"
+                style="list-style: none;"
+            >
+                @foreach($citationList as $citation)
+                    <li data-wk-prose-skip>
+                        <x-wirekit::popover :label="$citation['label']" placement="top">
+                            <x-slot:trigger>
+                                <button
+                                    type="button"
+                                    data-wk-assistant-citation
+                                    aria-label="{{ __('wirekit::Source :number, :label', ['number' => $citation['number'], 'label' => $citation['label']]) }}"
+                                    class="{{ $citationChipClasses }}"
+                                >{{ $citation['number'] }}</button>
+                            </x-slot:trigger>
+
+                            @if($citation['href'])
+                                <x-wirekit::link :href="$citation['href']" data-wk-assistant-citation-source>{{ $citation['label'] }}</x-wirekit::link>
+                            @else
+                                <span data-wk-assistant-citation-source class="block text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $citation['label'] }}</span>
+                            @endif
+
+                            @if($citation['snippet'])
+                                <span data-wk-prose-skip class="mt-[var(--space-wk-xs,0.25rem)] block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $citation['snippet'] }}</span>
+                            @endif
+                        </x-wirekit::popover>
+                    </li>
+                @endforeach
+            </ol>
+        @endif
 
         {{-- Footer chips (ambient — latency / tokens / cost) and action controls
              (copy / regenerate / rate) share ONE row at the bottom of the message

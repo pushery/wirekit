@@ -163,9 +163,13 @@
     @if($dismissible) x-on:keydown.escape.window="open && isTopmost && close()" @endif
     {{ $attributes }}
 >
-    {{-- Trigger slot — always visible, clicking opens the modal --}}
+    {{-- Trigger slot — always visible, clicking opens the modal.
+         The wrapper only carries the click listener, so it generates no box. As a block it kept a
+         button in the slot at its own width inside a container that stretches its children, and
+         a caller cannot reach it with a class. On its own `contents` changes nothing a page shows;
+         `class="contents"` on the component root is what hands the trigger to the container. --}}
     @isset($trigger)
-        <div x-on:click="show()">
+        <div class="contents" x-on:click="show()">
             {{ $trigger }}
         </div>
     @endisset

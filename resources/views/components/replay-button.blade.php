@@ -61,7 +61,7 @@
          is always true (an empty slot is still a ComponentSlot), so the default
          must be gated on the slot being EMPTY, not unset — otherwise the icon
          never renders for `<x-wirekit::replay-button />`. --}}
-    @if($slot->isEmpty())
+    @if(! $slot->hasActualContent())
         <svg
             aria-hidden="true"
             viewBox="0 0 24 24"

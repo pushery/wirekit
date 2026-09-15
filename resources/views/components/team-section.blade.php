@@ -29,7 +29,7 @@
 renders previews WITHOUT the developer's Tailwind build, so `list-none` is a dead class
 name there (it DOES load dist/wirekit.css — that is why the tokens in this component
 resolve). --}}
-<ul
+<ul data-wk-prose-skip
     role="list"
     aria-label="{{ $label }}"
     data-wk-team-section

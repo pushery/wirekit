@@ -75,8 +75,8 @@
          explicit accessible NAME fixes that without changing the divider's own
          contract: AT announces "Today, separator". --}}
     <x-wirekit::divider
-        :label="trim((string) $slot)"
-        :aria-label="trim((string) $slot)"
+        :label="\Pushery\WireKit\Support\SlotContent::text($slot)"
+        :aria-label="\Pushery\WireKit\Support\SlotContent::text($slot)"
         {{ $attributes }}
     />
 @else

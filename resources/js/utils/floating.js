@@ -39,6 +39,12 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  *   inherits the field's width through `w-full`; one positioned `fixed` (which
  *   is what lets it escape a clipping ancestor) has no such parent, so the width
  *   has to be carried over explicitly.
+ * @param {boolean} options.minReferenceWidth - Let the panel be WIDER than its reference but
+ *   never narrower, and never wider than the viewport allows. For a panel that sizes itself by
+ *   its content or by a width its caller chose: it starts at the field's width, grows to what it
+ *   asks for, and is capped at the room the chosen placement leaves. Opt-in like the options
+ *   above; `matchReferenceWidth` wins when both are set, since an exact width leaves nothing to
+ *   bound.
  * @param {boolean} options.autoReposition - Keep the panel pinned to its trigger
  *   while it is open: re-run the SAME middleware pipeline on scroll, resize, and
  *   ancestor-scroll via Floating UI's `autoUpdate`. Opt-in (default `false`, like
@@ -83,6 +89,7 @@ export async function position(reference, floating, {
     fitViewport = false,
     minHeight = 120,
     matchReferenceWidth = false,
+    minReferenceWidth = false,
     autoReposition = false,
 } = {}) {
     const middleware = [
@@ -97,20 +104,23 @@ export async function position(reference, floating, {
         }),
     ];
 
-    if (fitViewport || matchReferenceWidth) {
+    if (fitViewport || matchReferenceWidth || minReferenceWidth) {
         // AFTER flip on purpose: `availableHeight` describes the placement that
         // was actually chosen. Measured before the flip it would report the room
         // on the side floating-ui just rejected, and the cap would be wrong in
         // exactly the situation the cap exists for.
         middleware.push(size({
             padding: 8,
-            apply({ availableHeight, rects, elements }) {
+            apply({ availableHeight, availableWidth, rects, elements }) {
                 if (fitViewport) {
                     elements.floating.style.maxHeight = `${Math.max(availableHeight, minHeight)}px`;
                 }
 
                 if (matchReferenceWidth) {
                     elements.floating.style.width = `${rects.reference.width}px`;
+                } else if (minReferenceWidth) {
+                    elements.floating.style.minWidth = `${rects.reference.width}px`;
+                    elements.floating.style.maxWidth = `${Math.max(availableWidth, rects.reference.width)}px`;
                 }
             },
         }));

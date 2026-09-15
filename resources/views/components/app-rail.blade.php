@@ -216,49 +216,59 @@
 <nav
     data-wk-rail
     data-labels="{{ $labels }}"
-    {{-- A rail that cannot expand has no Alpine, so its names must simply be present — but
-         only in the modes that show names at all. An expandable rail overrides this from the
-         binding below, where the words wait for the column to stop moving. --}}
+    {{-- The names of a rail that cannot expand, present before Alpine runs, and only in the
+         modes that show names at all. The binding below agrees with this on arrival and adds the
+         names where the rail has a drawer to itself; on an expandable rail the words also wait
+         for the column to stop moving. --}}
     @if(! $expandable && $labels !== 'tooltip') data-wk-names @endif
     data-variant="{{ $variant }}"
     data-indicator="{{ $indicator }}"
     @if($tone !== 'default') data-wk-tone="{{ $tone }}" @endif
-    @if($expandable)
-        {{-- The state lives in resources/js/components/app-rail.js. It cannot live in
-             an inline object literal here: Alpine's CSP build cannot declare methods
-             that way, so under a strict policy the toggle would render and do nothing.
-             `persist` goes through AlpinePayload; the boolean is written as a literal
-             because a non-empty payload renders as JSON.parse(…) and JSON is a global
-             the CSP evaluator cannot resolve. --}}
-        x-data="wirekitAppRail({ persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::string($persistDriver) }}, expanded: {{ $expanded ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
-        :data-expanded="expanded ? '' : null"
-        {{-- ONE attribute drives every per-mode style below, and that is deliberate.
-             Items react through `group-data-[labels=…]/wk-rail:` variants; if the live
-             expanded state were a SECOND attribute those variants also had to answer
-             to, an expanded `labels="below"` rail would carry two utilities of equal
-             specificity for the same property — flex-direction, label visibility, main-
-             axis alignment — and the winner would be decided by Tailwind's emission
-             order rather than by state. Rewriting the mode instead means the expanded
-             rail simply IS an inline-label rail, and there is nothing to arbitrate.
-             The static attribute below stays for the paint before Alpine initializes. --}}
-        :data-wk-ready="ready ? '' : null"
-        {{-- TWO markers, because the mode and the words need two different moments.
+    {{-- EVERY rail runs the component, expandable or not, because one of its widths is decided
+         in the page for all of them. Below the shell's breakpoint a rail that has a drawer to
+         itself shows its names there, and only the page knows what else went into the drawer.
+         An expandable rail adds the toggle, the stored preference and the announcements; a rail
+         that cannot expand gets none of those and otherwise rests exactly where `labels` puts it.
 
-             `data-labels` rewrites the mode AT ONCE, and it has to: it also decides where an
-             item's icon sits. Held back to the end of the transition, the icon stayed centered
-             while the column grew and then snapped to the start edge — measured on a 240px
-             rail, it drifted from 17.5px out to 108px and jumped back to 16px in one frame.
-             That is a worse artifact than the one this was meant to remove.
+         The state lives in resources/js/components/app-rail.js. It cannot live in
+         an inline object literal here: Alpine's CSP build cannot declare methods
+         that way, so under a strict policy the toggle would render and do nothing.
+         `persist` goes through AlpinePayload; the booleans are written as literals
+         because a non-empty payload renders as JSON.parse(…) and JSON is a global
+         the CSP evaluator cannot resolve. --}}
+    x-data="wirekitAppRail({ expandable: {{ $expandable ? 'true' : 'false' }}, persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::string($persistDriver) }}, expanded: {{ $expanded ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
+    :data-expanded="expanded ? '' : null"
+    {{-- ONE attribute drives every per-mode style below, and that is deliberate.
+         Items react through `group-data-[labels=…]/wk-rail:` variants; if the live
+         expanded state were a SECOND attribute those variants also had to answer
+         to, an expanded `labels="below"` rail would carry two utilities of equal
+         specificity for the same property — flex-direction, label visibility, main-
+         axis alignment — and the winner would be decided by Tailwind's emission
+         order rather than by state. Rewriting the mode instead means the expanded
+         rail simply IS an inline-label rail, and there is nothing to arbitrate.
+         The static attribute below stays for the paint before Alpine initializes. --}}
+    :data-wk-ready="ready ? '' : null"
+    {{-- TWO markers, because the mode and the words need two different moments.
 
-             `data-wk-names` is the words alone, and those wait. Put into the layout at the
-             width the animation happens to be passing through, a name wraps there and unwraps
-             as the column catches up. Two concerns, two markers — the sidebar already splits
-             them the same way, and this file did not. --}}
-        :data-labels="expanded ? 'inline' : {{ \Pushery\WireKit\Support\AlpinePayload::string($labels) }}"
-        {{-- Present whenever names belong in the layout: always in a mode that shows them,
-             and in `tooltip` only once the column has finished widening. The mode above flips
-             at once; this waits. --}}
-        :data-wk-names="(wide || {{ \Pushery\WireKit\Support\AlpinePayload::string($labels) }} !== 'tooltip') ? '' : null"
+         `data-labels` rewrites the mode AT ONCE, and it has to: it also decides where an
+         item's icon sits. Held back to the end of the transition, the icon stayed centered
+         while the column grew and then snapped to the start edge — measured on a 240px
+         rail, it drifted from 17.5px out to 108px and jumped back to 16px in one frame.
+         That is a worse artifact than the one this was meant to remove.
+
+         `data-wk-names` is the words alone, and those wait. Put into the layout at the
+         width the animation happens to be passing through, a name wraps there and unwraps
+         as the column catches up. Two concerns, two markers — the sidebar already splits
+         them the same way, and this file did not. --}}
+    :data-labels="expanded ? 'inline' : {{ \Pushery\WireKit\Support\AlpinePayload::string($labels) }}"
+    {{-- Present whenever names belong in the layout: always in a mode that shows them,
+         and in `tooltip` only once the column has finished widening. The mode above flips
+         at once; this waits. --}}
+    :data-wk-names="(wide || {{ \Pushery\WireKit\Support\AlpinePayload::string($labels) }} !== 'tooltip') ? '' : null"
+    {{-- Only where there is something to swap. An `inline` rail rests at the expanded width
+         already, and an object naming one class twice keeps only its last entry, which removed
+         the width the moment the rail presented expanded. --}}
+    @if($restingWidth !== $expandedWidth)
         {{-- OBJECT syntax, not a ternary. A ternary hands Alpine one class to add, and Alpine
              only ever removes what it added itself — so the static initial width emitted below
              survived every toggle, leaving two width utilities on the element and a rail that

@@ -34,12 +34,20 @@
         // scrolling cells don't show through (the frozen column reads as solid even
         // on striped tables — the standard frozen-column convention).
         '[table[data-wk-sticky-column]_&:first-child]:sticky',
-        '[table[data-wk-sticky-column]_&:first-child]:left-0',
+        // LOGICAL, not the physical `left` inset. Writing direction does not move a physical edge:
+        // under `dir="rtl"` the first column renders on the right, and `left: 0` pinned it to the
+        // far END of the row while the scrolling columns ran under it. An LTR screenshot of that
+        // looks exactly like a correct one. Named as the CSS property rather than the utility on
+        // purpose: Tailwind reads comments too, so a utility spelled here is compiled into the sheet.
+        '[table[data-wk-sticky-column]_&:first-child]:start-0',
         '[table[data-wk-sticky-column]_&:first-child]:z-[1]',
         '[table[data-wk-sticky-column]_&:first-child]:bg-[var(--color-wk-bg)]',
+        // Capped with the header cell above it, so a long label wraps rather than taking the
+        // width the other columns scroll in. The reasoning is next to the same line in th.
+        '[table[data-wk-sticky-column]_&:first-child]:max-w-[var(--size-wk-table-sticky-column-max)]',
     ]), $scope);
 @endphp
 
-<td data-wk-table-td {{ $attributes->class([$classes]) }}>
+<td data-wk-prose-skip data-wk-table-td {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </td>

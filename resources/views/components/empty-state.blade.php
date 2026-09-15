@@ -67,7 +67,7 @@
 @php
     // — iconSlot symmetry: slot wins over icon prop when
     // both supplied. Matches feature pattern + stat behavior.
-    $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty();
+    $hasIconSlot = isset($iconSlot) && $iconSlot->hasActualContent();
 @endphp
 
 <div {{ $attributes->class([$classes]) }} @if($animateAttr) {!! $animateAttr !!} @endif>
@@ -84,19 +84,19 @@
 
     @if($title)
         {{-- Dynamic heading tag — level is validated to 1–6 in the @php block. --}}
-        <h{{ $levelValue }} class="mb-1 text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        <h{{ $levelValue }} data-wk-prose-skip class="mb-1 text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $title }}
         </h{{ $levelValue }}>
     @endif
 
     @if($description)
-        <p class="mb-4 max-w-md text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+        <p data-wk-prose-skip class="mb-4 max-w-md text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $description }}
         </p>
     @endif
 
     {{-- Default slot holds the call-to-action (e.g. button) --}}
-    @if(trim($slot->toHtml()) !== '')
+    @if($slot->hasActualContent())
         <div class="mt-2">
             {{ $slot }}
         </div>

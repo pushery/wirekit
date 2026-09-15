@@ -111,7 +111,7 @@
         </div>
     @endif
 
-    @if($slot->isNotEmpty())
+    @if($slot->hasActualContent())
         <div class="{{ $innerMaxClass }} mx-auto">
             {{ $slot }}
         </div>

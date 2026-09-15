@@ -22,6 +22,6 @@
     $as = \Pushery\WireKit\WireKit::tagName('visually-hidden', (string) $as);
 @endphp
 
-<{{ $as }} {{ $attributes->class([$classes]) }}>
+<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </{{ $as }}>

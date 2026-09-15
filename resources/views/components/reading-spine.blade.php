@@ -290,12 +290,12 @@
             "no padding between dot and edge" symptom). Gap is driven by the
             CSS variable so the list density tracks `--reading-spine-gap`.
         --}}
-        <ol role="list"
+        <ol data-wk-prose-skip role="list"
             class="flex flex-col py-[var(--reading-spine-padding-y)] px-[var(--reading-spine-padding-x)]"
             style="list-style: none; margin: 0; padding-top: var(--reading-spine-padding-y); padding-right: var(--reading-spine-padding-x); padding-bottom: var(--reading-spine-padding-y); padding-left: var(--reading-spine-padding-x); display: flex; flex-direction: column; gap: var(--reading-spine-gap);"
         >
             <template x-for="item in items" :key="item.id">
-                <li
+                <li data-wk-prose-skip
                     class="wk-reading-spine__item relative"
                     x-show="matchesFilter(item)"
                 >
@@ -311,7 +311,7 @@
                         inline style instead of relying on a class system that
                         only applies when Tailwind is loaded).
                     --}}
-                    <a
+                    <a data-wk-prose-skip
                         :href="'#' + item.id"
                         :data-active="item.index === activeIndex ? 'true' : 'false'"
                         :data-level="item.level"

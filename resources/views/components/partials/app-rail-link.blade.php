@@ -26,7 +26,7 @@
      and an `href` there is invalid rather than merely useless. `aria-current` is written
      in both, because it is defined for any element and an "active" module is active
      whichever tag draws it. --}}
-<{{ $railTag }}
+<{{ $railTag }} data-wk-prose-skip
     {{-- The marker the square-app-icon rule addresses. --}}
     data-wk-rail-item
     @if($railTag === 'button') type="button" @endif

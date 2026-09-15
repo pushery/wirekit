@@ -111,7 +111,7 @@
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
-<{{ $tag }}
+<{{ $tag }} data-wk-prose-skip
     @if($href) href="{{ $href }}" @endif
     {{-- Honor a caller-provided type so a no-href item can drive a form
          (e.g. type="submit" for a CSRF logout inside a wrapping <form>);

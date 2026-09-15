@@ -33,6 +33,13 @@
     'options' => [],
     'value' => [],          // option keys to pre-select on load (array or comma-separated string)
     'placeholder' => config('wirekit.components.multi-select.placeholder') ?? __('wirekit::Select…'),
+    // Where the options panel opens against the field: any placement `dropdown` takes. The
+    // panel still flips to the other side when the chosen one has no room.
+    'placement' => config('wirekit.components.multi-select.placement', 'bottom-start'),
+    // How wide the panel is. `trigger` matches the field. `auto` takes the width of the widest
+    // option, and a CSS length sets one. Those two are never narrower than the field and never
+    // wider than the room the placement leaves.
+    'panelWidth' => config('wirekit.components.multi-select.panel-width', 'trigger'),
     'scope' => null,
     'ariaLabel' => null,
 ])
@@ -86,6 +93,24 @@
 
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
+
+    // One placement vocabulary for every overlay that opens against a trigger.
+    $placement = WireKit::validateProp('multi-select', 'placement', (string) $placement, \Pushery\WireKit\Support\FloatingPlacement::ALL);
+
+    // `trigger`, `auto`, or a CSS length. The length is interpolated into a style attribute,
+    // so its shape is stated positively, as `grid` does for its track minimum: a denylist
+    // certifies every spelling it has not thought of. A percentage is left out on purpose,
+    // since a fixed panel would take it from the viewport rather than from the field.
+    $panelWidth = trim((string) $panelWidth);
+    $panelWidthStyle = '';
+    if (! in_array($panelWidth, ['trigger', 'auto'], true)) {
+        if (preg_match('/^\d+(?:\.\d+)?(?:rem|em|px|ch|vw)$/', $panelWidth) === 1) {
+            $panelWidthStyle = 'width: '.$panelWidth.';';
+        } else {
+            WireKit::validateProp('multi-select', 'panelWidth', $panelWidth, ['trigger', 'auto', 'a CSS length such as 20rem']);
+            $panelWidth = 'trigger';
+        }
+    }
 
     // Container classes — styled like an input field, wraps pills + filter input.
     // py-y-sm (0.375rem ≈ 6px) for visually balanced top/bottom padding around
@@ -183,12 +208,19 @@
     // an associative map, so the two broken formats had no coverage at all.
     // Mirrors the ungrouped half of combobox's own $normalizeOption; multi-select
     // has no grouped-option shape, so the group branch does not apply here.
+    //
+    // An array option may also carry a medium (`icon`, `image`, `avatar` or `flag`), a `description`,
+    // `keywords` and a `selectedLabel`; OptionMedia validates them and adds only the keys an
+    // option uses, so an option without them normalizes exactly as it did before.
     $encodedOptions = collect($options)->map(function ($option, $key) {
         if (is_array($option)) {
+            $value = (string) ($option['value'] ?? $key);
+            $label = (string) ($option['label'] ?? $option['value'] ?? $key);
+
             return [
-                'value' => (string) ($option['value'] ?? $key),
-                'label' => (string) ($option['label'] ?? $option['value'] ?? $key),
-            ];
+                'value' => $value,
+                'label' => $label,
+            ] + \Pushery\WireKit\Support\OptionMedia::fields('multi-select', $option, $value, $label);
         }
 
         // An int key means a list, so the string is BOTH value and label; a
@@ -197,6 +229,21 @@
             ? ['value' => (string) $option, 'label' => (string) $option]
             : ['value' => (string) $key, 'label' => (string) $option];
     })->values()->all();
+
+    // Icons in options are drawn once, as symbols, and each row and pill points at one; the
+    // rows are stamped out by Alpine and cannot render a Blade icon. IconSprite has the reasons.
+    [$encodedOptions, $iconSprite] = \Pushery\WireKit\Support\IconSprite::attach($encodedOptions, $id);
+    // A flag is a code until here and a URL from here on, resolved against the optional flags
+    // package the way the flag component resolves it.
+    $encodedOptions = \Pushery\WireKit\Support\FlagPackage::attach($encodedOptions);
+    $optionUses = \Pushery\WireKit\Support\OptionMedia::uses($encodedOptions);
+    $richRows = $optionUses['media'] || $optionUses['descriptions'];
+
+    // A row with a medium or a description lays its parts out in a line; a list that uses
+    // neither keeps its plain row. The medium in a pill is smaller, since a pill is one short line.
+    if ($richRows) {
+        $optionClasses .= ' flex items-center gap-[var(--gap-wk-sm)]';
+    }
 
     // Normalize the `value` prop to an array of string option keys for
     // pre-selection. Accepts an array (['php', 'js']) or a comma-separated
@@ -267,7 +314,7 @@
     <div
         {{ $attributes->except('aria-describedby')->class(['relative']) }}
         x-modelable="selected"
-        x-data="wirekitMultiSelect({ options: {{ \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }} })"
+        x-data="wirekitMultiSelect({ options: {{ \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }} })"
         @click.away="dropdownOpen = false"
         @keydown.escape="dropdownOpen = false"
     >
@@ -282,16 +329,28 @@
             <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="val" />
         </template>
 
-        {{-- Input container with pills --}}
+        {{-- Input container with pills. `wk-field-frame` is outside `resolveClasses()` on purpose:
+             on a coarse pointer the frame takes the 44px touch floor and the text input inside gives
+             its own up, and a developer who restyles the base classes must not lose that. --}}
         <div
             x-ref="field"
-            class="{{ $containerClasses }} {{ $stateClasses }}"
+            class="{{ $containerClasses }} {{ $stateClasses }} wk-field-frame"
             @click="focusAndOpen()"
         >
             {{-- Selected value pills --}}
             <template x-for="(val, i) in selected" :key="'pill-'+val">
                 <span class="{{ $pillClasses }}">
-                    <span x-text="getLabel(val)"></span>
+                    @if($optionUses['media'])
+                        <template x-for="chosen in pillMedia(val)" :key="chosen.value">
+                            @include('wirekit::components.partials.listbox-option-media', [
+                                'option' => 'chosen',
+                                'boxClasses' => 'size-5',
+                                'iconClasses' => 'size-3.5',
+                                'initialsClasses' => 'text-[length:var(--text-wk-2xs)]',
+                            ])
+                        </template>
+                    @endif
+                    <span x-text="pillLabel(val)"></span>
                     <button
                         type="button"
                         {{-- run(nextWith(val)), not deselect(val): removing a pill is
@@ -392,7 +451,8 @@
             role="listbox"
             aria-label="{{ $resolvedAriaLabel }}"
             aria-multiselectable="true"
-            class="fixed z-[var(--z-wk-dropdown)] overflow-y-auto rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-lg)] wk-scrollbar"
+            class="fixed z-[var(--z-wk-dropdown)] overflow-y-auto rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-lg)] wk-scrollbar{{ $panelWidth === 'auto' ? ' w-max' : '' }}"
+            @if($panelWidthStyle !== '') style="{{ $panelWidthStyle }}" @endif
             x-cloak
         >
             <template x-for="(opt, idx) in filteredOptions" :key="opt.value">
@@ -422,8 +482,24 @@
                          just changed. --}}
                     @click="{{ $optimisticConfig ? 'run(nextWith(opt.value))' : 'toggleValue(opt.value)' }}"
                     @if($optimisticConfig) x-bind:aria-busy="isPending" @endif
+                    @if($optionUses['descriptions'])
+                        :aria-labelledby="optionId(idx) + '-label'"
+                        :aria-describedby="opt.description ? optionId(idx) + '-desc' : null"
+                    @endif
                 >
-                    <span x-text="opt.label"></span>
+                    @if($richRows)
+                        @include('wirekit::components.partials.listbox-option-content', [
+                            'idExpression' => 'optionId(idx)',
+                            'media' => $optionUses['media'],
+                            'descriptions' => $optionUses['descriptions'],
+                            'mediaBox' => 'size-6',
+                            'mediaIcon' => 'size-5',
+                            'mediaInitials' => 'text-[length:var(--text-wk-2xs)]',
+                            'descriptionClasses' => 'text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]',
+                        ])
+                    @else
+                        <span x-text="opt.label"></span>
+                    @endif
                 </div>
             </template>
 
@@ -438,7 +514,7 @@
                  teleported panel; here that would be a second `fixed` box for
                  _place() to anchor, and an unanchored one sits at the viewport
                  origin. One panel, two contents, one anchor. --}}
-            <p
+            <p data-wk-prose-skip
                 role="option"
                 aria-disabled="true"
                 x-show="filteredOptions.length === 0"
@@ -464,6 +540,10 @@
             <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="selectionAnnouncement"></div>
         @endunless
 
+        {{-- The symbols the option icons point at, rendered with the component so a Livewire
+             update keeps them; a `<use>` reference reaches them from the teleported panel. --}}
+        {{ $iconSprite }}
+
         @if($optimisticConfig)
             {{-- Outside the listbox — a live region is not an option — and inside
                  the optimistic scope. Rendered unconditionally and starting
@@ -475,8 +555,8 @@
     </div>
 
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

@@ -133,7 +133,7 @@
         <div class="flex items-center gap-[var(--space-wk-sm,0.5rem)]">
             {{ $trailing }}
         </div>
-    @elseif(!$slot->isEmpty())
+    @elseif($slot->hasActualContent())
         {{-- Default-slot path: content passed WITHOUT the named leading/
              filters/trailing slots. This wrapper must mirror the toolbar's
              own responsive flex behavior (`flex-wrap justify-between

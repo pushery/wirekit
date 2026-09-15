@@ -211,9 +211,9 @@
          Kept in the DOM because the stripe state machine (active index,
          tooltip) still runs and may be re-enabled at runtime via a
          debug toggle from the host application. --}}
-    <ol class="wk-reading-minimap__stripes relative h-full p-0 m-0 list-none" aria-hidden="true" style="list-style: none; margin: 0; padding: 0;">
+    <ol data-wk-prose-skip class="wk-reading-minimap__stripes relative h-full p-0 m-0 list-none" aria-hidden="true" style="list-style: none; margin: 0; padding: 0;">
         <template x-for="(item, idx) in items" :key="idx">
-            <li
+            <li data-wk-prose-skip
                 class="wk-reading-minimap__stripe absolute left-0 right-0 cursor-pointer"
                 :class="idx === activeIndex ? 'wk-reading-minimap__stripe--active' : ''"
                 {{-- `top` percentage = source position; `height` per item
@@ -283,7 +283,7 @@
             data-test="reading-minimap-anchors"
         >
             <template x-for="(anchor, idx) in headingAnchorsList" :key="anchor.id">
-                <a
+                <a data-wk-prose-skip
                     class="wk-reading-minimap__anchor"
                     :href="anchorHref(anchor)"
                     :style="anchorStyle(anchor)"

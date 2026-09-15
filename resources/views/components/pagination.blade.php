@@ -13,10 +13,21 @@
     // Null keeps today's behavior exactly, including its translation.
     'previousLabel' => null,
     'nextLabel' => null,
+    // Turn pages inside a Livewire component instead of loading a new document. Every control keeps
+    // its href, so it is still a link to the page it names and still opens in a new tab. Inside a
+    // Livewire component a click calls the component's paging action for this paginator's page name
+    // instead, and whatever the component holds outside the URL survives the turn. Outside Livewire
+    // the attributes do nothing and the links navigate as they always did.
+    'livewire' => false,
+    // Where a Livewire page turn scrolls to: a selector, looked up among the pager's ancestors
+    // first and then in the whole document, as Livewire's own pager does. False keeps the scroll
+    // position. Read only with `livewire`, because a navigation starts at the top anyway.
+    'scrollTo' => 'body',
     'scope' => null,
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -29,34 +40,38 @@
         return;
     }
 
-    // A CURSOR PAGINATOR CAN ONLY DRIVE `mini`, so it gets `mini` whatever was asked for.
+    // A PAGINATOR THAT DOES NOT KNOW ITS LAST PAGE CAN ONLY DRIVE `mini`, so it gets `mini`
+    // whatever was asked for. That is a cursor paginator, and it is also the plain paginator
+    // `simplePaginate()` returns: both know whether another page exists, and neither knows how
+    // many there are.
     //
-    // `hasPages()` above is the wrong question to decide this on, and it was the only one
-    // being asked. It answers "is there more than one page", which BOTH paginator kinds
-    // answer — so a CursorPaginator walked straight through the guard and then hit
-    // currentPage() / lastPage() in `simple`, or firstItem() / total() / linkCollection()
-    // in `full`, none of which it has. `full` is the default, so the common case threw.
+    // `hasPages()` above is the wrong question to decide this on. It answers "is there more than
+    // one page", which every paginator answers. The check that followed asked for
+    // `currentPage()`, which tells a cursor paginator apart and lets a simple one through, and
+    // `full` then asked it for `total()` and `simple` for `lastPage()`. A simple paginator has
+    // neither, `full` is the default, and so the plain `simplePaginate()` case threw while the
+    // documentation said it worked.
     //
     // The failure surfaced as a ViewException out of a collection, a long way from the line
-    // where the decision was actually made — which is why this is decided HERE, once, by
-    // shape rather than by count.
+    // where the decision was actually made — which is why this is decided HERE, once, by the
+    // capability the richer variants need rather than by the paginator's class.
     //
-    // Degrading rather than throwing: cursor pagination exists for exactly the endless,
-    // append-only lists that cannot afford a COUNT(*), and `mini` is precisely prev/next.
-    // Everything it needs — hasPages(), previousPageUrl(), nextPageUrl() — a CursorPaginator
-    // has. So the developer gets working pagination instead of a stack trace.
+    // Degrading rather than throwing: both paginators exist for lists that cannot or need not
+    // count their rows, and `mini` is precisely previous/next. Everything it needs —
+    // hasPages(), previousPageUrl(), nextPageUrl() — both of them have. So the developer gets
+    // working pagination instead of a stack trace.
     //
     // It is said out loud all the same. A silent downgrade is its own puzzle later: the
     // developer asked for a total and page numbers and would otherwise be left wondering
     // where they went. Debug only — this is a fact about their code, not about a request.
-    $isCursorPaginator = ! method_exists($paginator, 'currentPage');
+    $knowsItsLastPage = method_exists($paginator, 'lastPage');
 
-    if ($isCursorPaginator && $variant !== 'mini') {
+    if (! $knowsItsLastPage && $variant !== 'mini') {
         if (config('app.debug')) {
             logger()->debug(sprintf(
                 'WireKit pagination: variant "%s" needs a paginator that knows its total and its page '
-                .'numbers, and a CursorPaginator has neither. Rendering "mini" (previous/next) instead. '
-                .'Pass variant="mini" to make this explicit.',
+                .'numbers, and a simple or cursor paginator knows neither. Rendering "mini" (previous/next) '
+                .'instead. Pass variant="mini" to make this explicit.',
                 $variant
             ));
         }
@@ -150,6 +165,46 @@
     // for nothing, and rendering an unlabeled arrow would be worse than the default.
     $previousText = $previousLabel ?: __('wirekit::Previous');
     $nextText = $nextLabel ?: __('wirekit::Next');
+
+    // The Livewire half. Every control calls the paging action for THIS paginator's page name, so
+    // two paginated lists in one component turn their own pages. Previous and next go to a page
+    // computed here rather than calling previousPage() and nextPage(): a double click then lands on
+    // the page the control named, not one page further.
+    //
+    // A cursor paginator pages by cursor, which Livewire sets with setPage(). The arguments end up
+    // in an expression inside an HTML attribute, so each string is made a JavaScript literal first
+    // (AlpinePayload::from, the form Alpine's CSP build reads back) and HTML-escaped second, by
+    // the echo that prints it.
+    $pageName = null;
+    $pageAction = null;
+    $previousAction = null;
+    $nextAction = null;
+    $scrollHandler = null;
+
+    $livewire = BooleanProp::from($livewire, false);
+
+    if ($livewire) {
+        $pagesByCursor = method_exists($paginator, 'getCursorName');
+        $pageName = $pagesByCursor ? $paginator->getCursorName() : $paginator->getPageName();
+        $pageNameJs = \Pushery\WireKit\Support\AlpinePayload::from($pageName);
+
+        $pageAction = static fn (int $page): string => 'gotoPage('.$page.', '.$pageNameJs.')';
+
+        if ($pagesByCursor) {
+            $previousAction = 'setPage('.\Pushery\WireKit\Support\AlpinePayload::from((string) $paginator->previousCursor()?->encode()).', '.$pageNameJs.')';
+            $nextAction = 'setPage('.\Pushery\WireKit\Support\AlpinePayload::from((string) $paginator->nextCursor()?->encode()).', '.$pageNameJs.')';
+        } else {
+            $previousAction = $pageAction($paginator->currentPage() - 1);
+            $nextAction = $pageAction($paginator->currentPage() + 1);
+        }
+
+        // The document is reached through the element rather than as a global: the expression has
+        // to hold under Alpine's CSP build, which resolves no global names.
+        if ($scrollTo !== false && $scrollTo !== null && $scrollTo !== '') {
+            $selectorJs = \Pushery\WireKit\Support\AlpinePayload::from((string) $scrollTo);
+            $scrollHandler = '($el.closest('.$selectorJs.') || $el.ownerDocument.querySelector('.$selectorJs.')).scrollIntoView()';
+        }
+    }
 @endphp
 
 <nav role="navigation" aria-label="{{ $navLabel }}" {{ $attributes->class([$navClasses]) }}>
@@ -182,7 +237,7 @@
             @if($paginator->onFirstPage())
                 <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true"><span aria-hidden="true">&laquo;</span> {{ $previousText }}</span>
             @else
-                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}"><span aria-hidden="true">&laquo;</span> {{ $previousText }}</a>
+                <a data-wk-prose-skip href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" @if($previousAction) wire:click.prevent="{{ $previousAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif><span aria-hidden="true">&laquo;</span> {{ $previousText }}</a>
             @endif
         </div>
 
@@ -198,7 +253,7 @@
 
         <div class="flex items-center gap-2">
             @if($paginator->hasMorePages())
-                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}">{{ $nextText }} <span aria-hidden="true">&raquo;</span></a>
+                <a data-wk-prose-skip href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" @if($nextAction) wire:click.prevent="{{ $nextAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>{{ $nextText }} <span aria-hidden="true">&raquo;</span></a>
             @else
                 <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true">{{ $nextText }} <span aria-hidden="true">&raquo;</span></span>
             @endif
@@ -258,7 +313,7 @@
             @if($paginator->onFirstPage())
                 <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" aria-label="{{ $previousText }}">&laquo;</span>
             @else
-                <a href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" aria-label="{{ $previousText }}">&laquo;</a>
+                <a data-wk-prose-skip href="{{ $abs($paginator->previousPageUrl()) }}" rel="prev" class="{{ $buttonBase }}" aria-label="{{ $previousText }}" @if($previousAction) wire:click.prevent="{{ $previousAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>&laquo;</a>
             @endif
 
             {{-- Numbered links: linkCollection() returns {url, label, active} per entry.
@@ -280,16 +335,16 @@
             @foreach($paginator->linkCollection()->slice(1, -1) as $link)
                 @if($link['url'] === null)
                     {{-- null url = separator (ellipsis) --}}
-                    <span class="{{ $buttonDisabled }}" aria-hidden="true">{!! $link['label'] !!}</span>
+                    <span class="{{ $buttonDisabled }}" aria-hidden="true" @if($pageAction) wire:key="{{ 'paginator-'.$pageName.'-gap'.$loop->index }}" @endif>{!! $link['label'] !!}</span>
                 @elseif($link['active'])
-                    <span class="{{ $buttonActive }}" aria-current="page">{!! $link['label'] !!}</span>
+                    <span class="{{ $buttonActive }}" aria-current="page" @if($pageAction) wire:key="{{ 'paginator-'.$pageName.'-page'.$link['label'] }}" @endif>{!! $link['label'] !!}</span>
                 @else
-                    <a href="{{ $abs($link['url']) }}" class="{{ $buttonBase }}" aria-label="{{ __('wirekit::Go to page :page', ['page' => $link['label']]) }}">{!! $link['label'] !!}</a>
+                    <a data-wk-prose-skip href="{{ $abs($link['url']) }}" class="{{ $buttonBase }}" aria-label="{{ __('wirekit::Go to page :page', ['page' => $link['label']]) }}" @if($pageAction) wire:click.prevent="{{ $pageAction((int) $link['label']) }}" wire:key="{{ 'paginator-'.$pageName.'-page'.$link['label'] }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>{!! $link['label'] !!}</a>
                 @endif
             @endforeach
 
             @if($paginator->hasMorePages())
-                <a href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" aria-label="{{ $nextText }}">&raquo;</a>
+                <a data-wk-prose-skip href="{{ $abs($paginator->nextPageUrl()) }}" rel="next" class="{{ $buttonBase }}" aria-label="{{ $nextText }}" @if($nextAction) wire:click.prevent="{{ $nextAction }}" @endif @if($scrollHandler) x-on:click="{{ $scrollHandler }}" @endif>&raquo;</a>
             @else
                 <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true" aria-label="{{ $nextText }}">&raquo;</span>
             @endif

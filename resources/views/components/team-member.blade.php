@@ -40,7 +40,7 @@
     ]), $scope);
 @endphp
 
-<li data-wk-team-member {{ $attributes->class([$classes]) }}>
+<li data-wk-prose-skip data-wk-team-member {{ $attributes->class([$classes]) }}>
     {{-- The portrait is decorative HERE, and only here, because the name it would
          announce is the very next thing in the card. Named, this row read "Ada
          Lovelace, Ada Lovelace, Head of Platform" — once from the avatar and once
@@ -71,7 +71,7 @@
 
     {{-- Links slot: put real <x-wirekit::link> elements here. Icon-only links
          need their own accessible name — see the docs page. --}}
-    @if(filled(trim($slot->toHtml())))
+    @if($slot->hasActualContent())
         <span data-wk-team-member-links class="flex items-center gap-[var(--gap-wk-sm)]">
             {{ $slot }}
         </span>

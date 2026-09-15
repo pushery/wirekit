@@ -82,7 +82,7 @@
     ])), $scope);
 @endphp
 
-<li
+<li data-wk-prose-skip
     data-wk-pricing-tier
     @if($isFeatured) data-featured="true" @endif
     {{ $attributes->class([$classes]) }}
@@ -99,7 +99,7 @@
     </div>
 
     @if($description)
-        <p data-wk-pricing-description class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</p>
+        <p data-wk-prose-skip data-wk-pricing-description class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</p>
     @endif
 
     <div data-wk-pricing-price class="mt-[var(--space-wk-md)] flex items-baseline gap-[var(--space-wk-xs)]">

@@ -168,7 +168,7 @@
     $avatarAlt = is_array($avatar) ? ($avatar['alt'] ?? '') : '';
 @endphp
 
-<{{ $tag }}
+<{{ $tag }} data-wk-prose-skip
     {{-- Never a submit button. A profile inside a form is a menu trigger, and the
          default type would post the form instead of opening the menu. --}}
     @if($tag === 'button') type="button" @endif
@@ -204,7 +204,7 @@
     {{ $attributes->class([$classes]) }}
 >
     @if($avatarSrc)
-        <img src="{{ $avatarSrc }}" alt="{{ $avatarAlt }}" class="h-8 w-8 rounded-full object-cover" />
+        <img data-wk-prose-skip src="{{ $avatarSrc }}" alt="{{ $avatarAlt }}" class="h-8 w-8 rounded-full object-cover" />
     @elseif($avatarInitials)
         {{-- The PRIMITIVE, not a copy of it. This was hand-rolled, and the comment above it
              claimed "the same deterministic-palette shape as the canonical avatar primitive"

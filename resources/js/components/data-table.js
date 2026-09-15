@@ -256,6 +256,23 @@ export default function wirekitDataTable(config = {}) {
         isColumnVisible(key) {
             return !this.hiddenKeys.includes(key);
         },
+        /**
+         * Is this the column that freezes against the inline start edge? The position comes
+         * from the loop's own order rather than from `:first-child`, so hiding a column moves
+         * the frozen cell with it instead of freezing something the reader cannot see.
+         *
+         * It lives here rather than in the directive because the shape it needs there —
+         * `visibleColumns[0]?.key` — is outside Alpine's CSP grammar. An expression the CSP
+         * build cannot parse is never evaluated, so the binding would be silently inert on
+         * that bundle and the column would simply not freeze, with nothing reporting it.
+         * Every column is hideable, so the empty case is reachable: guard the lookup rather
+         * than compare against `undefined`.
+         */
+        isFrozenColumn(col) {
+            const first = this.visibleColumns[0];
+
+            return first !== undefined && first.key === col.key;
+        },
         toggleColumn(key) {
             this.hiddenKeys = this.hiddenKeys.includes(key)
                 ? this.hiddenKeys.filter((k) => k !== key)

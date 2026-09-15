@@ -73,7 +73,7 @@ final class ClassPropsExtractor
      * class with a private constructor).
      *
      * @param  class-string  $className
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
      */
     public static function extract(string $className): array
     {
@@ -108,6 +108,13 @@ final class ClassPropsExtractor
                 'type_hint' => $typeHint,
                 'comment' => null,
                 'examples' => [],
+                // A class component states its type in the constructor signature, so the record
+                // carries it as the value type too; `values` stays null because `validateProp()`
+                // is a Blade-template shape and nothing here enforces a set.
+                'values' => null,
+                'value_type' => in_array(strtolower(ltrim((string) $typeHint, '?')), ['bool', 'int', 'float', 'string', 'array'], true)
+                    ? strtolower(ltrim((string) $typeHint, '?'))
+                    : null,
             ];
         }
 

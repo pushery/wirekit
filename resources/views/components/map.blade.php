@@ -166,14 +166,14 @@
         <div x-ref="canvas" class="absolute inset-0 h-full w-full" style="min-height: {{ $height }};" role="application" aria-label="{{ __('wirekit:::label (interactive)', ['label' => $ariaLabel]) }}" tabindex="0"></div>
         <div x-show="!available" x-cloak class="absolute inset-0 flex flex-col items-center justify-center gap-1 p-[var(--padding-wk-x-md)] text-center pointer-events-none">
             <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20l-5.5 2.5V6L9 3.5m0 16.5l6 2.5m-6-2.5V3.5m6 19l5.5-2.5V2.5L15 5m0 17.5V5m0 0L9 3.5"/><circle cx="12" cy="9" r="2.5"/></svg>
-            <p x-show="!dataDeferred" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Interactive map needs a map library — the locations are listed alongside.') }}</p>
+            <p data-wk-prose-skip x-show="!dataDeferred" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Interactive map needs a map library — the locations are listed alongside.') }}</p>
             {{-- The data-saving path says something different, and offers a way through.
                  Withholding without one is a worse answer than not asking: the reader
                  asked for less data, not for no map ever. `pointer-events-auto` because
                  the panel around it is deliberately transparent to the pointer. --}}
             <template x-if="dataDeferred">
                 <div class="flex flex-col items-center gap-2 pointer-events-auto">
-                    <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Map tiles are not loaded because your browser asked for reduced data. The locations are listed alongside.') }}</p>
+                    <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::Map tiles are not loaded because your browser asked for reduced data. The locations are listed alongside.') }}</p>
                     <x-wirekit::button intent="neutral" surface="outline" size="sm" type="button" x-on:click="loadAnyway()">{{ __('wirekit::Load the map anyway') }}</x-wirekit::button>
                 </div>
             </template>
@@ -195,12 +195,12 @@
          on something nobody can see (WCAG 2.4.7), so it stays out of the tab order while the
          wiring stays readable. --}}
     <div @if(filled($listLabel)) role="region" aria-label="{{ $listLabel }}" @endif tabindex="{{ $showList ? '0' : '-1' }}" class="{{ $showList ? 'w-full sm:w-[16rem] sm:shrink-0 max-h-[24rem] overflow-y-auto wk-scrollbar border-t-[length:var(--border-wk-width)] sm:border-t-0 sm:border-l-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]' : 'sr-only' }}">
-        <p class="sticky top-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
+        <p data-wk-prose-skip class="sticky top-0 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] bg-[var(--color-wk-bg-elevated)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]">
             {{ $listLabelResolved }} (<span x-text="markerCount"></span>)
         </p>
-        <ul role="list" class="list-none divide-y divide-[var(--color-wk-border)]" style="list-style: none; margin: 0; padding: 0;">
+        <ul data-wk-prose-skip role="list" class="list-none divide-y divide-[var(--color-wk-border)]" style="list-style: none; margin: 0; padding: 0;">
             <template x-for="m in markers" :key="m.id">
-                <li>
+                <li data-wk-prose-skip>
                     <button
                         type="button"
                         @click="selectMarker(m.id)"
@@ -218,7 +218,7 @@
                     </button>
                 </li>
             </template>
-            <li x-show="markerCount === 0" x-cloak class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No locations') }}</li>
+            <li data-wk-prose-skip x-show="markerCount === 0" x-cloak class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No locations') }}</li>
         </ul>
     </div>
 </div>

@@ -20,6 +20,8 @@
     // one accordion sits at the same depth, so letting rows disagree would only
     // let a developer build a broken outline one item at a time.
     'level' => 3,
+    // Whether a closed panel stays findable by the browser's find in page; set on the accordion.
+    'findable' => config('wirekit.components.accordion.findable', true),
 ])
 
 @php
@@ -33,7 +35,8 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['variant', 'size', 'level']);
+    $attributes = $attributes->except(['variant', 'size', 'level', 'findable']);
+    $findable = \Pushery\WireKit\Support\BooleanProp::from($findable, true);
 @endphp
 
 
@@ -125,7 +128,7 @@
 <div {{ $attributes->class([$wrapperClasses]) }}>
     {{-- Header button: delegates to toggle() defined on the parent accordion's x-data scope.
          Alpine resolves methods via scope chain — no $root prefix needed. --}}
-    <h{{ $levelValue }}>
+    <h{{ $levelValue }} data-wk-prose-skip>
         <button
             type="button"
             id="{{ $buttonId }}"
@@ -159,6 +162,28 @@
         </button>
     </h{{ $levelValue }}>
 
+    @if($findable)
+    {{-- FINDABLE PANEL. Closed, it is `hidden="until-found"` where the engine supports it, so the
+         browser's find in page can match its text and open it; `x-on:beforematch` opens the item's
+         own state before the browser takes the attribute off, so the next render keeps it open.
+         Where the engine does not support it, `x-wk-findable` hides it exactly as `x-show` did.
+
+         The padding and the border moved to the element inside: a closed until-found panel keeps
+         its box, and they would paint as an empty strip under every closed item. No `x-cloak`,
+         which would stop the browser from revealing it. See utils/findable.js. --}}
+    <div
+        id="{{ $panelId }}"
+        role="region"
+        aria-labelledby="{{ $buttonId }}"
+        x-wk-findable="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
+        x-on:beforematch="reveal({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
+        hidden="until-found"
+    >
+        <div class="{{ $panelClasses }}">
+            {{ $slot }}
+        </div>
+    </div>
+    @else
     {{-- Panel: only rendered when open. x-show toggles display; role=region
          pairs with aria-labelledby so screen readers know which heading names it. --}}
     <div
@@ -171,4 +196,5 @@
     >
         {{ $slot }}
     </div>
+    @endif
 </div>

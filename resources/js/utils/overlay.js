@@ -180,6 +180,17 @@ export function createOverlay({
     let openerChain = [];
 
     /**
+     * Whether the close in progress is a DISMISSAL: Cancel, Escape, or a click on the backdrop of a
+     * dismissible overlay. Set by those paths just before they close, and cleared on the next open.
+     *
+     * A dismissal acted on nothing, so the reader belongs back on the control they opened it from,
+     * and a named return target is no reason to move them. Every other close is read as the action
+     * having gone through, which is when a trigger inside a row the action deletes is about to
+     * disappear, and a named target is exactly what that close needs.
+     */
+    let dismissing = false;
+
+    /**
      * Where focus should land when the trap deactivates.
      *
      * Order: an explicit target the developer named > the original opener, if it
@@ -187,10 +198,22 @@ export function createOverlay({
      * the document body (the browser's own answer, and the one this exists to
      * avoid).
      *
+     * ⚠️ EXCEPT ON A DISMISSAL, where a surviving opener comes first. The named target used to win
+     * on every close, a Cancel with its trigger standing untouched included, and a keyboard user
+     * who backed out of a delete landed on the list heading instead of the row they were on. The
+     * order could not simply be flipped: a confirmation closes on the next task, BEFORE the
+     * re-render removes its row, so at that moment the trigger still exists, would win, and would
+     * vanish a moment later. What separates the two is how the dialog closed, not whether the
+     * trigger exists.
+     *
      * @param {HTMLElement|undefined} opener - element focused before the trap opened
      * @returns {HTMLElement}
      */
     const resolveReturnFocus = (opener) => {
+        if (dismissing && opener && opener.isConnected) {
+            return opener;
+        }
+
         if (focusReturnTo) {
             const named = typeof focusReturnTo === 'function'
                 ? focusReturnTo()
@@ -320,6 +343,7 @@ export function createOverlay({
         show() {
             if (this.open) return;
             this.open = true;
+            dismissing = false;
 
             // Snapshot the opener's ancestor chain while it is still attached —
             // see openerChain above. Taken before anything renders, so the DOM is
@@ -404,6 +428,9 @@ export function createOverlay({
          */
         _closeFromTrap() {
             if (!this.open) return;
+            // Only Escape reaches this while the overlay is still open: every other close sets
+            // `open` false before it deactivates the trap. So this close is a dismissal.
+            dismissing = true;
             this.open = false;
             this._trap = null;
             unlockScroll();
@@ -450,12 +477,23 @@ export function createOverlay({
         },
 
         /**
-         * Handle backdrop click — close only if dismissible.
+         * Handle backdrop click — close only if dismissible. A dismissal, like Escape.
          */
         handleBackdropClick() {
             if (dismissible) {
-                this.close();
+                this.dismissOverlay();
             }
+        },
+
+        /**
+         * Close without the action having happened: what a Cancel control calls. Focus goes back
+         * to the control the overlay was opened from while that still exists, ahead of a named
+         * return target, because nothing was acted on (see `resolveReturnFocus`).
+         */
+        dismissOverlay() {
+            if (!this.open) return;
+            dismissing = true;
+            this.close();
         },
     };
 }

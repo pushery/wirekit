@@ -237,7 +237,7 @@
                 aria-labelledby="{{ $popoverTitleId }}"
                 class="fixed z-[var(--z-wk-dropdown)] w-[18rem] max-w-[calc(100vw-2rem)] p-[var(--padding-wk-x-md)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)] shadow-[var(--shadow-wk-lg)] space-y-[var(--space-wk-sm)]"
             >
-                <p id="{{ $popoverTitleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]"
+                <p data-wk-prose-skip id="{{ $popoverTitleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]"
                    x-text="editIndex === null ? {{ \Pushery\WireKit\Support\AlpinePayload::from($addLabel) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Edit filter')) }}"></p>
 
                 {{-- Field --}}

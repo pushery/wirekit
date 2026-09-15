@@ -124,7 +124,7 @@
      identically. `filled()` rather than a truthiness check — an interpolated caller value can
      arrive as an empty string, and an `<aside aria-label="">` is an anonymous landmark
      wearing an attribute. --}}
-<{{ filled($label) ? 'aside' : 'div' }}
+<{{ filled($label) ? 'aside' : 'div' }} data-wk-prose-skip
     {{ $attributes->merge(['style' => 'top: '.($offset).'; width: 100%; --wk-sticky-panel-w: '.($width).';'])->class([$asideClasses]) }}
     @if(filled($label)) aria-label="{{ $label }}" @endif
 >

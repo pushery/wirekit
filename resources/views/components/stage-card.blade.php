@@ -89,7 +89,7 @@
         <x-wirekit::progress :value="$progressValue" :intent="$validIntent" size="sm" aria-label="{{ $label ? __('wirekit:::label progress', ['label' => $label]) : __('wirekit::Stage progress') }}" />
     @endif
 
-    @if(trim($slot->toHtml()) !== '')
+    @if($slot->hasActualContent())
         <div class="flex flex-col gap-2">
             {{ $slot }}
         </div>

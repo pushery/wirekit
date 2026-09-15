@@ -1,4 +1,5 @@
 import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-value.js';
+import { safeObserver } from '../utils/safe-observer.js';
 
 /**
  * Segmented control — a radiogroup that behaves like the native one it imitates.
@@ -26,6 +27,8 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  *   - _trackResizeObserver (ResizeObserver, on the track and on every segment) —
  *     disconnected, and null-guarded inside its callback against a notification
  *     queued before teardown.
+ *   - _edgeHintObserver (IntersectionObserver over the two edge sentinels, through
+ *     safeObserver) — stopped, which also turns a delivery already queued into a no-op.
  *
  * @param {Object} config
  * @param {string} config.selected  the option value selected at render time
@@ -38,6 +41,13 @@ export default function wirekitSegmentedControl(config = {}) {
         selected: config.selected != null ? String(config.selected) : '',
 
         _trackResizeObserver: null,
+
+        // Whether options sit past the start / end edge of the visible track. They drive the
+        // two edge shadows in the template; see _observeEdgeHints().
+        startHint: false,
+        endHint: false,
+
+        _edgeHintObserver: null,
 
         init() {
             // Seed from the server attribute when the caller passed nothing.
@@ -114,6 +124,8 @@ export default function wirekitSegmentedControl(config = {}) {
                 }
             }
 
+            this._observeEdgeHints();
+
             // A value the server changed has to reach the segments. Alpine read
             // `selected` once, here, and will not look at the seed again — so
             // without this the control keeps showing whatever it was born with
@@ -140,6 +152,9 @@ export default function wirekitSegmentedControl(config = {}) {
 
             this._trackResizeObserver?.disconnect();
             this._trackResizeObserver = null;
+
+            this._edgeHintObserver?.stop();
+            this._edgeHintObserver = null;
         },
 
         /**
@@ -234,6 +249,43 @@ export default function wirekitSegmentedControl(config = {}) {
 
             target.focus();
             target.click();
+        },
+
+        /**
+         * Say at each edge whether options continue past it.
+         *
+         * The track scrolls on its own, and on a phone that leaves a bar that can start
+         * mid-word with nothing to say options lie before it: there is no scrollbar until a
+         * drag is already underway. `table` and `data-table` answer the same question with
+         * a one-pixel sentinel at each inline edge of the scroll content and an observer over
+         * them: a sentinel outside the visible track means content continues that way. No
+         * scroll listener, and no direction arithmetic, because an intersection does not
+         * care which way the writing runs.
+         *
+         * Through `safeObserver`, so a delivery queued before teardown finds the observer
+         * stopped instead of writing into a scope that is gone. Capability-checked like the
+         * resize observer: the ESM harness has neither the observer nor the sentinels.
+         */
+        _observeEdgeHints() {
+            const start = this.$refs?.startSentinel;
+            const end = this.$refs?.endSentinel;
+
+            if (typeof IntersectionObserver !== 'function' || !start || !end) {
+                return;
+            }
+
+            this._edgeHintObserver = safeObserver(IntersectionObserver, (entries) => {
+                for (const entry of entries) {
+                    if (entry.target === start) {
+                        this.startHint = !entry.isIntersecting;
+                    } else if (entry.target === end) {
+                        this.endHint = !entry.isIntersecting;
+                    }
+                }
+            }, { root: this.$root });
+
+            this._edgeHintObserver.observe(start);
+            this._edgeHintObserver.observe(end);
         },
 
         /**

@@ -151,6 +151,12 @@
         .' '.((string) $attributes->get('aria-describedby', ''))
     );
 
+    // A native date, time or date-and-time field lays its parts out in a row, and WebKit centers
+    // the text only while that row layout stands. Given a block box instead, the text sat against
+    // the top edge, 8px above the middle of a 40px field. The other engines center it either way,
+    // so these three types take the row layout in every engine.
+    $isNativeTemporal = in_array($type, ['date', 'time', 'datetime-local'], true);
+
     // Base classes: all values reference design tokens — no hardcoded colors or sizes
     //
     // Note on :user-invalid styling:
@@ -164,7 +170,7 @@
     // Laravel validation errors, :user-invalid handles client-side HTML5
     // constraint violations. Both produce the same red border + red focus ring.
     $inputClasses = WireKit::resolveClasses('input', 'base', implode(' ', [
-        'block w-full',
+        $isNativeTemporal ? 'flex items-center w-full' : 'block w-full',
         $fontFamilyClass,
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
@@ -247,8 +253,8 @@
     // The leading/trailing icon slots live INSIDE the field frame, so — like
     // prefix/suffix and the affordance buttons — they route the field through the
     // flex wrapper.
-    $hasLeading = isset($leading) && ! $leading->isEmpty();
-    $hasTrailing = isset($trailing) && ! $trailing->isEmpty();
+    $hasLeading = isset($leading) && $leading->hasActualContent();
+    $hasTrailing = isset($trailing) && $trailing->hasActualContent();
     $useWrapper = $prefix || $suffix || $hasAffordances || $hasLeading || $hasTrailing;
 @endphp
 
@@ -357,7 +363,9 @@
                 @endif
                 {{ $attributes->except('aria-describedby')->class([
                     'wk-field', // 16px iOS-zoom floor on phones (dist/wirekit.css)
-                    'block w-full h-full bg-transparent border-none shadow-none',
+                    'w-full h-full bg-transparent border-none shadow-none',
+                    'block' => ! $isNativeTemporal,
+                    'flex items-center' => $isNativeTemporal,
                     $fontFamilyClass,
                     'text-[color:var(--color-wk-text)]',
                     'placeholder:text-[color:var(--color-wk-text-placeholder)]',
@@ -463,14 +471,14 @@
          either. Without it a drag-select across a form carries one stray no-break space per
          reserved field into whatever gets pasted. --}}
     @if($reserveMessage && ! (($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
-        <p aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
+        <p data-wk-prose-skip aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
     @endif
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hasSuccess && $successMessage)
-        <p id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @if($optimisticConfig)

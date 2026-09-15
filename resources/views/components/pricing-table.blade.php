@@ -147,7 +147,7 @@
         @endforeach
     </div>
 
-    <ul
+    <ul data-wk-prose-skip
         role="list"
         aria-label="{{ $label }}"
         data-wk-pricing-table
@@ -157,7 +157,7 @@
     </ul>
 </div>
 @else
-<ul
+<ul data-wk-prose-skip
     role="list"
     aria-label="{{ $label }}"
     data-wk-pricing-table

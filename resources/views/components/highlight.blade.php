@@ -82,7 +82,7 @@
 @endphp
 
 @if($query)
-    <{{ $as }} {{ $attributes->class([$classes]) }}>{!! $highlighted !!}</{{ $as }}>
+    <{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{!! $highlighted !!}</{{ $as }}>
 @else
-    <{{ $as }} {{ $attributes->class([$classes]) }}>{{ $slot }}</{{ $as }}>
+    <{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $slot }}</{{ $as }}>
 @endif

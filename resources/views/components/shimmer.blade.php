@@ -58,4 +58,4 @@
     }
 @endphp
 
-<{{ $tag }} {{ $attrs }}>{{ $slot }}</{{ $tag }}>
+<{{ $tag }} data-wk-prose-skip {{ $attrs }}>{{ $slot }}</{{ $tag }}>

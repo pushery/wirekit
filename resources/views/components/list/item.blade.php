@@ -17,4 +17,4 @@
     $classes = WireKit::resolveClasses('list-item', 'base', '', $scope);
 @endphp
 
-<li {{ $attributes->class([$classes]) }}>{{ $slot }}</li>
+<li data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $slot }}</li>

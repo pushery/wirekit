@@ -96,7 +96,7 @@
          so a fresh notification re-announces even when the count is unchanged — a
          count-only region would stay silent when one notification replaces another.
          Polite (never assertive): a notification must not interrupt the user. --}}
-    <p class="sr-only" role="status" aria-live="polite" aria-atomic="true"
+    <p data-wk-prose-skip class="sr-only" role="status" aria-live="polite" aria-atomic="true"
        x-text="summaryLine"></p>
 
     {{-- Bell trigger. The accessible name carries the live unread count so a
@@ -159,7 +159,7 @@
     >
         {{-- Header --}}
         <div class="flex items-center justify-between gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
-            <p id="{{ $titleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $titleResolved }}</p>
+            <p data-wk-prose-skip id="{{ $titleId }}" class="text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">{{ $titleResolved }}</p>
             <button
                 type="button"
                 x-show="unreadCount > 0"
@@ -197,13 +197,13 @@
             {{-- Empty state --}}
             <div x-show="isEmpty" x-cloak class="flex flex-col items-center justify-center gap-2 px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-xl)] text-center">
                 <svg aria-hidden="true" class="h-8 w-8 text-[color:var(--color-wk-text-subtle)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
-                <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
+                <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
             </div>
 
             {{-- Grouped notification list --}}
             <template x-for="group in groups" :key="groupKey(group)">
                 <div>
-                    <p x-show="group.label" x-cloak class="sticky top-0 px-[var(--padding-wk-x-md)] py-1 text-[length:var(--text-wk-xs)] uppercase tracking-wide font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-subtle)] bg-[var(--color-wk-bg-elevated)]" x-text="group.label"></p>
+                    <p data-wk-prose-skip x-show="group.label" x-cloak class="sticky top-0 px-[var(--padding-wk-x-md)] py-1 text-[length:var(--text-wk-xs)] uppercase tracking-wide font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-subtle)] bg-[var(--color-wk-bg-elevated)]" x-text="group.label"></p>
                     <template x-for="item in group.items" :key="item.id">
                         {{-- One interactive element per row. Items WITH href render as a
                              real <a> (native navigation + middle-click work) and items
@@ -214,7 +214,7 @@
                              line — never a nested control (button-in-button is invalid). --}}
                         <div class="contents">
                             <template x-if="item.href">
-                                <a
+                                <a data-wk-prose-skip
                                     :href="item.href"
                                     @click="activate(item)"
                                     class="{{ $row }}"
@@ -270,7 +270,7 @@
             {{-- Footer — ghost action (subtle full-width hover surface), NOT a
                  hover-underline text-link, matching the "Mark all read" header
                  action and WireKit's in-panel-action standard. --}}
-            <a href="{{ $seeAllHref }}" class="block px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] hover:bg-[var(--color-wk-bg-muted)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors">{{ $seeAllLabel }}</a>
+            <a data-wk-prose-skip href="{{ $seeAllHref }}" class="block px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-accent-text)] hover:bg-[var(--color-wk-bg-muted)] border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-inset transition-colors">{{ $seeAllLabel }}</a>
         @endif
     </div>
     </template>

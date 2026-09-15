@@ -201,8 +201,11 @@
     // `failure: 'keep'` is the whole reason this component can be here. Every
     // other setting matches the discrete controls; that one is what makes an
     // undo stop being hostile.
+    // The slot is read without its HTML comments, here and as the field's content below: inside
+    // a <textarea> a comment is text, so Livewire's morph markers around a caller's @if would be
+    // the field's value and the optimistic baseline.
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
-        'value' => (string) ($slot->isEmpty() ? '' : trim($slot)),
+        'value' => \Pushery\WireKit\Support\SlotContent::text($slot),
         'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
         'failure' => 'keep',
@@ -247,7 +250,7 @@
         @endif
         {{-- wk-field: 16px iOS-zoom floor on phones (dist/wirekit.css) --}}
         {{ $attributes->except('aria-describedby')->class(['wk-field', $textareaClasses, $stateClasses, $sizeClasses, $resize ? 'resize-y' : 'resize-none', 'wk-autosize' => $autosize]) }}
-    >{{ $slot }}</textarea>
+    >{{ \Pushery\WireKit\Support\SlotContent::withoutComments($slot) }}</textarea>
 
     {{-- Error / success / hint text use design tokens for automatic dark mode (error wins, then success, then hint) --}}
     {{-- See the `reserve-message` prop: an appearing message grows this element
@@ -255,14 +258,14 @@
          reason it is `aria-hidden` — it holds space, not text, and a drag-select across the
          form should not carry its no-break space into the clipboard. --}}
     @if($reserveMessage && ! (($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
-        <p aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
+        <p data-wk-prose-skip aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
     @endif
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hasSuccess && $successMessage)
-        <p id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @if($optimisticConfig)

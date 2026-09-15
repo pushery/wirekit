@@ -157,7 +157,7 @@
          spelling: the documented use is an interpolated caller value
          (`:label="__('Change :id', ['id' => $change->id])"`), and the same shape over a record
          with no title produces exactly it. A blank name is no name. --}}
-    <pre @class([$preClasses])><code
+    <pre data-wk-prose-skip @class([$preClasses])><code data-wk-prose-skip
         @class([$codeClasses])
         tabindex="0"
         @if(filled($label)) role="region" aria-label="{{ $label }}" @endif

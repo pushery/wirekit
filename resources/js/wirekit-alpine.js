@@ -31,6 +31,7 @@
 import Alpine from 'alpinejs';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
+import { registerFindableDirective } from './utils/findable.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 
@@ -64,6 +65,7 @@ import wirekitCodeBlock from './components/code-block.js';
 import wirekitSlider from './components/slider.js';
 import wirekitPasswordInput from './components/password-input.js';
 import wirekitSegmentedControl from './components/segmented-control.js';
+import wirekitBranchSwitcher from './components/branch-switcher.js';
 import wirekitPricingTable from './components/pricing-table.js';
 import wirekitSortable from './components/sortable.js';
 import wirekitProgress from './components/progress.js';
@@ -220,6 +222,8 @@ if (hostAlpine) {
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
     // apply it after EVERY render — not only the first. See utils/indeterminate.js.
     registerIndeterminateDirective(target);
+    // Disclosure panels the browser find in page can open. See utils/findable.js.
+    registerFindableDirective(target);
 
     target.data('wirekitChartJs', wirekitChartJs);
     target.data('wirekitDropdown', wirekitDropdown);
@@ -251,6 +255,7 @@ if (hostAlpine) {
     target.data('wirekitSlider', wirekitSlider);
     target.data('wirekitPasswordInput', wirekitPasswordInput);
     target.data('wirekitSegmentedControl', wirekitSegmentedControl);
+    target.data('wirekitBranchSwitcher', wirekitBranchSwitcher);
     target.data('wirekitPricingTable', wirekitPricingTable);
     target.data('wirekitSortable', wirekitSortable);
     target.data('wirekitProgress', wirekitProgress);

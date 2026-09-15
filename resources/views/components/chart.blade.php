@@ -147,12 +147,12 @@
          chart subtree get destroyed and re-created on replay — fresh
          Alpine init, fresh ApexCharts.render(), fresh entrance
          animation. --}}
-    <{{ $wrapperTag }}
+    <{{ $wrapperTag }} data-wk-prose-skip
         data-replayable="true"
         style="display: {{ ($inline ?? false) ? 'inline-block' : 'block' }}; width: 100%;"
     >
 @endif
-<{{ $wrapperTag }}
+<{{ $wrapperTag }} data-wk-prose-skip
     x-data="{{ $alpineComponent }}({{ \Pushery\WireKit\Support\AlpinePayload::from($chartConfig) }})"
     {{-- The one stable signal that says "a chart renders here", carrying the
          active adapter's library identifier as its value. A host that defers a
@@ -207,7 +207,7 @@
         rescue needed there, but added for parity / defensive consistency.
     --}}
     @if ($resolvedMountElement === 'div')
-        <{{ $wrapperTag }} x-ref="mount" aria-hidden="true" style="width: 100%; height: 100%; display: block;"></{{ $wrapperTag }}>
+        <{{ $wrapperTag }} data-wk-prose-skip x-ref="mount" aria-hidden="true" style="width: 100%; height: 100%; display: block;"></{{ $wrapperTag }}>
     @else
         <canvas x-ref="canvas" aria-hidden="true" style="width: 100%; height: 100%;"></canvas>
     @endif

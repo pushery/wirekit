@@ -191,7 +191,7 @@
             @isset($empty)
                 {{ $empty }}
             @else
-                <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
+                <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
             @endisset
         </div>
     @else
@@ -203,7 +203,7 @@
                  non-linked tiles are structurally identical grid items. --}}
             <div role="listitem" @if($tile['key'] !== '') data-key="{{ $tile['key'] }}" @endif>
                 @if($tile['href'] !== null)
-                    <a href="{{ $tile['href'] }}" title="{{ $tile['label'] }}" class="{{ $tile['class'] }}">
+                    <a data-wk-prose-skip href="{{ $tile['href'] }}" title="{{ $tile['label'] }}" class="{{ $tile['class'] }}">
                         <span class="{{ $tileInner }}">
                             <span class="flex items-center gap-[var(--gap-wk-xs)] min-w-0">
                                 <span class="shrink-0" style="color: {{ $tile['color'] }}">{!! $tile['icon'] !!}</span>

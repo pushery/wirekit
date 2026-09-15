@@ -91,6 +91,13 @@ final class ComponentManifest
             $entry['slots'] = ComponentRegistry::slotsOf($name);
             $entry['sub_components'] = ComponentRegistry::describeSubComponentsOf($name);
 
+            /*
+             * The design tokens this component reads: its template, its partials, the helpers it
+             * calls and the stylesheet rules on what it renders. Each part in `sub_components`
+             * carries its own, so a token is listed once, beside the element that reads it.
+             */
+            $entry['tokens'] = ComponentRegistry::tokensOf($name);
+
             $components[] = $entry;
         }
 

@@ -200,6 +200,6 @@
     }
 @endphp
 
-<{{ $as }} {{ $attrs }}>
+<{{ $as }} data-wk-prose-skip {{ $attrs }}>
     {{ $slot }}
 </{{ $as }}>

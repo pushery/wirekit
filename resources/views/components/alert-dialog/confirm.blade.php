@@ -101,7 +101,7 @@
         x-text="confirmAllowed ? '' : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Type the confirmation phrase to enable this action.')) }}"
     ></span>
 
-    @if(trim((string) $slot) === '')
+    @if(! $slot->hasActualContent())
         <x-wirekit::button intent="danger" surface="filled">{{ __('wirekit::Confirm') }}</x-wirekit::button>
     @elseif(preg_match('/<(?:button|a)[\\s>]/i', (string) $slot) === 1)
         {{-- The caller supplied their own control. Matched on the RENDERED markup,

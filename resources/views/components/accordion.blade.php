@@ -14,6 +14,10 @@
     // Row density. 'md' is the default trigger/panel padding; 'lg' is roomier
     // (larger padding + trigger text) for marketing / spacious layouts.
     'size' => config('wirekit.components.accordion.size', 'md'),
+    // Closed panels stay findable by the browser's find in page, which opens the one a match
+    // lands in. Only where the engine supports it; elsewhere a closed panel is hidden as before.
+    // Read by every item through @aware.
+    'findable' => config('wirekit.components.accordion.findable', true),
     // Heading level each item's trigger is wrapped in (1–6). Defaults to 3, which
     // is what every accordion shipped before this prop existed. The ARIA authoring
     // practices require the level to be "appropriate for the information
@@ -28,7 +32,11 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // `findable="false"` on an unbound tag is the string "false", which is truthy.
+    $findable = BooleanProp::from($findable, config('wirekit.components.accordion.findable', true));
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's

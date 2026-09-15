@@ -310,7 +310,7 @@
         : '';
 @endphp
 
-<{{ $tag }}
+<{{ $tag }} data-wk-prose-skip
     @if($href && ! $linkDisabled) href="{{ $href }}" @endif
     @if($tag === 'button') type="{{ $type }}" @endif
     @if($linkDisabled) role="link" aria-disabled="true" @endif

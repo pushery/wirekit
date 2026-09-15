@@ -30,7 +30,7 @@
 @php
     // — iconSlot symmetry: optional named slot for a header
     // icon/avatar/illustration. Renders before the default slot content.
-    $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty();
+    $hasIconSlot = isset($iconSlot) && $iconSlot->hasActualContent();
 @endphp
 
 <div {{ $attributes->class([$classes, 'flex items-center gap-[var(--gap-wk-sm)]']) }}>

@@ -83,7 +83,7 @@
     ></div>
 @else
     {{-- Horizontal divider (no label) --}}
-    <hr
+    <hr data-wk-prose-skip
         role="separator"
         {{ $attributes->class([
             WireKit::resolveClasses('divider', 'base', implode(' ', [

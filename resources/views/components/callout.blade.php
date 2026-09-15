@@ -142,7 +142,7 @@
     {{-- Variant icon —: iconSlot named slot wins over the
          variant-derived auto icon. The bool $icon prop continues to toggle
          the auto-icon path off when explicitly set false. --}}
-    @php $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty(); @endphp
+    @php $hasIconSlot = isset($iconSlot) && $iconSlot->hasActualContent(); @endphp
     @if($hasIconSlot)
         <div class="shrink-0 mt-0.5">{{ $iconSlot }}</div>
     @elseif($icon !== false)

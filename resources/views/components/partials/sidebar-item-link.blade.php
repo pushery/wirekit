@@ -26,7 +26,7 @@
         {{ $attributes->except(['rel', 'href'])->class([$classes, $activeClasses => $isSelected]) }}
     >
 @else
-<a
+<a data-wk-prose-skip
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif

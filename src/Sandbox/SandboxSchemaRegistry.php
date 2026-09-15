@@ -41,7 +41,11 @@ namespace Pushery\WireKit\Sandbox;
  * be: it is functional with whatever schemas are seeded, and more can be added
  * at any time.
  * Anti-drift test fails the build if a registered schema references
- * a prop not in the component's `@props([...])` block.
+ * a prop not in the component's `@props([...])` block, and
+ * `SandboxSchemaOffersEveryAcceptedValueTest` holds every `allowed_values`
+ * list to the component's own `validateProp()` list, in both directions.
+ * `SandboxSchemaDecidesEveryPropTest` holds the other half: every prop of a
+ * registered component is offered here or refused there, with a reason.
  */
 final class SandboxSchemaRegistry
 {
@@ -135,9 +139,10 @@ final class SandboxSchemaRegistry
         self::register('button', [
             'intent' => ['type' => 'string', 'default' => 'primary', 'allowed_values' => ['primary', 'neutral', 'success', 'warning', 'danger', 'info']],
             'surface' => ['type' => 'string', 'default' => 'filled', 'allowed_values' => ['filled', 'outline', 'soft', 'ghost', 'link']],
-            'size' => ['type' => 'string', 'default' => 'md', 'allowed_values' => ['xs', 'sm', 'md', 'lg', 'xl']],
+            'size' => ['type' => 'string', 'default' => 'md', 'allowed_values' => ['xs', 'sm', 'md-compact', 'md', 'lg', 'xl']],
             'type' => ['type' => 'string', 'default' => 'button', 'allowed_values' => ['button', 'submit', 'reset']],
             'disabled' => ['type' => 'bool', 'default' => false],
+            'wrapLabel' => ['type' => 'bool', 'default' => false],
             // `body` is the SandboxRenderer convention for slot content —
             // `<x-wirekit::button>{body}</x-wirekit::button>`. Earlier
             // iterations used `label` here, which the renderer treated as
@@ -147,9 +152,12 @@ final class SandboxSchemaRegistry
         ]);
 
         self::register('badge', [
-            'intent' => ['type' => 'string', 'default' => 'neutral', 'allowed_values' => ['primary', 'success', 'warning', 'danger', 'info', 'neutral']],
+            'intent' => ['type' => 'string', 'default' => 'neutral', 'allowed_values' => ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']],
             'size' => ['type' => 'string', 'default' => 'md', 'allowed_values' => ['sm', 'md', 'lg']],
             'dot' => ['type' => 'bool', 'default' => false],
+            'surface' => ['type' => 'string', 'default' => 'soft', 'allowed_values' => ['soft', 'solid', 'outline']],
+            'dismissible' => ['type' => 'bool', 'default' => false],
+            'wrap' => ['type' => 'bool', 'default' => false],
             // See note on button.body — same slot-content convention.
             'body' => ['type' => 'string', 'default' => 'Badge'],
         ]);
@@ -168,6 +176,9 @@ final class SandboxSchemaRegistry
         // is read as the API — it should show the name the kit asks people to write.
         self::register('callout', [
             'intent' => ['type' => 'string', 'default' => 'info', 'allowed_values' => $intentValues],
+            'icon' => ['type' => 'bool', 'default' => true],
+            'bordered' => ['type' => 'bool', 'default' => true],
+            'stripe' => ['type' => 'bool', 'default' => false],
             'body' => ['type' => 'string', 'default' => 'Callout body'],
         ]);
 
@@ -176,6 +187,7 @@ final class SandboxSchemaRegistry
             'title' => ['type' => 'string', 'default' => 'Heads up'],
             'body' => ['type' => 'string', 'default' => 'Alert body'],
             'dismissible' => ['type' => 'bool', 'default' => false],
+            'icon' => ['type' => 'bool', 'default' => true],
         ]);
 
         // The Card primitive accepts ONE surface prop (outline / elevated / flat),
@@ -219,15 +231,21 @@ final class SandboxSchemaRegistry
                     'sql', 'yaml', 'markdown', 'dockerfile',
                 ],
             ],
+            'copy' => ['type' => 'bool', 'default' => false],
             'body' => ['type' => 'string', 'default' => "<?php\necho 'hello';"],
         ]);
 
         self::register('kbd', [
+            'size' => ['type' => 'string', 'default' => 'md', 'allowed_values' => ['sm', 'md', 'lg']],
             'body' => ['type' => 'string', 'default' => 'Cmd'],
         ]);
 
         self::register('heading', [
             'level' => ['type' => 'int', 'default' => 2, 'allowed_values' => [1, 2, 3, 4, 5, 6]],
+            // No default: an unset size follows the level, which is what the component does with it.
+            'size' => ['type' => 'string', 'allowed_values' => ['sm', 'md', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl']],
+            'accent' => ['type' => 'bool', 'default' => false],
+            'tracking' => ['type' => 'string', 'default' => 'normal', 'allowed_values' => ['normal', 'tight', 'tighter']],
             'body' => ['type' => 'string', 'default' => 'Heading'],
         ]);
 
@@ -238,6 +256,12 @@ final class SandboxSchemaRegistry
         self::register('text', [
             'size' => ['type' => 'string', 'default' => 'base', 'allowed_values' => ['xs', 'sm', 'base', 'lg', 'xl']],
             'variant' => ['type' => 'string', 'default' => 'default', 'allowed_values' => ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger']],
+            'weight' => ['type' => 'string', 'default' => 'normal', 'allowed_values' => ['normal', 'medium', 'semibold', 'bold']],
+            // No default for the three the component leaves unset unless asked, so an unset value keeps that.
+            'align' => ['type' => 'string', 'allowed_values' => ['left', 'center', 'right']],
+            'truncate' => ['type' => 'bool', 'default' => false],
+            'lineClamp' => ['type' => 'int', 'allowed_values' => [1, 2, 3, 4, 5, 6]],
+            'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all']],
             'body' => ['type' => 'string', 'default' => 'Text body'],
         ]);
 
@@ -253,6 +277,11 @@ final class SandboxSchemaRegistry
                 'default' => '#',
                 'allowed_schemes' => ['http', 'https', 'mailto', 'tel'],
             ],
+            'variant' => ['type' => 'string', 'default' => 'default', 'allowed_values' => ['default', 'subtle', 'muted']],
+            // No default: an unset size inherits the surrounding text, which is what the component does.
+            'size' => ['type' => 'string', 'allowed_values' => ['xs', 'sm', 'base', 'lg', 'xl']],
+            'external' => ['type' => 'bool', 'default' => false],
+            'underline' => ['type' => 'string', 'default' => 'always', 'allowed_values' => ['always', 'hover', 'none']],
             'body' => ['type' => 'string', 'default' => 'Link'],
         ]);
     }

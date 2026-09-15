@@ -85,7 +85,7 @@
         datetime="{{ $carbonDate->toDateString() }}"
         class="shrink-0 px-[var(--space-wk-sm,0.5rem)] font-[number:var(--font-wk-heading-weight)]"
     >
-        {{ $slot->isEmpty() ? $label : $slot }}
+        {{ $slot->hasActualContent() ? $slot : $label }}
     </time>
     <span aria-hidden="true" class="grow border-t border-[var(--color-wk-border)]"></span>
 </div>

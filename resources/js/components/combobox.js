@@ -22,9 +22,18 @@
  *
  * @param {Object} config
  * @param {*}      config.value    the initially selected option's value
- * @param {Array}  config.options  normalized `{ value, label, group?, disabled? }`
+ * @param {Array}  config.options  normalized `{ value, label, group?, disabled? }`, plus the optional
+ *                                 `media`, `iconRef`, `src`, `initials`, `description`, `keywords`
+ *                                 and `selectedLabel` an option uses (see utils/option-media.js)
+ * @param {string} [config.placement]   where the panel opens against the field (Floating UI placement)
+ * @param {string} [config.panelWidth]  'trigger' matches the field; anything else lets the panel
+ *                                      be wider than the field but never narrower
+ * @param {boolean} [config.searchable] false renders a select-only trigger instead of a text field;
+ *                                      see selectOnlyKeydown() for its keyboard
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
+import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
+import { typeAheadIndex } from '../utils/roving-focus.js';
 
 export default function wirekitCombobox(config = {}) {
     return {
@@ -41,6 +50,17 @@ export default function wirekitCombobox(config = {}) {
         // skipped for that one move. See _revealHighlight().
         _movedByPointer: false,
 
+        // markMediaBroken() and showsInitials(), for an avatar whose photo fails to load.
+        ...optionMediaState(),
+
+        // Without a search field the trigger is a select-only combobox: it never filters, so
+        // `query` stays empty and `filtered` is always the whole list.
+        _searchable: config.searchable !== false,
+
+        // What the reader has typed into a select-only trigger, forgotten after half a second.
+        _typeAheadBuffer: '',
+        _typeAheadTimer: null,
+
         get filtered() {
             if (this.query === '') {
                 return this.allOptions;
@@ -48,7 +68,38 @@ export default function wirekitCombobox(config = {}) {
 
             const q = this.query.toLowerCase();
 
-            return this.allOptions.filter((o) => o.label.toLowerCase().includes(q));
+            return this.allOptions.filter((o) => optionMatches(o, q));
+        },
+
+        /**
+         * The chosen option, as a list of at most one, while the field shows it and it has a
+         * medium to draw at the start of the field.
+         *
+         * A list because the template binds the medium to an option through `x-for`, which is
+         * the one directive that introduces a name. Empty as soon as the text differs from the
+         * option's own, since the reader is then typing a new search and the medium of the last
+         * choice would sit beside words that no longer name it.
+         */
+        get fieldMedia() {
+            const match = this.allOptions.find((o) => o.value === this.selected);
+
+            if (! match || ! match.media) {
+                return [];
+            }
+
+            // A select-only trigger always shows the choice, so its medium always shows with it.
+            if (! this._searchable) {
+                return [match];
+            }
+
+            return this.query === chosenText(match) ? [match] : [];
+        },
+
+        /** The chosen option's text on a select-only trigger, or an empty string before a choice. */
+        get selectedText() {
+            const match = this.allOptions.find((o) => o.value === this.selected);
+
+            return match ? chosenText(match) : '';
         },
 
         /**
@@ -93,8 +144,8 @@ export default function wirekitCombobox(config = {}) {
             // Seed the query with the label of the initial value, if any.
             const match = this.allOptions.find((o) => o.value === this.selected);
 
-            if (match) {
-                this.query = match.label;
+            if (match && this._searchable) {
+                this.query = chosenText(match);
             }
 
             this._coordination = coordinateOverlay({
@@ -146,6 +197,10 @@ export default function wirekitCombobox(config = {}) {
         _listId: config.listId || null,
         _emptyId: config.emptyId || null,
         _inputId: config.inputId || null,
+        // Validated by the Blade, which falls back to these same defaults, so a value
+        // arriving here is one the component accepts.
+        _placement: config.placement || 'bottom-start',
+        _panelWidth: config.panelWidth || 'trigger',
 
         _place() {
             // No-op on the core bundle, which ships no overlays and no position
@@ -206,10 +261,13 @@ export default function wirekitCombobox(config = {}) {
                 }
 
                 window.wirekitPosition(anchor, panel, {
-                    placement: 'bottom-start',
+                    placement: this._placement,
                     offset: 4,
                     fitViewport: true,
-                    matchReferenceWidth: true,
+                    // The field's width, or at least the field's width: a panel told to be
+                    // `auto` or a length sizes itself and is only bounded here.
+                    matchReferenceWidth: this._panelWidth === 'trigger',
+                    minReferenceWidth: this._panelWidth !== 'trigger',
                 });
             }
         },
@@ -249,6 +307,7 @@ export default function wirekitCombobox(config = {}) {
         destroy() {
             this._coordination?.stop();
             this._coordination = null;
+            this._forgetTyping();
         },
 
         // ── Opening ─────────────────────────────────────────────────────────
@@ -343,7 +402,9 @@ export default function wirekitCombobox(config = {}) {
         _syncQuery() {
             const match = this.allOptions.find((o) => o.value === this.selected);
 
-            this.query = match ? match.label : '';
+            // A select-only trigger shows the choice through `selectedText` and never filters,
+            // so its query stays empty and the whole list stays reachable.
+            this.query = match && this._searchable ? chosenText(match) : '';
         },
 
         /**
@@ -432,6 +493,209 @@ export default function wirekitCombobox(config = {}) {
             }
 
             return option.value;
+        },
+
+        /**
+         * Open or close a select-only trigger on a click. Opening marks the current choice, as
+         * every other way of opening does.
+         */
+        toggleSelectOnly() {
+            if (this.open) {
+                this.open = false;
+
+                return;
+            }
+
+            this._highlightChoice();
+            this.open = true;
+        },
+
+        /**
+         * Choose the option with this value, the way a click on it does. The select-only
+         * trigger's keyboard hands its choice here, or to the optimistic layer's `runIf()`.
+         */
+        chooseValue(value) {
+            if (value === undefined) {
+                return;
+            }
+
+            const option = this.allOptions.find((o) => o.value === value);
+
+            if (option) {
+                this.selectOption(option);
+            }
+        },
+
+        /**
+         * The keyboard of a select-only trigger, after the WAI-ARIA APG select-only combobox.
+         *
+         * Returns the value to CHOOSE when a key picks the active option (Enter, Space, Tab or
+         * Alt+ArrowUp on an open list) and `undefined` for every other key. The template does the
+         * choosing, because with `optimistic` the choice goes through the optimistic layer's
+         * `runIf()`, which lives in a nested scope this factory cannot call.
+         *
+         * Closed: ArrowDown, ArrowUp, Alt+ArrowDown, Enter and Space open the list at the current
+         * choice; Home and End open it at the first or last option; a printable character opens
+         * it at the first option that starts with what has been typed. ArrowUp opening in place
+         * follows the example's code, where its prose says the first option: opening at the
+         * choice is what the other four opening keys do, and a key that jumped away from it would
+         * be the one exception.
+         *
+         * Open: the arrows move one option and stop at the ends, Home and End jump to them,
+         * PageUp and PageDown move ten, Escape closes without choosing, and Tab chooses and lets
+         * focus move on. Disabled options are skipped by every one of these.
+         *
+         * Space joins a search while one is being typed, so "New York" can be typed in full;
+         * otherwise it opens the list or chooses, as a native select does.
+         */
+        selectOnlyKeydown(event) {
+            const { key, altKey, ctrlKey, metaKey } = event;
+            const printable = [...key].length === 1 && ! altKey && ! ctrlKey && ! metaKey;
+
+            if (key === ' ' && this._typeAheadBuffer !== '') {
+                event.preventDefault();
+                this._typeAhead(key);
+
+                return undefined;
+            }
+
+            if (! this.open) {
+                if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter' || key === ' ') {
+                    event.preventDefault();
+                    this._highlightChoice();
+                    this.open = true;
+                } else if (key === 'Home' || key === 'End') {
+                    event.preventDefault();
+                    this.open = true;
+                    key === 'Home' ? this.highlightFirst() : this.highlightLast();
+                } else if (printable) {
+                    event.preventDefault();
+                    this._highlightChoice();
+                    this.open = true;
+                    this._typeAhead(key);
+                }
+
+                return undefined;
+            }
+
+            if ((key === 'ArrowUp' && altKey) || key === 'Enter' || key === ' ') {
+                event.preventDefault();
+
+                return this._closeWithChoice();
+            }
+
+            if (key === 'Tab') {
+                // No preventDefault: the choice is made and focus still moves on.
+                return this._closeWithChoice();
+            }
+
+            if (key === 'Escape') {
+                this.open = false;
+            } else if (key === 'ArrowDown' && ! altKey) {
+                event.preventDefault();
+                this.moveHighlight(1);
+            } else if (key === 'ArrowUp') {
+                event.preventDefault();
+                this.moveHighlight(-1);
+            } else if (key === 'Home' || key === 'End') {
+                event.preventDefault();
+                key === 'Home' ? this.highlightFirst() : this.highlightLast();
+            } else if (key === 'PageDown' || key === 'PageUp') {
+                event.preventDefault();
+                this._pageHighlight(key === 'PageDown' ? 10 : -10);
+            } else if (printable) {
+                event.preventDefault();
+                this._typeAhead(key);
+            }
+
+            return undefined;
+        },
+
+        /** Mark the current choice, or the first enabled option when there is none to mark. */
+        _highlightChoice() {
+            const index = this.filtered.findIndex((o) => o.value === this.selected && ! o.disabled);
+
+            if (index >= 0) {
+                this.highlight = index;
+            } else {
+                this.highlightFirst();
+            }
+        },
+
+        /** Close the list and hand back the value of the active option, if it can be chosen. */
+        _closeWithChoice() {
+            const value = this.highlightedValue();
+
+            this.open = false;
+            this._forgetTyping();
+
+            return value;
+        },
+
+        /**
+         * Move the active option ten places, stopping at the ends. A disabled option where the
+         * move lands is passed in the direction of travel, and back toward the start of the move
+         * when every option beyond it is disabled too.
+         */
+        _pageHighlight(delta) {
+            const max = this.filtered.length - 1;
+
+            if (max < 0) {
+                return;
+            }
+
+            const step = delta > 0 ? 1 : -1;
+            const landed = Math.max(0, Math.min(max, Math.max(this.highlight, 0) + delta));
+
+            for (let i = landed; i >= 0 && i <= max; i += step) {
+                if (! this.filtered[i].disabled) {
+                    this.highlight = i;
+
+                    return;
+                }
+            }
+
+            for (let i = landed - step; i >= 0 && i <= max; i -= step) {
+                if (! this.filtered[i].disabled) {
+                    this.highlight = i;
+
+                    return;
+                }
+            }
+        },
+
+        /**
+         * Add a character to the search and mark the option it reaches. The arithmetic is the
+         * shared `typeAheadIndex`, the same the menus use; a disabled option is handed to it as
+         * an empty label, which nothing can start with, so the search passes over it. A search
+         * that reaches nothing starts over with the next key, as in the APG example.
+         */
+        _typeAhead(char) {
+            this._typeAheadBuffer += char;
+
+            if (this._typeAheadTimer) {
+                clearTimeout(this._typeAheadTimer);
+            }
+
+            this._typeAheadTimer = setTimeout(() => this._forgetTyping(), 500);
+
+            const labels = this.filtered.map((o) => (o.disabled ? '' : o.label));
+            const index = typeAheadIndex(labels, this._typeAheadBuffer, this.highlight);
+
+            if (index >= 0) {
+                this.highlight = index;
+            } else {
+                this._forgetTyping();
+            }
+        },
+
+        _forgetTyping() {
+            if (this._typeAheadTimer) {
+                clearTimeout(this._typeAheadTimer);
+            }
+
+            this._typeAheadTimer = null;
+            this._typeAheadBuffer = '';
         },
 
         clearSelection() {

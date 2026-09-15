@@ -58,12 +58,12 @@
      component resolve). --}}
 <div data-wk-logo-cloud {{ $attributes->only('class') }}>
     @if($label)
-        <p class="mb-[var(--space-wk-md,1rem)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+        <p data-wk-prose-skip class="mb-[var(--space-wk-md,1rem)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
             {{ $label }}
         </p>
     @endif
 
-    <ul
+    <ul data-wk-prose-skip
         role="list"
         @if($listLabel) aria-label="{{ $listLabel }}" @endif
         {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->except('class')->class([$classes]) }}

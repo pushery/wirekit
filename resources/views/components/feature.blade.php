@@ -97,7 +97,7 @@
         : WireKit::validateProp('feature', 'size', $size, array_keys($sizeMap));
     [$chipSizeClasses, $iconSizeProp] = $sizeMap[$validSize];
 
-    $hasIconSlot = isset($iconSlot) && $iconSlot->isNotEmpty();
+    $hasIconSlot = isset($iconSlot) && $iconSlot->hasActualContent();
 
     // Heading level (1-6). An invalid value signals in debug (validateProp throws with a
     // did-you-mean) and falls back to the default in production — never to h1, which is
@@ -120,13 +120,13 @@
     @endif
 
     @if($title)
-        <h{{ $levelValue }} class="text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-lg)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             {{ $title }}
         </h{{ $levelValue }}>
     @endif
 
-    @if($slot->isNotEmpty())
-        <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] leading-relaxed">
+    @if($slot->hasActualContent())
+        <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] leading-relaxed">
             {{ $slot }}
         </p>
     @endif

@@ -7,6 +7,12 @@
     'variant' => config('wirekit.components.card.variant', 'outlined'),
     'as' => 'div',
     'href' => null,
+    // Say at rest that the card leads somewhere: a chevron at the inline end. The pointer cursor and
+    // the hover shadow are the only other signs, and a phone shows neither, so there a card with
+    // `href` looked exactly like one with nothing behind it. Opt-in, because drawing it by default
+    // would change the layout of every clickable card that already exists. Read only on a card that
+    // links or runs an action.
+    'chevron' => false,
     // Optional reveal animation when card scrolls into view. One of 11 base presets
     // (or any -in / -out variant). Null = no animation (default, v1.5.0-identical).
     'animateIn' => null,
@@ -25,6 +31,7 @@
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -168,14 +175,36 @@
         || $attributes->get('role') === 'button'
         || $hasClickBinding;
 
+    $chevron = BooleanProp::from($chevron, false);
+
+    // A chevron on a card that does nothing would promise a destination that is not there, so the
+    // prop is read only where the card is interactive, and a static card that asks for one is told
+    // so in debug.
+    $showChevron = $chevron && $isInteractive;
+
+    if ($chevron && ! $isInteractive && config('app.debug')) {
+        logger()->debug('WireKit card: `chevron` is set on a card that neither links nor runs an action, so no chevron is drawn.');
+    }
+
     // `block` stays with the anchor and is deliberately NOT part of the interactive set:
     // an `<a>` is inline and needs it to fill the card's box, which makes it a display
     // fix rather than an affordance. Putting it on the interactive branch would change
     // the width of every card that already renders as a `<button>` (inline-block by
     // default) — a layout change nobody asked for, in a release that may not break.
+    //
+    // With a chevron the card lays its content and the chevron out side by side instead, on either
+    // tag. That changes the width of a button card as well, which the prop asks for by being set.
+    // The card's inline-end padding holds the chevron in from the edge by the body's own inset, so
+    // the distance moves with the padding scale it matches.
+    $cardLayoutClass = match (true) {
+        $showChevron => 'flex items-center pe-[var(--padding-wk-x-lg)]',
+        (bool) $href => 'block',
+        default => '',
+    };
+
     $interactiveClasses = trim(
         ($isInteractive ? 'hover:shadow-[var(--shadow-wk-lg)] cursor-pointer ' : '')
-        .($href ? 'block' : '')
+        .$cardLayoutClass
     );
 
     // Render as <a> when href given, otherwise use $as tag (default: div)
@@ -242,7 +271,7 @@
     }
 @endphp
 
-<{{ $tag }}
+<{{ $tag }} data-wk-prose-skip
     data-wk-card
     @if($warnNoBody)
         {{-- Debug-only composition warning. It cannot be an inline console.warn:
@@ -258,7 +287,16 @@
     @if($tag === 'button') type="{{ $attributes->get('type', 'button') }}" @endif
     {{ $attributes->except($tag === 'button' ? ['rel', 'type'] : ['rel'])->merge($scrollKeyboardModel)->class([$baseClasses, $variantClasses, $interactiveClasses]) }}
 >
-    {{ $slot }}
+    @if($showChevron)
+        {{-- The content takes the column that can shrink and the chevron the one that cannot, so no
+             text ever runs under it. Decorative: the link's own text already names where it goes. --}}
+        <div class="flex-1 min-w-0">{{ $slot }}</div>
+        <span data-wk-card-chevron aria-hidden="true" class="shrink-0 inline-flex text-[color:var(--color-wk-text-muted)] rtl:-scale-x-100">
+            <x-wirekit::icon name="chevron-right" size="sm" />
+        </span>
+    @else
+        {{ $slot }}
+    @endif
     @if($opensNewTab)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
     @endif

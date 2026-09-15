@@ -15,11 +15,19 @@
     'variant' => config('wirekit.components.tabs.variant', 'underline'),
     'orientation' => 'horizontal', // horizontal (default) | vertical
     'label' => __('wirekit::Tabs'),
+    // Inactive panels become findable by the browser's find in page, which switches to the tab a
+    // match lands in. Off by default: an inactive tab is often a view of its own, and a search
+    // that changes the reader's view unasked is a surprise. Only where the engine supports it.
+    'findable' => config('wirekit.components.tabs.findable', false),
     'scope' => null,
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // `findable="false"` on an unbound tag is the string "false", which is truthy.
+    $findable = BooleanProp::from($findable, false);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -227,6 +235,22 @@
          active panel is visible; others stay in the DOM but are hidden via x-show. --}}
     <div class="{{ $panelClasses }}">
         @foreach($tabs as $key => $tab)
+            @if($findable)
+            {{-- FINDABLE PANEL. An inactive one is `hidden="until-found"` where the engine supports
+                 it, and a match activates its tab through `x-on:beforematch`, so `aria-selected`
+                 and the roving tab stop follow. The tab stop is BOUND: an element that is itself
+                 until-found still takes focus (measured in Chromium and WebKit, by script and by
+                 Tab), so an inactive panel carries no `tabindex` at all. See utils/findable.js. --}}
+            <div
+                role="tabpanel"
+                id="{{ $uid }}-panel-{{ $key }}"
+                aria-labelledby="{{ $uid }}-tab-{{ $key }}"
+                @if((string) $key === (string) $seedTab) tabindex="0" @else hidden="until-found" @endif
+                :tabindex="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }} ? '0' : null"
+                x-wk-findable="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
+                x-on:beforematch="active = {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
+            >
+            @else
             <div
                 role="tabpanel"
                 id="{{ $uid }}-panel-{{ $key }}"
@@ -235,6 +259,7 @@
                 x-show="active === {{ \Pushery\WireKit\Support\AlpinePayload::from($key) }}"
                 x-cloak
             >
+            @endif
                 {{-- Dynamic slot lookup: render the named slot whose name matches
                      the item key. Falls back to empty string if no slot was provided. --}}
                 {{ ${$key} ?? '' }}

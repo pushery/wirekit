@@ -157,7 +157,7 @@
 <span {{ $attributes->merge($avatarStyle ? ['style' => $avatarStyle] : [])->class([$baseClasses, $sizeClasses, $shapeClasses]) }}
 >
     @if($src)
-        <img src="{{ $src }}" alt="{{ $alt ?? '' }}" class="w-full h-full object-cover" />
+        <img data-wk-prose-skip src="{{ $src }}" alt="{{ $alt ?? '' }}" class="w-full h-full object-cover" />
     @elseif($initials)
         <span aria-hidden="{{ $alt ? 'true' : 'false' }}">{{ $initials }}</span>
         @if($alt)

@@ -276,7 +276,7 @@
                 @if($controlDescribedBy) aria-describedby="{{ $controlDescribedBy }}" @endif
                 {{ $attributes->except('aria-describedby')->class([$inputClasses]) }}
             />
-            @if(trim((string) $slot) !== '')
+            @if($slot->hasActualContent())
                 <span class="sr-only">{{ $slot }}</span>
             @else
                 {{-- The ONLY accessible name the native `<input type="color">` gets — there is no
@@ -703,8 +703,8 @@
      stylesheet selects that wrapper's own children, and the field's error paragraph is
      not part of what the optimistic layer withdrew. --}}
 @if($hasError && $errorMessage)
-    <p id="{{ $pickerId }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+    <p data-wk-prose-skip id="{{ $pickerId }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
 @elseif($hint)
-    <p id="{{ $pickerId }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    <p data-wk-prose-skip id="{{ $pickerId }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
 @endif
 </div>

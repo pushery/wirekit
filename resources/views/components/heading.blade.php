@@ -89,6 +89,6 @@
     ]), $scope);
 @endphp
 
-<{{ $tag }} {{ $attributes->class([$classes]) }}>
+<{{ $tag }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </{{ $tag }}>

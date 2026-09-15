@@ -118,7 +118,12 @@
 
     // Base classes: all values reference design tokens — no hardcoded colors or sizes
     $selectClasses = WireKit::resolveClasses('select', 'base', implode(' ', [
-        'block w-full appearance-none',
+        // `overflow-hidden` because with `appearance: none` WebKit paints the chosen value itself, and a
+        // value wider than the field counted into the scrollable width of every ancestor: invisible,
+        // since the text ends at the chevron, yet the page scrolled sideways on a phone. No
+        // ellipsis utility: on this select it drew no ellipsis in either engine, measured by screenshot.
+        // (Named in words on purpose: a class name in a comment is still a class to Tailwind's scanner.)
+        'block w-full appearance-none overflow-hidden',
         'font-[family-name:var(--font-wk-sans)]',
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
@@ -292,13 +297,13 @@
          reason it is `aria-hidden` — it holds space, not text, and a drag-select across the
          form should not carry its no-break space into the clipboard. --}}
     @if($reserveMessage && ! (($hasError && $errorMessage) || ($hasSuccess && $successMessage) || $hint))
-        <p aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
+        <p data-wk-prose-skip aria-hidden="true" class="select-none text-[length:var(--text-wk-sm)]">&nbsp;</p>
     @endif
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hasSuccess && $successMessage)
-        <p id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-success" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-success-text)]">{{ $successMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

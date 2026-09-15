@@ -56,7 +56,7 @@ final class PropsParser
     /**
      * Parse the `@props([…])` block from a Blade file on disk.
      *
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
      */
     public static function parseBlade(string $bladePath): array
     {
@@ -80,7 +80,7 @@ final class PropsParser
      * use case demands multi-block parsing, extend the regex below to
      * `preg_match_all` and aggregate the results.
      *
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
      */
     public static function parseSource(string $source): array
     {
@@ -102,7 +102,7 @@ final class PropsParser
      * same reason it applies to `@props`: a nested `config(...)` default carries
      * commas, and an inline comment carries anything at all.
      *
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
      */
     public static function parseAwareSource(string $source): array
     {
@@ -112,7 +112,7 @@ final class PropsParser
     /**
      * Parse the `@aware([…])` block of a Blade file.
      *
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
      */
     public static function parseAwareBlade(string $bladePath): array
     {
@@ -128,7 +128,7 @@ final class PropsParser
     /**
      * The shared reader behind `@props` and `@aware`.
      *
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
      */
     private static function parseDirectiveSource(string $source, string $directive): array
     {
@@ -155,7 +155,91 @@ final class PropsParser
         $phpSource = "<?php\n\$_props_parser_arr = {$arrayBody};\n";
         $tokens = token_get_all($phpSource);
 
-        return self::walkTokens($tokens);
+        return self::withValidation(self::walkTokens($tokens), $source);
+    }
+
+    /**
+     * Fold what the template ENFORCES about a prop into its record: the allow-list
+     * `validateProp()` checks it against, and the type the file proves it takes.
+     *
+     * Both live in the same file as the `@props` block and nowhere else, and until now nothing
+     * published them: a reader that wanted to offer a prop's values — a props playground, an
+     * agent picking one — had to read them out of the prose on the docs page.
+     *
+     * @param  list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>  $entries
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
+     */
+    private static function withValidation(array $entries, string $source): array
+    {
+        $allowed = PropValidationParser::valuesByProp($source);
+
+        foreach ($entries as $index => $entry) {
+            $values = $allowed[$entry['name']] ?? null;
+
+            $entries[$index]['values'] = $values;
+            $entries[$index]['value_type'] = self::valueType($entry['default_normalized'], $entry['type_hint'], $values);
+        }
+
+        return $entries;
+    }
+
+    /**
+     * What the file PROVES about a prop's value, or null when it proves nothing.
+     *
+     * Three pieces of evidence, strongest first:
+     *
+     *   1. a declared PHP type, which only a class-based component has;
+     *   2. the default's own literal — `false` is a flag, `12` a number, `[]` a list, `'md'` a
+     *      string. A `config(...)` default is read through to its fallback, because that is the
+     *      value the component uses when the application configures nothing;
+     *   3. the allow-list, whose entries are compared as strings.
+     *
+     * Anything else is null rather than a guess. A prop whose default is `null` and whose values
+     * are unconstrained says nothing about what it takes, and a manifest that claims otherwise
+     * costs its reader more than one that admits the gap.
+     *
+     * @param  ?list<string>  $values
+     */
+    private static function valueType(?string $defaultNormalized, ?string $typeHint, ?array $values): ?string
+    {
+        $scalars = ['bool', 'int', 'float', 'string', 'array'];
+
+        if ($typeHint !== null && in_array(strtolower(ltrim($typeHint, '?')), $scalars, true)) {
+            return strtolower(ltrim($typeHint, '?'));
+        }
+
+        // The allow-list first, because it describes what a CALLER may write, and the default
+        // only what the component starts from. `grid` defaults its columns to the number 1 and
+        // accepts `sm:2 md:3` as well — reading the default alone types it as a number, and a
+        // reader that offers a number input has been told something false.
+        if ($values !== null) {
+            foreach ($values as $value) {
+                if (preg_match('/^-?\d+$/', $value) !== 1) {
+                    return 'string';
+                }
+            }
+
+            return 'int';
+        }
+
+        $default = $defaultNormalized === null ? null : trim($defaultNormalized);
+
+        // `config('wirekit.components.alert.dismissible', false)` — the second argument is the
+        // value the component uses when the application configures nothing, so it is the
+        // evidence. Matched to the LAST paren on purpose: a fallback may be an array or a call.
+        if ($default !== null && preg_match('/^config\s*\(\s*\x27[^\x27]*\x27\s*,\s*(.+)\)$/s', $default, $match) === 1) {
+            $default = trim($match[1]);
+        }
+
+        return match (true) {
+            $default === null, $default === '', $default === 'null' => null,
+            $default === 'true', $default === 'false' => 'bool',
+            preg_match('/^-?\d+$/', $default) === 1 => 'int',
+            preg_match('/^-?\d*\.\d+$/', $default) === 1 => 'float',
+            str_starts_with($default, '[') => 'array',
+            str_starts_with($default, "'"), str_starts_with($default, '"') => 'string',
+            default => null,
+        };
     }
 
     /**

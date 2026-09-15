@@ -134,11 +134,13 @@ class DoctorPropsCommand extends Command
                     ];
                 }
 
-                $declared = collect(ComponentRegistry::extractProps($usage['name']))
-                    ->pluck('name')
-                    ->filter()
-                    ->values()
-                    ->all();
+                // `acceptedPropNames()`, not `extractProps()`: the question here is whether
+                // Blade would do anything with this attribute, and it does for an `@aware` key
+                // written straight onto the tag as much as for a declared prop. Asking the
+                // narrower question reported `variant` on `accordion.item` — a call in this
+                // package's own `faq-item` — as a typo, while the runtime warning over the same
+                // render stayed correctly quiet.
+                $declared = ComponentRegistry::acceptedPropNames($usage['name']);
 
                 // An empty declared list means the component's `@props` could not be
                 // resolved (`glass`, `fonts`), and against an empty list EVERY attribute

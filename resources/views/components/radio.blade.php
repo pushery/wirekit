@@ -28,7 +28,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -38,7 +38,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkFieldSet', 'wk-field-set']);
 @endphp
 
 
@@ -108,13 +108,26 @@
         : $nameAttr;
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $defaultId, 'radio-');
 
+    // The field.set around this radio, when there is one. A radio set shares one name, so a
+    // bag entry under it belongs to the set: rendered by every radio it repeats once per option.
+    $fieldGroup = $wkFieldSet instanceof \Pushery\WireKit\Support\FieldGroup ? $wkFieldSet : null;
+    $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($nameAttr) ?? false);
+
     // Error detection: explicit prop OR Laravel validation bag (grouped by name)
-    $hasError = $error || ($errors ?? null)?->has($nameAttr ?? '');
-    // One description list for the control: the component's own id first, then a caller's
+    $hasError = $error || (! $groupOwnsBagEntry && ($errors ?? null)?->has($nameAttr ?? ''));
+    $errorMessage = $error ?? ($groupOwnsBagEntry ? null : ($errors ?? null)?->first($nameAttr ?? ''));
+    $isInvalid = $hasError || ($fieldGroup?->isInvalid($errors ?? null) ?? false);
+
+    // One description list for the control: its own message, the group's, then a caller's
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
-    $describedBy = trim(($hasError ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.((string) $attributes->get('aria-describedby', '')));
-    $errorMessage = $error ?? ($errors ?? null)?->first($nameAttr ?? '');
+    $describedBy = \Pushery\WireKit\Support\FieldGroup::describedBy(
+        $fieldGroup,
+        $errors ?? null,
+        $hasError ? $id.'-error' : null,
+        $hint ? $id.'-hint' : null,
+        $attributes->get('aria-describedby'),
+    );
 
     // Visual circle — sibling of the peer input, reacts via peer-checked/focus/disabled
     $boxClasses = WireKit::resolveClasses('radio', 'base', implode(' ', [
@@ -149,7 +162,7 @@
         'cursor-pointer',
     ]), $scope);
 
-    if ($hasError) {
+    if ($isInvalid) {
         $boxClasses .= ' border-[var(--color-wk-border-error)]';
     }
 @endphp
@@ -161,8 +174,8 @@
             type="radio"
             id="{{ $id }}"
             @if($value !== null) value="{{ $value }}" @endif
-            @if($hasError) aria-invalid="true" @endif
-            @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+            @if($isInvalid) aria-invalid="true" @endif
+            @if($describedBy !== null) aria-describedby="{{ $describedBy }}" @endif
             {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
                  caller's own class became a second class attribute and the browser kept only
                  this one. --}}
@@ -195,8 +208,8 @@
 
     {{-- Error message or hint text --}}
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

@@ -75,6 +75,18 @@ export default function wirekitAccordion(config = {}) {
                 : this.opened.concat([id]);
         },
 
+        /**
+         * Open a panel the browser's find in page matched, and leave an open one alone.
+         *
+         * Not `toggle()`: a match must never close anything the reader is looking at. In single
+         * mode opening it closes the other panel, which is what a click on its header would do.
+         */
+        reveal(id) {
+            if (! this.isOpen(id)) {
+                this.toggle(id);
+            }
+        },
+
         isOpen(id) {
             return this.opened.includes(id);
         },
