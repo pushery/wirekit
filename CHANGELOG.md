@@ -10,6 +10,24 @@ Browse it online — one page per version — at
 
 ---
 
+## [2.52.0] — 2026-09-15
+
+**Minor.** The contrast arithmetic WireKit audits its own themes with now also runs in the browser, so a page can show a reader the contrast their current theme actually produces rather than the one the stylesheet declares. And an icon you name keeps that name for assistive technology even where no icon package is installed to draw it.
+
+### Added
+
+- **[Contrast checking in the browser](https://docs.wirekit.app/theming#checking-a-color-pairing-in-the-browser), with the same surface as the PHP class.** `ratio()`, `unmeasurableReason()`, `classify()`, `conformance()`, `relativeLuminance()`, `parseToLinearRgb()` and `parseToLinearRgba()` take the same arguments and give the same answers as `Pushery\WireKit\Theming\WcagContrast`, `null` for an unmeasurable pairing included. Some questions can only be answered where the page is: a theme or mode switch re-resolves every token, so a value computed on the server describes the theme your application declares rather than the one in front of the reader. Import the module on its own — it has no dependencies and ships inside the package — or take it from the ESM bundle as a named export. The two implementations are held against each other over one shared corpus, with identical answers required down to the last bits, because two implementations of one formula otherwise drift while each stays green against its own expectations.
+
+### Fixed
+
+- **An [icon](https://docs.wirekit.app/components/icon) you name keeps its name when it cannot render.** Without `blade-ui-kit/blade-icons` installed, or for an icon name that does not resolve, the icon renders an empty placeholder — and that placeholder was always hidden from assistive technology, even when you gave the icon an `aria-label`, `aria-labelledby` or `role="img"`. An icon-only button whose name came from its icon then had no accessible name at all. The placeholder now makes the decision the rendered icon makes: hidden when it is decorative, and exposed as an image carrying your name when you named it.
+
+### Components
+
+Every component this release changes, each linked to its page: [Icon](https://docs.wirekit.app/components/icon)
+
+---
+
 ## [2.51.0] — 2026-09-14
 
 **Minor.** An assistant's turn can show its work: a tool call has a component of its own, the variants a regeneration produced get a switcher, an answer names the sources it relied on, and the reasoning disclosure stays open while the model is still writing. The combobox becomes a picker that shows icons, avatars and descriptions, runs without search when a short list does not need it, and opens a panel as wide as its options. A light subtree can sit inside a dark page, and a dark panel on a light page now resolves every color WireKit derives rather than the ones computed for the page around it. And a field set can say what is wrong with its whole group, so a checkbox group's error no longer has to be wired by hand.

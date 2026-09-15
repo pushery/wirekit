@@ -89,7 +89,8 @@
 
 {{-- Render the SVG icon via blade-icons, OR a placeholder when blade-icons
      isn't installed yet. The placeholder preserves layout (same h/w as the
-     real icon would have) and stays inert (aria-hidden, no glyph).
+     real icon would have) and draws no glyph. It keeps the SVG branch's accessibility
+     decision: hidden when decorative, named and role="img" when the caller named it.
 
      Blade-heroicons' raw SVG source files carry `aria-hidden="true"` baked
      into the root element — useful as a sensible default for decorative
@@ -178,5 +179,16 @@
 @endphp
 {!! $svgHtml !!}
 @else
-    <span {{ $mergedAttributes->merge(['aria-hidden' => 'true', 'data-wk-icon-missing' => $name]) }} style="display:inline-block;"></span>
+    @php
+        // The placeholder takes the SVG branch's decision, never a harder one. A decorative icon
+        // already carries aria-hidden from the merge above. A named one has to stay in the
+        // accessibility tree: forcing aria-hidden here removed the name wherever no SVG could
+        // render, so an icon-only button lost its only accessible name. A name on a span is valid
+        // only with a role, so it becomes an image unless the caller chose a role of its own.
+        $placeholderAttributes = ['data-wk-icon-missing' => $name];
+        if ($isInformative && $callerRole === null) {
+            $placeholderAttributes['role'] = 'img';
+        }
+    @endphp
+    <span {{ $mergedAttributes->merge($placeholderAttributes) }} style="display:inline-block;"></span>
 @endif
