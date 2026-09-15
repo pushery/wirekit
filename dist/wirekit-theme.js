@@ -1,2 +1,2 @@
-/*! WireKit theme script v2.51.0 | MIT License | https://wirekit.app */
+/*! WireKit theme script v2.52.0 | MIT License | https://wirekit.app */
 (()=>{(function(){try{var c=document.currentScript,o=c&&c.getAttribute("data-wk-theme-key")||"wirekit-theme",r=null;if(c&&c.getAttribute("data-wk-theme-storage")==="cookie")for(var t=(document.cookie||"").split("; "),e=0;e<t.length;e++){var a=t[e].indexOf("="),l=a<0?t[e]:t[e].slice(0,a);if(l===o){r=decodeURIComponent(t[e].slice(a+1));break}}else r=localStorage.getItem(o);var n=r==="dark"||r!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",n)}catch{}})();})();

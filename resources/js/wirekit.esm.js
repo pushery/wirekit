@@ -10,6 +10,7 @@
  *   Livewire.start();
  */
 import { position } from './utils/floating.js';
+import { contrast } from './utils/wcag-contrast.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerFindableDirective } from './utils/findable.js';
@@ -361,4 +362,12 @@ export {
     registerMapEngine,
     wirekitStickyPanelShadows,
     wirekitStream,
+    // Not a factory either: WCAG 2.1 contrast, for a page that reports what a reader's theme
+    // actually resolved to. The same surface as `Pushery\WireKit\Theming\WcagContrast`, held
+    // against it over one corpus by WcagContrastJsMatchesThePhpTest.
+    //
+    // Importable on its own as `resources/js/utils/wcag-contrast.js` -- it has no dependencies
+    // and ships in the package, so a caller who wants the arithmetic and none of the runtime
+    // does not have to reach through this bundle for it.
+    contrast,
 };
