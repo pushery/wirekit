@@ -5,8 +5,10 @@
 ])
 
 {{-- Alert dialog cancel — pre-wired to close the parent alert-dialog
-     via x-on:click="close()". The parent provides the close() method
-     via x-data="wirekitAlertDialog(...)".
+     via x-on:click="dismissOverlay()", which the parent provides through
+     x-data="wirekitAlertDialog(...)". A dismissal rather than a plain close:
+     nothing was acted on, so focus goes back to the trigger ahead of a named
+     focus-return-to target.
 
      Use this instead of a bare <x-wirekit::button> when you want the
      Cancel control to actually close the dialog without manually
@@ -38,11 +40,11 @@
      wrapper because the wrapper is what this component always renders; the
      dialog then focuses the control inside it. --}}
 <div
-    x-on:click="close()"
+    x-on:click="dismissOverlay()"
     data-wk-alert-cancel
     {{ $attributes->class([$classes]) }}
 >
-    @if(trim((string) $slot) === '')
+    @if(! $slot->hasActualContent())
         {{-- Translated, and the key already existed. `Cancel` sat here as a literal while
              lang/en.json carried "Cancel" and lang/de.json carried "Abbrechen" — so a German
              app rendered a fully translated dialog with an English cancel button, and the

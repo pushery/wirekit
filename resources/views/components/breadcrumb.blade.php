@@ -135,7 +135,7 @@
 @endphp
 
 <nav aria-label="{{ __('wirekit::Breadcrumb') }}" {{ $attributes->class([$navClasses]) }}>
-    <ol role="list" class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;">
+    <ol data-wk-prose-skip role="list" class="{{ $listClasses }}" style="list-style: none; margin: 0; padding: 0;">
         @foreach($items as $i => $item)
             @php
                 // Normalize item: accept ['label' => .., 'href' => .., 'icon' => ..] or just a string label.
@@ -149,7 +149,7 @@
                 $iconWrap = $icon ? 'inline-flex items-center gap-[var(--padding-wk-x-xs)]' : '';
                 $isLast = $i === array_key_last($items);
             @endphp
-            <li class="flex items-center gap-[var(--padding-wk-x-xs)]">
+            <li data-wk-prose-skip class="flex items-center gap-[var(--padding-wk-x-xs)]">
                 @if($isLast)
                     {{-- Current page: no link, aria-current tells AT "this is where you are" --}}
                     <span class="{{ $currentClasses }} {{ $iconWrap }}" aria-current="page">
@@ -170,7 +170,7 @@
                         {{ $label }}
                     </span>
                 @else
-                    <a href="{{ $href }}" class="{{ $linkClasses }} {{ $iconWrap }}">
+                    <a data-wk-prose-skip href="{{ $href }}" class="{{ $linkClasses }} {{ $iconWrap }}">
                         @if($icon)<x-wirekit::icon :name="$icon" size="sm" aria-hidden="true" class="shrink-0" />@endif
                         {{ $label }}
                     </a>

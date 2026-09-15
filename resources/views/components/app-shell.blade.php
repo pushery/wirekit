@@ -382,7 +382,12 @@
                      The single-column branch below has carried this since it was reported the
                      first time. This branch never got it, and every mobile check here asks
                      about reachability or geometry — never about opacity. --}}
-                class="wk-app-shell-nav max-lg:bg-[var(--color-wk-rail-bg,var(--color-wk-bg-elevated))] absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] flex transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:contents"
+                class="wk-app-shell-nav max-lg:bg-[var(--color-wk-rail-bg,var(--color-wk-bg-elevated))] max-lg:pt-[var(--size-wk-shell-bar,3.5rem)] absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] flex transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:contents"
+                {{-- Whether the rail has this drawer to itself. Only this template knows what else went
+                     into it, and the rail has to: alone, it shows its names here, because a strip of
+                     unnamed icons on a screen with no hover is no navigation at all. Beside a module
+                     column it keeps its narrow form, which is what fits a phone there. --}}
+                @unless(isset($sidebar)) data-wk-rail-only @endunless
                 {{-- `invisible` when closed carries two fixes at once, both learned in the
                      browser on the single-column form above. A drawer parked at -100% is
                      only off-SCREEN while something clips it, and `position: fixed`/absolute
@@ -435,6 +440,32 @@
                 :tabindex="isDrawer && sidebarOpen ? '-1' : null"
                 x-cloak
             >
+                {{-- The drawer's own close control. First in the panel, so first in its tab order,
+                     which is where a dialog's close belongs, and where focus lands when it opens.
+
+                     One shell-bar high at the top of the drawer, with a shell-bar's inline inset, so
+                     it sits on the spot a header's navigation toggle occupies. A header placed in the
+                     content column puts that toggle UNDER the open drawer, and a second tap on it
+                     used to land on whatever the drawer drew in that corner: measured by an adopting
+                     application at 375px, the rail's brand link, which navigated away instead of
+                     closing. The columns start one shell-bar lower, so nothing of theirs sits under
+                     the button either.
+
+                     The colors are the rail's roles, because the surface under it is the rail's.
+                     Gone at the breakpoint, where this panel is layout and has nothing to close. --}}
+                <div class="absolute inset-x-0 top-0 flex h-[var(--size-wk-shell-bar,3.5rem)] items-center px-[var(--padding-wk-x-lg)] lg:hidden">
+                    <button
+                        type="button"
+                        data-wk-drawer-close
+                        x-on:click="sidebarOpen = false"
+                        aria-label="{{ __('wirekit::Close') }}"
+                        class="inline-flex items-center justify-center p-2 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-rail-muted)] hover:bg-[var(--color-wk-rail-hover-bg)] hover:text-[color:var(--color-wk-rail-hover-fg)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-rail-ring)] transition-colors cursor-pointer"
+                    >
+                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
                 {{-- `role="presentation"` by DEFAULT, and the slot's own attributes can take it
                      back. Both of these columns are layout: the landmark is the `<nav>` inside
                      them, which already carries its own name. Left as bare `<aside>` elements
@@ -587,9 +618,35 @@
                      nothing collides, and a lone complementary region beside the content is a
                      reasonable thing for an application to have. Changing that silently would
                      take a landmark away from every sidebar-only shell that ships today. --}}
-                {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->class(['wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-[var(--size-wk-sidebar-drawer)] transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] '.$asideInset]) }}
+                {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->class(['wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:pt-[var(--size-wk-shell-bar,3.5rem)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-[var(--size-wk-sidebar-drawer)] transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] '.$asideInset]) }}
                 x-cloak
             >
+                {{-- The drawer's own close control, for the reasons written on the console drawer
+                     above: first in the panel, on the spot a content-placed toggle occupies, with the
+                     column starting one shell-bar lower.
+
+                     Wrapped in a box that generates no box of its own, and the wrapper is not
+                     decoration. This aside sizes and squares EVERY direct child below the breakpoint,
+                     because its one child used to be the sidebar. Placed there bare, the close row
+                     would be stretched to the full height of the drawer and laid over the whole
+                     column; a height or a radius on a box that is not generated does nothing.
+
+                     The colors are the page's, because the surface under it is the elevated one. --}}
+                <div class="contents">
+                    <div class="absolute inset-x-0 top-0 flex h-[var(--size-wk-shell-bar,3.5rem)] items-center px-[var(--padding-wk-x-lg)] lg:hidden">
+                        <button
+                            type="button"
+                            data-wk-drawer-close
+                            x-on:click="sidebarOpen = false"
+                            aria-label="{{ __('wirekit::Close') }}"
+                            class="inline-flex items-center justify-center p-2 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:bg-[var(--color-wk-bg-subtle)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
+                        >
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
                 {{ $sidebar }}
             </aside>
         @endif

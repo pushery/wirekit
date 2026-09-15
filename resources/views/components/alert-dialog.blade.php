@@ -8,10 +8,11 @@
     // focus when the dialog opens. Unset, focus goes to Cancel — the least
     // destructive action, per the APG alertdialog pattern.
     'initialFocus' => null,
-    // CSS selector for where focus should land when the dialog closes and its own
-    // trigger is gone — the normal case for a delete-in-a-list confirmation, whose
-    // Livewire re-render removes the very row that held the trigger. Unset, the
-    // dialog falls back to the nearest ancestor of the trigger that survived.
+    // CSS selector for where focus should land when the dialog closes after its action —
+    // the normal case being a delete-in-a-list confirmation, whose Livewire re-render
+    // removes the very row that held the trigger. A dismissal (Cancel, Escape, the
+    // backdrop) returns to the trigger first while it still exists. Unset, the dialog
+    // falls back to the nearest ancestor of the trigger that survived.
     'focusReturnTo' => null,
     'scope' => null,
     // Close the dialog once the destructive action has fired.
@@ -131,9 +132,13 @@
     x-data="wirekitAlertDialog({ name: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }}, initialFocus: {{ \Pushery\WireKit\Support\AlpinePayload::from($initialFocus) }}, focusReturnTo: {{ \Pushery\WireKit\Support\AlpinePayload::from($focusReturnTo) }}, confirmationPhrase: {{ \Pushery\WireKit\Support\AlpinePayload::from($confirmationPhrase) }}, closeOnConfirm: {{ $closeOnConfirm ? 'true' : 'false' }} })"
     {{ $attributes }}
 >
-    {{-- Trigger slot — clicking opens the alert dialog --}}
+    {{-- Trigger slot — clicking opens the alert dialog.
+         The wrapper only carries the click listener, so it generates no box. As a block it kept a
+         button in the slot at its own width inside a container that stretches its children, and
+         a caller cannot reach it with a class. On its own `contents` changes nothing a page shows;
+         `class="contents"` on the component root is what hands the trigger to the container. --}}
     @isset($trigger)
-        <div x-on:click="show()">
+        <div class="contents" x-on:click="show()">
             {{ $trigger }}
         </div>
     @endisset

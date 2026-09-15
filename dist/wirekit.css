@@ -1,11 +1,11 @@
 /*!
- * WireKit CSS v2.50.0 — MIT License
+ * WireKit CSS v2.51.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
  * Design Tokens for WireKit UI Components.
  * Self-contained: no third-party CSS dependencies bundled, every token
- * lives inside a `:where(:root) {}` (light) and `:where(.dark) {}` (dark)
+ * lives inside a `:where(:root) {}` (light) or `:where(.dark) {}` (dark)
  * block so the file works as plain CSS in EVERY consumption path:
  *
  *   1. `<link rel="stylesheet">` via the `@wirekitStyles` Blade directive
@@ -21,6 +21,12 @@
  *   compile there and nowhere else. WireKit's own `.dark` selector works
  *   either way, which is why the difference is easy to miss until a
  *   `dark:` utility in application markup quietly does nothing.
+ *
+ * A subtree can switch as well: `.dark` on an element makes what is below it
+ * dark, and `light` makes it light inside a dark page. Both scopes declare
+ * exactly the tokens that change with the mode. The generated section after the
+ * first `:where(.dark)` block states the rule, and why tokens derived from a mode
+ * token are in it.
  *
  * To customize tokens, override CSS variables in your app.css with a
  * plain `:root` (specificity 0,1,0) — no extra tricks needed:
@@ -46,7 +52,12 @@
  * earlier than wirekit.css were silently defeated by our defaults.
  */
 
-@custom-variant dark (&:where(.dark, .dark *));
+/* The `dark` variant follows the NEAREST mode class: dark inside a `.dark`, light again
+   inside a `light` island below it, dark again in a `.dark` panel inside that island.
+   CSS has no selector for "the nearest of two classes", so it is spelled out two
+   alternations deep, which resolves four nested mode classes exactly. `@scope` would
+   say it in one line, but it sits above the supported browser floor. */
+@custom-variant dark (&:where(:where(.dark, .dark *):not(.dark .light, .dark .light *), :where(.dark .light .dark, .dark .light .dark *):not(.dark .light .dark .light, .dark .light .dark .light *)));
 
 /* ─── Light mode tokens ────────────────────────────────────── */
 /* Self-contained OKLCH values — no Tailwind var() dependencies.*/
@@ -152,7 +163,7 @@
 
        The value IS the fallback the adapter already used, so this declares what was on screen
        rather than changing it. Its only job is to make the override reachable. */
-    --color-wk-info: #67e8f9;
+    --color-wk-info: #0891b2;
 
     /* ─── Neutral Colors (Backgrounds) ─── */
     --color-wk-bg: #fff;
@@ -550,26 +561,31 @@
 }
 
 /* ─── The navigation roles are REGISTERED, and that is load-bearing ─── */
-/* An unregistered custom property inherits its TOKEN STREAM, not its value: a
-   descendant re-substitutes `var(…)` against its own declarations. That turns the
-   role set and the subtree remap below into a mutual reference — the role says
+/* A custom property is computed on the element that declares it, and a descendant
+   inherits the finished value, registered or not. So a role declared on the root is
+   resolved against the root's tokens, and a subtree that switches mode needs the role
+   declared again: the generated mode scopes after the first `:where(.dark)` rule do
+   that for every role, together with every other token derived from a mode token.
+   This note used to say that an unregistered property inherits its token stream and
+   re-resolves on each descendant. Measured in Chromium and WebKit, it does not, and a
+   `.dark` panel kept the root's roles for as long as that was believed.
+
+   The roles and the subtree remap further down read each other: a role says
    `var(--color-wk-text-muted)`, the remap says `--color-wk-text-muted:
-   var(--color-wk-rail-muted)`, and on a descendant each resolves through the other.
-   CSS calls that invalid at computed-value time and drops it, silently.
+   var(--color-wk-rail-muted)`. Declared on the same element, the two form a cycle, and
+   CSS makes both invalid at computed-value time, silently. The remap therefore reaches
+   descendants only, and never an element that switches mode itself.
 
-   It was measured rather than reasoned about: in dark mode a resting module rendered
-   the LIGHT muted foreground, 2.64:1 on its own rail, while every static check passed
-   — a stylesheet does not resolve cycles and neither does a string match. Scoping the
-   remap to descendants fixed the first half (a `muted` rail had computed to
-   `rgba(0, 0, 0, 0)`, no background at all) and left this one.
+   Registration decides what a cycle leaves behind, measured in both engines. An
+   unregistered property in a cycle has no value at all (a `muted` rail once computed to
+   `rgba(0, 0, 0, 0)`, no background); a registered role with `inherits: true` takes its
+   parent's color instead, while the generic token it formed the cycle with still loses
+   its value. `@property` is inside the supported-browser baseline (Chrome 85 / Safari
+   16.4 / Firefox 128 against a floor of 111 / 16.4 / 128), so no feature detection is
+   owed.
 
-   Registering makes each role compute to a color where it is declared, so a
-   descendant inherits a value with nothing left to substitute. `@property` is inside
-   the supported-browser baseline (Chrome 85 / Safari 16.4 / Firefox 128 against a
-   floor of 111 / 16.4 / 128), so no feature detection is owed.
-
-   `inherits: true` because the whole mechanism is inheritance; the initial values are
-   the light-mode defaults, used only if a declaration is ever invalid. */
+   The initial values are the light-mode defaults, used where there is no parent to
+   inherit from. */
 @property --color-wk-rail-bg { syntax: "<color>"; inherits: true; initial-value: #fff; }
 @property --color-wk-rail-text { syntax: "<color>"; inherits: true; initial-value: oklch(14.5% 0 0); }
 @property --color-wk-rail-muted { syntax: "<color>"; inherits: true; initial-value: oklch(47% 0 0); }
@@ -682,10 +698,10 @@
        column. They are the same thing on a neutral surface and must not be on a colored
        one — which is why they are separate roles rather than one.
 
-       Resolved from the generic token DIRECTLY, never through a sibling role, and that is
-       forced by the registration above: a registered property computes where it is
-       DECLARED, so an alias written here would freeze the root's value and a tone that
-       overrides its target would not move it. Measured exactly that: with
+       Resolved from the generic token DIRECTLY, never through a sibling role: a custom
+       property computes where it is DECLARED, registered or not, so an alias written here
+       would freeze the root's value and a tone that overrides its target would not move
+       it. Measured exactly that: with
        `--color-wk-rail-active-fg: var(--color-wk-rail-active-text)` the inverse tone's
        current module rendered near-black on near-black, 1.78:1, in every preset at once.
        Every tone block therefore declares EVERY role rather than relying on a default
@@ -706,6 +722,14 @@
     --size-wk-tooltip-max: 20rem;
     --color-wk-tooltip-bg: var(--color-wk-text);
     --color-wk-tooltip-text: var(--color-wk-bg);
+
+    /* ─── Table ─── */
+    /* The widest the frozen first column of a sticky-column table may get before its text
+       wraps. Relative to the viewport on a phone, where the scroller is the viewport and a
+       column past two fifths of it leaves the rest no room to appear; the rem ceiling takes
+       over from a tablet width up. A cap, not a width: a short label keeps its own width, and
+       a table with room to spare still hands the column its share. */
+    --size-wk-table-sticky-column-max: min(40vw, 16rem);
 
     /* ─── Scrollbar ─── */
     --color-wk-scrollbar-thumb: oklch(87% 0 0);
@@ -753,21 +777,16 @@
     /* Warning Background */
     --color-wk-warning-bg: oklch(32% 0.06 80);
 
-    /* ⚠️ NO DARK HALF FOR `--color-wk-info-text` / `--color-wk-accent-text`, DELIBERATELY,
-       and this comment stands where two redeclarations used to. Both are pure `var()`
-       aliases of `--color-wk-accent-content`, and neither is `@property`-registered — so the
-       note further up applies: an unregistered custom property inherits its TOKEN STREAM,
-       not its value. The `:root` declaration re-substitutes against whichever
-       `--color-wk-accent-content` wins at the element, which in dark IS the dark one.
+    /* `--color-wk-info-text` and `--color-wk-accent-text` have no dark value of their own:
+       both alias `--color-wk-accent-content`, which this rule does switch. On
+       `<html class="dark">` that is enough, because the root's declaration and this rule
+       match the same element. A `.dark` panel further down is different: a custom property
+       is computed where it is declared, so an alias left on the root keeps the light value
+       inside the panel, measured in Chromium and WebKit. The generated mode scopes after
+       this rule therefore declare every derived token again, for `.dark` as well.
 
-       Repeating them here changed no computed value, and it taught the wrong rule at the
-       exact place a preset author looks: the block appeared to be caring for these aliases,
-       so the pattern to copy was four more lines that also do nothing — while the tokens
-       that genuinely need a dark half, the registered rail roles, are the ones missing.
-
-       And it was not merely inert. With `.dark` on `<body>` and a developer override on
-       `:root`, the redeclaration BEAT that override for the whole body subtree; without it
-       the override inherits correctly. Deleting is the improvement, not the regression. */
+       The cost is the one every mode token already has: a developer override of one of these
+       on `:root` alone stops at a `.dark` panel. Declare it on `.dark` as well. */
 
     /* Dark-mode informational series color — see the light-mode note. Same value the chart
        adapter already fell back to here, so nothing on screen moves. */
@@ -788,9 +807,9 @@
     /* Neutral Text — subtle/placeholder use neutral-400 on neutral-950 for ~7.82:1.
        neutral-500 only reaches 4.18:1 on neutral-950 — below AA. */
     --color-wk-text: oklch(98.5% 0 0);  /* ~18.4:1 on neutral-950 */
-    /* `--color-wk-code` and `--color-wk-code-bg` have no dark half either, for the reason
-       spelled out at the info/accent aliases above: pure `var()`, unregistered, so the light
-       declaration already resolves against the dark `--color-wk-text` / `--color-wk-bg-muted`. */
+    /* `--color-wk-code` and `--color-wk-code-bg` have no dark value either: they alias
+       `--color-wk-text` and `--color-wk-bg-muted`, and the note at the info and accent
+       aliases above says where they are declared again, and why. */
     /* Lifted off neutral-400 (oklch 70.8%), and the reason is a surface the old
        number was never measured against. A callout tints its background with 15%
        of the accent; in DARK the accent is near-white, so that tint makes the
@@ -842,7 +861,129 @@
     /* Scrollbar — lighter thumb on dark backgrounds */
     --color-wk-scrollbar-thumb: oklch(43.9% 0 0);
     --color-wk-scrollbar-thumb-hover: oklch(55.6% 0 0);
-    }
+}
+
+/* mode-scopes: generated section begins ─────────────────────────────
+   Everything down to the closing marker is written from the
+   `:where(:root)` and `:where(.dark)` rules. Edit those rules instead;
+   a check fails when this section no longer matches them.
+
+   `light` or `.dark` on an element switches its subtree. For the switch
+   to be exact, a scope declares every token whose value changes with the
+   mode, and nothing else: the tokens `.dark` switches (the light scope
+   takes their root values) and every token derived from one of them.
+   Radii, spacing, type and motion stay on the root, so an override of
+   those in your own `:root` reaches into a subtree either way.
+   ───────────────────────────────────────────────────────────────── */
+:where(.light) {
+    color-scheme: light;
+    --color-wk-accent: oklch(20.5% 0 0);
+    --color-wk-accent-hover: oklch(26.9% 0 0);
+    --color-wk-accent-content: oklch(20.5% 0 0);
+    --color-wk-accent-fg: oklch(98.5% 0 0);
+    --color-wk-danger: oklch(57.7% 0.245 27.325);
+    --color-wk-danger-hover: oklch(50.5% 0.213 27.518);
+    --color-wk-danger-fg: #fff;
+    --color-wk-danger-text: oklch(50.5% 0.213 27.518);
+    --color-wk-success: oklch(62.7% 0.194 149.214);
+    --color-wk-success-hover: oklch(72.3% 0.219 149.579);
+    --color-wk-success-text: oklch(45.6% 0.17 149.7);
+    --color-wk-warning: oklch(76.9% 0.188 70.08);
+    --color-wk-warning-hover: oklch(66.6% 0.179 58.318);
+    --color-wk-warning-text: oklch(47.6% 0.158 65);
+    --color-wk-warning-bg: oklch(96.4% 0.058 102.1);
+    --color-wk-info: #0891b2;
+    --color-wk-bg: #fff;
+    --color-wk-bg-elevated: #fff;
+    --color-wk-bg-subtle: oklch(98.5% 0 0);
+    --color-wk-bg-muted: oklch(97% 0 0);
+    --color-wk-bg-input: #fff;
+    --color-wk-bg-inverse: oklch(14.5% 0 0);
+    --color-wk-bg-skeleton: oklch(93% 0 0);
+    --color-wk-text: oklch(14.5% 0 0);
+    --color-wk-text-muted: oklch(47% 0 0);
+    --color-wk-text-subtle: oklch(55.6% 0 0);
+    --color-wk-text-placeholder: oklch(55.6% 0 0);
+    --color-wk-text-inverse: #fff;
+    --color-wk-border: oklch(91.4% 0 0);
+    --color-wk-border-strong: oklch(66% 0 0);
+    --color-wk-border-strong-hover: oklch(58% 0 0);
+    --color-wk-border-hover: oklch(80% 0 0);
+    --color-wk-border-subtle: oklch(94% 0 0);
+    --color-wk-border-error: oklch(50.5% 0.213 27.518);
+    --color-wk-border-success: oklch(45.6% 0.17 149.7);
+    --color-wk-ring: oklch(14.5% 0 0);
+    --color-wk-ring-offset: #fff;
+    --shadow-wk-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-wk-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --shadow-wk-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.10), 0 4px 10px -2px rgba(0, 0, 0, 0.06);
+    --color-wk-overlay: oklch(0% 0 0 / 0.5);
+    --color-wk-scrollbar-thumb: oklch(87% 0 0);
+    --color-wk-scrollbar-thumb-hover: oklch(70.8% 0 0);
+    --reading-minimap-color-h1: rgba(15, 23, 42, 0.85);
+    --reading-minimap-color-h2: rgba(15, 23, 42, 0.75);
+    --reading-minimap-color-h3: rgba(15, 23, 42, 0.65);
+    --reading-minimap-color-h4: rgba(15, 23, 42, 0.55);
+    --reading-minimap-color-h5: rgba(15, 23, 42, 0.48);
+    --reading-minimap-color-h6: rgba(15, 23, 42, 0.42);
+    --reading-minimap-color-code: rgba(99, 102, 241, 0.55);
+    --reading-minimap-color-table: rgba(244, 63, 94, 0.50);
+    --reading-minimap-color-blockquote: rgba(71, 85, 105, 0.55);
+    --reading-minimap-color-prose: rgba(71, 85, 105, 0.42);
+    --reading-minimap-color-wirekit: rgba(16, 185, 129, 0.50);
+    --reading-minimap-color-image: rgba(245, 158, 11, 0.55);
+    --reading-minimap-color-default: rgba(71, 85, 105, 0.32);
+}
+
+/* The derived tokens, word for word, in both scopes. A custom property is computed
+   where it is declared, so each is declared again to resolve against the subtree. */
+:where(.light),
+:where(.dark) {
+    --color-wk-info-text: var(--color-wk-accent-content);
+    --color-wk-accent-text: var(--color-wk-accent-content);
+    --color-wk-code: var(--color-wk-text);
+    --color-wk-code-bg: var(--color-wk-bg-muted);
+    --shadow-wk-badge: 0 1px 1px color-mix(in srgb, var(--color-wk-text) 4%, transparent), inset 0 0 0 1px color-mix(in srgb, currentColor 30%, transparent);
+    --color-wk-rail-bg: var(--color-wk-bg-elevated);
+    --color-wk-rail-text: var(--color-wk-text);
+    --color-wk-rail-muted: var(--color-wk-text-muted);
+    --color-wk-rail-hover-bg: var(--color-wk-bg-muted);
+    --color-wk-rail-active-bg: var(--color-wk-bg-muted);
+    --color-wk-rail-active-text: var(--color-wk-text);
+    --color-wk-rail-hover-fg: var(--color-wk-text);
+    --color-wk-rail-active-fg: var(--color-wk-text);
+    --color-wk-rail-border: var(--color-wk-border);
+    --color-wk-rail-badge: var(--color-wk-accent);
+    --color-wk-rail-badge-fg: var(--color-wk-accent-fg);
+    --color-wk-rail-ring: var(--color-wk-ring);
+    --color-wk-tooltip-bg: var(--color-wk-text);
+    --color-wk-tooltip-text: var(--color-wk-bg);
+    --reading-spine-color-idle: var(--color-wk-text-subtle);
+    --reading-spine-color-active: var(--color-wk-text);
+    --reading-spine-bg: color-mix(in srgb, var(--color-wk-bg-elevated) 92%, transparent);
+    --reading-spine-edge-gradient: linear-gradient( to right, color-mix(in srgb, var(--color-wk-bg-elevated) 0%, transparent), color-mix(in srgb, var(--color-wk-bg-elevated) 35%, transparent) 50%, color-mix(in srgb, var(--color-wk-bg-elevated) 65%, transparent) );
+    --reading-bookmark-pill-bg: var(--color-wk-bg-elevated);
+    --reading-bookmark-pill-shadow: var(--shadow-wk-md);
+    --reading-meta-color: var(--color-wk-text-muted);
+    --reading-meta-paragraph-color: var(--color-wk-text-subtle);
+    --reading-minimap-color-idle: var(--reading-spine-color-idle);
+    --reading-minimap-color-active: var(--reading-spine-color-active);
+    --reading-minimap-viewport-bg: color-mix(in oklab, var(--color-wk-accent) 25%, transparent);
+    --reading-minimap-viewport-border: 2px solid color-mix(in oklab, var(--color-wk-accent) 70%, transparent);
+    --reading-minimap-block-bg: color-mix(in srgb, var(--reading-minimap-color-idle) 25%, transparent);
+    --reading-minimap-rendered-placeholder-bg: var(--color-wk-bg-elevated);
+    --reading-minimap-preview-bg: var(--color-wk-bg-elevated);
+    --reading-minimap-preview-border: 1px solid var(--color-wk-border);
+    --reading-minimap-preview-shadow: var(--shadow-wk-md);
+    --reading-minimap-bookmark-marker-color: var(--color-wk-accent);
+    --reading-minimap-anchor-text-color: var(--color-wk-text-muted);
+    --reading-minimap-anchor-text-color-hover: var(--color-wk-text);
+    --reading-minimap-anchor-inboard-bg: var(--color-wk-bg);
+    --reading-toc-bg: var(--color-wk-bg-elevated);
+    --reading-toc-color-idle: var(--reading-spine-color-idle);
+    --reading-toc-color-active: var(--reading-spine-color-active);
+}
+/* mode-scopes: generated section ends ─────────────────────────────── */
 
 /* ─── Scrollbar Utility ────────────────────────────────────── */
 /* Apply .wk-scrollbar to any scrollable container for a slim, */
@@ -1342,6 +1483,35 @@
     transform: translate(-50%, -50%);
 }
 
+/* Flag. A hairline just inside the flag's edge, so a white flag keeps its shape on a white page.
+   An outline rather than a border or an inset shadow: an outline paints over the image, where an
+   inset shadow would sit beneath it and vanish, and it takes no space, so the flag stays exactly
+   as tall as the icon it lines up with. The color is the text color at low strength, which makes
+   it dark on a light theme and light on a dark one without a token of its own, and the outline
+   follows the element's radius, so a circle gets a round edge.
+
+   Under forced colors the system chooses every color, and a text-colored ring around each flag
+   would be the loudest thing in a row of them, so it steps down to the system's gray. */
+[data-wk-flag] {
+    outline: var(--border-wk-width) solid color-mix(in oklab, var(--color-wk-text) 14%, transparent);
+    outline-offset: calc(var(--border-wk-width) * -1);
+}
+
+@media (forced-colors: active) {
+    [data-wk-flag] {
+        outline-color: GrayText;
+    }
+}
+
+/* Native date and time fields: the separators between the parts of a date or a time take the
+   placeholder color. An empty date field in WebKit shows today's date as its placeholder, in a gray
+   the page cannot restyle, and with the separators in the text color it read like a date somebody
+   had set. With the separators muted, an empty field reads as a hint and a set one still reads as
+   a value. */
+input.wk-field::-webkit-datetime-edit-text {
+    color: var(--color-wk-text-placeholder);
+}
+
 @media (pointer: coarse) {
     .wk-range-thumb {
         width: 1.75rem;
@@ -1404,6 +1574,9 @@
     select.wk-field,
     input.wk-field,
     textarea.wk-field,
+    /* A combobox without a search field is a `div` with `role="combobox"`, not an input, so
+       none of the three selectors above reaches it, and it is the same field on a phone. */
+    div.wk-field[role="combobox"],
     button.wk-button,
     a.wk-button,
     /* The accordion header is a full-width ROW, so it takes the height floor rather than the
@@ -1413,6 +1586,24 @@
        and a narrow viewport alone is still a fine pointer reporting the desktop size. */
     button.wk-accordion-trigger {
         min-height: var(--size-wk-touch-target);
+    }
+
+    /* A FRAMED field draws its box on a wrapper: `multi-select` and `tags-input` hold their pills
+       and a borderless text input inside a bordered, padded frame, and a tap anywhere in the frame
+       focuses that input. The input keeps `.wk-field` for the 16px type floor, so the floor above
+       reached it as well and made it 44px tall INSIDE the frame's own padding and border. Measured
+       at phone width with touch emulation, the same in Blink and WebKit: a multi-select 58px and a
+       tags-input 54px beside a 44px input in one filter row.
+
+       The frame is the target, so the frame takes the floor and the input gives its own up. The
+       element-qualified frame selector (0,1,1) beats the `min-h-[var(--size-wk-md)]` utility
+       (0,1,0) in any build order, and the descendant rule (0,2,2) beats `input.wk-field` above. */
+    div.wk-field-frame {
+        min-height: var(--size-wk-touch-target);
+    }
+
+    div.wk-field-frame input.wk-field {
+        min-height: 0;
     }
 
     /* min-WIDTH on the FIELDS ONLY, and the exclusion of buttons is the whole
@@ -1498,6 +1689,15 @@
         background: transparent;
         pointer-events: auto;
     }
+    /* A citation chip is a footnote marker on a desktop and a target on a phone: the same
+       button, lifted to the 44px floor only where the pointer is coarse. It is sized here
+       rather than in the component because a 44px marker on a mouse-driven page reads as a
+       tag rather than as a reference. */
+    [data-wk-assistant-citation] {
+        min-height: var(--size-wk-touch-target);
+        min-width: var(--size-wk-touch-target);
+    }
+
 }
 
 /* <x-wirekit::calendar> renders at a fixed ~312px content width (inline-block)
@@ -2088,7 +2288,7 @@
    inherits its roles from that ancestor rather than declaring its own. On an
    untoned rail the remap is a no-op: the roles it reads are the `:root` defaults,
    which are these same generic tokens. */
-/* DESCENDANTS ONLY, and the `*` is load-bearing rather than tidy.
+/* DESCENDANTS ONLY, and the descendant combinator is load-bearing rather than tidy.
    Applied to the column itself this is a CIRCULAR REFERENCE: the tone block
    declares `--color-wk-rail-bg: var(--color-wk-bg-muted)` on that same element,
    and this block declares `--color-wk-bg-muted: var(--color-wk-rail-hover-bg)`,
@@ -2108,7 +2308,13 @@
    `[data-variant="flush"]` is what keeps a CARD out of it: a card brings its own surface,
    so remapping its contents would put chrome-colored text on a light panel — the same
    defect from the other side. */
-:where(.wk-rail, .wk-sidebar[data-wk-tone], [data-wk-tone] .wk-sidebar[data-variant="flush"]) * {
+/* And never onto an element that switches mode itself. A `light` or `.dark` subtree
+   declares the roles again from its own tokens, so remapping that same element would make
+   each role and the token it reads refer to each other: a cycle, dropped at computed-value
+   time. Left out, the element keeps its own tokens and its descendants follow the roles it
+   computed, so a dark panel inside a rail is a dark panel. `:where()` keeps the exclusion
+   at specificity 0, like the rule it narrows. */
+:where(.wk-rail, .wk-sidebar[data-wk-tone], [data-wk-tone] .wk-sidebar[data-variant="flush"]) :where(:not(.light, .dark)) {
     --color-wk-text: var(--color-wk-rail-text);
     --color-wk-text-muted: var(--color-wk-rail-muted);
     --color-wk-text-subtle: var(--color-wk-rail-muted);
@@ -2273,6 +2479,20 @@
 }
 
 .wk-prose[data-preset='reading'] {
+    /*
+     * The reading face comes from the font system and never from a network: the fonts component
+     * declares `--font-wk-serif` as the bundled family the application configured through
+     * `wirekit.fonts.serif`, or as the platform's own serif stack when it configured none. The
+     * fallback here is for a page that renders no fonts component at all.
+     *
+     * And the measure follows the face. `--measure-wk` counts 65 of the SANS `ch`, which is the
+     * wrong ruler once the text is set in a serif: the clamp then lands short or long by the
+     * difference between the two metrics, and each bundled serif ships its own `--ch-wk-serif`
+     * for exactly this.
+     */
+    font-family: var(--font-wk-serif, ui-serif, Georgia, serif);
+    --measure-wk: calc(65 * var(--ch-wk-serif, var(--ch-wk-sans, 1ch)));
+    --measure-wk-wide: calc(78 * var(--ch-wk-serif, var(--ch-wk-sans, 1ch)));
     line-height: 1.75;
 }
 
@@ -2281,46 +2501,98 @@
     line-height: 1.9;
 }
 
+/* ─── Prose: adapt to the column, not the viewport (`container`) ─── */
+/* Prose in a sidebar, a card or a table cell is narrow on a desktop screen, and a viewport
+   breakpoint cannot see that: it reports "wide" while the column is 22rem across and the
+   heading scale is still built for a full page. `<x-wirekit::prose container>` makes the
+   wrapper a size container and tightens the scale below 30rem of ITS OWN width — the same
+   rhythm `density="compact"` asks for, without the caller having to know which column the
+   prose landed in.
+
+   Opt-in, and the reason is containment rather than support: size container queries are
+   inside the supported baseline, but `container-type: inline-size` makes an element's
+   inline size independent of its contents, so a prose inside a shrink-to-fit parent
+   collapses. The caller is the one who knows which parent it is.
+
+   Specificity over the Tailwind variants prose emits: those are `.class h2` (0,1,1), these
+   are `.class[attr] h2` (0,2,1), so the narrow scale wins while the attribute is there. */
+.wk-prose[data-container] {
+    container-type: inline-size;
+    container-name: wk-prose;
+}
+
+@container wk-prose (max-width: 30rem) {
+    .wk-prose[data-container] h1 {
+        font-size: var(--text-wk-xl);
+        margin-bottom: var(--padding-wk-y-xs);
+    }
+
+    .wk-prose[data-container] h2 {
+        font-size: var(--text-wk-lg);
+        margin-top: var(--padding-wk-y-md);
+        margin-bottom: var(--padding-wk-y-xs);
+    }
+
+    .wk-prose[data-container] h3 {
+        font-size: var(--text-wk-md);
+        margin-top: var(--padding-wk-y-sm);
+        margin-bottom: var(--padding-wk-y-xs);
+    }
+
+    .wk-prose[data-container] h4 {
+        font-size: var(--text-wk-sm);
+        margin-top: var(--padding-wk-y-sm);
+        margin-bottom: var(--padding-wk-y-xs);
+    }
+
+    .wk-prose[data-container] p {
+        margin-bottom: var(--padding-wk-y-sm);
+    }
+}
+
 /* Above-baseline progressive enhancement (house rule: feature-detected, purely
    additive, nothing depends on it). Browsers without text-wrap simply get the
-   normal wrapping they always got — no shim, no fallback branch. */
+   normal wrapping they always got — no shim, no fallback branch.
+   Every prose element rule carries the same exclusion: an element a WireKit
+   component renders (`data-wk-prose-skip`) and anything inside `not-wk-prose`
+   is not prose's to style. */
 @supports (text-wrap: pretty) {
-    .wk-prose p,
-    .wk-prose li {
+    .wk-prose p:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip])),
+    .wk-prose li:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip])) {
         text-wrap: pretty;
     }
 }
 
 @supports (text-wrap: balance) {
-    .wk-prose h1,
-    .wk-prose h2,
-    .wk-prose h3,
-    .wk-prose h4 {
+    .wk-prose h1:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip])),
+    .wk-prose h2:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip])),
+    .wk-prose h3:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip])),
+    .wk-prose h4:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip])) {
         text-wrap: balance;
     }
 }
 
-/* Markdown-style prose code blocks (`<pre>` children of `.wk-prose`)
-   inherit the themed scrollbar treatment. Without this, the prose
-   component's `[&_pre]:overflow-x-auto` Tailwind utility produces a
-   bare OS-default scrollbar inside long code samples — visibly
-   inconsistent with every other WireKit scrollable surface.        */
-.wk-prose pre {
+/* A <pre> the developer puts in prose scrolls only once it is reachable from the
+   keyboard (`<pre tabindex="0" role="region" aria-label="…">`); every other one
+   wraps. The one that scrolls takes the themed scrollbar every other WireKit scroll
+   surface has, instead of the bare OS default. Like every prose element rule, these
+   leave out what a WireKit component renders and anything inside `not-wk-prose`. */
+.wk-prose pre:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip])) {
     scrollbar-width: thin;
     scrollbar-color: var(--color-wk-scrollbar-thumb) var(--color-wk-scrollbar-track);
 }
-.wk-prose pre::-webkit-scrollbar {
+.wk-prose pre:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip]))::-webkit-scrollbar {
     width: var(--size-wk-scrollbar);
     height: var(--size-wk-scrollbar);
 }
-.wk-prose pre::-webkit-scrollbar-track {
+.wk-prose pre:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip]))::-webkit-scrollbar-track {
     background: var(--color-wk-scrollbar-track);
 }
-.wk-prose pre::-webkit-scrollbar-thumb {
+.wk-prose pre:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip]))::-webkit-scrollbar-thumb {
     background-color: var(--color-wk-scrollbar-thumb);
     border-radius: var(--radius-wk-full);
 }
-.wk-prose pre::-webkit-scrollbar-thumb:hover {
+.wk-prose pre:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip]))::-webkit-scrollbar-thumb:hover {
     background-color: var(--color-wk-scrollbar-thumb-hover);
 }
 
@@ -3093,10 +3365,16 @@
      [data-contrast="no-preference"]  an explicit refusal, also wins over the OS
      (absent)                         follow prefers-contrast
 
+   A subtree that switches mode is reached as well: a `light` island inside a dark
+   page takes the raised light values, a `.dark` panel on a light page the raised
+   dark ones. A mode scope declares the normal values on that element at
+   specificity 0, and these rules outrank it.
+
    Values are computed rather than chosen by eye — the ratio is against
    --color-wk-bg, and each line carries the number it achieves.
    ───────────────────────────────────────────────────────────────────────────── */
-:root[data-contrast="more"] {
+:root[data-contrast="more"],
+:root[data-contrast="more"] .light {
     --color-wk-text-muted: oklch(40% 0 0);        /* 9.21:1 — was 6.83:1 */
     --color-wk-text-subtle: oklch(45% 0 0);       /* 7.44:1 — was 4.73:1 */
     --color-wk-text-placeholder: oklch(45% 0 0);  /* 7.44:1 — a placeholder is text a reader must read */
@@ -3115,10 +3393,12 @@
 }
 
 @media (prefers-contrast: more) {
-    /* The OS asked. An explicit `no-preference` on the root still wins — the
-       application knows something the OS does not, and the same arbitration is
-       what the motion pair does twenty lines down. */
-    :root:not([data-contrast="no-preference"]) {
+    /* The OS asked. An explicit `no-preference` on the root still wins, on the page
+       and in every subtree that switches mode: the application knows something the
+       OS does not, and the same arbitration is what the motion pair does twenty lines
+       down. */
+    :root:not([data-contrast="no-preference"]),
+    :root:not([data-contrast="no-preference"]) .light:not([data-contrast="no-preference"]) {
         --color-wk-text-muted: oklch(40% 0 0);
         --color-wk-text-subtle: oklch(45% 0 0);
         --color-wk-text-placeholder: oklch(45% 0 0);
@@ -3127,7 +3407,7 @@
     }
 
     .dark:root:not([data-contrast="no-preference"]),
-    .dark:not([data-contrast="no-preference"]) {
+    :root:not([data-contrast="no-preference"]) .dark:not([data-contrast="no-preference"]) {
         --color-wk-text-muted: oklch(88% 0 0);
         --color-wk-text-subtle: oklch(84% 0 0);
         --color-wk-text-placeholder: oklch(84% 0 0);
@@ -3504,9 +3784,47 @@
    are identical, so hover (bg-subtle) already matches the real filled surface.
    The attribute-pair selector (0,2,0) beats the button's utility classes (0,1,0)
    regardless of source order. */
-[data-wk-toggle-button][aria-pressed="true"] {
+[data-wk-toggle-button][aria-pressed="true"],
+/* A toggle whose label changes with its state has no aria-pressed and keeps its state in
+   data-wk-state instead; its "on" state takes the same pressed surface. */
+[data-wk-toggle-button][data-wk-state="on"] {
     background-color: var(--color-wk-bg-muted);
     border-color: var(--color-wk-bg-muted);
+}
+
+/* The pressed icon's color, from the button's active intent. Measured on the pressed surface
+   across every preset and both modes before it shipped: the lowest pair is danger text at 3.92:1,
+   above the 3:1 an icon needs (WCAG 1.4.11). The surface still carries the state on its own. */
+[data-wk-toggle-button][aria-pressed="true"] [data-wk-toggle-icon],
+[data-wk-toggle-button][data-wk-state="on"] [data-wk-toggle-icon] {
+    color: var(--color-wk-accent-text);
+}
+
+[data-wk-toggle-button][data-wk-active-intent="success"][aria-pressed="true"] [data-wk-toggle-icon],
+[data-wk-toggle-button][data-wk-active-intent="success"][data-wk-state="on"] [data-wk-toggle-icon] {
+    color: var(--color-wk-success-text);
+}
+
+[data-wk-toggle-button][data-wk-active-intent="warning"][aria-pressed="true"] [data-wk-toggle-icon],
+[data-wk-toggle-button][data-wk-active-intent="warning"][data-wk-state="on"] [data-wk-toggle-icon] {
+    color: var(--color-wk-warning-text);
+}
+
+[data-wk-toggle-button][data-wk-active-intent="danger"][aria-pressed="true"] [data-wk-toggle-icon],
+[data-wk-toggle-button][data-wk-active-intent="danger"][data-wk-state="on"] [data-wk-toggle-icon] {
+    color: var(--color-wk-danger-text);
+}
+
+[data-wk-toggle-button][data-wk-active-intent="info"][aria-pressed="true"] [data-wk-toggle-icon],
+[data-wk-toggle-button][data-wk-active-intent="info"][data-wk-state="on"] [data-wk-toggle-icon] {
+    color: var(--color-wk-info-text);
+}
+
+/* The state label that does not apply is display:none, which removes it from the accessible name
+   as well as from sight, so the name is always the words on the button. */
+[data-wk-toggle-button][data-wk-state="on"] [data-wk-toggle-label-off],
+[data-wk-toggle-button][data-wk-state="off"] [data-wk-toggle-label-on] {
+    display: none;
 }
 
 /* How many slides share the view. Set on the viewport by the component, applied
@@ -3617,6 +3935,37 @@
         visibility 0s;
 }
 
+/* A swap inside a toggle-button follows the BUTTON's state rather than its own data-active.
+   The button's state is written by whoever owns it (the app, self-toggle, wire:model, the
+   optimistic layer), while the swap's data-active is only what the server rendered, so the
+   swap would otherwise stop following the first click it did not render. Same three rules as
+   above, one attribute higher; (0,4,0) beats the swap's own (0,3,0). The reduced-motion twins
+   below carry these selectors too. */
+[data-wk-toggle-button][aria-pressed="false"] .wk-swap > [data-wk-swap-on],
+[data-wk-toggle-button][aria-pressed="true"] .wk-swap > [data-wk-swap-off],
+[data-wk-toggle-button][data-wk-state="off"] .wk-swap > [data-wk-swap-on],
+[data-wk-toggle-button][data-wk-state="on"] .wk-swap > [data-wk-swap-off] {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+        opacity var(--transition-wk-duration) var(--transition-wk-easing),
+        transform var(--transition-wk-duration) var(--transition-wk-easing),
+        visibility 0s linear var(--transition-wk-duration);
+}
+
+[data-wk-toggle-button][aria-pressed="true"] .wk-swap > [data-wk-swap-on],
+[data-wk-toggle-button][aria-pressed="false"] .wk-swap > [data-wk-swap-off],
+[data-wk-toggle-button][data-wk-state="on"] .wk-swap > [data-wk-swap-on],
+[data-wk-toggle-button][data-wk-state="off"] .wk-swap > [data-wk-swap-off] {
+    opacity: 1;
+    visibility: visible;
+    transition:
+        opacity var(--transition-wk-duration) var(--transition-wk-easing),
+        transform var(--transition-wk-duration) var(--transition-wk-easing),
+        visibility 0s;
+}
+
 /* Pre-hydration default for a DYNAMIC swap (expression-driven). Until Alpine
    evaluates the `:data-active` binding, the element carries NO data-active
    attribute, so neither state rule above matches and both children would paint
@@ -3651,7 +4000,9 @@
    half-turn that snaps is still a half-turn the reader did not ask for. */
 @media (prefers-reduced-motion: reduce) {
     :root:not([data-reduce-motion="no-preference"]) .wk-swap > [data-wk-swap-on],
-    :root:not([data-reduce-motion="no-preference"]) .wk-swap > [data-wk-swap-off] {
+    :root:not([data-reduce-motion="no-preference"]) .wk-swap > [data-wk-swap-off],
+    :root:not([data-reduce-motion="no-preference"]) [data-wk-toggle-button] .wk-swap > [data-wk-swap-on],
+    :root:not([data-reduce-motion="no-preference"]) [data-wk-toggle-button] .wk-swap > [data-wk-swap-off] {
         transition: none;
         transform: none;
     }
@@ -3663,7 +4014,9 @@
    rule under two conditions. a build check compares the two halves rule
    by rule, so one can no longer gain a selector the other never hears about. */
 :root[data-reduce-motion="reduce"] .wk-swap > [data-wk-swap-on],
-:root[data-reduce-motion="reduce"] .wk-swap > [data-wk-swap-off] {
+:root[data-reduce-motion="reduce"] .wk-swap > [data-wk-swap-off],
+:root[data-reduce-motion="reduce"] [data-wk-toggle-button] .wk-swap > [data-wk-swap-on],
+:root[data-reduce-motion="reduce"] [data-wk-toggle-button] .wk-swap > [data-wk-swap-off] {
     transition: none;
     transform: none;
 }
@@ -4159,6 +4512,26 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 
     .wk-theme-switch-knob {
         border: calc(var(--border-wk-width) * 2) solid CanvasText;
+    }
+
+    /* A pressed toggle-button is a background on a border of the same color, and this mode
+       replaces both, so pressed and unpressed would paint alike. The reader's own selection color
+       fills it instead, with the icon in the matching text color rather than its intent color,
+       which would be an author color on a system background. */
+    [data-wk-toggle-button][aria-pressed="true"],
+    [data-wk-toggle-button][data-wk-state="on"] {
+        forced-color-adjust: none;
+        background: Highlight;
+        border-color: Highlight;
+        color: HighlightText;
+    }
+
+    /* Keyed on the intent attribute as well, so the selector is as specific as the intent rules
+       above (0,4,0) and wins by coming later. At (0,3,0) it lost to them, measured in Chromium:
+       the danger icon stayed its author red on the system Highlight fill. */
+    [data-wk-toggle-button][data-wk-active-intent][aria-pressed="true"] [data-wk-toggle-icon],
+    [data-wk-toggle-button][data-wk-active-intent][data-wk-state="on"] [data-wk-toggle-icon] {
+        color: HighlightText;
     }
 
     /* The second signal for the current tab, added so the state does not rely on
@@ -4722,6 +5095,11 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* item still showed trailing padding.                           */
 [data-wk-timeline] [data-wk-timeline-item-content] {
     padding-bottom: 1.5rem;
+    /* The content area is a flex item of its row, and a flex item keeps `min-width: auto`: it could
+       not become narrower than the widest line inside it. A code line that cannot wrap then pushed
+       the entry past its container, and nothing scrolled. At zero the entry shrinks with its
+       container, and a wide child scrolls in its own box. */
+    min-width: 0;
 }
 [data-wk-timeline] > li:last-child > [data-wk-timeline-item-content],
 [data-wk-timeline] > li:has(+ li[aria-hidden="true"]) > [data-wk-timeline-item-content] {
@@ -5985,18 +6363,30 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    component that swaps a raster/SVG asset by color mode. WireKit components
    never use the Tailwind `dark:` variant (color tokens auto-switch via the
    `.dark` class, so `dark:` is banned), but an IMAGE-SRC swap has no token
-   mechanism — so the light/dark visibility toggle lives here, scoped to the
-   `.dark` class exactly like every other WireKit dark rule. `wk-light-only`
-   shows in light mode and hides under `.dark`; `wk-dark-only` is the mirror.
+   mechanism — so the light/dark visibility toggle lives here. `wk-light-only`
+   hides where the NEAREST mode class is `.dark`, and `wk-dark-only` is the
+   mirror, so a `light` island inside a dark page shows its light asset.
+
+   The selectors spell "nearest" out the way the `dark` variant at the top of
+   this file does: inside a `.dark` and not inside a `.light` below it, or inside
+   a `.dark` below such a `.light` and not inside a further `.light` — four nested
+   mode classes, exactly. The added conditions sit in `:not(:where())`, so each
+   rule keeps the (0,2,0) specificity the plain `.dark .wk-light-only` had.
    `display: revert` restores each element's natural display (e.g. an <img>'s
    `inline`) instead of forcing a specific box type. */
 .wk-dark-only {
     display: none;
 }
-.dark .wk-light-only {
+.dark .wk-light-only:not(:where(.dark .light, .dark .light *)),
+.dark.wk-light-only:not(:where(.dark .light *)),
+:where(.dark .light) .dark .wk-light-only:not(:where(.dark .light .dark .light, .dark .light .dark .light *)),
+:where(.dark .light) .dark.wk-light-only:not(:where(.dark .light .dark .light *)) {
     display: none;
 }
-.dark .wk-dark-only {
+.dark .wk-dark-only:not(:where(.dark .light, .dark .light *)),
+.dark.wk-dark-only:not(:where(.dark .light *)),
+:where(.dark .light) .dark .wk-dark-only:not(:where(.dark .light .dark .light, .dark .light .dark .light *)),
+:where(.dark .light) .dark.wk-dark-only:not(:where(.dark .light .dark .light *)) {
     display: revert;
 }
 

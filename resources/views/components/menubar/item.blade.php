@@ -58,7 +58,7 @@
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
-<{{ $tag }}
+<{{ $tag }} data-wk-prose-skip
     @if($href) href="{{ $href }}" @endif
     @if($tag === 'button') type="button" @endif
     role="menuitem"

@@ -87,7 +87,7 @@
     sandbox iframe runs WITHOUT Tailwind preflight; the `list-none m-0 p-0`
     classes in $listClasses are decorative only and don't apply there.
 --}}
-<ol role="list" aria-label="{{ __('wirekit::Progress') }}" {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$listClasses]) }}>
+<ol data-wk-prose-skip role="list" aria-label="{{ __('wirekit::Progress') }}" {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$listClasses]) }}>
     @foreach($steps as $i => $step)
         @php
             // Normalize: accept a string (label only) or ['label' => .., 'description' => ..].
@@ -123,7 +123,7 @@
                     : 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text-muted)] border-[var(--color-wk-border)]');
         @endphp
 
-        <li
+        <li data-wk-prose-skip
             class="{{ $itemClasses }}"
             @if($isCurrent) aria-current="step" @endif
         >
@@ -148,7 +148,7 @@
                  of the link's name rather than a caption beside it.
                  `cursor-pointer` because Tailwind v4 sets `cursor: default` on `<button>` — the
                  reverse of v3 — so every button in this package puts the affordance back. --}}
-            <{{ $stepTag }}
+            <{{ $stepTag }} data-wk-prose-skip
                 @if($stepTag === 'a') href="{{ $stepHref }}" @endif
                 @if($stepTag === 'button') type="button" wire:click="{{ $stepAction }}" @endif
                 @class([

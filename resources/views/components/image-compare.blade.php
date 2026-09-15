@@ -166,7 +166,7 @@
     />
 
     {{-- Before image (bottom layer, fully visible under the after image). --}}
-    <img
+    <img data-wk-prose-skip
         src="{{ $before }}"
         alt="{{ $effectiveBeforeAlt }}"
         loading="{{ $loading }}"
@@ -199,7 +199,7 @@
         /components/image-compare#wide-aspect-ratio where the wide 21:9
         crop made the misalignment unmissable.
     --}}
-    <img
+    <img data-wk-prose-skip
         src="{{ $after }}"
         alt="{{ $effectiveAfterAlt }}"
         loading="{{ $loading }}"

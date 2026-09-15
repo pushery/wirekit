@@ -277,25 +277,20 @@ final class StrictnessGate
             static $declaredCache = [];
             if (! array_key_exists($context, $declaredCache)) {
                 try {
-                    // `@props` AND `@aware`, because Blade accepts either name on
-                    // the tag and the question here is only "does this component
-                    // know it?". `@aware` does not strip its key from the
-                    // attribute bag, so a key written directly on the tag arrives
-                    // here looking exactly like an unknown prop — and every form
-                    // control in the catalog reads `announceErrors` that way.
-                    // Deriving from `@props` alone reported the documented call
+                    // `acceptedPropNames()` is `@props` AND `@aware`, because Blade
+                    // accepts either name on the tag and the question here is only
+                    // "does this component know it?". `@aware` does not strip its
+                    // key from the attribute bag, so a key written directly on the
+                    // tag arrives here looking exactly like an unknown prop — and
+                    // every form control in the catalog reads `announceErrors` that
+                    // way. Deriving from `@props` alone reported the documented call
                     // `<x-wirekit::input announce-errors="false">` as a typo.
                     //
-                    // The union lives here and nowhere else: every other reader of
-                    // extractProps() means "the props this component declares",
-                    // which an `@aware` key is not.
-                    $declaredCache[$context] = array_map(
-                        static fn (array $p): string => $p['name'],
-                        [
-                            ...ComponentRegistry::extractProps($context),
-                            ...ComponentRegistry::extractAwareProps($context),
-                        ],
-                    );
+                    // The union was written out here and nowhere else, and then
+                    // `wirekit:doctor:props` asked the same question from
+                    // `extractProps()` alone and got it wrong. It has a name now, so
+                    // there is one answer rather than one copy.
+                    $declaredCache[$context] = ComponentRegistry::acceptedPropNames($context);
                 } catch (\Throwable) {
                     $declaredCache[$context] = null;
                 }

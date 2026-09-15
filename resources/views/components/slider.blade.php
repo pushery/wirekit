@@ -503,16 +503,23 @@
                          tooltip for. Measured — the attribute was there and the tooltip was
                          unreachable. Ticks without a description stay transparent to the
                          pointer, which keeps dragging over them unaffected. --}}
+                    {{-- Positioned the way the value bubble above is: a mark moves back by its own
+                         position as a share of its own width, so a label at 0% starts where the row
+                         starts, one at 100% ends where it ends, and one at 50% stays centered.
+                         Centering every label put the first and the last half a label past the
+                         track, and a clipping container cut them off. The tick does not follow its
+                         label: it sits at the same share of the mark's width, which lands it back on
+                         the value. --}}
                     <div
-                        class="absolute flex -translate-x-1/2 flex-col items-center{{ $mark['description'] !== null ? ' pointer-events-auto' : '' }}"
-                        style="left: {{ $mark['pct'] }}%"
+                        class="absolute flex flex-col items-start{{ $mark['description'] !== null ? ' pointer-events-auto' : '' }}"
+                        style="left: {{ $mark['pct'] }}%; transform: translateX(-{{ $mark['pct'] }}%)"
                         @if($mark['description'] !== null)
                             title="{{ $mark['description'] }}"
                         @endif
                     >
-                        <span class="h-1 w-px bg-[var(--color-wk-border)]"></span>
+                        <span class="relative h-1 w-px -translate-x-1/2 bg-[var(--color-wk-border)]" style="left: {{ $mark['pct'] }}%"></span>
                         @if($mark['label'] !== '')
-                            <span class="mt-0.5 text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-text-muted)]">{{ $mark['label'] }}</span>
+                            <span class="mt-0.5 whitespace-nowrap text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-text-muted)]">{{ $mark['label'] }}</span>
                         @endif
                         {{-- No `sr-only` description span here, and no `aria-describedby`.
                              Both were shipped and both were inert: this whole container is
@@ -543,8 +550,8 @@
     {{-- Same shape as `input`: one region, error winning over hint, announced politely so
          it does not interrupt what the reader is doing. --}}
     @if($error)
-        <p id="{{ $sliderId }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
+        <p data-wk-prose-skip id="{{ $sliderId }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
     @elseif($hint)
-        <p id="{{ $sliderId }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $sliderId }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

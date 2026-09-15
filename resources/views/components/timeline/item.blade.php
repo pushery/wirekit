@@ -80,7 +80,7 @@
     };
 @endphp
 
-<li {{ $attributes->class([$classes]) }}>
+<li data-wk-prose-skip {{ $attributes->class([$classes]) }}>
     {{-- Vertical connector line + dot indicator.
          Uses inline styles for flex layout to ensure reliable rendering. --}}
     <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
@@ -144,7 +144,7 @@
             @endif
         @endif
 
-        @if($slot->isNotEmpty())
+        @if($slot->hasActualContent())
             <div style="margin-top: 0.25rem;" class="text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]">
                 {{ $slot }}
             </div>

@@ -88,6 +88,10 @@
         'bg-[var(--color-wk-bg-muted)]',
         'p-0.5',
         'font-[family-name:var(--font-wk-sans)]',
+        // The reduced-motion clamp reaches an element carrying a `wk-` class and everything inside
+        // it. The segments animate with `transition-all`, and without a token here they kept animating
+        // for a reader who asked for less motion, on any page whose own ancestors carry no `wk-` class.
+        'wk-transition',
     ]), $scope);
 
     // Selected / unselected segment appearance.
@@ -231,6 +235,19 @@
             @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
         @endunless
     >
+        {{-- The start edge: a one-pixel sentinel at the true start of the scroll content, and a
+             shadow host that sticks to the visible edge. A sentinel outside the track means
+             options continue past that edge, and `_observeEdgeHints()` shows the shadow — the
+             machinery `table` and `data-table` use. Inside the track rather than around it,
+             because this element is the scroller, the component root and the one a caller's
+             `class` and `id` land on: a wrapper would move them. Zero width and aria-hidden, so
+             the flex row, the radiogroup and the accessibility tree are unchanged, and outside
+             the optimistic layer, which reads its own children. --}}
+        <span x-ref="startSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -me-px"></span>
+        <span aria-hidden="true" class="sticky start-0 z-[1] w-0 shrink-0 self-stretch pointer-events-none">
+            <span x-cloak x-show="startHint" x-transition.opacity class="wk-scroll-shadow-start"></span>
+        </span>
+
         {{-- Hidden input inside x-data scope so $refs.hiddenInput resolves correctly.
              Must be within the same Alpine component for x-ref to work.
 
@@ -343,12 +360,19 @@
                 <div class="sr-only" data-wk-optimistic-announcer aria-live="assertive" aria-atomic="true" x-text="announcement"></div>
             </div>
         @endif
+
+        {{-- The end edge, mirrored: the shadow host before the sentinel, so the sentinel is the true
+             end of the scroll content while the host sticks to the visible end. --}}
+        <span aria-hidden="true" class="sticky end-0 z-[1] w-0 shrink-0 self-stretch pointer-events-none">
+            <span x-cloak x-show="endHint" x-transition.opacity class="wk-scroll-shadow-end"></span>
+        </span>
+        <span x-ref="endSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -ms-px"></span>
     </div>
     {{-- Same shape as `input`: one region, error winning over hint, announced politely so
          it does not interrupt what the reader is doing. --}}
     @if($error)
-        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

@@ -132,10 +132,19 @@ return [
     |              tunes the written cookie (a UI preference: Lax + one-year Max-Age
     |              is the sensible default; Secure is added automatically on HTTPS).
     |
+    | `script` picks how @wirekitThemeScript delivers the head script:
+    |   'inline'   — written into the page (default). A Content-Security-Policy
+    |                grants it through the nonce you pass: @wirekitThemeScript($nonce).
+    |   'external' — loaded as a file from your own origin, for a policy that
+    |                allows no inline script at all. It still runs before the
+    |                first paint, because a plain script tag in <head> holds the
+    |                page until it has run.
+    |
     */
     'theme' => [
         'storage' => env('WIREKIT_THEME_STORAGE', 'local'),
         'storage_key' => env('WIREKIT_THEME_STORAGE_KEY', 'wirekit-theme'),
+        'script' => env('WIREKIT_THEME_SCRIPT', 'inline'),
         'cookie_attributes' => [
             'same_site' => env('WIREKIT_THEME_COOKIE_SAME_SITE', 'Lax'),
             'max_age' => (int) env('WIREKIT_THEME_COOKIE_MAX_AGE', 31536000),
@@ -269,6 +278,7 @@ return [
         'card.footer' => [],
         'avatar' => ['size' => 'md', 'shape' => 'circle', 'status-variant' => 'dot'],
         'avatar.group' => [],
+        'flag' => ['size' => 'md', 'shape' => 'rect'],
         'alert' => ['variant' => 'info'],
         'toggle' => ['size' => 'md'],
         'checkbox' => ['size' => 'md', 'variant' => 'default'],
@@ -307,7 +317,7 @@ return [
         'filter-builder' => ['searchable' => false, 'search-placeholder' => null, 'search-debounce' => 300, 'add-label' => null],
         'status-matrix' => ['cell-type' => 'status', 'legend' => true],
         'notification-center' => ['group-by' => 'none', 'filters' => false],
-        'data-table' => ['density' => 'comfortable', 'selectable' => false, 'searchable' => false, 'search-debounce' => 300],
+        'data-table' => ['density' => 'comfortable', 'selectable' => false, 'searchable' => false, 'search-debounce' => 300, 'sticky-column' => false],
         'event-calendar' => ['view' => 'month', 'week-starts-on' => 1],
         'calendar' => ['week-starts-on' => 1],
         'map' => ['provider' => 'maplibre', 'zoom' => 2, 'highlight' => 'ring', 'highlight-color' => 'accent', 'reduced-data' => 'respect'],
@@ -360,11 +370,11 @@ return [
         'command-palette' => ['hotkey' => 'cmd+k', 'placeholder' => null],
 
         // Navigation components
-        'tabs' => ['variant' => 'underline'],
+        'tabs' => ['variant' => 'underline', 'findable' => false],
         'breadcrumb' => ['separator' => 'chevron'],
-        'accordion' => ['mode' => 'single', 'variant' => 'bordered', 'size' => 'md'],
+        'accordion' => ['mode' => 'single', 'variant' => 'bordered', 'size' => 'md', 'findable' => true],
         'accordion.item' => [],
-        'collapsible' => [],
+        'collapsible' => ['findable' => true],
         'sidebar' => [],
         'sidebar.group' => [],
         'sidebar.item' => [],
@@ -377,8 +387,10 @@ return [
         // by the page. The key shipped for a while and could never have had an effect.
         'date-picker' => ['size' => 'md'],
         'file-upload' => ['size' => 'md', 'multiple' => false, 'accept' => null, 'capture' => null],
-        'combobox' => ['size' => 'md', 'placeholder' => null],
-        'multi-select' => ['placeholder' => null],
+        // `placement`: where the options panel opens, any placement `dropdown` takes. `panel-width`:
+        // `trigger` matches the field, `auto` fits the widest option, or a CSS length such as 20rem.
+        'combobox' => ['size' => 'md', 'placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger'],
+        'multi-select' => ['placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger'],
         'otp-input' => ['length' => 6, 'masked' => false],
         // `placeholder` is null rather than a literal so the component keeps resolving its
         // own translated default; set a string here to override it in every locale at once.
@@ -435,6 +447,23 @@ return [
             'threshold' => 0.4,
             'delay' => null,
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Flags
+    |--------------------------------------------------------------------------
+    |
+    | The artwork for <x-wirekit::flag> comes from the optional
+    | pushery/wirekit-flags package, found where Composer installed it. Set
+    | `path` to use a copy Composer does not know about instead, such as a
+    | checkout next to the application. A relative path is resolved against
+    | the application's base path.
+    |
+    */
+
+    'flags' => [
+        'path' => env('WIREKIT_FLAGS_PATH'),
     ],
 
     /*

@@ -139,7 +139,7 @@
 >
     {{-- Step title --}}
     @isset($title)
-        <h{{ $levelValue }} id="{{ $titleId }}" class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] mb-[var(--padding-wk-y-xs)]">{{ $title }}</h{{ $levelValue }}>
+        <h{{ $levelValue }} data-wk-prose-skip id="{{ $titleId }}" class="font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-lg)] mb-[var(--padding-wk-y-xs)]">{{ $title }}</h{{ $levelValue }}>
     @endisset
 
     {{-- Step body --}}

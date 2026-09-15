@@ -60,6 +60,6 @@
     ]), $scope);
 @endphp
 
-<a href="#{{ $target }}" {{ $attributes->class([$classes]) }}>
-    {{ $slot->isEmpty() ? $label : $slot }}
+<a data-wk-prose-skip href="#{{ $target }}" {{ $attributes->class([$classes]) }}>
+    {{ $slot->hasActualContent() ? $slot : $label }}
 </a>

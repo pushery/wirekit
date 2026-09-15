@@ -100,9 +100,9 @@
             <div class="flex-1 min-w-0 space-y-1.5">
                 {{ $slot }}
                 @if($hasError && $errorMessage)
-                    <p @if($errorId) id="{{ $errorId }}" @endif @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+                    <p data-wk-prose-skip @if($errorId) id="{{ $errorId }}" @endif @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
                 @elseif($hint)
-                    <p @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+                    <p data-wk-prose-skip @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
                 @endif
             </div>
         </div>
@@ -136,11 +136,11 @@
         @endif
 
         @if($hasError && $errorMessage)
-            <p @if($errorId) id="{{ $errorId }}" @endif @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
+            <p data-wk-prose-skip @if($errorId) id="{{ $errorId }}" @endif @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">
                 {{ $errorMessage }}
             </p>
         @elseif($hint)
-            <p @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
+            <p data-wk-prose-skip @if($hintId) id="{{ $hintId }}" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">
                 {{ $hint }}
             </p>
         @endif

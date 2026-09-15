@@ -11,6 +11,14 @@
     'columns' => [],
     'rowKey' => 'id',               // unique id field for selection + morph keying
     'selectable' => config('wirekit.components.data-table.selectable', false), // per-row + header selection checkboxes
+    // Freeze the first column while the rest scroll sideways. In an overview the first column
+    // NAMES the row, and on a phone it is the first thing a swipe takes away.
+    //
+    // With `selectable` BOTH leading columns freeze — the checkbox and the name — because a
+    // checkbox that scrolls out from under its own row is worse than one that never moved.
+    // The offset is knowable rather than measured: the selection column's width is set here,
+    // by this component, at `w-10`.
+    'stickyColumn' => config('wirekit.components.data-table.sticky-column', false),
     'searchable' => config('wirekit.components.data-table.searchable', false), // toolbar search box (client-side filter)
     'density' => config('wirekit.components.data-table.density', 'comfortable'), // comfortable | compact
     'columnManager' => false,       // show/hide-columns dropdown
@@ -106,6 +114,68 @@
     // search field — so an unbound `selectable="false"` rendered the very column it asked
     // to remove, and the row checkboxes came with it.
     $selectable = BooleanProp::from($selectable, false);
+    $stickyColumn = BooleanProp::from($stickyColumn, config('wirekit.components.data-table.sticky-column', false));
+
+    /*
+     * The frozen leading cells.
+     *
+     * `inset-inline-start`, never `left`: under `dir="rtl"` the first column is on the right,
+     * and a physical offset would freeze it against the wrong edge — the same correction the
+     * sentinels and shadows already carry.
+     *
+     * The OFFSET for the second frozen cell is `w-10` — the selection column's width, set by
+     * this component a few lines below. It is a constant here rather than a measurement
+     * because this component owns both ends of it; a `ResizeObserver` for a width we wrote
+     * ourselves would be machinery in place of a number.
+     *
+     * An opaque background is what makes freezing readable at all: without one the scrolling
+     * columns pass visibly underneath. The base is the surface, and the row's two states are
+     * repeated on the cell — `group-hover` for the pointer, and the selected class applied by
+     * the same expression the row uses, because `background: inherit` would take the row's
+     * SPECIFIED value and the row specifies nothing when it is neither.
+     */
+    $stickyCellBase = $stickyColumn
+        ? WireKit::resolveClasses('data-table', 'sticky-cell', 'sticky z-[1] bg-[var(--color-wk-bg)] group-hover:bg-[var(--color-wk-bg-subtle)]', $scope)
+        : '';
+
+    // The selected fill, resolved here rather than written as a literal inside the `:class`
+    // ternary below. `resolveClasses` runs at RENDER time in PHP and `:class` is a RUNTIME
+    // binding, so appearance decided inside the ternary is out of reach of `WireKit::scope()`:
+    // a theme could repaint every row and not the one cell that stays in view. Both branches are
+    // resolved here and interpolated; the ternary only chooses between two finished strings.
+    $stickySelectedFill = $stickyColumn
+        ? WireKit::resolveClasses('data-table', 'sticky-cell-selected', 'bg-[var(--color-wk-bg-muted)]', $scope)
+        : '';
+
+    /*
+     * The frozen column is CAPPED, and the cap is the difference between the feature helping and
+     * replacing the problem it solves. Measured at 390 px with an ordinary company name: the
+     * column took 165 px, 42% of the screen, and every further character is taken from the
+     * columns the reader froze it in order to read. `--size-wk-table-sticky-column-max` is the
+     * same token `<x-wirekit::table>` caps with — one knob for one concept, rather than a second
+     * that drifts. A cap, not a width: a short label keeps its own.
+     *
+     * Capping only works with a cell that may wrap, so the frozen cells carry `whitespace-normal`
+     * and every other cell keeps `whitespace-nowrap`. That decision is made HERE rather than in
+     * the class attribute, because two `white-space` utilities on one element are resolved by
+     * their order in the stylesheet, which is Tailwind's to choose and not ours to rely on.
+     */
+    $stickyCellCap = 'max-w-[var(--size-wk-table-sticky-column-max)] whitespace-normal';
+
+    $stickySelectionCell = $stickyColumn ? $stickyCellBase.' start-0' : '';
+    $stickyFirstDataCell = $stickyColumn
+        ? $stickyCellBase.($selectable ? ' start-10' : ' start-0').' '.$stickyCellCap
+        : 'whitespace-nowrap';
+
+    // The header's frozen cells sit above the body's, or a scrolled row would paint over the
+    // heading it belongs to. The heading has no hover state of its own.
+    $stickyHeadCellBase = $stickyColumn
+        ? WireKit::resolveClasses('data-table', 'sticky-head-cell', 'sticky z-[2] bg-[var(--color-wk-bg)]', $scope)
+        : '';
+    $stickyHeadSelection = $stickyColumn ? $stickyHeadCellBase.' start-0' : '';
+    $stickyHeadFirstData = $stickyColumn
+        ? $stickyHeadCellBase.($selectable ? ' start-10' : ' start-0').' '.$stickyCellCap
+        : 'whitespace-nowrap';
     $searchable = BooleanProp::from($searchable, false);
 
     $density = WireKit::validateProp('data-table', 'density', $density, ['comfortable', 'compact']);
@@ -378,7 +448,11 @@
          still reaches the hidden selection input: `$refs` gathers the refs of every ancestor
          component. `w-full min-w-0` keeps a wide table from widening the page, as in `table`. --}}
     <div class="relative w-full min-w-0" x-data="wirekitStickyPanelShadows()">
-    <div x-ref="scroller" @if(filled($caption)) role="region" aria-labelledby="{{ $captionId }}" @endif @if($loading) aria-busy="true" @endif x-bind:aria-busy="ariaBusy()" tabindex="0" class="w-full min-w-0 overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+    {{-- Positioned for the same reason as the scroller in `table`: the caption, the actions heading
+         and the status region are visually hidden, so `position: absolute`, and they must resolve
+         against the scroller rather than the wrapper outside it. The shadows below are siblings
+         and keep the wrapper as theirs. --}}
+    <div x-ref="scroller" @if(filled($caption)) role="region" aria-labelledby="{{ $captionId }}" @endif @if($loading) aria-busy="true" @endif x-bind:aria-busy="ariaBusy()" tabindex="0" class="relative w-full min-w-0 overflow-x-auto wk-scrollbar rounded-[var(--radius-wk-lg)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
         {{-- The sentinels need the table's inline edges, and this scroller also holds the empty
              state and the status region below the table, so the flex row is a wrapper around
              the table alone rather than the scroller itself. `w-fit min-w-full` sizes it the
@@ -388,24 +462,32 @@
              has an area to intersect and the layout pays nothing, in either writing direction. --}}
         <div class="flex w-fit min-w-full">
         <div x-ref="startSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -me-px"></div>
-        <table class="w-full shrink-0 border-collapse text-[length:var(--text-wk-sm)]">
+        {{-- `w-max` under `stickyColumn`, and it is the difference between the feature working and
+             merely rendering: at `w-full` the table squeezes itself into the scroller, nothing
+             ever overflows, and a frozen column freezes against an edge that never moves. --}}
+        <table data-wk-prose-skip class="shrink-0 border-collapse text-[length:var(--text-wk-sm)] {{ $stickyColumn ? 'w-max min-w-full' : 'w-full' }}" @if($stickyColumn) data-wk-sticky-column @endif>
             @if($caption)
                 <caption id="{{ $captionId }}" class="sr-only">{{ $caption }}</caption>
             @endif
             <thead>
                 <tr class="border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)]">
                     @if($selectable)
-                        <th scope="col" class="w-10 px-[var(--padding-wk-x-md)]">
+                        <th data-wk-prose-skip scope="col" class="w-10 px-[var(--padding-wk-x-md)] {{ $stickyHeadSelection }}">
                             {{-- Tri-state header selection (indeterminate set reactively). --}}
                             <input type="checkbox" :checked="allSelected" @change="toggleSelectAll()" x-effect="$el.indeterminate = someSelected" aria-label="{{ __('wirekit::Select all rows') }}" class="{{ $checkboxClass }}" />
                         </th>
                     @endif
                     <template x-for="col in visibleColumns" :key="col.key">
-                        <th
+                        <th data-wk-prose-skip
                             scope="col"
                             :aria-sort="ariaSort(col.key)"
-                            :class="(col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left') + (density === 'compact' ? ' py-1' : ' py-[var(--padding-wk-y-sm)]')"
-                            class="px-[var(--padding-wk-x-md)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)] whitespace-nowrap"
+                            {{-- The frozen classes land on the FIRST visible column only. Which one that
+                                 is comes from `isFrozenColumn()` in the factory rather than from an
+                                 index read here: the shape this needs — `visibleColumns[0]?.key` — does
+                                 not parse under Alpine's CSP build, and an unparseable binding is inert
+                                 rather than loud. Same call in the body cell below. --}}
+                            :class="(col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left') + (density === 'compact' ? ' py-1' : ' py-[var(--padding-wk-y-sm)]') + (isFrozenColumn(col) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickyHeadFirstData) }} : ' whitespace-nowrap')"
+                            class="px-[var(--padding-wk-x-md)] text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text-muted)]"
                         >
                             <template x-if="col.sortable !== false">
                                 <button type="button" @click="toggleSort(col.key)" class="inline-flex items-center gap-1 hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer">
@@ -421,15 +503,19 @@
                         </th>
                     </template>
                     @isset($rowActions)
-                        <th scope="col" class="w-10 px-[var(--padding-wk-x-md)]"><span class="sr-only">{{ __('wirekit::Actions') }}</span></th>
+                        <th data-wk-prose-skip scope="col" class="w-10 px-[var(--padding-wk-x-md)]"><span class="sr-only">{{ __('wirekit::Actions') }}</span></th>
                     @endisset
                 </tr>
             </thead>
             <tbody>
                 <template x-for="row in displayRows" :key="rowId(row)">
-                    <tr :class="isSelected(row) ? 'bg-[var(--color-wk-bg-muted)]' : 'hover:bg-[var(--color-wk-bg-subtle)]'" class="border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors">
+                    {{-- `group` so a frozen cell can repeat the row's hover. A sticky cell needs its
+                         own opaque background, and `background: inherit` would take the row's
+                         SPECIFIED value — which is nothing at all when the row is neither
+                         selected nor hovered. --}}
+                    <tr :class="isSelected(row) ? 'bg-[var(--color-wk-bg-muted)]' : 'hover:bg-[var(--color-wk-bg-subtle)]'" class="group border-b-[length:var(--border-wk-width)] border-[var(--color-wk-border)] transition-colors">
                         @if($selectable)
-                            <td class="px-[var(--padding-wk-x-md)]" :class="density === 'compact' ? 'py-1' : 'py-[var(--padding-wk-y-sm)]'">
+                            <td data-wk-prose-skip class="px-[var(--padding-wk-x-md)] {{ $stickySelectionCell }}" :class="(density === 'compact' ? 'py-1' : 'py-[var(--padding-wk-y-sm)]') + (isSelected(row) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickySelectedFill) }} : '')">
                                 {{-- Unique accessible name per row: prefix with the first
                                      column's value so a screen reader doesn't hear "Select
                                      row" N identical times (WCAG name uniqueness). --}}
@@ -437,9 +523,9 @@
                             </td>
                         @endif
                         <template x-for="col in visibleColumns" :key="col.key">
-                            <td
-                                :class="(col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left') + (density === 'compact' ? ' py-1' : ' py-[var(--padding-wk-y-sm)]')"
-                                class="px-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text)] whitespace-nowrap"
+                            <td data-wk-prose-skip
+                                :class="(col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left') + (density === 'compact' ? ' py-1' : ' py-[var(--padding-wk-y-sm)]') + (isFrozenColumn(col) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickyFirstDataCell) }} + (isSelected(row) ? {{ \Pushery\WireKit\Support\AlpinePayload::string(' '.$stickySelectedFill) }} : '') : ' whitespace-nowrap')"
+                                class="px-[var(--padding-wk-x-md)] text-[color:var(--color-wk-text)]"
                             >
                                 <template x-if="col.cellType === 'badge'">
                                     <span class="{{ $pillClass }}" :class="{{ \Pushery\WireKit\Support\AlpinePayload::from($badgeClasses) }}[badgeIntent(cellText(row, col), col)]" x-text="cellText(row, col)"></span>
@@ -537,7 +623,7 @@
                                             <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-6 h-6 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
                                         </template>
                                         <span>
-                                            <a :href="cellHref(row, col)" class="block w-fit {{ $linkClass }}" x-text="cellText(row, col)"></a>
+                                            <a data-wk-prose-skip :href="cellHref(row, col)" class="block w-fit {{ $linkClass }}" x-text="cellText(row, col)"></a>
                                             <template x-if="subText(row, col)">
                                                 <span class="block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
                                             </template>
@@ -563,7 +649,7 @@
                             </td>
                         </template>
                         @isset($rowActions)
-                            <td class="px-[var(--padding-wk-x-md)] text-right" :class="density === 'compact' ? 'py-1' : 'py-[var(--padding-wk-y-sm)]'">
+                            <td data-wk-prose-skip class="px-[var(--padding-wk-x-md)] text-right" :class="density === 'compact' ? 'py-1' : 'py-[var(--padding-wk-y-sm)]'">
                                 {{ $rowActions }}
                             </td>
                         @endisset
@@ -589,7 +675,7 @@
             @isset($empty)
                 {{ $empty }}
             @else
-                <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
+                <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
             @endisset
         </div>
 
@@ -618,11 +704,18 @@
              is over, so that render always arrives too late to announce it. The table knows when
              a round trip it started is out, and `loading` adds a wait the server declares. The
              static text below is only the first paint of a table rendered busy. --}}
-        <p class="sr-only" role="status" aria-live="polite" x-text="statusAnnouncement">@if($loading){{ __('wirekit::Loading results') }}@endif</p>
+        <p data-wk-prose-skip class="sr-only" role="status" aria-live="polite" x-text="statusAnnouncement">@if($loading){{ __('wirekit::Loading results') }}@endif</p>
     </div>
     {{-- aria-hidden: the shadows are for the eye. The scroller itself is focusable, and named
          when there is a caption. --}}
-    <div aria-hidden="true" x-cloak x-show="startShadow" x-transition.opacity class="wk-scroll-shadow-start"></div>
+    {{-- Suppressed under `stickyColumn`, and that is a decision rather than an omission: this
+         shadow marks content that has scrolled away past the start edge, and with a frozen
+         column nothing HAS scrolled away there — the shadow would lie on top of the one column
+         that never moves and say the opposite of what it means. The end shadow stays: content
+         really does continue past that edge. --}}
+    @unless($stickyColumn)
+        <div aria-hidden="true" x-cloak x-show="startShadow" x-transition.opacity class="wk-scroll-shadow-start"></div>
+    @endunless
     <div aria-hidden="true" x-cloak x-show="endShadow" x-transition.opacity class="wk-scroll-shadow-end"></div>
     </div>
 </div>

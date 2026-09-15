@@ -211,7 +211,7 @@
                 <button type="button" @click="today()" class="px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">{{ __('wirekit::Today') }}</button>
                 <button type="button" @click="next()" aria-label="{{ __('wirekit::Next') }}" class="{{ $navBtn }}"><svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg></button>
             </div>
-            <h{{ $levelValue }} class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" aria-live="polite" x-text="title"></h{{ $levelValue }}>
+            <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" aria-live="polite" x-text="title"></h{{ $levelValue }}>
         </div>
         {{-- View switcher — a single-select RADIOGROUP (not tabs: the buttons own
              no tabpanels; the views swap in place). aria-checked + roving tabindex
@@ -239,7 +239,7 @@
         </div>
         {{-- Outside the group on purpose: the count must still be announced when the group
              itself is hidden by the one-category rule above. --}}
-        <p class="sr-only" role="status" aria-live="polite" x-text="filterStatus"></p>
+        <p data-wk-prose-skip class="sr-only" role="status" aria-live="polite" x-text="filterStatus"></p>
     @endif
 
     {{-- ── Month view ──────────────────────────────────────────────── --}}
@@ -313,7 +313,7 @@
              group rather than a live region: the day button already says "pressed", and
              announcing the whole list on top of that would read it twice. --}}
         <div x-show="selectedDay" x-cloak role="group" :aria-label="selectedDayLabel" class="mt-[var(--space-wk-sm)] px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-lg)]">
-            <h{{ $detailLevel }} class="mb-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" x-text="selectedDayLabel"></h{{ $detailLevel }}>
+            <h{{ $detailLevel }} data-wk-prose-skip class="mb-[var(--space-wk-xs)] text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]" x-text="selectedDayLabel"></h{{ $detailLevel }}>
             <div class="flex flex-col gap-[var(--gap-wk-xs)]">
                 <template x-for="ev in selectedDayEvents" :key="'dd-' + ev.id">
                     <button type="button" @click="selectEvent(ev)" :aria-label="rowLabel(ev)" :data-wk-tip="ev.title" class="w-full flex items-center gap-[var(--gap-wk-sm)] px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)] rounded-[var(--radius-wk-md)] text-start hover:bg-[var(--color-wk-bg-muted)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] cursor-pointer">
@@ -327,7 +327,7 @@
                         <span x-show="attendeeStack(ev).length > 0" aria-hidden="true" class="wk-avatar-group shrink-0">
                             <template x-for="(a, ai) in attendeeStack(ev)" :key="'at-' + ev.id + '-' + ai">
                                 <span class="inline-flex items-center justify-center shrink-0 w-6 h-6 overflow-hidden rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text)]">
-                                    <template x-if="a.avatar"><img :src="a.avatar" alt="" class="w-full h-full object-cover"></template>
+                                    <template x-if="a.avatar"><img data-wk-prose-skip :src="a.avatar" alt="" class="w-full h-full object-cover"></template>
                                     <span x-show="!a.avatar" x-text="a.initials"></span>
                                 </span>
                             </template>
@@ -336,7 +336,7 @@
                     </button>
                 </template>
             </div>
-            <p x-show="selectedDayEvents.length === 0" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No events on this day') }}</p>
+            <p data-wk-prose-skip x-show="selectedDayEvents.length === 0" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No events on this day') }}</p>
         </div>
     @endif
 
@@ -462,7 +462,7 @@
              row's time shares one width and the titles line up. --}}
         <template x-for="day in agendaDays" :key="day.date.toISOString()">
             <div class="px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-sm)]">
-                <p class="mb-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? 'text-[color:var(--color-wk-accent-text)]' : 'text-[color:var(--color-wk-text)]'" x-text="day.label"></p>
+                <p data-wk-prose-skip class="mb-1 text-[length:var(--text-wk-sm)] font-[number:var(--font-wk-heading-weight)]" :aria-current="day.isToday ? 'date' : false" :class="day.isToday ? 'text-[color:var(--color-wk-accent-text)]' : 'text-[color:var(--color-wk-text)]'" x-text="day.label"></p>
                 {{-- Day markers as their own labeled line, shaped like the holiday
                      marker: the label leads and the type follows in parentheses.
                      The type is shown as text; blocked adds an sr-only "unavailable". --}}
@@ -494,7 +494,7 @@
                             <span x-show="attendeeStack(ev).length > 0" aria-hidden="true" class="wk-avatar-group shrink-0">
                                 <template x-for="(a, ai) in attendeeStack(ev)" :key="'at-' + ev.id + '-' + ai">
                                     <span class="inline-flex items-center justify-center shrink-0 w-6 h-6 overflow-hidden rounded-full bg-[var(--color-wk-bg-muted)] text-[length:var(--text-wk-2xs)] text-[color:var(--color-wk-text)]">
-                                        <template x-if="a.avatar"><img :src="a.avatar" alt="" class="w-full h-full object-cover"></template>
+                                        <template x-if="a.avatar"><img data-wk-prose-skip :src="a.avatar" alt="" class="w-full h-full object-cover"></template>
                                         <span x-show="!a.avatar" x-text="a.initials"></span>
                                     </span>
                                 </template>
@@ -517,7 +517,7 @@
          change; moving an element between `display: none` and visible is not a content
          change every screen reader reports, and the sentence in there never changes
          anyway. The text swap here is what makes the announcement happen. --}}
-    <p class="sr-only" role="status" aria-live="polite" x-text="view === 'agenda' && agendaEmpty ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No events in this range')) }} : ''"></p>
+    <p data-wk-prose-skip class="sr-only" role="status" aria-live="polite" x-text="view === 'agenda' && agendaEmpty ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::No events in this range')) }} : ''"></p>
 
     {{-- Shared truncated-title tooltip — ONE bubble for every [data-wk-tip] pill /
          chip / row / marker, shown on hover/focus only when the text is actually

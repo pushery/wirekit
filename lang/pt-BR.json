@@ -36,6 +36,8 @@
     "wirekit::Still not confirmed. Your text is kept here — reload to see whether it was saved.": "Ainda sem confirmação. Seu texto fica aqui — recarregue para ver se foi salvo.",
     "wirekit::Switch :label": "Trocar :label",
     "wirekit::Tabs": "Abas",
+    "wirekit::Thinking…": "Pensando…",
+    "wirekit::Thought for :seconds s": "Pensou por :seconds s",
     "wirekit::Typing…": "Digitando…",
     "wirekit::Uploading": "Enviando",
     "wirekit::Uploading :name": "Enviando :name",

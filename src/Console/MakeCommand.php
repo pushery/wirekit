@@ -55,6 +55,7 @@ class MakeCommand extends Command
      * the failure the whole MCP catalog is arranged against. One source, two readers.
      */
     public const RECIPES = [
+        'country-picker',
         'documentation-reader',
         'feature-numbered-marker',
         'hero-with-code-aside',

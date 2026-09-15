@@ -250,13 +250,13 @@
                 @endisset
 
                 @isset($title)
-                    <h{{ $levelValue }} class="text-[length:var(--text-wk-3xl,1.875rem)] sm:text-[length:var(--font-wk-heading-2xl,3.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] tracking-tight mb-[var(--space-wk-md,1rem)]">
+                    <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-3xl,1.875rem)] sm:text-[length:var(--font-wk-heading-2xl,3.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] tracking-tight mb-[var(--space-wk-md,1rem)]">
                         {{ $title }}
                     </h{{ $levelValue }}>
                 @endisset
 
                 @isset($lede)
-                    <p class="text-[length:var(--text-wk-lg)] opacity-80 max-w-[40rem] mb-[var(--space-wk-lg,1.5rem)] {{ $ledeAlignClasses }}">
+                    <p data-wk-prose-skip class="text-[length:var(--text-wk-lg)] opacity-80 max-w-[40rem] mb-[var(--space-wk-lg,1.5rem)] {{ $ledeAlignClasses }}">
                         {{ $lede }}
                     </p>
                 @endisset

@@ -33,6 +33,8 @@
     // rich-result validation. The schema text stays DERIVED from what is rendered
     // — same content, markup removed — so it cannot drift from the page.
     'plainText' => false,
+    // Passed to the accordion: a question's answer stays findable by the browser's find in page.
+    'findable' => config('wirekit.components.accordion.findable', true),
     'scope' => null,
 ])
 
@@ -41,6 +43,9 @@
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\Support\FaqCollector;
     use Pushery\WireKit\WireKit;
+
+    // `findable="false"` on an unbound tag is the string "false", which is truthy.
+    $findable = BooleanProp::from($findable, config('wirekit.components.accordion.findable', true));
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -77,6 +82,7 @@
         :variant="$variant"
         :size="$size"
         :mode="$multiple ? 'multiple' : 'single'"
+        :findable="$findable"
         :aria-label="$label"
     >
         {{ $slot }}

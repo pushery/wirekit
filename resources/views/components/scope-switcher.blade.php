@@ -218,7 +218,7 @@
             :aria-labelledby="$id.'-current-label '.$id.'-switch-purpose'"
         >
             @if($currentRow && $currentRow['image'])
-                <img src="{{ $currentRow['image'] }}" alt="" class="h-4 w-4 shrink-0 rounded-[var(--radius-wk-sm)] object-cover" />
+                <img data-wk-prose-skip src="{{ $currentRow['image'] }}" alt="" class="h-4 w-4 shrink-0 rounded-[var(--radius-wk-sm)] object-cover" />
             @elseif($currentRow && $currentRow['icon'])
                 <x-wirekit::icon :name="$currentRow['icon']" class="h-4 w-4 shrink-0" />
             @endif
@@ -328,7 +328,7 @@
                 @foreach($groupRows as $row)
                     @php $isCurrent = $currentRow !== null && $row['key'] === $currentRow['key']; @endphp
 
-                    <a
+                    <a data-wk-prose-skip
                         href="{{ $row['url'] }}"
                         role="option"
                         id="{{ $id }}-option-{{ $row['key'] }}"
@@ -353,7 +353,7 @@
                         class="{{ $itemClasses }}"
                     >
                         @if($row['image'])
-                            <img src="{{ $row['image'] }}" alt="" class="h-5 w-5 shrink-0 rounded-[var(--radius-wk-sm)] object-cover" />
+                            <img data-wk-prose-skip src="{{ $row['image'] }}" alt="" class="h-5 w-5 shrink-0 rounded-[var(--radius-wk-sm)] object-cover" />
                         @elseif($row['icon'])
                             @if($row['status'])
                                 <x-wirekit::indicator position="bottom-end" class="shrink-0">
@@ -434,7 +434,7 @@
                      was right. It is the last row of the same list and is now shaped like one.
                      The accent stays on the text, because this is an action and the rows
                      are not. --}}
-                <a
+                <a data-wk-prose-skip
                     href="{{ $create['url'] }}"
                     wire:navigate
                     class="{{ $itemClasses }} text-[color:var(--color-wk-accent-content)]"

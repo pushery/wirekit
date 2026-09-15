@@ -42,10 +42,10 @@
      deliberately, so a decorative list is not announced — and the consequence for a list
      that IS one is that VoiceOver stops saying "list, N items" and stops offering list
      navigation. No other engine shows it. --}}
-<ol role="list" {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }} data-wk-timeline="{{ $variant }}" >
+<ol data-wk-prose-skip role="list" {{ $attributes->merge(['style' => 'list-style: none; margin: 0; padding: 0;'])->class([$classes]) }} data-wk-timeline="{{ $variant }}" >
     {{-- Optional "before" continuation line — indicates earlier events exist --}}
     @if($before)
-        <li aria-hidden="true" style="display: flex; justify-content: center; width: var(--size-wk-xs, 1.5rem);">
+        <li data-wk-prose-skip aria-hidden="true" style="display: flex; justify-content: center; width: var(--size-wk-xs, 1.5rem);">
             {{-- Dashed line with fade-in from top --}}
             <div style="width: 0; height: 2rem; border-left: 1px dashed var(--color-wk-border); mask-image: linear-gradient(to bottom, transparent, black); -webkit-mask-image: linear-gradient(to bottom, transparent, black);"></div>
         </li>
@@ -55,7 +55,7 @@
 
     {{-- Optional "after" continuation line — indicates later events exist --}}
     @if($after)
-        <li aria-hidden="true" style="display: flex; justify-content: center; width: var(--size-wk-xs, 1.5rem);">
+        <li data-wk-prose-skip aria-hidden="true" style="display: flex; justify-content: center; width: var(--size-wk-xs, 1.5rem);">
             <div style="width: 0; height: 2rem; border-left: 1px dashed var(--color-wk-border); mask-image: linear-gradient(to top, transparent, black); -webkit-mask-image: linear-gradient(to top, transparent, black);"></div>
         </li>
     @endif

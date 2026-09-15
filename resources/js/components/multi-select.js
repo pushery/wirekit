@@ -9,8 +9,12 @@
  * @param {string} config.name - Input name for form submission
  * @param {Array<string>} [config.value] - Option keys to pre-select on load
  * @param {string} [config.id] - DOM id stem the option ids are minted from
+ * @param {string} [config.placement] - Where the panel opens against the field (Floating UI placement)
+ * @param {string} [config.panelWidth] - 'trigger' matches the field; anything else lets the panel
+ *   be wider than the field but never narrower
  */
 import { position } from '../utils/floating.js';
+import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
 
 export default function wirekitMultiSelect(config = {}) {
     return {
@@ -29,6 +33,9 @@ export default function wirekitMultiSelect(config = {}) {
         // Seed from the `value` prop so pre-selected pills render on load.
         // Copy the array (don't alias config) so splice/push never mutate it.
         selected: Array.isArray(config.value) ? [...config.value] : [],
+
+        // markMediaBroken() and showsInitials(), for an avatar whose photo fails to load.
+        ...optionMediaState(),
         filter: '',
         dropdownOpen: false,
         // Where the keyboard is standing, as an index into `filteredOptions`.
@@ -81,6 +88,9 @@ export default function wirekitMultiSelect(config = {}) {
         // `aria-activedescendant` are two readings of ONE string — the pairing
         // comes apart the moment those are written independently.
         _id: config.id || null,
+        // Validated by the Blade, which falls back to these same defaults.
+        _placement: config.placement || 'bottom-start',
+        _panelWidth: config.panelWidth || 'trigger',
 
         /**
          * Get filtered options based on current filter text.
@@ -91,7 +101,7 @@ export default function wirekitMultiSelect(config = {}) {
             return this._options.filter(
                 (opt) =>
                     !this.selected.includes(opt.value) &&
-                    opt.label.toLowerCase().includes(term)
+                    optionMatches(opt, term)
             );
         },
 
@@ -100,6 +110,27 @@ export default function wirekitMultiSelect(config = {}) {
          */
         getLabel(value) {
             return this._options.find((o) => o.value === value)?.label || value;
+        },
+
+        /**
+         * The text a pill shows: the option's `selectedLabel` when it has one, its label otherwise.
+         * The remove button and the announcement keep the full label, since a pill is short on
+         * room and a listener is not.
+         */
+        pillLabel(value) {
+            const option = this._options.find((o) => o.value === value);
+
+            return option ? chosenText(option) : value;
+        },
+
+        /**
+         * A pill's option as a list of at most one, when it has a medium to draw. A list because
+         * `x-for` is the directive that gives the pill's medium an option to bind to.
+         */
+        pillMedia(value) {
+            const option = this._options.find((o) => o.value === value);
+
+            return option && option.media ? [option] : [];
         },
 
         // ── Keyboard model ──────────────────────────────────────────────────
@@ -527,10 +558,11 @@ export default function wirekitMultiSelect(config = {}) {
 
             this._stopAutoUpdate?.();
             const { stop } = await position(field, panel, {
-                placement: 'bottom-start',
+                placement: this._placement,
                 offset: 4,
                 fitViewport: true,
-                matchReferenceWidth: true,
+                matchReferenceWidth: this._panelWidth === 'trigger',
+                minReferenceWidth: this._panelWidth !== 'trigger',
                 // Follow the field on scroll/resize; this is the panel the v2.19.0
                 // fixed-positioning switch made most visibly pin on scroll.
                 autoReposition: true,

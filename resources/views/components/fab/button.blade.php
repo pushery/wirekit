@@ -128,7 +128,7 @@
     ]), $scope);
 @endphp
 
-<{{ $tag }}
+<{{ $tag }} data-wk-prose-skip
     @if($href) href="{{ $href }}" @else type="button" @endif
     @if($haspopupValue !== null) aria-haspopup="{{ $haspopupValue }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
@@ -144,7 +144,7 @@
          hidden-ness is conditional for the reason spelled out at $slotIsDecorative:
          hiding visible text is what left this button nameless. --}}
     <span class="inline-grid place-items-center" @if($slotIsDecorative) aria-hidden="true" @endif>
-        @if(isset($slot) && $slot->isNotEmpty())
+        @if(isset($slot) && $slot->hasActualContent())
             {{ $slot }}
         @elseif(is_string($icon) && $icon !== '' && ! str_contains($icon, '<') && function_exists('svg'))
             {{ svg(WireKit::icon($icon), ['class' => 'h-6 w-6']) }}

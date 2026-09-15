@@ -163,7 +163,7 @@
     }
 @endphp
 
-<{{ $tag }}
+<{{ $tag }} data-wk-prose-skip
     @if($tag === 'a') href="{{ $href }}" @endif
     data-wk-attachment
     data-state="{{ $stateValue }}"
@@ -188,7 +188,7 @@
          controls can live outside the anchor. Without actions the whole card is
          the link (the $tag === 'a' root above). --}}
     @if($splitLink)
-        <a href="{{ $href }}" aria-label="{{ $accessibleName }}" data-wk-attachment-link class="flex min-w-0 flex-1 items-center gap-[var(--gap-wk-sm)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+        <a data-wk-prose-skip href="{{ $href }}" aria-label="{{ $accessibleName }}" data-wk-attachment-link class="flex min-w-0 flex-1 items-center gap-[var(--gap-wk-sm)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
     @endif
 
     {{-- Media tile: a real thumbnail when we have one, else the file glyph.
@@ -198,7 +198,7 @@
         class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)]"
     >
         @if($isImage)
-            <img src="{{ $thumbnail }}" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover" />
+            <img data-wk-prose-skip src="{{ $thumbnail }}" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover" />
         @else
             <x-wirekit::icon :name="$icon ?? 'file-text'" size="md" class="text-[color:var(--color-wk-text-muted)]" aria-hidden="true" />
         @endif

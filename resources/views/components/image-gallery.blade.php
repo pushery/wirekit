@@ -124,7 +124,7 @@
         @isset($empty)
             {{ $empty }}
         @else
-            <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
+            <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
         @endisset
     </div>
 @elseif($lightbox && $count > 0)

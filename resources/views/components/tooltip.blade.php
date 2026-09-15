@@ -13,6 +13,10 @@
     // already interactive (a button/link) to avoid a double tab-stop — the slot's own
     // focus then bubbles to the trigger and still shows the tooltip.
     'focusableTrigger' => true,
+    // `false` when the tooltip text is ALSO the trigger's accessible name, as on an icon-only
+    // control named by its tooltip. Describing a control with its own name makes a screen
+    // reader say it twice ("Fast mode, button, Fast mode"), so the pairing is left out.
+    'describes' => true,
     // Switch the tooltip off without removing it. A tooltip on a control that
     // has become inert — a collapsed sidebar item, a disabled action — has to be
     // able to go quiet, and `pointer-events-none` on the root is NOT a way to do
@@ -31,6 +35,9 @@
 @php
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // `describes="false"` on an unbound tag is the string "false", which is truthy.
+    $describes = BooleanProp::from($describes, true);
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
@@ -120,7 +127,7 @@
          reader actually arrives, and leaves it here when there is none so the wrapper case
          is unchanged. Done in JS rather than in Blade because the trigger is the CALLER's
          markup — this template never sees the element it needs to annotate. --}}
-    <div x-ref="trigger" data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @if($focusableTrigger) tabindex="0" @endif>
+    <div x-ref="trigger" @if($describes) data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @endif @if($focusableTrigger) tabindex="0" @endif>
         {{ $slot }}
     </div>
 

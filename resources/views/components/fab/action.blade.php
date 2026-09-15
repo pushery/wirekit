@@ -89,7 +89,7 @@
      The box is --size-wk-touch-target (44px) — the touch minimum, and these are the
      smallest targets on the screen. It reads the token rather than a literal so the
      floor lives in one place; a developer's own buttons sit next to these. --}}
-<{{ $tag }}
+<{{ $tag }} data-wk-prose-skip
     @if($href) href="{{ $href }}" @else type="button" @endif
     {{-- Only emit the name when there IS one. `aria-label=""` is worse than no
          aria-label at all: it suppresses the fallback to the element's own text

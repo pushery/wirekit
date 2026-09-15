@@ -26,4 +26,4 @@
     ]), $scope);
 @endphp
 
-<code {{ $attributes->class([$classes]) }}>{{ $slot }}</code>
+<code data-wk-prose-skip {{ $attributes->class([$classes]) }}>{{ $slot }}</code>

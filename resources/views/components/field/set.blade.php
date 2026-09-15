@@ -13,11 +13,33 @@
      leaves `@props` alone, so an `<x-…>` spelled inside the @props array — even in
      a `//` comment — is compiled as a real component tag and the view dies on an
      undefined `$component`. Measured here on 2026-09-04. --}}
+{{-- The group error, and why this view has a class behind it.
+
+     A message can belong to the GROUP rather than to one control: "choose at least one
+     role", or a rejected entry of an array field, which Laravel files under `roles.1` while
+     every checkbox is bound to `roles`. The set renders that message once, and the
+     checkboxes, radios and toggles inside point at it.
+
+     They cannot learn its id from this view, because a slot renders BEFORE the view of the
+     component that holds it. `Pushery\WireKit\Components\FieldSet` takes `name`, `error` and
+     `hint` in its constructor, which runs before the slot, and hands the controls a group
+     object through `@aware`. Everything else stays here, and the props stay declared below,
+     because that declaration is what every catalog and guard reads. --}}
 @props([
     'legend' => null,
     'hint' => null,
+    // The error-bag key the group answers for, and every entry below it: a rejected entry of
+    // an array field is filed under its index. The fieldset keeps it as its name attribute.
+    'name' => null,
+    // A message for the group as a whole. Takes precedence over the error bag.
+    'error' => null,
+    // Render the group error as a polite live region. Precedence: this prop, then the
+    // surrounding form's announce-errors, then config('wirekit.a11y.announce_error').
+    'announceError' => null,
     'scope' => null,
 ])
+
+@aware(['announceErrors' => null])
 
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -25,7 +47,26 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('field.set', $attributes->getAttributes());
 
+    use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\FieldGroup;
     use Pushery\WireKit\WireKit;
+
+    // `@aware` does not take its key out of the attribute bag, so the spelling written on the
+    // tag would render as a stray HTML attribute. Both spellings, as in field.
+    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+
+    // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
+    $announceError = BooleanProp::from($announceError ?? $announceErrors ?? config('wirekit.a11y.announce_error', true), true);
+
+    // The group the controls in the slot already answered to. Through the class it arrives as
+    // `$wkFieldSet`, and its ids are the ones they point at. A view compiled before the class
+    // existed reaches this file anonymously until its cache is cleared: the props then arrive
+    // as attributes, the group is built here, and the message still renders, only without the
+    // controls pointing at it.
+    $group = isset($wkFieldSet) && $wkFieldSet instanceof FieldGroup
+        ? $wkFieldSet
+        : FieldGroup::open($name, $error, $hint);
+    $groupMessage = $group->message($errors ?? null);
 
     // <fieldset> is the WCAG-recommended grouping container for related controls
     // (radio groups, checkbox groups, address blocks). The <legend> is its group
@@ -45,6 +86,10 @@
     $legendClasses = WireKit::resolveClasses('field.set', 'legend', 'mb-1 text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]', $scope);
     $hintClasses = WireKit::resolveClasses('field.set', 'hint', 'mb-3 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]', $scope);
 
+    // The group error takes the hint's place, the way a field's error replaces that field's
+    // hint: one message under the caption, above the controls a reader is about to scan.
+    $errorClasses = WireKit::resolveClasses('field.set', 'error', 'mb-3 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]', $scope);
+
     // How a slot is WRITTEN decides its TYPE (see Support\SlotAttributes): the block
     // form yields a ComponentSlot, the one-line form a plain string. Only the object
     // carries markup that is meant to render as markup, so only it is emitted raw —
@@ -54,10 +99,10 @@
 
     // `filled()` rather than a bare truthiness test: `legend="0"` is a caption a caller
     // asked for, and the old `@if($legend)` dropped it silently.
-    $hasLegend = $legendIsSlot ? trim((string) $legend) !== '' : filled($legend);
+    $hasLegend = $legendIsSlot ? $legend->hasActualContent() : filled($legend);
 @endphp
 
-<fieldset {{ $attributes->class([$classes]) }}>
+<fieldset @if($group->key !== null) name="{{ $group->key }}" @endif {{ $attributes->class([$classes]) }}>
     {{-- ⚠️ A <legend> IS THE GROUP'S CAPTION ONLY WHILE IT IS THE FIELDSET'S FIRST
          CHILD. One level down it is an ordinary inline box: the <fieldset> then has no
          accessible name, and a screen reader announces nothing before the controls —
@@ -76,8 +121,10 @@
             <legend class="{{ $legendClasses }}">{{ $legend }}</legend>
         @endif
     @endif
-    @if($hint)
-        <p class="{{ $hintClasses }}">{{ $hint }}</p>
+    @if($groupMessage !== null)
+        <p data-wk-prose-skip id="{{ $group->errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="{{ $errorClasses }}">{{ $groupMessage }}</p>
+    @elseif($group->hint !== null)
+        <p data-wk-prose-skip id="{{ $group->hintId }}" class="{{ $hintClasses }}">{{ $group->hint }}</p>
     @endif
 
     @if(config('app.debug') && str_contains((string) $slot, '<legend'))

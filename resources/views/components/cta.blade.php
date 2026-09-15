@@ -89,13 +89,13 @@
 <section data-variant="{{ $variant }}" {{ $attributes->class([$classes, $variantClasses]) }} @if($animateAttr) {!! $animateAttr !!} data-replayable="true" @endif>
     <div class="max-w-[var(--size-wk-container-md)] mx-auto">
         @isset($title)
-            <h{{ $levelValue }} class="text-[length:var(--text-wk-2xl,1.5rem)] sm:text-[length:var(--font-wk-heading-xl,2.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] mb-[var(--space-wk-md,1rem)]">
+            <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-2xl,1.5rem)] sm:text-[length:var(--font-wk-heading-xl,2.5rem)] font-[number:var(--font-wk-heading-weight)] leading-[var(--font-wk-heading-line-height,1.25)] mb-[var(--space-wk-md,1rem)]">
                 {{ $title }}
             </h{{ $levelValue }}>
         @endisset
 
         @isset($description)
-            <p class="text-[length:var(--text-wk-lg)] opacity-80 mb-[var(--space-wk-lg,1.5rem)]">
+            <p data-wk-prose-skip class="text-[length:var(--text-wk-lg)] opacity-80 mb-[var(--space-wk-lg,1.5rem)]">
                 {{ $description }}
             </p>
         @endisset

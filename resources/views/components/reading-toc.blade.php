@@ -153,13 +153,13 @@
         utility classes for decoration, inline style for load-bearing
         layout primitives.
     --}}
-    <ol role="list"
+    <ol data-wk-prose-skip role="list"
         class="wk-reading-toc__list wk-scrollbar flex flex-row items-center gap-[var(--reading-toc-gap)] py-[var(--reading-toc-padding-y)] px-[var(--reading-toc-padding-x)] overflow-x-auto"
         style="list-style: none; margin: 0; display: flex; flex-direction: row; align-items: center;"
     >
         <template x-for="item in items" :key="item.id">
-            <li class="wk-reading-toc__item shrink-0">
-                <a
+            <li data-wk-prose-skip class="wk-reading-toc__item shrink-0">
+                <a data-wk-prose-skip
                     :href="'#' + item.id"
                     :data-active="item.index === activeIndex ? 'true' : 'false'"
                     :data-level="item.level"

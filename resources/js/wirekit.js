@@ -7,6 +7,7 @@
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
+import { registerFindableDirective } from './utils/findable.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 import wirekitChartJs from './components/chart.js';
@@ -31,6 +32,7 @@ import wirekitWizard from './components/wizard.js';
 import wirekitClipboardButton from './components/clipboard-button.js';
 import wirekitReplayButton from './components/replay-button.js';
 import wirekitAccordion from './components/accordion.js';
+import wirekitBranchSwitcher from './components/branch-switcher.js';
 import wirekitTreeViewNode from './components/tree-view-node.js';
 import wirekitScrollFade from './components/scroll-fade.js';
 import wirekitScrollToTop from './components/scroll-to-top.js';
@@ -141,6 +143,8 @@ function registerComponents() {
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
     // apply it after EVERY render — not only the first. See utils/indeterminate.js.
     registerIndeterminateDirective(Alpine);
+    // Disclosure panels the browser find in page can open. See utils/findable.js.
+    registerFindableDirective(Alpine);
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitDropdown', wirekitDropdown);
@@ -164,6 +168,7 @@ function registerComponents() {
     Alpine.data('wirekitClipboardButton', wirekitClipboardButton);
     Alpine.data('wirekitReplayButton', wirekitReplayButton);
     Alpine.data('wirekitAccordion', wirekitAccordion);
+    Alpine.data('wirekitBranchSwitcher', wirekitBranchSwitcher);
     Alpine.data('wirekitTreeViewNode', wirekitTreeViewNode);
     Alpine.data('wirekitScrollFade', wirekitScrollFade);
     Alpine.data('wirekitScrollToTop', wirekitScrollToTop);

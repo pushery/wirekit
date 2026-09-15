@@ -33,7 +33,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -49,7 +49,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkFieldSet', 'wk-field-set']);
 @endphp
 
 
@@ -140,19 +140,31 @@
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $rawName, 'checkbox-');
     $name = $rawName ?? $id;
 
-    // Error detection: explicit prop OR Laravel validation bag
-    $hasError = $error || ($errors ?? null)?->has($name);
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    // The field.set around this checkbox, when there is one. It answers for its group: a
+    // message that belongs to all of its controls renders once, and every control points at it.
+    $fieldGroup = $wkFieldSet instanceof \Pushery\WireKit\Support\FieldGroup ? $wkFieldSet : null;
 
-    // aria-describedby: merge our own hint/error target with any caller-supplied
-    // value into ONE attribute. Two separate aria-describedby attributes would make
-    // the browser keep the first and silently drop the caller's association — the
-    // caller's intended description would be lost (WCAG). Own target first, then
-    // the caller's, matching the range-slider convention.
-    $ownDescribedBy = $hasError ? $id.'-error' : ($hint ? $id.'-hint' : null);
-    $callerDescribedBy = $attributes->get('aria-describedby');
-    $describedBy = trim(((string) ($ownDescribedBy ?? '')).' '.((string) ($callerDescribedBy ?? '')));
-    $describedBy = $describedBy !== '' ? $describedBy : null;
+    // Error detection: explicit prop OR Laravel validation bag. A bag entry under a key the
+    // group answers for is the group's message, not this checkbox's; rendered here as well, it
+    // would repeat under every control of the group.
+    $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($name) ?? false);
+    $hasError = $error || (! $groupOwnsBagEntry && ($errors ?? null)?->has($name));
+    $errorMessage = $error ?? ($groupOwnsBagEntry ? null : ($errors ?? null)?->first($name));
+
+    // Invalid on its own error or on its group's.
+    $isInvalid = $hasError || ($fieldGroup?->isInvalid($errors ?? null) ?? false);
+
+    // aria-describedby: our own hint/error target, the group's, and any caller-supplied value,
+    // merged into ONE attribute. Two separate aria-describedby attributes would make the
+    // browser keep the first and silently drop the other association (WCAG). The order lives
+    // in FieldGroup::describedBy, shared with radio and toggle.
+    $describedBy = \Pushery\WireKit\Support\FieldGroup::describedBy(
+        $fieldGroup,
+        $errors ?? null,
+        $hasError ? $id.'-error' : null,
+        $hint ? $id.'-hint' : null,
+        $attributes->get('aria-describedby'),
+    );
 
     // Visual box styling. The <input> uses .peer + .sr-only, and this box listens
     // to peer-checked / peer-focus-visible / peer-disabled via sibling selectors.
@@ -206,7 +218,7 @@
         'text-[color:var(--color-wk-accent-fg)]',
     ]), $scope);
 
-    if ($hasError) {
+    if ($isInvalid) {
         $boxClasses .= ' border-[var(--color-wk-border-error)]';
     }
 @endphp
@@ -245,7 +257,7 @@
                  box read as "none selected" while something was. --}}
             data-wk-indeterminate="{{ $indeterminate ? 'true' : 'false' }}"
             x-wk-indeterminate
-            @if($hasError) aria-invalid="true" @endif
+            @if($isInvalid) aria-invalid="true" @endif
             @if($optimisticConfig)
                 x-ref="control"
                 x-bind:aria-busy="isPending"
@@ -282,16 +294,17 @@
             </svg>
         </span>
 
-        @if($slot->isNotEmpty())
-            {{-- Slot-based label: supports rich HTML (links, formatting) for use cases like GDPR consent --}}
-            <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $slot }}</span>
-        @elseif($label)
 @php
     // Read, not consumed: a declared `required` prop would take the attribute out of the bag,
     // and the bag is what delivers it to the native control. A bare `required` arrives as
-    // `true`.
+    // `true`. Read once for both branches: the slot branch is the consent case, and consent
+    // checkboxes are exactly the required ones.
     $wkRequiredMarker = (bool) $attributes->get('required', false);
 @endphp
+        @if($slot->hasActualContent())
+            {{-- Slot-based label: supports rich HTML (links, formatting) for use cases like GDPR consent --}}
+            <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $slot }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
+        @elseif($label)
             <span class="{{ $textClasses }}{{ $hideLabel ? ' sr-only' : '' }}">{{ $label }}@if($wkRequiredMarker)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif</span>
         @endif
     </label>
@@ -305,8 +318,8 @@
 
     {{-- Error message or hint text --}}
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

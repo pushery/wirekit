@@ -291,7 +291,7 @@
                          tables to a screen reader, which is exactly the case where
                          knowing which month you are in matters most. --}}
                     <div :id="monthLabelId(month.offset)" class="text-center mb-[var(--padding-wk-y-sm)] font-[number:var(--font-wk-heading-weight)] text-[length:var(--text-wk-sm)]" x-text="month.label"></div>
-                    <table role="grid" class="w-full" :aria-labelledby="monthLabelId(month.offset)">
+                    <table data-wk-prose-skip role="grid" class="w-full" :aria-labelledby="monthLabelId(month.offset)">
                         <thead>
                             <tr>
                                 @foreach($weekdays as $day)
@@ -302,7 +302,7 @@
                                          spelling the WAI-ARIA date-picker example uses to give a column
                                          its full name — two letters is what fits in the cell, not what a
                                          screen reader should have to work from. --}}
-                                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day }}" :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day }}</th>
+                                    <th data-wk-prose-skip class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day }}" :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day }}</th>
                                 @endforeach
                             </tr>
                         </thead>
@@ -310,7 +310,7 @@
                             <template x-for="(week, weekIdx) in weeksOf(month.days)" :key="weekIdx">
                                 <tr role="row">
                                     <template x-for="day in week" :key="day.date">
-                                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange || day.isProvisionalEnd) ? 'true' : 'false'">
+                                        <td data-wk-prose-skip role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange || day.isProvisionalEnd) ? 'true' : 'false'">
                                             <button
                                                 type="button"
                                                 x-on:click="day.isCurrentMonth && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"
@@ -344,13 +344,13 @@
         </div>
     @else
     {{-- Calendar grid --}}
-    <table role="grid" class="w-full" :aria-labelledby="monthLabelId(0)" @keydown="handleKeydown($event)">
+    <table data-wk-prose-skip role="grid" class="w-full" :aria-labelledby="monthLabelId(0)" @keydown="handleKeydown($event)">
         <thead>
             <tr>
                 @foreach($weekdays as $day)
                     {{-- See the multi-month header above for why the abbreviation is
                          written twice and what `abbr` is doing here. --}}
-                    <th class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day }}" :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day }}</th>
+                    <th data-wk-prose-skip class="py-[var(--padding-wk-y-xs)] text-center text-[length:var(--text-wk-xs)] font-[number:var(--font-wk-body-weight)] text-[color:var(--color-wk-text-muted)]" scope="col" abbr="{{ $day }}" :abbr="weekdayHeaders[{{ $loop->index }}].long" x-text="weekdayHeaders[{{ $loop->index }}].short">{{ $day }}</th>
                 @endforeach
             </tr>
         </thead>
@@ -363,7 +363,7 @@
                              only allowed on gridcell/option/row/rowheader/tab/
                              treeitem roles — placing it on a <button> fails
                              axe-core's aria-allowed-attr (critical). --}}
-                        <td role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange || day.isProvisionalEnd) ? 'true' : 'false'">
+                        <td data-wk-prose-skip role="gridcell" class="p-0.5 text-center" :aria-selected="(day.isSelected || day.isInRange || day.isProvisionalEnd) ? 'true' : 'false'">
                             <button
                                 type="button"
                                 x-on:click="day.isCurrentMonth && {{ $optimisticConfig ? 'run' : 'selectDate' }}(day.date)"

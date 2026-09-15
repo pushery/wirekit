@@ -76,7 +76,9 @@
     if ($schemaText === null) {
         $schemaText = $plainText
             ? trim((string) preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($answerHtml), ENT_QUOTES | ENT_HTML5, 'UTF-8')))
-            : $answerHtml;
+            // Without comments: in the page they are Livewire's morph markers and stay, in the
+            // schema they would be recorded as part of the answer.
+            : \Pushery\WireKit\Support\SlotContent::text($answerHtml);
     }
 
     // Record what is actually being rendered. A search engine is told about this

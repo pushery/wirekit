@@ -60,7 +60,7 @@
         'transition-colors duration-[var(--transition-wk-duration)]',
     ]));
 
-    $hasChildren = $slot->isNotEmpty();
+    $hasChildren = $slot->hasActualContent();
 
     // A screen reader announces the role and state of the element that RECEIVES focus,
     // and focus lands on the label row. With `role="treeitem"` one level up on the <li>,
@@ -81,7 +81,7 @@
     $groupId = $hasChildren ? DomId::unique(null, 'wk-tree-group-') : null;
 @endphp
 
-<li
+<li data-wk-prose-skip
     role="none"
     {{ $attributes->class([$nodeClasses]) }}
     {{-- The toggle lives in resources/js/components/tree-view-node.js: it flips
@@ -136,7 +136,7 @@
 
     {{-- Nested children group --}}
     @if($hasChildren)
-        <ul
+        <ul data-wk-prose-skip
             role="group"
             id="{{ $groupId }}"
             x-show="nodeExpanded"

@@ -22,6 +22,7 @@ import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.j
  * @param {string|null}  [config.persist]   storage key; null keeps it ephemeral
  * @param {string}       [config.persistDriver] 'local' (default) or 'cookie'. The cookie
  *   driver exists so the SERVER can seed the first render — see persisted-flag.js.
+ * @param {boolean}      [config.expandable] whether a reader can widen it; absent means true
  */
 export default function wirekitAppRail(config = {}) {
     return {
@@ -60,6 +61,17 @@ export default function wirekitAppRail(config = {}) {
          */
         ready: false,
 
+        /**
+         * Whether a reader can widen this rail at all: its `expandable` prop.
+         *
+         * Every rail runs this component, because one of its widths is decided in the page
+         * rather than on the server (see `_presented()`). Only an expandable rail has a toggle,
+         * a stored preference and a state worth announcing; a rail that cannot expand gets none
+         * of those. Absent means true, because the factory predates the flag and every call
+         * made without it is an expandable rail.
+         */
+        _canToggle: config.expandable !== false,
+
         _persistKey: config.persist || null,
         _persistDriver: config.persistDriver === 'cookie' ? 'cookie' : 'local',
         _readyFrame: null,
@@ -83,7 +95,8 @@ export default function wirekitAppRail(config = {}) {
          * having been involved.
          *
          * Forced collapsed below the breakpoint, and the stored value left untouched, so a
-         * reader who expanded the rail on a laptop still finds it expanded there.
+         * reader who expanded the rail on a laptop still finds it expanded there. The one
+         * exception is a drawer the rail has to itself, which `_presented()` explains.
          */
         _persisted: false,
 
@@ -101,8 +114,41 @@ export default function wirekitAppRail(config = {}) {
             return this._viewport ? this._viewport.matches === true : true;
         },
 
+        /**
+         * Whether this rail is the only column of an off-canvas drawer.
+         *
+         * The shell says so on the drawer itself, because it is the one that knows what else went
+         * into it. Beside a module column the drawer is already as wide as a phone allows, and
+         * widening the rail there pushed the column off the device (the measurement on
+         * `_persisted` above). Alone, the expanded rail is narrower than any phone, while the
+         * narrow one is a strip of unnamed icons on a screen with no hover: a tap navigates long
+         * before a tooltip could appear.
+         */
+        _aloneInDrawer() {
+            return !! this.$el?.closest?.('[data-wk-rail-only]');
+        },
+
+        /**
+         * The width this rail presents right now.
+         *
+         * At or above the breakpoint it is the reader's: the stored preference, for a rail that
+         * has one. Below it the rail is part of a drawer, the preference stays stored and unused,
+         * and the drawer decides, from whether the rail has it to itself.
+         */
+        _presented() {
+            if (this._expandable()) {
+                return this._canToggle && this._persisted;
+            }
+
+            return this._aloneInDrawer();
+        },
+
         init() {
-            this._persisted = readPersistedFlag(this._persistKey, this.expanded, this._persistDriver);
+            // A rail that cannot expand has no preference to read. Its resting width is the one
+            // `labels` names, and the only other width it ever takes is a drawer's.
+            this._persisted = this._canToggle
+                ? readPersistedFlag(this._persistKey, this.expanded, this._persistDriver)
+                : false;
 
             // `64rem` rather than `1024px`: the shell's own `lg:` utilities are rem-based,
             // so a reader with a larger root font size crosses both at the same moment.
@@ -110,12 +156,12 @@ export default function wirekitAppRail(config = {}) {
                 ? window.matchMedia('(min-width: 64rem)')
                 : null;
 
-            this.expanded = this._persisted && this._expandable();
+            this.expanded = this._presented();
 
             // Re-decide on a rotation or a resize across the breakpoint. Without this, a
             // phone held sideways at 812px keeps whichever state it entered with.
             this._onViewportChange = () => {
-                this.expanded = this._persisted && this._expandable();
+                this.expanded = this._presented();
                 this.wide = this.expanded;
                 this._announce();
             };
@@ -161,7 +207,11 @@ export default function wirekitAppRail(config = {}) {
                 this.toggle();
             };
 
-            window.addEventListener('wirekit:rail:toggle', this._onExternalToggle);
+            // Only a rail a reader can widen listens. Any other would answer an outside trigger
+            // by refusing it, and a listener that can only refuse is one more thing to tear down.
+            if (this._canToggle) {
+                window.addEventListener('wirekit:rail:toggle', this._onExternalToggle);
+            }
 
             // Announce the state on arrival so a trigger rendered OUTSIDE the rail can
             // paint the right aria-expanded before its first click instead of guessing.
@@ -214,7 +264,7 @@ export default function wirekitAppRail(config = {}) {
             // it rather than the one in front: an external `wirekit:rail:toggle` event, or a
             // developer's own button, reaches this method the same way and must not be able
             // to widen the drawer past the device.
-            if (! this._expandable()) {
+            if (! this._canToggle || ! this._expandable()) {
                 return;
             }
 
@@ -251,6 +301,12 @@ export default function wirekitAppRail(config = {}) {
         },
 
         _announce() {
+            // A rail that cannot expand has no state for an outside trigger to mirror, and an
+            // announcement from it would repaint that trigger for a rail it does not control.
+            if (! this._canToggle) {
+                return;
+            }
+
             window.dispatchEvent(
                 new CustomEvent('wirekit:rail:toggled', {
                     // Optional chaining because the id is optional AND because `$el` is an

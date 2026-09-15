@@ -131,7 +131,7 @@
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
-<{{ $tag }}
+<{{ $tag }} data-wk-prose-skip
     @if($href !== null) href="{{ $href }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{ $attributes->except('rel')->class([$classes, $interactiveClasses]) }}

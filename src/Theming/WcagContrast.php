@@ -4,21 +4,27 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Theming;
 
+use InvalidArgumentException;
+
 /**
  * WCAG 2.1 contrast-ratio computation for WireKit theme tokens.
  *
  * Pure utility — no Laravel facade dependencies, no I/O. Given a CSS
- * color string in OKLCH or hex form, returns its relative luminance,
- * and given a pair of strings, returns their WCAG contrast ratio.
+ * color string, returns its relative luminance, and given a pair of strings,
+ * returns their WCAG contrast ratio as a reader sees it.
  *
  * Scope: this helper covers the color formats WireKit itself emits and the
- * forms a browser hands back from `getComputedStyle` — `oklch(L C H)` (L as a
- * decimal 0–1 or a percentage), `#rrggbb` / `#rgb` hex, `color-mix(in srgb, …)`,
- * and `rgb()` / `rgba()` (both the comma and the modern space form). Anything
- * else — named colors, `currentColor`, `color-mix` in a non-sRGB space — returns
- * `null`, which means "unparseable, skip this pairing" and MUST be treated as such
- * (assert on `null`; do not cast to float — `(float) null` reads as a false 0.00:1),
- * never as a contrast failure.
+ * forms a browser hands back from `getComputedStyle` — `oklch(L C H)` and
+ * `oklab(L a b)` (L as a decimal 0–1 or a percentage), hex in all four lengths,
+ * `rgb()` / `rgba()` (both the comma and the modern space form),
+ * `color(srgb …)`, `color-mix(in srgb, …)` and `transparent`, each with its
+ * alpha. A translucent foreground is composited over its background before the
+ * ratio is taken; a translucent background has no ratio of its own. Anything
+ * else — named colors, `currentColor`, `color-mix` in a non-sRGB space, a
+ * `color()` in another space — returns `null`, which means "unmeasurable, skip
+ * this pairing" and MUST be treated as such (assert on `null`; do not cast to
+ * float — `(float) null` reads as a false 0.00:1), never as a contrast failure.
+ * unmeasurableReason() says which of the two it was.
  *
  * OKLCH → sRGB conversion follows the CSS Color Module 4 specification:
  *
@@ -83,44 +89,111 @@ final class WcagContrast
      * Parse a CSS color string into linear sRGB [r, g, b] in 0..1.
      * Returns null when the format is unsupported.
      *
+     * The alpha channel is ignored here, as it always has been: a translucent color returns the
+     * color it is made of. Every contrast question needs the alpha, and ratio() reads it through
+     * parseToLinearRgba(). A fully transparent color has no color to return and is null, which is
+     * also what the `transparent` keyword gave before this parser could read it.
+     *
      * @return array{0: float, 1: float, 2: float}|null
      */
     public static function parseToLinearRgb(string $color): ?array
     {
+        $rgba = self::parseToLinearRgba($color);
+
+        if ($rgba === null || $rgba[3] <= 0.0) {
+            return null;
+        }
+
+        return [$rgba[0], $rgba[1], $rgba[2]];
+    }
+
+    /**
+     * Parse a CSS color string into linear sRGB plus alpha: [r, g, b, a], each in 0..1.
+     * Returns null when the format, or its alpha, is unsupported.
+     *
+     * Reads #rgb, #rgba, #rrggbb and #rrggbbaa; oklch(L C H) with an optional `/ alpha`; rgb() and
+     * rgba() in the comma form and the slash form; the `transparent` keyword; and
+     * color-mix(in srgb, …), whose operands may themselves be translucent. An alpha is a number or
+     * a percentage, and one this cannot read makes the whole color null: taken for opaque, it
+     * would be the overestimate this parser exists to end.
+     *
+     * @return array{0: float, 1: float, 2: float, 3: float}|null
+     */
+    public static function parseToLinearRgba(string $color): ?array
+    {
         $color = trim($color);
 
-        // Hex form — #rgb / #rrggbb (8-digit alpha not supported for contrast).
-        if (preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $color, $m) === 1) {
+        if (strcasecmp($color, 'transparent') === 0) {
+            return [0.0, 0.0, 0.0, 0.0];
+        }
+
+        // Hex form — #rgb, #rgba, #rrggbb, #rrggbbaa.
+        if (preg_match('/^#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/', $color, $m) === 1) {
             $hex = $m[1];
-            if (strlen($hex) === 3) {
-                $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+            if (strlen($hex) <= 4) {
+                $hex = implode('', array_map(static fn (string $digit): string => $digit.$digit, str_split($hex)));
             }
-            $r = hexdec(substr($hex, 0, 2)) / 255.0;
-            $g = hexdec(substr($hex, 2, 2)) / 255.0;
-            $b = hexdec(substr($hex, 4, 2)) / 255.0;
+            $channel = static fn (int $offset): float => hexdec(substr($hex, $offset, 2)) / 255.0;
 
-            return [self::srgbToLinear($r), self::srgbToLinear($g), self::srgbToLinear($b)];
+            return [
+                self::srgbToLinear($channel(0)),
+                self::srgbToLinear($channel(2)),
+                self::srgbToLinear($channel(4)),
+                strlen($hex) === 8 ? $channel(6) : 1.0,
+            ];
         }
 
-        // OKLCH form. Accept oklch(L C H) and oklch(L C H / alpha) — alpha
-        // ignored for contrast computation. L may be 0..1 decimal or N%.
+        // OKLCH form: oklch(L C H) and oklch(L C H / alpha). L may be 0..1 decimal or N%.
         // C is a small decimal (typically 0..0.4). H is degrees (any value).
-        if (preg_match('#^oklch\(\s*([^\s,)]+)\s+([^\s,)]+)\s+([^\s,)/]+)(?:\s*/\s*[^\s)]+)?\s*\)$#i', $color, $m) === 1) {
-            $L = self::parseOklchL($m[1]);
-            $C = self::parseOklchC($m[2]);
-            $H = (float) $m[3];
+        if (preg_match('#^oklch\(\s*([^\s,)]+)\s+([^\s,)]+)\s+([^\s,)/]+)(?:\s*/\s*([^\s)]+))?\s*\)$#i', $color, $m) === 1) {
+            $alpha = isset($m[4]) ? self::parseAlpha($m[4]) : 1.0;
+            if ($alpha === null) {
+                return null;
+            }
 
-            return self::oklchToLinearRgb($L, $C, $H);
+            [$r, $g, $b] = self::oklchToLinearRgb(self::parseOklchL($m[1]), self::parseOklchC($m[2]), (float) $m[3]);
+
+            return [$r, $g, $b, $alpha];
         }
 
-        // color-mix(in srgb, <c1> [p1%], <c2> [p2%]) — the softened tinted
-        // surfaces (badge / alert / stat) are built with color-mix, so without
-        // this arm every tinted background is unauditable (returns null) and a
-        // real AA failure on a soft surface can only be caught downstream by a
-        // developer's axe run. Mix in the sRGB space per the CSS
-        // spec: convert operands to gamma-encoded sRGB, blend by weight, convert
-        // back to linear. Only `in srgb` is supported (the space WireKit uses);
-        // other interpolation spaces return null rather than guess.
+        // OKLab form: oklab(L a b) and oklab(L a b / alpha). This is how a browser serializes a
+        // color-mix(in oklab, …) — WireKit's own translucent text and rail tokens come back from
+        // getComputedStyle in exactly this shape. L is 0..1 or N%; a and b are numbers, or N% of 0.4.
+        if (preg_match('#^oklab\(\s*([^\s,)]+)\s+([^\s,)]+)\s+([^\s,)/]+)(?:\s*/\s*([^\s)]+))?\s*\)$#i', $color, $m) === 1) {
+            $alpha = isset($m[4]) ? self::parseAlpha($m[4]) : 1.0;
+            if ($alpha === null) {
+                return null;
+            }
+
+            $axis = static fn (string $raw): float => str_ends_with($raw, '%') ? ((float) rtrim($raw, '%')) / 100.0 * 0.4 : (float) $raw;
+            [$r, $g, $b] = self::oklabToLinearRgb(self::parseOklchL($m[1]), $axis($m[2]), $axis($m[3]));
+
+            return [$r, $g, $b, $alpha];
+        }
+
+        // color(srgb r g b) and color(srgb r g b / alpha): how a browser serializes a
+        // color-mix(in srgb, …), with channels 0..1 or N%. Another color space is not converted
+        // here, and returns null rather than being read as sRGB.
+        if (preg_match('#^color\(\s*srgb\s+([\d.]+%?)\s+([\d.]+%?)\s+([\d.]+%?)(?:\s*/\s*([^\s)]+))?\s*\)$#i', $color, $m) === 1) {
+            $alpha = isset($m[4]) ? self::parseAlpha($m[4]) : 1.0;
+            if ($alpha === null) {
+                return null;
+            }
+
+            $channel = static fn (string $raw): float => max(0.0, min(1.0, str_ends_with($raw, '%') ? ((float) $raw) / 100.0 : (float) $raw));
+
+            return [
+                self::srgbToLinear($channel($m[1])),
+                self::srgbToLinear($channel($m[2])),
+                self::srgbToLinear($channel($m[3])),
+                $alpha,
+            ];
+        }
+
+        // color-mix(in srgb, <c1> [p1%], <c2> [p2%]) — the softened tinted surfaces (badge / alert /
+        // stat) are built with color-mix, so without this arm every tinted background is
+        // unauditable. Only `in srgb` is supported (the space WireKit uses); other interpolation
+        // spaces return null rather than guess.
         if (preg_match('#^color-mix\(\s*in\s+srgb\s*,\s*(.+)\)$#is', $color, $m) === 1) {
             $parts = self::splitTopLevelComma($m[1]);
             if (count($parts) !== 2) {
@@ -130,14 +203,14 @@ final class WcagContrast
             [$color1, $pct1] = self::parseMixOperand($parts[0]);
             [$color2, $pct2] = self::parseMixOperand($parts[1]);
 
-            $lin1 = self::parseToLinearRgb($color1);
-            $lin2 = self::parseToLinearRgb($color2);
-            if ($lin1 === null || $lin2 === null) {
+            $first = self::parseToLinearRgba($color1);
+            $second = self::parseToLinearRgba($color2);
+            if ($first === null || $second === null) {
                 return null;
             }
 
-            // Normalize weights: if one percentage is omitted it takes the
-            // remainder; if both are omitted it is a 50/50 mix (CSS default).
+            // An omitted percentage takes the remainder; two omitted are a 50/50 mix (CSS default).
+            $sum = 100.0;
             if ($pct1 === null && $pct2 === null) {
                 $w1 = 0.5;
             } elseif ($pct1 === null) {
@@ -150,32 +223,64 @@ final class WcagContrast
             }
             $w2 = 1.0 - $w1;
 
-            // Blend in gamma-encoded sRGB, then return linear for luminance.
-            $srgb1 = array_map(self::linearToSrgb(...), $lin1);
-            $srgb2 = array_map(self::linearToSrgb(...), $lin2);
-            $mixed = [
-                self::srgbToLinear($srgb1[0] * $w1 + $srgb2[0] * $w2),
-                self::srgbToLinear($srgb1[1] * $w1 + $srgb2[1] * $w2),
-                self::srgbToLinear($srgb1[2] * $w1 + $srgb2[2] * $w2),
-            ];
+            // Percentages adding up to less than 100% leave the result translucent by that much
+            // (CSS Color 5's alpha multiplier); above 100% they are only normalized.
+            $multiplier = $sum < 100.0 ? $sum / 100.0 : 1.0;
 
-            return $mixed;
+            // Premultiplied, as CSS mixes: each operand's channels count by its own alpha, so a
+            // color mixed with `transparent` fades rather than darkening toward black. For two
+            // opaque operands this is exactly the plain weighted blend it replaced.
+            $alpha = $first[3] * $w1 + $second[3] * $w2;
+            if ($alpha <= 0.0) {
+                return [0.0, 0.0, 0.0, 0.0];
+            }
+
+            $mix = static fn (int $i): float => self::srgbToLinear(
+                (self::linearToSrgb($first[$i]) * $first[3] * $w1 + self::linearToSrgb($second[$i]) * $second[3] * $w2) / $alpha
+            );
+
+            return [$mix(0), $mix(1), $mix(2), $alpha * $multiplier];
         }
 
-        // rgb() / rgba() — getComputedStyle returns resolved colors in this form,
-        // so a form control's live border/background read back from the DOM was
-        // unauditable (returned null) without this arm. Match both the
-        // legacy comma form (rgb(255, 0, 0) / rgba(255,0,0,.5)) AND the modern space
-        // form (rgb(255 255 255 / 50%)); alpha is ignored, as with oklch's `/ alpha`.
-        if (preg_match('/^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/i', $color, $m) === 1) {
-            $r = ((float) $m[1]) / 255.0;
-            $g = ((float) $m[2]) / 255.0;
-            $b = ((float) $m[3]) / 255.0;
+        // rgb() / rgba() — getComputedStyle returns resolved colors in this form, so a form
+        // control's live border or background read back from the DOM is auditable. Both the
+        // legacy comma form (rgba(255, 0, 0, .5)) and the modern slash form (rgb(255 0 0 / 50%)).
+        if (preg_match('#^rgba?\(\s*([\d.]+%?)\s*[,\s]\s*([\d.]+%?)\s*[,\s]\s*([\d.]+%?)\s*(?:[,/]\s*([\d.]+%?)\s*)?\)$#i', $color, $m) === 1) {
+            $alpha = isset($m[4]) ? self::parseAlpha($m[4]) : 1.0;
+            if ($alpha === null) {
+                return null;
+            }
 
-            return [self::srgbToLinear($r), self::srgbToLinear($g), self::srgbToLinear($b)];
+            $channel = static fn (string $value): float => max(0.0, min(1.0, str_ends_with($value, '%')
+                ? ((float) $value) / 100.0
+                : ((float) $value) / 255.0));
+
+            return [
+                self::srgbToLinear($channel($m[1])),
+                self::srgbToLinear($channel($m[2])),
+                self::srgbToLinear($channel($m[3])),
+                $alpha,
+            ];
         }
 
         return null;
+    }
+
+    /**
+     * An alpha value as 0..1, from a number or a percentage. Null for anything else.
+     */
+    private static function parseAlpha(string $token): ?float
+    {
+        if (preg_match('/^(\d*\.?\d+)(%?)$/', trim($token), $m) !== 1) {
+            return null;
+        }
+
+        $value = (float) $m[1];
+        if ($m[2] === '%') {
+            $value /= 100.0;
+        }
+
+        return max(0.0, min(1.0, $value));
     }
 
     /**
@@ -256,23 +361,67 @@ final class WcagContrast
 
     /**
      * WCAG 2.1 contrast ratio between two color strings.
-     * Returns a float >= 1.0 (1:1 = identical, 21:1 = max), or null if
-     * either input is in an unsupported format.
+     * Returns a float >= 1.0 (1:1 = identical, 21:1 = max), or null if either input is in an
+     * unsupported format, or if the BACKGROUND is translucent.
+     *
+     * A translucent foreground is laid over the background first, source-over in encoded sRGB,
+     * the way a browser composites it. Measured as if it were opaque, 50% black on white read
+     * 21:1 where a reader sees 3.98:1 — the dangerous direction, because nothing turns red. A
+     * translucent background has no contrast of its own: what shows through depends on whatever
+     * lies beneath it, which the two strings do not say, so it is refused rather than guessed.
      */
     public static function ratio(string $foreground, string $background): ?float
     {
-        $fg = self::parseToLinearRgb($foreground);
-        $bg = self::parseToLinearRgb($background);
-        if ($fg === null || $bg === null) {
+        $fg = self::parseToLinearRgba($foreground);
+        $bg = self::parseToLinearRgba($background);
+        if ($fg === null || $bg === null || $bg[3] < 1.0) {
             return null;
         }
 
-        $lFg = self::relativeLuminance($fg);
-        $lBg = self::relativeLuminance($bg);
+        $lFg = self::relativeLuminance($fg[3] < 1.0 ? self::compositeOver($fg, $bg) : [$fg[0], $fg[1], $fg[2]]);
+        $lBg = self::relativeLuminance([$bg[0], $bg[1], $bg[2]]);
         $lighter = max($lFg, $lBg);
         $darker = min($lFg, $lBg);
 
         return ($lighter + 0.05) / ($darker + 0.05);
+    }
+
+    /**
+     * Why ratio() returned null for this pair, or null when it would return a number.
+     *
+     * "translucent-background" and "unsupported-format" are different findings, and only the
+     * second is about how a value is written. Reporting both as a format problem sends a
+     * developer looking for a typo in a value that parsed perfectly well.
+     *
+     * @return 'translucent-background'|'unsupported-format'|null
+     */
+    public static function unmeasurableReason(string $foreground, string $background): ?string
+    {
+        $fg = self::parseToLinearRgba($foreground);
+        $bg = self::parseToLinearRgba($background);
+
+        if ($fg === null || $bg === null) {
+            return 'unsupported-format';
+        }
+
+        return $bg[3] < 1.0 ? 'translucent-background' : null;
+    }
+
+    /**
+     * Lay a translucent color over an opaque one: source-over, blended in encoded sRGB.
+     *
+     * @param  array{0: float, 1: float, 2: float, 3: float}  $top
+     * @param  array{0: float, 1: float, 2: float, 3: float}  $under
+     * @return array{0: float, 1: float, 2: float}
+     */
+    private static function compositeOver(array $top, array $under): array
+    {
+        $alpha = $top[3];
+        $blend = static fn (int $i): float => self::srgbToLinear(
+            self::linearToSrgb($top[$i]) * $alpha + self::linearToSrgb($under[$i]) * (1.0 - $alpha)
+        );
+
+        return [$blend(0), $blend(1), $blend(2)];
     }
 
     /**
@@ -296,6 +445,37 @@ final class WcagContrast
         }
 
         return 'fail';
+    }
+
+    /**
+     * Grade a contrast ratio against WCAG 2.1: "AAA", "AA" or "fail".
+     *
+     * - text: AA at 4.5:1 (1.4.3), AAA at 7:1 (1.4.6)
+     * - large-text: AA at 3:1 (1.4.3), AAA at 4.5:1 (1.4.6)
+     * - ui — components, graphics, focus indicators: AA at 3:1 (1.4.11). WCAG 2.x defines no AAA
+     *   level for non-text contrast, so the best a UI pairing can be is "AA".
+     *
+     * No warning band: that is classify()'s, and its callers rely on it. This answers the question
+     * a page asks when it labels a pairing AA or AAA.
+     *
+     * @return 'AAA'|'AA'|'fail'
+     *
+     * @throws InvalidArgumentException for a use it does not know; grading it as text would answer a question nobody asked
+     */
+    public static function conformance(float $ratio, string $use = 'text'): string
+    {
+        [$aa, $aaa] = match ($use) {
+            'text' => [4.5, 7.0],
+            'large-text' => [3.0, 4.5],
+            'ui' => [3.0, null],
+            default => throw new InvalidArgumentException(sprintf('Unknown contrast use "%s". Expected text, large-text or ui.', $use)),
+        };
+
+        if ($aaa !== null && $ratio >= $aaa) {
+            return 'AAA';
+        }
+
+        return $ratio >= $aa ? 'AA' : 'fail';
     }
 
     /** Convert oklch L-component (0..1 decimal OR "NN%" percentage) to 0..1 float. */

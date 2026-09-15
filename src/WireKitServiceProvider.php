@@ -14,6 +14,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\View\Compilers\BladeCompiler;
 use Pushery\WireKit\Charts\ChartManager;
 use Pushery\WireKit\Components\Chart;
+use Pushery\WireKit\Components\FieldSet;
 use Pushery\WireKit\Console\BoostSkillsCommand;
 use Pushery\WireKit\Console\ClassByAreaCommand;
 use Pushery\WireKit\Console\ComponentMakeCommand;
@@ -42,6 +43,7 @@ use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
 use Pushery\WireKit\Support\DomId;
+use Pushery\WireKit\Support\FlagPackage;
 
 class WireKitServiceProvider extends ServiceProvider
 {
@@ -232,6 +234,19 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../resources/fonts' => public_path('vendor/wirekit/fonts'),
             ], 'wirekit-fonts');
 
+            // Flags from the optional pushery/wirekit-flags package, published with their manifest
+            // to public/vendor/wirekit/flags/, so the web server serves them and the flag
+            // component can tell a current copy from a stale one. Registered only when the
+            // package is there to publish from.
+            $flagPackage = FlagPackage::root();
+
+            if ($flagPackage !== null) {
+                $this->publishes([
+                    $flagPackage.'/flags' => public_path('vendor/wirekit/flags'),
+                    $flagPackage.'/flags.json' => public_path('vendor/wirekit/flags/flags.json'),
+                ], 'wirekit-flags');
+            }
+
             // Per-preset publish tags, so an app can ship only what it activates
             // itself. Each registered font gets `wirekit-font-<key>`:
             //
@@ -259,6 +274,7 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
                 __DIR__.'/../dist/wirekit-tiptap.js' => public_path('vendor/wirekit/wirekit-tiptap.js'),
                 __DIR__.'/../dist/wirekit-optimistic.js' => public_path('vendor/wirekit/wirekit-optimistic.js'),
+                __DIR__.'/../dist/wirekit-theme.js' => public_path('vendor/wirekit/wirekit-theme.js'),
                 __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
                 __DIR__.'/../dist/wirekit-alpine.csp.js' => public_path('vendor/wirekit/wirekit-alpine.csp.js'),
             ], 'wirekit-scripts');
@@ -272,6 +288,7 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../dist/wirekit-apex.js' => public_path('vendor/wirekit/wirekit-apex.js'),
                 __DIR__.'/../dist/wirekit-tiptap.js' => public_path('vendor/wirekit/wirekit-tiptap.js'),
                 __DIR__.'/../dist/wirekit-optimistic.js' => public_path('vendor/wirekit/wirekit-optimistic.js'),
+                __DIR__.'/../dist/wirekit-theme.js' => public_path('vendor/wirekit/wirekit-theme.js'),
                 __DIR__.'/../dist/wirekit-alpine.js' => public_path('vendor/wirekit/wirekit-alpine.js'),
                 __DIR__.'/../dist/wirekit-alpine.csp.js' => public_path('vendor/wirekit/wirekit-alpine.csp.js'),
                 __DIR__.'/../dist/wirekit.min.css' => public_path('vendor/wirekit/wirekit.min.css'),
@@ -315,6 +332,12 @@ class WireKitServiceProvider extends ServiceProvider
         // resolved" — the half that was missing.
         $this->callAfterResolving('blade.compiler', function (BladeCompiler $blade) use ($prefix) {
             $blade->anonymousComponentPath(__DIR__.'/../resources/views/components', $prefix);
+
+            // One file on that path has a class behind it, under the same tag. A set hands the
+            // controls in its slot what they point at, and a slot renders before the view that
+            // holds it; only a constructor runs early enough. The markup and the declared props
+            // stay in the view, so every reader of `@props` still finds them there.
+            $blade->component(FieldSet::class, $prefix.'::field.set');
         });
 
         // Register class-based Blade components with 'wirekit' prefix
@@ -388,66 +411,26 @@ class WireKitServiceProvider extends ServiceProvider
 
         // @wirekitThemeScript — the no-FOUC head script.
         //
-        // Applies the stored theme BEFORE the first paint. This has to be an
-        // inline, synchronous script in <head>: any deferred or external script
-        // runs after the browser has already painted the light theme, and the
-        // reader sees a white flash before the page turns dark. That flash is
-        // the entire reason this directive exists, and it is why the script
-        // cannot be folded into the main bundle.
+        // Applies the stored theme BEFORE the first paint. It has to be a plain, classic script at the
+        // top of <head>: the browser holds the page until such a script has run, so the theme is set
+        // before anything paints. A deferred, async or module script runs after the first paint, the
+        // reader sees a light page turn dark, and preventing that flash is the entire reason this
+        // directive exists. It is also why the script cannot ride the main bundle.
         //
-        // The reader half depends on the configured storage driver:
-        //   'local'  — reads localStorage (client-only; this script IS the only
-        //              thing that can apply the theme before paint).
-        //   'cookie' — reads document.cookie. With this driver the server can
-        //              already have rendered <html class="dark"> from the request
-        //              cookie, so this script is a safety net (chiefly for the
-        //              'system' case and for a first render the server did not
-        //              resolve). It scans the cookie pair list by exact name — the
-        //              same reader the Alpine control uses — so both agree.
+        // The script is dist/wirekit-theme.js, one file for both deliveries; see themeScriptTag().
+        // It is written into the page by default, or loaded as that file when `wirekit.theme.script`
+        // is 'external', for a policy that allows scripts from the application's own origin and no
+        // inline script at all.
         //
-        // Takes an optional CSP nonce: @wirekitThemeScript($nonce). Apps without
-        // a CSP pass nothing.
+        // Takes an optional CSP nonce: @wirekitThemeScript($nonce). Apps without a CSP pass nothing.
         Blade::directive('wirekitThemeScript', function ($expression) {
             $expression = trim($expression);
             $nonceExpr = $expression === '' ? "''" : $expression;
 
             return '<?php
                 $__wk_nonce = '.$nonceExpr.';
-                $__wk_key = config("wirekit.theme.storage_key", "wirekit-theme");
-                $__wk_storage = config("wirekit.theme.storage", "local") === "cookie" ? "cookie" : "local";
                 $__wk_nonceAttr = $__wk_nonce ? \' nonce="\' . e($__wk_nonce) . \'"\' : "";
-                // `Js::from`, not `json_encode`, and not AlpinePayload. This string is
-                // concatenated into a `<script>` block, where HTML escaping does not apply —
-                // the package\'s own encoder docblock names that as the one place
-                // AlpinePayload must never be used, because it sets JSON_UNESCAPED_SLASHES
-                // and a payload containing `</script>` would close the block.
-                //
-                // Plain `json_encode` was safe here only by an accident of its defaults:
-                // slashes ARE escaped without that flag. `<!--` was not, and the day somebody
-                // unified this on the house encoder the accident would have gone the other way.
-                if ($__wk_storage === "cookie") {
-                    // Scan document.cookie by exact name (no regex, so a key with
-                    // regex-special characters cannot break the match). Mirrors the
-                    // Alpine control\'s _readCookie().
-                    $__wk_reader = \'var s=null,wc=(document.cookie||"").split("; ");\'
-                        . \'for(var i=0;i<wc.length;i++){var we=wc[i].indexOf("="),wn=we<0?wc[i]:wc[i].slice(0,we);\'
-                        . \'if(wn===\' . \Illuminate\Support\Js::from($__wk_key) . \'){s=decodeURIComponent(wc[i].slice(we+1));break;}}\';
-                } else {
-                    $__wk_reader = \'var s=localStorage.getItem(\' . \Illuminate\Support\Js::from($__wk_key) . \');\';
-                }
-                echo \'<script\' . $__wk_nonceAttr . \'>\'
-                    . \'(function(){try{\' . $__wk_reader
-                    // No stored choice means follow the OS — a first visit should
-                    // look like the rest of the reader\'s machine, not like our
-                    // default. An explicit choice always wins over the OS.
-                    . \'var d=s==="dark"||(s!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);\'
-                    . \'document.documentElement.classList.toggle("dark",d);\'
-                    // localStorage throws in private mode and when storage is
-                    // disabled entirely; the cookie reader cannot throw but is
-                    // wrapped identically. Swallowing it leaves the OS preference
-                    // in charge, which is the right fallback — never a broken page.
-                    . \'}catch(e){}})();\'
-                    . \'</scr\' . \'ipt>\' . "\n";
+                echo \Pushery\WireKit\WireKitServiceProvider::themeScriptTag($__wk_nonceAttr);
             ?>';
         });
 
@@ -642,6 +625,80 @@ class WireKitServiceProvider extends ServiceProvider
     }
 
     /**
+     * The URL of a dist file, with a version query: the published copy when it is current, the
+     * package's asset route when that copy is missing or stale.
+     *
+     * Extracted from scriptTag() when the theme script became a second tag that needs the same
+     * decision. The staleness check exists so a developer who published the assets once and then
+     * upgraded the package does not silently keep serving the old file.
+     */
+    protected static function assetSource(string $file): string
+    {
+        $published = public_path('vendor/wirekit/'.$file);
+        $dist = self::distPath($file);
+
+        if (self::publishedIsStale($published, $dist)) {
+            $version = $dist ? filemtime($dist) : time();
+
+            return url('/wirekit/'.$file).'?v='.$version;
+        }
+
+        return asset('vendor/wirekit/'.$file).'?v='.filemtime($published);
+    }
+
+    /**
+     * The `@wirekitThemeScript` tag: dist/wirekit-theme.js, written into the page or loaded as a file.
+     *
+     * One script serves both deliveries because it reads its configuration from its own tag, from
+     * `data-wk-theme-storage` and `data-wk-theme-key`, instead of having values written into its
+     * code. The inline form therefore puts nothing but the file's own code inside the script block,
+     * and the file form loads the same code.
+     *
+     * The file form is a classic tag with no `defer` and no `async`, unlike the bundle tags: it has to
+     * hold the page until the theme is set, which is exactly what a deferred script does not do.
+     *
+     * @param  string  $nonceAttr  pre-escaped ` nonce="…"` or an empty string
+     */
+    public static function themeScriptTag(string $nonceAttr = ''): string
+    {
+        $storage = config('wirekit.theme.storage', 'local') === 'cookie' ? 'cookie' : 'local';
+        $attributes = $nonceAttr
+            .' data-wk-theme-storage="'.$storage.'"'
+            .' data-wk-theme-key="'.e((string) config('wirekit.theme.storage_key', 'wirekit-theme')).'"';
+
+        if (config('wirekit.theme.script', 'inline') === 'external') {
+            return '<script'.$attributes.' src="'.self::assetSource('wirekit-theme.js').'"></script>'."\n";
+        }
+
+        return '<script'.$attributes.'>'.self::themeScriptSource().'</script>'."\n";
+    }
+
+    /**
+     * The theme script's code without its license banner, read once per process.
+     *
+     * The banner is the only comment in the built file, and a page does not need a license notice
+     * written into it.
+     */
+    protected static function themeScriptSource(): string
+    {
+        static $source = null;
+
+        if ($source === null) {
+            $path = self::distPath('wirekit-theme.js');
+
+            if ($path === null) {
+                // Said out loud: an empty script block renders cleanly and sets no theme at all.
+                logger()->warning('WireKit: dist/wirekit-theme.js is missing, so @wirekitThemeScript renders an empty script. Reinstall the package.');
+            }
+
+            $code = $path === null ? '' : (string) file_get_contents($path);
+            $source = trim((string) preg_replace('#\A/\*!.*?\*/#s', '', $code));
+        }
+
+        return $source;
+    }
+
+    /**
      * Build one `<script>` tag for a bundle, published copy or package route.
      *
      * Extracted from the `@wirekitScripts` directive when the ApexCharts adapter became a
@@ -656,16 +713,7 @@ class WireKitServiceProvider extends ServiceProvider
      */
     public static function scriptTag(string $file, string $nonceAttr = '', string $extraAttrs = ''): string
     {
-        $published = public_path('vendor/wirekit/'.$file);
-        $dist = self::distPath($file);
-        $useRoute = self::publishedIsStale($published, $dist);
-
-        if ($useRoute) {
-            $version = $dist ? filemtime($dist) : time();
-            $src = url('/wirekit/'.$file).'?v='.$version;
-        } else {
-            $src = asset('vendor/wirekit/'.$file).'?v='.filemtime($published);
-        }
+        $src = self::assetSource($file);
 
         // `data-navigate-once` — the bundle registers Alpine components and document
         // listeners, and that is a once-per-DOCUMENT job. Livewire's navigate re-executes a
@@ -855,6 +903,7 @@ class WireKitServiceProvider extends ServiceProvider
             'wirekit/wirekit-apex.js' => ['file' => 'wirekit-apex.js', 'type' => 'application/javascript; charset=utf-8'],
             'wirekit/wirekit-tiptap.js' => ['file' => 'wirekit-tiptap.js', 'type' => 'application/javascript; charset=utf-8'],
             'wirekit/wirekit-optimistic.js' => ['file' => 'wirekit-optimistic.js', 'type' => 'application/javascript; charset=utf-8'],
+            'wirekit/wirekit-theme.js' => ['file' => 'wirekit-theme.js', 'type' => 'application/javascript; charset=utf-8'],
             'wirekit/wirekit-alpine.js' => ['file' => 'wirekit-alpine.js', 'type' => 'application/javascript; charset=utf-8'],
             'wirekit/wirekit-alpine.csp.js' => ['file' => 'wirekit-alpine.csp.js', 'type' => 'application/javascript; charset=utf-8'],
         ];
@@ -907,6 +956,34 @@ class WireKitServiceProvider extends ServiceProvider
                     'Cache-Control' => 'public, max-age=31536000, immutable',
                 ]);
             })->where('path', '.*');
+        });
+
+        // Flags from the optional pushery/wirekit-flags package, served from the package itself so
+        // the flag component works right after `composer require`. Only a flag the package's
+        // manifest names is served: the code and the format are looked up, never joined into a
+        // path unchecked, so the route cannot be walked to anything else in the package.
+        //
+        // A browser that opens this URL directly treats the SVG as a document. The response
+        // therefore carries a policy that allows no script, no request and no plugin, plus
+        // nosniff. The artwork is checked for active content before the package ships; these
+        // headers are what still holds if a file ever were not.
+        Route::group(['middleware' => $this->assetRouteMiddleware()], function (): void {
+            Route::get('wirekit/flags/{format}/{code}.svg', function (string $format, string $code) {
+                $file = FlagPackage::file($code, $format);
+
+                if ($file === null) {
+                    abort(404);
+                }
+
+                return response((string) file_get_contents($file), 200, [
+                    'Content-Type' => 'image/svg+xml',
+                    'X-Content-Type-Options' => 'nosniff',
+                    'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+                    // The component keys the URL with this file's own checksum, so a changed flag
+                    // is a new URL and the year-long promise holds.
+                    'Cache-Control' => 'public, max-age=31536000, immutable',
+                ]);
+            })->where(['format' => '4x3|1x1', 'code' => '[a-z]{2,6}(?:-[a-z]{2,3})?']);
         });
 
         Route::group(['middleware' => $this->assetRouteMiddleware()], function () use ($assets): void {

@@ -209,7 +209,7 @@
     {{-- Developer controls (Stop / Retry) and custom state UIs render here, inside the
          component's Alpine scope — reference status / isStreaming / start() / stop().
          Given clear breathing room from the streamed text above (only when present). --}}
-    @unless($slot->isEmpty())
+    @if($slot->hasActualContent())
         <div class="mt-[var(--gap-wk-md)]">{{ $slot }}</div>
-    @endunless
+    @endif
 </div>

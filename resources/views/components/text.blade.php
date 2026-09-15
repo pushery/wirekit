@@ -138,6 +138,6 @@
     $as = \Pushery\WireKit\WireKit::tagName('text', (string) $as);
 @endphp
 
-<{{ $as }} {{ $attributes->class([$classes]) }}>
+<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </{{ $as }}>

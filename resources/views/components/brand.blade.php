@@ -100,7 +100,7 @@
     // Caller-provided `aria-label` always wins (`merge()` treats it as
     // default). Empty `name` + empty slot = logo-only; presence of either
     // means an accessible name is already provided by the visible text.
-    $hasVisibleName = $name !== null || trim((string) $slot) !== '';
+    $hasVisibleName = $name !== null || $slot->hasActualContent();
     $logoOnlyNeedsLabel = $logo && ! $hasVisibleName && ! $attributes->has('aria-label');
 
     // Responsive-logo swap. When $mobileLogo is set, render TWO <img> tags:
@@ -135,7 +135,7 @@
     };
 @endphp
 
-<a
+<a data-wk-prose-skip
     href="{{ $href }}"
     @if($logoOnlyNeedsLabel) aria-label="{{ __('wirekit::Home') }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
@@ -163,28 +163,28 @@
              single element carrying both `{bp}:block` and `wk-dark-only` is a
              0,1,0 specificity tie decided by stylesheet load order (fragile).
              Splitting them onto the span vs the imgs keeps it deterministic. --}}
-        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
         <span class="hidden {{ $bpInlineFlex }} items-center">
-            <img src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
-            <img src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+            <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+            <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
         </span>
     @elseif($logo && $mobileLogo)
         {{-- Responsive logo swap: mobile-first wordmark below the breakpoint,
              full-width wordmark at + breakpoint. Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label handles the accessible name. --}}
-        <img src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
-        <img src="{{ $logo }}" alt="" class="hidden h-8 w-auto {{ $bpBlock }}" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="hidden h-8 w-auto {{ $bpBlock }}" style="{{ $wkLogoStyle }}" aria-hidden="true" />
     @elseif($logo && $darkLogo)
         {{-- Mode-aware logo swap: light wordmark in light mode, dark wordmark
              under the `.dark` class (via the wk-light-only / wk-dark-only
              visibility pair in dist/wirekit.css). Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label / visible name handles the accessible name. --}}
-        <img src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
-        <img src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
     @elseif($logo)
-        <img src="{{ $logo }}" alt="" class="h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
     @endif
     @if($name)
         {{-- Same rule as the sidebar row and the profile row beside it: in a collapsed
@@ -208,7 +208,7 @@
 
          Additive: with no logo and no name the output is byte-identical, and
          with either set the slot rendered nothing before. --}}
-    @if(trim((string) $slot) !== '')
+    @if($slot->hasActualContent())
         {{ $slot }}
     @endif
     @if($opensNewTab)

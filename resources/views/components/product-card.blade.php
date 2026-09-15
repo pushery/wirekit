@@ -186,7 +186,7 @@
     </div>
 
     <div class="flex flex-1 flex-col gap-[var(--gap-wk-sm)] p-[var(--padding-wk-x-md)]">
-        <h{{ $levelValue }} class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
+        <h{{ $levelValue }} data-wk-prose-skip class="text-[length:var(--text-wk-md)] font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">
             @if($href)
                 {{-- stretched-link: the whole card is clickable by pointer while
                      the LINK is still just the name. The pointer target and the
@@ -197,7 +197,7 @@
                      at. Opacity, not an accent color: on the stock theme accent
                      (oklch 20.5%) barely differs from text (14.5%) and in dark mode
                      they are identical, so a color hover would be invisible. --}}
-                <a href="{{ $href }}" data-wk-product-card-link class="wk-product-card-link transition-opacity duration-[var(--transition-wk-duration)] group-hover:opacity-80 focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+                <a data-wk-prose-skip href="{{ $href }}" data-wk-product-card-link class="wk-product-card-link transition-opacity duration-[var(--transition-wk-duration)] group-hover:opacity-80 focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
                     {{ $name }}
                 </a>
             @else
@@ -206,7 +206,7 @@
         </h{{ $levelValue }}>
 
         @if($description)
-            <p class="line-clamp-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</p>
+            <p data-wk-prose-skip class="line-clamp-2 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $description }}</p>
         @endif
 
         @if($ratingValue !== null)

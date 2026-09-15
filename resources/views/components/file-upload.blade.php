@@ -344,9 +344,9 @@
          load wirekit.css so the CSS variable resolves). The class-based
          `mt-[var(--padding-wk-y-sm)]` in $listClasses is now redundant but kept
          for documentation parity. Enforced by ListStyleAntiDriftTest. --}}
-    <ul role="list" class="{{ $listClasses }}" style="list-style: none; padding: 0; margin: var(--padding-wk-y-sm) 0 0 0;" x-show="files.length > 0" x-cloak>
+    <ul data-wk-prose-skip role="list" class="{{ $listClasses }}" style="list-style: none; padding: 0; margin: var(--padding-wk-y-sm) 0 0 0;" x-show="files.length > 0" x-cloak>
         <template x-for="(file, index) in files" :key="file.name">
-            <li class="{{ $fileItemClasses }}">
+            <li data-wk-prose-skip class="{{ $fileItemClasses }}">
                 {{-- Filename — flex-1 grows to fill available space so the size + X get
                      pushed to the right edge of the row (standard file-uploader UX).
                      min-w-0 + truncate prevents long names from blowing out the flex line. --}}
@@ -386,11 +386,11 @@
     </ul>
 
     @if($hint && !$hasError)
-        <p id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @if($showsError)
         {{-- Error message — aria-describedby'd above, and visually distinguished. --}}
-        <p id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 </div>

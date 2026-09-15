@@ -23,7 +23,7 @@
     ]), $scope);
 @endphp
 
-<p
+<p data-wk-prose-skip
     x-bind:id="$wkAncestorData('[data-wk-desc-id]', 'wkDescId')"
     {{ $attributes->class([$classes]) }}
 >

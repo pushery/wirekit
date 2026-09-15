@@ -92,7 +92,7 @@
          accessible name and axe-core's "link-name" rule fails. We fall
          back from $slot to $trigger so authors who pass either form
          get a working link. --}}
-    <a
+    <a data-wk-prose-skip
         href="{{ $href }}"
         @if($computedRel) rel="{{ $computedRel }}" @endif
         {{-- Through ->class(), not as a hardcoded attribute beside the bag. A caller's own
@@ -107,7 +107,7 @@
              the Drift suite by itself. --}}
         {{ $attributes->except('rel')->class($triggerClasses) }}
     >
-        {{ trim((string) $slot) !== '' ? $slot : $trigger }}
+        {{ $slot->hasActualContent() ? $slot : $trigger }}
         @if($opensNewTab)
             <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
         @endif

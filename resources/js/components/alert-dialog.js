@@ -22,8 +22,9 @@ const FOCUSABLE = 'button, [href], input, select, textarea, [tabindex]:not([tabi
  * @param {boolean} config.dismissible - Whether ESC/backdrop closes (default: false)
  * @param {string} [config.initialFocus] - CSS selector for the control that should
  *   receive focus instead of Cancel
- * @param {string} [config.focusReturnTo] - CSS selector for where focus should land
- *   when the dialog closes and its own trigger no longer exists
+ * @param {string} [config.focusReturnTo] - CSS selector for where focus should land when the
+ *   dialog closes after its action, typically because the re-render removed the trigger's row.
+ *   A dismissal (Cancel, Escape, the backdrop) returns to a surviving trigger first.
  * @param {string} [config.confirmationPhrase] - Exact string the developer must type
  *   before `alert-dialog.confirm` will fire. Absent, nothing is held back.
  */

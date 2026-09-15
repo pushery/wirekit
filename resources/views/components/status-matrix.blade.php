@@ -253,25 +253,25 @@
                 @isset($empty)
                     {{ $empty }}
                 @else
-                    <p class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
+                    <p data-wk-prose-skip class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $emptyText }}</p>
                 @endisset
             </div>
         @else
-        <table @if($isCompositeGrid) role="grid" @endif class="w-full border-collapse" aria-label="{{ $ariaLabelResolved }}">
+        <table data-wk-prose-skip @if($isCompositeGrid) role="grid" @endif class="w-full border-collapse" aria-label="{{ $ariaLabelResolved }}">
             <thead>
                 <tr>
                     {{-- Top-left corner: the row-axis label — left-aligned to match
                          the row headers below it. --}}
-                    <th scope="col" class="{{ $headCell }} text-left left-0 z-[calc(var(--z-wk-sticky)+1)]">{{ $cornerLabel }}</th>
+                    <th data-wk-prose-skip scope="col" class="{{ $headCell }} text-left left-0 z-[calc(var(--z-wk-sticky)+1)]">{{ $cornerLabel }}</th>
                     @foreach($colList as $col)
-                        <th scope="col" class="{{ $headCell }} text-center z-[var(--z-wk-sticky)]">{{ $col['label'] }}</th>
+                        <th data-wk-prose-skip scope="col" class="{{ $headCell }} text-center z-[var(--z-wk-sticky)]">{{ $col['label'] }}</th>
                     @endforeach
                 </tr>
             </thead>
             <tbody>
                 @foreach($rowList as $ri => $row)
                     <tr>
-                        <th scope="row" class="{{ $rowHead }}">{{ $row['label'] }}</th>
+                        <th data-wk-prose-skip scope="row" class="{{ $rowHead }}">{{ $row['label'] }}</th>
                         @foreach($colList as $ci => $col)
                             @php
                                 $rk = $row['key'];
@@ -282,7 +282,7 @@
                             @endphp
                             {{-- `gridcell` only inside a grid: the role is defined as a cell
                                  of one, and a <td> outside a grid is already a cell. --}}
-                            <td @if($isCompositeGrid) role="gridcell" @endif class="{{ $cellBox }}">
+                            <td data-wk-prose-skip @if($isCompositeGrid) role="gridcell" @endif class="{{ $cellBox }}">
                                 @switch($cellType)
                                     @case('tristate')
                                         <button

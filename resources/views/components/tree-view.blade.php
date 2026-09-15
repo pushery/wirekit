@@ -43,7 +43,7 @@
 @endphp
 
 {{-- No x-cloak needed — tree has no hidden/shown toggle; Alpine only handles keyboard nav --}}
-<ul
+<ul data-wk-prose-skip
     role="tree"
     {{-- A `role="tree"` is announced by its name and by nothing else, and this component had
          no way to give it one: no `label` prop, no default, and nothing in the props table.

@@ -37,11 +37,28 @@
     //       users who scale text up. Not just a font-size bump: leading has to
     //       grow with it or large text reads worse, not better.
     'preset' => null,
+    // `container` — opt in to adapting the rhythm to the COLUMN rather than the viewport.
+    // Prose in a sidebar, a card or a table cell is narrow on a desktop screen, where every
+    // viewport breakpoint says "wide" and the heading scale stays built for a full page.
+    // With this set, the wrapper becomes a size container and the scale tightens below
+    // 30rem of its own width — the `compact` rhythm, without the caller having to know
+    // which column the prose landed in.
+    //
+    // Opt-IN, because `container-type: inline-size` is not free: the element's inline size
+    // stops depending on its contents, so a prose inside a shrink-to-fit parent (an
+    // `inline-block`, a `max-content` grid track, a floated box) collapses instead of
+    // sizing itself. Every prose that is laid out by its parent is unaffected, which is
+    // most of them — but not all, and the caller is the one who knows.
+    'container' => false,
     'scope' => null,
 ])
 
 @php
+    use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
+
+    // `container="false"` on an unbound tag is the string "false", which is truthy.
+    $container = BooleanProp::from($container, false);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -51,6 +68,19 @@
     // Prose — typography wrapper that styles raw HTML (h1–h6, p, ul, ol,
     // blockquote, code, table, a) with WireKit design tokens. Similar
     // to @tailwindcss/typography but token-driven.
+    //
+    // Every element rule ends in the same exclusion, written out on each rule because Tailwind
+    // compiles only the class names it can read literally in this file:
+    //
+    //     :not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip]))
+    //
+    // Prose styles the markup it is given, not the WireKit components nested in it. Every element
+    // a component renders carries `data-wk-prose-skip`, which exempts that element and nothing
+    // below it, so whatever sits in a component's slot is still styled and a table cell can hold
+    // prose of its own. `not-wk-prose` is the developer's opt-out for a whole block: the element
+    // and everything inside it. Without the exclusion, a button link inside prose came out
+    // underlined, a code block wrapped and took a second padding, and table cells lost their own
+    // padding. `:where()` adds no specificity, so every rule weighs exactly what it did before.
 
     // Density-aware heading + paragraph rules. `comfortable` keeps the
     // pre-v2.0.0 scale (back-compat default); `compact` tightens the
@@ -64,18 +94,18 @@
 
     $densityClasses = match ($density) {
         'comfortable' => [
-            '[&_h1]:text-[length:var(--text-wk-2xl)] [&_h1]:mt-0 [&_h1]:mb-[var(--padding-wk-y-md)]',
-            '[&_h2]:text-[length:var(--text-wk-xl)] [&_h2]:mt-[var(--padding-wk-y-xl)] [&_h2]:mb-[var(--padding-wk-y-sm)]',
-            '[&_h3]:text-[length:var(--text-wk-lg)] [&_h3]:mt-[var(--padding-wk-y-lg)] [&_h3]:mb-[var(--padding-wk-y-sm)]',
-            '[&_h4]:text-[length:var(--text-wk-md)] [&_h4]:mt-[var(--padding-wk-y-lg)] [&_h4]:mb-[var(--padding-wk-y-xs)]',
-            '[&_p]:mb-[var(--padding-wk-y-md)]',
+            '[&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-2xl)] [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-0 [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
+            '[&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-xl)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-xl)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-sm)]',
+            '[&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-lg)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-lg)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-sm)]',
+            '[&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-md)] [&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-lg)] [&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
+            '[&_p:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
         ],
         'compact' => [
-            '[&_h1]:text-[length:var(--text-wk-xl)] [&_h1]:mt-0 [&_h1]:mb-[var(--padding-wk-y-xs)]',
-            '[&_h2]:text-[length:var(--text-wk-lg)] [&_h2]:mt-[var(--padding-wk-y-md)] [&_h2]:mb-[var(--padding-wk-y-xs)]',
-            '[&_h3]:text-[length:var(--text-wk-md)] [&_h3]:mt-[var(--padding-wk-y-sm)] [&_h3]:mb-[var(--padding-wk-y-xs)]',
-            '[&_h4]:text-[length:var(--text-wk-sm)] [&_h4]:mt-[var(--padding-wk-y-sm)] [&_h4]:mb-[var(--padding-wk-y-xs)]',
-            '[&_p]:mb-[var(--padding-wk-y-sm)]',
+            '[&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-xl)] [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-0 [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
+            '[&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-lg)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-md)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
+            '[&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-md)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-sm)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
+            '[&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-sm)] [&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mt-[var(--padding-wk-y-sm)] [&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
+            '[&_p:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-sm)]',
         ],
         default => WireKit::validateProp('prose', 'density', $density, ['comfortable', 'compact']),
     };
@@ -112,25 +142,25 @@
         '[overflow-wrap:break-word]',
         // Shared heading typography (font-weight + line-height), density
         // controls size + margin.
-        '[&_h1]:font-[number:var(--font-wk-heading-weight)] [&_h1]:leading-[var(--leading-wk-tight)]',
-        '[&_h2]:font-[number:var(--font-wk-heading-weight)] [&_h2]:leading-[var(--leading-wk-tight)]',
-        '[&_h3]:font-[number:var(--font-wk-heading-weight)] [&_h3]:leading-[var(--leading-wk-tight)]',
-        '[&_h4]:font-[number:var(--font-wk-heading-weight)]',
+        '[&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_h1:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:leading-[var(--leading-wk-tight)]',
+        '[&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_h2:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:leading-[var(--leading-wk-tight)]',
+        '[&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_h3:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:leading-[var(--leading-wk-tight)]',
+        '[&_h4:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)]',
         // Inline
-        '[&_a]:text-[color:var(--color-wk-accent-text)] [&_a]:underline [&_a]:underline-offset-2',
-        '[&_strong]:font-[number:var(--font-wk-heading-weight)]',
+        '[&_a:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[color:var(--color-wk-accent-text)] [&_a:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:underline [&_a:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:underline-offset-2',
+        '[&_strong:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)]',
         // Lists
-        '[&_ul]:list-disc [&_ul]:pl-[var(--padding-wk-x-lg)] [&_ul]:mb-[var(--padding-wk-y-md)]',
-        '[&_ol]:list-decimal [&_ol]:pl-[var(--padding-wk-x-lg)] [&_ol]:mb-[var(--padding-wk-y-md)]',
-        '[&_li]:mb-[var(--padding-wk-y-xs)]',
+        '[&_ul:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:list-disc [&_ul:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:pl-[var(--padding-wk-x-lg)] [&_ul:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
+        '[&_ol:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:list-decimal [&_ol:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:pl-[var(--padding-wk-x-lg)] [&_ol:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
+        '[&_li:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-xs)]',
         // Blockquote
-        '[&_blockquote]:border-l-4 [&_blockquote]:border-[var(--color-wk-border)] [&_blockquote]:pl-[var(--padding-wk-x-md)] [&_blockquote]:italic [&_blockquote]:text-[color:var(--color-wk-text-muted)] [&_blockquote]:mb-[var(--padding-wk-y-md)]',
+        '[&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-l-4 [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-[var(--color-wk-border)] [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:pl-[var(--padding-wk-x-md)] [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:italic [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[color:var(--color-wk-text-muted)] [&_blockquote:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
         // Code
         // Inline code is the prime offender — tokens like `Foo::bar(string $x)`
         // have long no-space runs, so it gets the stronger `anywhere` (which
         // also lets the code element's min-content shrink, so it can't force
         // its parent wider than the viewport).
-        '[&_code]:font-[family-name:var(--font-wk-mono)] [&_code]:text-[length:var(--text-wk-sm)] [&_code]:bg-[var(--color-wk-bg-muted)] [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:rounded-[var(--radius-wk-sm)] [&_code]:[overflow-wrap:anywhere]',
+        '[&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[family-name:var(--font-wk-mono)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-sm)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:bg-[var(--color-wk-bg-muted)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:px-1.5 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:py-0.5 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:rounded-[var(--radius-wk-sm)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:[overflow-wrap:anywhere]',
         // ⚠️ A DESCENDANT `overflow-x` RULE ON <pre> USED TO BE HERE (the arbitrary-variant
         // form, spelled out it would be re-emitted by the scanner reading this comment —
         // Tailwind reads comments too, and writing the class here would resurrect the dead
@@ -149,22 +179,22 @@
         // Wrapping instead of scrolling shows the whole line rather than hiding half of it,
         // which is the better reading experience anyway. `anywhere` is the safety net for a
         // single unbroken token longer than the column.
-        '[&_pre]:bg-[var(--color-wk-bg-muted)] [&_pre]:rounded-[var(--radius-wk-md)] [&_pre]:p-[var(--padding-wk-x-md)] [&_pre]:mb-[var(--padding-wk-y-md)]',
-        '[&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]',
+        '[&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:bg-[var(--color-wk-bg-muted)] [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:rounded-[var(--radius-wk-md)] [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:p-[var(--padding-wk-x-md)] [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)]',
+        '[&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:whitespace-pre-wrap [&_pre:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:[overflow-wrap:anywhere]',
         // A caller who WANTS horizontal scrolling can have it, by authoring the keyboard
         // model themselves: `<pre tabindex="0" role="region" aria-label="…">`. Scrolling is
         // then granted to exactly the markup that is reachable, which is the whole point —
         // the accessible path is the only path that scrolls.
-        '[&_pre[tabindex]]:whitespace-pre [&_pre[tabindex]]:overflow-x-auto',
-        '[&_pre_code]:bg-transparent [&_pre_code]:p-0',
+        '[&_pre[tabindex]:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:whitespace-pre [&_pre[tabindex]:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:overflow-x-auto',
+        '[&_pre_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:bg-transparent [&_pre_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:p-0',
         // Table
-        '[&_table]:w-full [&_table]:mb-[var(--padding-wk-y-md)] [&_table]:border-collapse',
-        '[&_th]:text-left [&_th]:font-[number:var(--font-wk-heading-weight)] [&_th]:py-[var(--padding-wk-y-sm)] [&_th]:px-[var(--padding-wk-x-sm)] [&_th]:border-b-2 [&_th]:border-[var(--color-wk-border)]',
-        '[&_td]:py-[var(--padding-wk-y-sm)] [&_td]:px-[var(--padding-wk-x-sm)] [&_td]:border-b [&_td]:border-[var(--color-wk-border-subtle)]',
+        '[&_table:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:w-full [&_table:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:mb-[var(--padding-wk-y-md)] [&_table:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-collapse',
+        '[&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-left [&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[number:var(--font-wk-heading-weight)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:py-[var(--padding-wk-y-sm)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:px-[var(--padding-wk-x-sm)] [&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-b-2 [&_th:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-[var(--color-wk-border)]',
+        '[&_td:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:py-[var(--padding-wk-y-sm)] [&_td:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:px-[var(--padding-wk-x-sm)] [&_td:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-b [&_td:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-[var(--color-wk-border-subtle)]',
         // Horizontal rule
-        '[&_hr]:border-[var(--color-wk-border)] [&_hr]:my-[var(--padding-wk-y-xl)]',
+        '[&_hr:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:border-[var(--color-wk-border)] [&_hr:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:my-[var(--padding-wk-y-xl)]',
         // Images
-        '[&_img]:rounded-[var(--radius-wk-md)] [&_img]:my-[var(--padding-wk-y-md)]',
+        '[&_img:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:rounded-[var(--radius-wk-md)] [&_img:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:my-[var(--padding-wk-y-md)]',
     ], $densityClasses)), $scope);
 
     $sizeClasses = match ($size) {
@@ -192,6 +222,6 @@
     };
 @endphp
 
-<div @if($measureAttr) data-measure="{{ $measureAttr }}" @endif @if($presetValue) data-preset="{{ $presetValue }}" @endif {{ $attributes->class([$classes, $sizeClasses, $variantClasses]) }}>
+<div @if($measureAttr) data-measure="{{ $measureAttr }}" @endif @if($presetValue) data-preset="{{ $presetValue }}" @endif @if($container) data-container @endif {{ $attributes->class([$classes, $sizeClasses, $variantClasses]) }}>
     {{ $slot }}
 </div>

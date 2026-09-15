@@ -6,6 +6,9 @@
     // instead — both surface as the $trigger variable, so the template renders either.
     'trigger' => null,
     'open' => false,
+    // Closed content stays findable by the browser's find in page, which opens the disclosure a
+    // match lands in. Only where the engine supports it; switch it off for a spoiler.
+    'findable' => config('wirekit.components.collapsible.findable', true),
     'scope' => null,
 ])
 
@@ -22,6 +25,7 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $open = BooleanProp::from($open, false);
+    $findable = BooleanProp::from($findable, true);
 
     // A standalone single disclosure: one trigger + one collapsible region. Unlike
     // <x-wirekit::accordion> there is no card chrome and no group coordination — it is
@@ -52,7 +56,10 @@
     // The deduper takes the stable value as its base and appends `-2` to a repeat, so the
     // first keeps the readable id and the second stops pointing at it.
     $uid = \Pushery\WireKit\Support\DomId::unique(
-        $attributes->get('id') ?: \Pushery\WireKit\WireKit::stableId(
+        // A caller id NAMES THE COMPONENT and stays on the root, through the attribute bag. The panel
+        // takes an id derived from it: taking the same id put two elements under one name, and
+        // aria-controls pointed at whichever a lookup found first, which was the root.
+        $attributes->get('id') ? $attributes->get('id').'-panel' : \Pushery\WireKit\WireKit::stableId(
             'wk-collapsible',
             is_string($trigger) || $trigger instanceof \Stringable ? trim((string) $trigger) : null
         ),
@@ -87,7 +94,10 @@
     ]), $scope);
 @endphp
 
-<div x-data="{ open: {{ \Pushery\WireKit\Support\AlpinePayload::from($openBool) }} }" {{ $attributes->class([$rootClasses]) }}>
+{{-- `wk-collapsible` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-`
+     class token and its descendants, and the chevron and the collapsing panel sit under this root.
+     It stays outside `resolveClasses()`, so a scoped base class list cannot drop it. --}}
+<div x-data="{ open: {{ \Pushery\WireKit\Support\AlpinePayload::from($openBool) }} }" {{ $attributes->class(['wk-collapsible', $rootClasses]) }}>
     {{-- Trigger — a real <button> so it is keyboard-operable (Enter/Space) by default.
          aria-expanded announces state; aria-controls links it to the region below. --}}
     <button
@@ -110,7 +120,24 @@
 
     {{-- Collapsible region — smooth height transition via x-collapse. x-cloak hides it
          until Alpine initializes so a closed disclosure never flashes open on load. --}}
-    <div id="{{ $uid }}" x-show="open" x-collapse x-cloak class="{{ $contentClasses }}">
-        {{ $slot }}
-    </div>
+    @if($findable)
+        {{-- Findable: `hidden="until-found"` while closed where the engine supports it, with the
+             height animated by `x-wk-findable.collapse` in place of `x-collapse`, which only works
+             with `x-show`. The padding moved to the element inside, since a closed until-found
+             panel keeps its box. See utils/findable.js. --}}
+        <div
+            id="{{ $uid }}"
+            x-wk-findable.collapse="open"
+            x-on:beforematch="open = true"
+            @unless($openBool) hidden="until-found" @endunless
+        >
+            <div class="{{ $contentClasses }}">
+                {{ $slot }}
+            </div>
+        </div>
+    @else
+        <div id="{{ $uid }}" x-show="open" x-collapse x-cloak class="{{ $contentClasses }}">
+            {{ $slot }}
+        </div>
+    @endif
 </div>

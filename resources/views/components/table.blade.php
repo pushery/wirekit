@@ -210,7 +210,12 @@
          the box, matching the sortable header button: an outset ring on an element that
          is itself a min-width-zero flex child adds width outside the border box, which is
          the one thing this wrapper spends its own comment above avoiding. --}}
-    class="flex w-full min-w-0 overflow-x-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] {{ $stickyHeader ? 'overflow-y-auto' : '' }}"
+    {{-- Positioned, so the scroller is the containing block for anything a cell places
+         absolutely. A visually hidden label is `position: absolute`, and against the wrapper
+         outside the scroller it was neither clipped nor scrolled: it widened the wrapper and
+         every ancestor on a phone. The shadows are siblings of the scroller and keep the
+         wrapper as theirs, so they still hold still while the table moves. --}}
+    class="relative flex w-full min-w-0 overflow-x-auto wk-scrollbar focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] {{ $stickyHeader ? 'overflow-y-auto' : '' }}"
     @if($stickyHeaderStyle) style="{{ $stickyHeaderStyle }}" @endif
     {{-- Reachability is unconditional; the landmark is opt-in. `filled()` rather than `??`,
          because `role="region"` with an empty name is not exposed as a landmark at all — an
@@ -240,7 +245,7 @@
      follow and `-mr-` / `-ml-` would not. --}}
 <div x-ref="startSentinel" aria-hidden="true" class="w-px shrink-0 self-stretch -me-px"></div>
 @endif
-    <table
+    <table data-wk-prose-skip
         {{ $attributes->class([$classes]) }}
         @foreach($tableAttrs as $attr) {{ $attr }} @endforeach
         {{-- Debug-only composition warning. It cannot be an inline console.warn:

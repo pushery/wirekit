@@ -83,7 +83,7 @@
         <x-wirekit::rating :value="$ratingValue" readonly size="sm" data-wk-testimonial-rating />
     @endif
 
-    <blockquote data-wk-testimonial-quote class="flex-1 text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]">
+    <blockquote data-wk-prose-skip data-wk-testimonial-quote class="flex-1 text-[length:var(--text-wk-md)] text-[color:var(--color-wk-text)]">
         {{ $slot }}
     </blockquote>
 
@@ -115,7 +115,7 @@
                  output in a figure, and a figure nested inside this figcaption
                  would make a screen reader announce the company mark as its own
                  "figure" in the middle of the attribution. --}}
-            <img
+            <img data-wk-prose-skip
                 src="{{ $logo }}"
                 alt="{{ $logoAlt ?? '' }}"
                 data-wk-testimonial-logo

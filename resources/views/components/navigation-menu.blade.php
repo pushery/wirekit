@@ -21,6 +21,8 @@
     ]), $scope);
 @endphp
 
+{{-- `wk-navigation-menu` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-`
+     class token and its descendants, and every item's chevron sits under this root. --}}
 <nav
     x-data="wirekitNavigationMenu()"
     {{-- Outside-click close is handled in wirekitNavigationMenu()'s
@@ -38,7 +40,7 @@
     x-on:keydown="handleBarKeydown($event)"
     x-on:focusout="handleBarFocusOut($event)"
     aria-label="{{ __('wirekit::Main navigation') }}"
-    {{ $attributes->class([$classes]) }}
+    {{ $attributes->class(['wk-navigation-menu', $classes]) }}
 >
     {{ $slot }}
 </nav>

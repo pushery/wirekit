@@ -39,12 +39,12 @@
             "code": "<div x-data>\n<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'delete-project' })\">Delete Project</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"delete-project\" :dismissible=\"true\">\n    <x-wirekit::alert-dialog.title>Delete Project</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        This will permanently delete the project and all associated data. This action cannot be undone.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::button intent=\"danger\" size=\"sm\">Delete Project</x-wirekit::button>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>\n</div>"
         },
         {
-            "title": "Closing on confirm",
-            "code": "<div x-data>\n<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'archive-run' })\">Archive Run</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"archive-run\" close-on-confirm>\n    <x-wirekit::alert-dialog.title>Archive this run</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        The run moves out of the active list. You can restore it from the archive for thirty days.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::alert-dialog.confirm>\n            <x-wirekit::button intent=\"danger\" size=\"sm\">Archive</x-wirekit::button>\n        </x-wirekit::alert-dialog.confirm>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>\n</div>"
+            "title": "Trigger in a stretched stack",
+            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Download recovery codes</x-wirekit::button>\n    <x-wirekit::alert-dialog name=\"disable-two-factor\" class=\"contents\">\n        <x-slot:trigger>\n            <x-wirekit::button intent=\"danger\">Disable two-factor authentication</x-wirekit::button>\n        </x-slot:trigger>\n        <x-wirekit::alert-dialog.title>Disable two-factor authentication?</x-wirekit::alert-dialog.title>\n        <x-wirekit::alert-dialog.description>Your account is then protected by its password alone.</x-wirekit::alert-dialog.description>\n        <x-wirekit::alert-dialog.actions>\n            <x-wirekit::alert-dialog.cancel>\n                <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n            </x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"danger\" size=\"sm\" wire:click=\"disableTwoFactor\">Disable</x-wirekit::button>\n        </x-wirekit::alert-dialog.actions>\n    </x-wirekit::alert-dialog>\n</x-wirekit::stack>"
         },
         {
-            "title": "Type to Confirm",
-            "code": "<div x-data>\n<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'drop-environment' })\">Delete Environment</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"drop-environment\" :dismissible=\"true\" confirmation-phrase=\"delete production\">\n    <x-wirekit::alert-dialog.title>Delete this environment?</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        Every deployment, secret and log line in it goes with it. There is no undo.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.confirmation />\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::alert-dialog.confirm>\n            <x-wirekit::button intent=\"danger\" size=\"sm\">Delete Environment</x-wirekit::button>\n        </x-wirekit::alert-dialog.confirm>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>\n</div>"
+            "title": "Closing on confirm",
+            "code": "<div x-data>\n<x-wirekit::button intent=\"danger\" @click=\"$dispatch('wirekit-alert-dialog-show', { name: 'archive-run' })\">Archive Run</x-wirekit::button>\n\n<x-wirekit::alert-dialog name=\"archive-run\" close-on-confirm>\n    <x-wirekit::alert-dialog.title>Archive this run</x-wirekit::alert-dialog.title>\n    <x-wirekit::alert-dialog.description>\n        The run moves out of the active list. You can restore it from the archive for thirty days.\n    </x-wirekit::alert-dialog.description>\n    <x-wirekit::alert-dialog.actions>\n        <x-wirekit::alert-dialog.cancel>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::alert-dialog.cancel>\n        <x-wirekit::alert-dialog.confirm>\n            <x-wirekit::button intent=\"danger\" size=\"sm\">Archive</x-wirekit::button>\n        </x-wirekit::alert-dialog.confirm>\n    </x-wirekit::alert-dialog.actions>\n</x-wirekit::alert-dialog>\n</div>"
         }
     ],
     "alert": [
@@ -215,6 +215,16 @@
         {
             "title": "Bottom navigation with an active tab and a badge",
             "code": "<div style=\"position: relative; height: 8rem; width: 22rem; max-width: 100%; margin-inline: auto;\">\n    <x-wirekit::bottom-nav label=\"Main\" :mobile-only=\"false\" interactive style=\"position: absolute;\">\n        <x-wirekit::bottom-nav.item href=\"#\" label=\"Home\" icon=\"home\" active />\n        <x-wirekit::bottom-nav.item href=\"#\" label=\"Search\" icon=\"search\" />\n        <x-wirekit::bottom-nav.item href=\"#\" label=\"Inbox\" icon=\"inbox\" badge=\"3\" />\n        <x-wirekit::bottom-nav.item href=\"#\" label=\"Profile\" icon=\"user\" />\n    </x-wirekit::bottom-nav>\n</div>"
+        }
+    ],
+    "branch-switcher": [
+        {
+            "title": "Two arrows and a count",
+            "code": "<x-wirekit::branch-switcher :count=\"3\" :current=\"2\" />"
+        },
+        {
+            "title": "An answer with its variants underneath",
+            "code": "<x-wirekit::assistant-message model=\"atlas-2\">\n    Sixty requests a minute, per token. The 429 carries a <code>Retry-After</code> header.\n\n    <x-slot:actions>\n        <x-wirekit::branch-switcher :count=\"3\" :current=\"1\" label=\"Answer variants\" />\n    </x-slot:actions>\n</x-wirekit::assistant-message>"
         }
     ],
     "brand-bar": [
@@ -970,7 +980,7 @@
         },
         {
             "title": "Every corner",
-            "code": "<x-wirekit::row gap=\"2xl\" align=\"center\" wrap>\n    <x-wirekit::indicator position=\"top-end\">\n        <x-wirekit::avatar alt=\"Ada Lovelace\" size=\"md\" />\n        <x-slot:badge><x-wirekit::badge intent=\"success\" size=\"sm\">1</x-wirekit::badge></x-slot:badge>\n    </x-wirekit::indicator>\n    <x-wirekit::indicator position=\"top-start\">\n        <x-wirekit::avatar alt=\"Grace Hopper\" size=\"md\" />\n        <x-slot:badge><x-wirekit::badge intent=\"info\" size=\"sm\">2</x-wirekit::badge></x-slot:badge>\n    </x-wirekit::indicator>\n    <x-wirekit::indicator position=\"bottom-end\">\n        <x-wirekit::avatar alt=\"Alan Turing\" size=\"md\" />\n        <x-slot:badge><x-wirekit::badge intent=\"warning\" size=\"sm\">3</x-wirekit::badge></x-slot:badge>\n    </x-wirekit::indicator>\n    <x-wirekit::indicator position=\"bottom-start\">\n        <x-wirekit::avatar alt=\"Katherine Johnson\" size=\"md\" />\n        <x-slot:badge><x-wirekit::badge intent=\"neutral\" size=\"sm\">4</x-wirekit::badge></x-slot:badge>\n    </x-wirekit::indicator>\n</x-wirekit::row>"
+            "code": "<x-wirekit::row gap=\"2xl\" align=\"center\" wrap class=\"px-2\">\n    <x-wirekit::indicator position=\"top-end\">\n        <x-wirekit::avatar alt=\"Ada Lovelace\" size=\"md\" />\n        <x-slot:badge><x-wirekit::badge intent=\"success\" size=\"sm\">1</x-wirekit::badge></x-slot:badge>\n    </x-wirekit::indicator>\n    <x-wirekit::indicator position=\"top-start\">\n        <x-wirekit::avatar alt=\"Grace Hopper\" size=\"md\" />\n        <x-slot:badge><x-wirekit::badge intent=\"info\" size=\"sm\">2</x-wirekit::badge></x-slot:badge>\n    </x-wirekit::indicator>\n    <x-wirekit::indicator position=\"bottom-end\">\n        <x-wirekit::avatar alt=\"Alan Turing\" size=\"md\" />\n        <x-slot:badge><x-wirekit::badge intent=\"warning\" size=\"sm\">3</x-wirekit::badge></x-slot:badge>\n    </x-wirekit::indicator>\n    <x-wirekit::indicator position=\"bottom-start\">\n        <x-wirekit::avatar alt=\"Katherine Johnson\" size=\"md\" />\n        <x-slot:badge><x-wirekit::badge intent=\"neutral\" size=\"sm\">4</x-wirekit::badge></x-slot:badge>\n    </x-wirekit::indicator>\n</x-wirekit::row>"
         },
         {
             "title": "Nudged further out",
@@ -1201,6 +1211,10 @@
             "code": "<x-wirekit::modal name=\"confirm-action\">\n    <x-slot:trigger>\n        <x-wirekit::button>Open Modal</x-wirekit::button>\n    </x-slot:trigger>\n    <x-wirekit::modal.header>Confirm Action</x-wirekit::modal.header>\n    <x-wirekit::modal.body>Are you sure you want to proceed?</x-wirekit::modal.body>\n    <x-wirekit::modal.footer>\n        <x-wirekit::modal.close>\n            <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Cancel</x-wirekit::button>\n        </x-wirekit::modal.close>\n        <x-wirekit::button intent=\"danger\" size=\"sm\">Delete</x-wirekit::button>\n    </x-wirekit::modal.footer>\n</x-wirekit::modal>"
         },
         {
+            "title": "Trigger in a stretched stack",
+            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Download recovery codes</x-wirekit::button>\n    <x-wirekit::modal name=\"regenerate-codes\" class=\"contents\">\n        <x-slot:trigger>\n            <x-wirekit::button intent=\"danger\">Regenerate recovery codes</x-wirekit::button>\n        </x-slot:trigger>\n        <x-wirekit::modal.header>Regenerate recovery codes?</x-wirekit::modal.header>\n        <x-wirekit::modal.body>The codes you saved before stop working.</x-wirekit::modal.body>\n    </x-wirekit::modal>\n</x-wirekit::stack>"
+        },
+        {
             "title": "Non-Dismissible Modal",
             "code": "<x-wirekit::modal name=\"required-action\" :dismissible=\"false\">\n    <x-slot:trigger>\n        <x-wirekit::button>Open Non-Dismissible</x-wirekit::button>\n    </x-slot:trigger>\n    <x-wirekit::modal.header>Required</x-wirekit::modal.header>\n    <x-wirekit::modal.body>You must complete this action.</x-wirekit::modal.body>\n    <x-wirekit::modal.footer>\n        <x-wirekit::modal.close>\n            <x-wirekit::button size=\"sm\">Complete</x-wirekit::button>\n        </x-wirekit::modal.close>\n    </x-wirekit::modal.footer>\n</x-wirekit::modal>"
         }
@@ -1403,8 +1417,8 @@
             "code": "<x-wirekit::prose>\n    <p>This paragraph is capped at a readable line length by default, so long-form text stays comfortable to read on a wide screen instead of running the full width of its container. Set <code>measure=\"none\"</code> to opt out and fill the container, or <code>measure=\"wide\"</code> for a slightly roomier column.</p>\n</x-wirekit::prose>"
         },
         {
-            "title": "Readability presets",
-            "code": "<x-wirekit::stack gap=\"lg\">\n    <x-wirekit::prose preset=\"chat\"><p>Chat preset — tight leading, sized for a message bubble that already caps its own line length.</p></x-wirekit::prose>\n    <x-wirekit::prose preset=\"reading\"><p>Reading preset — roomier leading for long-form text you sit with for a while.</p></x-wirekit::prose>\n    <x-wirekit::prose preset=\"large\"><p>Large preset — bigger body text, with the leading grown to match so it actually reads easier.</p></x-wirekit::prose>\n</x-wirekit::stack>"
+            "title": "Prose with components inside",
+            "code": "<x-wirekit::prose>\n    <h2>Publish the assets</h2>\n    <p>Run the command once after installing and again after every upgrade. The\n       <a href=\"#\">integration guide</a> explains when you can skip it.</p>\n    <x-wirekit::code-block language=\"bash\">php artisan vendor:publish --tag=wirekit-assets</x-wirekit::code-block>\n    <p>The code block above and the button below keep their own spacing, color and radius.</p>\n    <x-wirekit::button href=\"#\">Read the integration guide</x-wirekit::button>\n</x-wirekit::prose>"
         }
     ],
     "qr-code": [
@@ -2091,8 +2105,8 @@
             "code": "<x-wirekit::row gap=\"sm\" align=\"center\">\n    <x-wirekit::toggle-button :pressed=\"true\" self-toggle aria-label=\"Bold\">B</x-wirekit::toggle-button>\n    <x-wirekit::toggle-button :pressed=\"false\" self-toggle aria-label=\"Italic\">I</x-wirekit::toggle-button>\n    <x-wirekit::toggle-button :pressed=\"false\" self-toggle aria-label=\"Underline\">U</x-wirekit::toggle-button>\n</x-wirekit::row>"
         },
         {
-            "title": "Optimistic toggle button — accepted, refused, and a slow answer",
-            "code": "<livewire:demos.optimistic-host>\n<x-wirekit::row gap=\"lg\" style=\"flex-wrap: wrap;\">\n    <x-wirekit::stack gap=\"xs\" align=\"start\">\n        <x-wirekit::text size=\"sm\" weight=\"medium\">Accepted</x-wirekit::text>\n        <x-wirekit::toggle-button :pressed=\"false\" optimistic=\"demoAccept\">Accepted</x-wirekit::toggle-button>\n        <x-wirekit::text size=\"xs\" intent=\"muted\">The press is kept and nothing is said.</x-wirekit::text>\n    </x-wirekit::stack>\n    <x-wirekit::stack gap=\"xs\" align=\"start\">\n        <x-wirekit::text size=\"sm\" weight=\"medium\">Refused</x-wirekit::text>\n        <x-wirekit::toggle-button :pressed=\"false\" optimistic=\"demoReject\">Refused</x-wirekit::toggle-button>\n        <x-wirekit::text size=\"xs\" intent=\"muted\">The press is taken back, and said out loud.</x-wirekit::text>\n    </x-wirekit::stack>\n    <x-wirekit::stack gap=\"xs\" align=\"start\">\n        <x-wirekit::text size=\"sm\" weight=\"medium\">Slow to answer</x-wirekit::text>\n        <x-wirekit::toggle-button :pressed=\"false\" optimistic=\"demoSlow\">Slow</x-wirekit::toggle-button>\n        <x-wirekit::text size=\"xs\" intent=\"muted\">The dashed outline is the provisional state.</x-wirekit::text>\n    </x-wirekit::stack>\n</x-wirekit::row>\n</livewire:demos.optimistic-host>"
+            "title": "Icon-only with a tooltip",
+            "code": "<x-wirekit::toggle-button icon=\"bolt\" tooltip=\"Fast mode\" self-toggle />"
         }
     ],
     "toggle": [
@@ -2107,6 +2121,20 @@
         {
             "title": "Toggle with helper text",
             "code": "<x-wirekit::toggle name=\"marketing\" label=\"Marketing emails\" hint=\"Occasional product updates, no more than once a month.\" />"
+        }
+    ],
+    "tool-call": [
+        {
+            "title": "A finished tool call",
+            "code": "<x-wirekit::tool-call name=\"search_docs\" status=\"done\" :seconds=\"2\" :arguments=\"['query' => 'rate limits', 'limit' => 4]\">\n    Four passages matched. The closest is <em>Rate limits</em>, which gives sixty requests a minute per token.\n</x-wirekit::tool-call>"
+        },
+        {
+            "title": "Every state a call can be in",
+            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::tool-call name=\"fetch_invoice\" status=\"pending\" />\n    <x-wirekit::tool-call name=\"get_weather\" status=\"running\" />\n    <x-wirekit::tool-call name=\"search_docs\" status=\"done\" :seconds=\"2\" />\n    <x-wirekit::tool-call name=\"charge_card\" status=\"failed\" :seconds=\"9\">Card declined — insufficient funds.</x-wirekit::tool-call>\n</x-wirekit::stack>"
+        },
+        {
+            "title": "Three calls in the order they happened",
+            "code": "<x-wirekit::timeline variant=\"compact\">\n    <x-wirekit::timeline.item time=\"0.0s\" intent=\"success\">\n        <x-wirekit::tool-call name=\"find_customer\" status=\"done\" :seconds=\"1\" :arguments=\"['email' => 'ada@example.test']\" />\n    </x-wirekit::timeline.item>\n    <x-wirekit::timeline.item time=\"1.2s\" intent=\"success\">\n        <x-wirekit::tool-call name=\"list_invoices\" status=\"done\" :seconds=\"3\" :arguments=\"['customer' => 4711, 'unpaid' => true]\" />\n    </x-wirekit::timeline.item>\n    <x-wirekit::timeline.item time=\"4.4s\">\n        <x-wirekit::tool-call name=\"send_reminder\" status=\"running\" :arguments=\"['invoice' => 8814]\" />\n    </x-wirekit::timeline.item>\n</x-wirekit::timeline>"
         }
     ],
     "toolbar": [

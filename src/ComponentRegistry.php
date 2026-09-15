@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\File;
 use Pushery\WireKit\Components\Chart;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\ClassPropsExtractor;
+use Pushery\WireKit\Support\ComponentTokens;
 use Pushery\WireKit\Support\PropsParser;
 
 class ComponentRegistry
@@ -50,6 +51,7 @@ class ComponentRegistry
             'time-picker' => ['category' => 'Form', 'description' => 'Time selection input'],
             'toggle' => ['category' => 'Form', 'description' => 'Toggle switch with label and hint'],
             'toggle-button' => ['category' => 'Display', 'description' => 'Single two-state button that stays pressed (aria-pressed) — the bold/italic/mute shape'],
+            'tool-call' => ['category' => 'Display', 'description' => 'One tool invocation an assistant made — name, status, arguments as JSON, and the result behind a disclosure'],
 
             // ── Layout ──
             'app-rail' => ['category' => 'Navigation', 'description' => 'Full-height module rail with tooltip, below (captions under the icons), or inline labels'],
@@ -150,6 +152,7 @@ class ComponentRegistry
             'assistant-message' => ['category' => 'Display', 'description' => 'AI assistant turn — roles, streaming body, model chip, reasoning disclosure, and coalesced screen-reader announcements'],
             'avatar' => ['category' => 'Display', 'description' => 'User avatar with image, initials, or status'],
             'badge' => ['category' => 'Display', 'description' => 'Small status label'],
+            'branch-switcher' => ['category' => 'Display', 'description' => 'Steps between several generated answers — prev/next, a live count, and a polite announcement per move'],
             'button' => ['category' => 'Display', 'description' => 'Action button with variants and loading state'],
             'button-group' => ['category' => 'Display', 'description' => 'Welds adjacent controls into one unit — collapsed inner radii and a single seam, RTL-safe'],
             'calendar' => ['category' => 'Display', 'description' => 'Calendar date display'],
@@ -162,6 +165,7 @@ class ComponentRegistry
             'countdown' => ['category' => 'Display', 'description' => 'Live countdown to an absolute deadline with overdue + urgent states (client-side, no polling)'],
             'data-list' => ['category' => 'Display', 'description' => 'Key-value data display list'],
             'empty-state' => ['category' => 'Display', 'description' => 'Placeholder for empty content areas'],
+            'flag' => ['category' => 'Display', 'description' => 'Country or region flag from the optional pushery/wirekit-flags package, with a same-size placeholder without it'],
             'image' => ['category' => 'Display', 'description' => 'Content image as a figure with alt text, lazy loading, CLS-safe ratio box, and optional caption'],
             'image-compare' => ['category' => 'Display', 'description' => 'Before/after image comparison slider'],
             'image-gallery' => ['category' => 'Display', 'description' => 'Responsive image grid with an accessible, keyboard-navigable lightbox'],
@@ -454,7 +458,12 @@ class ComponentRegistry
      * bug classes (truncated `config(...)` defaults, leaked inline
      * comments) that the prior regex parser silently shipped.
      *
-     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>
+     * ⚠️ `values` and `value_type` joined the record when the manifest gained them, and this
+     * annotation did not follow. Nothing at runtime noticed — the keys were there — but the
+     * annotation is what a reader and static analysis treat as the contract, and `McpCatalog`
+     * declared a shape its own input could not satisfy for a whole cycle.
+     *
+     * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
      */
     public static function extractProps(string $name): array
     {
@@ -475,8 +484,11 @@ class ComponentRegistry
      * the two together would quietly widen every published surface.
      *
      * The one question where they belong together is "is this attribute a name
-     * the component knows?", because Blade accepts either spelling on the tag —
-     * so the unknown-prop warning unions them and nothing else does.
+     * the component knows?", because Blade accepts either spelling on the tag.
+     * That union has a name of its own — `acceptedPropNames()` — and every reader
+     * of that question goes through it. It was spelled out at a single caller
+     * until a second one asked the same thing from `extractProps()` alone and
+     * reported a correct call as a typo.
      *
      * A class-based component has no `@aware`; the empty list is the honest
      * answer rather than a special case.
@@ -490,6 +502,36 @@ class ComponentRegistry
         }
 
         return PropsParser::parseAwareBlade(self::bladeFilePath($name));
+    }
+
+    /**
+     * Every name this component ACCEPTS on its tag — `@props` and `@aware` together.
+     *
+     * A different question from `extractProps()`, and the difference is the whole reason this
+     * method exists. That one answers "which props does the component declare?", which is what a
+     * manifest, a docs page and an API map mean. This one answers "would Blade do something with
+     * this attribute?" — and there the two blocks are equal, because `@aware` reads
+     * `currentComponentData`, which carries the component's OWN data before the parent chain. A
+     * key written directly on the tag therefore arrives and takes effect; measured on
+     * `<x-wirekit::accordion.item variant="separated">`, which renders the separated chrome.
+     *
+     * ⚠️ THE UNION USED TO BE WRITTEN OUT AT ITS ONE CALLER, AND A SECOND CALLER THEN GOT IT
+     * WRONG. The unknown-prop warning unions both and says why; `wirekit:doctor:props` asks the
+     * identical question from `extractProps()` alone, and reported `variant` on
+     * `accordion.item` — a call in this package's own `faq-item` — as a typo. The two readers of
+     * one question now share one answer instead of one of them carrying a copy.
+     *
+     * @return list<string>
+     */
+    public static function acceptedPropNames(string $name): array
+    {
+        return array_values(array_filter(array_map(
+            static fn (array $prop): string => (string) $prop['name'],
+            [
+                ...self::extractProps($name),
+                ...self::extractAwareProps($name),
+            ],
+        ), static fn (string $prop): bool => $prop !== ''));
     }
 
     /**
@@ -617,14 +659,33 @@ class ComponentRegistry
     }
 
     /**
-     * A parent's sub-components, each with the props it actually declares.
+     * The design tokens a component reads, sorted: the custom properties from the shipped
+     * stylesheet that its template, the partials it includes, the package helpers it calls and
+     * the stylesheet rules on the classes and `data-wk-*` attributes it renders read.
+     *
+     * A sub-component answers for itself, and a parent never for its parts. That boundary is what
+     * lets a reader place a token on the element that reads it. Derived on every call, so the
+     * answer cannot fall behind the markup; how, and what it cannot see, is on ComponentTokens.
+     *
+     * @return list<string>
+     */
+    public static function tokensOf(string $name): array
+    {
+        return ComponentTokens::of($name);
+    }
+
+    /**
+     * A parent's sub-components, each with the props it declares and the tokens it reads.
      *
      * The bare-name form (`subComponentsOf()`) tells a tool that `table.th`
      * exists and nothing else, so its `headerScope` prop — shipped and
      * documented — was unreachable through every surface fed by it. A name
      * without its props is a pointer to documentation the tool cannot read.
      *
-     * @return list<array{name: string, tag: string, props: list<array<string, mixed>>}>
+     * Each part answers for its own tokens and never for its parent's, so a token is listed once,
+     * beside the element that reads it.
+     *
+     * @return list<array{name: string, tag: string, props: list<array<string, mixed>>, tokens: list<string>}>
      */
     public static function describeSubComponentsOf(string $parent): array
     {
@@ -635,6 +696,7 @@ class ComponentRegistry
                 'name' => $sub,
                 'tag' => self::tag($sub),
                 'props' => self::extractProps($sub),
+                'tokens' => self::tokensOf($sub),
             ];
         }
 

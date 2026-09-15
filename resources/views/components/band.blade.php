@@ -86,6 +86,6 @@
     carry meaning, the caller says so — `as="header"`, `as="footer"`, or an aria-label of their
     own through the attribute bag.
 --}}
-<{{ $as }} {{ $attributes->class([$classes]) }}>
+<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </{{ $as }}>

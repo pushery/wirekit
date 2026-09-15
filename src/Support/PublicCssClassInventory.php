@@ -100,7 +100,7 @@ final class PublicCssClassInventory
      * The scan is deliberately wider than `class="…"` — it has to reach `:class` bindings
      * and Alpine expressions — which is exactly why it cannot tell a class apart from the
      * other things that carry the house prefix. Each exclusion below is one of those,
-     * learned from an identifier that was published as a public class and styles nothing.
+     * learned from an identifier the scan took for a public class and that styles nothing.
      *
      * @return list<string>
      */
@@ -136,6 +136,12 @@ final class PublicCssClassInventory
             // `stableId('wk-tabs', …)` reads as a public class named `wk-tabs`, which is
             // emitted nowhere.
             $source = (string) preg_replace('/(stableId\s*\(\s*)(["\']).*?\2/s', '$1$2$2', $source);
+
+            // Third shape: the attribute names a template strips from its bag. `->except([…])` and
+            // `->only([…])` list ATTRIBUTES, and one of them carries the prefix: a field set hands its
+            // controls a value under `wkFieldSet`, and each control removes that name in both
+            // spellings so a caller cannot write it onto the input. An attribute name styles nothing.
+            $source = (string) preg_replace('/(->\s*(?:except|only)\s*\(\s*)\[[^\]]*\]/s', '$1[]', $source);
 
             // The negative lookbehind excludes `--wk-…` CSS variables AND Tailwind named-group
             // / peer identifiers (`group/wk-profile`, `peer/wk-…`): a `/`-prefixed token is a

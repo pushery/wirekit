@@ -121,7 +121,7 @@
     $newTabHint = $opensNewTab ? '<span class="sr-only">'.e(__('wirekit::(opens in new tab)')).'</span>' : '';
 @endphp
 
-<{{ $as }}
+<{{ $as }} data-wk-prose-skip
     @if($href) href="{{ $href }}" @endif
     @if($external) target="_blank" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif

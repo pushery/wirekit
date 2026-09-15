@@ -32,7 +32,7 @@
     'scope' => null,
 ])
 
-@aware(['announceErrors' => null])
+@aware(['announceErrors' => null, 'wkFieldSet' => null])
 
 @php
     use Pushery\WireKit\Support\BooleanProp;
@@ -42,7 +42,7 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['announceErrors', 'announce-errors']);
+    $attributes = $attributes->except(['announceErrors', 'announce-errors', 'wkFieldSet', 'wk-field-set']);
 @endphp
 
 
@@ -78,13 +78,26 @@
     $hasAccessibleName = $label !== null || $attributes->has('aria-label') || $attributes->has('aria-labelledby');
     $fallbackAriaLabel = $hasAccessibleName ? null : ucfirst(str_replace(['-', '_'], ' ', (string) $name));
 
+    // The field.set around this toggle, when there is one. A bag entry under a key the group
+    // answers for is the group's message and renders once, above the group.
+    $fieldGroup = $wkFieldSet instanceof \Pushery\WireKit\Support\FieldGroup ? $wkFieldSet : null;
+    $groupOwnsBagEntry = ! $error && ($fieldGroup?->covers($name) ?? false);
+
     // Error detection: explicit prop OR Laravel validation bag
-    $hasError = $error || ($errors ?? null)?->has($name);
-    // One description list for the control: the component's own id first, then a caller's
+    $hasError = $error || (! $groupOwnsBagEntry && ($errors ?? null)?->has($name));
+    $errorMessage = $error ?? ($groupOwnsBagEntry ? null : ($errors ?? null)?->first($name));
+    $isInvalid = $hasError || ($fieldGroup?->isInvalid($errors ?? null) ?? false);
+
+    // One description list for the control: its own message, the group's, then a caller's
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
-    $describedBy = trim(($hasError ? $id.'-error' : ($hint ? $id.'-hint' : '')).' '.((string) $attributes->get('aria-describedby', '')));
-    $errorMessage = $error ?? ($errors ?? null)?->first($name);
+    $describedBy = \Pushery\WireKit\Support\FieldGroup::describedBy(
+        $fieldGroup,
+        $errors ?? null,
+        $hasError ? $id.'-error' : null,
+        $hint ? $id.'-hint' : null,
+        $attributes->get('aria-describedby'),
+    );
 
     // Size scale: track width/height + knob offset distance
     // Knob diameter = track height minus 4px of padding
@@ -215,8 +228,8 @@
                     x-bind:aria-busy="isPending"
                     x-on:change="toggle()"
                 @endif
-                @if($hasError) aria-invalid="true" @endif
-                @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
+                @if($isInvalid) aria-invalid="true" @endif
+                @if($describedBy !== null) aria-describedby="{{ $describedBy }}" @endif
                 {{-- `peer sr-only` rides the bag rather than sitting beside it: hardcoded, a
                      caller's own class became a second class attribute and the browser kept
                      only this one. --}}
@@ -254,8 +267,8 @@
 
     {{-- Error message or hint text --}}
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

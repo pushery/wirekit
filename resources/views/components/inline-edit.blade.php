@@ -440,15 +440,15 @@
     </div>
 
     @if($hint)
-        <p id="{{ $hintId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $hintId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 
     @if($showsError)
-        <p id="{{ $errorId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $errorId }}" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @endif
 
     {{-- The save outcome is ANNOUNCED, never inferred from a round trip ending.
          role="status" is polite: it waits for the user to finish what they are
          doing rather than interrupting mid-word. --}}
-    <p x-ref="status" role="status" aria-live="{{ $announceError ? 'polite' : 'off' }}" class="sr-only"></p>
+    <p data-wk-prose-skip x-ref="status" role="status" aria-live="{{ $announceError ? 'polite' : 'off' }}" class="sr-only"></p>
 </div>

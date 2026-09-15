@@ -36,7 +36,7 @@
     }
 @endphp
 
-<h{{ $levelValue }}
+<h{{ $levelValue }} data-wk-prose-skip
     x-bind:id="$wkAncestorData('[data-wk-title-id]', 'wkTitleId')"
     {{ $attributes->class([$classes]) }}
 >

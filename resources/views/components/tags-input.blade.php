@@ -252,7 +252,9 @@
             <input type="hidden" :name="{{ \Pushery\WireKit\Support\AlpinePayload::string($name.'[]') }}" :value="tag" />
         </template>
 
-        <div class="{{ $containerClasses }} {{ $stateClasses }} {{ $disabledClasses }}" @click="$refs.input.focus()"
+        {{-- `wk-field-frame`: on a coarse pointer the frame takes the 44px touch floor and the text
+             input inside gives its own up. Outside `resolveClasses()`, so restyling keeps it. --}}
+        <div class="{{ $containerClasses }} {{ $stateClasses }} {{ $disabledClasses }} wk-field-frame" @click="$refs.input.focus()"
             {{-- A named group around the chips AND the field, so a screen reader that
                  lands on the remove button of the fourth chip is told which control it
                  is inside. Only when a label exists: `role="group"` with no accessible
@@ -346,8 +348,8 @@
     </div>
 
     @if($hasError && $errorMessage)
-        <p id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>
     @elseif($hint)
-        <p id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $id }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
     @endif
 </div>

@@ -73,7 +73,7 @@
         }
     }
 
-    $labelText = $label !== '' ? $label : trim((string) $slot);
+    $labelText = $label !== '' ? $label : \Pushery\WireKit\Support\SlotContent::text($slot);
 
     // A tooltip is rendered ONLY where the label is not drawn. Beside a visible caption
     // it is not merely redundant: it gives the link a second source of the same name,
@@ -264,14 +264,13 @@
      column; an inline-block wrapper leaves the module's hover target narrower than the
      row it appears to occupy. `focusable-trigger="false"` because the slot is already an
      <a> — the default would put a second tab stop in front of every module. --}}
-@if($needsTooltip && $expandable)
-    {{-- Expandable: the tooltip must go quiet the moment the label becomes visible, so
-         `disabled` is BOUND to live state rather than decided at render — the tooltip
-         reads the attribute at trigger time. `expanded` is in scope because the rail's
-         Alpine component wraps this subtree. --}}
+@if($needsTooltip)
+    {{-- The tooltip must go quiet the moment the label becomes visible, so `disabled` is BOUND
+         to live state rather than decided at render: the tooltip reads the attribute at trigger
+         time. Every rail can show its names at runtime, an expandable one on its toggle and any
+         rail in a drawer it has to itself, and `expanded` is in scope because the rail's Alpine
+         component wraps this subtree. --}}
     <x-wirekit::tooltip :text="$labelText" :placement="$placement" focusable-trigger="false" class="block w-full" x-bind:data-wk-tooltip-disabled="expanded">@include('wirekit::components.partials.app-rail-link')</x-wirekit::tooltip>
-@elseif($needsTooltip)
-    <x-wirekit::tooltip :text="$labelText" :placement="$placement" focusable-trigger="false" class="block w-full">@include('wirekit::components.partials.app-rail-link')</x-wirekit::tooltip>
 @else
     @include('wirekit::components.partials.app-rail-link')
 @endif

@@ -3577,9 +3577,9 @@ class VerifyInstallationCommand extends Command
      * Anchored at the rule head rather than found with strpos(), because a
      * substring search matches those characters wherever they occur. `.dark`
      * occurs inside `html.dark` and inside `.dark-mode` — and, the case that
-     * made this check worse than merely noisy, inside
-     * `@custom-variant dark (&:where(.dark, .dark *));`, the line the
-     * integration guide tells every developer to write. That at-rule carries
+     * made this check worse than merely noisy, inside the
+     * `@custom-variant dark (…)` line the integration guide tells every
+     * developer to write. That at-rule carries
      * no braces of its own, so the old search anchored inside it and then
      * walked forward to the NEXT rule's opening brace: on the documented
      * setup — the `@custom-variant` line, then `:root`, then `.dark` — it

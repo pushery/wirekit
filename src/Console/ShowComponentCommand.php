@@ -220,6 +220,7 @@ class ShowComponentCommand extends Command
             'props' => $props,
             'slots' => $this->extractSlots($name),
             'sub_components' => $subComponents,
+            'tokens' => ComponentRegistry::tokensOf($name),
         ];
 
         $this->output->write(

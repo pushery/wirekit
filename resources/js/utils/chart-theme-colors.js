@@ -14,7 +14,7 @@
  *   values, with mode-aware fallbacks if a variable is undeclared.
  *
  * - `palette(colors)` — 8-slot dataset palette (accent, danger, success,
- *   warning, info, plus three fixed fallbacks). Identical across adapters
+ *   warning, info, plus three accents whose shade follows the mode). Identical across adapters
  *   so dataset 0 paints the same visual color whether Chart.js or
  *   ApexCharts is active.
  *
@@ -45,6 +45,9 @@
  *   success: string,
  *   warning: string,
  *   info: string,
+ *   violet: string,
+ *   pink: string,
+ *   orange: string,
  *   textPrimary: string,
  *   textMuted: string,
  *   border: string
@@ -144,32 +147,72 @@ export function resolveThemeColors(style) {
         return false;
     };
 
-    // Chart-DATA colors (fills, strokes, dataset colors). These must be
-    // visible against the chart background. The WireKit Default theme uses
-    // a neutral palette (--color-wk-accent: oklch(20.5% 0 0) — near-black
-    // for UI chrome) which would render a chart polygon as a black blob
-    // on a white background. Detect that case via isGrayscale() and
-    // substitute the softer fallback so out-of-the-box chart legibility
-    // doesn't depend on the developer overriding the accent token. Themes
-    // that DO want neutral charts can override with a chroma > 0 oklch
-    // (e.g. oklch(50% 0.01 250) — a near-neutral with just enough chroma
-    // to register as non-grayscale) or with a hex/rgb declaration.
+    // The surface every series is read against: the page's own background token. A chart sits on
+    // it, or on a card the default themes keep at the same value.
+    const background = resolve('--color-wk-bg', '#ffffff', '#0a0a0a');
+
+    // WCAG relative luminance of an rgb()/rgba() or #rrggbb string, or null for anything else. An
+    // unparseable color is left alone below rather than second-guessed.
+    const luminance = (colorStr) => {
+        let channels = null;
+        const rgb = colorStr.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        const hex = colorStr.match(/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i);
+
+        if (rgb) {
+            channels = [rgb[1], rgb[2], rgb[3]].map(Number);
+        } else if (hex) {
+            channels = [hex[1], hex[2], hex[3]].map((part) => parseInt(part, 16));
+        }
+
+        if (!channels) {
+            return null;
+        }
+
+        const [r, g, b] = channels.map((value) => {
+            const c = value / 255;
+            return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        });
+
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+
+    const contrastWithBackground = (colorStr) => {
+        const color = luminance(colorStr);
+        const surface = luminance(background);
+
+        if (color === null || surface === null) {
+            return Infinity;
+        }
+
+        return (Math.max(color, surface) + 0.05) / (Math.min(color, surface) + 0.05);
+    };
+
+    // Chart-DATA colors (fills, strokes, dataset colors). These must be visible against the chart
+    // background: WCAG 1.4.11 asks 3:1 of graphics a reader needs to understand the content, and a
+    // series is exactly that. Two cases hand a series to the chart's own shade of the hue:
+    //
+    //   * A GRAY token. The WireKit Default theme's accent is `oklch(20.5% 0 0)`, near-black for UI
+    //     chrome, which would render a chart polygon as a black blob. Themes that DO want neutral
+    //     charts can use a chroma > 0 oklch (e.g. `oklch(50% 0.01 250)`) or a hex/rgb declaration.
+    //   * A token under 3:1 against the background. The default warning token is shared with every
+    //     warning surface in the library and measured 2.13:1 on white; the substitute keeps the
+    //     series legible without changing the token for everything else that reads it.
+    //
+    // The substitutes are 600 shades in light mode and 200 shades in dark mode, and each clears 3:1
+    // against the default background of its mode.
     const resolveChartColor = (varName, fallbackLight, fallbackDark) => {
         const resolved = resolve(varName, fallbackLight, fallbackDark);
-        if (isGrayscale(resolved)) {
+        if (isGrayscale(resolved) || contrastWithBackground(resolved) < 3) {
             return isDark ? fallbackDark : fallbackLight;
         }
         return resolved;
     };
 
     const colors = {
-        // Chart-data palette — Tailwind 300-shade light tones, 200-shade
-        // dark tones (one step lighter on dark backgrounds, matching the
-        // standard `bg-sky-300 dark:bg-sky-200` Tailwind pattern). Sits in
-        // a soft, professional saturation band that reads as polished
-        // rather than alarming when used as polygon fills + dataset
-        // markers, while keeping enough contrast against both light and
-        // dark surfaces.
+        // Chart-data substitutes: Tailwind 600 shades in light mode, 200 shades in dark mode. The
+        // light ones were 300 shades, a soft band that read as polished and measured 1.4 to 1.9:1 on
+        // white, so a default install drew its first series at 1.67:1. A 600 shade is the lightest
+        // step of each hue that clears 3:1 there; the dark 200 shades clear it many times over.
         //
         // Sky-blue replaces flat blue for a friendlier accent default;
         // rose replaces red for a less-alarming negative signal that still
@@ -177,11 +220,16 @@ export function resolveThemeColors(style) {
         // toggling between modes MUST visibly recolor to signal the theme
         // change, otherwise dark-mode regression tests fail and developers
         // perceive the chart as not theme-aware.
-        accent:      resolveChartColor('--color-wk-accent', '#7dd3fc', '#bae6fd'),
-        danger:      resolveChartColor('--color-wk-danger', '#fda4af', '#fecdd3'),
-        success:     resolveChartColor('--color-wk-success', '#86efac', '#bbf7d0'),
-        warning:     resolveChartColor('--color-wk-warning', '#fcd34d', '#fde68a'),
-        info:        resolveChartColor('--color-wk-info', '#67e8f9', '#a5f3fc'),
+        accent:      resolveChartColor('--color-wk-accent', '#0284c7', '#bae6fd'),
+        danger:      resolveChartColor('--color-wk-danger', '#e11d48', '#fecdd3'),
+        success:     resolveChartColor('--color-wk-success', '#16a34a', '#bbf7d0'),
+        warning:     resolveChartColor('--color-wk-warning', '#d97706', '#fde68a'),
+        info:        resolveChartColor('--color-wk-info', '#0891b2', '#a5f3fc'),
+        // The three accents after the five intents carry no meaning and no token of their own, so
+        // their shade follows the mode, on the same rule as the substitutes above.
+        violet:      isDark ? '#c4b5fd' : '#7c3aed',
+        pink:        isDark ? '#f9a8d4' : '#db2777',
+        orange:      isDark ? '#fdba74' : '#ea580c',
         // UI-chrome tokens (text, muted, border) stay strictly themed — a
         // neutral theme should keep neutral text and borders; only chart-
         // data fills get the legibility fallback above.
@@ -209,14 +257,13 @@ export function palette(colors) {
         colors.success,
         colors.warning,
         colors.info,
-        // Tailwind 300-shade tones for slots 6-8 — match the softer
-        // saturation band used in the resolveChartColor fallbacks above.
-        // These three are non-semantic accents (no "this means good/bad"
-        // meaning): violet, pink, orange. Together with the five semantic
-        // slots they cover up to 8 series without repeating colors.
-        '#c4b5fd', // violet-300
-        '#f9a8d4', // pink-300
-        '#fdba74', // orange-300
+        // Slots 6-8 are non-semantic accents (no "this means good/bad" meaning): violet, pink,
+        // orange. Together with the five semantic slots they cover up to 8 series without
+        // repeating colors. Their shade follows the mode (see `resolveThemeColors`); the 300 shades
+        // remain the answer for a caller that hands in a colors object of its own.
+        colors.violet ?? '#c4b5fd',
+        colors.pink ?? '#f9a8d4',
+        colors.orange ?? '#fdba74',
     ];
 }
 

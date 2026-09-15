@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pushery\WireKit\Console;
 
 use Illuminate\Console\Command;
+use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\SuggestSimilar;
 use Pushery\WireKit\Theming\WcagContrast;
 
@@ -155,6 +156,13 @@ class DoctorA11yCommand extends Command
             if ($contents === false) {
                 continue;
             }
+
+            // A comment is where somebody QUOTED the markup these rules look for, usually to
+            // explain why the real thing is correct — so it is the likeliest place to find a
+            // finding that is not one. Blanked rather than removed, so every line number below
+            // still points at the line it did.
+            $contents = BladeParser::blankComments($contents);
+
             $rel = str_replace(base_path().'/', '', $file);
 
             foreach ($this->rules() as $rule) {
@@ -382,7 +390,16 @@ class DoctorA11yCommand extends Command
                 $ratio = WcagContrast::ratio($fg, $bg);
                 if ($ratio === null) {
                     $totals['skip']++;
-                    $this->line(sprintf('    <fg=gray>SKIP</> %-44s   unsupported color format', $pair['name']));
+                    // Two different findings, and only one is about how a value is written. A translucent
+                    // background has no contrast of its own, so calling it a format problem would send a
+                    // developer looking for a typo in a value that parsed perfectly well.
+                    $this->line(sprintf(
+                        '    <fg=gray>SKIP</> %-44s   %s',
+                        $pair['name'],
+                        WcagContrast::unmeasurableReason($fg, $bg) === 'translucent-background'
+                            ? 'translucent background, contrast depends on what lies beneath it'
+                            : 'unsupported color format',
+                    ));
 
                     continue;
                 }
@@ -462,7 +479,18 @@ class DoctorA11yCommand extends Command
 
         $extract = function (string $selector, string $source): array {
             $escaped = preg_quote($selector, '/');
-            $pattern = '/(?<![\w-])(?::where\(\s*)?'.$escaped.'(?:\s*\))?\s*\{([^}]*)\}/u';
+
+            // ⚠️ THE SELECTOR MAY SIT IN A LIST. A theme writes `:root, .light` for a token that
+            // changes with the mode, as the theming guide asks, and the shipped stylesheet once
+            // declared its own light tokens on `:where(:root), :where(.light)`. Requiring the
+            // brace to follow the selector immediately read such a rule as absent — and absent is
+            // indistinguishable from empty here, so every pairing came back "token unresolved"
+            // rather than wrong.
+            //
+            // `[^{};]*` and not `[^{}]*`: a selector list cannot contain a semicolon, and
+            // without that exclusion a `.dark` inside a DECLARATION (`:where(.dark, .dark *)`)
+            // runs across the gap to the next rule and captures a block it does not belong to.
+            $pattern = '/(?<![\w-])(?::where\(\s*)?'.$escaped.'(?:\s*\))?(?:\s*,[^{};]*)?\s*\{([^}]*)\}/u';
             preg_match_all($pattern, $source, $matches);
             $tokens = [];
             foreach ($matches[1] ?? [] as $body) {

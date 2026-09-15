@@ -63,6 +63,6 @@
     $as = \Pushery\WireKit\WireKit::tagName('container', (string) $as);
 @endphp
 
-<{{ $as }} {{ $attributes->class([$classes]) }}>
+<{{ $as }} data-wk-prose-skip {{ $attributes->class([$classes]) }}>
     {{ $slot }}
 </{{ $as }}>

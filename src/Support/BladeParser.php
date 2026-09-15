@@ -632,6 +632,67 @@ final class BladeParser
     }
 
     /**
+     * Blank every comment in a Blade file while leaving every byte offset where it was.
+     *
+     * For a scanner that reads markup, a comment is the one place text appears that the page
+     * never gets — and it is exactly where the markup a scanner looks for tends to be quoted,
+     * because that is where somebody explained the rule. `qr-code` says in a `//` comment that
+     * "the accessible name lives on the wrapper `<div role="img">` above it", and the a11y
+     * linter read that sentence as an unnamed `role="img"` and reported an ERROR over two
+     * wrappers that both carry `aria-label`.
+     *
+     * ⚠️ BLANKED, NOT REMOVED, AND THAT IS THE WHOLE DESIGN. Every caller reports a line
+     * number, and most compute it from a byte offset with `substr_count(…, "\n")`. Deleting a
+     * comment shifts everything after it, so a scanner fed a stripped file would report real
+     * findings at the wrong lines — trading a false positive for a wrong address, which is
+     * worse because it looks right. Each matched character becomes a space, each newline stays
+     * a newline, and the string keeps its exact length.
+     *
+     * Three shapes, because all three hold prose: Blade comments, HTML comments, and the `//`,
+     * `#` and block comments inside a `@php` block. The PHP half goes through `token_get_all()`
+     * rather than a pattern, so a `//` inside a string literal is left alone.
+     */
+    public static function blankComments(string $contents): string
+    {
+        $blank = static fn (string $text): string => (string) preg_replace('/[^\n]/u', ' ', $text);
+
+        $contents = (string) preg_replace_callback(
+            '/\{\{--.*?--\}\}|<!--.*?-->/s',
+            static fn (array $m): string => $blank($m[0]),
+            $contents,
+        );
+
+        return (string) preg_replace_callback(
+            '/@php\b.*?@endphp\b/s',
+            static function (array $m) use ($blank): string {
+                $body = $m[0];
+
+                // `token_get_all` needs a real open tag to tokenize at all; the sentinel is the
+                // same length as the directive it replaces, so every offset inside the body
+                // survives the round trip.
+                $php = '<?php     '.mb_substr($body, mb_strlen('@php'), mb_strlen($body) - mb_strlen('@php') - mb_strlen('@endphp'));
+
+                foreach (array_reverse(token_get_all($php, TOKEN_PARSE)) as $token) {
+                    if (! is_array($token) || ! in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+                        continue;
+                    }
+
+                    $offset = mb_strpos($body, $token[1], 0);
+
+                    if ($offset === false) {
+                        continue;
+                    }
+
+                    $body = mb_substr($body, 0, $offset).$blank($token[1]).mb_substr($body, $offset + mb_strlen($token[1]));
+                }
+
+                return $body;
+            },
+            $contents,
+        ) ?: $contents;
+    }
+
+    /**
      * Extract every WireKit component reference (`<x-wirekit::name>`)
      * from a Blade file, returning unique component names sorted.
      *

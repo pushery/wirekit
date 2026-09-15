@@ -246,7 +246,7 @@
     div. Block mode stays `<div>` for the default dashboard-cell use case.
 --}}
 @php $sparklineTag = $inline ? 'span' : 'div'; @endphp
-<{{ $sparklineTag }}
+<{{ $sparklineTag }} data-wk-prose-skip
     {{ $sparklineAttributes->class([$rootClass]) }}
     style="{{ $displayStyle }}height: {{ $resolvedHeight }}; {{ $inline ? 'width: 4rem;' : 'width: 100%;' }}"
     data-trend="{{ $resolvedTrend }}"

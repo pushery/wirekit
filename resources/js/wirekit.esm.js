@@ -12,6 +12,7 @@
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
+import { registerFindableDirective } from './utils/findable.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 import wirekitChartJs from './components/chart.js';
@@ -44,6 +45,7 @@ import wirekitCodeBlock from './components/code-block.js';
 import wirekitSlider from './components/slider.js';
 import wirekitPasswordInput from './components/password-input.js';
 import wirekitSegmentedControl from './components/segmented-control.js';
+import wirekitBranchSwitcher from './components/branch-switcher.js';
 import wirekitPricingTable from './components/pricing-table.js';
 import wirekitSortable from './components/sortable.js';
 import wirekitProgress from './components/progress.js';
@@ -146,6 +148,8 @@ export function installRuntime(Alpine) {
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
     // apply it after EVERY render — not only the first. See utils/indeterminate.js.
     registerIndeterminateDirective(Alpine);
+    // Disclosure panels the browser find in page can open. See utils/findable.js.
+    registerFindableDirective(Alpine);
 }
 
 /**
@@ -211,6 +215,7 @@ export default function (Alpine) {
     Alpine.data('wirekitSlider', wirekitSlider);
     Alpine.data('wirekitPasswordInput', wirekitPasswordInput);
     Alpine.data('wirekitSegmentedControl', wirekitSegmentedControl);
+    Alpine.data('wirekitBranchSwitcher', wirekitBranchSwitcher);
     Alpine.data('wirekitPricingTable', wirekitPricingTable);
     Alpine.data('wirekitSortable', wirekitSortable);
     Alpine.data('wirekitProgress', wirekitProgress);
@@ -301,6 +306,7 @@ export {
     wirekitSlider,
     wirekitPasswordInput,
     wirekitSegmentedControl,
+    wirekitBranchSwitcher,
     wirekitPricingTable,
     wirekitSortable,
     wirekitProgress,

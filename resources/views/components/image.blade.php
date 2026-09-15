@@ -83,7 +83,7 @@
 @endphp
 
 <figure {{ $attributes->class([$figureClasses]) }}>
-    <img
+    <img data-wk-prose-skip
         src="{{ $src }}"
         alt="{{ $alt ?? '' }}"
         loading="{{ $loading }}"

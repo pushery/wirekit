@@ -112,7 +112,7 @@
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 @endphp
 
-<{{ $tag }}
+<{{ $tag }} data-wk-prose-skip
     id="{{ $itemId }}"
     @if($href) href="{{ $href }}" @endif
     @if($tag === 'button') type="button" @endif

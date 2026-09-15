@@ -7,6 +7,7 @@ namespace Pushery\WireKit\Mcp;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Console\MakeCommand;
 use Pushery\WireKit\Support\AccessibilityContract;
+use Pushery\WireKit\Support\ComponentTokens;
 use Pushery\WireKit\Theming\ThemePresetRegistry;
 use Pushery\WireKit\WireKit;
 
@@ -159,9 +160,10 @@ final class McpCatalog
      *     tag: string,
      *     docs_url: ?string,
      *     component_kind: 'anonymous'|'class',
-     *     props: list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>}>,
+     *     props: list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>,
      *     slots: list<array{name: string, required: bool}>,
-     *     sub_components: list<array{name: string, tag: string, props: list<array<string, mixed>>}>,
+     *     sub_components: list<array{name: string, tag: string, props: list<array<string, mixed>>, tokens: list<string>}>,
+     *     tokens: list<string>,
      *     parent?: string,
      * }|null
      */
@@ -226,6 +228,7 @@ final class McpCatalog
             'props' => $props,
             'slots' => ComponentRegistry::slotsOf($name),
             'sub_components' => ComponentRegistry::describeSubComponentsOf($name),
+            'tokens' => ComponentRegistry::tokensOf($name),
         ] + (isset($meta['parent']) ? ['parent' => $meta['parent']] : []);
     }
 
@@ -429,6 +432,10 @@ final class McpCatalog
      * overrides. `McpTokensCoverTheDocumentedTokenReferenceTest` holds it against the reference
      * rather than against a count, since a count cannot say which one went missing.
      *
+     * The reader is `ComponentTokens::declaredIn()`, the same one every component's `tokens` list
+     * is drawn from, so this catalog and the manifest cannot disagree about which properties are
+     * tokens.
+     *
      * @return list<array{name: string, value: string}>
      */
     public function tokens(): array
@@ -438,20 +445,9 @@ final class McpCatalog
             return [];
         }
 
-        $css = (string) file_get_contents($cssPath);
-        if (! preg_match_all('/^\s*(--[a-z0-9-]+)\s*:\s*([^;]+);/m', $css, $m, PREG_SET_ORDER)) {
-            return [];
-        }
-
-        $seen = [];
         $out = [];
-        foreach ($m as $match) {
-            $tokenName = $match[1];
-            if (isset($seen[$tokenName])) {
-                continue;
-            }
-            $seen[$tokenName] = true;
-            $out[] = ['name' => $tokenName, 'value' => trim($match[2])];
+        foreach (ComponentTokens::declaredIn((string) file_get_contents($cssPath)) as $tokenName => $value) {
+            $out[] = ['name' => $tokenName, 'value' => $value];
         }
 
         return $out;

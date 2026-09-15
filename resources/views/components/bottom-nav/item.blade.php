@@ -109,7 +109,7 @@
     }
 @endphp
 
-<a
+<a data-wk-prose-skip
     href="{{ $href }}"
     @if($active) aria-current="page" @endif
     {{-- `aria-label=""` is not "no label", it is an EMPTY name, and it overrides the text
