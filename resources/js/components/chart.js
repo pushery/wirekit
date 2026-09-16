@@ -1,4 +1,4 @@
-import { resolveThemeColors, palette, withOpacity } from '../utils/chart-theme-colors.js';
+import { resolveThemeColors, palette, withOpacity, themeModeOf } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
 
@@ -655,7 +655,7 @@ Chart.register(...registerables);</pre>
          * Both wirekitChartJs and wirekitApexChart consume the same helpers
          * so dataset palettes, fallbacks, and probe behavior stay in lockstep.
          */
-        _resolveThemeColors(style) { return resolveThemeColors(style); },
+        _resolveThemeColors(style) { return resolveThemeColors(style, this.$refs?.canvas ?? null); },
         _palette(colors)           { return palette(colors); },
         _withOpacity(color, op)    { return withOpacity(color, op); },
 
@@ -779,8 +779,7 @@ Chart.register(...registerables);</pre>
          */
         _applyThemeToChartOptions(chart, colors, fontFamily) {
             const options = chart.options;
-            const isDark = document.documentElement.classList.contains('dark')
-                || document.body?.classList.contains('dark') === true;
+            const isDark = themeModeOf(this.$refs?.canvas ?? null) === 'dark';
 
             // Global text color + font family
             options.color = colors.textMuted;
@@ -866,10 +865,14 @@ Chart.register(...registerables);</pre>
          * NOTE: This only affects charts constructed AFTER the call —
          * existing chart instances use cached options and must be
          * re-themed via _applyThemeToChartOptions() instead.
+         *
+         * Page-wide, and still right with charts in different theme scopes: each construction
+         * writes its own chart's colors here immediately before `new Chart`, and the observer
+         * below records that Chart.js keeps what it resolved at construction, so the defaults a
+         * later chart writes do not repaint an earlier one.
          */
         _applyGlobalDefaults(colors, fontFamily) {
-            const isDark = document.documentElement.classList.contains('dark')
-                || document.body?.classList.contains('dark') === true;
+            const isDark = themeModeOf(this.$refs?.canvas ?? null) === 'dark';
 
             // Global text color and font
             Chart.defaults.color = colors.textMuted;

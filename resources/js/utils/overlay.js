@@ -389,8 +389,47 @@ export function createOverlay({
                     return;
                 }
 
-                const panelEl = this.$refs.panel;
-                if (panelEl) {
+                /*
+                 * ⚠️ AND THE TICK IS NO PROMISE THAT THE PANEL IS SHOWN.
+                 *
+                 * It relies on `x-transition` holding the next ticks until the second frame,
+                 * and that hold is GLOBAL: another component's `$nextTick` schedules a
+                 * `setTimeout(releaseNextTicks)` first, and when that timer fires it empties
+                 * the whole stack — this callback included — while the panel is still
+                 * `display: none`. focus-trap then finds no tabbable node, falls back to the
+                 * panel, cannot focus a hidden element, and never tries again: it listens for
+                 * `focusin` outside and for Tab, and focus never left the opener. The reader
+                 * stays on the trigger for good, which is WCAG 2.4.3.
+                 *
+                 * Measured in an adopting application's release gate in both engines: red in two of seven
+                 * runs there and in none of seventy local ones, which is the distribution of a
+                 * race between a timer and a frame.
+                 *
+                 * So the arming waits for the panel to have a box and re-checks both conditions
+                 * above after every wait — the overlay can close inside these frames exactly as
+                 * it can inside the tick. The wait is bounded: a panel that never reports a box
+                 * is armed anyway, because a late trap beats no trap at all.
+                 */
+                const armWhenPanelIsShown = (attempt = 0) => {
+                    if (!this.open || this._trap) {
+                        return;
+                    }
+
+                    const panelEl = this.$refs.panel;
+
+                    if (!panelEl) {
+                        return;
+                    }
+
+                    if (attempt < 10
+                        && typeof requestAnimationFrame === 'function'
+                        && typeof panelEl.getClientRects === 'function'
+                        && panelEl.getClientRects().length === 0) {
+                        requestAnimationFrame(() => armWhenPanelIsShown(attempt + 1));
+
+                        return;
+                    }
+
                     this._trap = createFocusTrap(panelEl, {
                         // ESC closes when EITHER the overlay is generally
                         // dismissible OR the caller opted into the
@@ -418,7 +457,9 @@ export function createOverlay({
                         setReturnFocus: resolveReturnFocus,
                     });
                     this._trap.activate();
-                }
+                };
+
+                armWhenPanelIsShown();
             });
         },
 

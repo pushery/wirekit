@@ -47,6 +47,19 @@
     // Before this prop existed, such a code could not be entered here at all:
     // every keystroke was discarded and the boxes stayed empty with no message.
     'alphabet' => '0123456789',
+    // How many boxes form a group. Null keeps the previous behavior exactly: one
+    // wrapping row, breaking wherever the width runs out.
+    //
+    // Reported from an adopting application, measured at four widths: an eight-digit
+    // code broke 6+2 at 1280px and 5+3 at 375px, and a six-digit one 5+1 at 375px —
+    // a break in the middle of a code, at no boundary the code has. Somebody copying
+    // it from an email reads one line there.
+    //
+    // The prop does NOT force a break: the groups sit in a wrapping row and each
+    // group itself does not wrap, so a row that fits stays a row and a row that does
+    // not breaks at a group boundary. `group="4"` on eight digits is one row on a
+    // desktop and 4+4 on a phone, which is what the report asked for.
+    'group' => null,
     // Focus the first box on load.
     //
     // A one-time-code screen is single-purpose: the reader arrived from a
@@ -112,6 +125,39 @@
     }
     $alphabetChars = array_values(array_unique(mb_str_split($alphabet)));
     $alphabetIsNumeric = ctype_digit($alphabet);
+
+    // ── Grouping ──────────────────────────────────────────────────────────
+    //
+    // Validated against the sizes this length can actually carry, so a typo says what
+    // the values are instead of rendering one box per group or one group of all of
+    // them. `2` upward: a group of one is every box on its own, which is what the
+    // ungrouped row already does at a narrow width.
+    $group = $group === null || $group === '' ? null : (string) $group;
+
+    if ($group !== null) {
+        // ⚠️ `StrictnessGate::enforce()` DIRECTLY, not through `WireKit::validateProp()`, and the
+        // reason is the catalog rather than the behavior — the two do the same thing here (throw
+        // in debug, fall back and warn in production, same message). `PropValidationParser` reads
+        // every `validateProp()` allow-list to publish a prop's values in `/api-map.json`, and it
+        // can only read a LITERAL list. This one depends on another prop: the sizes a code of
+        // `length` can carry. A list built at render time comes back unresolved, which publishes
+        // the prop as taking anything — and the machine-readable surface would then promise a
+        // developer that any value goes. `PropValidationParserTest` holds that to exactly one
+        // sanctioned occurrence; this call was briefly the second.
+        $group = (int) \Pushery\WireKit\Support\StrictnessGate::enforce(
+            'otp-input',
+            'group',
+            (string) $group,
+            array_map(strval(...), range(2, max(2, (int) $length))),
+            fallback: (string) max(2, (int) $length),
+        );
+    }
+
+    // The boxes, split into the rows the markup renders. One chunk when ungrouped, so
+    // the loop below has a single shape and the wrapper decides the rest.
+    $digitGroups = $group === null
+        ? [range(0, (int) $length - 1)]
+        : array_chunk(range(0, (int) $length - 1), $group);
 
     // Case folding, but only when it cannot lose information: an alphabet with
     // letters of a single case (the ambiguity-free kind) accepts either case and
@@ -289,7 +335,11 @@
              field normally sits in offers about 320px of content width, so it runs
              past the edge. Wrapping is the only adjustment that keeps the boxes at
              their designed size; shrinking them would make the digits unreadable. --}}
-        class="flex flex-wrap gap-2"
+        {{-- The gap between GROUPS is wider than the gap between boxes, and that is the
+             visible separator the report asked for — without a glyph, which a screen
+             reader would either read out or need hiding from. Ungrouped, the row keeps
+             the gap it always had. --}}
+        class="flex flex-wrap {{ $group === null ? 'gap-2' : 'gap-4' }}"
         role="group"
         @if($required) aria-required="true" @endif
         aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::One-time code') }}"
@@ -297,7 +347,18 @@
              before reaching a digit has to hear that the code is not enterable. --}}
         @if($disabled) aria-disabled="true" @endif
     >
-        @for($i = 0; $i < $length; $i++)
+        @foreach($digitGroups as $digitGroup)
+        {{-- `contents` when ungrouped, so the boxes stay flex items of the row above and
+             the layout is the one that shipped — byte for byte, not approximately. A
+             wrapper that took part in the layout would make an eight-digit code stop
+             wrapping and run past the card, which is the bug one door over.
+
+             Grouped, it is a row that does NOT wrap: the groups wrap against each other
+             in the row above, so a break can only happen at a group boundary. Eight
+             digits with `group="4"` are one row wherever 376px fits and 4+4 where it
+             does not — measured in the report at 1280px and 375px. --}}
+        <div class="{{ $group === null ? 'contents' : 'flex gap-2' }}">
+        @foreach($digitGroup as $i)
             <input
                 type="{{ $masked ? 'password' : 'text' }}"
                 {{-- A numeric keypad is right only for a numeric alphabet; offering
@@ -354,13 +415,18 @@
                 {{-- Selects the cell on focus, so a filled cell overwrites like an empty
                      one. Without it, `maxlength="1"` plus a caret after the existing
                      character means the browser refuses the keystroke, `onInput` never
-                     fires, and correcting a code costs a deletion per cell. --}}
+                     fires, and correcting a code costs a deletion per cell. The mouseup
+                     handler keeps that selection when a click caused the focus, which
+                     WebKit would otherwise collapse to a caret once the click finishes. --}}
                 @focus="onFocus($event)"
+                @mouseup="onMouseUp($event)"
                 @input="onInput($event, {{ $i }})"
                 @keydown="onKeydown($event, {{ $i }})"
                 @paste="onPaste($event)"
             />
-        @endfor
+        @endforeach
+        </div>
+        @endforeach
     </div>
 
     @if($hasError && $errorMessage)

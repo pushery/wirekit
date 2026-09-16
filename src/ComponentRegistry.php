@@ -67,6 +67,7 @@ class ComponentRegistry
             'resizable' => ['category' => 'Layout', 'description' => 'Resizable panel layout'],
             'band' => ['category' => 'Layout', 'description' => 'Edge-to-edge strip with padding and one rule'],
             'row' => ['category' => 'Layout', 'description' => 'Horizontal flex container'],
+            'page-header' => ['category' => 'Layout', 'description' => 'Screen title, optional description and actions that drop under the title when the row runs out'],
             'section' => ['category' => 'Layout', 'description' => 'Full-width page section with background and padding'],
             'spacer' => ['category' => 'Layout', 'description' => 'Flexible space filler in flex layouts'],
             'stack' => ['category' => 'Layout', 'description' => 'Vertical flex container'],

@@ -293,7 +293,7 @@ export default function wirekitEventCalendar(config = {}) {
             return tracked.length;
         },
 
-        _measureAgendaTime() {
+        _measureAgendaTime(attempt = 0) {
             if (this.view !== 'agenda' || !this.$root || typeof this.$root.querySelectorAll !== 'function') {
                 return;
             }
@@ -301,6 +301,14 @@ export default function wirekitEventCalendar(config = {}) {
             const max = labels.reduce((m, el) => Math.max(m, el.getBoundingClientRect().width), 0);
             if (max > 0) {
                 this.$root.style.setProperty('--wk-agenda-time', `${Math.ceil(max)}px`);
+            } else if (labels.length > 0 && attempt < 10 && typeof requestAnimationFrame === 'function') {
+                // Labels that exist but measure nothing are not an empty agenda: the panel has
+                // not been laid out yet. Measured in WebKit: in the tick this runs in, the agenda
+                // was still `display: none` and all three labels read 0 px; one frame later it
+                // was `block` and they read 49, 49 and 38 px. Blink had already laid it out. The
+                // old branch below then removed the variable and nothing measured again, so the
+                // column fell back to the fixed width. Measure again on the next frame instead.
+                requestAnimationFrame(() => this._measureAgendaTime(attempt + 1));
             } else {
                 // No event rows (marker-only / empty agenda) — fall back to the
                 // stylesheet default rather than pinning a stale or zero width.

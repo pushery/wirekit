@@ -184,6 +184,19 @@ export default function wirekitAppShell(config = {}) {
             // sliding in and the question "who opened this" can no longer be asked.
             this._opener = typeof document !== 'undefined' ? document.activeElement : null;
 
+            // ⚠️ ESCAPE HAS TO WORK BEFORE THE TRAP DOES, and the gap is the whole arming
+            // wait below — measured by an adopting application at 375px, three rounds per
+            // engine: 156/156/162 ms in Blink and 164/171/173 ms in WebKit from the click
+            // to focus arriving in the drawer, against a 150 ms panel transition.
+            //
+            // In that window the drawer is already over the page and already visible, focus
+            // is still on the toggle, and `escapeDeactivates` belongs to a trap that is not
+            // armed yet — so the key press reaches nothing at all. A reader who opens the
+            // drawer by accident and presses Escape straight away sees nothing happen, and
+            // has to press it a second time. Everything the arming wait buys is about WHERE
+            // FOCUS GOES; closing needs none of it.
+            this._armInterimEscape(panel);
+
             const trap = this._createTrap(panel, {
                 // Escape is the drawer's own close, so the trap's deactivation and the
                 // state have to agree — otherwise the panel slides away with `sidebarOpen`
@@ -271,6 +284,12 @@ export default function wirekitAppShell(config = {}) {
                 if (this._arm !== arming || ! this.sidebarOpen) {
                     return;
                 }
+
+                // Handed over rather than left running beside the trap: from here
+                // `escapeDeactivates` is the close path, and two handlers for one key
+                // would close the drawer twice — the second one against a trap that has
+                // already returned focus.
+                this._releaseInterimEscape();
 
                 trap.activate();
             };
@@ -422,7 +441,69 @@ export default function wirekitAppShell(config = {}) {
             return fallback;
         },
 
+        /**
+         * Escape closes the drawer for as long as the trap is still arming.
+         *
+         * Held on `this` rather than in a closure for the reason the settle listener
+         * records one screen up: a handle that lives only in a closure cannot be released
+         * from anywhere else, and this one has three exits — the trap arming, the drawer
+         * closing by any other means, and the shell being torn down mid-animation.
+         *
+         * Deliberately does NOT call `preventDefault()`. With the trap armed, Escape
+         * reaches the page's own keydown listeners too; suppressing it only in the first
+         * 160 ms would make the drawer behave differently depending on how fast the reader
+         * is, which is the defect one level up.
+         *
+         * @param {Element} panel the drawer, so focus can be returned the way the trap does
+         */
+        _armInterimEscape(panel) {
+            if (typeof document === 'undefined' || this._onInterimEscape) {
+                return;
+            }
+
+            this._onInterimEscape = (event) => {
+                if (event?.key !== 'Escape' || ! this.sidebarOpen) {
+                    return;
+                }
+
+                this._releaseInterimEscape();
+
+                // The trap never activated, so `focus-trap` will not return focus for us —
+                // `deactivate()` on an inactive trap is a no-op, by its own contract. The
+                // drawer therefore returns focus here, through the SAME resolver the trap
+                // is given, so both paths land on the same control.
+                const target = this._resolveReturnFocus(panel, this._opener);
+
+                this.sidebarOpen = false;
+                target?.focus?.();
+            };
+
+            // Optional call, like every other listener in this file: a unit harness hands
+            // the factory a `document` with only the fields a case needs, and a hard call
+            // here would throw before the decision under test is reached.
+            document.addEventListener?.('keydown', this._onInterimEscape);
+        },
+
+        /** Idempotent: called by the arming handover, by every close, and by `destroy()`. */
+        _releaseInterimEscape() {
+            if (! this._onInterimEscape) {
+                return;
+            }
+
+            if (typeof document !== 'undefined') {
+                document.removeEventListener?.('keydown', this._onInterimEscape);
+            }
+
+            this._onInterimEscape = null;
+        },
+
         _releaseTrap(deactivateOptions = {}) {
+            // Before the early return, because the interim listener outlives the trap in
+            // exactly one case: a drawer that closes while the trap is still arming has no
+            // `_trap` to release and would otherwise keep a document-level keydown handler
+            // for the rest of the page's life.
+            this._releaseInterimEscape();
+
             if (! this._trap) {
                 return;
             }

@@ -120,7 +120,14 @@
         'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
     ]);
 
-    // Disabled state for prev/next at list boundaries
+    // Disabled state for prev/next at list boundaries.
+    //
+    // No opacity, and that is the point of this list. The muted pair, cursor-not-allowed and the
+    // missing hover already say the control is inert. Opacity applies to the ELEMENT, so it
+    // composites the text and its own background against the page together and shrinks the
+    // distance between them: in the light theme a 4.5:1 pair read at about 1.6:1. Elsewhere in
+    // the library opacity IS the only dimming signal and stays; here it only said the state a
+    // fourth time, and it was the one saying it that made the label unreadable.
     $buttonDisabled = implode(' ', [
         'inline-flex items-center justify-center',
         'h-[var(--size-wk-sm)] min-w-[var(--size-wk-sm)]',
@@ -131,7 +138,6 @@
         'bg-[var(--color-wk-bg-subtle)]',
         'text-[color:var(--color-wk-text-subtle)]',
         'cursor-not-allowed',
-        'opacity-[var(--opacity-wk-disabled)]',
     ]);
 
     // Active page highlight — uses accent color for strong visual anchor

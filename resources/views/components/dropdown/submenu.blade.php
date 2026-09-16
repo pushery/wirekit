@@ -63,6 +63,9 @@
         // or a personalization inherits whichever file the reader happened to open.
         // The background alone marks nothing: dark's --color-wk-bg-subtle equals
         // its --color-wk-bg-elevated, which is the panel this row sits on.
+        // The same shape as `dropdown.item`: the panel's inline padding makes room for it,
+        // and a focused row that stayed square would be the reported defect on a sibling.
+        'rounded-[var(--radius-wk-nav-item)]',
         'focus:outline-hidden',
         'focus-visible:bg-[var(--color-wk-bg-subtle)]',
         'focus-visible:ring-[length:var(--ring-wk-width)]',

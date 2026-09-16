@@ -169,8 +169,8 @@
             "code": "<x-wirekit::badge size=\"sm\">Small</x-wirekit::badge>\n<x-wirekit::badge size=\"md\">Medium</x-wirekit::badge>\n<x-wirekit::badge size=\"lg\">Large</x-wirekit::badge>"
         },
         {
-            "title": "Soft surface (default)",
-            "code": "<x-wirekit::row gap=\"xs\" :wrap=\"true\">\n    <x-wirekit::badge intent=\"primary\">Primary</x-wirekit::badge>\n    <x-wirekit::badge intent=\"success\">Success</x-wirekit::badge>\n    <x-wirekit::badge intent=\"warning\">Warning</x-wirekit::badge>\n    <x-wirekit::badge intent=\"danger\">Danger</x-wirekit::badge>\n    <x-wirekit::badge intent=\"neutral\">Neutral</x-wirekit::badge>\n</x-wirekit::row>"
+            "title": "Every surface in every intent",
+            "code": "<x-wirekit::badge intent=\"{intent}\" surface=\"{surface}\">Beta</x-wirekit::badge>"
         }
     ],
     "band": [
@@ -421,8 +421,8 @@
             "code": "<x-wirekit::checkbox name=\"terms\" label=\"I agree to the terms of service\" />"
         },
         {
-            "title": "Unchecked, checked, indeterminate, disabled",
-            "code": "<x-wirekit::stack gap=\"sm\">\n    <x-wirekit::checkbox name=\"c1\" label=\"Unchecked\" />\n    <x-wirekit::checkbox name=\"c2\" label=\"Checked\" checked />\n    <x-wirekit::checkbox name=\"c3\" label=\"Indeterminate (partial selection)\" indeterminate />\n    <x-wirekit::checkbox name=\"c4\" label=\"Disabled\" disabled />\n    <x-wirekit::checkbox name=\"c5\" label=\"Disabled + checked\" disabled checked />\n</x-wirekit::stack>"
+            "title": "Every state a prop can set",
+            "code": "::state{label=\"Unchecked\"}\n<x-wirekit::checkbox name=\"c1\" label=\"Ship on Friday\" />\n::state{label=\"Checked\"}\n<x-wirekit::checkbox name=\"c2\" label=\"Ship on Friday\" checked />\n::state{label=\"Indeterminate\"}\n<x-wirekit::checkbox name=\"c3\" label=\"Ship on Friday\" indeterminate />\n::state{label=\"Disabled\"}\n<x-wirekit::checkbox name=\"c4\" label=\"Ship on Friday\" disabled />\n::state{label=\"Disabled and checked\"}\n<x-wirekit::checkbox name=\"c5\" label=\"Ship on Friday\" disabled checked />"
         },
         {
             "title": "Checkbox sizes",
@@ -449,12 +449,12 @@
             "code": "<x-wirekit::code-block>composer require pushery/wirekit\nphp artisan wirekit:install</x-wirekit::code-block>"
         },
         {
-            "title": "Code block with filename",
-            "code": "<x-wirekit::code-block filename=\"routes/web.php\">Route::get('/', function () {\n    return view('welcome');\n});</x-wirekit::code-block>"
+            "title": "The same block in both color modes",
+            "code": "<x-wirekit::code-block language=\"php\">Route::get('/', function () {\n    return view('welcome');\n});</x-wirekit::code-block>"
         },
         {
-            "title": "Copyable code block",
-            "code": "<x-wirekit::code-block :copy=\"true\" filename=\"Install\">composer require pushery/wirekit</x-wirekit::code-block>"
+            "title": "Code block with filename",
+            "code": "<x-wirekit::code-block filename=\"routes/web.php\">Route::get('/', function () {\n    return view('welcome');\n});</x-wirekit::code-block>"
         }
     ],
     "code": [
@@ -667,8 +667,8 @@
             "code": "<x-wirekit::dropdown label=\"Options\">\n    <x-slot:trigger>\n        <x-wirekit::button>Options</x-wirekit::button>\n    </x-slot:trigger>\n    <x-wirekit::dropdown.item href=\"/profile\">Profile</x-wirekit::dropdown.item>\n    <x-wirekit::dropdown.item href=\"/settings\">Settings</x-wirekit::dropdown.item>\n    <x-wirekit::dropdown.separator />\n    <x-wirekit::dropdown.item wire:click=\"logout\" danger>Sign out</x-wirekit::dropdown.item>\n</x-wirekit::dropdown>"
         },
         {
-            "title": "Danger item",
-            "code": "<x-wirekit::dropdown>\n    <x-wirekit::dropdown.trigger>\n        <x-wirekit::button intent=\"neutral\" surface=\"outline\">Account</x-wirekit::button>\n    </x-wirekit::dropdown.trigger>\n    <x-wirekit::dropdown.panel>\n        <x-wirekit::dropdown.item>Edit Profile</x-wirekit::dropdown.item>\n        <x-wirekit::dropdown.item>Change Password</x-wirekit::dropdown.item>\n        <x-wirekit::dropdown.separator />\n        <x-wirekit::dropdown.item :danger=\"true\">Delete Account</x-wirekit::dropdown.item>\n    </x-wirekit::dropdown.panel>\n</x-wirekit::dropdown>"
+            "title": "A workspace switcher that shows it opens a menu",
+            "code": "<x-wirekit::dropdown>\n    <x-wirekit::dropdown.trigger>\n        <x-wirekit::button intent=\"neutral\" surface=\"outline\">\n            Northwind Labs\n            <x-wirekit::dropdown.indicator />\n        </x-wirekit::button>\n    </x-wirekit::dropdown.trigger>\n    <x-wirekit::dropdown.panel label=\"Workspaces\">\n        <x-wirekit::dropdown.item>Northwind Labs</x-wirekit::dropdown.item>\n        <x-wirekit::dropdown.item>Globex</x-wirekit::dropdown.item>\n    </x-wirekit::dropdown.panel>\n</x-wirekit::dropdown>"
         }
     ],
     "editor": [
@@ -1301,6 +1301,20 @@
         {
             "title": "Masked Characters",
             "code": "<x-wirekit::otp-input label=\"Secure Code\" name=\"secure\" :masked=\"true\" />"
+        }
+    ],
+    "page-header": [
+        {
+            "title": "A screen title with a description and one action",
+            "code": "<x-wirekit::page-header\n    title=\"Roles\"\n    description=\"Who may do what. A role is a set of permissions you can hand to several people at once.\"\n>\n    <x-slot:actions>\n        <x-wirekit::button intent=\"primary\">New role</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::page-header>"
+        },
+        {
+            "title": "A section header inside a screen that already has a title",
+            "code": "<x-wirekit::page-header level=\"2\" title=\"Webhook endpoints\" description=\"Where we send events.\" />"
+        },
+        {
+            "title": "Two actions beside a long title",
+            "code": "<x-wirekit::page-header\n    title=\"Audit log\"\n    description=\"Every change, who made it and when.\"\n>\n    <x-slot:actions>\n        <x-wirekit::button intent=\"neutral\" surface=\"outline\">Export</x-wirekit::button>\n        <x-wirekit::button intent=\"primary\">Filter</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::page-header>"
         }
     ],
     "pagination": [

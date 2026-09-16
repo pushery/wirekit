@@ -197,6 +197,7 @@ class VerifyInstallationCommand extends Command
             $this->checkBuiltCssHasWireKitUtilities();
             $this->checkTokenAlignment();
             $this->checkRootDarkSymmetry();
+            $this->checkTokensInWrappersThatCannotWin();
             $this->checkAlpinePluginCleanupHygiene();
         }
 
@@ -2172,7 +2173,7 @@ class VerifyInstallationCommand extends Command
                 // same way.
                 $call = '(?:__|trans_choice|PluralPhrases::from)';
 
-                if (preg_match('/'.$call.'\(\s*([\'"])'.preg_quote($key, '/').'\1/', $body) === 1) {
+                if (preg_match('/'.$call.'\(\s*'.$this->translationKeyNeedle($key).'/', $body) === 1) {
                     $found[$key] = str_replace($root.'/', '', $file->getPathname());
                 }
             }
@@ -2240,7 +2241,7 @@ class VerifyInstallationCommand extends Command
                         continue;
                     }
 
-                    if (preg_match('/'.$call.'\(\s*([\'"])'.preg_quote($key, '/').'\1/', $body) === 1) {
+                    if (preg_match('/'.$call.'\(\s*'.$this->translationKeyNeedle($key).'/', $body) === 1) {
                         $used[$key] = true;
                     }
                 }
@@ -2248,6 +2249,32 @@ class VerifyInstallationCommand extends Command
         }
 
         return $used;
+    }
+
+    /**
+     * A key as PHP SOURCE spells it, in either quoting, as one regex fragment.
+     *
+     * `preg_quote()` escapes a key for the regular expression and says nothing about how PHP
+     * writes it. Between single quotes an apostrophe is spelled `\'`, and both scans above used
+     * to ask for the bare character between a back-referenced quote. Measured over the two
+     * spellings of the same call: the double-quoted form matched, the single-quoted one did not,
+     * and single quotes are what a Blade template ordinarily writes.
+     *
+     * It fails in the quiet direction. A key nothing appears to render is reported as an orphan,
+     * and the advice then tells the maintainer to delete a string their own page shows — reported
+     * from an adopting application, where following it would have left a German page showing the
+     * English sentence with nothing going red.
+     */
+    private function translationKeyNeedle(string $key): string
+    {
+        // Between single quotes, PHP requires an escape for exactly two characters.
+        $single = preg_quote(str_replace(['\\', "'"], ['\\\\', "\\'"], $key), '/');
+
+        // Between double quotes the set is a different one, and `$` belongs to it: a key carrying
+        // one would otherwise be written as an interpolation rather than as itself.
+        $double = preg_quote(str_replace(['\\', '"', '$'], ['\\\\', '\\"', '\\$'], $key), '/');
+
+        return '(?:\''.$single.'\'|"'.$double.'")';
     }
 
     /**
@@ -2807,8 +2834,16 @@ class VerifyInstallationCommand extends Command
 
             $context = implode("\n", array_slice($lines, max(0, $i - 3), min(3, $i)));
 
-            $guarded = preg_match('/if\s*\(\s*!\s*this\._\w+/', $context) === 1
-                || preg_match('/if\s*\(\s*this\._\w+\s*\)/', $context) === 1;
+            // `this.anything`, not only `this._anything`. The underscore was an accident of the
+            // examples this was written against: an Alpine factory's own state is ordinarily
+            // spelled without one, and `if (this.observer)` is the same guard. Reported from an
+            // adopting application, which worked around it with optional chaining.
+            //
+            // It does NOT require the condition to name the same field as the call, and never
+            // did. Requiring that would be a stricter check than the one asked for, and it would
+            // reject the shapes a real teardown takes — a local alias, a destructured handle.
+            $guarded = preg_match('/if\s*\(\s*!\s*this\.\w+/', $context) === 1
+                || preg_match('/if\s*\(\s*this\.\w+\s*\)/', $context) === 1;
 
             if (! $guarded) {
                 return true;
@@ -2816,6 +2851,100 @@ class VerifyInstallationCommand extends Command
         }
 
         return false;
+    }
+
+    /**
+     * JavaScript source with every comment blanked out, line for line.
+     *
+     * Every pattern in the cleanup-hygiene check is a plain text match, so prose that NAMES one
+     * counts as the thing itself — and it costs in both directions. An adopting application
+     * measured the loud one: a comment reading `` `MutationObserver.disconnect()` also empties its
+     * record queue`` turned the check red, so the sentence explaining the guard became a finding
+     * about the guard, and the diff between green and red was pure prose. The quiet one is worse
+     * and was not reported: a comment that happens to contain `destroy() {` makes the file look
+     * like it has a teardown, and a real leak goes unreported.
+     *
+     * Contents are replaced with SPACES rather than removed, and newlines are kept, because the
+     * disconnect scan reads "the three lines above this one". Deleting the lines would move every
+     * call site away from its own context.
+     *
+     * ⚠️ Quote state is tracked so a `//` inside a string literal stays put — `'https://…'` would
+     * otherwise swallow the rest of its line, and with it any call that shares it. A REGEX literal
+     * carrying a quote (`/['"]/`) is the shape this does not model; it would flip the state and
+     * blank too much or too little from there to the end of the file. Named rather than hidden:
+     * the cure is a real tokenizer, and the failure mode here is one file scanned wrongly, in a
+     * check whose own docblock calls itself a heuristic.
+     */
+    private function stripJsComments(string $source): string
+    {
+        $out = '';
+        $length = strlen($source);
+        $quote = null;
+        $i = 0;
+
+        while ($i < $length) {
+            $char = $source[$i];
+            $next = $i + 1 < $length ? $source[$i + 1] : '';
+
+            if ($quote !== null) {
+                $out .= $char;
+
+                // A backslash escapes whatever follows, the closing quote included.
+                if ($char === '\\' && $next !== '') {
+                    $out .= $next;
+                    $i += 2;
+
+                    continue;
+                }
+
+                if ($char === $quote) {
+                    $quote = null;
+                }
+
+                $i++;
+
+                continue;
+            }
+
+            if ($char === "'" || $char === '"' || $char === '`') {
+                $quote = $char;
+                $out .= $char;
+                $i++;
+
+                continue;
+            }
+
+            if ($char === '/' && $next === '/') {
+                while ($i < $length && $source[$i] !== "\n") {
+                    $out .= ' ';
+                    $i++;
+                }
+
+                continue;
+            }
+
+            if ($char === '/' && $next === '*') {
+                $out .= '  ';
+                $i += 2;
+
+                while ($i < $length && ! ($source[$i] === '*' && ($i + 1 < $length) && $source[$i + 1] === '/')) {
+                    $out .= $source[$i] === "\n" ? "\n" : ' ';
+                    $i++;
+                }
+
+                if ($i < $length) {
+                    $out .= '  ';
+                    $i += 2;
+                }
+
+                continue;
+            }
+
+            $out .= $char;
+            $i++;
+        }
+
+        return $out;
     }
 
     /**
@@ -3310,8 +3439,10 @@ class VerifyInstallationCommand extends Command
      * Detect `:root` ↔ `.dark` color-token override asymmetry.
      *
      * If a developer overrides `--color-wk-accent` in `:root` but DOES NOT
-     * provide a matching declaration in `.dark`, dark mode silently falls
-     * back to WireKit's default. The existing checkTokenAlignment()
+     * provide a matching declaration in `.dark`, that override silently
+     * carries into dark mode — `:root` outranks the `:where(.dark)` WireKit
+     * declares its own dark value with, so the token keeps the light value
+     * rather than turning over. The existing checkTokenAlignment()
      * compares Tailwind↔WireKit pairs, not the developer's own root vs
      * dark blocks — so this complementary check fills that gap.
      *
@@ -3388,11 +3519,204 @@ class VerifyInstallationCommand extends Command
         }
 
         $this->reportWarn('Token symmetry: '.count($asymmetric).' color token(s) overridden in `:root` but not in `.dark`');
-        foreach (array_keys($asymmetric) as $token) {
-            $this->line("    <fg=gray>•</> {$token}");
+
+        // The advice is the same for every token here; the REASON is not, and the one
+        // sentence this used to print was wrong for both halves.
+        //
+        // It said "Dark mode falls back to WireKit defaults for these tokens", and
+        // WireKit's own stylesheet says the opposite three lines above its light block:
+        // every default is declared under `:where(:root)` at specificity 0 precisely so
+        // that a developer's `:root` override wins "regardless of source order". The
+        // dark defaults are `:where(.dark)`, also specificity 0. So an application that
+        // declares a token in `:root` keeps ITS value in dark mode — nothing falls back
+        // to anything, which is a worse outcome than the sentence described and reads as
+        // a smaller one.
+        //
+        // A value that goes through `var()` is a second case, reported from an adopting
+        // application whose three tokens DO turn over and which declined the advice on
+        // that ground. A custom property is substituted on the element that declares it,
+        // so `--a: var(--b)` written in `:root` resolves against `:root`'s `--b`: on
+        // `<html class="dark">` those are the same element and the pair turns over, while
+        // a `.dark` further down the tree inherits the value already resolved in light.
+        // The advice stands there too, for that reason rather than the false one.
+        $derived = array_filter($asymmetric, fn (string $value): bool => preg_match('/\bvar\(\s*--/', $value) === 1);
+        $literal = array_diff_key($asymmetric, $derived);
+
+        if ($literal !== []) {
+            foreach (array_keys($literal) as $token) {
+                $this->line("    <fg=gray>•</> {$token}");
+            }
+            $this->line('    <fg=gray>Your `:root` value keeps applying in dark mode — it outranks the `:where(.dark)`</>');
+            $this->line('    <fg=gray>WireKit declares its own dark value with, so the token never turns over.</>');
+            $this->line('    <fg=gray>Add matching declarations to your `.dark { … }` block.</>');
         }
-        $this->line('    <fg=gray>Dark mode falls back to WireKit defaults for these tokens.</>');
-        $this->line('    <fg=gray>Add matching declarations to your `.dark { … }` block.</>');
+
+        if ($derived !== []) {
+            foreach (array_keys($derived) as $token) {
+                $this->line("    <fg=gray>•</> {$token}");
+            }
+            $this->line('    <fg=gray>These resolve at `:root`, where they are declared. On `<html class="dark">` that is</>');
+            $this->line('    <fg=gray>the same element, so they follow what they point at — but a `.dark` further down</>');
+            $this->line('    <fg=gray>the tree inherits the value already resolved in light.</>');
+            $this->line('    <fg=gray>Repeat the same `var()` references under `.dark { … }` so a subtree resolves them too.</>');
+        }
+    }
+
+    /**
+     * A `--*-wk-*` override written in a wrapper that cannot win.
+     *
+     * The symmetry check above asks whether an override has a dark counterpart. This asks the
+     * question before it: whether the override reaches anything at all. Two wrappers look right,
+     * do nothing, and — this is what makes the class the quietest one there is — raise no error
+     * either way. `docs/theming.md` names both:
+     *
+     *  - **`@theme { … }`** is Tailwind's utility-generation block, not an override route. A theme
+     *    variable no utility references is dropped, so the declaration compiles to nothing; one
+     *    that survives is emitted inside `@layer theme` and then loses to the unlayered defaults.
+     *  - **any `@layer`**, for that second reason alone: `dist/wirekit.css` ships unlayered, and
+     *    unlayered CSS beats layered CSS whatever the specificity.
+     *
+     * ⚠️ The layer half is deliberately narrow, and a real adopting application is why. The cascade only
+     * compares declarations that apply to the SAME element, so a custom property set on a
+     * DESCENDANT shadows the inherited one whether it sits in a layer or not — an adopting
+     * application scopes `--size-wk-fab` to one component that way, correctly. Only a rule that
+     * targets the root competes with WireKit's own declaration, so only those are read here.
+     *
+     * ⚠️ And it reads `--<family>-wk-<name>`, not `--wk-<name>`. The second shape is a lever a page
+     * sets for a component to read off its own element (`--wk-fab-lift`), which is a different
+     * contract with different rules; flagging it here would be a guess dressed as a check.
+     */
+    private function checkTokensInWrappersThatCannotWin(): void
+    {
+        $appCss = resource_path('css/app.css');
+
+        if (! file_exists($appCss) || ($content = file_get_contents($appCss)) === false) {
+            $this->reportInfo('Token wrappers: skipped — no readable resources/css/app.css');
+
+            return;
+        }
+
+        $content = $this->stripCssComments($content);
+        $offenders = [];
+
+        // Declared straight inside `@theme`. Nested blocks come out first so a rule written in
+        // there cannot be read as a declaration of the block itself.
+        $theme = (string) preg_replace('/\{[^{}]*\}/', '', $this->extractAtRuleBlock($content, '@theme'));
+
+        foreach (array_keys($this->parseWireKitTokens($theme)) as $token) {
+            $offenders[] = [$token, '@theme'];
+        }
+
+        // Inside a layer, and only where the rule targets the root — see the note above.
+        foreach ([':root', '.dark'] as $selector) {
+            foreach (array_keys($this->parseWireKitTokens($this->extractCssBlock($this->extractAtRuleBlock($content, '@layer'), $selector))) as $token) {
+                $offenders[] = [$token, '@layer … '.$selector];
+            }
+        }
+
+        if ($offenders === []) {
+            $this->reportPass('Token wrappers: no `--*-wk-*` override sits in an `@theme` or `@layer` block');
+
+            return;
+        }
+
+        $this->reportWarn('Token wrappers: '.count($offenders).' `--*-wk-*` override(s) in a wrapper that cannot win');
+
+        foreach ($offenders as [$token, $where]) {
+            $this->line("    <fg=gray>•</> {$token} <fg=gray>in {$where}</>");
+        }
+
+        $this->line('    <fg=gray>These compile to nothing, or to a layered declaration that loses to WireKit\'s</>');
+        $this->line('    <fg=gray>unlayered default — in BOTH modes, with no error either way.</>');
+        $this->line('    <fg=gray>Move them to a plain `:root { … }` block, with a plain `.dark { … }` beside it.</>');
+    }
+
+    /**
+     * The bodies of every at-rule block whose head starts with `$atRule`, concatenated.
+     *
+     * {@see extractCssBlock()} descends INTO an at-rule rather than matching it, which is what
+     * makes it able to find a `:root` nested in a `@media`. This is the other half of the same
+     * walk: it takes the at-rule's own body, so a caller can ask what a `@theme` or a `@layer`
+     * contains. Feeding the result back into `extractCssBlock()` is how the layer half reaches
+     * the rules inside.
+     */
+    private function extractAtRuleBlock(string $css, string $atRule): string
+    {
+        $out = '';
+        $len = strlen($css);
+        $headStart = 0;
+        $i = 0;
+
+        while ($i < $len) {
+            $char = $css[$i];
+
+            if ($char === ';' || $char === '}') {
+                $headStart = $i + 1;
+                $i++;
+
+                continue;
+            }
+
+            if ($char !== '{') {
+                $i++;
+
+                continue;
+            }
+
+            $head = trim((string) preg_replace('/\s+/', ' ', substr($css, $headStart, $i - $headStart)));
+            $depth = 1;
+            $bodyStart = $i + 1;
+            $j = $bodyStart;
+
+            while ($j < $len && $depth > 0) {
+                if ($css[$j] === '{') {
+                    $depth++;
+                } elseif ($css[$j] === '}') {
+                    $depth--;
+                }
+                $j++;
+            }
+
+            $bodyEnd = $depth === 0 ? $j - 1 : $len;
+
+            // `@theme` and `@theme inline` are the same block; `@layer base` and `@layer` are both
+            // layers. Matching the word and requiring a boundary keeps `@themed` out.
+            if ($head === $atRule || str_starts_with($head, $atRule.' ')) {
+                $out .= substr($css, $bodyStart, $bodyEnd - $bodyStart).';';
+                $i = $j;
+                $headStart = $i;
+
+                continue;
+            }
+
+            $i = $bodyStart;
+            $headStart = $i;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Parse `--<family>-wk-<name>: value;` declarations from a CSS block body.
+     *
+     * Wider than {@see parseColorTokens()} on purpose: this question is about the wrapper, and a
+     * radius or a shadow written there is as inert as a color.
+     *
+     * @return array<string, string>
+     */
+    private function parseWireKitTokens(string $block): array
+    {
+        $tokens = [];
+
+        foreach (explode(';', $block) as $decl) {
+            [$name, $value] = array_pad(array_map('trim', explode(':', trim($decl), 2)), 2, '');
+
+            if (preg_match('/^--[a-z0-9]+(?:-[a-z0-9]+)*-wk-/', $name) === 1) {
+                $tokens[$name] = $value;
+            }
+        }
+
+        return $tokens;
     }
 
     /**
@@ -3474,10 +3798,16 @@ class VerifyInstallationCommand extends Command
                     continue;
                 }
 
-                // Opt-out comment lets developers acknowledge intentional patterns.
+                // Opt-out comment lets developers acknowledge intentional patterns. Read BEFORE
+                // the comments are blanked out below, since the marker is itself one.
                 if (str_contains($source, '// wirekit-doctor: cleanup-ok')) {
                     continue;
                 }
+
+                // Every pattern below is a plain text match, so prose that NAMES one would count
+                // as the thing itself — loudly for `.disconnect()`, and silently for `destroy() {`,
+                // where a comment would hide a real leak. See stripJsComments().
+                $source = $this->stripJsComments($source);
 
                 $relativePath = str_replace($developerJsDir.'/', '', $path);
 

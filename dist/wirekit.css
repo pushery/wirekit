@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.52.0 — MIT License
+ * WireKit CSS v2.53.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -486,6 +486,13 @@
     --text-wk-3xl: calc(1.875rem * var(--font-scale-wk));
     --text-wk-4xl: calc(2.25rem * var(--font-scale-wk));
     --text-wk-5xl: calc(3rem * var(--font-scale-wk));
+
+    /* The touch text floor. iOS zooms into a text field whose text is smaller than 16px the moment
+       it is focused, so on a touch screen every field and the editable host lift their text to this
+       value. A fixed length on purpose: the threshold is 16 CSS pixels whatever the font scale. A
+       control that stands beside a field reads the same value to keep one type size in the row, and
+       lowering it below 16px brings the zoom back. */
+    --text-wk-touch-floor: 16px;
 
     /* Readable line-length measure for long-form prose (<x-wirekit::prose>).
        ~65ch is the established comfortable reading width; `wide` relaxes it. */
@@ -1302,14 +1309,19 @@
    Tailwind v4 floor. The shadow is a static depth cue (no animation), so
    no prefers-reduced-motion handling is required.
 
+   Strength: 24% of the text color over 1.25rem. At 12% over 0.875rem the densest point stood at
+   1.30:1 on white, as distinct as a hairline border, and below the border in the dark theme, and a
+   gradient spends almost its whole width below that point: in screenshots from two engines the
+   shadow did not show. ScrollShadowStaysVisibleTest holds the computed contrast in both themes.
+
    Customize via:
      --wk-scroll-shadow-bg     (cover color — MUST match the container bg)
      --wk-scroll-shadow-color  (the shadow tint)
      --wk-scroll-shadow-size   (shadow height) */
 .wk-scroll-shadow {
     --wk-scroll-shadow-bg: var(--color-wk-bg-elevated);
-    --wk-scroll-shadow-color: color-mix(in oklab, var(--color-wk-text) 12%, transparent);
-    --wk-scroll-shadow-size: 0.875rem;
+    --wk-scroll-shadow-color: color-mix(in oklab, var(--color-wk-text) 24%, transparent);
+    --wk-scroll-shadow-size: 1.25rem;
     background:
         linear-gradient(var(--wk-scroll-shadow-bg) 30%, transparent) center top / 100% 2.25rem,
         linear-gradient(transparent, var(--wk-scroll-shadow-bg) 70%) center bottom / 100% 2.25rem,
@@ -1331,8 +1343,8 @@
    flowing to the content beneath. */
 .wk-scroll-shadow-top,
 .wk-scroll-shadow-bottom {
-    --wk-scroll-shadow-color: color-mix(in oklab, var(--color-wk-text) 12%, transparent);
-    --wk-scroll-shadow-size: 0.875rem;
+    --wk-scroll-shadow-color: color-mix(in oklab, var(--color-wk-text) 24%, transparent);
+    --wk-scroll-shadow-size: 1.25rem;
     position: absolute;
     left: 0;
     right: 0;
@@ -1370,8 +1382,8 @@
    restyled and the other left behind. */
 .wk-scroll-shadow-start,
 .wk-scroll-shadow-end {
-    --wk-scroll-shadow-color: color-mix(in oklab, var(--color-wk-text) 12%, transparent);
-    --wk-scroll-shadow-size: 0.875rem;
+    --wk-scroll-shadow-color: color-mix(in oklab, var(--color-wk-text) 24%, transparent);
+    --wk-scroll-shadow-size: 1.25rem;
     position: absolute;
     top: 0;
     bottom: 0;
@@ -1532,7 +1544,7 @@ input.wk-field::-webkit-datetime-edit-text {
     select.wk-field,
     input.wk-field,
     textarea.wk-field {
-        font-size: 16px;
+        font-size: var(--text-wk-touch-floor);
     }
 
     /* The same floor for the OTHER kind of text entry, which the rule above cannot
@@ -1549,7 +1561,19 @@ input.wk-field::-webkit-datetime-edit-text {
     .wk-editor-content,
     [contenteditable="true"],
     [contenteditable=""] {
-        font-size: 16px;
+        font-size: var(--text-wk-touch-floor);
+    }
+
+    /* The same floor for a BUTTON, but only one that asks for it. A button
+       keeps its designed size on touch, which is right on its own; a small one in a row
+       with a small field then reads a size below the lifted field beside it.
+       `touch-text-floor` on the component emits this marker. Element-qualified for the
+       reason the field rule gives: (0,1,1) beats the button's
+       `text-[length:var(--text-wk-*)]` utility (0,1,0) in either stylesheet order. `a`
+       too, because a button with an href renders as an anchor. */
+    button.wk-touch-text-floor,
+    a.wk-touch-text-floor {
+        font-size: var(--text-wk-touch-floor);
     }
 
     /* Touch-target floor. The size ladder is built for a mouse: --size-wk-md is
@@ -2436,6 +2460,78 @@ input.wk-field::-webkit-datetime-edit-text {
 .wk-card-body[data-wk-padded="false"] > table td:not([data-wk-table-td]),
 .wk-card-body[data-wk-padded="false"] > table th:not([data-wk-table-th]) {
     padding: var(--padding-wk-y-sm) var(--padding-wk-x-md);
+}
+
+/* ─── A frozen first column on a table nobody built with the component ───────
+   `[data-wk-sticky-column]` was a MARKER and carried no behavior: the freezing
+   lives in Tailwind arbitrary variants on `table.td` and `table.th`, which are
+   compiled into the adopting application's own build. So a table that does not
+   come from the component — a rendered Markdown table is the reported case —
+   got nothing from the attribute, and the documentation portal was about to
+   rebuild the rules from the token instead. Measured there on 2026-09-14: a
+   1026px table (1035px in WebKit) inside a 342px scroller, and at the end of
+   the scroll a number with no row label beside it.
+
+   The rules below are the attribute's own, so the marker now carries what its
+   name says. They sit BELOW the component's utilities in specificity — those
+   are `table[data-wk-sticky-column] .class:first-child`, one class more — and
+   declare the same values, so a component table renders exactly as before and
+   the component keeps deciding for its own markup.
+
+   The child combinators are deliberate: a table nested inside a sticky-column
+   table is a different table, and a descendant selector would freeze its first
+   column too.
+
+   ⚠️ Sticky needs something to scroll past. The width pair is what gives it
+   that — a table capped at `100%` simply compresses its columns, there is no
+   horizontal scroll, and the frozen column is inert with nothing to report. The
+   scroll container itself belongs to the page: an ancestor with
+   `overflow-x: auto`, which is what the component's `responsive` wrapper is. */
+/* ⚠️ THE WIDTH RULE EXCLUDES COMPONENT TABLES BY NAME, AND SPECIFICITY IS NOT THE LEVER —
+   THAT IS THE HALF THE PARAGRAPH ABOVE GOT WRONG. It says these rules "sit BELOW the
+   component's utilities in specificity". True of the FREEZING rules below, which face a
+   selector carrying one class more. False of this one, and not because the specificities
+   are equal: **this stylesheet is UNLAYERED and Tailwind's utilities live in
+   `@layer utilities`, so an unlayered declaration wins whatever its specificity is.**
+
+   Measured rather than argued, because two plausible fixes each changed nothing: rewriting
+   this selector as `:where([data-wk-sticky-column])` — specificity zero — left the overflow
+   at exactly 528px, not one pixel moved. A browser probe then read `width: 1775.89px` on a
+   table that carries `lg:w-full`, with the cells at `white-space: normal` and free to wrap.
+   The cascade was never deciding on specificity at all.
+
+   What it cost: `sticky-column-below="lg"` freezes the first column on a phone and is
+   supposed to WRAP INTO ITS BOX above the breakpoint, which is the entire point of the
+   variant. With `inline-size: max-content` applying unconditionally it scrolled sideways at
+   every width — 516px of overflow on the nightly browser lane, 528px reproduced locally,
+   against a case that allows at most 1.
+
+   `:not(.wk-table)` is the honest lever: the component stamps `wk-table` on every table it
+   renders, so it keeps deciding its own width through its own utilities — which is what the
+   paragraph above always meant. A table this library did not render carries no `wk-table`,
+   gets the width pair, and that is the rendered Markdown table this block was written for. */
+[data-wk-sticky-column]:not(.wk-table) {
+    inline-size: max-content;
+    min-inline-size: 100%;
+}
+
+[data-wk-sticky-column] > :is(thead, tbody, tfoot) > tr > :is(th, td):first-child {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: 1;
+    background-color: var(--color-wk-bg);
+    /* A cap rather than a width: a short label keeps its own, and the column
+       wraps instead of eating the width the other columns need to appear. */
+    max-inline-size: var(--size-wk-table-sticky-column-max);
+    white-space: normal;
+}
+
+/* The heading cell of the frozen column sits above BOTH sticky axes — its own
+   column and a sticky header row — so it is the one that needs the higher
+   layer, and the subtle surface is what the component gives it. */
+[data-wk-sticky-column] > thead > tr > :is(th, td):first-child {
+    z-index: 20;
+    background-color: var(--color-wk-bg-subtle);
 }
 
 /* ─── Data-list row separators ─────────────────────────────── */
@@ -3529,26 +3625,51 @@ input.wk-field::-webkit-datetime-edit-text {
 
    The middle state is the one that cannot be written as a media query, and it
    is the one a real application needed. */
+/* AND ONE LEVER PER ELEMENT, because the rule above is document-wide and that is a
+   decision rather than an accident. Measured 2026-09-08 in Chromium: WireKit puts
+   `wk-scrollbar` on `<html>` and `<body>`, so every element on the page is a descendant
+   of a `wk-` element and the four `!important` declarations reach markup this library
+   does not own. That reach is kept — a reader who asked for less motion gets it even
+   where an application never implemented the preference, and most applications do not.
+
+   What it costs is the animation that IS the information: a live trace, a queue that
+   shows work moving, a progress shape whose stillness would read as a hang. WCAG 2.3.3
+   exempts motion essential to the functionality, and until now the only way to claim
+   that exemption was to out-specify this rule AND add `!important` — the arms race the
+   attribute above was introduced to end, one level down.
+
+     data-wk-motion="essential"   this element and its subtree keep their motion
+
+   It is a claim about the content, not a way around the preference, and the reduce
+   rules WireKit writes for its OWN indicators are deliberately outside its reach: a
+   spinner, a skeleton and an indeterminate progress bar STOP rather than slow, and each
+   announces its state through `role="status"`, so nothing is lost with the movement.
+
+   `:not(:where(…))` rather than a bare `:not(…)`: `:where()` carries zero specificity,
+   so every branch below keeps exactly the specificity it had, and its forgiving parsing
+   means an engine that cannot read the argument drops the argument rather than the whole
+   rule — a selector list is invalidated by one bad member, and losing this list would
+   mean losing reduced motion entirely. */
 @media (prefers-reduced-motion: reduce) {
     /* The root element ITSELF, which carries wk-scrollbar — a descendant
        combinator alone would drop it, and scroll-behavior lives there. */
-    :root:not([data-reduce-motion="no-preference"])[class^="wk-"],
-    :root:not([data-reduce-motion="no-preference"])[class*=" wk-"],
-    :root:not([data-reduce-motion="no-preference"]) [class^="wk-"],
-    :root:not([data-reduce-motion="no-preference"]) [class*=" wk-"],
-    :root:not([data-reduce-motion="no-preference"]) [class^="wk-"] *,
-    :root:not([data-reduce-motion="no-preference"]) [class*=" wk-"] *,
-    :root:not([data-reduce-motion="no-preference"]) [x-transition\:enter],
-    :root:not([data-reduce-motion="no-preference"]) [x-transition\:leave],
-    :root:not([data-reduce-motion="no-preference"]) [x-transition\.opacity],
-    :root:not([data-reduce-motion="no-preference"]) [x-transition\.opacity\.duration\.200ms],
-    :root:not([data-reduce-motion="no-preference"]) [x-transition\.origin\.top\.left],
+    :root:not([data-reduce-motion="no-preference"])[class^="wk-"]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+    :root:not([data-reduce-motion="no-preference"])[class*=" wk-"]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+    :root:not([data-reduce-motion="no-preference"]) [class^="wk-"]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+    :root:not([data-reduce-motion="no-preference"]) [class*=" wk-"]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+    :root:not([data-reduce-motion="no-preference"]) [class^="wk-"] *:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+    :root:not([data-reduce-motion="no-preference"]) [class*=" wk-"] *:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\:enter]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\:leave]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\.opacity]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\.opacity\.duration\.200ms]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+    :root:not([data-reduce-motion="no-preference"]) [x-transition\.origin\.top\.left]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
     /* `x-collapse` is not an `x-transition` spelling and was missed by the enumeration
        above: three components animate their height with it (collapsible, tree-view,
        sidebar.collapsible), so a reader who asked for less motion still got a sliding
        panel. The comment above says a new modifier combination needs a line here; this is
        a different Alpine directive entirely, which is why nobody thought to add one. */
-    :root:not([data-reduce-motion="no-preference"]) [x-collapse] {
+    :root:not([data-reduce-motion="no-preference"]) [x-collapse]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)) {
         animation-duration: 1ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 1ms !important;
@@ -3563,27 +3684,27 @@ input.wk-field::-webkit-datetime-edit-text {
    indirection that would avoid it. */
 /* The root element ITSELF, which carries wk-scrollbar — a descendant
    combinator alone would drop it, and scroll-behavior lives there. */
-:root[data-reduce-motion="reduce"][class^="wk-"],
-:root[data-reduce-motion="reduce"][class*=" wk-"],
-:root[data-reduce-motion="reduce"] [class^="wk-"],
-:root[data-reduce-motion="reduce"] [class*=" wk-"],
-:root[data-reduce-motion="reduce"] [class^="wk-"] *,
-:root[data-reduce-motion="reduce"] [class*=" wk-"] *,
+:root[data-reduce-motion="reduce"][class^="wk-"]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"][class*=" wk-"]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"] [class^="wk-"]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"] [class*=" wk-"]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"] [class^="wk-"] *:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"] [class*=" wk-"] *:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
 /* Attribute-selected animations reach the clamp only if they are named here. The
    optimistic pending outline is the first animation in this file selected purely by
    attributes — no `wk-` class is involved — so every class-token branch above misses it and
    an application that says "reduce" kept getting a breathing outline. The information (the
    dashed outline) is unaffected: only the breathing stops, which is the same split the
    media-query half makes. */
-:root[data-reduce-motion="reduce"] [data-wk-optimistic] [aria-busy="true"],
-:root[data-reduce-motion="reduce"] [data-wk-optimistic] .sr-only[aria-busy="true"] + *,
-:root[data-reduce-motion="reduce"] [x-transition\:enter],
-:root[data-reduce-motion="reduce"] [x-transition\:leave],
-:root[data-reduce-motion="reduce"] [x-transition\.opacity],
-:root[data-reduce-motion="reduce"] [x-transition\.opacity\.duration\.200ms],
-:root[data-reduce-motion="reduce"] [x-transition\.origin\.top\.left],
+:root[data-reduce-motion="reduce"] [data-wk-optimistic] [aria-busy="true"]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"] [data-wk-optimistic] .sr-only[aria-busy="true"] + *:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"] [x-transition\:enter]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"] [x-transition\:leave]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"] [x-transition\.opacity]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"] [x-transition\.opacity\.duration\.200ms]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
+:root[data-reduce-motion="reduce"] [x-transition\.origin\.top\.left]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)),
 /* Same omission, same reason — see the media-query half above. */
-:root[data-reduce-motion="reduce"] [x-collapse] {
+:root[data-reduce-motion="reduce"] [x-collapse]:not(:where([data-wk-motion="essential"])):not(:where([data-wk-motion="essential"] *)) {
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
@@ -4136,7 +4257,13 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    edge — so both read the same token. `scroll-to-top` and `reading-bookmark` already
    did exactly this on both axes; this rule was the one that did not. */
 .wk-fab {
-    inset-block-end: calc(var(--padding-wk-x-lg, 1rem) + env(safe-area-inset-bottom, 0px));
+    /* `--wk-fab-lift` is the host's lever for a surface anchored at the bottom edge whose height
+       only the host knows — a cookie banner is the case this came from. Default 0px, so a page
+       that sets nothing renders exactly as before, and the value ADDS to this clearance and to
+       the bottom-nav modifier below, because one page can carry both. Without it a host had to
+       override this rule outright, and a non-modal banner over a focused FAB is WCAG 2.2
+       SC 2.4.11 (Focus Not Obscured), which names a cookie banner as its example. */
+    inset-block-end: calc(var(--padding-wk-x-lg, 1rem) + var(--wk-fab-lift, 0px) + env(safe-area-inset-bottom, 0px));
 }
 
 /* The other block edge. A single-action FAB may sit along the top instead —
@@ -4196,19 +4323,20 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    it. Opt in with the modifier: the component cannot see whether a nav exists
    elsewhere in the document, and guessing would lift every FAB off the corner. */
 .wk-fab-above-nav {
-    inset-block-end: calc(3.25rem + var(--padding-wk-y-md, 0.5rem) + env(safe-area-inset-bottom, 0px));
+    inset-block-end: calc(3.25rem + var(--padding-wk-y-md, 0.5rem) + var(--wk-fab-lift, 0px) + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 768px) {
     /* The nav hides at md, so the room reserved for it goes too — and what is left is the
-       ordinary viewport clearance, on the same token as the rest. */
+       ordinary viewport clearance, on the same token as the rest. The host's lift stays in the
+       sum, because a surface the host measures does not hide at md the way the nav does. */
     .wk-fab-above-nav:not(.wk-fab-above-nav-always) {
-        inset-block-end: calc(var(--padding-wk-x-lg, 1rem) + env(safe-area-inset-bottom, 0px));
+        inset-block-end: calc(var(--padding-wk-x-lg, 1rem) + var(--wk-fab-lift, 0px) + env(safe-area-inset-bottom, 0px));
     }
 
     /* Same escape hatch, same reason it is declared on its own. */
     .wk-fab-above-nav-always {
-        inset-block-end: calc(3.25rem + var(--padding-wk-y-md, 0.5rem) + env(safe-area-inset-bottom, 0px));
+        inset-block-end: calc(3.25rem + var(--padding-wk-y-md, 0.5rem) + var(--wk-fab-lift, 0px) + env(safe-area-inset-bottom, 0px));
     }
 }
 
@@ -4317,18 +4445,18 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 
 /* Horizontal (default): collapse the inline seam + square inner edges. */
-.wk-button-group:not([data-orientation="vertical"]) > :not(:first-child) {
+.wk-button-group:not([data-orientation="vertical"]):not([data-stack-below]) > :not(:first-child) {
     margin-inline-start: -1px;
 }
-.wk-button-group:not([data-orientation="vertical"]) > :first-child:not(:last-child) {
+.wk-button-group:not([data-orientation="vertical"]):not([data-stack-below]) > :first-child:not(:last-child) {
     border-start-end-radius: 0;
     border-end-end-radius: 0;
 }
-.wk-button-group:not([data-orientation="vertical"]) > :last-child:not(:first-child) {
+.wk-button-group:not([data-orientation="vertical"]):not([data-stack-below]) > :last-child:not(:first-child) {
     border-start-start-radius: 0;
     border-end-start-radius: 0;
 }
-.wk-button-group:not([data-orientation="vertical"]) > :not(:first-child):not(:last-child) {
+.wk-button-group:not([data-orientation="vertical"]):not([data-stack-below]) > :not(:first-child):not(:last-child) {
     border-radius: 0;
 }
 
@@ -4338,16 +4466,16 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
  * corner AND its seam-side border, which reads as a rounded field butting a
  * squared button. Reach the nested field and square its seam edge + drop the
  * duplicated seam border so the field abuts the neighbor cleanly. */
-.wk-button-group:not([data-orientation="vertical"]) > :first-child:not(:last-child) .wk-field {
+.wk-button-group:not([data-orientation="vertical"]):not([data-stack-below]) > :first-child:not(:last-child) .wk-field {
     border-start-end-radius: 0;
     border-end-end-radius: 0;
     border-inline-end: 0;
 }
-.wk-button-group:not([data-orientation="vertical"]) > :last-child:not(:first-child) .wk-field {
+.wk-button-group:not([data-orientation="vertical"]):not([data-stack-below]) > :last-child:not(:first-child) .wk-field {
     border-start-start-radius: 0;
     border-end-start-radius: 0;
 }
-.wk-button-group:not([data-orientation="vertical"]) > :not(:first-child):not(:last-child) .wk-field {
+.wk-button-group:not([data-orientation="vertical"]):not([data-stack-below]) > :not(:first-child):not(:last-child) .wk-field {
     border-radius: 0;
     border-inline-end: 0;
 }
@@ -4366,6 +4494,265 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 }
 .wk-button-group[data-orientation="vertical"] > :not(:first-child):not(:last-child) {
     border-radius: 0;
+}
+
+/* Stacking below a breakpoint — a group whose labels fit on a desktop and run off a phone.
+   `stack-below` writes `data-stack-below`, and the base rules above skip
+   such a group entirely — they are the ones that square the seam edges, and a squared corner
+   cannot be restored from a media query without knowing which radius token the child was drawn
+   with. So the two shapes are declared here per breakpoint instead: joined on the inline axis at
+   the named width and up, joined on the block axis below it. The declarations are the same ones
+   the static horizontal and vertical groups use, which is why they are repeated rather than
+   abstracted: a shared selector list would have to name every value anyway. */
+
+@media (min-width: 640px) {
+    .wk-button-group[data-stack-below="sm"] > :not(:first-child) {
+        margin-inline-start: -1px;
+    }
+    .wk-button-group[data-stack-below="sm"] > :first-child:not(:last-child) {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="sm"] > :last-child:not(:first-child) {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+    .wk-button-group[data-stack-below="sm"] > :not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+    .wk-button-group[data-stack-below="sm"] > :first-child:not(:last-child) .wk-field {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+        border-inline-end: 0;
+    }
+    .wk-button-group[data-stack-below="sm"] > :last-child:not(:first-child) .wk-field {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+    .wk-button-group[data-stack-below="sm"] > :not(:first-child):not(:last-child) .wk-field {
+        border-radius: 0;
+        border-inline-end: 0;
+    }
+}
+
+@media (max-width: 639px) {
+    .wk-button-group[data-stack-below="sm"] {
+        flex-direction: column;
+    }
+    .wk-button-group[data-stack-below="sm"] > :not(:first-child) {
+        margin-block-start: -1px;
+    }
+    .wk-button-group[data-stack-below="sm"] > :first-child:not(:last-child) {
+        border-end-start-radius: 0;
+        border-end-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="sm"] > :last-child:not(:first-child) {
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="sm"] > :not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+}
+
+@media (min-width: 768px) {
+    .wk-button-group[data-stack-below="md"] > :not(:first-child) {
+        margin-inline-start: -1px;
+    }
+    .wk-button-group[data-stack-below="md"] > :first-child:not(:last-child) {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="md"] > :last-child:not(:first-child) {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+    .wk-button-group[data-stack-below="md"] > :not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+    .wk-button-group[data-stack-below="md"] > :first-child:not(:last-child) .wk-field {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+        border-inline-end: 0;
+    }
+    .wk-button-group[data-stack-below="md"] > :last-child:not(:first-child) .wk-field {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+    .wk-button-group[data-stack-below="md"] > :not(:first-child):not(:last-child) .wk-field {
+        border-radius: 0;
+        border-inline-end: 0;
+    }
+}
+
+@media (max-width: 767px) {
+    .wk-button-group[data-stack-below="md"] {
+        flex-direction: column;
+    }
+    .wk-button-group[data-stack-below="md"] > :not(:first-child) {
+        margin-block-start: -1px;
+    }
+    .wk-button-group[data-stack-below="md"] > :first-child:not(:last-child) {
+        border-end-start-radius: 0;
+        border-end-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="md"] > :last-child:not(:first-child) {
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="md"] > :not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+}
+
+@media (min-width: 1024px) {
+    .wk-button-group[data-stack-below="lg"] > :not(:first-child) {
+        margin-inline-start: -1px;
+    }
+    .wk-button-group[data-stack-below="lg"] > :first-child:not(:last-child) {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="lg"] > :last-child:not(:first-child) {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+    .wk-button-group[data-stack-below="lg"] > :not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+    .wk-button-group[data-stack-below="lg"] > :first-child:not(:last-child) .wk-field {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+        border-inline-end: 0;
+    }
+    .wk-button-group[data-stack-below="lg"] > :last-child:not(:first-child) .wk-field {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+    .wk-button-group[data-stack-below="lg"] > :not(:first-child):not(:last-child) .wk-field {
+        border-radius: 0;
+        border-inline-end: 0;
+    }
+}
+
+@media (max-width: 1023px) {
+    .wk-button-group[data-stack-below="lg"] {
+        flex-direction: column;
+    }
+    .wk-button-group[data-stack-below="lg"] > :not(:first-child) {
+        margin-block-start: -1px;
+    }
+    .wk-button-group[data-stack-below="lg"] > :first-child:not(:last-child) {
+        border-end-start-radius: 0;
+        border-end-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="lg"] > :last-child:not(:first-child) {
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="lg"] > :not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+}
+
+@media (min-width: 1280px) {
+    .wk-button-group[data-stack-below="xl"] > :not(:first-child) {
+        margin-inline-start: -1px;
+    }
+    .wk-button-group[data-stack-below="xl"] > :first-child:not(:last-child) {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="xl"] > :last-child:not(:first-child) {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+    .wk-button-group[data-stack-below="xl"] > :not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+    .wk-button-group[data-stack-below="xl"] > :first-child:not(:last-child) .wk-field {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+        border-inline-end: 0;
+    }
+    .wk-button-group[data-stack-below="xl"] > :last-child:not(:first-child) .wk-field {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+    .wk-button-group[data-stack-below="xl"] > :not(:first-child):not(:last-child) .wk-field {
+        border-radius: 0;
+        border-inline-end: 0;
+    }
+}
+
+@media (max-width: 1279px) {
+    .wk-button-group[data-stack-below="xl"] {
+        flex-direction: column;
+    }
+    .wk-button-group[data-stack-below="xl"] > :not(:first-child) {
+        margin-block-start: -1px;
+    }
+    .wk-button-group[data-stack-below="xl"] > :first-child:not(:last-child) {
+        border-end-start-radius: 0;
+        border-end-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="xl"] > :last-child:not(:first-child) {
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="xl"] > :not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+}
+
+@media (min-width: 1536px) {
+    .wk-button-group[data-stack-below="2xl"] > :not(:first-child) {
+        margin-inline-start: -1px;
+    }
+    .wk-button-group[data-stack-below="2xl"] > :first-child:not(:last-child) {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="2xl"] > :last-child:not(:first-child) {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+    .wk-button-group[data-stack-below="2xl"] > :not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
+    .wk-button-group[data-stack-below="2xl"] > :first-child:not(:last-child) .wk-field {
+        border-start-end-radius: 0;
+        border-end-end-radius: 0;
+        border-inline-end: 0;
+    }
+    .wk-button-group[data-stack-below="2xl"] > :last-child:not(:first-child) .wk-field {
+        border-start-start-radius: 0;
+        border-end-start-radius: 0;
+    }
+    .wk-button-group[data-stack-below="2xl"] > :not(:first-child):not(:last-child) .wk-field {
+        border-radius: 0;
+        border-inline-end: 0;
+    }
+}
+
+@media (max-width: 1535px) {
+    .wk-button-group[data-stack-below="2xl"] {
+        flex-direction: column;
+    }
+    .wk-button-group[data-stack-below="2xl"] > :not(:first-child) {
+        margin-block-start: -1px;
+    }
+    .wk-button-group[data-stack-below="2xl"] > :first-child:not(:last-child) {
+        border-end-start-radius: 0;
+        border-end-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="2xl"] > :last-child:not(:first-child) {
+        border-start-start-radius: 0;
+        border-start-end-radius: 0;
+    }
+    .wk-button-group[data-stack-below="2xl"] > :not(:first-child):not(:last-child) {
+        border-radius: 0;
+    }
 }
 
 /* ─── Progress bar indeterminate ───────────────────────────── */

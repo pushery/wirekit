@@ -22,6 +22,8 @@
     // Distinct from the `scope` prop above, which is WireKit's token-scope override —
     // overloading that would break scoped theming for the 200+ components that share it.
     'headerScope' => 'col',
+    // sm | md | lg | xl | 2xl — hide this column below that breakpoint; its cells take the same value.
+    'hideBelow' => null,
 ])
 
 @php
@@ -94,6 +96,27 @@
         ? ''
         : 'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]';
 
+    // `hideBelow` takes a column off a narrow screen. The classes are written out per breakpoint
+    // because Tailwind reads literal class names and never an assembled one, and a `max-*` variant
+    // hides only below the breakpoint, so above it the cell keeps the display the table gives it
+    // instead of one this component would have to restate. The header and every cell of the column
+    // take the same value: a header hidden without its cells, or cells without their header, would
+    // put every value under the wrong heading. An unknown value throws in debug and hides nothing
+    // in production.
+    $hideBelow = filled($hideBelow) ? (string) $hideBelow : null;
+    if ($hideBelow !== null && ! in_array($hideBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
+        WireKit::validateProp('table.th', 'hideBelow', $hideBelow, ['sm', 'md', 'lg', 'xl', '2xl']);
+        $hideBelow = null;
+    }
+    $hideClasses = match ($hideBelow) {
+        'sm' => 'max-sm:hidden',
+        'md' => 'max-md:hidden',
+        'lg' => 'max-lg:hidden',
+        'xl' => 'max-xl:hidden',
+        '2xl' => 'max-2xl:hidden',
+        default => '',
+    };
+
     // Base th styling — heading weight, scope-aware text, compact-aware padding
     // via table[data-wk-compact] selector
     $classes = WireKit::resolveClasses('table.th', 'base', implode(' ', [
@@ -102,6 +125,7 @@
         'text-[length:var(--text-wk-sm)]',
         $scopeText,
         $alignClass,
+        $hideClasses,
         // Compact variant: reduce vertical padding
         $padOnButton ? '' : '[table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)]',
         // Sticky first column: freeze the leading header cell. It needs its own

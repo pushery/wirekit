@@ -26,6 +26,10 @@
     'hint' => null,
     'error' => null,
     'indeterminate' => false,
+    // Take the surrounding field.set's group error, or decline it. A control that belongs to
+    // the group but neither causes the rejection nor can resolve it says `:group-error="false"`
+    // and is then neither announced as invalid nor described by the group's message.
+    'groupError' => true,
     'size' => config('wirekit.components.checkbox.size', 'md'),
     // 'default' (inline control + label) or 'card' (the whole bordered card is the
     // clickable target and highlights when checked — the selectable-option pattern).
@@ -151,8 +155,17 @@
     $hasError = $error || (! $groupOwnsBagEntry && ($errors ?? null)?->has($name));
     $errorMessage = $error ?? ($groupOwnsBagEntry ? null : ($errors ?? null)?->first($name));
 
+    // Whether this control answers for the group's message.
+    //
+    // A group error can be true of SOME of its controls: three checkboxes under one caption,
+    // and a rejection that only two of them can resolve. Announced on all three, the reader who
+    // reaches the third hears "invalid" and a sentence that ticking it will not satisfy. The
+    // group still owns its bag entry either way — `covers()` is not gated on this — so a
+    // declining control does not start printing the group's message under itself.
+    $groupError = BooleanProp::from($groupError, true);
+
     // Invalid on its own error or on its group's.
-    $isInvalid = $hasError || ($fieldGroup?->isInvalid($errors ?? null) ?? false);
+    $isInvalid = $hasError || ($groupError && ($fieldGroup?->isInvalid($errors ?? null) ?? false));
 
     // aria-describedby: our own hint/error target, the group's, and any caller-supplied value,
     // merged into ONE attribute. Two separate aria-describedby attributes would make the
@@ -164,6 +177,7 @@
         $hasError ? $id.'-error' : null,
         $hint ? $id.'-hint' : null,
         $attributes->get('aria-describedby'),
+        $groupError,
     );
 
     // Visual box styling. The <input> uses .peer + .sr-only, and this box listens

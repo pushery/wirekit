@@ -252,6 +252,13 @@
         ? "collapsed ? '' : 'rotate-180'"
         : "collapsed ? 'rotate-180' : ''";
 
+    // The glyph the collapse control draws, written out per side. The rule inside the panel stands
+    // on the column's own side, and the arrow sits in the other half, drawn pointing left: the
+    // direction `$chevronFlip` has always assumed, so its states swap on the trailing side exactly
+    // as they did.
+    $collapseGlyphEdge = $side === 'end' ? 'M15 3.75v16.5' : 'M9 3.75v16.5';
+    $collapseGlyphArrow = $side === 'end' ? 'M10.5 9.75 8.25 12l2.25 2.25' : 'M15.75 9.75 13.5 12l2.25 2.25';
+
     $surface = $variant === 'flush'
         ? [
             $contentEdgeBorder,

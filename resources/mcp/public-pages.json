@@ -102,6 +102,7 @@
     "notification-center",
     "number-input",
     "otp-input",
+    "page-header",
     "pagination",
     "password-input",
     "popover",

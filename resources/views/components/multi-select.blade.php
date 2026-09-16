@@ -451,7 +451,10 @@
             role="listbox"
             aria-label="{{ $resolvedAriaLabel }}"
             aria-multiselectable="true"
-            class="fixed z-[var(--z-wk-dropdown)] overflow-y-auto rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-lg)] wk-scrollbar{{ $panelWidth === 'auto' ? ' w-max' : '' }}"
+            {{-- `[overflow-wrap:anywhere]` lets an option name with no space or hyphen break inside the
+                 word instead of widening its row past the panel, which scrolled the list sideways. The
+                 combobox panel carries the same class, and its comment has the reasoning. --}}
+            class="fixed z-[var(--z-wk-dropdown)] overflow-y-auto [overflow-wrap:anywhere] rounded-[var(--radius-wk-md)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] bg-[var(--color-wk-bg-elevated)] shadow-[var(--shadow-wk-lg)] wk-scrollbar{{ $panelWidth === 'auto' ? ' w-max' : '' }}"
             @if($panelWidthStyle !== '') style="{{ $panelWidthStyle }}" @endif
             x-cloak
         >
