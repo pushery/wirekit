@@ -25,6 +25,10 @@
     // 'default' (inline control + label) or 'card' (the whole bordered card is the
     // clickable target and highlights when selected — the pricing-tier pattern).
     'variant' => config('wirekit.components.radio.variant', 'default'),
+    // Take the surrounding field.set's group error, or decline it. A control that belongs to
+    // the group but neither causes the rejection nor can resolve it says `:group-error="false"`
+    // and is then neither announced as invalid nor described by the group's message.
+    'groupError' => true,
     'scope' => null,
 ])
 
@@ -116,7 +120,12 @@
     // Error detection: explicit prop OR Laravel validation bag (grouped by name)
     $hasError = $error || (! $groupOwnsBagEntry && ($errors ?? null)?->has($nameAttr ?? ''));
     $errorMessage = $error ?? ($groupOwnsBagEntry ? null : ($errors ?? null)?->first($nameAttr ?? ''));
-    $isInvalid = $hasError || ($fieldGroup?->isInvalid($errors ?? null) ?? false);
+    // Whether this radio answers for the group's message. A group error can be true of SOME of
+    // its controls; announced on one that cannot resolve it, the reader hears "invalid" and a
+    // sentence that selecting it will not satisfy. `covers()` is not gated on this, so a
+    // declining control does not start printing the group's message under itself.
+    $groupError = BooleanProp::from($groupError, true);
+    $isInvalid = $hasError || ($groupError && ($fieldGroup?->isInvalid($errors ?? null) ?? false));
 
     // One description list for the control: its own message, the group's, then a caller's
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
@@ -127,6 +136,7 @@
         $hasError ? $id.'-error' : null,
         $hint ? $id.'-hint' : null,
         $attributes->get('aria-describedby'),
+        $groupError,
     );
 
     // Visual circle — sibling of the peer input, reacts via peer-checked/focus/disabled

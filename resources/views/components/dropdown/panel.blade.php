@@ -49,6 +49,18 @@
         'z-[var(--z-wk-dropdown)]',
         'min-w-[12rem]',
         'py-[var(--padding-wk-y-xs)]',
+        // Inline padding as well, and it is what gives the items a shape to have.
+        //
+        // Reported from the starter kit: a focused entry drew a 2px square ring that ran
+        // into the panel's rounded inner edge — measured at x 64..254 inside a panel at
+        // x 63..255. The items were flush to the walls, so the only shapes on screen were
+        // a rounded panel and a square row inside it.
+        //
+        // Set to the same token as the block padding, so the inset reads as one frame
+        // rather than as two decisions. `--radius-wk-nav-item` on the item is then
+        // literally "panel radius minus this padding", which is what that token already
+        // computes everywhere else in the library.
+        'px-[var(--padding-wk-y-xs)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',

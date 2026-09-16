@@ -143,6 +143,7 @@ final class SandboxSchemaRegistry
             'type' => ['type' => 'string', 'default' => 'button', 'allowed_values' => ['button', 'submit', 'reset']],
             'disabled' => ['type' => 'bool', 'default' => false],
             'wrapLabel' => ['type' => 'bool', 'default' => false],
+            'touchTextFloor' => ['type' => 'bool', 'default' => false],
             // `body` is the SandboxRenderer convention for slot content —
             // `<x-wirekit::button>{body}</x-wirekit::button>`. Earlier
             // iterations used `label` here, which the renderer treated as
@@ -246,6 +247,8 @@ final class SandboxSchemaRegistry
             'size' => ['type' => 'string', 'allowed_values' => ['sm', 'md', 'base', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl']],
             'accent' => ['type' => 'bool', 'default' => false],
             'tracking' => ['type' => 'string', 'default' => 'normal', 'allowed_values' => ['normal', 'tight', 'tighter']],
+            // No default: an unset break keeps the browser's own rules, as it does on text.
+            'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all']],
             'body' => ['type' => 'string', 'default' => 'Heading'],
         ]);
 

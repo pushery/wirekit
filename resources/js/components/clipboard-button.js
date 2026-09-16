@@ -30,6 +30,13 @@ export default function wirekitClipboardButton(config = {}) {
         _duration: Number(config.duration) || 2000,
         _resetTimer: null,
 
+        // Neither confirmation is up. The resting icon and label show only then, so a refusal
+        // replaces them with the failure state instead of falling back to the look of a button
+        // nobody pressed, which is all a sighted reader saw of a refused write.
+        get idle() {
+            return ! this.copied && ! this.failed;
+        },
+
         destroy() {
             if (this._resetTimer) {
                 clearTimeout(this._resetTimer);

@@ -325,6 +325,14 @@
         'fixed z-[var(--z-wk-dropdown)]',  // fixed escapes a clipping card; width + height come from _place()
         'list-none',
         'wk-scrollbar max-h-60 overflow-auto',
+        // `[overflow-wrap:anywhere]` lets an option name with no space or hyphen break inside the
+        // word instead of widening its row past the panel. The panel takes its width from the field,
+        // so a repository name with underscores scrolled the whole list sideways, and on a phone the
+        // name could only be read by scrolling. It sits on the panel rather than the row so group
+        // headings, descriptions and the empty state inherit it, and it is `anywhere` rather than
+        // `break-word` because only `anywhere` lowers the min-content width. A space still wins
+        // wherever there is one.
+        '[overflow-wrap:anywhere]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',
         'border-[var(--color-wk-border)]',

@@ -25,6 +25,7 @@
     // leaves no max-height rather than a wrong one. The reasoning is with the code below.
     'stickyHeaderMax' => config('wirekit.components.table.sticky-header-max', '24rem'),
     'stickyColumn' => false, // freeze the FIRST column while the rest scroll horizontally
+    'stickyColumnBelow' => null, // sm | md | lg | xl | 2xl — freeze it only below that breakpoint
     'alpineSort' => false, // enable client-side Alpine sorting (no Livewire needed)
     // Accessible name for the responsive scroll wrapper, and the switch that makes it a
     // LANDMARK. The wrapper is keyboard-reachable either way (WCAG 2.1.1 — `tabindex="0"` is
@@ -77,6 +78,29 @@
         ? 'max-height: '.trim((string) $stickyHeaderMax).';'
         : null;
     $stickyColumn = BooleanProp::from($stickyColumn, false);
+
+    // `stickyColumnBelow` freezes the first column only below a breakpoint and turns the frozen column
+    // on by itself. From that width up the table fills its box again, so a wide screen wraps the cells
+    // instead of scrolling sideways past a column it does not need to hold. The width classes are
+    // written out per breakpoint because Tailwind reads literal class names and never an assembled
+    // one. An unknown value throws in debug and freezes the column at every width in production,
+    // which is what the column did before this prop existed.
+    $stickyColumnBelow = filled($stickyColumnBelow) ? (string) $stickyColumnBelow : null;
+    if ($stickyColumnBelow !== null) {
+        $stickyColumn = true;
+        if (! in_array($stickyColumnBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
+            WireKit::validateProp('table', 'stickyColumnBelow', $stickyColumnBelow, ['sm', 'md', 'lg', 'xl', '2xl']);
+            $stickyColumnBelow = null;
+        }
+    }
+    $stickyColumnWidth = match ($stickyColumnBelow) {
+        'sm' => 'min-w-full w-max sm:w-full',
+        'md' => 'min-w-full w-max md:w-full',
+        'lg' => 'min-w-full w-max lg:w-full',
+        'xl' => 'min-w-full w-max xl:w-full',
+        '2xl' => 'min-w-full w-max 2xl:w-full',
+        default => 'min-w-full w-max',
+    };
     $alpineSort = BooleanProp::from($alpineSort, false);
 
     // Base table classes — full width, collapse borders, use design tokens for typography
@@ -86,7 +110,7 @@
         // frozen column has something to scroll past — `w-full` caps it at 100% and
         // the columns just compress (no horizontal scroll, sticky-column inert). Use
         // the natural content width (min 100%) so a wide table overflows + scrolls.
-        $stickyColumn ? 'min-w-full w-max' : 'w-full',
+        $stickyColumn ? $stickyColumnWidth : 'w-full',
         // As a flex item the table would shrink to fit the scroller and never
         // overflow, which removes the scrolling the sentinels are watching for.
         // `flex-shrink` is inert outside a flex container, so the non-responsive

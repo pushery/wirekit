@@ -7,6 +7,7 @@
     'size' => null,
     'accent' => false,
     'tracking' => 'normal',
+    'break' => null,        // where an unbroken name may wrap: normal | anywhere | all. null → the default rules, no class
     'as' => null,
     'scope' => null,
 ])
@@ -75,6 +76,20 @@
         default => WireKit::validateProp('heading', 'tracking', $tracking, ['normal', 'tight', 'tighter']),
     };
 
+    // A heading often carries a name somebody typed — a template, a repository, a channel —
+    // and such names tend to have no point a browser may break at, so they run out of the
+    // heading instead. The same three values and the same literal classes as `text`, so the two
+    // cannot drift apart: arbitrary properties rather than the named overflow-wrap utilities,
+    // which only arrived in Tailwind 4.1. `anywhere` also counts toward the min-content width,
+    // which is what lets a heading wrap inside a flex row.
+    $breakClasses = match ($break === null ? null : (string) $break) {
+        'normal' => '[overflow-wrap:normal] [word-break:normal]',
+        'anywhere' => '[overflow-wrap:anywhere]',
+        'all' => '[word-break:break-all]',
+        null => '',
+        default => WireKit::validateProp('heading', 'break', (string) $break, ['normal', 'anywhere', 'all']),
+    };
+
     $colorClasses = $accent
         ? 'text-[color:var(--color-wk-accent-text)]'
         : 'text-[color:var(--color-wk-text)]';
@@ -85,6 +100,7 @@
         'leading-[var(--font-wk-heading-line-height,1.25)]',
         $sizeClasses,
         $trackingClasses,
+        $breakClasses,
         $colorClasses,
     ]), $scope);
 @endphp

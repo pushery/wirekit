@@ -105,6 +105,9 @@
         // they are: 20.5% IS dark's elevated tone by decision (dist/wirekit.css,
         // `[data-wk-tone="inverse"]`), so re-tinting one would move every hover in
         // the catalog to close a focus hole.
+        // The same shape as `dropdown.item`: the panel's inline padding makes room for it,
+        // and a focused row that stayed square would be the reported defect on a sibling.
+        'rounded-[var(--radius-wk-nav-item)]',
         'focus:outline-hidden',
         'focus-visible:bg-[var(--color-wk-bg-subtle)]',
         'focus-visible:ring-[length:var(--ring-wk-width)]',

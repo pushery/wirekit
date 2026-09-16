@@ -26,6 +26,29 @@
  */
 
 /**
+ * The theme a chart is drawn in: the nearest ancestor that sets one, `.dark` or `.light`, and the
+ * document only when no ancestor does.
+ *
+ * Both classes scope the tokens of everything under them, so a light panel can sit on a dark page.
+ * Reading the mode from `<html>` and `<body>` alone gave a chart in such a panel the page's mode,
+ * its fallbacks and its tooltip. `closest()` includes the element itself and reaches `<body>` and
+ * `<html>`, so a page that sets its theme there answers the same as before.
+ *
+ * @param {Element|null} element - the chart's own element, or null for the document's theme
+ * @returns {'dark'|'light'}
+ */
+export function themeModeOf(element) {
+    const scope = element && typeof element.closest === 'function' ? element.closest('.dark, .light') : null;
+    if (scope) {
+        return scope.classList.contains('dark') ? 'dark' : 'light';
+    }
+
+    return document.documentElement.classList.contains('dark') || document.body?.classList.contains('dark') === true
+        ? 'dark'
+        : 'light';
+}
+
+/**
  * Resolve WireKit theme colors from the current CSS-variable cascade.
  *
  * Implementation note — OKLCH probe trick: setting a CSS variable as
@@ -39,6 +62,8 @@
  *   element inside the cascade we want to read (typically the chart's
  *   canvas or mount div). Must be in the live DOM so .dark on <html> /
  *   <body> propagates correctly.
+ * @param {Element|null} [element] - the chart's own element. Its nearest `.dark` or `.light`
+ *   decides the mode, and the probe that resolves each token hangs beside it, inside its cascade.
  * @returns {{
  *   accent: string,
  *   danger: string,
@@ -53,9 +78,8 @@
  *   border: string
  * }} rgb()/rgba() string values for each token.
  */
-export function resolveThemeColors(style) {
-    const isDark = document.documentElement.classList.contains('dark')
-        || document.body?.classList.contains('dark') === true;
+export function resolveThemeColors(style, element = null) {
+    const isDark = themeModeOf(element) === 'dark';
 
     // Probe element: hidden div appended to <body> so var() resolves
     // through the correct cascade. Appending to <html> would fail when
@@ -67,11 +91,14 @@ export function resolveThemeColors(style) {
     // script died renders completely while nothing on it is bound. That is a
     // disproportionate price for reading a color, and it is invisible: no error a
     // reader sees, no failing control, just a page that quietly does nothing.
-    const probe = document.body ? document.createElement('div') : null;
+    // Beside the chart when there is one: a probe under <body> resolves every token in the page's
+    // cascade, which is not the chart's inside a `.light` or `.dark` panel.
+    const host = element?.parentElement ?? document.body ?? null;
+    const probe = host ? document.createElement('div') : null;
 
     if (probe) {
         probe.style.display = 'none';
-        document.body.appendChild(probe);
+        host.appendChild(probe);
     }
 
     // Canvas 2D parser + paint-and-read pixel trick — forces every color
@@ -352,11 +379,14 @@ export function resolveCssVarsDeep(node, style, cache = new Map(), scratch = {})
                 // Same reasoning as the probe in `resolveThemeColors()` above: no <body>
                 // means no cascade to read through, and the honest answer is to hand the
                 // caller its own `var(…)` back rather than to take the page down over it.
-                if (!document.body) return _match;
+                // `scratch.host` is the chart's own neighborhood when the caller passes one, so a
+                // nested var() resolves in the chart's cascade rather than the page's.
+                const host = scratch.host ?? document.body;
+                if (!host) return _match;
 
                 const probe = document.createElement('div');
                 probe.style.display = 'none';
-                document.body.appendChild(probe);
+                host.appendChild(probe);
                 probe.style.color = `var(${varName})`;
                 computed = getComputedStyle(probe).color;
                 probe.remove();

@@ -84,6 +84,30 @@ export default function wirekitOtpInput(config = {}) {
             event.target.select();
         },
 
+        /**
+         * Keep that selection when a click caused the focus.
+         *
+         * WebKit finishes the click after the focus handler has run, and the click's
+         * default action puts a caret where the pointer is — which collapses the
+         * selection and brings back exactly the refused keystroke described above.
+         * Measured in WebKit: the cell still reads 0–1 after `mouseup` and `click`,
+         * and 0–0 before the next frame; typing "9" leaves the "1" in place. Chromium
+         * keeps the selection, so the defect is invisible there.
+         *
+         * Canceling the default of `mouseup` is what keeps it; canceling `click` was
+         * measured and does not. Selecting again a moment after focus is not a
+         * substitute, measured two ways: one frame later leaves the caret in place in
+         * WebKit even for an instant click, and a 50 ms timer does too, while in Chromium
+         * it passes an instant click and fails one held as long as a person holds it.
+         *
+         * `select()` again here, not only the cancel: clicking a cell that already has
+         * focus fires no focus event, and the press has already placed a caret.
+         */
+        onMouseUp(event) {
+            event.preventDefault();
+            event.target.select();
+        },
+
         onInput(event, index) {
             const raw = event.target.value;
 

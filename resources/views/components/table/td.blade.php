@@ -4,6 +4,7 @@
      any file that renders one. --}}
 @props([
     'align' => 'left', // left | center | right
+    'hideBelow' => null, // sm | md | lg | xl | 2xl — the same value as the column's header
     'scope' => null,
 ])
 
@@ -21,6 +22,27 @@
         default => 'text-left',
     };
 
+    // `hideBelow` takes a column off a narrow screen. The classes are written out per breakpoint
+    // because Tailwind reads literal class names and never an assembled one, and a `max-*` variant
+    // hides only below the breakpoint, so above it the cell keeps the display the table gives it
+    // instead of one this component would have to restate. The header and every cell of the column
+    // take the same value: a header hidden without its cells, or cells without their header, would
+    // put every value under the wrong heading. An unknown value throws in debug and hides nothing
+    // in production.
+    $hideBelow = filled($hideBelow) ? (string) $hideBelow : null;
+    if ($hideBelow !== null && ! in_array($hideBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
+        WireKit::validateProp('table.td', 'hideBelow', $hideBelow, ['sm', 'md', 'lg', 'xl', '2xl']);
+        $hideBelow = null;
+    }
+    $hideClasses = match ($hideBelow) {
+        'sm' => 'max-sm:hidden',
+        'md' => 'max-md:hidden',
+        'lg' => 'max-lg:hidden',
+        'xl' => 'max-xl:hidden',
+        '2xl' => 'max-2xl:hidden',
+        default => '',
+    };
+
     // Base td styling — standard padding, body text weight, compact-aware padding
     $classes = WireKit::resolveClasses('table.td', 'base', implode(' ', [
         'px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)]',
@@ -28,6 +50,7 @@
         'text-[color:var(--color-wk-text)]',
         'font-[number:var(--font-wk-body-weight)]',
         $alignClass,
+        $hideClasses,
         // Compact variant: reduce vertical padding to match th
         '[table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)]',
         // Sticky first column: freeze the leading body cell. Solid background so

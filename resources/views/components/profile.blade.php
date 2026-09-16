@@ -131,6 +131,26 @@
         default => WireKit::validateProp('profile', 'radius', (string) $radius, ['none', 'sm', 'md', 'lg', 'xl', 'full', 'nav-item']),
     };
 
+    // ── An avatar-only control IS the avatar ──────────────────────────────
+    //
+    // Reported from the starter kit, measured in both engines: the account trigger at
+    // the top of a phone layout showed a 2px square ring around a round avatar, 35px
+    // across a 32px circle, `radius="nav-item"` doing exactly what it was asked.
+    //
+    // A radius describes a BOX, and with no name and no slot there is no box — the
+    // control hugs the circle, so the only shape that can look deliberate is the
+    // circle's own. The prop keeps its meaning everywhere it has a row to describe,
+    // and this is not only about the focus ring: the hover surface is the same
+    // rounded-rect around the same circle.
+    // `hasActualContent()` rather than `trim((string) $slot)`: Livewire wraps a rendered slot
+    // in morph markers, so the string form of an EMPTY slot is not empty — an account trigger
+    // inside a Livewire component would have kept its rounded-rect ring, and only there.
+    $avatarOnly = $control && ! filled($name) && ! $slot->hasActualContent();
+
+    if ($avatarOnly) {
+        $radiusClasses = 'rounded-[var(--radius-wk-full)]';
+    }
+
     // Profile — avatar + name display for header areas.
     $classes = WireKit::resolveClasses('profile', 'base', implode(' ', [
         'flex items-center',

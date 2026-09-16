@@ -1,4 +1,4 @@
-import { resolveThemeColors, palette, resolveCssVarsDeep } from '../utils/chart-theme-colors.js';
+import { resolveThemeColors, palette, resolveCssVarsDeep, themeModeOf } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
 
@@ -580,7 +580,7 @@ window.ApexCharts = ApexCharts;</pre>
                 // straight to SVG `fill="…"`, which does NOT parse CSS
                 // vars. Without this walk, every such reference silently
                 // falls back to ApexCharts' default first-series blue.
-                const resolvedThemed = resolveCssVarsDeep(themed, style);
+                const resolvedThemed = resolveCssVarsDeep(themed, style, new Map(), { host: this.$refs?.mount?.parentElement ?? null });
                 this.chart = new ApexCharts(mount, resolvedThemed);
                 this.chart.render();
                 this._removeHiddenTabStop(mount);
@@ -1152,7 +1152,7 @@ window.ApexCharts = ApexCharts;</pre>
                     // per-dataset / colorScale / annotation colors pick up
                     // the new .dark cascade values. Same reasoning as the
                     // initial-mount resolveCssVarsDeep() above.
-                    const resolvedThemed = resolveCssVarsDeep(themed, style);
+                    const resolvedThemed = resolveCssVarsDeep(themed, style, new Map(), { host: this.$refs?.mount?.parentElement ?? null });
                     this.chart.updateOptions(resolvedThemed, false, !reduced);
 
                     // A theme swap can rebuild the SVG root, which arrives
@@ -1369,7 +1369,7 @@ window.ApexCharts = ApexCharts;</pre>
          * by wirekitChartJs so dataset palettes, fallbacks, and probe
          * behavior stay in lockstep across both adapters.
          */
-        _resolveThemeColors(style) { return resolveThemeColors(style); },
+        _resolveThemeColors(style) { return resolveThemeColors(style, this.$refs?.mount ?? null); },
         _palette(colors)           { return palette(colors); },
 
         _setupDetachGuard(mount) {
@@ -1473,8 +1473,7 @@ window.ApexCharts = ApexCharts;</pre>
          * values where present.
          */
         _themeApexConfig(rawConfig, colors, fontFamily) {
-            const isDark = document.documentElement.classList.contains('dark')
-                || document.body?.classList.contains('dark') === true;
+            const isDark = themeModeOf(this.$refs?.mount ?? null) === 'dark';
 
             // Auto-fill series-level colors when not user-set. _manualColorIndices
             // captures developer choices at init time so dark-mode re-theme skips them.

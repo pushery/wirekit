@@ -113,14 +113,22 @@ final class FieldGroup
      * control's own before the group's because it is the more specific. A hint is left out while
      * an error renders in its place, since only one of the two is on the page. One attribute:
      * written twice, the parser keeps the first and the other description is lost.
+     *
+     * `$takesGroupError` is a control declining the group's message — a checkbox that belongs to
+     * the group, does not cause the rejection and cannot resolve it. It drops the reference to
+     * the group error and nothing else: the control keeps its own error, its own hint, and the
+     * group HINT, which is a different sentence and is on the page whenever the group is valid.
+     * It is deliberately not expressed as "pass null for the group": that would also stop
+     * {@see covers()} from suppressing the group's bag entry, and the control would print the
+     * group's message under itself — the confusion this is here to prevent, one step over.
      */
-    public static function describedBy(?self $group, ?object $errors, ?string $ownErrorId, ?string $ownHintId, ?string $callerIds): ?string
+    public static function describedBy(?self $group, ?object $errors, ?string $ownErrorId, ?string $ownHintId, ?string $callerIds, bool $takesGroupError = true): ?string
     {
         $groupInvalid = $group !== null && $group->isInvalid($errors);
 
         $ids = array_filter([
             $ownErrorId,
-            $groupInvalid ? $group->errorId : null,
+            $groupInvalid && $takesGroupError ? $group->errorId : null,
             $ownErrorId === null ? $ownHintId : null,
             ! $groupInvalid && $group?->hint !== null ? $group->hintId : null,
             $callerIds,

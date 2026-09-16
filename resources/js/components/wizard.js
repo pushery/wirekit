@@ -253,18 +253,49 @@ export default function wirekitWizard(config = {}) {
             if (typeof document === 'undefined' || typeof this.$nextTick !== 'function') return;
 
             this.$nextTick(() => {
-                // `<body>` is where a browser leaves focus when the focused element is
-                // hidden. Anything else means the control survived, and it keeps focus.
+                // Focus is lost when it sits on `<body>` — and also when it still sits on an
+                // element that can no longer hold it. Blink drops focus to `<body>` as soon as
+                // the focused button is hidden, so asking for `<body>` was enough there. WebKit
+                // does not: measured after a microtask and after a frame, `activeElement` was
+                // still the Next button, already `hidden` with no client rects, and only later
+                // did focus fall to `<body>` — after this check had passed and returned. So an
+                // element that is detached or renders no box counts as lost too. A control that
+                // survived the change still renders, and it keeps its focus.
                 const active = document.activeElement;
-                if (active && active !== document.body) return;
+                const renders = (el) => el.isConnected !== false
+                    && (typeof el.getClientRects !== 'function' || el.getClientRects().length > 0);
+                if (active && active !== document.body && renders(active)) return;
 
                 const panel = this.stepElement(this.current);
                 if (!panel || typeof panel.focus !== 'function') return;
 
-                // The panel the reader was moved to, rather than the opposite control: it
-                // is the top of what changed, and it is the one target that exists whatever
-                // the controls slot was replaced with.
-                panel.focus();
+                // Move focus, and check that it arrived. WebKit ignores the move while it is
+                // still dropping focus from the hidden button: measured, `panel.focus()` ran,
+                // `activeElement` stayed on the button, no `focusin` fired, and a moment later
+                // focus fell to `<body>` all the same. Calling `blur()` on the button first did
+                // not change that either. What WebKit does accept is the same move once focus
+                // has reached `<body>`, so the move is repeated on the next frame for as long as
+                // focus is still on `<body>` or on an element that renders nothing — and stops
+                // the moment it arrives, or the reader has put focus somewhere real themselves.
+                let frames = 0;
+                const attempt = () => {
+                    const current = document.activeElement;
+                    if (current === panel) return;
+                    if (current && current !== document.body && renders(current)) return;
+
+                    panel.focus();
+
+                    if (document.activeElement !== panel && frames < 10
+                        && typeof requestAnimationFrame === 'function') {
+                        frames += 1;
+                        requestAnimationFrame(attempt);
+                    }
+                };
+
+                // The panel the reader is moved to, rather than the opposite control: it is
+                // the top of what changed, and the one target that exists whatever the
+                // controls slot was replaced with.
+                attempt();
             });
         },
 

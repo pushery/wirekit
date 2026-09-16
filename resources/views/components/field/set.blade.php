@@ -68,6 +68,22 @@
         : FieldGroup::open($name, $error, $hint);
     $groupMessage = $group->message($errors ?? null);
 
+    // The <fieldset> points at its own message, the way a control in the slot does.
+    //
+    // A group whose controls are not form controls has nothing else that can carry the
+    // reference. A row of buttons choosing a template is the reported shape: a <button>
+    // cannot be marked invalid and takes no error of its own, so the message rendered and
+    // nothing in the accessibility tree pointed at it — which is why an adopting
+    // application kept a hand-built `role="group"` with `aria-describedby` instead of
+    // reaching for this component.
+    //
+    // Through the same composer the controls use, so the order is the one they get and a
+    // caller's own `aria-describedby` is APPENDED rather than replaced: written twice, the
+    // parser keeps the first and the other description is lost. The two null arguments are
+    // the fieldset having no error and no hint of its own — only the group's.
+    $fieldsetDescribedBy = FieldGroup::describedBy($group, $errors ?? null, null, null, $attributes->get('aria-describedby'));
+    $attributes = $attributes->except(['aria-describedby']);
+
     // <fieldset> is the WCAG-recommended grouping container for related controls
     // (radio groups, checkbox groups, address blocks). The <legend> is its group
     // label, announced by screen readers before each control in the set.
@@ -102,7 +118,7 @@
     $hasLegend = $legendIsSlot ? $legend->hasActualContent() : filled($legend);
 @endphp
 
-<fieldset @if($group->key !== null) name="{{ $group->key }}" @endif {{ $attributes->class([$classes]) }}>
+<fieldset @if($group->key !== null) name="{{ $group->key }}" @endif @if($fieldsetDescribedBy !== null) aria-describedby="{{ $fieldsetDescribedBy }}" @endif {{ $attributes->class([$classes]) }}>
     {{-- ⚠️ A <legend> IS THE GROUP'S CAPTION ONLY WHILE IT IS THE FIELDSET'S FIRST
          CHILD. One level down it is an ordinary inline box: the <fieldset> then has no
          accessible name, and a screen reader announces nothing before the controls —

@@ -8,6 +8,10 @@
     // Let a label that a USER typed take a second line. Default false: a label the application
     // wrote belongs on one line, and a button that wraps mid-word is the defect there.
     'wrapLabel' => false,
+    // On a touch screen, lift the label to the text floor the form fields lift to. Default false:
+    // a button on its own is right at its designed size; this is for one that shares a row with a
+    // field, where it would otherwise read a size below the field beside it.
+    'touchTextFloor' => false,
     'href' => null,
     'disabled' => false,
     'loading' => false,
@@ -57,6 +61,7 @@
     // the page rendering either way and nothing to say so. Normalized against this prop's own
     // default, like every other boolean on this component.
     $wrapLabel = BooleanProp::from($wrapLabel, false);
+    $touchTextFloor = BooleanProp::from($touchTextFloor, false);
 
     // ⚠️ `loadingTarget` IMPLIES `loading`, because there is no other reason to set it.
     //
@@ -104,14 +109,31 @@
         // one property are decided by their order in the generated stylesheet rather than in the
         // attribute — which is exactly why an adopting application had to wrap its labels in a
         // `<span>` instead.
+        //
+        // `[overflow-wrap:anywhere]` comes with the wrap as well. `whitespace-normal` only allows a
+        // break at a space or a hyphen, and a typed name often has neither: a template name with
+        // underscores, a channel, a repository. The label then stayed as wide as the whole word,
+        // because that word was its min-content width and a flex row cannot shrink the button below
+        // it. `break-word` would allow the break without lowering min-content; `anywhere` does both,
+        // and a space still wins wherever there is one. Spelled as an arbitrary property, the same
+        // spelling text and heading use for their break values.
         $wrapLabel
-            ? 'inline-flex items-center justify-center gap-x-2 whitespace-normal flex-nowrap'
+            ? 'inline-flex items-center justify-center gap-x-2 whitespace-normal flex-nowrap [overflow-wrap:anywhere]'
             : 'inline-flex items-center justify-center gap-x-2 whitespace-nowrap',
         // Marker for the coarse-pointer touch-target floor in dist/wirekit.css —
         // the same hook `wk-field` gives the form controls. It carries no styling
         // of its own; it exists so a stylesheet rule can reach this element with
         // enough specificity to beat the size utility.
-        'wk-button',
+        //
+        // The touch TEXT floor's marker rides in the same entry when the prop asks for it: a
+        // button on its own is right at its designed size, and one that shares a row with a field
+        // takes the size the field lifts to instead of reading smaller beside it.
+        //
+        // ⚠️ ONE STRING WITH A TERNARY, never a spread of a nested array. A bracket inside this
+        // list ends the block early for every reader that matches it with a lazy `\[(.*?)\]` —
+        // measured: a guard over these class lists then read a base block that stopped before the
+        // focus ring below, and reported this button as carrying no ring at all.
+        $touchTextFloor ? 'wk-button wk-touch-text-floor' : 'wk-button',
         'cursor-pointer',
         'font-[family-name:var(--font-wk-sans)]',
         'font-[number:var(--font-wk-body-weight)]',

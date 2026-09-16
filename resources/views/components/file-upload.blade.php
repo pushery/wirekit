@@ -236,6 +236,12 @@
     $fileItemClasses = implode(' ', [
         'group flex items-center gap-[var(--padding-wk-x-sm)] min-w-0',
         'px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-xs)]',
+        // At least as tall as the remove button's touch area. The button draws a small chip and
+        // takes taps across that area, centered on it; with rows shorter than the area, the lower
+        // part of one button's area lay over the next row's button, and a tap just below a file's
+        // own button removed the file under it. `items-center` keeps the button in the middle of
+        // its row, so neighbors now stand at least one area apart, plus the list gap.
+        'min-h-[var(--size-wk-touch-target)]',
         'text-[length:var(--text-wk-sm)]',
         'bg-[var(--color-wk-bg-muted)]',
         'rounded-[var(--radius-wk-md)]',
