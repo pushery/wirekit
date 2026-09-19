@@ -79,10 +79,29 @@
     // class carries the block-end offset INCLUDING env(safe-area-inset-bottom) (so
     // the iOS home indicator never overlaps it), and the inline offset folds in the
     // matching horizontal safe-area inset for a landscape notch on that side.
+    // ⚠️ `--wk-scrollbar-inset` is on the END arm ONLY, and that is not an oversight.
+    //
+    // A `position: fixed` box is laid out against a box that INCLUDES a classic scrollbar, so
+    // the gutter eats into the inline-end gap while the block-end gap loses nothing. The two
+    // axes read as symmetric and are not: at a 17px gutter the declared 16px inline offset
+    // renders as about -1px and the button touches the scrollbar.
+    //
+    // `env(safe-area-inset-right)` does not cover it, and that is what hid this for so long —
+    // it compensates a device notch and is 0 on every desktop, in both engines, so the rule
+    // looks like deliberate scrollbar handling and is a flat 1rem.
+    //
+    // The scrollbar sits on the inline-END edge in BOTH directions: LTR puts it right, which is
+    // inline-end, and an RTL document puts it left, which is also inline-end. So the START arm
+    // is genuinely unaffected and folding the term in there would push it away from a gutter
+    // that is not on that side.
+    //
+    // Host-filled with a `0px` fallback, exactly like `--wk-fab-lift` one axis over: the kit
+    // ships no JavaScript for it, and with overlay scrollbars — the macOS default and every
+    // touch device — the gutter is 0 and nothing moves.
     $positionClass = match ($position) {
         'start' => 'start-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-left))]',
         'center' => 'left-1/2 -translate-x-1/2',
-        default => 'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right))]',
+        default => 'end-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-right)_+_var(--wk-scrollbar-inset,0px))]',
     };
 
     // Resolved OUT of the class list, next to $positionClass, rather than as a

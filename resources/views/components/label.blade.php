@@ -34,9 +34,10 @@
 @endphp
 
 <label {{ $attributes->class([$classes]) }}>
-    {{ $slot }}
-    {{-- Required indicator uses danger-text variable (auto dark mode, no dark: needed) --}}
-    @if($required)
-        <span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>
-    @endif
+    {{-- Required indicator uses danger-text variable (auto dark mode, no dark: needed).
+         ⚠️ DENSE, on one line with the slot, and that is not formatting. A newline between
+         the slot and this span is HTML whitespace, which collapses to a space and lands on
+         TOP of `ms-0.5` — so this one label rendered a visibly wider gap than the seven
+         components that write it dense. Reported from an adopting application. --}}
+    {{ $slot }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
 </label>

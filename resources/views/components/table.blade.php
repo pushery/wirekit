@@ -220,7 +220,11 @@
      explicit minimum resolves `min-width: auto` to that content width — so a
      14-column table pushed this whole wrapper 449px past a phone-width docs
      column. Measured, not reasoned: the frame-escape sweep named this element. --}}
-<div class="relative w-full min-w-0" x-data="wirekitStickyPanelShadows()">
+{{-- `@container/wk-table` makes this frame the thing a column's `hide-below-container`
+     measures against. NAMED on purpose: an anonymous container would also become the
+     measuring context for every `@`-variant a caller nests inside the table, and
+     retarget it without anybody asking. --}}
+<div class="@container/wk-table relative w-full min-w-0" x-data="wirekitStickyPanelShadows()">
 <div
     x-ref="scroller"
     {{-- `flex` is load-bearing, not cosmetic. The sentinels are block elements, so in

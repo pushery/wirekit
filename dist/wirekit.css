@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.53.0 — MIT License
+ * WireKit CSS v2.54.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -439,6 +439,30 @@
        in on top automatically, so the notch / home indicator are always
        cleared regardless of this value. */
     --space-wk-toast-offset: 0px;
+
+    /* Classic-scrollbar gutter — the width a scrollbar takes OUT of the viewport box that
+       every `position: fixed` surface is laid out against. Default 0px, which is already
+       correct for overlay scrollbars: the macOS default and every touch device.
+
+       Why the kit cannot fill this itself: the value is
+       `max(0, innerWidth - documentElement.clientWidth)`, which only JavaScript can read, and
+       it changes when content grows past a viewport. WireKit ships no script for it, so an
+       application that renders a classic scrollbar sets it once and the pinned surfaces
+       follow — `<x-wirekit::fab>`, `<x-wirekit::fab.button>`, `<x-wirekit::toast-region>`,
+       `<x-wirekit::scroll-to-top>`, `<x-wirekit::reading-bookmark>` and the viewport-pinned
+       variant of `<x-wirekit::reading-progress>`. `<x-wirekit::reading-spine>` is the one
+       exception and exposes its own `edge-offset` lever instead.
+
+       ⚠️ That expression answers for the DOCUMENT scroller. A route whose content lives in a
+       full-height inner container scrolls that element instead, so the document has no gutter
+       and the expression returns 0 while a classic scrollbar is drawn on the inner box anyway.
+       Publish the token on that container too, from `offsetWidth - clientWidth`; the cascade
+       then gives its children the nearer answer. See the theming guide.
+
+       ⚠️ Only the edge the scrollbar is ON folds it in. The block axis loses nothing, and the
+       opposite inline edge has no gutter under it — adding the term there would push a surface
+       away from empty space. */
+    --wk-scrollbar-inset: 0px;
 
     /* ─── Container Max Widths ─── */
     --size-wk-container-sm: 40rem;
@@ -1522,6 +1546,44 @@
    a value. */
 input.wk-field::-webkit-datetime-edit-text {
     color: var(--color-wk-text-placeholder);
+}
+
+/* A REQUIRED FIELD THE READER LEFT INVALID IS RED — every field, not only the two that happened
+   to spell it out in their own markup.
+
+   `input` and `textarea` carried these classes as utilities on the element; nothing else did. So
+   on a form where all four fields are required, the browser blocked the submit, marked the name
+   and the email red, and left both password fields looking untouched. That is worse than marking
+   nothing: the markup that IS there makes a statement about which fields are at fault, and it was
+   wrong about two of them. Reported from the screen by somebody filling in a registration form.
+
+   Binding it to `.wk-field` is what keeps a third field component from reopening the gap — which
+   had already happened twice by the time this was written, and once by the same session that was
+   fixing it. `:user-invalid` only matches form controls, so the rule does nothing on the button
+   and table elements that also carry the class.
+
+   ⚠️ `:user-invalid`, never `:invalid`. The first fires only after the reader has interacted with
+   the control or tried to submit; the second is true the moment an empty required field renders,
+   which paints a form red before anyone has typed a character.
+
+   The frame-on-a-wrapper case stays in `input`, where the border belongs to a surrounding element
+   rather than to the control — there is no shared class for that wrapper to hang this on.
+
+   ⚠️ TWO THINGS HERE ARE THE SHAPE THEY ARE BECAUSE A GUARD SAID SO, and both were right.
+
+   `@supports selector(:user-invalid)` because the selector is ABOVE the support baseline —
+   Chrome 119 and Safari 16.5 against a floor of 111 and 16.4. Below it the field simply keeps its
+   normal border, which is the state it had before this rule existed, so nothing depends on the
+   enhancement.
+
+   And there is NO focus rule here. Recoloring the focus ring of an invalid field says "focused"
+   through color alone, which `FocusIndicatorIsNotColorAloneTest` refuses for the reason it exists:
+   a reader who cannot separate the two colors loses the focus indicator entirely. The ring keeps
+   its own meaning and the border carries the validity one — two statements on two channels. */
+@supports selector(:user-invalid) {
+    .wk-field:user-invalid {
+        border-color: var(--color-wk-border-error);
+    }
 }
 
 @media (pointer: coarse) {

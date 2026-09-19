@@ -24,6 +24,31 @@
     'headerScope' => 'col',
     // sm | md | lg | xl | 2xl — hide this column below that breakpoint; its cells take the same value.
     'hideBelow' => null,
+    // Hide the column below a width of the TABLE, not of the window.
+    //
+    // ⚠️ `hideBelow` asks the viewport, and beside a sidebar that is the wrong question.
+    // Measured in an app shell: the table has 649px at a 1024px viewport and 702px at 768px,
+    // because the sidebar steps beside the content at `lg`. A column that appears at `md`
+    // therefore appears exactly where the table has least room — a reported table ran 141px
+    // past its frame at 1024px for that reason.
+    //
+    // ⚠️ THE SCALE IS THE CONTAINER SCALE AND IT IS NOT THE VIEWPORT ONE. Tailwind's container
+    // sizes are their own ladder: `3xl` here is 48rem of TABLE width, where `hide-below="md"`
+    // is 48rem of WINDOW. Same numbers, different subject — so the two props are deliberately
+    // not interchangeable and a call site should pick one.
+    //
+    // The container is NAMED (`@container/wk-table` on the table's frame) rather than
+    // anonymous: an unnamed container would also become the measuring context for every
+    // `@`-variant a caller nests inside the table, and silently retarget it.
+    'hideBelowContainer' => null,
+    // Let a long header break instead of holding its column as wide as the longest word.
+    //
+    // A column header is `whitespace-nowrap` by default, and that is right for the usual
+    // one-word head. It is wrong for a column whose NAME is long and whose CONTENT is not:
+    // reported from a permissions table where "Nutzungsbedingungen" and
+    // "Datenschutzerklaerung" held their columns at 144 and 142px over icons that need 16,
+    // and the table ran past its frame rather than the heads taking two lines.
+    'wrap' => false,
 ])
 
 @php
@@ -66,9 +91,33 @@
     // for that row — NOT as a column header. The muted, nowrap column-header
     // treatment made a row header render small, greyed-out and clipped; it now
     // uses the regular text color and is allowed to wrap.
+    $wrap = BooleanProp::from($wrap, false);
+
+    /*
+     * `whitespace-normal` is emitted EXPLICITLY rather than by leaving `nowrap` off, and that is
+     * the half the report asked for without naming it: two Tailwind utilities for one property are
+     * decided by their order in the generated stylesheet, not by the order in the attribute — so a
+     * developer's own `class="whitespace-normal"` does not reliably win, which is why the adopting
+     * application had to wrap its header text in a `<span>` instead.
+     *
+     * `[overflow-wrap:anywhere]` comes with the wrap, the same pairing `button`'s `wrap-label`
+     * ships and for the same measured reason: `whitespace-normal` only permits a break at a space
+     * or a hyphen, and a long compound noun has neither. Without it the head stays exactly as wide
+     * as its longest word, which is the width the report measured.
+     *
+     * ⚠️ Deliberately NOT the `hyphens` utility the report proposed. It depends on a dictionary
+     * the browser may not have — Chromium ships hyphenation as a downloadable component on Linux,
+     * and the report could not measure that from macOS. A break rule that works everywhere beats a
+     * prettier one that is a different rule in CI than on a laptop.
+     *
+     * ⚠️ The utility is described rather than spelled, and that is not squeamishness: Tailwind
+     * scans RAW FILES, so naming a class in a comment compiles it. Spelled out here, this
+     * paragraph emitted a utility nothing uses — and the drift guard then reported it as a
+     * compiled selector with no source, which is exactly what it is for.
+     */
     $scopeText = $isRowHeader
         ? 'text-[color:var(--color-wk-text)]'
-        : 'text-[color:var(--color-wk-text-muted)] whitespace-nowrap';
+        : 'text-[color:var(--color-wk-text-muted)] '.($wrap ? 'whitespace-normal [overflow-wrap:anywhere]' : 'whitespace-nowrap');
 
     // Whenever a sort <button> renders, the padding MOVES onto it instead of sitting
     // on the cell (see both buttons below). Measured at a coarse pointer, the button
@@ -116,6 +165,30 @@
         '2xl' => 'max-2xl:hidden',
         default => '',
     };
+
+    /*
+     * The container variant, written out per size for the same reason the viewport one is:
+     * Tailwind reads a literal class name and never an assembled one.
+     *
+     * Appended rather than replacing: a column may legitimately answer both questions, and
+     * `hidden` from either one wins on its own.
+     */
+    $hideBelowContainer = filled($hideBelowContainer) ? (string) $hideBelowContainer : null;
+    if ($hideBelowContainer !== null && ! in_array($hideBelowContainer, ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'], true)) {
+        WireKit::validateProp('table.th', 'hideBelowContainer', $hideBelowContainer, ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl']);
+        $hideBelowContainer = null;
+    }
+    $hideClasses = trim($hideClasses.' '.(match ($hideBelowContainer) {
+        'sm' => '@max-sm/wk-table:hidden',
+        'md' => '@max-md/wk-table:hidden',
+        'lg' => '@max-lg/wk-table:hidden',
+        'xl' => '@max-xl/wk-table:hidden',
+        '2xl' => '@max-2xl/wk-table:hidden',
+        '3xl' => '@max-3xl/wk-table:hidden',
+        '4xl' => '@max-4xl/wk-table:hidden',
+        '5xl' => '@max-5xl/wk-table:hidden',
+        default => '',
+    }));
 
     // Base th styling — heading weight, scope-aware text, compact-aware padding
     // via table[data-wk-compact] selector

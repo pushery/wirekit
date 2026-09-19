@@ -807,6 +807,20 @@
             "code": "<x-wirekit::filter-builder\n    searchable\n    search-placeholder=\"Search orders…\"\n    :fields=\"[\n        ['key' => 'status', 'label' => 'Status', 'type' => 'select', 'options' => [\n            ['value' => 'paid', 'label' => 'Paid'],\n            ['value' => 'refunded', 'label' => 'Refunded'],\n        ]],\n        ['key' => 'total', 'label' => 'Total', 'type' => 'number'],\n    ]\"\n/>"
         }
     ],
+    "flag": [
+        {
+            "title": "Flag beside a country name",
+            "code": "<x-wirekit::row gap=\"sm\">\n    <x-wirekit::flag country=\"de\" />\n    <x-wirekit::text>Germany</x-wirekit::text>\n</x-wirekit::row>"
+        },
+        {
+            "title": "Rect, square and circle",
+            "code": "<x-wirekit::row gap=\"md\">\n    <x-wirekit::flag country=\"jp\" shape=\"rect\" />\n    <x-wirekit::flag country=\"jp\" shape=\"square\" />\n    <x-wirekit::flag country=\"jp\" shape=\"circle\" />\n</x-wirekit::row>"
+        },
+        {
+            "title": "Every size",
+            "code": "<x-wirekit::row gap=\"md\">\n    <x-wirekit::flag country=\"br\" size=\"xs\" />\n    <x-wirekit::flag country=\"br\" size=\"sm\" />\n    <x-wirekit::flag country=\"br\" size=\"md\" />\n    <x-wirekit::flag country=\"br\" size=\"lg\" />\n    <x-wirekit::flag country=\"br\" size=\"xl\" />\n</x-wirekit::row>"
+        }
+    ],
     "fonts": [
         {
             "title": "Font Family Variables",
@@ -1343,6 +1357,20 @@
         {
             "title": "Strength Meter Enabled",
             "code": "<x-wirekit::password-input label=\"New Password\" name=\"new_password\" :strength-meter=\"true\" hint=\"Use at least 8 characters with a mix of letters, numbers, and symbols.\" />"
+        }
+    ],
+    "phone": [
+        {
+            "title": "A phone field",
+            "code": "<x-wirekit::phone name=\"phone\" label=\"Phone number\" country=\"DE\" />"
+        },
+        {
+            "title": "A form that expects three countries",
+            "code": "<x-wirekit::phone name=\"phone\" label=\"Phone number\" :countries=\"['DE', 'AT', 'CH']\" country=\"DE\" />"
+        },
+        {
+            "title": "Everywhere, with three countries first",
+            "code": "<x-wirekit::phone name=\"phone\" label=\"Phone number\" :country-order=\"['DE', 'AT', 'CH']\" />"
         }
     ],
     "popover": [
@@ -2175,8 +2203,8 @@
             "code": "<x-wirekit::tooltip placement=\"right\">\n    <x-slot:content>\n        Pro Tip: Use Ctrl+S to save.\n    </x-slot:content>\n    <x-wirekit::button intent=\"neutral\" surface=\"ghost\" size=\"sm\">Keyboard Shortcuts</x-wirekit::button>\n</x-wirekit::tooltip>"
         },
         {
-            "title": "Tooltip placements",
-            "code": "<x-wirekit::row wrap gap=\"lg\" justify=\"center\" class=\"py-8\">\n<x-wirekit::tooltip text=\"Appears above\" placement=\"top\">\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Top</x-wirekit::button>\n</x-wirekit::tooltip>\n<x-wirekit::tooltip text=\"Appears below\" placement=\"bottom\">\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Bottom</x-wirekit::button>\n</x-wirekit::tooltip>\n<x-wirekit::tooltip text=\"Appears to the left\" placement=\"left\">\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Left</x-wirekit::button>\n</x-wirekit::tooltip>\n<x-wirekit::tooltip text=\"Appears to the right\" placement=\"right\">\n    <x-wirekit::button intent=\"neutral\" surface=\"outline\">Right</x-wirekit::button>\n</x-wirekit::tooltip>\n</x-wirekit::row>"
+            "title": "Inside a Paragraph",
+            "code": "<x-wirekit::text>\n    Your plan renews monthly.\n    <x-wirekit::tooltip as=\"span\" text=\"Charged on the first of each month, in your local currency.\" :focusable-trigger=\"true\">\n        <x-wirekit::icon name=\"info\" size=\"sm\" class=\"inline align-text-bottom\" />\n    </x-wirekit::tooltip>\n    Cancel any time.\n</x-wirekit::text>"
         }
     ],
     "tour": [

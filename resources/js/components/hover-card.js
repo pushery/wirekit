@@ -68,6 +68,9 @@ export default function wirekitHoverCard(config = {}) {
         // Cross-close channel — see utils/overlay-coordination.js. Two open
         // sibling hover cards overlap, which a reader sees and no test does.
         _coordination: null,
+        // Disconnects the observer that puts the placement back after a framework update
+        // erases it. See the note beside `repairErasure` in show().
+        _stopRepair: null,
         // Held up for exactly the moment focus is put back on the trigger by
         // Escape or a shift-Tab out of the card. Without it the trigger's own
         // `focusin` re-shows the card the instant focus lands, and Escape would
@@ -330,10 +333,44 @@ export default function wirekitHoverCard(config = {}) {
             const panel = this.$refs.panel;
 
             if (trigger && panel) {
-                await position(trigger, panel, {
+                // Drop the previous showing's observer before making another one.
+                this._stopRepair?.();
+                this._stopRepair = null;
+
+                const placement = await position(trigger, panel, {
                     placement: this._placement,
                     offset: this._offset,
+
+                    // Everything this call writes is inline style, and a framework update patches
+                    // the panel against its own template, whose `style` attribute carries none of
+                    // it. The placement is gone while the card is still open — and this panel is
+                    // teleported to the overlay root, so with no `top` it sits at the END of the
+                    // document rather than a few pixels off its trigger.
+                    //
+                    // Measured on /overlays across one refresh: `top` 959.25px → empty, still
+                    // shown, box unchanged at 288x74.
+                    //
+                    // ⚠️ That last number is why the option is `repairErasure` and not
+                    // `autoReposition`: an unchanged box means no resize, and `autoUpdate`
+                    // observes boxes rather than the style attribute — it would have watched this
+                    // panel being erased and reported nothing, exactly as it did for the data
+                    // table's column menu.
+                    //
+                    // A hover card is not transient either. It holds itself open while the
+                    // pointer rests on it, and it is focusable — the reader tabs INTO it, which
+                    // is the whole reason `tabFromTrigger` exists.
+                    repairErasure: true,
                 });
+
+                if (placement && typeof placement.stop === 'function') {
+                    if (this.open) {
+                        this._stopRepair = placement.stop;
+                    } else {
+                        // Closed while the placement was in flight — its observer would outlive
+                        // the panel it belongs to.
+                        placement.stop();
+                    }
+                }
             }
         },
 
@@ -344,6 +381,8 @@ export default function wirekitHoverCard(config = {}) {
             this.open = false;
             clearTimeout(this._showTimer);
             clearTimeout(this._hideTimer);
+            this._stopRepair?.();
+            this._stopRepair = null;
         },
 
         /**
@@ -353,6 +392,8 @@ export default function wirekitHoverCard(config = {}) {
             this.open = false;
             clearTimeout(this._showTimer);
             clearTimeout(this._hideTimer);
+            this._stopRepair?.();
+            this._stopRepair = null;
         },
     };
 }

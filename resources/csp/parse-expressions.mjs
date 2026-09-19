@@ -25,8 +25,12 @@
  * ## Protocol
  *
  * Reads `{ "expressions": ["…", …] }` on stdin, writes
- * `{ "ok": true, "results": [{ "ok": bool, "error": string|null }, …] }` on
- * stdout — one result per input, in order. On a setup problem it writes
+ * `{ "ok": true, "grammar": { "reservedWordAsMember": bool },
+ *    "results": [{ "ok": bool, "error": string|null }, …] }` on
+ * stdout — one result per input, in order. `grammar` describes the parser that
+ * produced those results, so advice derived from them can be true for THIS
+ * installation rather than for the version somebody happened to test against.
+ * On a setup problem it writes
  * `{ "ok": false, "error": "…" }` and exits 1, because a run that could not
  * measure must never look like a run that found nothing.
  */
@@ -132,6 +136,27 @@ try {
         );
     }
 
+    // Does THIS parser accept a reserved word as a member name?
+    //
+    // ⚠️ The answer changed under us. Up to `@alpinejs/csp` 3.17.2 the tokenizer emitted a
+    // KEYWORD for `delete`, `new`, `typeof` and the rest of that set wherever they appeared, so
+    // `$wire.delete(1)` died with `Expected IDENTIFIER but got KEYWORD "delete"` — the dead-button
+    // class this command was written for. 3.17.3 accepts it. Measured both ways rather than read
+    // out of a release note: the same probe against a downgraded `@alpinejs/csp` fails and against
+    // the current one passes, while `items.filter(i => i.done)` is rejected by both.
+    //
+    // It is reported rather than assumed because the constraint here is `^3.15.12`: a developer
+    // running this command can legitimately be on either side of that line, and the advice we
+    // print about index access is TRUE on one side and FALSE on the other. A sentence that tells
+    // somebody to rewrite working code is the same class of damage as a missed violation.
+    let reservedWordAsMember = true;
+
+    try {
+        new Parser(new Tokenizer('a.delete').tokenize()).parse();
+    } catch {
+        reservedWordAsMember = false;
+    }
+
     const payload = JSON.parse(await readStdin());
     const expressions = Array.isArray(payload.expressions) ? payload.expressions : [];
 
@@ -186,7 +211,7 @@ try {
         };
     });
 
-    process.stdout.write(JSON.stringify({ ok: true, results }));
+    process.stdout.write(JSON.stringify({ ok: true, grammar: { reservedWordAsMember }, results }));
 } catch (error) {
     process.stdout.write(JSON.stringify({ ok: false, error: String(error?.message ?? error) }));
     process.exit(1);

@@ -97,9 +97,9 @@
     // gesture eats the taps". `.wk-fab` already ships this expression.
     $positionClasses = match ($position) {
         'bottom-left' => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] left-[var(--padding-wk-x-lg)]',
-        'top-right' => 'top-[var(--padding-wk-x-lg)] right-[var(--padding-wk-x-lg)]',
+        'top-right' => 'top-[var(--padding-wk-x-lg)] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
         'top-left' => 'top-[var(--padding-wk-x-lg)] left-[var(--padding-wk-x-lg)]',
-        default => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[var(--padding-wk-x-lg)]',
+        default => 'bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
     };
 @endphp
 

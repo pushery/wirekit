@@ -31,6 +31,11 @@ export default function wirekitTooltip(config = {}) {
         _longPressTimer: null,
         _autoDismissTimer: null,
 
+        // The positioner's teardown handle, held only while the tooltip is open. One
+        // attribute-filtered MutationObserver per showing, disconnected on every hide — see the
+        // note beside `repairErasure` below for why a tooltip of all things needs one.
+        _stopRepair: null,
+
         // Stored cleanup handler for destroy()
         _navCleanup: null,
 
@@ -257,9 +262,37 @@ export default function wirekitTooltip(config = {}) {
             if (trigger && tooltip) {
                 this._inheritThemeVars(tooltip);
 
-                await position(trigger, tooltip, {
+                // Drop the previous showing's observer before making another one. A tooltip is
+                // shown and hidden constantly, so one left behind per hover adds up fastest here
+                // of anywhere in the catalog.
+                this._stopRepair?.();
+                this._stopRepair = null;
+
+                const placement = await position(trigger, tooltip, {
                     placement: this._placement,
                     offset: this._offset,
+
+                    // ⚠️ A TOOLTIP LOOKS LIKE THE ONE OVERLAY THAT CANNOT NEED THIS, AND THE
+                    // MEASUREMENT SAYS OTHERWISE — which is why the reasoning is written out
+                    // rather than assumed.
+                    //
+                    // Everything this call writes is inline style, and a framework update patches
+                    // the panel against its own template, whose `style` attribute carries none of
+                    // it. The placement is then gone while the tooltip is still open, and since
+                    // this panel is teleported to the overlay root, with no `top` it sits at the
+                    // END of the document.
+                    //
+                    // The obvious objection is that a tooltip lasts a moment, so an update can
+                    // hardly catch one. That holds for the pointer, and not at all for the
+                    // keyboard: a tooltip opened by FOCUS stands for as long as the focus does,
+                    // which on a form is minutes. Measured with a focused trigger and one
+                    // refresh: still visible, focus still on the trigger, `top` gone from
+                    // `295.5px` to empty.
+                    //
+                    // ⚠️ That is an accessibility path rather than a cosmetic one. The trigger's
+                    // `aria-describedby` still points at this panel, so a screen reader is
+                    // describing a control with a box that is now nowhere near it.
+                    repairErasure: true,
                     // Without this a `placement="right"` tooltip runs off the
                     // right edge of a phone and stays there. Floating UI's
                     // default shift only moves along the placement's MAIN axis,
@@ -274,6 +307,17 @@ export default function wirekitTooltip(config = {}) {
                     // did not.
                     crossAxisShift: true,
                 });
+
+                if (placement && typeof placement.stop === 'function') {
+                    if (this.open) {
+                        this._stopRepair = placement.stop;
+                    } else {
+                        // Hidden while the placement was in flight — its observer would outlive
+                        // the panel it belongs to, and on a tooltip that race is the common case
+                        // rather than the exotic one.
+                        placement.stop();
+                    }
+                }
             }
         },
 
@@ -313,6 +357,8 @@ export default function wirekitTooltip(config = {}) {
          */
         close() {
             this.open = false;
+            this._stopRepair?.();
+            this._stopRepair = null;
             this._clearAllTimers();
         },
 
@@ -331,6 +377,8 @@ export default function wirekitTooltip(config = {}) {
          */
         _forceClose() {
             this.open = false;
+            this._stopRepair?.();
+            this._stopRepair = null;
             this._clearAllTimers();
         },
     };

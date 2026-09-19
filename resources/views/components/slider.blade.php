@@ -169,8 +169,20 @@
         //
         // A list element is a POSITION, never a spec, so an array element settles it: the
         // caller wrote a map and PHP's key numbering is a coincidence.
+        //
+        // ⚠️ AND A POSITION IS A NUMBER, which the array test alone does not say. A label map
+        // written the most natural way for a small ordered scale — `[0 => 'Neutral', 1 =>
+        // 'Ja', 2 => 'Hoch']` — has contiguous keys from zero, so `array_is_list()` calls it a
+        // list, and the branch below then read `'Neutral'` as a POSITION and subtracted the
+        // minimum from it. That is a TypeError, so the page was an HTTP 500 rather than a
+        // misplaced mark.
+        //
+        // The neighboring shapes all worked and hid it: `[0 => 'Low', 50 => 'Mid']` has gaps,
+        // `[1 => 'A', 2 => 'B']` does not start at zero, and an array spec is caught above —
+        // only a zero-based contiguous label map reaches it.
         $marksIsList = array_is_list($marks)
-            && ! collect($marks)->contains(fn ($m) => is_array($m));
+            && ! collect($marks)->contains(fn ($m) => is_array($m))
+            && ! collect($marks)->contains(fn ($m) => ! is_numeric($m));
 
         $pairs = $marksIsList
             ? array_map(fn ($v) => [$v, (string) $v, null], $marks)
@@ -310,11 +322,58 @@
     ]), $scope);
 
     // Live value display next to the slider.
+    /*
+     * THE WIDEST TEXT THIS BOX WILL EVER SHOW, so it can reserve that width once and stop
+     * resizing while the thumb is held.
+     *
+     * ⚠️ The value span is a SIBLING of the track inside a `w-full` flex row, so the track's
+     * width is the row minus the gap minus this box. Anything that changes this box's width
+     * moves the track — under the pointer that is dragging it. Reported from an adopting
+     * application using `valueTextMap`, where the text is a WORD and the width changes with
+     * every step.
+     *
+     * ⚠️ AND IT IS NOT ONLY THE WORD CASE, which is why the reservation is computed rather
+     * than switched on a prop. Measured on the plain numeric preview, 0 to 100: the track is
+     * 481.5px at "0" and "7" and **477.7px at "100"** — the old two-and-a-half character
+     * minimum covers two digits and the third one costs 3.8px. A fix keyed on `valueTextMap`
+     * would have left that.
+     *
+     * ⚠️ That floor is described in words on purpose, and so is the numeric variant a few
+     * lines down. Tailwind scans this directory as RAW TEXT, so a utility spelled out in a
+     * comment is compiled — and then the reverse drift audit reports a selector no source
+     * emits, because the only source was the sentence explaining its removal. `app.css` says
+     * the same thing about why it excludes `tests/`.
+     *
+     * `valueText` is `marksMap[current] ?? String(current)`, so the candidate set is exactly
+     * the map's labels plus the numeric ends. The ghost below renders the longest of them
+     * invisibly in the same grid cell, which sizes the cell to the real rendered width — in
+     * the real font, rather than in `ch` units that assume every glyph is as wide as a zero.
+     */
+    $wkStepDecimals = 0;
+    if (is_string($step) || is_numeric($step)) {
+        $wkStepString = rtrim(rtrim(sprintf('%.6F', (float) $step), '0'), '.');
+        $wkStepDecimals = str_contains($wkStepString, '.') ? strlen(explode('.', $wkStepString)[1]) : 0;
+    }
+
+    $wkValueTextCandidates = array_map('strval', array_values($valueTextMap));
+    foreach ([$min, $max] as $wkEnd) {
+        $wkValueTextCandidates[] = number_format((float) $wkEnd, $wkStepDecimals, '.', '');
+    }
+
+    $widestValueText = '';
+    foreach ($wkValueTextCandidates as $wkCandidate) {
+        if (mb_strlen($wkCandidate) > mb_strlen($widestValueText)) {
+            $widestValueText = $wkCandidate;
+        }
+    }
+
     $valueClasses = WireKit::resolveClasses('slider', 'value', implode(' ', [
         'tabular-nums',
         'text-[length:var(--text-wk-sm)]',
         'text-[color:var(--color-wk-text)]',
-        'min-w-[2.5ch]',
+        // A one-cell grid: the ghost and the live text share it, so the cell is as wide as
+        // the widest of them and never as narrow as whichever is showing.
+        'grid justify-items-end',
         'text-end',
     ]), $scope);
 
@@ -391,6 +450,12 @@
          overlay container, and therefore the bubble + marks all at ONE width.
          Input-semantic attributes (wire:model, aria-*, data-*) still flow to
          the <input> below via except(['class','style']). --}}
+    {{-- A parent's hand-written `x-model` answers `x-modelable` above, so it belongs HERE
+         and not on the range input with the rest. On the input it still tracks a drag -- both
+         sides listen to the same event -- but the other direction is silent: Alpine sets
+         `el.value` without dispatching, so a programmatic change from the parent moved the thumb
+         and left `current` behind, with the bubble and the tick marks reading the old number. --}}
+    {{ $attributes->whereStartsWith('x-model')->whereDoesntStartWith('x-modelable') }}
     {{ $attributes->only(['class', 'style'])->class([$wrapperClasses]) }}
 >
 @if($optimisticConfig)
@@ -482,7 +547,7 @@
             @if($disabled) disabled @endif
             {{-- class / style are consumed by the wrapper above; everything
                  else (wire:model, aria-*, data-*) stays on the input. --}}
-            {{ $attributes->except(['class', 'style', 'aria-describedby'])->class([$inputClasses]) }}
+            {{ $attributes->except(['class', 'style', 'aria-describedby'])->whereDoesntStartWith('x-model')->class([$inputClasses]) }}
         />
 
         @if(! empty($normalizedMarks))
@@ -538,7 +603,17 @@
     @if($showValue)
         {{-- aria-live="polite" so screen readers get the updated value when
              the user releases the slider, not on every tick. --}}
-        <span class="{{ $valueClasses }}" aria-live="polite" x-text="valueText"></span>
+        <span class="{{ $valueClasses }}">
+            {{-- The reservation. `aria-hidden` because it is the same value said twice, and
+                 `invisible` rather than `hidden` because a hidden element occupies nothing
+                 and would reserve nothing. --}}
+            <span aria-hidden="true" class="col-start-1 row-start-1 invisible whitespace-nowrap">{{ $widestValueText }}</span>
+            {{-- aria-live="polite" so screen readers get the updated value when the user
+                 releases the slider, not on every tick. It stays on the element whose text
+                 changes — an adopting application selects this attribute to restyle the box,
+                 and moving it would break that without telling anyone. --}}
+            <span aria-live="polite" class="col-start-1 row-start-1 whitespace-nowrap" x-text="valueText"></span>
+        </span>
     @endif
 @if($optimisticConfig)
         {{-- Rendered unconditionally and starting empty: a live region that

@@ -30,7 +30,7 @@ use Stringable;
  * - `keywords` — extra words the search matches. The description is deliberately NOT searched:
  *   typing into a filter should narrow to options whose name fits, and a sentence of context
  *   matches far more than the reader meant.
- * - `flag` — a code from the optional pushery/wirekit-flags package, such as `de`. The option
+ * - `flag` — a country or region code such as `de`. The option
  *   carries the code, lower-cased; the component turns it into the flag's URL through
  *   FlagPackage, the way it turns an icon name into a sprite reference, so this class stays a
  *   normalizer that reads nothing from disk.

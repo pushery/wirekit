@@ -60,6 +60,25 @@
     // not breaks at a group boundary. `group="4"` on eight digits is one row on a
     // desktop and 4+4 on a phone, which is what the report asked for.
     'group' => null,
+    // Where the row of boxes sits inside the control's own width.
+    //
+    // A one-time code almost always stands in a centered card — the heading, the sentence
+    // and the button are all centered — and the row of boxes was the one thing that could
+    // not be. The container carries `flex flex-wrap` and no `justify`, so it packs left;
+    // and when the row wraps, the second line sits under the start of the first rather
+    // than under its middle.
+    //
+    // ⚠️ THE CALL SITE COULD NOT REACH IT, WHICH IS WHY THIS IS A PROP AND NOT A NOTE.
+    // `$attributes->only('class')` lands on the outer wrapper, so a centering utility
+    // written on the tag never touches the row. The only thing left to an adopting
+    // application was a rule over this component's internal markup — `justify-content` on
+    // a descendant `[role="group"]` — which is exactly the shape the grouping prop below
+    // removed one door over, and which breaks silently the day the markup moves.
+    //
+    // `start` by default, so no existing field moves. The centered default the report
+    // suggests would be right for most call sites and wrong for backward compatibility,
+    // and the second consideration wins in a minor.
+    'justify' => config('wirekit.components.otp-input.justify', 'start'),
     // Focus the first box on load.
     //
     // A one-time-code screen is single-purpose: the reader arrived from a
@@ -152,6 +171,31 @@
             fallback: (string) max(2, (int) $length),
         );
     }
+
+    // ── Alignment ─────────────────────────────────────────────────────────
+    //
+    // On the row itself, not on the wrapper: the wrapper is where the attribute bag lands,
+    // and that is precisely the element a call site could already reach and that did not
+    // help. A flex line is justified per LINE, so a wrapped code centers both of its rows
+    // rather than hanging the second one off the first's left edge.
+    $justify = filled($justify) ? (string) $justify : 'start';
+
+    // Fully qualified: this view's `WireKit` import lives in a LATER `@php` block, and a
+    // later block does not reach this one.
+    if (! in_array($justify, ['start', 'center', 'end'], true)) {
+        \Pushery\WireKit\WireKit::validateProp('otp-input', 'justify', $justify, ['start', 'center', 'end']);
+        $justify = 'start';
+    }
+
+    // ⚠️ The default emits NOTHING rather than the leading-edge utility, so a field that
+    // does not ask for an alignment renders the markup it always did, byte for byte. The
+    // flex default already packs to the leading edge; naming it would change every
+    // rendered page to say what was already true.
+    $justifyClass = match ($justify) {
+        'center' => 'justify-center',
+        'end' => 'justify-end',
+        default => '',
+    };
 
     // The boxes, split into the rows the markup renders. One chunk when ungrouped, so
     // the loop below has a single shape and the wrapper decides the rest.
@@ -339,7 +383,10 @@
              visible separator the report asked for — without a glyph, which a screen
              reader would either read out or need hiding from. Ungrouped, the row keeps
              the gap it always had. --}}
-        class="flex flex-wrap {{ $group === null ? 'gap-2' : 'gap-4' }}"
+        {{-- `trim()` so the default keeps the exact class string that shipped: with no
+             alignment asked for the expression contributes nothing, and a trailing space
+             would still be a diff on every rendered page. --}}
+        class="{{ trim('flex flex-wrap '.($group === null ? 'gap-2' : 'gap-4').' '.$justifyClass) }}"
         role="group"
         @if($required) aria-required="true" @endif
         aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::One-time code') }}"

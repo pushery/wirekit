@@ -3,7 +3,7 @@
      shown early. Measured rather than asserted: the guard refutes this reason for
      any file that renders one. --}}
 @props([
-    // A code the pushery/wirekit-flags package carries: an ISO 3166-1 alpha-2 code such as
+    // A code the shipped artwork carries: an ISO 3166-1 alpha-2 code such as
     // `de`, or one of its region and organization codes such as `eu` or `gb-sct`. Case does not
     // matter.
     'country' => null,

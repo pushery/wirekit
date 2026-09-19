@@ -12,12 +12,32 @@
  * an error — the menu still opens and closes, it just falls back to the CSS
  * placement — so the check stays a silent guard.
  *
- * Lifecycle resources held on `this`: NONE. The positioner is called once per
- * open and registers nothing that outlives it.
+ * ⚠️ Lifecycle resources held on `this`: ONE, and this line said NONE until the
+ * panel started repairing its own placement. `place()` asks the positioner to put
+ * the placement back when something removes it, which registers a MutationObserver
+ * — so there is a handle to release, and it is released on close, before every
+ * reopen and on destroy.
+ *
+ * WHY. Everything the positioner writes is inline style, and a framework update
+ * patches this panel against its own template, whose `style` attribute carries
+ * none of it. The whole attribute is replaced, the placement is gone, and `open`
+ * never changed — so nothing asks for a new one. Measured here, menu open, one
+ * refresh: `top` went from `158.5px` to empty and stayed empty.
+ *
+ * ⚠️ `autoReposition` does NOT cover this case, which is worth knowing because it
+ * looks like it should. It recomputes on a size change, and this erasure does not
+ * resize the panel: the `max-height` it drops was never binding on a 77px menu, so
+ * the box stayed 192x77 and no observer fired. That is why the option here is
+ * `repairErasure`, which watches the attribute rather than the box.
  */
 export default function wirekitDataTableColumnMenu() {
     return {
         open: false,
+
+        // The positioner's teardown handle, held only while the panel is open. Its own docblock
+        // puts this duty on the caller: an observer left behind outlives every opening, and this
+        // menu is opened and closed all day.
+        _stopRepair: null,
 
         init() {
             // Anchor AFTER the menu has been rendered: it is x-show'd, so at the
@@ -32,8 +52,15 @@ export default function wirekitDataTableColumnMenu() {
                     return;
                 }
 
+                this._stopRepair?.();
+                this._stopRepair = null;
                 this.restoreFocus();
             });
+        },
+
+        destroy() {
+            this._stopRepair?.();
+            this._stopRepair = null;
         },
 
         /**
@@ -93,13 +120,45 @@ export default function wirekitDataTableColumnMenu() {
             const button = this.$refs.colBtn;
             const menu = this.$refs.colMenu;
 
-            if (button && menu) {
-                window.wirekitPosition(button, menu, {
-                    placement: 'bottom-end',
-                    offset: 4,
-                    fitViewport: true,
-                });
+            if (! button || ! menu) {
+                return;
             }
+
+            // Drop the previous opening's observer before making another one.
+            this._stopRepair?.();
+            this._stopRepair = null;
+
+            const placement = window.wirekitPosition(button, menu, {
+                placement: 'bottom-end',
+                offset: 4,
+                fitViewport: true,
+                repairErasure: true,
+            });
+
+            // ⚠️ The global is documented as something a component asks for WITHOUT depending
+            // on it, so it may be absent — and by the same reasoning it may be something other
+            // than this package's own helper. A stub that returns a non-thenable makes `.then`
+            // throw, which is a worse failure than the missing placement it replaces.
+
+            if (! placement || typeof placement.then !== 'function') {
+                return;
+            }
+
+            placement.then((result) => {
+                if (typeof result?.stop !== 'function') {
+                    return;
+                }
+
+                // Closed while the placement was in flight: the helper awaits frames and a promise,
+                // so the panel can be shut before this resolves and the observer would outlive it.
+                if (! this.open) {
+                    result.stop();
+
+                    return;
+                }
+
+                this._stopRepair = result.stop;
+            });
         },
     };
 }

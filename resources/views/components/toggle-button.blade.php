@@ -134,8 +134,12 @@
         : "{$expression} ? 'true' : 'false'";
 
     // `wire:model` binds a boolean property to the pressed state in both directions, which needs a
-    // local state for Livewire's `x-model` to reach through `x-modelable`.
-    $hasModel = $attributes->whereStartsWith('wire:model')->getAttributes() !== [];
+    // local state for Livewire's `x-model` to reach through `x-modelable`. A hand-written `x-model`
+    // -- how an Alpine parent embeds this button -- asks for exactly the same thing, so it counts:
+    // without it the seam was never emitted at all, and the binding sat on the element pointing at
+    // a property no `x-data` here declares.
+    $hasModel = $attributes->whereStartsWith(['wire:model', 'x-model'])
+        ->whereDoesntStartWith('x-modelable')->getAttributes() !== [];
 
     // The pressed LOOK is the neutral FILLED surface; unpressed is OUTLINE. Rather
     // than baking the surface in from PHP (which only the initial server render can
@@ -176,8 +180,8 @@
         // Two writers of one value would race. The layer calls the server itself, so a model
         // binding next to it is the one that goes, and the developer hears why.
         if ($hasModel) {
-            $refuse('`optimistic` and `wire:model` both write the pressed state. `optimistic` calls the server itself, so `wire:model` is dropped.');
-            $attributes = $attributes->whereDoesntStartWith('wire:model');
+            $refuse('`optimistic` and `wire:model`/`x-model` both write the pressed state. `optimistic` calls the server itself, so the model binding is dropped.');
+            $attributes = $attributes->whereDoesntStartWith(['wire:model', 'x-model']);
         }
 
         $attributes = $attributes->merge([

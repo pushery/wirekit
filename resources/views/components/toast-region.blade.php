@@ -65,6 +65,41 @@
         ? 'padding-top: calc(1rem + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-top, 0px));'
         : 'padding-bottom: calc(1rem + var(--space-wk-toast-offset, 0px) + env(safe-area-inset-bottom, 0px));';
 
+    // ⚠️ The INLINE gap has the same hole the FAB had, and here it hides one level deeper.
+    //
+    // The region is pinned flush to its edge and the 1rem gap comes from the base padding INSIDE
+    // the box. A `position: fixed` box is laid out against a box that includes a classic
+    // scrollbar, so the region overlaps the gutter and a toast ends up against it — nothing in
+    // the markup looks wrong, because the padding is there and is being honored.
+    //
+    // Only the arms anchored to the trailing edge are touched. A region on the opposite edge has
+    // no gutter under it, and the centered arms are off by HALF the gutter, which is a different
+    // magnitude and a different fix; neither is what was reported.
+    //
+    // ⚠️ These arms name a physical side rather than a logical one, and that is deliberate rather
+    // than an oversight to repair here. Right-to-left support is a decided, deferred piece of
+    // work across the whole catalog, held by its own baseline; a term added INSIDE an existing
+    // physical utility introduces no new one, while converting the direction would settle the
+    // deferred question in three files as a side effect of a scrollbar fix.
+    //
+    // ⚠️ The check reads the RESOLVED class rather than the input value, because the fallback arm
+    // renders a trailing-edge position for any unknown input — so a comparison against the string
+    // would miss exactly the arm a typo lands on.
+    //
+    // ⚠️ And the directional utilities are DESCRIBED here rather than spelled, for the same
+    // reason the stacking comment below gives: Tailwind scans this file as text, comments
+    // included, so naming one emits it into the compiled stylesheet and counts it against the
+    // direction baseline. Writing this paragraph the obvious way added seven.
+    // Named by EXCLUSION rather than by matching the resolved class, and for two reasons at
+    // once: the fallback arm has to be included (an unknown position renders on the trailing
+    // edge, so a typo lands there), and matching the class would mean spelling a directional
+    // utility in this file — which Tailwind would compile straight out of the comparison.
+    $isTrailingEdge = ! in_array($position, ['top-left', 'bottom-left', 'top-center', 'bottom-center'], true);
+
+    if ($isTrailingEdge) {
+        $offsetStyle .= ' padding-right: calc(1rem + var(--wk-scrollbar-inset, 0px));';
+    }
+
     // Container: fixed portal, stacks toasts vertically with gap
     $containerClasses = WireKit::resolveClasses('toast-region', 'base', implode(' ', [
         // The scale, not a hardcoded number. The literal four-nines arbitrary value that

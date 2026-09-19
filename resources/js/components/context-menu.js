@@ -69,6 +69,18 @@ export default function wirekitContextMenu() {
         _anchorAt: null,
 
         init() {
+            // Release the placement observer whenever the menu closes, whichever way it closed.
+            // Three separate places set `open` to false, so hooking one of them would leave an
+            // observer alive on the other two — and a context menu opens and closes all day.
+            this.$watch('open', (isOpen) => {
+                if (isOpen) {
+                    return;
+                }
+
+                this._stopRepair?.();
+                this._stopRepair = null;
+            });
+
             this._navCleanup = () => this._forceClose();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
 
@@ -99,7 +111,13 @@ export default function wirekitContextMenu() {
             window.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
         },
 
+        // The positioner's teardown handle, held only while the panel is open.
+        _stopRepair: null,
+
         destroy() {
+            this._stopRepair?.();
+            this._stopRepair = null;
+
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
@@ -159,10 +177,42 @@ export default function wirekitContextMenu() {
                 },
             };
 
-            await position(virtualRef, panel, {
+            // Drop the previous opening's observer before making another one. A context menu is
+            // opened and closed constantly, so one left behind per opening adds up quickly.
+            this._stopRepair?.();
+            this._stopRepair = null;
+
+            const placement = await position(virtualRef, panel, {
                 placement: 'bottom-start',
                 offset: 2,
+
+                // ⚠️ Put the placement back when a page update takes it away, and note that
+                // `autoReposition` would NOT do this job here for two separate reasons.
+                //
+                // Everything this call writes is inline style, and a framework update patches the
+                // panel against its own template, whose `style` attribute carries none of it — so
+                // the whole attribute is replaced and the placement is gone, while the state that
+                // opened the menu never changed and nothing asks for a new one. This panel is
+                // teleported to the overlay root, so with no `top` it sits at the END of the
+                // document rather than a few pixels off the cursor.
+                //
+                // `autoReposition` watches the two elements' BOXES. Here the reference is VIRTUAL
+                // — a cursor position that answers `getBoundingClientRect()` and nothing else, so
+                // there is no element to observe — and the panel is sized by its content, so an
+                // erasure need not change its box at all. Both halves of what that option needs
+                // are absent; this one watches the attribute that is actually removed.
+                repairErasure: true,
             });
+
+            if (placement && typeof placement.stop === 'function') {
+                if (this.open) {
+                    this._stopRepair = placement.stop;
+                } else {
+                    // Closed while the placement was in flight — its observer would outlive the
+                    // panel it belongs to.
+                    placement.stop();
+                }
+            }
 
             // Focus the first item — AFTER positioning, so the panel is already at its
             // final coordinates and nothing has to be re-measured.

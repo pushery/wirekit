@@ -57,12 +57,26 @@ export default function wirekitCombobox(config = {}) {
         // `query` stays empty and `filtered` is always the whole list.
         _searchable: config.searchable !== false,
 
+        // The label this component put into `query` itself, so `filtered` can tell it apart from
+        // something the reader typed. Not a mode flag: it is compared by value, so deleting back
+        // to the seeded text reopens the whole list, which is the same thing the reader meant.
+        _seededQuery: '',
+
         // What the reader has typed into a select-only trigger, forgotten after half a second.
         _typeAheadBuffer: '',
         _typeAheadTimer: null,
 
         get filtered() {
-            if (this.query === '') {
+            // ⚠️ The SEEDED label is not a search, and treating it as one made every option but
+            // the current selection unreachable: the field pre-fills `query` with the chosen
+            // row's label so it reads as the choice, and the filter then matched exactly that one
+            // row. Opening the picker showed a list of length 1 -- a reader had to select-all and
+            // delete before they could see anything else.
+            //
+            // Measured 2026-09-18 on a standalone combobox with an initial selection: 5 options,
+            // 1 filtered, before this component was embedded anywhere. It contradicts the
+            // component's own documented contract, which filters "as the user types".
+            if (this.query === '' || this.query === this._seededQuery) {
                 return this.allOptions;
             }
 
@@ -146,7 +160,22 @@ export default function wirekitCombobox(config = {}) {
 
             if (match && this._searchable) {
                 this.query = chosenText(match);
+                this._seededQuery = this.query;
             }
+
+            // `selected` also moves from OUTSIDE: `x-modelable` exposes it, so a `wire:model`
+            // round trip, a parent component's `x-model` or a reset all write it directly, and
+            // none of them goes through selectOption(). Without this the value was right and the
+            // field showed the previous label -- indefinitely, with nothing red anywhere.
+            //
+            // Measured 2026-09-18 in a browser, driving it from `phone`: typing `+43` moved the
+            // parent's country and `selected` followed to AT, while the visible text still read
+            // "Germany (+49)". `wire:model` has had the same hole for releases; it took embedding
+            // the component in another one to make anybody look.
+            //
+            // selectOption() keeps its own call rather than leaning on this: that path runs
+            // synchronously inside the click, and a watcher flushes a microtask later.
+            this.$watch('selected', () => this._syncQuery());
 
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:combobox-open',
@@ -156,6 +185,10 @@ export default function wirekitCombobox(config = {}) {
             // Announce on every transition into the open state so siblings close.
             this.$watch('open', (val) => {
                 if (! val) {
+                    // A hidden panel has nothing to follow, and its followers would go on
+                    // recomputing against a field the reader has moved away from.
+                    this._unplace();
+
                     return;
                 }
 
@@ -255,12 +288,17 @@ export default function wirekitCombobox(config = {}) {
                 return;
             }
 
+            // Drop the followers from the previous opening before making new ones. Reopening
+            // without this would stack one `autoUpdate` per open, all of them writing the same
+            // element.
+            this._unplace();
+
             for (const panel of panels) {
                 if (! panel) {
                     continue;
                 }
 
-                window.wirekitPosition(anchor, panel, {
+                const placement = window.wirekitPosition(anchor, panel, {
                     placement: this._placement,
                     offset: 4,
                     fitViewport: true,
@@ -268,8 +306,97 @@ export default function wirekitCombobox(config = {}) {
                     // `auto` or a length sizes itself and is only bounded here.
                     matchReferenceWidth: this._panelWidth === 'trigger',
                     minReferenceWidth: this._panelWidth !== 'trigger',
+                    // ⚠️ KEEP FOLLOWING THE FIELD — a single placement does not survive a
+                    // Livewire update, and the panel does not recover on its own.
+                    //
+                    // Everything the positioner computes is written as INLINE STYLE: `top`,
+                    // `left`, and the width and `max-height` the `size` middleware applies. A
+                    // morph patches this node against its template — the teleport does not put
+                    // it out of reach, which is exactly why it carries a `wire:key` — and the
+                    // template's `style` attribute carries none of those values. So the morph
+                    // replaces the whole attribute and every computed value is gone, while
+                    // `open` never changed and nothing asks for a new placement.
+                    //
+                    // Measured on a Livewire page with the list open and one refresh: `top`
+                    // went from `682.5px` to empty and the list from 683 to 2757, with the
+                    // field still at 679 and `aria-expanded` still true. It never came back.
+                    // That is what an application reported from its own test run — a list at
+                    // exactly `window.innerHeight`, which is where a `fixed` panel with no
+                    // `top` lands when the overlay root sits at the end of a page whose
+                    // content ends at the fold.
+                    //
+                    // `autoUpdate` watches the elements themselves rather than the framework,
+                    // so it answers a wipe from any cause: the panel's box changes the moment
+                    // its width and cap are dropped, and the recompute writes all four values
+                    // back. Nothing here knows what Livewire is, which is the point — this
+                    // component ships to pages that have no Livewire at all.
+                    autoReposition: true,
+
+                    // ⚠️ AND the erasure repair, because `autoReposition` covers that case only
+                    // BY ACCIDENT here — it works, and it works for a reason this component does
+                    // not control.
+                    //
+                    // `autoUpdate` recomputes on a BOX change, never on an attribute change. What
+                    // makes it notice an erasure at all is that the erasure takes a width with it
+                    // and the panel collapses. That width comes from the sizing options above, so
+                    // whether the repair happens depends on whether the width being removed was
+                    // BINDING on that panel, on that page.
+                    //
+                    // ⚠️ Predicted that `panelWidth` other than `trigger` would break it, since
+                    // that path writes `minWidth`/`maxWidth` rather than a width. MEASURED, and
+                    // the prediction was wrong: on a wide field the `minWidth` is binding too, so
+                    // the panel still collapses and the repair still happens. The hole is not
+                    // where it was expected.
+                    //
+                    // It is kept anyway, and the reason is what the measurement showed rather than
+                    // what it failed to show: the repair rests on a coincidence between two
+                    // unrelated things — how a panel is sized, and whether a placement survives.
+                    // `repairErasure` watches the attribute that is actually removed, so the
+                    // question stops depending on geometry. A sibling component in this same
+                    // catalog has the erasure and does NOT collapse, and nothing about this one
+                    // guarantees it stays on the lucky side of that line.
+                    repairErasure: true,
+                });
+
+                // ⚠️ The global is documented as something a component asks for WITHOUT depending
+                // on it, so it may be absent — and by the same reasoning it may be something other
+                // than this package's own helper. A stub that returns a non-thenable makes `.then`
+                // throw, which is a worse failure than the missing placement it replaces.
+
+                if (! placement || typeof placement.then !== 'function') {
+                    continue;
+                }
+
+                placement.then((result) => {
+                    if (typeof result?.stop !== 'function') {
+                        return;
+                    }
+
+                    // Closed while the placement was in flight: `position()` awaits frames and
+                    // a promise, so the list can be shut before this resolves. Its follower
+                    // would then outlive the panel it follows.
+                    if (! this.open) {
+                        result.stop();
+
+                        return;
+                    }
+
+                    this._placeStops.push(result.stop);
                 });
             }
+        },
+
+        // The `autoUpdate` teardown handles, one per panel. The helper's own docblock puts this
+        // duty on the caller: without it the scroll, resize and observer listeners leak, and a
+        // component that reopens often leaks once per opening.
+        _placeStops: [],
+
+        _unplace() {
+            for (const stop of this._placeStops) {
+                stop();
+            }
+
+            this._placeStops = [];
         },
 
         /**
@@ -307,6 +434,7 @@ export default function wirekitCombobox(config = {}) {
         destroy() {
             this._coordination?.stop();
             this._coordination = null;
+            this._unplace();
             this._forgetTyping();
         },
 
@@ -405,6 +533,7 @@ export default function wirekitCombobox(config = {}) {
             // A select-only trigger shows the choice through `selectedText` and never filters,
             // so its query stays empty and the whole list stays reachable.
             this.query = match && this._searchable ? chosenText(match) : '';
+            this._seededQuery = this.query;
         },
 
         /**

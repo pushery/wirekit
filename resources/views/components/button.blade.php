@@ -12,6 +12,25 @@
     // a button on its own is right at its designed size; this is for one that shares a row with a
     // field, where it would otherwise read a size below the field beside it.
     'touchTextFloor' => false,
+    // Show the icon alone and keep the label as the accessible name.
+    //
+    // The seam for the icon itself already existed — `<x-slot:iconLeft>` and `<x-slot:iconRight>`
+    // have shipped for a long time, so the report that named both halves missing was half right.
+    // What was missing is this: a button carrying only an icon still took the HORIZONTAL padding
+    // of a text button, so it rendered as a wide box with a small glyph floating in the middle,
+    // and there was nothing holding the label in the accessibility tree once it was hidden.
+    //
+    // Reported from the starter kit's user list, where a row action had to narrow on a phone:
+    // "Edit roles" in German held 147px of the 309px the table had left. Their workaround put
+    // the icon and a `sr-only` label in the slot by hand and re-did the padding from outside —
+    // which is what this replaces, and the shape `clipboard-button` has had all along.
+    //
+    // ⚠️ THE LABEL STAYS IN THE DEFAULT SLOT. It is rendered visually-hidden rather than
+    // dropped, so the button keeps a real accessible name that is translated by the same
+    // `__()` the visible one went through and is reachable by voice control — which an
+    // `aria-label` on a control with no visible text is not, reliably. A caller who prefers
+    // `aria-label` can still use it; this only means they do not HAVE to.
+    'iconOnly' => false,
     'href' => null,
     'disabled' => false,
     'loading' => false,
@@ -62,6 +81,7 @@
     // default, like every other boolean on this component.
     $wrapLabel = BooleanProp::from($wrapLabel, false);
     $touchTextFloor = BooleanProp::from($touchTextFloor, false);
+    $iconOnly = BooleanProp::from($iconOnly, false);
 
     // ⚠️ `loadingTarget` IMPLIES `loading`, because there is no other reason to set it.
     //
@@ -204,6 +224,58 @@
         default => WireKit::validateProp('button', 'size', $size, ['xs', 'sm', 'md-compact', 'md', 'lg', 'xl']),
     };
 
+    /*
+     * An icon-only button with nothing to be named by is a button a screen reader announces as
+     * "button" and nothing else — and it is invisible to the person who built it, because the
+     * glyph tells THEM everything.
+     *
+     * ⚠️ NO FALLBACK NAME IS INVENTED, and that is the difference from `clipboard-button`, which
+     * can fall back to "Copy to clipboard" because it does exactly one thing. This button does
+     * whatever its call site does; a generic name would be a name that passes an automated check
+     * and tells a reader nothing, which is worse than the failure it hides.
+     *
+     * Loud where it can be fixed — throwing in console, a log line in a request — the split every
+     * validator in this catalog makes.
+     */
+    if ($iconOnly && trim(strip_tags((string) $slot)) === '' && ! $attributes->has('aria-label') && ! $attributes->has('aria-labelledby')) {
+        $message = 'icon-only needs an accessible name: put the label in the default slot (it is '
+            .'rendered visually hidden), or pass aria-label / aria-labelledby.';
+
+        if (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid()) {
+            throw new \InvalidArgumentException('wirekit::button: '.$message);
+        }
+
+        if (function_exists('logger')) {
+            logger()->warning('[WireKit] button: '.$message);
+        }
+    }
+
+    /*
+     * Icon-only REPLACES that table rather than editing its string, and it runs after it rather
+     * than instead of it — so the size is still validated on this path, by the one call that
+     * publishes the allow-list.
+     *
+     * What changes is the horizontal padding, which is the whole defect: a text button's `px`
+     * around a single glyph is a wide box with something small in the middle. The font size and
+     * the radius stay, because the glyph is sized in `em` by every icon this catalog ships and
+     * the corner is a property of the size rather than of the content.
+     *
+     * ⚠️ SPELLED OUT, LIKE THE HEIGHT TABLE BELOW AND FOR THE SAME REASON. A class assembled at
+     * runtime is a class Tailwind never generates: it scans source text, so the utility would be
+     * absent from the stylesheet and the button would silently keep the padding this is here to
+     * remove.
+     */
+    if ($iconOnly) {
+        $sizeClasses = match ($size) {
+            'xs' => 'text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)]',
+            'sm' => 'text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-sm)]',
+            'md-compact' => 'text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-md)]',
+            'lg' => 'text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-md)]',
+            'xl' => 'text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-lg)]',
+            default => 'text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-md)]',
+        };
+    }
+
     // The height, and why it is TWO tables rather than one class.
     //
     // A clamped label is exactly one line tall, so a FIXED height is the right
@@ -222,7 +294,31 @@
     //
     // `$size` is already validated by the match above, so `default` here only has
     // to be a sane value rather than a second error path.
-    $heightClasses = $wrapLabel
+    /*
+     * A THIRD table, and it is a square: the width is the same token as the height, so the
+     * button is as wide as it is tall at every size instead of as wide as its padding.
+     *
+     * ⚠️ It ignores `wrapLabel`, and that is not an oversight. There is no visible label to
+     * wrap — the label is in the accessibility tree and nowhere else — so the wrapping variant's
+     * `min-h` plus vertical padding would describe a second line that cannot exist, and it would
+     * make the box taller than it is wide.
+     *
+     * Every size clears the 24x24 CSS-pixel floor of WCAG 2.5.8 without a carve-out: the
+     * smallest is `xs` at 0.875 x 2rem = 28px, and it is the one worth checking because it is
+     * the size a dense table row reaches for.
+     */
+    $iconOnlyHeightClasses = match ($size) {
+        'xs' => 'h-[calc(var(--size-wk-sm)*0.875)] w-[calc(var(--size-wk-sm)*0.875)]',
+        'sm' => 'h-[var(--size-wk-sm)] w-[var(--size-wk-sm)]',
+        'md-compact' => 'h-[var(--size-wk-md-compact)] w-[var(--size-wk-md-compact)]',
+        'lg' => 'h-[var(--size-wk-lg)] w-[var(--size-wk-lg)]',
+        'xl' => 'h-[calc(var(--size-wk-lg)*1.1)] w-[calc(var(--size-wk-lg)*1.1)]',
+        default => 'h-[var(--size-wk-md)] w-[var(--size-wk-md)]',
+    };
+
+    $heightClasses = $iconOnly
+        ? $iconOnlyHeightClasses
+        : ($wrapLabel
         ? match ($size) {
             'xs' => 'min-h-[calc(var(--size-wk-sm)*0.875)] py-[var(--padding-wk-y-xs)]',
             'sm' => 'min-h-[var(--size-wk-sm)] py-[var(--padding-wk-y-xs)]',
@@ -238,7 +334,7 @@
             'lg' => 'h-[var(--size-wk-lg)]',
             'xl' => 'h-[calc(var(--size-wk-lg)*1.1)]',
             default => 'h-[var(--size-wk-md)]',
-        };
+        });
 
     // Render as <a> when href is provided, otherwise <button>
     $tag = $href ? 'a' : 'button';
@@ -371,7 +467,16 @@
         <span class="shrink-0">{{ $iconLeft }}</span>
     @endisset
 
-    {{ $slot }}
+    {{-- ⚠️ HIDDEN, NEVER DROPPED. An icon-only button whose label was simply not rendered is a
+         control a screen reader announces as "button" and nothing else — and it looks finished,
+         because the glyph says everything a sighted reader needs. Kept visually hidden, the same
+         translated string is still the accessible name (WCAG 4.1.2) and still the phrase voice
+         control matches on. --}}
+    @if($iconOnly)
+        <span class="sr-only">{{ $slot }}</span>
+    @else
+        {{ $slot }}
+    @endif
 
     @isset($iconRight)
         <span class="shrink-0">{{ $iconRight }}</span>

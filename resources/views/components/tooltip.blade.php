@@ -30,6 +30,26 @@
     // a tooltip that follows live state. The component reads it at trigger time.
     'disabled' => false,
     'scope' => null,
+    // What the host AND the trigger wrapper root in. `div` keeps every existing call site
+    // rendering exactly as before; `as="span"` is what makes this component usable inside a
+    // text-level one.
+    //
+    // ⚠️ It has to move BOTH elements, and that is the whole reason it is one prop rather
+    // than two. A `<div>` inside a `<p>` is invalid HTML, so the parser closes the paragraph
+    // and hoists the div out — the trigger stops being a child of its text node and becomes
+    // its SIBLING. In a grid that sibling gets a cell of its own, which is how a warning
+    // glyph ends up next to the wrong row. Nothing about that is red: the Blade reads
+    // correctly, both markers are in the output so every assertion passes, and there is no
+    // overflow and no console error for a screen sweep to catch.
+    //
+    // The panel is unaffected either way — it lives in a `<template x-teleport>`, and a
+    // `<template>` IS phrasing content, so it is valid inside a `<p>` and its children are an
+    // inert fragment the paragraph's content model never sees.
+    //
+    // The default stays `div` deliberately rather than becoming `span`: a span wrapper is
+    // invalid the moment a slot carries block content, and only the caller knows what is in
+    // its slot.
+    'as' => 'div',
 ])
 
 @php
@@ -44,6 +64,13 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $focusableTrigger = BooleanProp::from($focusableTrigger, true);
     $disabled = BooleanProp::from($disabled, false);
+
+    // `$as` is interpolated into two opening tags below, and Blade's escaping does not make
+    // that safe: `e()` escapes neither a space nor an `=`, so `as="div onmouseover=alert(1)"`
+    // would arrive as a working event handler. `tagName()` checks the SHAPE rather than an
+    // allowlist, the same way `card` does — an enum would have to guess which elements a
+    // developer legitimately wants.
+    $as = WireKit::tagName('tooltip', (string) $as);
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props.
@@ -86,7 +113,7 @@
 @endphp
 
 {{-- Tooltip wrapper — handles hover, focus, touch, and keyboard events --}}
-<div
+<{{ $as }} data-wk-prose-skip
     @if($disabled) data-wk-tooltip-disabled="true" @endif
     x-data="wirekitTooltip({
         placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }},
@@ -127,9 +154,9 @@
          reader actually arrives, and leaves it here when there is none so the wrapper case
          is unchanged. Done in JS rather than in Blade because the trigger is the CALLER's
          markup — this template never sees the element it needs to annotate. --}}
-    <div x-ref="trigger" @if($describes) data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @endif @if($focusableTrigger) tabindex="0" @endif>
+    <{{ $as }} data-wk-prose-skip x-ref="trigger" @if($describes) data-wk-tooltip-describedby="{{ $tooltipId }}" aria-describedby="{{ $tooltipId }}" @endif @if($focusableTrigger) tabindex="0" @endif>
         {{ $slot }}
-    </div>
+    </{{ $as }}>
 
     {{-- Tooltip panel, teleported out of the document flow.
 
@@ -210,4 +237,4 @@
         @endif
     </div>
     </template>
-</div>
+</{{ $as }}>

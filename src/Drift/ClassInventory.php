@@ -1283,7 +1283,46 @@ final class ClassInventory
          * Without `+` every calc-addition arbitrary value is rejected here and
          * surfaces as reverse-dead in Tier 2 even though it has a static source.
          */
-        if (preg_match('/^-?(?:[a-z]|\[|\d[a-z])[a-zA-Z0-9:_\-\[\]\(\)\/.,#%*&+]+$/', $masked) !== 1) {
+        /*
+         * CONTAINER-QUERY VARIANTS START WITH `@`, WHICH THE SHAPE CHECK BELOW REJECTS ON ITS
+         * FIRST CHARACTER — and it has to keep rejecting a bare `@`, because a Blade directive
+         * is spelled that way too (`@if`, `@props`, `@class`). Admitting `@` outright would make
+         * every directive look like a utility.
+         *
+         * A container variant is distinguishable without loosening anything else: it is exactly
+         * `@container`, or it carries a `/` (a NAMED container, `@container/wk-table`) or a `:`
+         * (a variant, `@max-3xl/wk-table:hidden`, `@2xl/bento:col-span-2`). No Blade directive
+         * carries either.
+         *
+         * ⚠️ This was an ALLOWLIST ENTRY before it was a fix, and the allowlist said so: five
+         * bento classes sat under "the tokenizer does not parse the `@{size}/{name}:` syntax …
+         * teach the harvester the syntax if more land". More landed — the table's own named
+         * container and eight `@max-*` column variants — and adding nine more entries would have
+         * been the kind of entry that file already warns about: one that reads as a fact about
+         * the compiler when it is a fact about us.
+         */
+        $isContainerVariant = preg_match('/^@(?:container$|[a-z0-9-]*[\/:])/', $masked) === 1;
+
+        /*
+         * The utility form drops the `@` AND the `/name`, because neither is part of the SHAPE
+         * question the checks below ask. `@container/wk-table` is the `container` utility scoped
+         * to a name; `@2xl/bento:col-span-2` is `2xl:col-span-2` scoped to one. Keeping the name
+         * would make every check answer "no known utility here", which is a statement about the
+         * scope marker rather than about the class.
+         *
+         * Gated on `$isContainerVariant`, so an ordinary `/name` elsewhere is untouched —
+         * `group-data-[labels=below]/wk-rail:not-sr-only` keeps its peer name, which its own
+         * variant needs.
+         */
+        $utilityForm = $isContainerVariant
+            ? preg_replace('/^@([a-z0-9-]*)\/[a-z0-9_-]+/', '$1', $masked) ?? $masked
+            : $masked;
+
+        if ($isContainerVariant && str_starts_with($utilityForm, '@')) {
+            $utilityForm = substr($utilityForm, 1);
+        }
+
+        if (preg_match('/^-?(?:[a-z]|\[|\d[a-z])[a-zA-Z0-9:_\-\[\]\(\)\/.,#%*&+]+$/', $utilityForm) !== 1) {
             return false;
         }
 
@@ -1356,20 +1395,65 @@ final class ClassInventory
          * identifiers — most often PHP array keys captured from the
          * `$variantColors['icon']` shape inside @class([…]) bodies.
          */
-        $hasTailwindStructuralChar = preg_match('/[-:\[]/', $candidate) === 1;
-        if (! $hasTailwindStructuralChar && ! in_array($candidate, self::KNOWN_SINGLE_WORD_CLASSES, true)) {
+        /*
+         * ⚠️ Asked of the UTILITY FORM rather than the raw candidate, so that the container-query
+         * marker does not change the answer. A bare `@container` carries no hyphen, colon or
+         * bracket and is not spelled `container`, so reading the raw form rejected it — while
+         * `container` itself is on the list two lines up. The named spelling passed only because
+         * its `/` happens to sit in the shape regex's body set, which is a coincidence rather
+         * than a decision.
+         */
+        $hasTailwindStructuralChar = preg_match('/[-:\[]/', $utilityForm) === 1;
+        if (! $hasTailwindStructuralChar && ! in_array($utilityForm, self::KNOWN_SINGLE_WORD_CLASSES, true)) {
             return false;
         }
 
         if ($strict) {
-            if (in_array($candidate, self::KNOWN_SINGLE_WORD_CLASSES, true)) {
+            /*
+             * ⚠️ THE UTILITY FORM AGAIN, and this was the half that stayed broken after the two
+             * checks above were fixed. Strict mode is what reads classes out of PHP strings —
+             * `implode(' ', ['@max-3xl/wk-table:hidden', …])` — and both of its shape questions
+             * are anchored at the FIRST character, which for a container variant is `@`. So the
+             * loose path accepted these and the strict path dropped them, which presents as a
+             * class that is traceable from a `class=` attribute and untraceable from a match arm:
+             * the same class, two answers, depending only on where it was written.
+             */
+            if (in_array($utilityForm, self::KNOWN_SINGLE_WORD_CLASSES, true)) {
                 return true;
             }
 
-            $hasArbitraryBracket = str_contains($candidate, '[') && str_contains($candidate, ']');
+            /*
+             * ⚠️ AND THE VARIANT CHAIN IS NOT PART OF THE SHAPE QUESTION EITHER — this was the
+             * third half of the same mistake, after the two the comment above records.
+             *
+             * `2xl:hidden` is the `hidden` utility under a breakpoint, and `hidden` is on the
+             * list one check up. Reading the whole string kept the variant out while the same
+             * utility passed bare, so `hidden` written in a `class=` attribute was traceable and
+             * `'2xl' => '2xl:hidden'` written in a match arm was not. That presents as drift in
+             * the compiled stylesheet — a selector Tailwind emitted from a source the inventory
+             * says does not emit it — and it is a statement about where the class was written
+             * rather than about the class.
+             *
+             * It reaches every `<variant>:<single-word utility>`: `sm:hidden`, `md:flex`,
+             * `lg:block`, `@3xl/wk-table:hidden`. The hyphen test below cannot accept any of
+             * them, because there is no hyphen to find.
+             *
+             * Split on the LAST colon: the variant chain sits in front, and bracketed spans are
+             * already masked at this point, so a `:` inside an arbitrary value cannot be the one
+             * this finds.
+             */
+            $baseUtility = str_contains($utilityForm, ':')
+                ? substr($utilityForm, (int) strrpos($utilityForm, ':') + 1)
+                : $utilityForm;
+
+            if (in_array($baseUtility, self::KNOWN_SINGLE_WORD_CLASSES, true)) {
+                return true;
+            }
+
+            $hasArbitraryBracket = str_contains($utilityForm, '[') && str_contains($utilityForm, ']');
             // Allow optional digit prefix on the first segment so digit-leading
             // breakpoint variants like `2xl:grid-cols-12` pass strict mode.
-            $isHyphenated = preg_match('/^\d?[a-z][a-z0-9]*(?::[a-z0-9-]+)*-[a-z0-9]/', $candidate) === 1;
+            $isHyphenated = preg_match('/^\d?[a-z][a-z0-9]*(?::[a-z0-9-]+)*-[a-z0-9]/', $utilityForm) === 1;
 
             if (! $hasArbitraryBracket && ! $isHyphenated) {
                 return false;

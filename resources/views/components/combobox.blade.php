@@ -36,6 +36,13 @@
     // `false` renders a select-only combobox: a focusable trigger instead of a text field, for a
     // short list nobody needs to search, with the keyboard of the WAI-ARIA select-only pattern.
     'searchable' => true,
+    // `false` hides the clear button. The default stays true, because for most lists "none of
+    // them" is a real answer a reader must be able to give back. It is NOT one everywhere: a
+    // control whose value is a PRECONDITION for the field around it -- the country in a phone
+    // number, which is what assembles the E.164 -- ends up in a state where the reader sees a
+    // number on screen and the form submits nothing. That is the exact failure the surrounding
+    // component is usually built to prevent, so it has to be able to say no.
+    'clearable' => true,
     // `??` rather than a `config(…, 'Select…')` fallback, and the difference is the
     // whole point: a config default holds ONE string for every locale, so the literal
     // that used to sit in that second argument was unreachable to a translated app —
@@ -79,6 +86,7 @@
     $disabled = BooleanProp::from($disabled, false);
     $hideLabel = BooleanProp::from($hideLabel, false);
     $searchable = BooleanProp::from($searchable, true);
+    $clearable = BooleanProp::from($clearable, true);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -281,6 +289,15 @@
         'disabled:cursor-not-allowed',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
+        // A label wider than the field is cut MID-CHARACTER without this, because an input
+        // defaults to `text-overflow: clip`. Measured 2026-09-18 at 390px on a 160px country
+        // picker: 80px of content box for a 99px label, and the field read "Germany (+" with the
+        // clear button hard against it -- which looks like a bug in the component rather than a
+        // field that is simply too narrow for its longest option.
+        //
+        // It costs nothing at any comfortable width, and the value is still fully readable: the
+        // input scrolls to the caret as soon as it is focused.
+        'text-ellipsis',
         $heightClasses,
     ]), $scope);
 
@@ -413,11 +430,22 @@
          rather than the option behind them. `wire:model` compiles to `x-model`, and
          `x-modelable` is what lets a non-input element answer it. --}}
     x-modelable="selected"
-    {{ $attributes->whereStartsWith('wire:model') }}
+    {{-- `x-model` is routed here too, and for the same reason: `x-modelable` above is what
+         ANSWERS it, and a hand-written one is how a parent component embeds this control. Left
+         to the bag below it landed on the search input beside its built-in `x-model="query"` --
+         two `x-model` attributes on one tag, where the browser keeps the first and the caller's
+         is dropped without a word. `x-modelable` is excluded: a caller may not redirect the seam. --}}
+    {{ $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }}
     {{-- The roleless wrapper otherwise carries ONLY layout — every caller attribute
          (aria-describedby, data-*, autocomplete, required, …) is routed to the
          role="combobox" input below, never left stranded on this <div>. --}}
-    {{ $attributes->only(['style'])->class(['relative w-full']) }}
+    {{-- `class` as well as `style`, and `slider` two files over has carried both for releases.
+         Dropping it here left a caller's class stranded: the wrapper kept only `style`, the input
+         below excludes `class` from its own bag, so `<x-wirekit::combobox class="max-w-[10rem]">`
+         reached the markup nowhere at all and sized nothing. Measured 2026-09-18 across docs/,
+         resources/ and the sample: ZERO callers passed one, which is what a silently discarded
+         attribute looks like from the outside -- nobody keeps doing something with no effect. --}}
+    {{ $attributes->only(['class', 'style'])->class(['relative w-full']) }}
 >
     @if($optimisticConfig)
         {{-- `display: contents` — this element's `relative` is the containing
@@ -474,7 +502,7 @@
         {{-- `wire:model*` is excluded here and rendered on the Alpine root above: on
              this element it would be a second model binding beside `x-model="query"`,
              pointed at the search text. --}}
-        {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby'])->whereDoesntStartWith('wire:model') }}
+        {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $inputClasses }}"
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     />
@@ -512,7 +540,7 @@
         @if($describedBy) aria-describedby="{{ $describedBy }}" @endif
         {{-- `required` is an input attribute, and a `div` has no validity to carry it. --}}
         @if($attributes->get('required')) aria-required="true" @endif
-        {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby', 'required', 'autocomplete', 'placeholder', 'readonly'])->whereDoesntStartWith('wire:model') }}
+        {{ $attributes->except(['aria-label', 'class', 'style', 'aria-describedby', 'required', 'autocomplete', 'placeholder', 'readonly'])->whereDoesntStartWith(['wire:model', 'x-model']) }}
         class="wk-field {{ $triggerClasses }}"
         @if($optionUses['media']) x-bind:class="fieldMedia.length ? {{ \Pushery\WireKit\Support\AlpinePayload::string($fieldMediaPadding) }} : ''" @endif
     >
@@ -541,7 +569,7 @@
     @endif
 
     {{-- Clear button — visible only when a value is selected. Positioned left of the chevron. --}}
-    @if(!$disabled)
+    @if(!$disabled && $clearable)
         <button
             type="button"
             x-show="selected"

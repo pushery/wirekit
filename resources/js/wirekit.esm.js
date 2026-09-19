@@ -21,6 +21,7 @@ import wirekitDropdown from './components/dropdown.js';
 import wirekitSubmenu from './components/submenu.js';
 import wirekitTooltip from './components/tooltip.js';
 import wirekitModal from './components/modal.js';
+import wirekitModalTrigger from './components/modal-trigger.js';
 import wirekitDrawer from './components/drawer.js';
 import wirekitToast from './components/toast.js';
 import wirekitTreeView from './components/tree-view.js';
@@ -45,6 +46,7 @@ import wirekitDropdownTrigger from './components/dropdown-trigger.js';
 import wirekitCodeBlock from './components/code-block.js';
 import wirekitSlider from './components/slider.js';
 import wirekitPasswordInput from './components/password-input.js';
+import wirekitPhone from './components/phone.js';
 import wirekitSegmentedControl from './components/segmented-control.js';
 import wirekitBranchSwitcher from './components/branch-switcher.js';
 import wirekitPricingTable from './components/pricing-table.js';
@@ -191,6 +193,7 @@ export default function (Alpine) {
     Alpine.data('wirekitSubmenu', wirekitSubmenu);
     Alpine.data('wirekitTooltip', wirekitTooltip);
     Alpine.data('wirekitModal', wirekitModal);
+    Alpine.data('wirekitModalTrigger', wirekitModalTrigger);
     Alpine.data('wirekitDrawer', wirekitDrawer);
     Alpine.data('wirekitToast', wirekitToast);
     Alpine.data('wirekitTreeView', wirekitTreeView);
@@ -215,6 +218,7 @@ export default function (Alpine) {
     Alpine.data('wirekitCodeBlock', wirekitCodeBlock);
     Alpine.data('wirekitSlider', wirekitSlider);
     Alpine.data('wirekitPasswordInput', wirekitPasswordInput);
+    Alpine.data('wirekitPhone', wirekitPhone);
     Alpine.data('wirekitSegmentedControl', wirekitSegmentedControl);
     Alpine.data('wirekitBranchSwitcher', wirekitBranchSwitcher);
     Alpine.data('wirekitPricingTable', wirekitPricingTable);
@@ -282,6 +286,7 @@ export {
     wirekitSubmenu,
     wirekitTooltip,
     wirekitModal,
+    wirekitModalTrigger,
     wirekitDrawer,
     wirekitToast,
     wirekitTreeView,
@@ -306,6 +311,7 @@ export {
     wirekitCodeBlock,
     wirekitSlider,
     wirekitPasswordInput,
+    wirekitPhone,
     wirekitSegmentedControl,
     wirekitBranchSwitcher,
     wirekitPricingTable,

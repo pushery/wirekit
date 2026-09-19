@@ -333,7 +333,21 @@
                         role="option"
                         id="{{ $id }}-option-{{ $row['key'] }}"
                         wire:key="{{ $id }}-{{ $row['key'] }}"
-                        @if($prefetch) wire:navigate.hover @else wire:navigate @endif
+                        {{-- ⚠️ NOT ON THE CURRENT ROW, and a preventDefault cannot take its
+                             place. Livewire's navigate binds its own click AND mousedown
+                             listeners to this element and checks neither `defaultPrevented`
+                             nor anything else this component can set — measured in
+                             `livewire.js`, whose only two mentions of `defaultPrevented` are
+                             about its own CustomEvents. So `onItemClick`'s preventDefault
+                             closes the panel and Livewire navigates anyway; for a real
+                             pointer the mousedown handler even runs BEFORE the click handler
+                             that was supposed to stop it.
+                             The lane caught it as a bare `#` appended to the URL, pushed from
+                             `livewire.js` — five weekly runs reported it as "it navigated"
+                             without being able to say who did. Not binding the row we refuse
+                             to navigate to is the fix; the preventDefault below stays as the
+                             belt for the anchor's own default. --}}
+                        @unless($isCurrent) @if($prefetch) wire:navigate.hover @else wire:navigate @endif @endunless
                         data-key="{{ $row['key'] }}"
                         data-search="{{ $row['search'] }}"
                         {{-- Present ONLY on the current row, never as `false` elsewhere. A

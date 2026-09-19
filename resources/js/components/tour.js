@@ -24,6 +24,9 @@ export default function wirekitTour(config = {}) {
         _startHandler: null,
         _trap: null,
         _opener: null,
+        // Disconnects the observer that puts the step's placement back after a framework update
+        // erases it. See the note beside `repairErasure` in _positionStep().
+        _stopRepair: null,
 
         init() {
             // Listen for programmatic start — store reference for cleanup
@@ -45,6 +48,9 @@ export default function wirekitTour(config = {}) {
             // runs on) would otherwise leave an active focus trap behind, holding
             // its own document listeners and a reference to a detached panel.
             this._releaseFocus({ returnFocus: false });
+
+            this._stopRepair?.();
+            this._stopRepair = null;
         },
 
         /**
@@ -109,6 +115,9 @@ export default function wirekitTour(config = {}) {
             this.active = false;
             this.currentStep = 0;
             this.totalSteps = 0;
+
+            this._stopRepair?.();
+            this._stopRepair = null;
         },
 
         /**
@@ -135,10 +144,42 @@ export default function wirekitTour(config = {}) {
             const targetEl = targetSelector ? document.querySelector(targetSelector) : null;
 
             if (targetEl && stepEl) {
-                await position(targetEl, stepEl, {
+                // Every step re-places a DIFFERENT element, so the previous step's observer is
+                // dropped here rather than only on finish().
+                this._stopRepair?.();
+                this._stopRepair = null;
+
+                const placed = await position(targetEl, stepEl, {
                     placement,
                     offset: 12,
+
+                    // Everything this call writes is inline style, and a framework update patches
+                    // the step against its own template, whose `style` attribute carries none of
+                    // it. Measured on /overlay-placement-seam across one refresh: `top` 650.5px →
+                    // empty, same node, still shown, box unchanged at 320x111.
+                    //
+                    // ⚠️ The unchanged box is why this is `repairErasure` and not
+                    // `autoReposition`: no resize means `autoUpdate` sees nothing, because it
+                    // observes boxes rather than the style attribute.
+                    //
+                    // A tour is the longest-lived overlay in the catalog — it stands over the page
+                    // for as many steps as it has, and the page underneath keeps working. The
+                    // whole point of a step is that it POINTS AT something, and a step that has
+                    // slid to the end of the document is telling the reader about an element they
+                    // cannot see, while the focus trap still holds them inside it.
+                    repairErasure: true,
                 });
+
+                if (placed && typeof placed.stop === 'function') {
+                    // Compared against the step rather than merely checking `active`: the reader
+                    // may already have advanced while this placement was in flight, and that step
+                    // owns the observer now.
+                    if (this.active && this.currentStep === Number(stepEl.dataset.wkTourStep)) {
+                        this._stopRepair = placed.stop;
+                    } else {
+                        placed.stop();
+                    }
+                }
 
                 // Same reason as scroll-to-top: an explicit `behavior` argument wins
                 // over the CSS reduced-motion rule, so it has to ask itself.

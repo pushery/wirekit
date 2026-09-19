@@ -234,16 +234,21 @@ class WireKitServiceProvider extends ServiceProvider
                 __DIR__.'/../resources/fonts' => public_path('vendor/wirekit/fonts'),
             ], 'wirekit-fonts');
 
-            // Flags from the optional pushery/wirekit-flags package, published with their manifest
-            // to public/vendor/wirekit/flags/, so the web server serves them and the flag
-            // component can tell a current copy from a stale one. Registered only when the
-            // package is there to publish from.
-            $flagPackage = FlagPackage::root();
+            // Flags, published with their manifest to public/vendor/wirekit/flags/, so the web
+            // server serves them and the flag component can tell a current copy from a stale
+            // one. The same shape as the fonts above: the artwork ships with the package and is
+            // published on request, never loaded by a page that does not ask for a flag.
+            //
+            // Registered unconditionally since the artwork moved in-package. `root()` can still
+            // be null when `wirekit.flags.path` is set to somewhere that holds no manifest, and
+            // publishing from a path that does not exist would fail at `vendor:publish` rather
+            // than here — so the guard stays, for a case that is now a mistake rather than an
+            // absent dependency.
+            $flagRoot = FlagPackage::root();
 
-            if ($flagPackage !== null) {
+            if ($flagRoot !== null) {
                 $this->publishes([
-                    $flagPackage.'/flags' => public_path('vendor/wirekit/flags'),
-                    $flagPackage.'/flags.json' => public_path('vendor/wirekit/flags/flags.json'),
+                    $flagRoot => public_path('vendor/wirekit/flags'),
                 ], 'wirekit-flags');
             }
 
@@ -958,10 +963,10 @@ class WireKitServiceProvider extends ServiceProvider
             })->where('path', '.*');
         });
 
-        // Flags from the optional pushery/wirekit-flags package, served from the package itself so
-        // the flag component works right after `composer require`. Only a flag the package's
-        // manifest names is served: the code and the format are looked up, never joined into a
-        // path unchecked, so the route cannot be walked to anything else in the package.
+        // Flags served from this package's own `resources/flags`, so the flag component works with
+        // nothing installed beyond WireKit itself. Only a flag the manifest names is served: the
+        // code and the format are looked up, never joined into a path unchecked, so the route
+        // cannot be walked to anything else in the package.
         //
         // A browser that opens this URL directly treats the SVG as a document. The response
         // therefore carries a policy that allows no script, no request and no plugin, plus

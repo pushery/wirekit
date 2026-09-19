@@ -318,14 +318,35 @@ class WireKit
      * DEFAULT, by seeding it from the component's own stable identity — its `name` — which
      * is precisely what a widget embedded in a Livewire component is given anyway.
      *
-     * Without a seed there is nothing stable to derive from, so the random suffix remains:
-     * a collision between two unnamed widgets on one page would be worse than a re-render,
-     * and inventing determinism where the inputs have none would only move the surprise.
+     * ⚠️ THIS PARAGRAPH USED TO READ "Without a seed there is nothing stable to derive from,
+     * so the random suffix remains: a collision between two unnamed widgets on one page would
+     * be worse than a re-render, and inventing determinism where the inputs have none would
+     * only move the surprise." Both halves of that are wrong, and the counter-example was in
+     * this package the whole time.
+     *
+     * There IS something stable without a seed: the ORDER the widgets render in. {@see DomId}
+     * has used it since 2.20 for exactly this — it counts per request and per prefix, so two
+     * unnamed widgets get `-1` and `-2` (no collision, which answers the second half) and the
+     * same widget gets the same number on the next render (stable, which answers the first).
+     * The registry resets on `RequestHandled`, so it is Octane-safe rather than accidentally
+     * correct under FPM.
+     *
+     * What the random fallback cost while that reasoning stood: measured 2026-09-17 on an
+     * unnamed `filter-builder`, the open panel's node came back `isConnected=false` after one
+     * `$refresh()`, a closed replacement stood in its place, and the trigger NEVER OPENED
+     * AGAIN — no error, no warning. Eight templates ride on this method, and every one of them
+     * carries a comment promising the opposite.
+     *
+     * ⚠️ The caveat DomId documents travels with the delegation and is the right trade: across
+     * independently-updating Livewire islands the counter can restart, so an unnamed widget in
+     * an island that re-renders alone may come back with a different number. A caller who hits
+     * that passes a `name` — which is the one-word fix, and the control that proved the cause.
+     * A random id breaks the pairing on EVERY render; a counted one only in that case.
      */
     public static function stableId(string $prefix, ?string $seed = null): string
     {
         if ($seed === null || trim($seed) === '') {
-            return $prefix.'-'.Str::random(6);
+            return Support\DomId::unique(null, $prefix.'-');
         }
 
         $slug = Str::slug($seed);
