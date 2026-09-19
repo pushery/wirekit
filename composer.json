@@ -32,7 +32,7 @@
     "bacon/bacon-qr-code": "^3.1",
     "blade-ui-kit/blade-heroicons": "^2.7",
     "codeat3/blade-phosphor-icons": "^2.4",
-    "larastan/larastan": "3.12.0",
+    "larastan/larastan": "3.12.1",
     "laravel/ai": "^0.11.2",
     "laravel/boost": "^2.9",
     "laravel/mcp": "^1.0",
@@ -41,7 +41,7 @@
     "orchestra/testbench": "^10.0 || ^11.1",
     "pestphp/pest": "^5.0",
     "pestphp/pest-plugin-laravel": "^5.0",
-    "phpstan/phpstan": "2.2.13",
+    "phpstan/phpstan": "2.2.14",
     "secondnetwork/blade-tabler-icons": "^3.46",
     "symfony/yaml": "^7.4 || ^8.0"
   },

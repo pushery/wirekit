@@ -72,11 +72,11 @@
     <div
         x-data="wirekitBranchSwitcher({{ $config }})"
         x-modelable="current"
-        {{ $attributes->whereStartsWith('wire:model') }}
+        {{ $attributes->whereStartsWith(['wire:model', 'x-model'])->whereDoesntStartWith('x-modelable') }}
         data-wk-branch-switcher
         role="group"
         aria-label="{{ $groupLabel }}"
-        {{ $attributes->except(['wire:model'])->class([$navClasses]) }}
+        {{ $attributes->whereDoesntStartWith(['wire:model', 'x-model'])->class([$navClasses]) }}
     >
         <button
             type="button"

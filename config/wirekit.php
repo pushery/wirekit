@@ -391,7 +391,7 @@ return [
         // `trigger` matches the field, `auto` fits the widest option, or a CSS length such as 20rem.
         'combobox' => ['size' => 'md', 'placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger'],
         'multi-select' => ['placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger'],
-        'otp-input' => ['length' => 6, 'masked' => false],
+        'otp-input' => ['length' => 6, 'masked' => false, 'justify' => 'start'],
         // `placeholder` is null rather than a literal so the component keeps resolving its
         // own translated default; set a string here to override it in every locale at once.
         'tags-input' => ['max-tags' => null, 'placeholder' => null],
@@ -400,6 +400,7 @@ return [
         'color-picker' => ['size' => 'md', 'format' => 'hex', 'native-on-mobile' => false],
         'number-input' => ['size' => 'md', 'step' => 1],
         'password-input' => ['size' => 'md', 'toggle' => true, 'strength-meter' => false],
+        'phone' => ['country' => 'DE', 'size' => 'md'],
         'time-picker' => ['size' => 'md'],
 
         // Additional components
@@ -454,11 +455,15 @@ return [
     | Flags
     |--------------------------------------------------------------------------
     |
-    | The artwork for <x-wirekit::flag> comes from the optional
-    | pushery/wirekit-flags package, found where Composer installed it. Set
-    | `path` to use a copy Composer does not know about instead, such as a
-    | checkout next to the application. A relative path is resolved against
-    | the application's base path.
+    | The artwork for <x-wirekit::flag> ships with WireKit, in its own
+    | resources/flags, so nothing needs installing and this stays unset for
+    | almost everybody. Set `path` to use a copy kept somewhere else instead,
+    | such as a checkout next to the application or a test fixture. A relative
+    | path is resolved against the application's base path.
+    |
+    | Setting it to a directory that holds no flags.json is the one way to make
+    | every flag draw its placeholder, so a wrong value here is visible rather
+    | than silent: WireKit logs one warning naming this setting.
     |
     */
 

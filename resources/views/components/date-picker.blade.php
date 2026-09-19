@@ -259,8 +259,13 @@
 <div class="w-full" @if($optimisticConfig) x-data="wirekitOptimistic({{ $optimisticConfig }})" @endif>
     @if($label)
         <label for="{{ $dateId }}" class="block mb-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)]">
+            {{-- ⚠️ ONE marker, and this line used to be followed by a second one rendering
+                 `&nbsp;*`. Both sat inside this label, so a required date-picker printed TWO
+                 asterisks — reported from an adopting application as a spacing fault on its
+                 registration form, which is what a duplicate looks like when you only see it
+                 once. The dense form is the house form: no whitespace, `ms-0.5` carries the
+                 gap, and eight components now agree on it. --}}
             {{ $label }}@if($required)<span class="text-[color:var(--color-wk-danger-text)] ms-0.5" aria-hidden="true">*</span>@endif
-            @if($required)<span aria-hidden="true" class="text-[color:var(--color-wk-danger-text)]">&nbsp;*</span>@endif
         </label>
     @elseif($needsSrOnlyFallback)
         {{-- Screen-reader-only label fallback. Visible-label-less demos still

@@ -53,6 +53,31 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  *   the caller MUST call it on close/destroy or the scroll/resize listeners leak
  *   (the caller owns teardown). No `animationFrame` option: the default
  *   scroll+resize listeners are cheap; a per-frame rAF loop would burn CPU here.
+ * @param {boolean} options.repairErasure - Put the placement back when something REMOVES it.
+ *   A framework that re-renders the panel patches it against its own template, whose `style`
+ *   attribute carries none of what this function writes — so `top`, `left`, the width and the
+ *   height cap all disappear at once, while the state that opened the panel never changed and
+ *   nothing asks for a new placement. A `fixed` element with no `top` then sits at its static
+ *   position, which for a teleported panel is the end of the document.
+ *
+ *   ⚠️ `autoReposition` does NOT cover this, and assuming it does is the mistake this option
+ *   exists to end. `autoUpdate` recomputes when something it OBSERVES changes, and it observes the
+ *   two elements' BOXES — so it repairs an erasure only where the erasure also resizes the panel.
+ *   Measured on a data table's column menu: `top` went from `158.5px` to empty, `max-height` from
+ *   `950.5px` to empty, and the box stayed 192x77 because the cap had never been binding. No
+ *   observer fired, and the placement was still gone thirty-four frames later.
+ *
+ *   This option watches the `style` attribute instead, which is the thing that is actually taken
+ *   away. Measured on the same page: one mutation record, `attributeName: 'style'`, with `top`
+ *   already empty when the callback runs — early enough to put it back.
+ *
+ *   ⚠️ It re-places ONLY when `top` is empty, and that condition is the termination proof rather
+ *   than an optimization: a write from inside the callback re-enters the observer (measured: five
+ *   writes produced six callback runs), so an unconditional repair loops forever. Writing a `top`
+ *   makes the re-entrant run see a placed panel and stop, after exactly one extra pass.
+ *
+ *   Opt-in, like the options above, so no existing caller changes behavior. Like `autoReposition`
+ *   it returns a `stop` the caller owns.
  * @returns {Promise<{x: number, y: number, placement: string, stop?: () => void}>}
  */
 /**
@@ -91,6 +116,7 @@ export async function position(reference, floating, {
     matchReferenceWidth = false,
     minReferenceWidth = false,
     autoReposition = false,
+    repairErasure = false,
 } = {}) {
     const middleware = [
         offsetMiddleware(offset),
@@ -167,8 +193,25 @@ export async function position(reference, floating, {
 
     const result = await run();
 
+    // Put the placement back when something takes it away. See the option's docblock for why
+    // `autoReposition` cannot do this and why the emptiness test is what makes it terminate.
+    let stopRepair = null;
+
+    if (repairErasure && typeof MutationObserver === 'function') {
+        const repair = new MutationObserver(() => {
+            if (floating.style.top !== '') {
+                return;
+            }
+
+            run();
+        });
+
+        repair.observe(floating, { attributes: true, attributeFilter: ['style'] });
+        stopRepair = () => repair.disconnect();
+    }
+
     if (! autoReposition) {
-        return result;
+        return stopRepair ? { ...result, stop: stopRepair } : result;
     }
 
     // Follow the trigger on scroll / resize / ancestor-scroll. autoUpdate also
@@ -213,6 +256,7 @@ export async function position(reference, floating, {
     // It stopped being correct in the same edit that made it deferred.
     const stop = () => {
         stopAutoUpdate();
+        stopRepair?.();
 
         if (queued) {
             cancelAnimationFrame(queued);

@@ -5,8 +5,8 @@
      renders the moment it is written. Swap the array for the list your Livewire class builds —
      the reference above shows how to derive it from `intl`, localized and sorted.
 
-     The flags come from the optional `pushery/wirekit-flags` package. Without it every option
-     still renders, with a neutral placeholder where the flag would be. --}}
+     The flag artwork ships with WireKit. A code it does not carry still renders its row, with a
+     neutral placeholder of the same width where the flag would be. --}}
 <div>
     <x-wirekit::combobox
         name="country"

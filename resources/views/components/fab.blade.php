@@ -24,7 +24,10 @@
     $positionClass = match ($position) {
         'start' => 'start-[var(--padding-wk-x-lg)]',
         'center' => 'left-1/2 -translate-x-1/2',
-        default => 'end-[var(--padding-wk-x-lg)]',
+        // The gutter term is on the END arm only: a classic scrollbar sits on the inline-end
+        // edge in both directions, so the start arm has no gutter under it. Same shape as
+        // `fab/button`, which is the surface this was reported on.
+        default => 'end-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]',
     };
 
     $classes = WireKit::resolveClasses('fab', 'base', implode(' ', [

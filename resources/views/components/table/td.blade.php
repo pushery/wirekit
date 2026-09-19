@@ -5,6 +5,23 @@
 @props([
     'align' => 'left', // left | center | right
     'hideBelow' => null, // sm | md | lg | xl | 2xl — the same value as the column's header
+    // Hide the column below a width of the TABLE, not of the window.
+    //
+    // ⚠️ `hideBelow` asks the viewport, and beside a sidebar that is the wrong question.
+    // Measured in an app shell: the table has 649px at a 1024px viewport and 702px at 768px,
+    // because the sidebar steps beside the content at `lg`. A column that appears at `md`
+    // therefore appears exactly where the table has least room — a reported table ran 141px
+    // past its frame at 1024px for that reason.
+    //
+    // ⚠️ THE SCALE IS THE CONTAINER SCALE AND IT IS NOT THE VIEWPORT ONE. Tailwind's container
+    // sizes are their own ladder: `3xl` here is 48rem of TABLE width, where `hide-below="md"`
+    // is 48rem of WINDOW. Same numbers, different subject — so the two props are deliberately
+    // not interchangeable and a call site should pick one.
+    //
+    // The container is NAMED (`@container/wk-table` on the table's frame) rather than
+    // anonymous: an unnamed container would also become the measuring context for every
+    // `@`-variant a caller nests inside the table, and silently retarget it.
+    'hideBelowContainer' => null,
     'scope' => null,
 ])
 
@@ -42,6 +59,30 @@
         '2xl' => 'max-2xl:hidden',
         default => '',
     };
+
+    /*
+     * The container variant, written out per size for the same reason the viewport one is:
+     * Tailwind reads a literal class name and never an assembled one.
+     *
+     * Appended rather than replacing: a column may legitimately answer both questions, and
+     * `hidden` from either one wins on its own.
+     */
+    $hideBelowContainer = filled($hideBelowContainer) ? (string) $hideBelowContainer : null;
+    if ($hideBelowContainer !== null && ! in_array($hideBelowContainer, ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl'], true)) {
+        WireKit::validateProp('table.td', 'hideBelowContainer', $hideBelowContainer, ['sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl', '5xl']);
+        $hideBelowContainer = null;
+    }
+    $hideClasses = trim($hideClasses.' '.(match ($hideBelowContainer) {
+        'sm' => '@max-sm/wk-table:hidden',
+        'md' => '@max-md/wk-table:hidden',
+        'lg' => '@max-lg/wk-table:hidden',
+        'xl' => '@max-xl/wk-table:hidden',
+        '2xl' => '@max-2xl/wk-table:hidden',
+        '3xl' => '@max-3xl/wk-table:hidden',
+        '4xl' => '@max-4xl/wk-table:hidden',
+        '5xl' => '@max-5xl/wk-table:hidden',
+        default => '',
+    }));
 
     // Base td styling — standard padding, body text weight, compact-aware padding
     $classes = WireKit::resolveClasses('table.td', 'base', implode(' ', [

@@ -37,9 +37,14 @@
  *   - `_typeAheadTimer` — the forget-what-was-typed setTimeout. Same reasoning:
  *     it outlives a Livewire morph or an SPA navigation otherwise, and fires
  *     against a scope that is gone.
+ *   - `_stopRepair` — the MutationObserver that puts the flyout's placement back
+ *     when a framework update erases it. Released on every re-open, on both close
+ *     paths and in destroy(). See the note beside `repairErasure` in openSub().
  *
- * No listeners or observers are registered, so those two timers are the whole
- * cleanup surface.
+ * ⚠️ That third line used to read "No listeners or observers are registered, so
+ * those two timers are the whole cleanup surface." It was true when written, and
+ * a sentence like it is the first thing to become false — the observer above was
+ * added one commit later.
  *
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/menu/
  */
@@ -64,6 +69,7 @@ export default function wirekitSubmenu(config = {}) {
         _closeTimer: null,
         _typeAheadBuffer: '',
         _typeAheadTimer: null,
+        _stopRepair: null,
 
         /**
          * Release both lifecycle resources: the pending hover-out close timer and the
@@ -73,6 +79,19 @@ export default function wirekitSubmenu(config = {}) {
         destroy() {
             this._clearCloseTimer();
             this._resetTypeAhead();
+            this._releaseRepair();
+        },
+
+        /**
+         * Disconnect the placement-repair observer, if one is running.
+         *
+         * A method rather than two lines repeated at each site: `subOpen` goes false in two
+         * places and teardown is a third, and a release that is only written at some of them is
+         * the failure mode this observer would otherwise introduce.
+         */
+        _releaseRepair() {
+            this._stopRepair?.();
+            this._stopRepair = null;
         },
 
         /**
@@ -94,10 +113,40 @@ export default function wirekitSubmenu(config = {}) {
             const trigger = this.$refs.subTrigger;
             const panel = this.$refs.subPanel;
             if (trigger && panel) {
-                await position(trigger, panel, {
+                this._releaseRepair();
+
+                const placement = await position(trigger, panel, {
                     placement: this._subPlacement,
                     offset: this._subOffset,
+
+                    // Everything this call writes is inline style, and a framework update patches
+                    // the panel against its own template, whose `style` attribute carries none of
+                    // it. The placement is gone while the flyout is still open.
+                    //
+                    // Measured on /overlay-placement-seam across one refresh: `top` 556.5px →
+                    // empty, same node, still shown, box unchanged at 192x76.
+                    //
+                    // ⚠️ The unchanged box is why this is `repairErasure` and not
+                    // `autoReposition`: no resize means `autoUpdate` sees nothing, because it
+                    // observes boxes rather than the style attribute.
+                    //
+                    // A submenu is the worst place in the catalog for this. It is a level a
+                    // reader is standing INSIDE — arrowing, typing ahead — and a flyout that
+                    // jumps to the end of the document takes their place in the menu with it,
+                    // while the parent item still says `aria-expanded="true"`.
+                    repairErasure: true,
                 });
+
+                if (placement && typeof placement.stop === 'function') {
+                    if (this.subOpen) {
+                        this._stopRepair = placement.stop;
+                    } else {
+                        // Closed while the placement was in flight — its observer would outlive
+                        // the panel it belongs to, and a hover-out close is 140ms away.
+                        placement.stop();
+                    }
+                }
+
                 // Not when the reader already moved into the flyout while it was being positioned.
                 if (focusFirst && ! this._focusIsInsideThePanel()) this._focusFirstSubItem();
             }
@@ -117,6 +166,8 @@ export default function wirekitSubmenu(config = {}) {
             if (!this.subOpen) return;
 
             this.subOpen = false;
+            this._releaseRepair();
+
             if (refocusParent) {
                 this.$refs.subTrigger?.focus({ preventScroll: true });
             }
@@ -163,6 +214,7 @@ export default function wirekitSubmenu(config = {}) {
 
                 this.subOpen = false;
                 this._resetTypeAhead();
+                this._releaseRepair();
             }, HOVER_CLOSE_DELAY_MS);
         },
 

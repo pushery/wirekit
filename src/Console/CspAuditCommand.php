@@ -75,6 +75,25 @@ class CspAuditCommand extends Command
     protected $description = 'Check every Alpine expression in your Blade views against Alpine\'s CSP grammar (needs node)';
 
     /**
+     * Does the installed CSP parser accept a reserved word as a member name?
+     *
+     * `null` until the oracle has run, and `null` is never read as either answer — a run that
+     * could not ask must not print advice that depends on the answer.
+     *
+     * ⚠️ This is a property rather than a constant because the answer CHANGED, and the
+     * constraint in `package.json` is `^3.15.12`, so both answers are live in the field. Up to
+     * `@alpinejs/csp` 3.17.2 the tokenizer emitted a KEYWORD for `delete`, `new`, `typeof` and
+     * the rest of that set wherever they stood, so `$wire.delete(1)` was a dead button. 3.17.3
+     * accepts it. Measured both ways against the real package, not read out of a release note.
+     *
+     * The advice block below used to state the 3.17.2 behavior unconditionally, and it prints
+     * whenever there is ANY offender — so a developer on 3.17.3 with an arrow-function problem
+     * was told to rewrite methods that work. Telling somebody to change working code is the same
+     * class of damage as missing a violation: it spends the credibility this command runs on.
+     */
+    private ?bool $reservedWordAsMember = null;
+
+    /**
      * The attributes whose VALUE Alpine evaluates as an expression.
      *
      * Deliberately not "every x-* attribute": `x-ref`, `x-transition` and
@@ -312,6 +331,11 @@ class CspAuditCommand extends Command
         if ($this->option('json')) {
             $this->line((string) json_encode([
                 'scanned' => count($found),
+                // What the parser that produced these verdicts actually does, not what a
+                // version somebody tested against did. `null` means the run could not ask.
+                // A build step that branches on the offender list without this reads a verdict
+                // as a property of the code when it is a property of the installed parser.
+                'grammar' => ['reserved_word_as_member' => $this->reservedWordAsMember],
                 // Additive, and the reason they are here rather than only on the report: a
                 // build step reading this payload has the same blind spot a reader does.
                 'surface' => array_values($paths),
@@ -1199,7 +1223,7 @@ class CspAuditCommand extends Command
             return null;
         }
 
-        /** @var array{ok?: bool, error?: string, results?: array<int, CspVerdict>}|null $payload */
+        /** @var array{ok?: bool, error?: string, grammar?: array{reservedWordAsMember?: bool}, results?: array<int, CspVerdict>}|null $payload */
         $payload = json_decode($process->getOutput(), true);
 
         if (! is_array($payload) || ($payload['ok'] ?? false) !== true) {
@@ -1211,6 +1235,11 @@ class CspAuditCommand extends Command
 
             return null;
         }
+
+        // Recorded from the SAME process that produced the verdicts, so the advice cannot
+        // describe a different parser than the one that judged the expressions.
+        $capability = $payload['grammar']['reservedWordAsMember'] ?? null;
+        $this->reservedWordAsMember = is_bool($capability) ? $capability : null;
 
         /** @var array<int, CspVerdict> $results */
         $results = $payload['results'] ?? [];
@@ -1618,12 +1647,22 @@ class CspAuditCommand extends Command
         $this->line('member and index access, ++/--, unary, and the usual binary/logical operators.');
         $this->line('It rejects: arrow functions, template literals, optional chaining, nullish');
         $this->line('coalescing, spread, `new`, function expressions, and several statements in one');
-        $this->line('attribute. A method named after an operator or a literal needs index access:');
-        $this->line('`$wire.delete(…)` does not parse, `$wire[\'delete\'](…)` does. That is the whole');
-        // Naming the set rather than the category, because the category is much wider than
-        // the set: every other reserved word is read as an ordinary identifier here, so a
-        // developer told "a JavaScript keyword" renames methods that were never affected.
-        $this->line('set: delete false in instanceof new null true typeof undefined void.');
+        $this->line('attribute.');
+
+        // ⚠️ Printed only when the parser that just judged your files actually rejects it.
+        // `@alpinejs/csp` accepted a reserved word as a member name from 3.17.3 on, and this
+        // block fires on ANY offender — so stating it unconditionally told developers on a
+        // current build to rewrite methods that work. `null` means the run could not ask, and
+        // then it says nothing: silence is recoverable, a confident wrong instruction is not.
+        if ($this->reservedWordAsMember === false) {
+            $this->line('A method named after an operator or a literal needs index access here:');
+            $this->line('`$wire.delete(…)` does not parse, `$wire[\'delete\'](…)` does. That is the whole');
+            // Naming the set rather than the category, because the category is much wider than
+            // the set: every other reserved word is read as an ordinary identifier here, so a
+            // developer told "a JavaScript keyword" renames methods that were never affected.
+            $this->line('set: delete false in instanceof new null true typeof undefined void.');
+            $this->line('Upgrading `@alpinejs/csp` to 3.17.3 or newer removes that restriction.');
+        }
 
         return self::FAILURE;
     }

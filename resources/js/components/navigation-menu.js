@@ -52,8 +52,24 @@ export default function wirekitNavigationMenu() {
         _coordination: null,
         // Where the open item's trigger stood when its panel opened — see utils/scroll-anchor.js.
         _anchorAt: null,
+        // Disconnects the observer that puts the placement back after a framework update erases
+        // it. See the note beside `repairErasure` in open().
+        _stopRepair: null,
 
         init() {
+            // Release the placement observer whenever a panel closes, whichever way it closed.
+            // FOUR separate places clear `activeItem` — the SPA cleanup, the delayed close, the
+            // immediate close and a switch to another item — so hooking one of them would leave
+            // an observer alive on the other three.
+            this.$watch('activeItem', (name) => {
+                if (name) {
+                    return;
+                }
+
+                this._stopRepair?.();
+                this._stopRepair = null;
+            });
+
             this._navCleanup = () => { this.activeItem = null; };
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
 
@@ -108,6 +124,11 @@ export default function wirekitNavigationMenu() {
         },
 
         destroy() {
+            // Teardown does not necessarily pass through a close, so the watcher above cannot be
+            // relied on here.
+            this._stopRepair?.();
+            this._stopRepair = null;
+
             this._coordination?.stop();
             this._coordination = null;
 
@@ -153,14 +174,46 @@ export default function wirekitNavigationMenu() {
             const panel = this.$refs[`panel-${name}`];
 
             if (trigger && panel) {
-                await position(trigger, panel, {
+                // Switching straight from one item to another never passes through a closed
+                // state, so the watcher above does not fire — drop the previous panel's observer
+                // here as well.
+                this._stopRepair?.();
+                this._stopRepair = null;
+
+                const placement = await position(trigger, panel, {
                     placement: 'bottom-start',
                     offset: 4,
+
+                    // Everything this call writes is inline style, and a framework update patches
+                    // the panel against its own template, whose `style` attribute carries none of
+                    // it. The placement is gone while the flyout is still open — and the panel is
+                    // teleported out of the bar, so with no `top` it sits at the END of the
+                    // document instead of under its trigger.
+                    //
+                    // Measured on /overlays across one refresh: `top` 949px → empty, still shown,
+                    // box unchanged at 105x67.
+                    //
+                    // ⚠️ The unchanged box is why this is `repairErasure` and not
+                    // `autoReposition`: no resize means `autoUpdate` sees nothing, since it
+                    // observes boxes rather than the style attribute.
+                    repairErasure: true,
                     // Keep wide mega-menu panels inside the viewport on narrow
                     // screens — the default main-axis shift can't pull a panel
                     // back from the edge for a bottom placement's cross axis.
                     crossAxisShift: true,
                 });
+
+                if (placement && typeof placement.stop === 'function') {
+                    // `activeItem` is compared rather than merely checked for truthiness: a
+                    // reader who crossed to another item while this placement was in flight has
+                    // a DIFFERENT panel open, and storing this handle would leak one observer
+                    // and disconnect the wrong one on the next close.
+                    if (this.activeItem === name) {
+                        this._stopRepair = placement.stop;
+                    } else {
+                        placement.stop();
+                    }
+                }
             }
         },
 

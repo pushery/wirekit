@@ -15,6 +15,11 @@
  * Lifecycle resources held on `this`:
  *   - _clock (setInterval) — refreshes the current-time line each minute in
  *     week view; cleared in destroy(). The callback null-guards `_clock`.
+ *   - _visibility — the page-visibility subscription that pauses that clock;
+ *     stopped in destroy().
+ *   - _stopTipRepair (MutationObserver) — puts the truncation bubble's placement
+ *     back when a framework update erases it; released on every re-place, in
+ *     tipHide() and in destroy().
  *
  * @param {Object} config
  * @param {Array}  config.events - [{id,title,start,end,allDay?,intent?}]
@@ -159,6 +164,9 @@ export default function wirekitEventCalendar(config = {}) {
         destroy() {
             this._visibility?.stop();
             this._visibility = null;
+
+            this._stopTipRepair?.();
+            this._stopTipRepair = null;
 
             if (this._clock) {
                 clearInterval(this._clock);
@@ -670,6 +678,9 @@ export default function wirekitEventCalendar(config = {}) {
         tipOpen: false,
         tipText: '',
         _tipTarget: null,
+        // Disconnects the observer that puts the bubble's placement back after a framework
+        // update erases it. See the note beside `repairErasure` in tipShow().
+        _stopTipRepair: null,
 
         _isTruncated(target) {
             const els = (typeof target.matches === 'function' && target.matches('.truncate'))
@@ -693,7 +704,42 @@ export default function wirekitEventCalendar(config = {}) {
             this.tipOpen = true;
             await this.$nextTick();
             if (this.$refs.tip) {
-                await position(target, this.$refs.tip, { placement: 'top', offset: 6, crossAxisShift: true });
+                // One bubble is shared by every target, so moving between chips re-places the
+                // same element — drop the previous placement's observer before making another.
+                this._stopTipRepair?.();
+                this._stopTipRepair = null;
+
+                const placement = await position(target, this.$refs.tip, {
+                    placement: 'top',
+                    offset: 6,
+                    crossAxisShift: true,
+
+                    // Everything this call writes is inline style, and a framework update patches
+                    // the bubble against its own template, whose `style` attribute carries none
+                    // of it. Measured on /overlays across one refresh: `top` 1699px → empty,
+                    // still shown, box unchanged at 274x28.
+                    //
+                    // ⚠️ This bubble is NOT teleported, and it makes no difference. It is
+                    // `position: fixed`, so with no `top` it falls back to its STATIC position —
+                    // which for a div declared at the end of the calendar root is wherever that
+                    // div happens to sit, far from the chip it belongs to.
+                    //
+                    // ⚠️ The unchanged box is why this is `repairErasure` and not
+                    // `autoReposition`: no resize means `autoUpdate` sees nothing, since it
+                    // observes boxes rather than the style attribute.
+                    repairErasure: true,
+                });
+
+                if (placement && typeof placement.stop === 'function') {
+                    // Compared against the target rather than merely checking `tipOpen`: the
+                    // pointer may already have moved to another chip while this placement was in
+                    // flight, and that showing owns the bubble now.
+                    if (this.tipOpen && this._tipTarget === target) {
+                        this._stopTipRepair = placement.stop;
+                    } else {
+                        placement.stop();
+                    }
+                }
             }
         },
         tipHide(e) {
@@ -704,6 +750,8 @@ export default function wirekitEventCalendar(config = {}) {
             }
             this.tipOpen = false;
             this._tipTarget = null;
+            this._stopTipRepair?.();
+            this._stopTipRepair = null;
         },
     };
 }

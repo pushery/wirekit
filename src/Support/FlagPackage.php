@@ -4,28 +4,32 @@ declare(strict_types=1);
 
 namespace Pushery\WireKit\Support;
 
-use Composer\InstalledVersions;
-
 /**
- * The optional `pushery/wirekit-flags` package: where it is, what it holds, and the URL a flag is
- * served from.
+ * The flag artwork: where it is, what it holds, and the URL a flag is served from.
  *
- * WireKit ships no flag artwork of its own. The package does, together with a manifest,
- * `flags.json`, that names every flag, its formats and the sha256 of each file. Everything here
- * reads that manifest rather than the directory, so a file the manifest does not name is never
- * served, and no URL is built for a flag that does not exist.
+ * `resources/flags/` carries every flag in two formats, together with a manifest, `flags.json`,
+ * that names each one and the sha256 of each file. Everything here reads that manifest rather
+ * than the directory, so a file the manifest does not name is never served, and no URL is built
+ * for a flag that does not exist.
  *
- * Where the package is:
+ * ⚠️ THE ARTWORK USED TO LIVE IN A SEPARATE PACKAGE, and this class is named after it. Owner
+ * decision 2026-09-18: it belongs here, for the reason the fonts are already here — 115 font
+ * files and 5.82 MB ship unconditionally and are only LOADED when `<x-wirekit::fonts />` asks
+ * for them. The flags are 1.43 MB against that, which is 16% of the package and 1.5% of a
+ * typical application's vendor directory, and a second repository would have cost a CI lane, a
+ * release cycle, a Packagist registration and a hand-kept version pairing for it.
  *
- *   1. `wirekit.flags.path`, when it is set: a copy Composer does not know about, such as a
- *      checkout next to the application or a test fixture. A relative path is resolved against
- *      the application's base path.
- *   2. Otherwise, the path Composer installed `pushery/wirekit-flags` to.
+ * The NAME stays because the country-picker recipe calls `FlagPackage::isoCodes()` in published
+ * documentation. Renaming it is a breaking change, and a breaking change needs a major version.
+ *
+ * Where the artwork is:
+ *
+ *   1. `wirekit.flags.path`, when it is set: a copy elsewhere, such as a test fixture. A relative
+ *      path is resolved against the application's base path.
+ *   2. Otherwise, `resources/flags/` inside this package.
  */
 final class FlagPackage
 {
-    public const PACKAGE = 'pushery/wirekit-flags';
-
     /** The two artworks the package carries. */
     public const FORMATS = ['4x3', '1x1'];
 
@@ -47,10 +51,8 @@ final class FlagPackage
 
         if (is_string($configured) && $configured !== '') {
             $path = str_starts_with($configured, '/') ? $configured : base_path($configured);
-        } elseif (class_exists(InstalledVersions::class) && InstalledVersions::isInstalled(self::PACKAGE)) {
-            $path = (string) InstalledVersions::getInstallPath(self::PACKAGE);
         } else {
-            return null;
+            $path = __DIR__.'/../../resources/flags';
         }
 
         $real = realpath($path);
@@ -118,9 +120,21 @@ final class FlagPackage
             return null;
         }
 
-        $file = realpath($root.'/flags/'.$format.'/'.$code.'.svg');
+        // `root()` IS the flags directory — it is the path that holds `flags.json`, and it
+        // returns null when that file is not directly inside it. So the format folder sits one
+        // level down from `$root`, not two: appending `flags/` here asked for
+        // `<root>/flags/4x3/de.svg` and the artwork lives at `<root>/4x3/de.svg`.
+        //
+        // The lookup missed by exactly one segment, `realpath()` returned false, and the route
+        // turned that into a 404 for every code in every install that had not published the
+        // artwork. `manifest()` and `isoCodes()` read `$root.'/flags.json'` and were right all
+        // along, which is why the page rendered and only the image bytes were missing.
+        $file = realpath($root.'/'.$format.'/'.$code.'.svg');
 
-        return $file !== false && str_starts_with($file, $root.'/flags/') && is_file($file) ? $file : null;
+        // Containment is asserted against `$root` itself for the same reason. This is narrower
+        // than the old `$root.'/flags/'`, not wider: a code that climbs out of the flags
+        // directory still fails it, and FORMATS above already pins the middle segment.
+        return $file !== false && str_starts_with($file, $root.'/') && is_file($file) ? $file : null;
     }
 
     /**
@@ -243,10 +257,16 @@ final class FlagPackage
     }
 
     /**
-     * Log, once per process, that a flag was asked for while the package is not installed.
+     * Log, once per process, that the flag artwork could not be found where it should be.
      *
-     * Guarded the way the icon system guards its own degradation log: this renders in contexts with
-     * no container behind it, and a diagnostic that throws is worse than silence.
+     * ⚠️ This used to mean "the optional package is not installed", which was the ONLY way it
+     * could fire. The artwork now ships with WireKit, so a missing root means one thing instead:
+     * `wirekit.flags.path` points somewhere that holds no `flags.json`. That is a configuration
+     * mistake rather than a missing dependency, and the message says so — telling somebody to
+     * install a package that no longer exists is worse than saying nothing.
+     *
+     * Guarded the way the icon system guards its own degradation log: this renders in contexts
+     * with no container behind it, and a diagnostic that throws is worse than silence.
      */
     public static function reportMissingOnce(): bool
     {
@@ -257,7 +277,7 @@ final class FlagPackage
         self::$reportedMissing = true;
 
         if (function_exists('logger')) {
-            logger()->warning('WireKit: a flag was drawn as a placeholder because '.self::PACKAGE.' is not installed. Run `composer require '.self::PACKAGE.'`.');
+            logger()->warning('WireKit: a flag was drawn as a placeholder because no flags.json was found. The artwork ships with WireKit, so check `wirekit.flags.path` — it is set and points somewhere that holds none.');
         }
 
         return true;
@@ -278,7 +298,7 @@ final class FlagPackage
         self::$reportedUnknown[$code] = true;
 
         if (function_exists('logger')) {
-            logger()->warning(sprintf('WireKit: %s has no flag for "%s", so a placeholder was drawn. Its flags.json lists the codes it carries.', self::PACKAGE, $code));
+            logger()->warning(sprintf('WireKit: there is no flag for "%s", so a placeholder was drawn. resources/flags/flags.json lists the codes it carries.', $code));
         }
 
         return true;

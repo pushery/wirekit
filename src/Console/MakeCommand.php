@@ -64,6 +64,7 @@ class MakeCommand extends Command
         'marketing-landing-page',
         'marketing-landing-toc',
         'on-page-toc',
+        'phone-number-validation',
         'reading-sidebar',
         'stat-with-sparkline',
         'toolbar-filter-bar',

@@ -92,7 +92,7 @@
         //
         // No browser test can catch this: `env(safe-area-inset-*)` is 0 in headless
         // Playwright, which is why it survived every green mobile run.
-        : 'fixed bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[var(--padding-wk-x-lg)]';
+        : 'fixed bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))] right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))]';
 
     $rootClass = WireKit::resolveClasses('reading-bookmark', 'base', implode(' ', [
         'wk-reading-bookmark',

@@ -225,6 +225,9 @@ export default function wirekitFilterBuilder(config = {}) {
 
         // ── Lifecycle ────────────────────────────────────────────────────
         _onScroll: null,
+        // Disconnects the observer that puts the placement back after a framework update erases
+        // it. See the note beside `repairErasure` in _focusFirstControl().
+        _stopRepair: null,
         // Where the trigger stood when the popover opened — see utils/scroll-anchor.js.
         _anchorAt: null,
         _onResize: null,
@@ -250,6 +253,9 @@ export default function wirekitFilterBuilder(config = {}) {
             }
         },
         destroy() {
+            this._stopRepair?.();
+            this._stopRepair = null;
+
             if (this._onScroll) {
                 window.removeEventListener('scroll', this._onScroll, { capture: true });
                 this._onScroll = null;
@@ -282,6 +288,9 @@ export default function wirekitFilterBuilder(config = {}) {
         // the user deliberately clicked elsewhere.
         close(restoreFocus = false) {
             this.open = false;
+            this._stopRepair?.();
+            this._stopRepair = null;
+
             if (restoreFocus) this.$refs.trigger?.focus();
         },
 
@@ -549,11 +558,37 @@ export default function wirekitFilterBuilder(config = {}) {
                 // screens (mirrors <x-wirekit::popover>). Positions once on open; the
                 // click.outside / escape close it.
                 if (this.$refs.trigger && this.$refs.panel) {
-                    await position(this.$refs.trigger, this.$refs.panel, {
+                    this._stopRepair?.();
+                    this._stopRepair = null;
+
+                    const placement = await position(this.$refs.trigger, this.$refs.panel, {
                         placement: 'bottom-start',
                         offset: 6,
                         crossAxisShift: true,
+
+                        // Everything this call writes is inline style, and a framework update
+                        // patches the panel against its own template, whose `style` attribute
+                        // carries none of it. Measured on /overlay-placement-seam across one
+                        // refresh: `top` 268.5px -> empty, same node, box unchanged at 288x280.
+                        // The unchanged box is why this is `repairErasure` and not
+                        // `autoReposition`: no resize means `autoUpdate` sees nothing, because it
+                        // observes boxes rather than the style attribute.
+                        //
+                        // This measurement only became POSSIBLE once an unnamed widget stopped
+                        // getting a fresh root id on every render. Before that it did not lose its
+                        // placement -- it lost the whole component, and the panel that came back
+                        // was a closed replacement whose trigger never opened again. Nothing was
+                        // left to re-place.
+                        repairErasure: true,
                     });
+
+                    if (placement && typeof placement.stop === 'function') {
+                        if (this.open) {
+                            this._stopRepair = placement.stop;
+                        } else {
+                            placement.stop();
+                        }
+                    }
                 }
                 // Not when the reader already moved into the panel while it was being positioned.
                 if (! focusIsWithin(this.$refs.panel)) {

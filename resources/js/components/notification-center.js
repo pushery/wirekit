@@ -12,7 +12,14 @@
  *   - _rt (window event listener) — OPTIONAL, created only when a
  *     `realtimeEvent` name is configured; removed in destroy(). Its callback
  *     does NOT dereference `this._rt`, so no post-destroy null-guard is needed
- *     (it only calls prepend()). No observers / timers / rAF loops.
+ *     (it only calls prepend()).
+ *   - _stopRepair (MutationObserver) — puts the panel's placement back when a
+ *     framework update erases it; released on every re-anchor, in close() and in
+ *     destroy(). See the note beside `repairErasure` in _anchor().
+ *
+ * ⚠️ The first entry used to end "No observers / timers / rAF loops." It was true
+ * when written, and a sentence of that shape is the first thing to become false —
+ * the observer above arrived later.
  *
  * @param {Object} config
  * @param {Array}  config.items - notifications [{id,type,title,body?,timeLabel?,read?,group?,href?,actionLabel?}]
@@ -92,6 +99,9 @@ export default function wirekitNotificationCenter(config = {}) {
         open: !!config.open, // start open (inline embeds, docs demos)
         _rt: null,
         _onScroll: null,
+        // Disconnects the observer that puts the placement back after a framework update erases
+        // it. See the note beside `repairErasure` in _anchor().
+        _stopRepair: null,
         // Where the bell stood when the panel opened — see utils/scroll-anchor.js.
         _anchorAt: null,
         _onResize: null,
@@ -130,6 +140,9 @@ export default function wirekitNotificationCenter(config = {}) {
             if (this.open) this.$nextTick(() => this._anchor());
         },
         destroy() {
+            this._stopRepair?.();
+            this._stopRepair = null;
+
             if (this._rt && config.realtimeEvent) {
                 window.removeEventListener(config.realtimeEvent, this._rt);
                 this._rt = null;
@@ -187,6 +200,9 @@ export default function wirekitNotificationCenter(config = {}) {
         },
         close(restoreFocus = false) {
             this.open = false;
+            this._stopRepair?.();
+            this._stopRepair = null;
+
             if (restoreFocus) this.$refs.bell?.focus();
         },
 
@@ -298,11 +314,38 @@ export default function wirekitNotificationCenter(config = {}) {
         // hidden behind sibling content (mirrors <x-wirekit::context-menu>).
         async _anchor() {
             if (this.$refs.bell && this.$refs.panel) {
-                await position(this.$refs.bell, this.$refs.panel, {
+                this._stopRepair?.();
+                this._stopRepair = null;
+
+                const placement = await position(this.$refs.bell, this.$refs.panel, {
                     placement: 'bottom-start',
                     offset: 8,
                     crossAxisShift: true,
+
+                    // Everything this call writes is inline style, and a framework update patches
+                    // the panel against its own template, whose `style` attribute carries none of
+                    // it. Measured on /overlay-placement-seam across one refresh: `top` 398.5px →
+                    // empty, same node, box unchanged at 352x172.
+                    //
+                    // ⚠️ The unchanged box is why this is `repairErasure` and not
+                    // `autoReposition`: no resize means `autoUpdate` sees nothing, because it
+                    // observes boxes rather than the style attribute.
+                    //
+                    // ⚠️ This measurement only became POSSIBLE once an unnamed widget stopped
+                    // getting a fresh root id on every render. Before that it did not lose its
+                    // placement — it lost the whole component, and the panel that came back was a
+                    // closed replacement whose bell never opened again. Nothing was left to
+                    // re-place, so the question could not be asked.
+                    repairErasure: true,
                 });
+
+                if (placement && typeof placement.stop === 'function') {
+                    if (this.open) {
+                        this._stopRepair = placement.stop;
+                    } else {
+                        placement.stop();
+                    }
+                }
             }
         },
 

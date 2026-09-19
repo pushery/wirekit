@@ -149,7 +149,7 @@
         $indicator === 'dot'
             ? ($useSticky
                 ? 'sticky z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]'
-                : 'fixed z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]')
+                : 'fixed z-[var(--z-wk-sticky)] pointer-events-none right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]')
             : ($useSticky
                 ? 'sticky left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$positionClass
                 : 'fixed left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$positionClass),
