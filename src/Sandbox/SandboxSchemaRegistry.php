@@ -144,6 +144,11 @@ final class SandboxSchemaRegistry
             'disabled' => ['type' => 'bool', 'default' => false],
             'wrapLabel' => ['type' => 'bool', 'default' => false],
             'touchTextFloor' => ['type' => 'bool', 'default' => false],
+            // Offered rather than refused, even though the sandbox renders at ONE width and
+            // the swap it drives happens at another. What the reader sees change is the class
+            // list and the box, which is what the prop is about; a refusal would have had to
+            // claim the prop does nothing here, and it does.
+            'iconOnlyBelow' => ['type' => 'string', 'default' => null, 'allowed_values' => ['sm', 'md', 'lg', 'xl', '2xl']],
             // `body` is the SandboxRenderer convention for slot content —
             // `<x-wirekit::button>{body}</x-wirekit::button>`. Earlier
             // iterations used `label` here, which the renderer treated as

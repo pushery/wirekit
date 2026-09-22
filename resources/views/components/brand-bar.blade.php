@@ -73,7 +73,8 @@
     };
 
     $stickyClass = filter_var($sticky, FILTER_VALIDATE_BOOL)
-        ? 'sticky top-0 z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg)]'
+        // Page chrome, so it sticks BELOW a strip above the page (`--wk-strip-inset`), not under it.
+        ? 'sticky top-[var(--wk-strip-inset,0px)] z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg)]'
         : '';
 
     $isContainerWrapped = filter_var($container, FILTER_VALIDATE_BOOL);

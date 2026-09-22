@@ -29,6 +29,23 @@
     // rails inaccessible in practice, and the reason this is a prop rather than the
     // default slot (a slot cannot also be a tooltip's text without rendering twice).
     'label' => '',
+    // Opt-in: a visible name that does not fit is cut with an ellipsis instead of wrapping.
+    //
+    // ⚠ THIS IS A DELIBERATE EXCEPTION TO AN ABSOLUTE RULE, decided by the maintainer on
+    // 2026-09-21 and scoped to exactly what the rule protects. The rule below ("AND IT IS
+    // NEVER TRUNCATED") is about DESTINATIONS: "Insig…" cannot be told apart from
+    // "Insights" or "Insight reports", so a clipped module name names nothing. That argument
+    // does not reach an entry that is not a destination — the account trigger at the foot
+    // of a rail, labeled with a person's name, which is unambiguous even when cut and which
+    // pushed its row to 52px beside 32px neighbors when a test fixture drew a long name.
+    //
+    // So the default stays the rule, and nothing changes for any existing rail. A caller
+    // who sets this takes the trade knowingly, on an entry where the name is not what tells
+    // the entries apart. The full name stays in the accessible name untouched (the span is
+    // clipped visually, never shortened), and it is repeated as a `title`, because the kit's
+    // own tooltip switches itself off while the rail is expanded and a clipped name would
+    // otherwise have no way back to its full text for a sighted reader.
+    'truncate' => false,
     // A trailing counter. Digits where a label is visible, a dot where it is not — the
     // digits have no room in a 3.5rem rail, but an unread signal must not simply vanish
     // where it matters most. The count stays in the accessible name in BOTH states.
@@ -54,6 +71,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('app-rail.item', $attributes->getAttributes());
 
     $active = BooleanProp::from($active, false);
+    $truncate = BooleanProp::from($truncate, false);
 
     // `@aware` hands back the value the PARENT was called with, before that component's
     // own normalization ran — so `expandable` arrives raw here and gets the same
@@ -184,11 +202,14 @@
     // `sr-only` is the RESTING state, never `hidden` — the string is the link's
     // accessible name and has to survive every mode.
     //
-    // AND IT IS NEVER TRUNCATED. A navigation entry whose name is clipped does not name
+    // AND IT IS NEVER TRUNCATED BY DEFAULT. A navigation entry whose name is clipped does not name
     // anything: "Insig…" is not a destination, and the reader cannot tell it from
     // "Insights" or "Insight reports" without hovering. Maintainer's rule, and it is
     // absolute — so a name that does not fit WRAPS. An item two lines tall beside items
     // one line tall is a small untidiness; a module nobody can identify is a defect.
+    //
+    // The one way out is `truncate`, opt-in and argued at the prop: it exists for an entry
+    // that is not a destination, and it leaves this default exactly as it was.
     //
     // `break-words` rather than plain wrapping, because a single long word has no space to
     // break at and would otherwise overflow the column instead of wrapping inside it.
@@ -209,6 +230,17 @@
         'group-data-[labels=inline]/wk-rail:flex-1',
         'group-data-[labels=inline]/wk-rail:break-words',
         'group-data-[labels=inline]/wk-rail:text-[length:var(--text-wk-sm)]',
+
+        // Only when the caller opted in. `min-w-0` lets the span shrink below its content in
+        // every flex context; `flex-1` is the half `inline` already carries and the expanded
+        // `tooltip` state never had, without which an ellipsis has no bounded box to appear in.
+        // Written out literally because Tailwind reads source text and cannot extract a class
+        // name assembled at runtime.
+        ...($truncate ? [
+            'group-data-[wk-names]/wk-rail:min-w-0',
+            'group-data-[labels=tooltip]/wk-rail:flex-1',
+            'group-data-[wk-names]/wk-rail:truncate',
+        ] : []),
     ]), $scope);
 
     // Auto-inject rel="noopener noreferrer" when target="_blank". `$attributes->merge`

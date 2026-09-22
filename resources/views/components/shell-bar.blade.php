@@ -159,7 +159,8 @@
         default => '',
     };
 
-    $stickyClasses = $sticky ? 'sticky top-0 z-[var(--z-wk-sticky)]' : '';
+    // Sticks BELOW a strip above the page (`--wk-strip-inset`, 0px without one), not under it.
+    $stickyClasses = $sticky ? 'sticky top-[var(--wk-strip-inset,0px)] z-[var(--z-wk-sticky)]' : '';
 
     // The block margin cancels the host's own padding; the inline margin cancels that PLUS
     // the zone's inset, because a zone that insets its content to line up with the navigation

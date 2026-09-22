@@ -91,11 +91,11 @@
         default => 'var(--reading-progress-fill, var(--color-wk-accent))', // primary, info
     };
 
-    // Position: top (default) or bottom. Top pins to viewport top via `top: 0`,
-    // bottom via `bottom: 0`. `pointer-events-none` so the strip never intercepts
-    // hover / click events on whatever sits under it (typically nothing — it's
-    // 3px tall — but defensive against overlap with a sticky nav).
-    $positionClass = $position === 'bottom' ? 'bottom-0' : 'top-0';
+    // Position: top (default) or bottom — the edge itself is resolved further down,
+    // once the boundary says whether the bar is fixed to the viewport or sticky in a
+    // container. `pointer-events-none` so the strip never intercepts hover / click
+    // events on whatever sits under it (typically nothing — it's 3px tall — but
+    // defensive against overlap with a sticky nav).
 
     // Resolve boundary. Three shapes supported (v2.4.0 Ext 1):
     //   null         → viewport-fixed (default — every existing developer
@@ -131,6 +131,15 @@
     $useSticky = $resolvedBoundary === 'container' || $resolvedBoundary === 'selector';
     $positionMode = $useSticky ? 'sticky' : 'fixed';
 
+    // A strip above the page (`announcement-banner strip`) takes `--wk-strip-inset` from the
+    // top of the viewport, so a bar FIXED to the top starts below it — the edge `page-progress`
+    // uses. Not the sticky branch: that bar pins inside its own container, which already sits
+    // below a strip, and folding the inset in there would push it one strip-height down. The
+    // class and the inline style carry the same edge because the inline style wins; the class
+    // is what a stylesheet or a test reading the markup sees.
+    $edgeClass = $position === 'bottom' ? 'bottom-0' : ($useSticky ? 'top-0' : 'top-[var(--wk-strip-inset,0px)]');
+    $edgeStyle = $position === 'bottom' ? 'bottom: 0' : ($useSticky ? 'top: 0' : 'top: var(--wk-strip-inset, 0px)');
+
     // Marker class — used by reduced-motion gating in dist/wirekit.css, and by
     // print-stylesheet rules. Doubled-class specificity (`.wk-reading-progress.wk-reading-progress`)
     // wins over developer typography wrappers without using `!important`.
@@ -151,8 +160,8 @@
                 ? 'sticky z-[var(--z-wk-sticky)] pointer-events-none right-[var(--padding-wk-x-lg)] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]'
                 : 'fixed z-[var(--z-wk-sticky)] pointer-events-none right-[calc(var(--padding-wk-x-lg)_+_var(--wk-scrollbar-inset,0px))] bottom-[calc(var(--padding-wk-x-lg)_+_env(safe-area-inset-bottom,0px))]')
             : ($useSticky
-                ? 'sticky left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$positionClass
-                : 'fixed left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$positionClass),
+                ? 'sticky left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$edgeClass
+                : 'fixed left-0 right-0 z-[var(--z-wk-sticky)] pointer-events-none bg-transparent '.$edgeClass),
     ]), $scope);
 
     // Segments prop — a numeric array of fractional positions (0..1) where chapter
@@ -277,7 +286,7 @@
         aria-valuemax="100"
         x-bind:aria-valuenow="roundedProgress()"
         x-bind:aria-hidden="progress === 0 ? 'true' : null"
-        {{ $attributes->merge(['style' => 'position: '.($positionMode).'; '.($position === 'bottom' ? 'bottom: 0' : 'top: 0').'; left: 0; right: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: '.($heightToken).';'.($segmentsStyle ? ' '.$segmentsStyle : '')])->class([$rootClass])->merge(['aria-label' => __('wirekit::Reading progress')]) }}
+        {{ $attributes->merge(['style' => 'position: '.($positionMode).'; '.$edgeStyle.'; left: 0; right: 0; max-width: none; z-index: var(--z-wk-sticky); pointer-events: none; height: '.($heightToken).';'.($segmentsStyle ? ' '.$segmentsStyle : '')])->class([$rootClass])->merge(['aria-label' => __('wirekit::Reading progress')]) }}
         {{-- `max-width: none` defeats developer-side typography CSS that
              applies a max-width to direct children of a prose wrapper
              (the `@tailwindcss/typography` plugin's `.prose > * {

@@ -71,6 +71,8 @@ import wirekitBranchSwitcher from './components/branch-switcher.js';
 import wirekitPricingTable from './components/pricing-table.js';
 import wirekitSortable from './components/sortable.js';
 import wirekitProgress from './components/progress.js';
+import wirekitPageProgress from './components/page-progress.js';
+import wirekitDateFormatHint from './components/date-format-hint.js';
 import wirekitReadingProgress from './components/reading-progress.js';
 import wirekitFileUpload from './components/file-upload.js';
 import wirekitTablist from './components/tablist.js';
@@ -263,6 +265,8 @@ if (hostAlpine) {
     target.data('wirekitPricingTable', wirekitPricingTable);
     target.data('wirekitSortable', wirekitSortable);
     target.data('wirekitProgress', wirekitProgress);
+    target.data('wirekitPageProgress', wirekitPageProgress);
+    target.data('wirekitDateFormatHint', wirekitDateFormatHint);
     target.data('wirekitReadingProgress', wirekitReadingProgress);
     target.data('wirekitFileUpload', wirekitFileUpload);
     target.data('wirekitTablist', wirekitTablist);

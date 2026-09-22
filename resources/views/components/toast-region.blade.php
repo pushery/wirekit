@@ -41,13 +41,13 @@
 
     // Position classes — map human-friendly names to fixed positioning
     $positionClasses = match ($position) {
-        'top-left' => 'top-0 left-0 items-start',
-        'top-center' => 'top-0 left-1/2 -translate-x-1/2 items-center',
-        'top-right' => 'top-0 right-0 items-end',
+        'top-left' => 'top-[var(--wk-strip-inset,0px)] left-0 items-start',
+        'top-center' => 'top-[var(--wk-strip-inset,0px)] left-1/2 -translate-x-1/2 items-center',
+        'top-right' => 'top-[var(--wk-strip-inset,0px)] right-0 items-end',
         'bottom-left' => 'bottom-0 left-0 items-start',
         'bottom-center' => 'bottom-0 left-1/2 -translate-x-1/2 items-center',
         'bottom-right' => 'bottom-0 right-0 items-end',
-        default => 'top-0 right-0 items-end',
+        default => 'top-[var(--wk-strip-inset,0px)] right-0 items-end',
     };
 
     // Edge offset — keeps the toast stack clear of a fixed app header / nav

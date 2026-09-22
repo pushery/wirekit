@@ -35,6 +35,8 @@
     'plainText' => false,
     // Passed to the accordion: a question's answer stays findable by the browser's find in page.
     'findable' => config('wirekit.components.accordion.findable', true),
+    // Passed to the accordion: whether an answer animates its height open and shut.
+    'animate' => config('wirekit.components.accordion.animate', true),
     'scope' => null,
 ])
 
@@ -46,6 +48,7 @@
 
     // `findable="false"` on an unbound tag is the string "false", which is truthy.
     $findable = BooleanProp::from($findable, config('wirekit.components.accordion.findable', true));
+    $animate = BooleanProp::from($animate, config('wirekit.components.accordion.animate', true));
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -83,6 +86,14 @@
         :size="$size"
         :mode="$multiple ? 'multiple' : 'single'"
         :findable="$findable"
+        {{-- ⚠️ `animate` IS NOT FORWARDED HERE, AND THAT IS MEASURED RATHER THAN FORGOTTEN.
+             `accordion.item` reads it through `@aware`, which walks the ancestor components
+             until it finds the name — and this component is one of them, so the value arrives
+             whether the accordion repeats it or not. Adding the line changed no rendered byte
+             in either direction, for a set attribute and for none.
+             What IS load-bearing is the prop above: without it, an unbound `animate="false"`
+             stays the STRING "false", which is truthy — the same trap this file already names
+             for `findable`. --}}
         :aria-label="$label"
     >
         {{ $slot }}

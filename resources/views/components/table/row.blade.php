@@ -150,7 +150,22 @@
     {{-- `headers` points at the record's row-header cell, so a screen reader reaching this row
          is told which record it continues. Without it the row is an orphan announcing values
          with no subject. --}}
-    <tr data-wk-table-details class="{{ $detailsClasses }}">
+    {{-- ⚠️ THE KEY IS DERIVED, NOT DECLARED, AND THE DEFECT IT CLOSES IS SILENT. Livewire pairs
+         an UNKEYED sibling by position, which is right exactly as long as every record emits one
+         details row, always immediately behind itself. The call site this slot was built for is
+         the one where that stops being true — a row that carries details beside a row that does
+         not — and when it breaks, both rows still render. Only their pairing is wrong, so nothing
+         is red and the screen shows one record's details under another's name.
+
+         A details row belongs to exactly one record, and that record's key is already in the bag,
+         so there is nothing for a call site to declare.
+
+         ⚠️ AND ONLY THAT ONE ATTRIBUTE CROSSES. Forwarding `$attributes` wholesale would put the
+         record row's `class` on this row and overwrite the details classes below, and a `@class`
+         on the record would silently start applying to both. --}}
+    <tr data-wk-table-details
+        @if(filled($attributes->get('wire:key'))) wire:key="{{ $attributes->get('wire:key') }}-details" @endif
+        class="{{ $detailsClasses }}">
         <td
             data-wk-prose-skip
             @if($detailsColspan !== null) colspan="{{ (int) $detailsColspan }}" @endif

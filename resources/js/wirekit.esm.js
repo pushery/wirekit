@@ -52,6 +52,8 @@ import wirekitBranchSwitcher from './components/branch-switcher.js';
 import wirekitPricingTable from './components/pricing-table.js';
 import wirekitSortable from './components/sortable.js';
 import wirekitProgress from './components/progress.js';
+import wirekitPageProgress from './components/page-progress.js';
+import wirekitDateFormatHint from './components/date-format-hint.js';
 import wirekitReadingProgress from './components/reading-progress.js';
 import wirekitFileUpload from './components/file-upload.js';
 import wirekitTablist from './components/tablist.js';
@@ -224,6 +226,8 @@ export default function (Alpine) {
     Alpine.data('wirekitPricingTable', wirekitPricingTable);
     Alpine.data('wirekitSortable', wirekitSortable);
     Alpine.data('wirekitProgress', wirekitProgress);
+    Alpine.data('wirekitPageProgress', wirekitPageProgress);
+    Alpine.data('wirekitDateFormatHint', wirekitDateFormatHint);
     Alpine.data('wirekitReadingProgress', wirekitReadingProgress);
     Alpine.data('wirekitFileUpload', wirekitFileUpload);
     Alpine.data('wirekitTablist', wirekitTablist);
@@ -317,6 +321,8 @@ export {
     wirekitPricingTable,
     wirekitSortable,
     wirekitProgress,
+    wirekitPageProgress,
+    wirekitDateFormatHint,
     wirekitReadingProgress,
     wirekitFileUpload,
     wirekitTablist,
