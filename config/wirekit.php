@@ -372,7 +372,7 @@ return [
         // Navigation components
         'tabs' => ['variant' => 'underline', 'findable' => false],
         'breadcrumb' => ['separator' => 'chevron'],
-        'accordion' => ['mode' => 'single', 'variant' => 'bordered', 'size' => 'md', 'findable' => true],
+        'accordion' => ['mode' => 'single', 'variant' => 'bordered', 'size' => 'md', 'findable' => true, 'animate' => true],
         'accordion.item' => [],
         'collapsible' => ['findable' => true],
         'sidebar' => [],
@@ -398,6 +398,7 @@ return [
         'slider' => ['size' => 'md', 'min' => 0, 'max' => 100, 'step' => 1],
         'range-slider' => ['show_values' => true, 'min' => 0, 'max' => 100, 'step' => 1],
         'color-picker' => ['size' => 'md', 'format' => 'hex', 'native-on-mobile' => false],
+        'cart-item' => ['min' => 1, 'size' => 'lg'],
         'number-input' => ['size' => 'md', 'step' => 1],
         'password-input' => ['size' => 'md', 'toggle' => true, 'strength-meter' => false],
         'phone' => ['country' => 'DE', 'size' => 'md'],

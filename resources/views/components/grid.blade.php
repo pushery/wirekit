@@ -17,7 +17,14 @@
     // `cols` cannot express at all: it only knows equal columns, and the two
     // commonest application layouts there are — the three-pane workspace and the
     // week grid — are neither equal nor expressible as a count.
-    'template' => null, // @example "14rem 1fr 18rem" @example "4.5rem repeat(7, minmax(0, 1fr))"
+    //
+    // It takes breakpoints the way `cols` does, with the value in brackets because a track
+    // list has spaces in it and a breakpoint token cannot: `lg:[minmax(0,1fr)_20rem]`, an
+    // underscore standing for each space, which is the arbitrary-value spelling Tailwind
+    // already taught anyone writing an arbitrary grid-cols class by hand. Tokens without a prefix are
+    // the base. `cols="1" template="lg:[1fr_20rem]"` is one column on a phone and two tracks
+    // from `lg` — the layout this form exists for.
+    'template' => null, // @example "14rem 1fr 18rem" @example "4.5rem repeat(7, minmax(0, 1fr))" @example "lg:[minmax(0,1fr)_20rem]"
     'gap' => config('wirekit.components.grid.gap', 'md'),
     // Which spacing ladder `gap` names a rung on: `space`, what this prop has always read, or
     // `gap`, the tighter ladder WireKit's own components use inside themselves. The two share
@@ -81,6 +88,9 @@
     // set, so they CAN be literals, and a class survives a stricter CSP than an
     // inline style does.
     $trackStyle = null;
+    $templateBase = null;
+    $templateAt = [];
+    $responsiveTemplate = false;
 
     if ($trackProp === 'min') {
         // A CSS length, and nothing else. This string is interpolated into a
@@ -101,11 +111,49 @@
         // The CSS track vocabulary: lengths, fr, auto, min-content/max-content,
         // minmax(), repeat(), fit-content(). A semicolon or a quote would end the
         // declaration and start another one, so neither is in the set.
-        if (! preg_match('/^[a-zA-Z0-9\s.,%()\[\]_-]+$/', trim((string) $template))) {
-            WireKit::validateProp('grid', 'template', (string) $template, ['a CSS grid-template-columns value such as "14rem 1fr 18rem"']);
+        $trackValue = '/^[a-zA-Z0-9\s.,%()\[\]_-]+$/';
+
+        // Split the base from the breakpoint tokens. A track list has spaces and a token
+        // cannot, so a breakpoint value is bracketed with `_` standing for each space; a
+        // base value keeps its spaces and is simply every token that is not `bp:[…]`.
+        // Named lines (`[sidebar-start] 14rem`) are brackets WITHOUT a prefix, so they stay
+        // in the base, and the greedy match keeps `lg:[[a]_1fr_[b]]` whole.
+        $baseTokens = [];
+
+        foreach (preg_split('/\s+/', trim((string) $template)) as $token) {
+            if (preg_match('/^(sm|md|lg|xl|2xl):\[(.+)\]$/', $token, $match)) {
+                $templateAt[$match[1]] = str_replace('_', ' ', $match[2]);
+            } else {
+                $baseTokens[] = $token;
+            }
+        }
+
+        $templateBase = $baseTokens === [] ? null : implode(' ', $baseTokens);
+
+        // Every value is validated on its own, AFTER the prefix is stripped — the `:` of a
+        // breakpoint is syntax of this prop and never reaches CSS, so it is not in the set.
+        $invalid = collect(array_filter([$templateBase, ...array_values($templateAt)], fn ($v) => $v !== null))
+            ->first(fn (string $value) => ! preg_match($trackValue, $value));
+
+        if ($invalid !== null) {
+            WireKit::validateProp('grid', 'template', (string) $template, ['a CSS grid-template-columns value such as "14rem 1fr 18rem", optionally with breakpoints such as "1fr lg:[1fr_20rem]"']);
             $trackProp = null;
+            $templateAt = [];
+        } elseif ($templateAt === []) {
+            // No breakpoint: exactly what this prop has always rendered, byte for byte.
+            $trackStyle = 'grid-template-columns: '.$templateBase.';';
         } else {
-            $trackStyle = 'grid-template-columns: '.trim((string) $template).';';
+            // With breakpoints the base can NOT stay an inline `grid-template-columns`:
+            // an inline declaration beats every class, so the `lg:` rule would never win.
+            // Each value rides in its own custom property instead, and a class that is
+            // written out literally below reads it inside its media query. The VALUE is
+            // arbitrary and the CLASS is not — which is the whole trick, because Tailwind can
+            // extract a literal class and cannot extract one assembled at runtime.
+            $responsiveTemplate = true;
+            $trackStyle = collect(['' => $templateBase] + $templateAt)
+                ->filter(fn ($value) => $value !== null)
+                ->map(fn (string $value, string $bp) => '--wk-grid-template'.($bp === '' ? '' : '-'.$bp).': '.$value.';')
+                ->implode(' ');
         }
     }
 
@@ -134,11 +182,61 @@
     // than one.
     $colsRequested = (string) $cols !== (string) config('wirekit.components.grid.cols', 1);
 
-    $colsClasses = ($trackProp !== null && ! $colsRequested)
+    $colsTokens = preg_split('/\s+/', trim(is_numeric($cols) ? (string) $cols : $cols));
+
+    if ($responsiveTemplate) {
+        // ⚠ With breakpoints `cols` is no longer a fallback — it is the ACTIVE value at every
+        // breakpoint the template leaves free, including the default. `cols="1"
+        // template="lg:[1fr_20rem]"` needs `grid-cols-1` below `lg`: dropped as an unrequested
+        // default (the rule above), the phone would get no column definition at all, and
+        // implicit `auto` tracks cannot shrink below their content the way `minmax(0,1fr)`
+        // can — a long word would overflow where one column was promised.
+        //
+        // And at a breakpoint the template DOES occupy, the `cols` class is left out rather
+        // than left to compete. Two classes on one property at one breakpoint are decided by
+        // the order Tailwind emits them, which is not a precedence anyone should have to
+        // know; `template` beats `cols` is the documented rule, so it is made structural.
+        $occupied = array_keys($templateAt);
+
+        if ($templateBase !== null) {
+            $occupied[] = '';
+        }
+
+        $colsTokens = array_filter($colsTokens, fn (string $token) => ! in_array(
+            str_contains($token, ':') ? strstr($token, ':', true) : '',
+            $occupied,
+            true,
+        ));
+    }
+
+    $colsClasses = ($trackProp !== null && ! $colsRequested && ! $responsiveTemplate)
         ? ''
-        : collect(preg_split('/\s+/', trim(is_numeric($cols) ? (string) $cols : $cols)))
+        : collect($colsTokens)
             ->map(fn (string $token) => $colsMap[$token] ?? WireKit::validateProp('grid', 'cols', $token, array_keys($colsMap)))
             ->implode(' ');
+
+    // Written out rather than assembled, for the reason `$colsMap` is: Tailwind reads source
+    // text. The VALUE each one reads is arbitrary and lives in the custom property; the class
+    // itself is one of six fixed strings, which is what makes a runtime track list reachable
+    // from a media query without a safelist.
+    $templateClassMap = [
+        '' => 'grid-cols-[var(--wk-grid-template)]',
+        'sm' => 'sm:grid-cols-[var(--wk-grid-template-sm)]',
+        'md' => 'md:grid-cols-[var(--wk-grid-template-md)]',
+        'lg' => 'lg:grid-cols-[var(--wk-grid-template-lg)]',
+        'xl' => 'xl:grid-cols-[var(--wk-grid-template-xl)]',
+        '2xl' => '2xl:grid-cols-[var(--wk-grid-template-2xl)]',
+    ];
+
+    // Only for a breakpoint that was set. A class for one that was not would read an unset
+    // property, resolve to `none` and erase whatever `cols` placed there.
+    $templateClasses = $responsiveTemplate
+        ? collect(['' => $templateBase] + $templateAt)
+            ->filter(fn ($value) => $value !== null)
+            ->keys()
+            ->map(fn (string $bp) => $templateClassMap[$bp])
+            ->implode(' ')
+        : '';
 
     // Resolved before the rungs, so an unknown ladder name is reported as what it is rather
     // than silently falling through to the historical one.
@@ -181,6 +279,7 @@
     $classes = WireKit::resolveClasses('grid', 'base', implode(' ', array_filter([
         'grid',
         $colsClasses,
+        $templateClasses,
         $gapClasses,
         $alignClasses,
     ])), $scope);

@@ -18,6 +18,19 @@
     // lands in. Only where the engine supports it; elsewhere a closed panel is hidden as before.
     // Read by every item through @aware.
     'findable' => config('wirekit.components.accordion.findable', true),
+    // Whether a panel animates its height open and shut. Read by every item through @aware.
+    //
+    // ⚠️ ON BY DEFAULT, AND THAT IS A CHANGE RATHER THAN A NEW SWITCH. The mechanism was always
+    // there — `x-wk-findable` carries a `.collapse` modifier that animates the height, reads
+    // `--transition-wk-duration` off the element, and skips itself under reduced motion — and
+    // `collapsible`, the sibling disclosure in this same library, has been calling it all along.
+    // The accordion simply did not, so a page showing both had one that eased and one that
+    // jumped. Reported from a screen, because no suite can see it: nothing is broken.
+    //
+    // A switch defaulting to OFF would have closed the ticket without changing the screen it
+    // came from. The escape hatch is here for a caller who wants the jump back, which is the
+    // half that makes the default safe to move.
+    'animate' => config('wirekit.components.accordion.animate', true),
     // Heading level each item's trigger is wrapped in (1–6). Defaults to 3, which
     // is what every accordion shipped before this prop existed. The ARIA authoring
     // practices require the level to be "appropriate for the information
@@ -37,6 +50,7 @@
 
     // `findable="false"` on an unbound tag is the string "false", which is truthy.
     $findable = BooleanProp::from($findable, config('wirekit.components.accordion.findable', true));
+    $animate = BooleanProp::from($animate, config('wirekit.components.accordion.animate', true));
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's

@@ -41,6 +41,32 @@
     'placeholder' => null,
     'error' => null,
     'hint' => null,
+    // ⚠️ SAY SO WHEN THE BROWSER WRITES DATES IN A DIFFERENT ORDER THAN THE PAGE, rather than
+    // change the order — which no author can do. A native `<input type="date">` takes its
+    // format from the BROWSER's user-interface language and from nothing else; it is not an
+    // authorable property in any shipped browser, which is why this is a disclosure and not a
+    // `locale` prop.
+    //
+    // The misreading it closes is silent, and that is what makes it worth a prop: `03.04.2026`
+    // and `04/03/2026` are both valid dates. Nothing is rejected, no error appears, and the
+    // record carries a different day than the person meant. Reported from a shop whose
+    // operators work on company laptops with an English system language while every word on
+    // the screen is German.
+    //
+    // Off by default, so an existing call site renders byte for byte as before. On, it renders
+    // NOTHING when the two orders agree — the overwhelmingly common case.
+    //
+    // ⚠️ IF YOU WANT THE APPLICATION'S OWN FORMAT, THE ANSWER IS A DIFFERENT COMPONENT.
+    // `x-wirekit::calendar` takes the application locale and draws the dates itself. The
+    // trade is the one this component exists to avoid: a non-native field gives up the
+    // keyboard model, the calendar the browser opens, and the date wheel on a phone.
+    //
+    // ⚠️ AND THE NAME ABOVE CARRIES NO ANGLE BRACKETS, WHICH IS NOT A TYPO. Blade's
+    // pre-compiler scans RAW TEXT for component tags, before any of this is a PHP comment —
+    // so a tag written here is compiled into a real invocation, and every render of this
+    // component then dies on `Undefined variable $component`. Measured, from the first
+    // version of this paragraph.
+    'formatHint' => false,
     'scope' => null,
 ])
 
@@ -105,6 +131,7 @@
     $dateId = $id ?? ($name ? 'wk-date-' . $name : 'wk-date-' . Str::random(6));
     $errorId = $dateId . '-error';
     $hintId = $dateId . '-hint';
+    $formatHintId = $dateId.'-format-hint';
 
     // The bag read is guarded on the name, exactly as field.blade.php does.
     // `MessageBag::has(null)` falls through to `any()`, so an unguarded read
@@ -153,7 +180,17 @@
     // document is dropped silently by assistive technology, and the field is then
     // described by less than the markup claims — or, with only a hint set, by
     // nothing at all. Compose from what this render actually emits.
-    $describedBy = trim(($hint && ! $hasError ? $hintId : '') . ' ' . ($showsError ? $errorId : ''));
+    $formatHint = BooleanProp::from($formatHint, false);
+
+    // The format hint joins the description whenever the prop is on, and NOT only when it has
+    // something to say — its text is decided in the browser, after this markup is written. An
+    // element with no text contributes nothing to a computed description, so the stable idref
+    // costs nothing; a describedby rewritten at runtime would be the fragile half.
+    $describedBy = trim(
+        ($hint && ! $hasError ? $hintId : '')
+        .' '.($formatHint ? $formatHintId : '')
+        .' '.($showsError ? $errorId : '')
+    );
     // A caller's aria-describedby joins this list, because the control is what it describes
     // and an attribute is written once: the parser keeps the first copy of a duplicate. Own
     // ids first, then the caller's.
@@ -353,6 +390,27 @@
 
     @if($hint && !$hasError)
         <p data-wk-prose-skip id="{{ $hintId }}" class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+    @endif
+
+    @if($formatHint)
+        {{-- The sentence is composed in the browser because only the browser knows its own
+             date order. The translated TEMPLATE travels from here, so the wording is the
+             page's language; the two dates in it are formatted at runtime. --}}
+        <p
+            data-wk-prose-skip
+            id="{{ $formatHintId }}"
+            x-data="wirekitDateFormatHint({
+                locale: {{ \Pushery\WireKit\Support\AlpinePayload::from(str_replace('_', '-', app()->getLocale())) }},
+                template: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Your browser writes dates in a different order than this page: :appDate is entered as :fieldDate.')) }},
+            })"
+            x-text="message"
+            {{-- ⚠️ `--space-wk-xs` AND NOT THE PADDING TOKEN THE HINT ABOVE READS, though the two
+                 render the same 0.25rem. A margin between two stacked elements is a SPACE, and a
+                 margin reading a padding family is only right where it cancels one — the rule the
+                 spacing ratchet holds. The paragraph above is frozen debt from before that rule;
+                 copying it would have grown the count this element had no reason to be in. --}}
+            class="mt-[var(--space-wk-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]"
+        ></p>
     @endif
 
     @if($showsError)

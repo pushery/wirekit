@@ -14,6 +14,20 @@
     // run they are the same value, and a server that cannot tell "not set" from
     // "explicitly collapsed=false" would override a developer who asked for expanded.
     'collapsed' => null,
+    // The state on a FIRST visit, before the store has anything to say. It is the third case
+    // the persistence has always been missing: an explicit `collapsed` wins and turns the seeding
+    // OFF, a stored value decides when there is one, and with neither the component fell back to
+    // a hard `false`. An application whose sidebar should start collapsed and follow the reader
+    // afterwards could not say so — the nearest thing was rebuilding the kit's own cookie read
+    // in a layout, superglobal fallback and all.
+    //
+    // ⚠️ BOTH DRIVERS ANSWER THIS THE SAME WAY, which is the half that makes it one idea rather
+    // than two. The cookie driver seeds the first RENDER from here; the local driver renders
+    // from here and then hands this same value to the store read as its fallback, so an empty
+    // localStorage keeps it instead of collapsing to `false`.
+    //
+    // Default `false`, so every existing call site renders byte for byte as before.
+    'defaultCollapsed' => null,
     // Surface shape. `card` (default) is the self-contained panel: background,
     // border on all four sides, rounded, meant to sit inside a padded column.
     // `flush` is the full-bleed navigation COLUMN of the common admin layout —
@@ -163,7 +177,11 @@
         }
     }
 
-    $collapsed = BooleanProp::from($collapsed, false);
+    // The seeding above only fires when the store HAS something. Where it does not, this is the
+    // answer — and it is the prop's whole reason: `false` was not a decision, it was the absence
+    // of one.
+    $defaultCollapsed = BooleanProp::from($defaultCollapsed, false);
+    $collapsed = BooleanProp::from($collapsed, $defaultCollapsed);
 
     // Landmark accessible name. Only emit our default `aria-label` when the
     // developer supplied NEITHER aria-label NOR aria-labelledby directly on the

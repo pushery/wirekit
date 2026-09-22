@@ -19,6 +19,20 @@
     // driver below is allowed to answer it instead — which is the whole point of that
     // driver, so an explicit value here wins and turns the seeding off.
     'expanded' => null,
+    // The state on a FIRST visit, before the store has anything to say. It is the third case
+    // the persistence has always been missing: an explicit `expanded` wins and turns the seeding
+    // OFF, a stored value decides when there is one, and with neither the component fell back to
+    // a hard `false`. An application whose rail should start open and follow the reader
+    // afterwards could not say so — the nearest thing was rebuilding the kit's own cookie read
+    // in a layout, superglobal fallback and all.
+    //
+    // ⚠️ BOTH DRIVERS ANSWER THIS THE SAME WAY, which is the half that makes it one idea rather
+    // than two. The cookie driver seeds the first RENDER from here; the local driver renders
+    // from here and then hands this same value to the store read as its fallback, so an empty
+    // localStorage keeps it instead of collapsing to `false`.
+    //
+    // Default `false`, so every existing call site renders byte for byte as before.
+    'defaultExpanded' => null,
     // Storage key. Null keeps the choice for the session only.
     'persist' => null,
     // WHERE the choice is remembered: 'local' (default) or 'cookie'.
@@ -116,7 +130,11 @@
         }
     }
 
-    $expanded = BooleanProp::from($expanded, false);
+    // The seeding above only fires when the store HAS something. Where it does not, this is the
+    // answer — and it is the prop's whole reason: `false` was not a decision, it was the absence
+    // of one.
+    $defaultExpanded = BooleanProp::from($defaultExpanded, false);
+    $expanded = BooleanProp::from($expanded, $defaultExpanded);
 
     $labels = WireKit::validateProp('app-rail', 'labels', $labels, ['tooltip', 'below', 'inline']);
     $tone = WireKit::validateProp('app-rail', 'tone', $tone, ['default', 'muted', 'inverse', 'accent']);

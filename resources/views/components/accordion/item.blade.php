@@ -22,6 +22,8 @@
     'level' => 3,
     // Whether a closed panel stays findable by the browser's find in page; set on the accordion.
     'findable' => config('wirekit.components.accordion.findable', true),
+    // Whether this panel animates its height. Set on the accordion, read here through @aware.
+    'animate' => config('wirekit.components.accordion.animate', true),
 ])
 
 @php
@@ -35,8 +37,9 @@
     // written as an attribute on the tag, it survives into `{{ $attributes }}` and
     // renders as a stray HTML attribute on the element. Blade accepts both
     // spellings on a tag, so both are dropped here.
-    $attributes = $attributes->except(['variant', 'size', 'level', 'findable']);
+    $attributes = $attributes->except(['variant', 'size', 'level', 'findable', 'animate']);
     $findable = \Pushery\WireKit\Support\BooleanProp::from($findable, true);
+    $animate = \Pushery\WireKit\Support\BooleanProp::from($animate, true);
 @endphp
 
 
@@ -175,7 +178,15 @@
         id="{{ $panelId }}"
         role="region"
         aria-labelledby="{{ $buttonId }}"
+        {{-- ⚠️ BOTH SPELLINGS ARE WRITTEN OUT RATHER THAN ASSEMBLED, and the duplication is the
+             point. A directive NAME built in PHP is invisible to every scanner that looks for
+             this one by name — the CSP audit among them — so the modifier would be unreachable
+             to exactly the checks that exist to find it. Two literal lines cost nothing. --}}
+        @if($animate)
+        x-wk-findable.collapse="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
+        @else
         x-wk-findable="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
+        @endif
         x-on:beforematch="reveal({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
         hidden="until-found"
     >
@@ -191,6 +202,10 @@
         role="region"
         aria-labelledby="{{ $buttonId }}"
         x-show="isOpen({{ \Pushery\WireKit\Support\AlpinePayload::from($itemId) }})"
+        {{-- The other half of the same prop. `x-wk-findable.collapse` exists because `x-collapse`
+             only works with `x-show` — and this branch IS `x-show`, so here the plugin is the
+             right tool and the same prop reaches both paths rather than one of them. --}}
+        @if($animate) x-collapse @endif
         x-cloak
         class="{{ $panelClasses }}"
     >

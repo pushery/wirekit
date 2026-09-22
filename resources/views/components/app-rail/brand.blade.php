@@ -12,6 +12,23 @@
     // Makes the whole block a link. Leave it out for a switcher — wrap the component in a
     // dropdown trigger instead, so the control is a button and announces itself as one.
     'href' => null,
+    // ⚠️ THERE IS A SECOND MARK SLOT, `expanded`, AND IT IS NOT DECLARED HERE because a named
+    // slot is not a prop. It is documented here because this is where a reader looks.
+    //
+    // A rail that opens has two widths, and a brand usually has two forms: a signet that fits
+    // in the narrow column, and a wordmark that is only legible in the wide one. Put the signet
+    // in the default slot and the wordmark in `<x-slot:expanded>`, and the two swap with the
+    // rail's LIVE state.
+    //
+    // Leave the slot out and nothing changes — the default slot is drawn at every width, byte
+    // for byte as before. The markers below are emitted only when there is something to swap
+    // with, so a rail with one mark carries no rule that could hide it.
+    //
+    // ⚠️ THE ACCESSIBLE NAME COMES FROM `name` AND IS UNAFFECTED, which is what makes the swap
+    // safe. Both forms are presentation: the hidden one is `display: none` and reaches no
+    // accessibility tree, while `name` stays in it at every width. A developer who instead
+    // labels the images themselves gets two names for one thing, and only one of them at a
+    // time — which is the trap this arrangement avoids rather than one it creates.
     'scope' => null,
 ])
 
@@ -142,7 +159,16 @@
          something — and the guard that caught this exists because that mistake is invisible
          until somebody who needs it reports it. A decorative avatar in here announces nothing
          on its own anyway; one that does is the developer's decision to make. --}}
-    <span class="shrink-0">{{ $slot }}</span>
+    @isset($expanded)
+        {{-- Two forms, swapped by the same live conjunction the name uses. The rule is in the
+             shipped stylesheet, for the reason stated there: two `group-data-*` variants of ONE
+             group stack into a descendant selector, which asks the rail to contain itself, and
+             a bare Tailwind class exists only where a developer's build scanned this package. --}}
+        <span data-wk-rail-brand-mark class="shrink-0">{{ $slot }}</span>
+        <span data-wk-rail-brand-mark-wide class="min-w-0 shrink-0">{{ $expanded }}</span>
+    @else
+        <span class="shrink-0">{{ $slot }}</span>
+    @endisset
 
     @if(filled($name))
         {{-- Visually hidden while the rail is narrow, never absent: the name is what

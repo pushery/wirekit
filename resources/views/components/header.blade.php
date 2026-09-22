@@ -67,7 +67,8 @@
     // and was therefore painted over — arithmetic, not a quirk. A panel anchored INSIDE
     // this bar opens downward and never overlaps it, so nothing is lost; a modal is still
     // above, which is correct.
-    $stickyClasses = $sticky ? 'sticky top-0 z-[var(--z-wk-chrome)]' : '';
+    // Sticks BELOW a strip above the page (`--wk-strip-inset`, 0px without one), not under it.
+    $stickyClasses = $sticky ? 'sticky top-[var(--wk-strip-inset,0px)] z-[var(--z-wk-chrome)]' : '';
 
     // When `:container="true"`, the inner wrapper takes 100% of the header
     // content area up to the 2xl container limit and centers itself with

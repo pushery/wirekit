@@ -43,5 +43,6 @@
     "wirekit::Uploading :name": "Enviando :name",
     "wirekit::User": "Usuário",
     "wirekit::You're all caught up": "Você está em dia",
+    "wirekit::Your browser writes dates in a different order than this page: :appDate is entered as :fieldDate.": "Seu navegador escreve datas em uma ordem diferente desta página: :appDate é digitado como :fieldDate.",
     "wirekit::{1} :count unsaved change|[2,*] :count unsaved changes": "{1} :count alteração não salva|[2,*] :count alterações não salvas"
 }

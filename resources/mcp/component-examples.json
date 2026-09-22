@@ -1331,6 +1331,12 @@
             "code": "<x-wirekit::page-header\n    title=\"Audit log\"\n    description=\"Every change, who made it and when.\"\n>\n    <x-slot:actions>\n        <x-wirekit::button intent=\"neutral\" surface=\"outline\">Export</x-wirekit::button>\n        <x-wirekit::button intent=\"primary\">Filter</x-wirekit::button>\n    </x-slot:actions>\n</x-wirekit::page-header>"
         }
     ],
+    "page-progress": [
+        {
+            "title": "Start a request, then answer it",
+            "code": "<x-wirekit::page-progress />\n{{-- The wrapper carries `x-data` so `$dispatch` has a scope to fire from. Without it Alpine\n     never attaches the handler and both buttons are dead, silently, with nothing in the\n     console — which on a page whose whole subject is a control that reports is the one\n     defect a reader would not question. --}}\n<div x-data>\n<x-wirekit::stack gap=\"md\" style=\"padding: 1.5rem;\">\n    <x-wirekit::text>\n        The first button opens a request, the second answers it. Watch the top edge of\n        this frame. Press them in quick succession and nothing appears at all — that is\n        the delay doing its job.\n    </x-wirekit::text>\n    <x-wirekit::row gap=\"sm\" wrap>\n        <x-wirekit::button x-on:click=\"$dispatch('livewire:navigate')\">Open a request</x-wirekit::button>\n        <x-wirekit::button surface=\"outline\" intent=\"neutral\" x-on:click=\"$dispatch('livewire:navigated')\">Answer it</x-wirekit::button>\n    </x-wirekit::row>\n</x-wirekit::stack>\n</div>"
+        }
+    ],
     "pagination": [
         {
             "title": "Full variant (default)",

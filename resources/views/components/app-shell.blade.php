@@ -4,7 +4,7 @@
     'scope' => null,
     // Viewport-fixer mode. Default (false) keeps `min-h-screen` — the shell grows
     // with its content and the PAGE scrolls as a document. When true, the root is
-    // pinned to the viewport (`h-dvh overflow-hidden`) so the inner sidebar + main
+    // pinned to the viewport height (100dvh, less any strip above the page) so the inner sidebar + main
     // regions scroll INTERNALLY (brand pinned top, account menu pinned bottom) — the
     // classic fixed-height admin-shell case. `dvh` (not `vh`) so the mobile browser
     // toolbar collapse is handled.
@@ -114,14 +114,18 @@
     // bare block-level `display:flex` div collapses to its intrinsic
     // content width inside prose / preview ancestors — making the
     // header + main visually too narrow with a wide gutter on the right.
-    // Height: `min-h-screen` (default, document-scroll) vs `h-dvh overflow-hidden`
+    // Height: the screen's height as a minimum (default, document-scroll) vs exactly the viewport's
     // (viewport-fixer). Only in the fixed-height mode does the inner
     // `flex flex-1 overflow-hidden` row get a bounded height to distribute, so the
     // sidebar/main internal scroll regions finally engage — the `viewport` prop
     // replaces the old manual `style="height: ..."` override developers had to write.
     $classes = WireKit::resolveClasses('app-shell', 'base', implode(' ', [
         'flex flex-col w-full',
-        $viewport ? 'h-dvh overflow-hidden' : 'min-h-screen',
+        // Both heights give back what a strip above the page takes (`--wk-strip-inset`, 0px
+        // without one). In the viewport mode that is the difference between the account at the
+        // foot of the sidebar and a foot one strip-height below the edge of the screen; in the
+        // document mode it keeps a short page from scrolling by exactly the strip.
+        $viewport ? 'h-[calc(100dvh-var(--wk-strip-inset,0px))] overflow-hidden' : 'min-h-[calc(100vh-var(--wk-strip-inset,0px))]',
         // An untoned shell keeps the literal it always had, rather than routing through
         // the role token with a fallback. The two resolve to the same color today, and
         // that is exactly why: a shell nobody toned must not start depending on a

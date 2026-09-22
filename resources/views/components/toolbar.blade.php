@@ -63,7 +63,8 @@
         // No z fallback: it read 10 while the token is 40, so anywhere the token did not
         // resolve this toolbar sat four layers below every other sticky surface. Same defect,
         // same line, as date-separator.
-        ? 'sticky top-0 z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg)]'
+        // A page's bar, so it sticks BELOW a strip above the page (`--wk-strip-inset`), not under it.
+        ? 'sticky top-[var(--wk-strip-inset,0px)] z-[var(--z-wk-sticky)] bg-[var(--color-wk-bg)]'
         : '';
 
     $baseClasses = WireKit::resolveClasses('toolbar', 'base', implode(' ', array_filter([

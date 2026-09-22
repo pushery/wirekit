@@ -5,7 +5,7 @@
 {{-- The rail module's link, factored out because the item renders it EITHER inside a
      tooltip or bare, and the two branches must not become two copies of the same anchor.
      Every variable it reads ($linkAttributes, $icon, $iconClasses, $labelClasses,
-     $labelText, $badge, $opensNewTab) is resolved in the including view — @include shares
+     $labelText, $truncate, $badge, $opensNewTab) is resolved in the including view — @include shares
      the including scope, so nothing has to be passed.
 
      `$linkAttributes` in particular is resolved there ON PURPOSE: inside a component's
@@ -45,7 +45,7 @@
             @endif
         </span>
     @endif
-    <span data-wk-rail-label class="{{ $labelClasses }}">{{ $labelText }}</span>
+    <span data-wk-rail-label class="{{ $labelClasses }}" @if($truncate) title="{{ $labelText }}" @endif>{{ $labelText }}</span>
     @if(filled($badge))
         {{-- Going `absolute` in the icon-only rail is what keeps the lone glyph centered —
              sharing the flex row pushes it visibly off-center, which is what the browser

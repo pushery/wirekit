@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.54.0 — MIT License
+ * WireKit CSS v2.55.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -464,6 +464,33 @@
        away from empty space. */
     --wk-scrollbar-inset: 0px;
 
+    /* ─── Viewport strip ───
+       The block-axis sibling of --wk-scrollbar-inset: the height a strip above the page takes
+       from the top of the viewport. 0px by default, which is right for every page without one.
+       The strip sets it on :root, and every surface that pins itself to the viewport's top or
+       takes the viewport's height folds it in — so a strip moves the application down by exactly
+       its own height and changes nothing else, "as if the browser were a little taller". */
+    --wk-strip-inset: 0px;
+    /* One line of the strip: its text size at a line-height of 1.5, plus its block padding on
+       both sides. The strip is exactly this tall, and that is what lets the stylesheet know its
+       height before anything paints — a measured height would make the page jump once measured. */
+    --wk-strip-height: calc(var(--text-wk-sm) * 1.5 + 2 * var(--padding-wk-y-xs));
+
+    /* ─── Announcement banner, tone from a hue ───
+       A banner can take its color from a HUE rather than an intent: `hue="250"` is blue,
+       `hue="300"` violet, independent of the theme's accent (which is monochrome by default, so
+       `intent="info"` is not blue out of the box). Lightness and chroma are fixed HERE, because
+       they are what decides contrast, and a hue must not be able to break it.
+
+       Measured over all 360 hues rather than assumed, against the text color below:
+       at L 0.48 / C 0.15 the weakest hue is ~190° (cyan), at 5.52:1 even when the browser clips
+       each channel instead of mapping the gamut, 6.13:1 when it maps. L 0.55 — the lightness the
+       Aurora preset uses — falls to 4.17:1 at the same hue, which is below AA. Override both
+       together or not at all. */
+    --wk-banner-hue-l: 0.48;
+    --wk-banner-hue-c: 0.15;
+    --color-wk-banner-hue-fg: oklch(98.5% 0 0);
+
     /* ─── Container Max Widths ─── */
     --size-wk-container-sm: 40rem;
     --size-wk-container-md: 48rem;
@@ -589,6 +616,30 @@
        shell. */
     --size-wk-drawer-inset: 3rem;
 
+}
+
+/* ─── Viewport strip ───
+   A strip above the page — `<x-wirekit::announcement-banner strip>` — hands its height to
+   --wk-strip-inset, and every viewport-pinned surface folds that in.
+
+   ⚠ :where() on every selector here, and it is not decoration. The tokens above live in
+   :where(:root) so that a developer's own `:root { … }` always wins. A bare
+   `:root:has([data-wk-viewport-strip])` would carry (0,2,0) and silently overrule that override.
+
+   Up to two strips stack, which covers the case that happens: the environment line and a
+   maintenance notice at once. The second sits under the first; the inset is both together. */
+:where(:root:has([data-wk-viewport-strip])) {
+    --wk-strip-inset: var(--wk-strip-height);
+}
+
+:where(:root:has([data-wk-viewport-strip] ~ [data-wk-viewport-strip])) {
+    --wk-strip-inset: calc(2 * var(--wk-strip-height));
+}
+
+/* Unlayered, so it beats the component's own `top-0` from Tailwind's utilities layer whatever
+   the specificity — the cascade checks the layer first. */
+:where([data-wk-viewport-strip] ~ [data-wk-viewport-strip]) {
+    top: var(--wk-strip-height);
 }
 
 /* ─── The navigation roles are REGISTERED, and that is load-bearing ─── */
@@ -790,6 +841,10 @@
     --color-wk-danger: oklch(57.7% 0.245 27.325);
     --color-wk-danger-hover: oklch(50.5% 0.213 27.518);
     --color-wk-danger-fg: #fff;
+    /* The same value as in light, on purpose: the hue tone is a mid-dark fill in BOTH modes
+       (lightness fixed by --wk-banner-hue-l), so the text on it does not change with the page.
+       A dark-mode inversion here would put dark text on a dark fill. */
+    --color-wk-banner-hue-fg: oklch(98.5% 0 0);
     --color-wk-danger-text: oklch(70.4% 0.191 22.216);
 
     /* Success — success-fg inherits zinc-900 from light mode.
@@ -948,6 +1003,7 @@
     --shadow-wk-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-wk-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
     --shadow-wk-lg: 0 12px 32px -4px rgba(0, 0, 0, 0.10), 0 4px 10px -2px rgba(0, 0, 0, 0.06);
+    --color-wk-banner-hue-fg: oklch(98.5% 0 0);
     --color-wk-overlay: oklch(0% 0 0 / 0.5);
     --color-wk-scrollbar-thumb: oklch(87% 0 0);
     --color-wk-scrollbar-thumb-hover: oklch(70.8% 0 0);
@@ -1228,6 +1284,32 @@
     overflow: visible;
     clip-path: none;
     white-space: normal;
+}
+
+/* THE TWO MARK FORMS, on the same conjunction as the name above and for the same    */
+/* reasons — the mode says the rail is in its labeled shape, the words-settled       */
+/* marker says the widening animation has finished, and following either alone is    */
+/* wrong in a different direction each time.                                         */
+/*                                                                                   */
+/* Both rules are scoped to the markers, which the component emits ONLY when a        */
+/* second form was given. A brand with one mark therefore carries no rule that could  */
+/* hide it, and every call site written before the slot existed renders unchanged.    */
+/*                                                                                   */
+/* `display: none` rather than visually-hidden, and unlike the NAME above: these two  */
+/* are the same thing drawn twice, so leaving the hidden one in the accessibility     */
+/* tree would announce the workspace twice. The name is what carries the identity and */
+/* it stays in the tree at every width.                                               */
+[data-wk-rail-brand-mark-wide] {
+    display: none;
+}
+
+[data-wk-rail][data-wk-names][data-labels='inline'] [data-wk-rail-brand-mark] {
+    display: none;
+}
+
+[data-wk-rail][data-wk-names][data-labels='inline'] [data-wk-rail-brand-mark-wide] {
+    display: flex;
+    align-items: center;
 }
 
 [data-wk-rail-brand-desc] {
@@ -5738,6 +5820,25 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* without using !important. Same pattern as wk-list.                  */
 /* `:where(:root)` — specificity 0; see top-of-file cascade rationale. */
 :where(:root) {
+    /* page-progress (the request bar at the page edge). Its heights mirror the
+       reading bar's on purpose — the two are the only full-bleed strips the kit
+       pins to an edge, and a page that shows both should not show two weights.
+       They are separate tokens even so: a theme that wants the request bar
+       louder than the reading one has to be able to say that. */
+    --page-progress-height-sm: 2px;
+    --page-progress-height-md: 3px;
+    --page-progress-height-lg: 5px;
+    /* page-progress fill override — the same hook the reading bar carries, for the same
+       job: retint every request bar on the page without touching a call site. Intents
+       resolve to var(--page-progress-fill, var(--color-wk-X)), so this wins when set.
+
+       MUST be `initial`, NOT empty. A custom property declared with an EMPTY value is
+       "valid but no token": `var(--x, fallback)` then SKIPS the fallback and the property
+       falls through to its own initial value, which for background-color is transparent —
+       an invisible bar with no error anywhere. `initial` makes the declaration behave as
+       if undeclared, so the fallback chain works. Same trap, same cure, as the two hooks
+       a few lines down. */
+    --page-progress-fill: initial;
     /* reading-progress (bar) */
     --reading-progress-height-sm: 2px;
     --reading-progress-height-md: 3px;
@@ -6211,6 +6312,15 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
    rule, so the mirror has to say so. The print block a few screens down carries `!important`
    for the same reason and says so too. */
 [dir="rtl"] .wk-reading-progress__fill {
+    transform-origin: right center !important;
+}
+
+/* The request bar at the page edge, same reason and a SEPARATE rule rather than a
+   selector list beside the one above. The guard that holds the reading bar's
+   `!important` matches `[dir="rtl"] .wk-reading-progress__fill {` — a list puts another
+   selector between the class and the brace, and the mirror it protects reads as gone.
+   Two rules cost two lines and cannot be broken by a third object joining later. */
+[dir="rtl"] .wk-page-progress__fill {
     transform-origin: right center !important;
 }
 [dir="rtl"] .wk-reading-spine .wk-reading-spine__link[data-active="true"] .wk-reading-spine__tick,
@@ -6697,6 +6807,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     /* `fixed`. A fixed element does not scroll with the page when   */
     /* the page becomes sheets: it lands ON the text of whichever    */
     /* sheet it fell on, once, over content the reader wanted.       */
+    .wk-page-progress,
     .wk-reading-progress,
     .wk-reading-spine,
     .wk-reading-minimap,
@@ -6910,6 +7021,10 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     /* prefers-reduced-motion see an instant state change, no motion.      */
     /* Bar progress and dot stroke still UPDATE on scroll — only the inter-*/
     /* polating transition is removed; the value itself jumps to current.  */
+    /* page-progress keeps the report and loses the travel: the bar still appears and
+       still says when the waiting ended, it just stops sliding to say it. Removing the
+       indicator would take the information away from the readers most likely to want it. */
+    :root:not([data-reduce-motion="no-preference"]) .wk-page-progress .wk-page-progress__fill,
     :root:not([data-reduce-motion="no-preference"]) .wk-reading-progress .wk-reading-progress__fill,
     :root:not([data-reduce-motion="no-preference"]) .wk-reading-progress--dot circle,
     :root:not([data-reduce-motion="no-preference"]) .wk-reading-spine,
@@ -7013,6 +7128,7 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 /* prefers-reduced-motion see an instant state change, no motion.      */
 /* Bar progress and dot stroke still UPDATE on scroll — only the inter-*/
 /* polating transition is removed; the value itself jumps to current.  */
+:root[data-reduce-motion="reduce"] .wk-page-progress .wk-page-progress__fill,
 :root[data-reduce-motion="reduce"] .wk-reading-progress .wk-reading-progress__fill,
 :root[data-reduce-motion="reduce"] .wk-reading-progress--dot circle,
 :root[data-reduce-motion="reduce"] .wk-reading-spine,
