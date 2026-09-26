@@ -113,7 +113,7 @@
         <button
             type="button"
             x-show="dismissible"
-            x-on:click="close()"
+            x-on:click="dismissByReader('close-button')"
             aria-label="{{ __('wirekit::Close') }}"
             class="{{ $closeClasses }}"
         >

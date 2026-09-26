@@ -21,6 +21,13 @@
     // re-size a page.
     'size' => null,
     'external' => false,
+    // Whether a link that opens a new tab says so: the arrow icon `external` draws and the
+    // screen-reader hint "(opens in new tab)" that every `target="_blank"` carries. `false`
+    // drops both and keeps the target and the forced `rel`. It is for an anchor whose script
+    // turns it into something else, a document link that opens a dialog when script runs and
+    // a new tab when it does not: there the automatic announcement is wrong half the time, and
+    // the call site states what the reader gets instead.
+    'announceNewTab' => true,
     'underline' => 'always',
     'as' => 'a',
     'scope' => null,
@@ -39,6 +46,7 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $external = BooleanProp::from($external, false);
+    $announceNewTab = BooleanProp::from($announceNewTab, true);
 
     $variantClasses = match ($variant) {
         'default' => 'text-[color:var(--color-wk-accent-text)]',
@@ -115,10 +123,10 @@
     // a single string so the rendered <a> has no whitespace between $slot and
     // </a>. Newlines inside the tag would render as a trailing space and
     // extend the underline past the link text.
-    $extLink = $external
+    $extLink = $external && $announceNewTab
         ? '<svg class="inline-block h-3.5 w-3.5 ms-0.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>'
         : '';
-    $newTabHint = $opensNewTab ? '<span class="sr-only">'.e(__('wirekit::(opens in new tab)')).'</span>' : '';
+    $newTabHint = $opensNewTab && $announceNewTab ? '<span class="sr-only">'.e(__('wirekit::(opens in new tab)')).'</span>' : '';
 @endphp
 
 <{{ $as }} data-wk-prose-skip

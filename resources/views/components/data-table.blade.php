@@ -22,7 +22,10 @@
     'searchable' => config('wirekit.components.data-table.searchable', false), // toolbar search box (client-side filter)
     'density' => config('wirekit.components.data-table.density', 'comfortable'), // comfortable | compact
     'columnManager' => false,       // show/hide-columns dropdown
-    'hidden' => [],                 // initially-hidden column keys
+    // Hidden column keys. Read from the state carrier rather than `x-data`, so a render with a
+    // different list moves the table to it without rebuilding the component; the reader's own
+    // choice arrives as `wirekit:data-table-columns-changed`, for an application to keep.
+    'hidden' => [],
     'server' => false,              // server-driven: stop local sort/filter, emit events only
     // The order the table starts in: a column key and a direction. In server mode, the order the
     // server already applied, so `aria-sort` and the arrow describe the rows on screen. Without
@@ -309,7 +312,7 @@
 <div
     {{ $attributes->except(['id', 'name', 'class'])->whereDoesntStartWith('wire:model') }}
     id="{{ $id }}"
-    x-data="wirekitDataTable({ columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, hidden: {{ \Pushery\WireKit\Support\AlpinePayload::from($hiddenArr) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }}, loadingText: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Loading results')) }}, prominenceClasses: {{ \Pushery\WireKit\Support\AlpinePayload::from($prominenceClasses) }}, selectionPhrases: {{ $selectionPhrases }}, locale: {{ $pluralLocale }} })"
+    x-data="wirekitDataTable({ columns: {{ \Pushery\WireKit\Support\AlpinePayload::from($colsArr) }}, rowKey: {{ \Pushery\WireKit\Support\AlpinePayload::string($rowKey) }}, mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }}, density: {{ \Pushery\WireKit\Support\AlpinePayload::string($density) }}, emptyText: {{ \Pushery\WireKit\Support\AlpinePayload::string($emptyText) }}, loadingText: {{ \Pushery\WireKit\Support\AlpinePayload::string(__('wirekit::Loading results')) }}, prominenceClasses: {{ \Pushery\WireKit\Support\AlpinePayload::from($prominenceClasses) }}, selectionPhrases: {{ $selectionPhrases }}, locale: {{ $pluralLocale }} })"
     {{ $attributes->only('class')->class([$base]) }}
 >
     {{-- What changes from one render to the next travels HERE, not in `x-data`.
@@ -324,7 +327,7 @@
 
          A `<template>` so it has no box at all, and an attribute so Blade's own escaping
          applies. --}}
-    <template data-wk-data-table-state="{{ \Pushery\WireKit\Support\AlpinePayload::from(['rows' => $rowsArr, 'avatarTints' => $avatarTints, 'sortKey' => $sortKey, 'sortDir' => $sortDir, 'search' => $search, 'loading' => $loading]) }}"></template>
+    <template data-wk-data-table-state="{{ \Pushery\WireKit\Support\AlpinePayload::from(['rows' => $rowsArr, 'avatarTints' => $avatarTints, 'sortKey' => $sortKey, 'sortDir' => $sortDir, 'search' => $search, 'loading' => $loading, 'hidden' => $hiddenArr]) }}"></template>
 
     @if($selectable && $name)
         {{-- Selection bridge for wire:model / form submission. --}}

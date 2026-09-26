@@ -58,6 +58,11 @@
     'value' => null,
     'size' => config('wirekit.components.slider.size', 'md'),
     'showValue' => false,
+    // Where the shown value sits: `end`, beside the track as it always has, or `below`, on its
+    // own centered line under the track. `below` keeps every track of a form the same length:
+    // beside the track each slider reserves room for its own widest value, so five sliders
+    // with five different value words drew five different track lengths.
+    'valuePosition' => 'end',
     // Step marks: a list of values (`[0, 25, 50, 75, 100]`) for plain ticks, or a
     // value => label map (`[0 => 'Low', 100 => 'High']`) for labeled ticks.
     'marks' => [],
@@ -100,11 +105,19 @@
      * this way; this one was added without the guard.
      */
     $error ??= $name ? ($errors ?? null)?->first($name) : null;
+    // Whether a message line renders below the control: the error, or the hint when there is none.
+    $hasMessage = (bool) $error || (bool) $hint;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $showValue = BooleanProp::from($showValue, false);
+    $valueBelow = match ($valuePosition) {
+        'end' => false,
+        'below' => true,
+        default => \Pushery\WireKit\WireKit::validateProp('slider', 'valuePosition', (string) $valuePosition, ['end', 'below']) === 'below',
+    };
+    $valueBelow = $valueBelow && $showValue;
     $tooltip = BooleanProp::from($tooltip, false);
     $disabled = BooleanProp::from($disabled, false);
     $required = BooleanProp::from($required, false);
@@ -126,7 +139,12 @@
     // Slider = styled HTML <input type="range">. Native element gives us
     // arrow-key support, drag handling, and accessibility for free; we only
     // need to style the track + thumb via CSS variables.
-    $sliderId = $id ?? ($name ? 'wk-slider-' . $name : 'wk-slider-' . Str::random(6));
+    //
+    // The id is the same on every render: Livewire's morph recognizes an element by it, and an
+    // id drawn fresh per render made every round trip REPLACE the range input, so a drag bound
+    // with `wire:model.live` lost its thumb mid-gesture. Seeded from the bound property when
+    // there is no name, counted per render order when there is neither.
+    $sliderId = $id ?? ($name ? 'wk-slider-' . $name : WireKit::stableId('wk-slider', $attributes->whereStartsWith('wire:model')->first()));
     // One description list for the control: the component's own id first, then a caller's
     // aria-describedby. Written as separate attributes, the parser kept only the first copy,
     // so a caller's description was dropped or pushed the component's own out.
@@ -287,7 +305,15 @@
     // cell, fit-content wrapper) a w-full track has no intrinsic width and
     // collapses to a few px — far too narrow to drag.
     $wrapperClasses = WireKit::resolveClasses('slider', 'wrapper', implode(' ', array_filter([
-        'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
+        // With the value below, a grid rather than the row: the label keeps its column and the
+        // value gets a line of its own under the TRACK. A wrapping row would center the value
+        // under the label and the track together, half a label away from the track's middle.
+        // One column when no label is shown, or an empty first column would still cost a gap.
+        // The gap is a gap token and runs between the rows too, so the value line keeps the same
+        // distance from whatever sits above it: the track, or the marks under the track.
+        $valueBelow
+            ? 'grid items-center gap-[var(--gap-wk-sm)] w-full '.($label ? 'grid-cols-[auto_minmax(0,1fr)]' : 'grid-cols-[minmax(0,1fr)]')
+            : 'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
         // ⚠️ `min(16rem, 100%)`, NOT a bare `16rem`. The floor keeps a shrink-to-fit
         // context (a flex or grid auto item, a table cell, a fit-content wrapper) from
         // collapsing the track to a few unusable pixels — but `min-width` is a HARD floor,
@@ -302,7 +328,12 @@
         // shipped and what every preview is drawn against, so that is what stays.)
         'min-w-[min(16rem,100%)]',
         $tooltip ? 'pt-7' : '',
-        $hasLabeledMarks ? 'pb-6' : (! empty($normalizedMarks) ? 'pb-2' : ''),
+        // With the value below, the value's own line takes the room the marks hang into (see
+        // $valueClasses), so the wrapper reserves nothing under the track itself. A message
+        // takes that room too: the row wraps, the message is a line of its own (`basis-full`),
+        // and it starts under the marks. Without the wrap it was a fourth item of the row,
+        // beside the value, and took its width from the track.
+        $valueBelow ? '' : ($hasMessage ? 'flex-wrap gap-y-[var(--gap-wk-xs)]' : ($hasLabeledMarks ? 'pb-6' : (! empty($normalizedMarks) ? 'pb-2' : ''))),
     ])), $scope);
 
     // The native input — we make the thumb and track visible via `wk-slider`
@@ -310,8 +341,9 @@
     $inputClasses = WireKit::resolveClasses('slider', 'input', implode(' ', [
         'wk-slider',
         // Inside a track overlay (tooltip / marks) the input fills its relative
-        // container; otherwise it flexes directly in the wrapper row.
-        $hasTrackOverlay ? 'w-full' : 'flex-1',
+        // container; otherwise it flexes directly in the wrapper row, or fills its grid
+        // column when the value sits below (`flex-1` means nothing to a grid item).
+        ($hasTrackOverlay || $valueBelow) ? 'w-full' : 'flex-1',
         'appearance-none',
         'bg-transparent',
         'cursor-pointer',
@@ -367,15 +399,21 @@
         }
     }
 
-    $valueClasses = WireKit::resolveClasses('slider', 'value', implode(' ', [
+    $valueClasses = WireKit::resolveClasses('slider', 'value', implode(' ', array_filter([
         'tabular-nums',
         'text-[length:var(--text-wk-sm)]',
         'text-[color:var(--color-wk-text)]',
         // A one-cell grid: the ghost and the live text share it, so the cell is as wide as
         // the widest of them and never as narrow as whichever is showing.
-        'grid justify-items-end',
-        'text-end',
-    ]), $scope);
+        $valueBelow ? 'grid justify-items-center text-center' : 'grid justify-items-end text-end',
+        // Below the track: the track's column, so the value centers under the track rather
+        // than under the label beside it.
+        $valueBelow && $label ? 'col-start-2' : '',
+        // And the value line starts under the marks. They hang out of flow from the track, so
+        // the grid row does not know they are there: a tick is 0.5rem under the track and a
+        // labeled one adds a line of `xs` text, 1.75rem in all.
+        $valueBelow ? ($hasLabeledMarks ? 'mt-7' : (! empty($normalizedMarks) ? 'mt-2' : '')) : '',
+    ])), $scope);
 
     // Accessible-name fallback. WCAG 2.1 (4.1.2) — every form input must
     // have a programmatically-determinable name. When no visible `label`
@@ -603,15 +641,20 @@
     @if($showValue)
         {{-- aria-live="polite" so screen readers get the updated value when
              the user releases the slider, not on every tick. --}}
-        <span class="{{ $valueClasses }}">
+        {{-- `data-wk-slider-value` is the styling hook for the box. The `aria-live` element
+             inside it is the announced TEXT, and since the value gained its width reservation
+             it is a grid child, so a rule aimed at it no longer reaches the box. --}}
+        <span data-wk-slider-value class="{{ $valueClasses }}">
             {{-- The reservation. `aria-hidden` because it is the same value said twice, and
                  `invisible` rather than `hidden` because a hidden element occupies nothing
                  and would reserve nothing. --}}
             <span aria-hidden="true" class="col-start-1 row-start-1 invisible whitespace-nowrap">{{ $widestValueText }}</span>
             {{-- aria-live="polite" so screen readers get the updated value when the user
                  releases the slider, not on every tick. It stays on the element whose text
-                 changes — an adopting application selects this attribute to restyle the box,
-                 and moving it would break that without telling anyone. --}}
+                 changes, which is right for the announcement. It is NOT a styling hook for the
+                 box: that is `data-wk-slider-value` on the parent. This comment offered the
+                 attribute as one until the box became a grid, and a rule written against it then
+                 moved the text inside the box instead of the box. --}}
             <span aria-live="polite" class="col-start-1 row-start-1 whitespace-nowrap" x-text="valueText"></span>
         </span>
     @endif
@@ -623,10 +666,28 @@
     </div>
 @endif
     {{-- Same shape as `input`: one region, error winning over hint, announced politely so
-         it does not interrupt what the reader is doing. --}}
+         it does not interrupt what the reader is doing. A line of its own under the control in
+         both layouts: across both columns of the grid when the value sits below, since in the
+         label's column alone it widened that column to its own length; a full-width line of the
+         wrapped row otherwise, starting under the marks, which hang out of flow. --}}
+    {{-- The layout keys are written out in each `@class` rather than kept in one array and
+         spread in: a class that exists only in a PHP variable is one the drift audit cannot
+         trace to this file, and Tailwind would still compile it. --}}
     @if($error)
-        <p data-wk-prose-skip id="{{ $sliderId }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]">{{ $error }}</p>
+        <p data-wk-prose-skip id="{{ $sliderId }}-error" @if($announceError) aria-live="polite" aria-atomic="true" @endif @class([
+            'col-span-full' => $valueBelow,
+            'basis-full' => ! $valueBelow,
+            'mt-7' => ! $valueBelow && $hasLabeledMarks,
+            'mt-2' => ! $valueBelow && ! $hasLabeledMarks && ! empty($normalizedMarks),
+            'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-danger-text)]',
+        ])>{{ $error }}</p>
     @elseif($hint)
-        <p data-wk-prose-skip id="{{ $sliderId }}-hint" class="text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">{{ $hint }}</p>
+        <p data-wk-prose-skip id="{{ $sliderId }}-hint" @class([
+            'col-span-full' => $valueBelow,
+            'basis-full' => ! $valueBelow,
+            'mt-7' => ! $valueBelow && $hasLabeledMarks,
+            'mt-2' => ! $valueBelow && ! $hasLabeledMarks && ! empty($normalizedMarks),
+            'text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]',
+        ])>{{ $hint }}</p>
     @endif
 </div>

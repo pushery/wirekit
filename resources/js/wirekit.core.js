@@ -20,6 +20,7 @@ import wirekitChartJs from './components/chart.js';
 import wirekitImageCompare from './components/image-compare.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerFindableDirective } from './utils/findable.js';
+import { registerClearedFieldMemory } from './utils/cleared-field.js';
 import { reportLateRegistration } from './utils/late-registration.js';
 import { installOverlayRoot } from './utils/overlay-root.js';
 
@@ -41,6 +42,9 @@ function registerCoreComponents() {
     registerIndeterminateDirective(Alpine);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(Alpine);
+    // A field Livewire emptied after a successful action is not the reader's mistake.
+    // See utils/cleared-field.js.
+    registerClearedFieldMemory();
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitImageCompare', wirekitImageCompare);

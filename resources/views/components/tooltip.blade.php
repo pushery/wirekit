@@ -29,6 +29,10 @@
     // site can bind it — `x-bind:data-wk-tooltip-disabled="collapsed"` — and get
     // a tooltip that follows live state. The component reads it at trigger time.
     'disabled' => false,
+    // The panel's surface. `inverted` is the classic tooltip, the text color as the background and
+    // the page color as the text, so it stands out on either theme. `elevated` takes the surface
+    // menus and popovers use: the elevated background, the body text and the theme's border.
+    'surface' => 'inverted',
     'scope' => null,
     // What the host AND the trigger wrapper root in. `div` keeps every existing call site
     // rendering exactly as before; `as="span"` is what makes this component usable inside a
@@ -64,6 +68,7 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $focusableTrigger = BooleanProp::from($focusableTrigger, true);
     $disabled = BooleanProp::from($disabled, false);
+    $surface = WireKit::validateProp('tooltip', 'surface', (string) $surface, ['inverted', 'elevated']);
 
     // `$as` is interpolated into two opening tags below, and Blade's escaping does not make
     // that safe: `e()` escapes neither a space nor an `=`, so `as="div onmouseover=alert(1)"`
@@ -87,7 +92,7 @@
     // w-max ensures the tooltip sizes to its content (not the trigger width)
     // Uses `fixed` positioning so the tooltip escapes ancestor `overflow: hidden` containers.
     // Floating UI uses strategy: 'fixed' to position relative to the viewport.
-    $tooltipClasses = WireKit::resolveClasses('tooltip', 'panel', implode(' ', [
+    $tooltipClasses = WireKit::resolveClasses('tooltip', 'panel', implode(' ', array_filter([
         'fixed',
         'w-max',
         'z-[var(--z-wk-tooltip)]',
@@ -100,6 +105,9 @@
         'font-[family-name:var(--font-wk-sans)]',
         'rounded-[var(--radius-wk-sm)]',
         'shadow-[var(--shadow-wk-md)]',
+        // The elevated surface keeps the popover's border, so it has an edge on a theme with no
+        // shadow. The colors come from the wrapper (`data-wk-tooltip-surface` in the stylesheet).
+        $surface === 'elevated' ? 'border-[length:var(--border-wk-width)] border-[var(--color-wk-border)]' : '',
         // There is deliberately no `pointer-events-none` here, and the absence is the
         // rule rather than an omission. WCAG 1.4.13 requires content shown on hover to
         // be HOVERABLE: the pointer must be able to travel onto it without it
@@ -109,12 +117,13 @@
         // armed, so it vanished the moment the pointer set off towards it.
         // The panel binds `mouseenter`/`mouseleave` below; the `offset` gap between
         // trigger and panel is crossed well inside `delayHide`.
-    ]), $scope);
+    ])), $scope);
 @endphp
 
 {{-- Tooltip wrapper — handles hover, focus, touch, and keyboard events --}}
 <{{ $as }} data-wk-prose-skip
     @if($disabled) data-wk-tooltip-disabled="true" @endif
+    @if($surface === 'elevated') data-wk-tooltip-surface="elevated" @endif
     x-data="wirekitTooltip({
         placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }},
         offset: {{ (int) $offset }},
@@ -123,7 +132,7 @@
     })"
     x-on:mouseenter="mouseenter()"
     x-on:mouseleave="mouseleave()"
-    x-on:focusin="focusin()"
+    x-on:focusin="focusin($event)"
     x-on:focusout="focusout()"
     x-on:pointerdown="pointerdown($event)"
     x-on:pointerup="pointerup($event)"

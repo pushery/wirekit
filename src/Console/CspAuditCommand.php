@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\View;
 use Pushery\WireKit\Support\AlpineRegistrations;
 use Pushery\WireKit\Support\BladeParser;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Process\ExecutableFinder;
 use Symfony\Component\Process\Process;
 
@@ -92,6 +93,18 @@ class CspAuditCommand extends Command
      * class of damage as missing a violation: it spends the credibility this command runs on.
      */
     private ?bool $reservedWordAsMember = null;
+
+    /**
+     * What the installed CSP build refuses whatever an expression says, read from its own error
+     * messages by the bridge: directive name => message, and element name => message. Filled by
+     * `parse()` from the same process that judged the expressions.
+     *
+     * @var array<string, string>
+     */
+    private array $prohibitedDirectives = [];
+
+    /** @var array<string, string> */
+    private array $prohibitedTags = [];
 
     /**
      * The attributes whose VALUE Alpine evaluates as an expression.
@@ -226,6 +239,18 @@ class CspAuditCommand extends Command
         $unregistered = [];
 
         foreach ($found as $i => $entry) {
+            // Refused by the build whatever the expression says: a directive it throws on before
+            // reading the value (`x-html`), or an element it evaluates nothing on (`<iframe>`,
+            // `<script>`). The grammar passes these, because `body` is a good expression, so they
+            // are judged first and on their own terms.
+            $refused = $this->refusedByBuild($entry);
+
+            if ($refused !== null) {
+                $offenders[] = $entry + ['error' => $refused];
+
+                continue;
+            }
+
             // A call whose callee is a LITERAL parses and is dead, and that combination is
             // invisible to both halves of this audit: the grammar accepts it, and there is
             // no Blade left in it for the substitution check to object to.
@@ -336,6 +361,12 @@ class CspAuditCommand extends Command
                 // A build step that branches on the offender list without this reads a verdict
                 // as a property of the code when it is a property of the installed parser.
                 'grammar' => ['reserved_word_as_member' => $this->reservedWordAsMember],
+                // What the installed build refuses outright, as read from it — so a build step
+                // can see that the check ran against the bundle it ships, not against a list.
+                'prohibited_by_build' => [
+                    'directives' => array_keys($this->prohibitedDirectives),
+                    'tags' => array_keys($this->prohibitedTags),
+                ],
                 // Additive, and the reason they are here rather than only on the report: a
                 // build step reading this payload has the same blind spot a reader does.
                 'surface' => array_values($paths),
@@ -839,6 +870,7 @@ class CspAuditCommand extends Command
                         'attribute' => $hit['attribute'],
                         'expression' => $hit['expression'],
                         'unresolved' => $hit['unresolved'],
+                        'tag' => $hit['tag'],
                     ];
                 }
             }
@@ -865,7 +897,7 @@ class CspAuditCommand extends Command
      * is Blade's question and lives next to the walk; choosing what replaces them is a
      * statement about Alpine's grammar and belongs to this command.
      *
-     * @return array<int, array{line: int, attribute: string, expression: string, unresolved: string|null}>
+     * @return array<int, array{line: int, attribute: string, expression: string, unresolved: string|null, tag: string}>
      */
     private function expressionsIn(string $contents): array
     {
@@ -888,6 +920,9 @@ class CspAuditCommand extends Command
                     'attribute' => $attribute['name'],
                     'expression' => $attribute['expression'],
                     'unresolved' => $attribute['unresolved'],
+                    // The element the expression sits on: the build refuses every expression on
+                    // some elements, whatever it says.
+                    'tag' => strtolower($tag['name']),
                 ];
             }
         }
@@ -1164,6 +1199,37 @@ class CspAuditCommand extends Command
     }
 
     /**
+     * The reason the installed CSP build refuses this expression whatever it says, or null.
+     *
+     * @param  array{attribute?: string, tag?: string}  $entry
+     */
+    private function refusedByBuild(array $entry): ?string
+    {
+        // The directive's base: `x-html`, not the modifiers or the argument after it.
+        $directive = strtolower((string) preg_replace('/[:.].*$/s', '', (string) ($entry['attribute'] ?? '')));
+
+        if (isset($this->prohibitedDirectives[$directive])) {
+            return sprintf(
+                '%s (the installed build throws on the directive before it reads the value). Render '
+                .'the markup on the server instead, or use x-text where the value is text.',
+                $this->prohibitedDirectives[$directive],
+            );
+        }
+
+        $tag = strtolower((string) ($entry['tag'] ?? ''));
+
+        if (isset($this->prohibitedTags[$tag])) {
+            return sprintf(
+                '%s (no expression on this element is evaluated, whatever it says). Bind the value '
+                .'on a wrapper, or set the attribute on the server.',
+                $this->prohibitedTags[$tag],
+            );
+        }
+
+        return null;
+    }
+
+    /**
      * Hand the expressions to Alpine's own parser.
      *
      * The shape is the bridge's, and it is written out rather than loosened: `warnings`
@@ -1223,7 +1289,7 @@ class CspAuditCommand extends Command
             return null;
         }
 
-        /** @var array{ok?: bool, error?: string, grammar?: array{reservedWordAsMember?: bool}, results?: array<int, CspVerdict>}|null $payload */
+        /** @var array{ok?: bool, error?: string, grammar?: array{reservedWordAsMember?: bool}, prohibited?: array{directives?: array<int, array{name?: string, message?: string}>, tags?: array<int, array{name?: string, message?: string}>}, results?: array<int, CspVerdict>}|null $payload */
         $payload = json_decode($process->getOutput(), true);
 
         if (! is_array($payload) || ($payload['ok'] ?? false) !== true) {
@@ -1240,6 +1306,26 @@ class CspAuditCommand extends Command
         // describe a different parser than the one that judged the expressions.
         $capability = $payload['grammar']['reservedWordAsMember'] ?? null;
         $this->reservedWordAsMember = is_bool($capability) ? $capability : null;
+
+        // The refusals come from the same process, and an empty set is not a clean one: the
+        // bridge fails on it, and so does this, in case the two ever disagree.
+        foreach (['directives' => 'prohibitedDirectives', 'tags' => 'prohibitedTags'] as $key => $property) {
+            $set = [];
+
+            foreach ($payload['prohibited'][$key] ?? [] as $entry) {
+                if (is_string($entry['name'] ?? null) && is_string($entry['message'] ?? null)) {
+                    $set[strtolower($entry['name'])] = $entry['message'];
+                }
+            }
+
+            if ($set === []) {
+                $this->error('The CSP parser bridge did not say what the build refuses outright ('.$key.'), so this run cannot check it.');
+
+                return null;
+            }
+
+            $this->{$property} = $set;
+        }
 
         /** @var array<int, CspVerdict> $results */
         $results = $payload['results'] ?? [];
@@ -1327,6 +1413,15 @@ class CspAuditCommand extends Command
                 count($registrationScan['files']),
             ));
         }
+
+        // What the build refuses whatever an expression says, and where that set came from: the
+        // installed bundle's own messages, so the line changes when the build does.
+        // Escaped: the console formatter reads `<iframe>` as one of its own style tags.
+        $this->line(OutputFormatter::escape(sprintf(
+            'Refused by the installed CSP build whatever the expression says: %s, and any expression on %s.',
+            implode(', ', array_map(static fn (string $d): string => '`'.$d.'`', array_keys($this->prohibitedDirectives))),
+            implode(' or ', array_map(static fn (string $t): string => '<'.$t.'>', array_keys($this->prohibitedTags))),
+        )));
 
         // Listed before the verdict, so the verdict is the last thing on screen and cannot be
         // read without this qualifying it.

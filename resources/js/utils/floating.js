@@ -53,7 +53,7 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  *   the caller MUST call it on close/destroy or the scroll/resize listeners leak
  *   (the caller owns teardown). No `animationFrame` option: the default
  *   scroll+resize listeners are cheap; a per-frame rAF loop would burn CPU here.
- * @param {boolean} options.repairErasure - Put the placement back when something REMOVES it.
+ * @param {boolean|function(HTMLElement): void} options.repairErasure - Put the placement back when something REMOVES it.
  *   A framework that re-renders the panel patches it against its own template, whose `style`
  *   attribute carries none of what this function writes — so `top`, `left`, the width and the
  *   height cap all disappear at once, while the state that opened the panel never changed and
@@ -78,6 +78,13 @@ import { computePosition, autoUpdate, flip, shift, limitShift, size, offset as o
  *
  *   Opt-in, like the options above, so no existing caller changes behavior. Like `autoReposition`
  *   it returns a `stop` the caller owns.
+ *
+ *   A function instead of `true` is called with the panel before the placement is put back, for a
+ *   caller that writes inline style of its own besides the placement. The same update removes that
+ *   too: a tooltip copies its colors onto its teleported panel, and without the callback it came
+ *   back placed but in the default colors. The emptiness test still ends it: a write from the
+ *   callback re-enters the observer like any other, and every pass ends in a `run()` that writes
+ *   `top`.
  * @returns {Promise<{x: number, y: number, placement: string, stop?: () => void}>}
  */
 /**
@@ -104,6 +111,60 @@ export function focusIsWithin(container) {
     }
 
     return container.contains(active);
+}
+
+/**
+ * Lift a panel above the dialog its trigger stands in.
+ *
+ * Every panel teleports into the one overlay root, where it stacks against the modals and drawers
+ * that live there too by z-index alone: a dropdown at `--z-wk-dropdown` and a tooltip at
+ * `--z-wk-tooltip` sit BELOW a dialog at `--z-wk-modal`. For a panel of the page that is right. For
+ * one opened from inside the dialog it is not: the dialog's own layer covered it, and a click on a
+ * dropdown entry landed on that layer, which closes the dialog. Measured in Blink and WebKit for a
+ * tooltip, a popover and a dropdown in an open modal.
+ *
+ * So the panel is lifted just above the highest positioned ancestor of its trigger that stands at
+ * dialog level or above, a tooltip one step higher than the rest, so that inside a dialog the two
+ * keep the order they have on the page. A panel of the page finds no such ancestor and keeps its
+ * own layer; a panel opened from a panel that was lifted is lifted above that one in turn.
+ *
+ * @param {HTMLElement} reference
+ * @param {HTMLElement} floating
+ */
+export function liftAboveTriggerDialog(reference, floating) {
+    if (! reference || ! floating || typeof getComputedStyle !== 'function') {
+        return;
+    }
+
+    // The panel's own layer, from its classes: a previous lift is cleared before it is read.
+    floating.style.zIndex = '';
+
+    const tokens = getComputedStyle(document.documentElement);
+    const dialogLevel = parseInt(tokens.getPropertyValue('--z-wk-modal'), 10);
+    const tooltipLevel = parseInt(tokens.getPropertyValue('--z-wk-tooltip'), 10);
+    const own = parseInt(getComputedStyle(floating).zIndex, 10);
+
+    if (! Number.isFinite(dialogLevel)) {
+        return;
+    }
+
+    let layer = null;
+
+    for (let el = reference.parentElement; el && el !== document.body; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        const z = parseInt(style.zIndex, 10);
+
+        if (style.position !== 'static' && Number.isFinite(z) && z >= dialogLevel && (layer === null || z > layer)) {
+            layer = z;
+        }
+    }
+
+    if (layer === null) {
+        return;
+    }
+
+    const step = Number.isFinite(own) && Number.isFinite(tooltipLevel) && own >= tooltipLevel ? 2 : 1;
+    floating.style.zIndex = String(layer + step);
 }
 
 export async function position(reference, floating, {
@@ -191,6 +252,8 @@ export async function position(reference, floating, {
         return result;
     };
 
+    liftAboveTriggerDialog(reference, floating);
+
     const result = await run();
 
     // Put the placement back when something takes it away. See the option's docblock for why
@@ -201,6 +264,10 @@ export async function position(reference, floating, {
         const repair = new MutationObserver(() => {
             if (floating.style.top !== '') {
                 return;
+            }
+
+            if (typeof repairErasure === 'function') {
+                repairErasure(floating);
             }
 
             run();

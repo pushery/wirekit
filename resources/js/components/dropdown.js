@@ -7,6 +7,7 @@
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
+import { isRendered } from '../utils/rendered.js';
 
 /**
  * @param {Object} config - Dropdown configuration from Blade
@@ -427,7 +428,11 @@ export default function wirekitDropdown(config = {}) {
                     +'[role="menuitemradio"]:not([aria-disabled="true"]),'
                     +'[role="menuitemcheckbox"]:not([aria-disabled="true"])'
                 )
-            ).filter((el) => !el.closest('[data-wk-submenu-panel]'));
+            )
+                .filter((el) => !el.closest('[data-wk-submenu-panel]'))
+                // Only the entries drawn: one hidden with `x-show` cannot take focus, and an
+                // arrow key landing on it left focus where it was.
+                .filter(isRendered);
         },
     };
 }

@@ -20,6 +20,9 @@
  * Lifecycle resources held on `this`:
  *   - _observer (IntersectionObserver) — disconnected + nulled in destroy();
  *     the callback null-guards against post-destroy fires.
+ *   - _resizeObserver (ResizeObserver on the scroller) — disconnected + nulled in
+ *     destroy(); its callback null-guards both observers. It exists for the reveal of a
+ *     hidden panel, see _recheckOnReveal below.
  */
 export default function wirekitStickyPanelShadows() {
     return {
@@ -42,6 +45,17 @@ export default function wirekitStickyPanelShadows() {
         endShadow: false,
 
         _observer: null,
+        _resizeObserver: null,
+
+        /*
+         * Set while the scroller has no box. An IntersectionObserver reports only CHANGES of
+         * a sentinel's visibility, and a sentinel that is out of view both inside a hidden
+         * panel and after the reveal (the end of a table that really overflows) never gets a
+         * second report: its shadow would stay as the hidden state left it. So the reveal is
+         * watched for separately, and the sentinels are observed afresh, which delivers a new
+         * first report of their actual state.
+         */
+        _recheckOnReveal: false,
 
         init() {
             const scroller = this.$refs.scroller;
@@ -70,9 +84,24 @@ export default function wirekitStickyPanelShadows() {
                 // can execute after Alpine teardown set this._observer to null.
                 if (!this._observer) return;
                 for (const entry of entries) {
+                    // A scroller with no box says nothing about overflow. Inside a hidden
+                    // panel (a tab not yet selected, anything under `display: none`) every
+                    // sentinel reports "out of view", and taking that at its word switched
+                    // BOTH shadows on: they stood there on the reveal until the next
+                    // observation faded them out, a flash on each side of a table that fits.
+                    // Such an entry now means "no shadow", and the observation that follows
+                    // the reveal sets the real state from nothing.
+                    const rootHasBox = !! entry.rootBounds
+                        && entry.rootBounds.width > 0
+                        && entry.rootBounds.height > 0;
+
+                    if (! rootHasBox) {
+                        this._recheckOnReveal = true;
+                    }
+
                     for (const [edge, el] of present) {
                         if (entry.target === el) {
-                            this[edge + 'Shadow'] = ! entry.isIntersecting;
+                            this[edge + 'Shadow'] = rootHasBox && ! entry.isIntersecting;
                         }
                     }
                 }
@@ -81,12 +110,42 @@ export default function wirekitStickyPanelShadows() {
             for (const [, el] of present) {
                 this._observer.observe(el);
             }
+
+            if (typeof ResizeObserver !== 'undefined') {
+                this._resizeObserver = new ResizeObserver((entries) => {
+                    // Null-guard against post-destroy fire, for both observers this reaches.
+                    if (!this._resizeObserver || !this._observer) return;
+
+                    const box = entries[0]?.contentRect;
+
+                    if (! box || box.width === 0 || box.height === 0) {
+                        this._recheckOnReveal = true;
+
+                        return;
+                    }
+
+                    if (! this._recheckOnReveal) return;
+
+                    this._recheckOnReveal = false;
+
+                    for (const [, el] of present) {
+                        this._observer.unobserve(el);
+                        this._observer.observe(el);
+                    }
+                });
+                this._resizeObserver.observe(scroller);
+            }
         },
 
         destroy() {
             if (this._observer) {
                 this._observer.disconnect();
                 this._observer = null;
+            }
+
+            if (this._resizeObserver) {
+                this._resizeObserver.disconnect();
+                this._resizeObserver = null;
             }
         },
     };

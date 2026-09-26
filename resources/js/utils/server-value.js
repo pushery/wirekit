@@ -30,13 +30,15 @@
  * and these components are documented to work in a plain form too. A mutation on
  * an attribute is true whoever wrote it.
  *
- * @param {HTMLElement} el       the element carrying the attribute — the component root
- * @param {Function}    onChange called with the new value, only when it differs
+ * @param {HTMLElement} el        the element carrying the attribute — the component root
+ * @param {Function}    onChange  called with the new value, only when it differs
+ * @param {string}      attribute the attribute to follow; a component whose server half is not
+ *                                its value (the options of a server search) names its own
  * @returns {Function}  disconnects the observer; call it from destroy()
  */
 export const WK_SERVER_VALUE_ATTRIBUTE = 'data-wk-server-value';
 
-export function observeServerValue(el, onChange) {
+export function observeServerValue(el, onChange, attribute = WK_SERVER_VALUE_ATTRIBUTE) {
     // Defensive per the house rule for observers: a component may be torn down
     // between init() and the first callback, and an observer firing into a dead
     // scope throws where nobody is looking.
@@ -45,14 +47,14 @@ export function observeServerValue(el, onChange) {
     }
 
     const observer = new MutationObserver(() => {
-        const value = el.getAttribute(WK_SERVER_VALUE_ATTRIBUTE);
+        const value = el.getAttribute(attribute);
 
         if (value !== null) {
             onChange(value);
         }
     });
 
-    observer.observe(el, { attributes: true, attributeFilter: [WK_SERVER_VALUE_ATTRIBUTE] });
+    observer.observe(el, { attributes: true, attributeFilter: [attribute] });
 
     return () => observer.disconnect();
 }

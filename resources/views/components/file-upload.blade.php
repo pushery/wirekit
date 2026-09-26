@@ -82,7 +82,6 @@
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
-    use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
@@ -93,7 +92,18 @@
 
     // File upload — dropzone UI with click-to-browse fallback. Alpine tracks
     // drag-over state and the list of selected files for live preview.
-    $uploadId = $id ?? ($name ? 'wk-upload-' . $name : 'wk-upload-' . Str::random(6));
+    //
+    // The property the input is bound to, if any. The factory watches it so the list empties
+    // when a save sets it back to empty, and it seeds the id below.
+    $boundModel = $attributes->whereStartsWith('wire:model')->first();
+    $boundModel = is_string($boundModel) && $boundModel !== '' ? $boundModel : null;
+
+    // The id has to be the same on every render. Livewire's morph recognizes an element by it,
+    // so an id drawn fresh per render made each round trip REPLACE the input — and Livewire
+    // fires its upload events on the element it bound to, which by then had left the page, so
+    // no form ever heard `livewire-upload-finish`. Seeded from the bound property when there is
+    // no name (`wk-upload-photos`), counted per render order when there is neither.
+    $uploadId = $id ?? ($name ? 'wk-upload-' . $name : WireKit::stableId('wk-upload', $boundModel));
     $errorId = $uploadId . '-error';
     $hintId = $uploadId . '-hint';
 
@@ -271,7 +281,7 @@
          four statements and a `const`, which Alpine's CSP build does not parse —
          under a strict Content-Security-Policy dropping a file did nothing while
          clicking the label still worked. --}}
-    x-data="wirekitFileUpload({ removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }}, removedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removedMessage) }} })"
+    x-data="wirekitFileUpload({ removeLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removeLabel) }}, removedMessage: {{ \Pushery\WireKit\Support\AlpinePayload::from((string) $removedMessage) }}, model: {{ \Pushery\WireKit\Support\AlpinePayload::from($boundModel) }} })"
     {{-- `wire:model` is peeled off here and re-attached to the file input below.
          Livewire decides what a model binding MEANS by reading the element's
          type: on a `<input type="file">` it takes the upload path, and on

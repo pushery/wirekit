@@ -6,6 +6,9 @@
     'scope' => null,
 ])
 
+{{-- The bar's density: one attribute on `navbar` sets every entry. --}}
+@aware(['density' => 'default'])
+
 @php
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -20,12 +23,16 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $active = BooleanProp::from($active, false);
 
+    // `@aware` leaves its key in the attribute bag, where it would render as a stray attribute.
+    $attributes = $attributes->except(['density']);
+    $compact = $density === 'compact';
+
     // Navbar item — navigation link with active state indicator.
     $classes = WireKit::resolveClasses('navbar.item', 'base', implode(' ', [
         'inline-flex items-center',
-        'px-[var(--padding-wk-x-sm)]',
-        'py-[var(--padding-wk-y-sm)]',
-        'text-[length:var(--text-wk-md)]',
+        $compact ? 'px-[var(--padding-wk-x-xs)]' : 'px-[var(--padding-wk-x-sm)]',
+        $compact ? 'py-[var(--padding-wk-y-xs)]' : 'py-[var(--padding-wk-y-sm)]',
+        $compact ? 'text-[length:var(--text-wk-sm)]' : 'text-[length:var(--text-wk-md)]',
         'rounded-[var(--radius-wk-sm)]',
         'transition-colors',
         'duration-[var(--transition-wk-duration)]',
@@ -33,9 +40,13 @@
         'focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
     ]), $scope);
 
-    $colorClasses = $active
-        ? 'text-[color:var(--color-wk-accent-text)] font-[number:var(--font-wk-heading-weight)]'
-        : 'text-[color:var(--color-wk-text)]';
+    // Compact entries you are not on step back to the muted color and come forward on hover, so
+    // in a dense row the current one is the only entry at full strength.
+    $colorClasses = match (true) {
+        $active => 'text-[color:var(--color-wk-accent-text)] font-[number:var(--font-wk-heading-weight)]',
+        $compact => 'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]',
+        default => 'text-[color:var(--color-wk-text)]',
+    };
 
     // Auto-inject rel="noopener noreferrer" + SR hint when target="_blank".
     // See sidebar/item.blade.php for the rationale on except('rel') + explicit

@@ -51,7 +51,7 @@ class DoctorPropsCommand extends Command
         {--require-in-scope : Fail when no scanned template uses a WireKit component. For an application that uses WireKit everywhere, an empty scope means the linter went blind.}
         {--fail-on-legacy-axis : Also exit 1 on an older prop spelling. Off by default, because both spellings are supported API for the whole of v2.}';
 
-    protected $description = 'Static-analysis template linter — finds unknown or misspelled props on WireKit components, slot closing tags Blade does not compile as one, and older prop spellings on the shared semantic axes';
+    protected $description = 'Static-analysis template linter — finds unknown or misspelled props on WireKit components, slots passed as attributes, slot closing tags Blade does not compile as one, and older prop spellings on the shared semantic axes';
 
     public function handle(): int
     {
@@ -72,13 +72,18 @@ class DoctorPropsCommand extends Command
             return self::FAILURE;
         }
 
-        $this->info("Scanning {$path} for unknown props, swallowed slot closes and older prop spellings...");
+        $this->info("Scanning {$path} for unknown props, slots passed as attributes, swallowed slot closes and older prop spellings...");
         $this->line('');
 
         $findings = [];
         $slotFindings = [];
+        $slotAttributeFindings = [];
         $legacyFindings = [];
         $scanned = 0;
+
+        // Per component, the named slots that are not also props: read from the component's
+        // own template once per run rather than once per usage.
+        $slotOnlyNames = [];
 
         // The walk is hoisted so its emptiness can be answered separately from the
         // finding set. Reading zero files and reporting "no unknown props" is a
@@ -142,12 +147,45 @@ class DoctorPropsCommand extends Command
                 // render stayed correctly quiet.
                 $declared = ComponentRegistry::acceptedPropNames($usage['name']);
 
+                // A named slot written as an attribute never reaches the slot. The value lands
+                // in the attribute bag, a name that is also an HTML attribute renders as one
+                // (`title` becomes a tooltip), and the slot stays empty, so the heading or the
+                // action it was meant to be is simply missing. Only a slot that is not also a
+                // prop is meant here: a name that is both is right either way. A template with no
+                // resolvable `@props` is skipped, as the unknown-prop check below skips it: an
+                // internal partial handed its data as attributes reads every `$name` it prints
+                // as a slot, and there is nothing to tell a slot from a variable against.
+                $slotOnlyNames[$usage['name']] ??= $declared === [] ? [] : array_values(array_diff(
+                    array_column(ComponentRegistry::slotsOf($usage['name']), 'name'),
+                    ['slot'],
+                    $declared,
+                ));
+
+                $asAttribute = array_values(array_filter(
+                    $usage['attributes'],
+                    fn (string $attribute): bool => in_array(
+                        lcfirst(str_replace(' ', '', ucwords(str_replace('-', ' ', $attribute)))),
+                        $slotOnlyNames[$usage['name']],
+                        true,
+                    ),
+                ));
+
+                foreach ($asAttribute as $attribute) {
+                    $slotAttributeFindings[] = [
+                        'file' => str_replace(base_path().'/', '', $file),
+                        'component' => $usage['name'],
+                        'attribute' => $attribute,
+                        'slot' => lcfirst(str_replace(' ', '', ucwords(str_replace('-', ' ', $attribute)))),
+                    ];
+                }
+
                 // An empty declared list means the component's `@props` could not be
                 // resolved (`glass`, `fonts`), and against an empty list EVERY attribute
                 // reads as unknown. The gate returns early on exactly this, so the wave of
                 // phantom findings cannot happen here — but say so, because a reader
                 // wondering why a file is quiet deserves the reason in the code.
-                foreach (StrictnessGate::unknownPropNames(array_fill_keys($usage['attributes'], true), $declared) as $unknown) {
+                // Reported once, as a slot, rather than a second time as an unknown prop.
+                foreach (StrictnessGate::unknownPropNames(array_fill_keys(array_diff($usage['attributes'], $asAttribute), true), $declared) as $unknown) {
                     $suggestions = SuggestSimilar::byLevenshtein($unknown, $declared);
 
                     $findings[] = [
@@ -160,7 +198,7 @@ class DoctorPropsCommand extends Command
             }
         }
 
-        if ($findings === [] && $slotFindings === [] && $legacyFindings === []) {
+        if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $legacyFindings === []) {
             // Two different clean results, and collapsing them is how the first one
             // hides. Templates exist but none of them use a WireKit component: the
             // run is honest, there was simply nothing in scope — so it succeeds and
@@ -233,6 +271,25 @@ class DoctorPropsCommand extends Command
             $this->line('here rather than by noticing a page looks subtly wrong.');
         }
 
+        foreach ($slotAttributeFindings as $finding) {
+            $this->line(sprintf(
+                '  <fg=yellow>%s</> — <x-wirekit::%s> takes <fg=red>%s</> as a slot, not an attribute: pass it as %s',
+                $finding['file'],
+                $finding['component'],
+                $finding['attribute'],
+                OutputFormatter::escape('<x-slot:'.$finding['slot'].'>')
+            ));
+        }
+
+        if ($slotAttributeFindings !== []) {
+            $this->line('');
+            $this->warn(sprintf('%d slot(s) passed as an attribute.', count($slotAttributeFindings)));
+            $this->line('A slot written as an attribute never reaches the slot: the value lands in the attribute');
+            $this->line('bag, where a name that is also an HTML attribute renders as one (a `title` becomes a');
+            $this->line('tooltip), and the slot stays empty. A test that looks for the text still passes, because');
+            $this->line('the text is on the page, inside the attribute.');
+        }
+
         foreach ($slotFindings as $finding) {
             // The snippet is markup, and the console formatter reads `<…>` as its own styling
             // tags — printed raw, the very thing being reported would be eaten on its way to
@@ -272,7 +329,7 @@ class DoctorPropsCommand extends Command
             // lives in a branch this run did not take. Without it a reader sees a list of
             // advisories and cannot tell whether the linter got as far as the two checks
             // that actually break a page.
-            if ($findings === [] && $slotFindings === []) {
+            if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === []) {
                 $this->info(sprintf(
                     'No unknown props, and no slot closing tag swallowed by the text after it, across %d template(s).',
                     $scanned
@@ -298,6 +355,7 @@ class DoctorPropsCommand extends Command
         $failed = $failOn !== 'none' && (
             $findings !== []
             || $slotFindings !== []
+            || $slotAttributeFindings !== []
             || ($legacyFindings !== [] && $this->option('fail-on-legacy-axis'))
         );
 

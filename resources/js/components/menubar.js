@@ -35,6 +35,7 @@
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
+import { isRendered } from '../utils/rendered.js';
 
 /**
  * What the browser would consider a tab stop OUTSIDE this bar.
@@ -384,7 +385,9 @@ export default function wirekitMenubar() {
             const panel = this.$refs[`panel-${this.activeMenu}`];
             if (!panel) return [];
             return [...panel.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')]
-                .filter((el) => !el.closest('[data-wk-submenu-panel]'));
+                .filter((el) => !el.closest('[data-wk-submenu-panel]'))
+                // Only the entries drawn; a hidden one cannot take focus (see utils/rendered.js).
+                .filter(isRendered);
         },
 
         /**

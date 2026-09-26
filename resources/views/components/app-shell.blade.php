@@ -125,7 +125,14 @@
         // without one). In the viewport mode that is the difference between the account at the
         // foot of the sidebar and a foot one strip-height below the edge of the screen; in the
         // document mode it keeps a short page from scrolling by exactly the strip.
-        $viewport ? 'h-[calc(100dvh-var(--wk-strip-inset,0px))] overflow-hidden' : 'min-h-[calc(100vh-var(--wk-strip-inset,0px))]',
+        //
+        // `--wk-shell-height` comes first and is unset by default. It is the one name an
+        // application sets to give the shell a different height in some context, a bounded
+        // preview box or an embedded frame, instead of matching these utilities by their escaped
+        // class names, which change whenever the expression does.
+        $viewport
+            ? 'h-[var(--wk-shell-height,calc(100dvh-var(--wk-strip-inset,0px)))] overflow-hidden'
+            : 'min-h-[var(--wk-shell-height,calc(100vh-var(--wk-strip-inset,0px)))]',
         // An untoned shell keeps the literal it always had, rather than routing through
         // the role token with a fallback. The two resolve to the same color today, and
         // that is exactly why: a shell nobody toned must not start depending on a
@@ -386,7 +393,7 @@
                      The single-column branch below has carried this since it was reported the
                      first time. This branch never got it, and every mobile check here asks
                      about reachability or geometry — never about opacity. --}}
-                class="wk-app-shell-nav max-lg:bg-[var(--color-wk-rail-bg,var(--color-wk-bg-elevated))] max-lg:pt-[var(--size-wk-shell-bar,3.5rem)] absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] flex transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:contents"
+                class="wk-app-shell-nav max-lg:bg-[var(--color-wk-rail-bg,var(--color-wk-bg-elevated))] max-lg:pt-[var(--size-wk-shell-bar,3.5rem)] absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] flex transform transition-[translate,transform,visibility] duration-[var(--transition-wk-duration)] lg:contents"
                 {{-- Whether the rail has this drawer to itself. Only this template knows what else went
                      into it, and the rail has to: alone, it shows its names here, because a strip of
                      unnamed icons on a screen with no hover is no navigation at all. Beside a module
@@ -622,7 +629,7 @@
                      nothing collides, and a lone complementary region beside the content is a
                      reasonable thing for an application to have. Changing that silently would
                      take a landmark away from every sidebar-only shell that ships today. --}}
-                {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->class(['wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:pt-[var(--size-wk-shell-bar,3.5rem)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-[var(--size-wk-sidebar-drawer)] transform transition-[transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] '.$asideInset]) }}
+                {{ \Pushery\WireKit\Support\SlotAttributes::of($sidebar)->class(['wk-app-shell-aside max-lg:bg-[var(--color-wk-bg-elevated)] max-lg:pt-[var(--size-wk-shell-bar,3.5rem)] max-lg:[&>*]:h-full max-lg:[&>*]:rounded-none absolute inset-y-0 left-0 z-[calc(var(--z-wk-sticky)+2)] w-[var(--size-wk-sidebar-drawer)] transform transition-[translate,transform,visibility] duration-[var(--transition-wk-duration)] lg:relative lg:translate-x-0 lg:z-auto lg:transition-[width] '.$asideInset]) }}
                 x-cloak
             >
                 {{-- The drawer's own close control, for the reasons written on the console drawer

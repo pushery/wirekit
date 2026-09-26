@@ -17,7 +17,10 @@
     // Alert dialog actions — footer area with cancel/confirm buttons.
     // Cancel button should appear first for safety (initial focus lands there).
     $classes = WireKit::resolveClasses('alert-dialog.actions', 'base', implode(' ', [
-        'flex items-center justify-end gap-3',
+        // Wrapping, because what does not fit a row packed to its end leaves on its START side,
+        // and nothing scrolls to that side: three actions on a phone cut the first one off the
+        // panel, out of reach. Wrapped, they stack at the end; one line on a desktop, as before.
+        'flex flex-wrap items-center justify-end gap-3',
         'mt-[var(--padding-wk-y-lg)]',
     ]), $scope);
 @endphp

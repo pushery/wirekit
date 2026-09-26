@@ -470,9 +470,16 @@ export default (options = {}) => ({
 
     /**
      * Pointer-down on the viewport overlay starts a drag-pan gesture.
+     *
+     * Only for a mouse or a pen. The drag maps the pointer's position onto the scroll position,
+     * the way a scrollbar thumb does, and on a touch screen a swipe means "move the content"
+     * instead: under a finger the page scrolled the wrong way round. A touch therefore starts no
+     * drag and is not prevented, so the browser scrolls natively (the overlay allows vertical
+     * panning), and a tap on a stripe still jumps to its section.
      */
     startDrag(event) {
         if (!this.draggable) return;
+        if (event.pointerType === 'touch') return;
         event.preventDefault();
         this._dragging = true;
         this._dragStartY = event.clientY;

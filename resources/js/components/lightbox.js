@@ -32,6 +32,19 @@ function focusableFrom(target) {
  * @param {boolean} config.loop - Whether prev/next wraps at the ends.
  */
 export default function wirekitLightbox(config = {}) {
+    /*
+     * This component's own scope, bound once it starts, and what every method that changes state
+     * writes through.
+     *
+     * A method called from an expression runs with `this` set to the MERGED scope of the element
+     * the expression is on. A trigger inside a tooltip (the house shape for an icon button) sees
+     * the tooltip's scope first, and the tooltip has an `open` of its own, so `this.open = true`
+     * in `openAt()` opened the tooltip and left the gallery closed, with no error. The same held
+     * for `$refs`: from inside the tooltip, `this.$refs` are the tooltip's. Bound at `init()`,
+     * this is the scope of the lightbox's own root, where `open` and `$refs` are the lightbox's.
+     */
+    let host = null;
+
     return {
         open: false,
         current: 0,
@@ -104,6 +117,8 @@ export default function wirekitLightbox(config = {}) {
         _triggerNoter: null,
 
         init() {
+            host = this;
+
             // Page-level open: any control can dispatch
             // wirekit-lightbox-open { name, index } to open THIS instance.
             this._openHandler = (e) => {
@@ -128,11 +143,35 @@ export default function wirekitLightbox(config = {}) {
             this.$el?.addEventListener?.('click', this._triggerNoter, true);
         },
 
+        /**
+         * Point an embed slide's frame at its source.
+         *
+         * Alpine's CSP build evaluates nothing on an `<iframe>`, so a `:src` on the frame never
+         * ran there and the slide stayed blank. The frame carries no binding; the wrapper around it
+         * calls this, which is plain JavaScript and runs under both builds. The source was checked
+         * on the server, where a scheme other than http(s) or a path is dropped.
+         *
+         * @param {HTMLElement} wrapper - The element around the frame.
+         * @param {{src?: string, alt?: string}} item - The slide.
+         */
+        embed(wrapper, item) {
+            const frame = wrapper && typeof wrapper.querySelector === 'function'
+                ? wrapper.querySelector('iframe')
+                : null;
+
+            if (!frame || !item) return;
+
+            frame.setAttribute('title', String(item.alt || ''));
+            frame.setAttribute('src', String(item.src || ''));
+        },
+
         openAt(index) {
-            if (this.count === 0) {
+            const self = host ?? this;
+
+            if (self.count === 0) {
                 return;
             }
-            this.current = Math.max(0, Math.min(index, this.count - 1));
+            self.current = Math.max(0, Math.min(index, self.count - 1));
 
             /*
              * Already open? Then this is a NAVIGATION, not an opening.
@@ -148,15 +187,15 @@ export default function wirekitLightbox(config = {}) {
              * The index is set above, before this returns, so the navigation still happens —
              * it is only the arming that is skipped, because it has already been done.
              */
-            if (this.open && this._trap) {
+            if (self.open && self._trap) {
                 return;
             }
 
             // Whoever opened it gets focus back when it closes; see `_returnTo`.
-            this._returnTo = this._pendingTrigger;
-            this._pendingTrigger = null;
+            self._returnTo = self._pendingTrigger;
+            self._pendingTrigger = null;
 
-            this.open = true;
+            self.open = true;
 
             /*
              * Hold the page still. This is `role="dialog" aria-modal="true"` and it took no
@@ -174,11 +213,11 @@ export default function wirekitLightbox(config = {}) {
              * frozen after the last one closes — `command-palette` carries a comment about
              * exactly that, from when it did keep its own.
              */
-            this._holdsScrollLock = true;
+            self._holdsScrollLock = true;
             lockScroll();
 
-            this.$nextTick(() => {
-                const container = this.$refs.stage;
+            self.$nextTick(() => {
+                const container = self.$refs.stage;
                 if (!container) {
                     return;
                 }
@@ -186,37 +225,39 @@ export default function wirekitLightbox(config = {}) {
                 // The state can have changed inside the tick — Escape during the frame, a
                 // Livewire morph, a close from anywhere. Arming here would put a trap on an
                 // overlay that is no longer shown, and nothing would ever take it off.
-                if (!this.open || this._trap) {
+                if (!self.open || self._trap) {
                     return;
                 }
 
-                this._trap = createFocusTrap(container, {
+                self._trap = createFocusTrap(container, {
                     escapeDeactivates: true,
                     // Back to the opener while it is still in the page; otherwise the library's
                     // own choice, which is whatever was focused when the trap activated.
-                    setReturnFocus: (previous) => (this._returnTo && this._returnTo.isConnected ? this._returnTo : previous),
+                    setReturnFocus: (previous) => (self._returnTo && self._returnTo.isConnected ? self._returnTo : previous),
                     // Escape / programmatic deactivate tears down + flips the flag
                     // so x-show hides the overlay; focus returns to the trigger.
                     onDeactivate: () => {
                         // Escape lands here without passing through `close()`, so the
                         // release has to be on this path too — it was the commonest way out
                         // of the viewer and would have left the page locked for good.
-                        this._releaseScrollLock();
-                        this.open = false;
-                        this._trap = null;
+                        self._releaseScrollLock();
+                        self.open = false;
+                        self._trap = null;
                     },
                 });
-                this._trap.activate();
+                self._trap.activate();
             });
         },
 
         close() {
-            this._releaseScrollLock();
+            const self = host ?? this;
 
-            if (this._trap) {
-                this._trap.deactivate();
+            self._releaseScrollLock();
+
+            if (self._trap) {
+                self._trap.deactivate();
             } else {
-                this.open = false;
+                self.open = false;
             }
         },
 
@@ -237,21 +278,25 @@ export default function wirekitLightbox(config = {}) {
         },
 
         next() {
-            if (this.count === 0) {
+            const self = host ?? this;
+
+            if (self.count === 0) {
                 return;
             }
-            this.current = this.loop
-                ? (this.current + 1) % this.count
-                : Math.min(this.current + 1, this.count - 1);
+            self.current = self.loop
+                ? (self.current + 1) % self.count
+                : Math.min(self.current + 1, self.count - 1);
         },
 
         prev() {
-            if (this.count === 0) {
+            const self = host ?? this;
+
+            if (self.count === 0) {
                 return;
             }
-            this.current = this.loop
-                ? (this.current - 1 + this.count) % this.count
-                : Math.max(this.current - 1, 0);
+            self.current = self.loop
+                ? (self.current - 1 + self.count) % self.count
+                : Math.max(self.current - 1, 0);
         },
 
         // Whether prev/next is available (for disabling the controls at the ends

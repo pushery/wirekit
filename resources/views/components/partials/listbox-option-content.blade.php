@@ -10,14 +10,29 @@
      would announce "Starred Only projects you marked" as one name.
 
      Params: $idExpression (the JS expression of the row's id), $media, $descriptions (whether the
-     list uses them), $mediaBox, $mediaIcon, $mediaInitials (sizes), $descriptionClasses. --}}
+     list uses them), $mediaBox, $mediaIcon, $mediaInitials (sizes), $descriptionClasses, and
+     $mediaPerRow (optional): draw the medium only on a row whose option has one. --}}
 @if($media)
-    @include('wirekit::components.partials.listbox-option-media', [
-        'option' => 'opt',
-        'boxClasses' => $mediaBox,
-        'iconClasses' => $mediaIcon,
-        'initialsClasses' => $mediaInitials,
-    ])
+    @if($mediaPerRow ?? false)
+        {{-- A list whose options arrive later, the results of a server search, cannot know at
+             render time whether they carry a medium, so each row decides. A row without one has
+             no empty box beside its label. --}}
+        <template x-if="opt.media">
+            @include('wirekit::components.partials.listbox-option-media', [
+                'option' => 'opt',
+                'boxClasses' => $mediaBox,
+                'iconClasses' => $mediaIcon,
+                'initialsClasses' => $mediaInitials,
+            ])
+        </template>
+    @else
+        @include('wirekit::components.partials.listbox-option-media', [
+            'option' => 'opt',
+            'boxClasses' => $mediaBox,
+            'iconClasses' => $mediaIcon,
+            'initialsClasses' => $mediaInitials,
+        ])
+    @endif
 @endif
 <span class="block min-w-0 flex-1">
     @if($descriptions)

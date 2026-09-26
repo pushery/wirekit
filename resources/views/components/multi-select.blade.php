@@ -40,6 +40,18 @@
     // option, and a CSS length sets one. Those two are never narrower than the field and never
     // wider than the room the placement leaves.
     'panelWidth' => config('wirekit.components.multi-select.panel-width', 'trigger'),
+    // Search on the server instead of in the browser, for a list too long to render into the
+    // page. The typed text is sent as a `search-change` event with `{ value }` once it settles,
+    // and `options` are the results the application renders for it. A chosen value keeps its
+    // label after the results move on.
+    'server' => false,
+    // Characters before the text is sent. Shorter text sends an empty value, once.
+    'searchMinLength' => config('wirekit.components.multi-select.search-min-length', 2),
+    // Milliseconds of quiet before the text is sent: one request per settled search rather
+    // than one per character. 0 sends at once, for an application that throttles on its side.
+    'searchDebounce' => config('wirekit.components.multi-select.search-debounce', 300),
+    // The application cut its results at a limit. The list then says there are more.
+    'truncated' => false,
     'scope' => null,
     'ariaLabel' => null,
 ])
@@ -62,6 +74,10 @@
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — so
     // `required="false"` would read as TRUE and mark the field required anyway.
     $required = BooleanProp::from($required, false);
+    $server = BooleanProp::from($server, false);
+    $truncated = BooleanProp::from($truncated, false);
+    $searchMinLength = max(1, (int) $searchMinLength);
+    $searchDebounce = max(0, (int) $searchDebounce);
 
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
@@ -212,7 +228,13 @@
     // An array option may also carry a medium (`icon`, `image`, `avatar` or `flag`), a `description`,
     // `keywords` and a `selectedLabel`; OptionMedia validates them and adds only the keys an
     // option uses, so an option without them normalizes exactly as it did before.
-    $encodedOptions = collect($options)->map(function ($option, $key) {
+    //
+    // A LIST is decided by the ARRAY, never by one key: keys 0, 1, 2 … in order. PHP turns a
+    // numeric string key into an integer, so deciding by the key's type read `[31 => 'Rain
+    // jacket']` and every `pluck('name', 'id')` as a list and submitted the NAMES — the pills
+    // looked right and `wire:model` received labels instead of ids.
+    $optionsAreAList = array_is_list(collect($options)->all());
+    $encodedOptions = collect($options)->map(function ($option, $key) use ($optionsAreAList) {
         if (is_array($option)) {
             $value = (string) ($option['value'] ?? $key);
             $label = (string) ($option['label'] ?? $option['value'] ?? $key);
@@ -223,9 +245,9 @@
             ] + \Pushery\WireKit\Support\OptionMedia::fields('multi-select', $option, $value, $label);
         }
 
-        // An int key means a list, so the string is BOTH value and label; a
-        // string key is the submitted value and the string beside it its label.
-        return is_int($key)
+        // In a list the string is BOTH value and label; in a map the key is the submitted
+        // value and the string beside it its label, whatever type the key has.
+        return $optionsAreAList
             ? ['value' => (string) $option, 'label' => (string) $option]
             : ['value' => (string) $key, 'label' => (string) $option];
     })->values()->all();
@@ -237,6 +259,12 @@
     // package the way the flag component resolves it.
     $encodedOptions = \Pushery\WireKit\Support\FlagPackage::attach($encodedOptions);
     $optionUses = \Pushery\WireKit\Support\OptionMedia::uses($encodedOptions);
+    // A server search learns what its rows carry only from results that have not arrived yet,
+    // so it draws every row the rich way: a medium and a description appear per row, and a row
+    // without them looks exactly like a plain one.
+    if ($server) {
+        $optionUses = ['media' => true, 'descriptions' => true];
+    }
     $richRows = $optionUses['media'] || $optionUses['descriptions'];
 
     // A row with a medium or a description lays its parts out in a line; a list that uses
@@ -256,6 +284,24 @@
         : (is_string($value) && $value !== ''
             ? array_values(array_filter(array_map('trim', explode(',', $value)), fn ($v) => $v !== ''))
             : []);
+
+    // Server search. The results travel on an attribute of their own rather than in `x-data`,
+    // which Alpine reads once: Livewire patches the attribute on every render and the factory
+    // follows it (utils/server-search.js). The sentences are translated here, since a sentence
+    // put together in JavaScript cannot be.
+    $serverConfig = '';
+    $serverOptions = null;
+    if ($server) {
+        $serverConfig = ', server: true, searchMinLength: '.$searchMinLength.', searchDebounce: '.$searchDebounce
+            .', searchTexts: '.\Pushery\WireKit\Support\AlpinePayload::from([
+                'searching' => __('wirekit::Searching…'),
+                'prompt' => __('wirekit::Type to search'),
+                'tooShort' => trans_choice('wirekit::{1} Type at least :count character|[2,*] Type at least :count characters', $searchMinLength, ['count' => $searchMinLength]),
+                'truncated' => __('wirekit::More results. Keep typing to narrow them.'),
+                'empty' => __('wirekit::No results'),
+            ]);
+        $serverOptions = \Pushery\WireKit\Support\AlpinePayload::from(['options' => $encodedOptions, 'truncated' => $truncated]);
+    }
 @endphp
 
 @php
@@ -314,7 +360,9 @@
     <div
         {{ $attributes->except('aria-describedby')->class(['relative']) }}
         x-modelable="selected"
-        x-data="wirekitMultiSelect({ options: {{ \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }} })"
+        {{-- In server mode the options are read from the attribute below, so they are not sent twice. --}}
+        x-data="wirekitMultiSelect({ options: {{ $server ? '[]' : \Pushery\WireKit\Support\AlpinePayload::from($encodedOptions) }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($selectedValues) }}, id: {{ \Pushery\WireKit\Support\AlpinePayload::string($id) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $serverConfig }} })"
+        @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @endif
         @click.away="dropdownOpen = false"
         @keydown.escape="dropdownOpen = false"
     >
@@ -451,6 +499,8 @@
             role="listbox"
             aria-label="{{ $resolvedAriaLabel }}"
             aria-multiselectable="true"
+            {{-- The results on screen answer an older search while a newer one is out. --}}
+            @if($server) x-bind:aria-busy="searchAriaBusy()" @endif
             {{-- `[overflow-wrap:anywhere]` lets an option name with no space or hyphen break inside the
                  word instead of widening its row past the panel, which scrolled the list sideways. The
                  combobox panel carries the same class, and its comment has the reasoning. --}}
@@ -495,6 +545,7 @@
                             'idExpression' => 'optionId(idx)',
                             'media' => $optionUses['media'],
                             'descriptions' => $optionUses['descriptions'],
+                            'mediaPerRow' => $server,
                             'mediaBox' => 'size-6',
                             'mediaIcon' => 'size-5',
                             'mediaInitials' => 'text-[length:var(--text-wk-2xs)]',
@@ -521,8 +572,23 @@
                 role="option"
                 aria-disabled="true"
                 x-show="filteredOptions.length === 0"
+                {{-- A server search has more to say about an empty list than "No results": a
+                     search still out, text too short to send, or no search at all yet. --}}
+                @if($server) x-text="searchEmptyText(filter)" @endif
                 class="{{ $emptyRowClasses }}"
             >{{ __('wirekit::No results') }}</p>
+
+            @if($server)
+                {{-- Under results: a newer search still out, or results the application cut at
+                     its limit. The same kind of row as the empty state, for the same reason. --}}
+                <p data-wk-prose-skip
+                    role="option"
+                    aria-disabled="true"
+                    x-show="filteredOptions.length > 0 && searchNote() !== ''"
+                    x-text="searchNote()"
+                    class="{{ $emptyRowClasses }}"
+                ></p>
+            @endif
         </div>
         </template>
 
@@ -542,6 +608,13 @@
         @unless($optimisticConfig)
             <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="selectionAnnouncement"></div>
         @endunless
+
+        @if($server)
+            {{-- The search status, spoken: the panel's rows are options a reader arrows through,
+                 and a row that says "Searching" is only read when the keyboard lands on it.
+                 Present from the first render for the reason the announcer above gives. --}}
+            <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="searchAnnouncement(filteredOptions.length, filter)"></div>
+        @endif
 
         {{-- The symbols the option icons point at, rendered with the component so a Livewire
              update keeps them; a `<use>` reference reaches them from the teleported panel. --}}

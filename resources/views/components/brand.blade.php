@@ -1,5 +1,6 @@
 {{-- optimistic-ui: n/a — navigation
-     A logo that links home. Navigation, not a mutation. --}}
+     A logo that links home, or a mark with no link of its own. Navigation or presentation,
+     not a mutation. --}}
 @props([
     'logo' => null,
     'mobileLogo' => null,
@@ -40,7 +41,19 @@
     // the case that needs its own value.
     'mobileLogoAspect' => null,
     'name' => null,
+    // Where the mark links. `:href="false"` (or an empty string) renders NO link: the mark then
+    // sits inside something that is already one, a rail's brand or a header's home link, where an
+    // `<a>` of its own would be a link inside a link, which is invalid HTML and two tab stops for
+    // one place. Not `null`: Blade gives a prop passed as null its default, so null means "/".
     'href' => '/',
+    // The mark's height, on the scale `avatar` and the `--size-wk-*` tokens use (1.5, 2, 2.5 and
+    // 3rem), so a mark and an avatar beside it can share a line. `sm` is the height every brand
+    // has always had, written as it always was, so a brand that sets nothing renders as before.
+    //
+    // A CSS length is taken too, for a height the scale does not have: a wordmark that sits in a
+    // 28px row is `1.75rem`, between `xs` and `sm`. Numbers with `rem`, `em` or `px` only; the
+    // value goes into a style attribute, so anything else is refused like a word off the scale.
+    'size' => 'sm',
     'scope' => null,
 ])
 
@@ -59,8 +72,44 @@
     $wkMobileAspect = ($mobileLogoAspect ?: $logoAspect)
         ? 'aspect-ratio: '.e($mobileLogoAspect ?: $logoAspect).'; '
         : '';
-    $wkLogoStyle = $wkLogoAspect.'min-width: 2rem;';
-    $wkMobileStyle = $wkMobileAspect.'min-width: 2rem;';
+    // A length is recognized before the scale is checked, the way `multi-select` reads its
+    // `panelWidth`, so a length never reaches the enum and a word off the scale still does.
+    $wkLogoLength = preg_match('/^\d+(?:\.\d+)?(?:rem|em|px)$/', trim((string) $size)) === 1
+        ? trim((string) $size)
+        : null;
+
+    if ($wkLogoLength === null) {
+        $size = WireKit::validateProp('brand', 'size', (string) $size, ['xs', 'sm', 'md', 'lg', 'a CSS length such as 1.75rem']);
+    }
+
+    // Whole class strings, never assembled from the size: Tailwind reads this file as text. A
+    // length has no class: its height goes into the style below, and a height utility beside it
+    // would only lose to it.
+    $wkLogoHeight = $wkLogoLength !== null ? '' : match ($size) {
+        'xs' => 'h-[var(--size-wk-xs)]',
+        'md' => 'h-[var(--size-wk-md)]',
+        'lg' => 'h-[var(--size-wk-lg)]',
+        default => 'h-8',
+    };
+    // The height class with its trailing space, or nothing. `w-auto` stays literal in every
+    // `<img>` below, where a scan of this template for class names finds it.
+    $wkLogoHeightClass = $wkLogoHeight === '' ? '' : $wkLogoHeight.' ';
+
+    // The square floor follows the height, so a mark whose ratio is not known yet reserves a
+    // square of its own height rather than one of the default's.
+    $wkLogoFloor = $wkLogoLength ?? match ($size) {
+        'xs' => 'var(--size-wk-xs)',
+        'md' => 'var(--size-wk-md)',
+        'lg' => 'var(--size-wk-lg)',
+        default => '2rem',
+    };
+    $wkLogoHeightStyle = $wkLogoLength !== null ? 'height: '.$wkLogoLength.'; ' : '';
+    $wkLogoStyle = $wkLogoHeightStyle.$wkLogoAspect.'min-width: '.$wkLogoFloor.';';
+    $wkMobileStyle = $wkLogoHeightStyle.$wkMobileAspect.'min-width: '.$wkLogoFloor.';';
+
+    // A link unless the caller said otherwise, with `false` or an empty string. Null is in the list
+    // for completeness only: Blade has already replaced a null prop with its default by now.
+    $isLink = ! in_array($href, [null, '', false], true);
 
     // Brand — logo + name combo for header and sidebar.
     // The `wk-brand` marker class drives the doubled-class anti-prose-
@@ -84,15 +133,15 @@
     // (the ordinary IndieAuth/Mastodon verification on a brand link) silently
     // replaced the computed value. See dropdown/item.blade.php.
     $targetAttr = $attributes->get('target', '');
-    $opensNewTab = str_contains($targetAttr, '_blank');
+    $opensNewTab = $isLink && str_contains($targetAttr, '_blank');
     $relAttr = $attributes->get('rel', '');
     $finalRel = $opensNewTab && ! str_contains($relAttr, 'noopener')
         ? trim($relAttr . ' noopener noreferrer')
         : $relAttr;
     $computedRel = $opensNewTab ? $finalRel : ($relAttr ?: null);
 
-    // Accessibility — when the brand renders as a link (it always does, via
-    // the `<a href>` root) AND the only visible content is the logo image
+    // Accessibility — when the brand renders as a link (an `<a href>` root,
+    // unless `href` is false) AND the only visible content is the logo image
     // (no name, no slot content), the link has no accessible name. The img
     // is decorative (`alt=""` + `aria-hidden`) by design — the URL alone
     // doesn't describe the destination. We auto-inject `aria-label="{{ __('wirekit::Home') }}"`
@@ -101,7 +150,9 @@
     // default). Empty `name` + empty slot = logo-only; presence of either
     // means an accessible name is already provided by the visible text.
     $hasVisibleName = $name !== null || $slot->hasActualContent();
-    $logoOnlyNeedsLabel = $logo && ! $hasVisibleName && ! $attributes->has('aria-label');
+    // Only a LINK needs a name. Without one the mark is presentation inside something that is
+    // named already, and a generic element does not take a name anyway.
+    $logoOnlyNeedsLabel = $isLink && $logo && ! $hasVisibleName && ! $attributes->has('aria-label');
 
     // Responsive-logo swap. When $mobileLogo is set, render TWO <img> tags:
     //   - mobile <img>: visible below the breakpoint, hidden at + breakpoint
@@ -135,8 +186,8 @@
     };
 @endphp
 
-<a data-wk-prose-skip
-    href="{{ $href }}"
+<{{ $isLink ? 'a' : 'span' }} data-wk-prose-skip
+    @if($isLink) href="{{ $href }}" @endif
     @if($logoOnlyNeedsLabel) aria-label="{{ __('wirekit::Home') }}" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
     {{ $attributes->except('rel')->class([$classes]) }}
@@ -163,28 +214,28 @@
              single element carrying both `{bp}:block` and `wk-dark-only` is a
              0,1,0 specificity tie decided by stylesheet load order (fragile).
              Splitting them onto the span vs the imgs keeps it deterministic. --}}
-        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
         <span class="hidden {{ $bpInlineFlex }} items-center">
-            <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
-            <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+            <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+            <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
         </span>
     @elseif($logo && $mobileLogo)
         {{-- Responsive logo swap: mobile-first wordmark below the breakpoint,
              full-width wordmark at + breakpoint. Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label handles the accessible name. --}}
-        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="h-8 w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
-        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="hidden h-8 w-auto {{ $bpBlock }}" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="hidden {{ $wkLogoHeightClass }}w-auto {{ $bpBlock }}" style="{{ $wkLogoStyle }}" aria-hidden="true" />
     @elseif($logo && $darkLogo)
         {{-- Mode-aware logo swap: light wordmark in light mode, dark wordmark
              under the `.dark` class (via the wk-light-only / wk-dark-only
              visibility pair in dist/wirekit.css). Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label / visible name handles the accessible name. --}}
-        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
-        <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
     @elseif($logo)
-        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="h-8 w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
     @endif
     @if($name)
         {{-- Same rule as the sidebar row and the profile row beside it: in a collapsed
@@ -214,4 +265,4 @@
     @if($opensNewTab)
         <span class="sr-only">{{ __('wirekit::(opens in new tab)') }}</span>
     @endif
-</a>
+</{{ $isLink ? 'a' : 'span' }}>

@@ -85,8 +85,8 @@
             "code": "<x-wirekit::app-rail labels=\"below\" style=\"height: 16rem;\">\n    <x-wirekit::app-rail.item href=\"#\" icon=\"chart-bar\" label=\"Insights\" :active=\"true\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"database\" label=\"Schema\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"shield\" label=\"Security\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"settings\" label=\"Config\" />\n</x-wirekit::app-rail>"
         },
         {
-            "title": "Names beside the icons",
-            "code": "<x-wirekit::app-rail labels=\"inline\" style=\"height: 16rem;\">\n    <x-wirekit::app-rail.group label=\"Workspace\">\n        <x-wirekit::app-rail.item href=\"#\" icon=\"home\" label=\"Home\" :active=\"true\" />\n        <x-wirekit::app-rail.item href=\"#\" icon=\"folders\" label=\"Projects\" />\n        <x-wirekit::app-rail.item href=\"#\" icon=\"users\" label=\"Team\" badge=\"12\" />\n    </x-wirekit::app-rail.group>\n    <x-wirekit::app-rail.group label=\"Account\" :separated=\"true\">\n        <x-wirekit::app-rail.item href=\"#\" icon=\"settings\" label=\"Settings\" />\n    </x-wirekit::app-rail.group>\n</x-wirekit::app-rail>"
+            "title": "Long names and a counter under the icons",
+            "code": "<x-wirekit::app-rail labels=\"below\" lang=\"de\" style=\"height: 20rem; --size-wk-rail-icon-labeled: 1.5rem;\">\n    <x-wirekit::app-rail.item href=\"#\" icon=\"chart-bar\" label=\"Übersicht\" :active=\"true\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"file-text\" label=\"Verwaltung\" badge=\"5\" />\n    <x-wirekit::app-rail.item href=\"#\" icon=\"users\" label=\"Kontoeinstellungen\" />\n    <x-slot:footer>\n        <x-wirekit::app-rail.item href=\"#\" icon=\"inbox\" label=\"Benachrichtigungen\" />\n    </x-slot:footer>\n</x-wirekit::app-rail>"
         }
     ],
     "app-shell": [
@@ -1317,6 +1317,16 @@
             "code": "<x-wirekit::otp-input label=\"Secure Code\" name=\"secure\" :masked=\"true\" />"
         }
     ],
+    "overflow-nav": [
+        {
+            "title": "A row of open records",
+            "code": "<x-wirekit::overflow-nav label=\"Open records\" :items=\"[\n    ['label' => 'Waxed leather boots', 'href' => '#boots'],\n    ['label' => 'Canvas tote', 'href' => '#tote'],\n    ['label' => 'Merino socks', 'href' => '#socks'],\n    ['label' => 'Linen shirt', 'href' => '#shirt'],\n    ['label' => 'Wool beanie', 'href' => '#beanie'],\n    ['label' => 'Leather belt', 'href' => '#belt'],\n    ['label' => 'Rain jacket', 'href' => '#jacket', 'current' => true],\n    ['label' => 'Travel wallet', 'href' => '#wallet'],\n    ['label' => 'Suede loafers', 'href' => '#loafers'],\n    ['label' => 'Cotton scarf', 'href' => '#scarf'],\n    ['label' => 'Denim apron', 'href' => '#apron'],\n    ['label' => 'Silk tie', 'href' => '#tie'],\n    ['label' => 'Hiking poles', 'href' => '#poles'],\n    ['label' => 'Duffel bag', 'href' => '#duffel'],\n    ['label' => 'Card holder', 'href' => '#cards'],\n    ['label' => 'Straw hat', 'href' => '#hat'],\n]\" />"
+        },
+        {
+            "title": "One line",
+            "code": "<x-wirekit::overflow-nav label=\"Recently viewed\" lines=\"1\" :items=\"[\n    ['label' => 'Overview', 'href' => '#overview', 'current' => true],\n    ['label' => 'Orders', 'href' => '#orders'],\n    ['label' => 'Customers', 'href' => '#customers'],\n    ['label' => 'Products', 'href' => '#products'],\n    ['label' => 'Invoices', 'href' => '#invoices'],\n    ['label' => 'Shipping', 'href' => '#shipping'],\n    ['label' => 'Returns', 'href' => '#returns'],\n    ['label' => 'Reports', 'href' => '#reports'],\n    ['label' => 'Settings', 'href' => '#settings'],\n]\" />"
+        }
+    ],
     "page-header": [
         {
             "title": "A screen title with a description and one action",
@@ -1981,6 +1991,16 @@
         {
             "title": "Status-only announcement",
             "code": "<x-wirekit::stream\n    announce=\"status\"\n    simulate=\"A long generated report would render here; assistive tech is told only that it is ready, not read the whole thing aloud.\"\n/>"
+        }
+    ],
+    "strength-meter": [
+        {
+            "title": "Four steps",
+            "code": "<x-wirekit::stack style=\"width: 24rem; max-width: 100%\" gap=\"md\">\n    <x-wirekit::strength-meter :value=\"1\" label=\"Code strength\" show-level />\n    <x-wirekit::strength-meter :value=\"2\" label=\"Code strength\" show-level />\n    <x-wirekit::strength-meter :value=\"3\" label=\"Code strength\" show-level />\n    <x-wirekit::strength-meter :value=\"4\" label=\"Code strength\" show-level />\n</x-wirekit::stack>"
+        },
+        {
+            "title": "Five named steps",
+            "code": "<x-wirekit::strength-meter\n    style=\"width: 24rem; max-width: 100%\"\n    :value=\"4\"\n    :max=\"5\"\n    label=\"Passphrase strength\"\n    :levels=\"['Very weak', 'Weak', 'Fair', 'Strong', 'Very strong']\"\n    show-level\n/>"
         }
     ],
     "structured-data": [

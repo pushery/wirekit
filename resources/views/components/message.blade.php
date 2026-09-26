@@ -76,7 +76,7 @@
     };
     $actionsRevealClasses = $actionsRevealValue === 'always'
         ? ''
-        : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 transition-opacity duration-[var(--transition-wk-duration)]';
+        : 'opacity-0 focus-within:opacity-100 group-hover:opacity-100 [@media(pointer:coarse)]:opacity-100 [[data-wk-touch]_&]:opacity-100 transition-opacity duration-[var(--transition-wk-duration)]';
 
     // Parse author data
     $authorName = is_array($author) ? ($author['name'] ?? '') : (string) $author;

@@ -18,6 +18,8 @@ export default function wirekitModal(config = {}) {
         dismissible: config.dismissible !== false,
         showEvent: 'wirekit-modal-show',
         closeEvent: 'wirekit-modal-close',
+        // Sent when the reader dismisses it, so a page can clean up state it did not close itself.
+        dismissedEvent: 'wirekit:modal-dismissed',
         // Start on the first CONTROL, not on the scrolling body — utils/first-control.js.
         initialFocus: (panelEl) => firstControl(panelEl, 'data-wk-modal-body'),
     });

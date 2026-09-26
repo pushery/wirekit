@@ -149,32 +149,10 @@
     // The server half of the cookie driver, and it runs BEFORE the boolean cast on purpose:
     // the cast turns null into false, and after that "not set" and "explicitly expanded" are
     // one value. Seeding then would override the developer instead of filling in for them.
-    //
-    // The REQUEST is asked first and the superglobal only as a fallback, and that order is
-    // the fix rather than a detail. PHP fills `$_COOKIE` once per PROCESS, not once per
-    // request. Under `fpm-fcgi` those coincide — a process serves one request and dies — which
-    // is why reading it alone looks correct for as long as it does. Every server that keeps a
-    // worker alive across requests (Octane, FrankenPHP, RoadRunner) fills it at boot, when
-    // there is no request, and never again; the column then renders the other state and
-    // nothing throws.
-    //
-    // The superglobal stays as a FALLBACK because dropping it would be a regression. The
-    // cookie is written by JavaScript, so it arrives as plaintext, and Laravel's
-    // `EncryptCookies` nulls a plaintext cookie it cannot decrypt unless the name is excepted.
-    // An application on FPM that never added that exception is served by `$_COOKIE` today and
-    // must keep working. The fallback can fail to answer but cannot answer WRONGLY: on a
-    // long-lived server nothing writes `$_COOKIE` per request, so it is empty rather than
-    // another visitor's value, and the result is only ever compared as a boolean.
+    // Which store is asked, and in what order, is `PersistedCookie`'s to say: `app-rail` and
+    // `sidebar.collapse-toggle` read the same flag, and one read keeps the three agreeing.
     if ($collapsed === null && $persistDriver === 'cookie' && $persist !== null) {
-        $stored = request()->cookie($persist);
-
-        if (! is_string($stored)) {
-            $stored = isset($_COOKIE[$persist]) && is_string($_COOKIE[$persist]) ? $_COOKIE[$persist] : null;
-        }
-
-        if ($stored !== null) {
-            $collapsed = $stored === '1';
-        }
+        $collapsed = \Pushery\WireKit\Support\PersistedCookie::flag($persist);
     }
 
     // The seeding above only fires when the store HAS something. Where it does not, this is the
@@ -263,19 +241,8 @@
         ? 'border-s-[length:var(--border-wk-width)]'
         : 'border-e-[length:var(--border-wk-width)]';
 
-    // Computed here rather than assembled inside the attribute: a ternary built from string
-    // fragments in a Blade echo is one missing quote away from emitting `collapsed ?  :`,
-    // a JavaScript syntax error that only shows up in the reader's console.
-    $chevronFlip = $side === 'end'
-        ? "collapsed ? '' : 'rotate-180'"
-        : "collapsed ? 'rotate-180' : ''";
-
-    // The glyph the collapse control draws, written out per side. The rule inside the panel stands
-    // on the column's own side, and the arrow sits in the other half, drawn pointing left: the
-    // direction `$chevronFlip` has always assumed, so its states swap on the trailing side exactly
-    // as they did.
-    $collapseGlyphEdge = $side === 'end' ? 'M15 3.75v16.5' : 'M9 3.75v16.5';
-    $collapseGlyphArrow = $side === 'end' ? 'M10.5 9.75 8.25 12l2.25 2.25' : 'M15.75 9.75 13.5 12l2.25 2.25';
+    // The collapse glyph reads `$side` too; it is drawn in `partials/sidebar-collapse-glyph`, which
+    // `sidebar.collapse-toggle` shares.
 
     $surface = $variant === 'flush'
         ? [
@@ -551,8 +518,10 @@
             'seedOn' => $collapsed,
             'seedClassOn' => 'w-[var(--size-wk-rail,3.25rem)]',
             'seedClassOff' => 'w-[var(--wk-sidebar-w,16rem)]',
-            // No gate: unlike the rail, this factory does not re-decide on viewport, so a
-            // gate here would disagree with it for a frame.
+            // No gate. The factory re-decides on viewport only for a column in the shell's
+            // drawer, and the drawer is closed while the page loads, so the seeded width is
+            // never seen there. A gate would instead shift every sidebar outside a shell on a
+            // phone for a frame, where the factory collapses at every width.
             'seedMinWidth' => null,
         ])
     @endif

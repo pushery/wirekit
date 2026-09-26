@@ -14,6 +14,10 @@
     'stripe' => false,
     // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
     'animateIn' => null,
+    // The heading, as a prop or as the `title` slot (the slot wins when both are given).
+    // It was a slot only, and `title="…"` on the tag then landed on the wrapper as an HTML
+    // attribute: a tooltip, with no heading drawn. `alert` takes it both ways, and so does this.
+    'title' => null,
     'scope' => null,
 ])
 
@@ -153,9 +157,11 @@
 
     {{-- Body: title (named slot) + message (default slot) + actions (named slot) --}}
     <div class="flex-1 min-w-0">
-        @isset($title)
+        {{-- A slot is asked for its actual content, because the markers Livewire writes
+             around an `@if` inside it are not a heading; a prop is a string. --}}
+        @if($title instanceof \Illuminate\View\ComponentSlot ? $title->hasActualContent() : filled($title))
             <div class="font-[number:var(--font-wk-heading-weight)] mb-1 text-[color:var(--color-wk-text)]">{{ $title }}</div>
-        @endisset
+        @endif
         <div class="text-[color:var(--color-wk-text-muted)]">{{ $slot }}</div>
         @isset($actions)
             {{-- flex-wrap so a callout with two buttons (or a long single

@@ -87,9 +87,49 @@ export default (preset, options = {}) => ({
         // global @media block snaps duration to 0.01ms — visually identical
         // to no-animation. The opacity-from-0 keyframes would otherwise leave
         // the element invisible if we skipped triggering entirely.
+        //
+        // "Enough of it is in view" has two readings, and a tall target needs the second. A
+        // target taller than `innerHeight / threshold` can never be `threshold` in view at
+        // once — a wrapped section of stacked paragraphs on a phone is — so an observer
+        // watching the ratio alone never fired and the section stayed at opacity 0 for good,
+        // with nothing logged. It now also fires once the target FILLS `threshold` of the
+        // viewport's height, and watches a ladder of thresholds so the growing overlap is
+        // reported at all (with only `[threshold]` a target that never crosses it is never
+        // reported again after the first observation).
+        //
+        // The first observation keeps its old meaning: a target already partly in view on
+        // load fires at once.
+        const threshold = Number(this.options.threshold) || 0;
+        const ladder = [0, threshold];
+        for (let step = 1; step < 20; step++) {
+            ladder.push(step / 20);
+        }
+        let firstReport = true;
+        // Fire on ENTERING the in-view state, not on every rung of the ladder: with
+        // `once: false` each fire restarts the animation, and a scroll through the ladder
+        // would restart it at every step. Leaving the state re-arms it.
+        let inView = false;
+
         this._observer = new IntersectionObserver(
             (entries) => {
-                if (! entries[0].isIntersecting) return;
+                const entry = entries[0];
+                const initial = firstReport;
+                firstReport = false;
+
+                const viewportHeight = entry.rootBounds?.height || window.innerHeight || 0;
+                const enough = entry.isIntersecting && (initial
+                    || entry.intersectionRatio >= threshold
+                    || (viewportHeight > 0 && entry.intersectionRect.height >= threshold * viewportHeight));
+
+                if (! enough) {
+                    inView = false;
+
+                    return;
+                }
+
+                if (inView) return;
+
+                inView = true;
                 this.fire();
                 if (this.options.once) {
                     // Null-guard against post-destroy fire — same race condition
@@ -101,7 +141,7 @@ export default (preset, options = {}) => ({
                     this._observer = null;
                 }
             },
-            { threshold: this.options.threshold }
+            { threshold: [...new Set(ladder)].sort((a, b) => a - b) }
         );
         this._observer.observe(this.$root);
     },

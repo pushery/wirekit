@@ -38,7 +38,10 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('modal', $attributes->getAttributes());
 
     // Title ID for aria-labelledby — links dialog to its header
-    $titleId = 'wk-modal-title-' . ($name ?? \Illuminate\Support\Str::random(12));
+    // Counted, not random, when there is no name. The same dialog renders the same id on the next
+    // round trip, so Livewire's morph keeps the heading instead of replacing it, and a heading
+    // re-rendered on its own still carries the id the dialog's aria-labelledby names.
+    $titleId = $name !== null ? 'wk-modal-title-' . $name : \Pushery\WireKit\Support\DomId::unique(null, 'wk-modal-title-');
 
     // HOW THE DIALOG GETS ITS NAME, and why this is not just `aria-labelledby`.
     //
@@ -154,13 +157,14 @@
      the non-focusable panel div lets focus fall back to `document.body`, so
      focus-trap never sees the ESC and the overlay stays open. A window-level
      ESC listener bypasses this entirely: it catches the event regardless of
-     focus location and calls `close()` directly (which in turn deactivates the
-     focus trap). `close()` is guarded against re-entry, so the extra call is
-     safe even if focus-trap happens to catch it too. Only registered when the
+     focus location and calls `dismissByReader('escape')` directly (which closes, deactivates
+     the focus trap and announces `wirekit:modal-dismissed`). It is guarded against re-entry, so
+     the extra call is safe even if focus-trap happens to catch it too, and the announcement is
+     made once. Only registered when the
      modal is dismissible — non-dismissible modals must never close on ESC. --}}
 <div
     x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }} })"
-    @if($dismissible) x-on:keydown.escape.window="open && isTopmost && close()" @endif
+    @if($dismissible) x-on:keydown.escape.window="open && isTopmost && dismissByReader('escape')" @endif
     {{ $attributes }}
 >
     {{-- Trigger slot — always visible, clicking opens the modal.

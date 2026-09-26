@@ -9,6 +9,7 @@ use BladeUI\Icons\Factory;
 use Composer\InstalledVersions;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
+use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
@@ -17,6 +18,7 @@ use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\DirectoryHash;
 use Pushery\WireKit\Support\LayoutShells;
 use Pushery\WireKit\Support\SuggestSimilar;
+use Pushery\WireKit\Support\TailwindSources;
 use Pushery\WireKit\Support\TailwindVersion;
 use Pushery\WireKit\WireKit;
 
@@ -537,6 +539,10 @@ class VerifyInstallationCommand extends Command
         $cssFiles = glob(resource_path('css/*.css')) ?: [];
         $hasSource = false;
 
+        // The narrow form: one `@source` per component, pointing at `resources/tailwind/<name>.txt`.
+        $declared = [];
+        $unresolved = [];
+
         foreach ($cssFiles as $file) {
             // `@` plus an explicit false check. Under strict_types a `false` here is a
             // fatal TypeError in str_contains(), and the unsuppressed warning is promoted
@@ -597,22 +603,142 @@ class VerifyInstallationCommand extends Command
             preg_match_all('~@source\s+(?!not\b)([^;]*);~i', $withoutComments, $directives);
 
             foreach ($directives[1] as $argument) {
-                $argument = strtolower($argument);
+                $lower = strtolower($argument);
 
-                if (str_contains($argument, 'wirekit') && str_contains($argument, 'views')) {
+                if (str_contains($lower, 'wirekit') && str_contains($lower, 'views')) {
                     $hasSource = true;
 
                     break 2;
+                }
+
+                // A per-component source. The path is relative to the stylesheet it sits in, as
+                // Tailwind reads it, and a path that resolves to nothing is recorded: Tailwind
+                // skips it without a word, and the component it names renders unstyled.
+                if (preg_match('~'.preg_quote(TailwindSources::DIRECTORY, '~').'/([a-z0-9-]+)\.txt~', $lower, $named) === 1) {
+                    $path = trim($argument, " \t\n\r'\"");
+                    $resolved = realpath(str_starts_with($path, '/') ? $path : dirname($file).'/'.$path);
+
+                    // Ours when it resolves inside this package's sources, whatever the vendor
+                    // directory is called; a path that resolves nowhere is ours when it says so.
+                    if ($resolved !== false && str_starts_with($resolved, $this->tailwindSourcesDirectory().'/')) {
+                        $declared[$named[1]] = true;
+                    } elseif ($resolved === false && str_contains($lower, 'wirekit')) {
+                        $unresolved[] = $path;
+                    }
                 }
             }
         }
 
         if ($hasSource) {
             $this->reportPass('Tailwind @source includes WireKit templates');
-        } else {
-            $this->reportFail('Missing @source for WireKit in Tailwind CSS');
-            $this->line('  Fix: Add to resources/css/app.css:');
-            $this->line('  @source "../../vendor/pushery/wirekit/resources/views/**/*.blade.php";');
+
+            return;
+        }
+
+        if ($declared !== [] || $unresolved !== []) {
+            $this->checkPerComponentSources(array_keys($declared), $unresolved);
+
+            return;
+        }
+
+        $this->reportFail('Missing @source for WireKit in Tailwind CSS');
+        $this->line('  Fix: Add to resources/css/app.css:');
+        $this->line('  @source "../../vendor/pushery/wirekit/resources/views/**/*.blade.php";');
+    }
+
+    /**
+     * The directory of this package's per-component Tailwind sources, resolved.
+     */
+    private function tailwindSourcesDirectory(): string
+    {
+        $directory = dirname(__DIR__, 2).'/'.TailwindSources::DIRECTORY;
+
+        return realpath($directory) ?: $directory;
+    }
+
+    /**
+     * Per-component sources: every one resolves, and together they cover every component the
+     * application's views render.
+     *
+     * The narrow form is only as good as the list, and a list goes stale the first time a view
+     * starts using a component nobody added: that component's utilities are simply missing, and
+     * nothing fails. So the views are read and held against what the declared sources cover.
+     * A source covers its whole closure, so a component rendered inside a declared one (a button
+     * in a modal) is covered without a line of its own.
+     *
+     * @param  list<string>  $declared  component names whose source resolved
+     * @param  list<string>  $unresolved  `@source` paths that resolve to no file
+     */
+    private function checkPerComponentSources(array $declared, array $unresolved): void
+    {
+        foreach ($unresolved as $path) {
+            $this->reportFail(sprintf('Tailwind @source names a WireKit source that does not exist: %s', $path));
+
+            $name = basename($path, '.txt');
+            $suggestions = SuggestSimilar::byLevenshtein($name, array_keys(ComponentRegistry::all()));
+
+            $this->line($suggestions === []
+                ? '  No WireKit component has that name. Check the path, relative to the stylesheet it sits in.'
+                : '  Did you mean '.implode(' or ', array_map(fn (string $s): string => "`{$s}`", $suggestions)).'?');
+        }
+
+        $covered = [];
+
+        foreach ($declared as $name) {
+            foreach (TailwindSources::templatesOf($name) as $template) {
+                $covered[$template] = true;
+            }
+        }
+
+        $used = [];
+
+        foreach (File::allFiles(resource_path('views')) as $view) {
+            if (! str_ends_with($view->getFilename(), '.blade.php')) {
+                continue;
+            }
+
+            foreach (BladeParser::extractWireKitComponentUsagesFromSource($view->getContents()) as $usage) {
+                $component = explode('.', $usage['name'])[0];
+
+                if (ComponentRegistry::get($component) !== null) {
+                    $used[$component] = true;
+                }
+            }
+        }
+
+        $missing = [];
+
+        foreach (array_keys($used) as $component) {
+            $templates = TailwindSources::templatesOf($component);
+
+            if ($templates !== [] && array_diff($templates, array_keys($covered)) !== []) {
+                $missing[] = $component;
+            }
+        }
+
+        sort($missing);
+
+        if ($missing !== []) {
+            $this->reportFail(sprintf(
+                'Tailwind @source misses %d WireKit component(s) your views render: %s',
+                count($missing),
+                implode(', ', $missing),
+            ));
+            $this->line('  Their utilities are not built, so they render unstyled. Fix: add to your stylesheet:');
+
+            foreach ($missing as $component) {
+                $this->line(sprintf('  @source "../../vendor/pushery/wirekit/%s/%s.txt";', TailwindSources::DIRECTORY, $component));
+            }
+
+            return;
+        }
+
+        if ($unresolved === []) {
+            $this->reportPass(sprintf(
+                'Tailwind @source covers the %d WireKit component(s) your views render, through %d per-component source(s)',
+                count($used),
+                count($declared),
+            ));
         }
     }
 
@@ -2842,8 +2968,16 @@ class VerifyInstallationCommand extends Command
             // It does NOT require the condition to name the same field as the call, and never
             // did. Requiring that would be a stricter check than the one asked for, and it would
             // reject the shapes a real teardown takes — a local alias, a destructured handle.
+            //
+            // A comparison with `null` or `undefined` is the same guard written out, in either
+            // order and with `!=` as well as `!==`: `if (this.resizes !== null) {`. It was read as
+            // unguarded, so the warning asked for a guard that stood right above the call.
+            // Accepted only when the comparison is the whole condition or its first `&&` term; a
+            // comparison with anything else (`this.observer !== previous`) guards nothing.
             $guarded = preg_match('/if\s*\(\s*!\s*this\.\w+/', $context) === 1
-                || preg_match('/if\s*\(\s*this\.\w+\s*\)/', $context) === 1;
+                || preg_match('/if\s*\(\s*this\.\w+\s*\)/', $context) === 1
+                || preg_match('/if\s*\(\s*this\.\w+\s*!==?\s*(?:null|undefined)\s*(?:\)|&&)/', $context) === 1
+                || preg_match('/if\s*\(\s*(?:null|undefined)\s*!==?\s*this\.\w+\s*(?:\)|&&)/', $context) === 1;
 
             if (! $guarded) {
                 return true;

@@ -26,10 +26,15 @@
  *
  * Reads `{ "expressions": ["…", …] }` on stdin, writes
  * `{ "ok": true, "grammar": { "reservedWordAsMember": bool },
+ *    "prohibited": { "directives": [{ "name", "message" }, …], "tags": [{ "name", "message" }, …] },
  *    "results": [{ "ok": bool, "error": string|null }, …] }` on
  * stdout — one result per input, in order. `grammar` describes the parser that
  * produced those results, so advice derived from them can be true for THIS
  * installation rather than for the version somebody happened to test against.
+ * `prohibited` is what the same build refuses whatever an expression says: a
+ * directive it throws on before reading the value, and elements on which it
+ * evaluates nothing. Grammar cannot find either, because neither depends on
+ * how the expression is written.
  * On a setup problem it writes
  * `{ "ok": false, "error": "…" }` and exits 1, because a run that could not
  * measure must never look like a run that found nothing.
@@ -101,7 +106,39 @@ function loadCspParser() {
     }
 
     // eslint-disable-next-line no-new-func -- dev tooling reading a parser out of a bundle; never shipped to a browser
-    return new Function(`${source.slice(start, end)}\nreturn { Tokenizer, Parser };`)();
+    const parser = new Function(`${source.slice(start, end)}\nreturn { Tokenizer, Parser };`)();
+
+    return { ...parser, source };
+}
+
+/**
+ * What the CSP build refuses whatever the expression says, read out of its own messages.
+ *
+ * The build registers its own handler for `x-html`, and that handler throws before it reads
+ * the value; it refuses to evaluate anything on an `<iframe>` or a `<script>`. A grammar check
+ * passes all three, because `body` is a perfectly good expression. So the set comes from the
+ * same bundle the grammar comes from, by the wording of its errors, and nothing about it is
+ * listed here.
+ *
+ * An empty set is an error, not a clean result: it means the wording moved, and a check that
+ * silently stopped finding would certify the one thing it exists to catch.
+ */
+function prohibitedBy(source) {
+    const unique = (matches) => [...new Map(matches.map((m) => [m[1], { name: m[1], message: m[0] }])).values()];
+
+    const directives = unique([...source.matchAll(/Using the (x-[\w-]+) directive is prohibited in the CSP build/g)]);
+    const tags = unique([...source.matchAll(/Evaluating expressions on an? (\w+) is prohibited in the CSP build/g)]);
+
+    if (directives.length === 0 || tags.length === 0) {
+        throw new Error(
+            'Could not read what Alpine\'s CSP build refuses outright (a directive such as x-html, '
+            + 'expressions on an iframe or a script) from @alpinejs/csp: the wording of its errors '
+            + 'changed in this version. The audit refuses to report a verdict rather than certify '
+            + 'directives it can no longer check.'
+        );
+    }
+
+    return { directives, tags };
 }
 
 function readStdin() {
@@ -115,7 +152,8 @@ function readStdin() {
 }
 
 try {
-    const { Tokenizer, Parser } = loadCspParser();
+    const { Tokenizer, Parser, source } = loadCspParser();
+    const prohibited = prohibitedBy(source);
 
     // Prove the instrument still IS an instrument before reading anything off
     // it. Everything below this line is a verdict from it.
@@ -211,7 +249,7 @@ try {
         };
     });
 
-    process.stdout.write(JSON.stringify({ ok: true, grammar: { reservedWordAsMember }, results }));
+    process.stdout.write(JSON.stringify({ ok: true, grammar: { reservedWordAsMember }, prohibited, results }));
 } catch (error) {
     process.stdout.write(JSON.stringify({ ok: false, error: String(error?.message ?? error) }));
     process.exit(1);

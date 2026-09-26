@@ -48,7 +48,24 @@
     // reported from a permissions table where "Nutzungsbedingungen" and
     // "Datenschutzerklaerung" held their columns at 144 and 142px over icons that need 16,
     // and the table ran past its frame rather than the heads taking two lines.
+    //
+    // `wrap` breaks ANYWHERE, which is what a long compound over a narrow icon column needs.
+    // `wrap="words"` breaks only between words and evens the lines up: over a column of numbers
+    // there is nothing to hold the column wider than a digit, and a head that may break anywhere
+    // fell to that width ("Line / s", "to 2 / %"). Between words, the longest word is the floor.
     'wrap' => false,
+    // Turn the label on its side, reading from bottom to top on one line.
+    //
+    // For a column whose NAME is long and whose values are a mark or a glyph, next to a column
+    // that takes the rest of the width: reported from a user list with one column per legal text,
+    // where six one-word heads took 570px over cells that need 20. `wrap` cannot help there, since
+    // the wide column claims everything the heads give up and they fall to one letter per line.
+    // A turned head is as wide as one line of text in any language, and the row grows instead.
+    //
+    // Every head in that row then stands on the row's floor (the stylesheet does that, from the
+    // row), and a sort indicator stays upright under the label. A turned head is one line, so it
+    // outranks `wrap`.
+    'sideways' => false,
 ])
 
 @php
@@ -64,6 +81,7 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $sortable = BooleanProp::from($sortable, false);
+    $sideways = BooleanProp::from($sideways, false);
 
     // Alignment maps to text-* utilities
     $alignClass = match ($align) {
@@ -82,6 +100,23 @@
         default => 'justify-start',
     };
 
+    // A turned head lays the sort button out as a column: the label, then the indicator under
+    // it, upright, so its arrow still points the way the order runs. Across the column the pair
+    // follows `align`, as a label does in any head.
+    $sortLayout = $sideways
+        ? 'flex-col justify-end gap-1 '.match ($align) {
+            'center' => 'items-center',
+            'right' => 'items-end',
+            default => 'items-start',
+        }
+        : 'items-center gap-1 '.$justifyClass;
+
+    // The label itself. Only the text turns; the indicator beside it in the markup below is
+    // outside this span, which is what keeps it upright.
+    $label = $sideways
+        ? new \Illuminate\Support\HtmlString('<span class="wk-sideways">'.$slot.'</span>')
+        : $slot;
+
     // Sanitize the <th scope> to the valid HTML set; anything else falls back to col.
     // Resolved BEFORE the class builder so a row-header can drop the column-header look.
     $headerScope = in_array($headerScope, ['col', 'row', 'colgroup', 'rowgroup'], true) ? $headerScope : 'col';
@@ -91,7 +126,9 @@
     // for that row — NOT as a column header. The muted, nowrap column-header
     // treatment made a row header render small, greyed-out and clipped; it now
     // uses the regular text color and is allowed to wrap.
-    $wrap = BooleanProp::from($wrap, false);
+    // `words` is its own mode; any other value is the boolean it always was.
+    $wrapWords = $wrap === 'words';
+    $wrap = $wrapWords || BooleanProp::from($wrap, false);
 
     /*
      * `whitespace-normal` is emitted EXPLICITLY rather than by leaving `nowrap` off, and that is
@@ -117,7 +154,11 @@
      */
     $scopeText = $isRowHeader
         ? 'text-[color:var(--color-wk-text)]'
-        : 'text-[color:var(--color-wk-text-muted)] '.($wrap ? 'whitespace-normal [overflow-wrap:anywhere]' : 'whitespace-nowrap');
+        : 'text-[color:var(--color-wk-text-muted)] '.match (true) {
+            $wrapWords => 'whitespace-normal wk-lines-balanced',
+            $wrap => 'whitespace-normal [overflow-wrap:anywhere]',
+            default => 'whitespace-nowrap',
+        };
 
     // Whenever a sort <button> renders, the padding MOVES onto it instead of sitting
     // on the cell (see both buttons below). Measured at a coarse pointer, the button
@@ -278,9 +319,9 @@
         <button
             type="button"
             @click="sortBy({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})"
-            class="flex w-full items-center gap-1 {{ $justifyClass }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
+            class="flex w-full {{ $sortLayout }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
         >
-            {{ $slot }}
+            {{ $label }}
             <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'asc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 3L2 8h8L6 3z"/></svg>
             <svg x-show="getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }}) === 'desc'" aria-hidden="true" class="h-3 w-3" viewBox="0 0 12 12" fill="currentColor"><path d="M6 9L2 4h8L6 9z"/></svg>
             <svg x-show="!getSortDirection({{ \Pushery\WireKit\Support\AlpinePayload::string($column) }})" aria-hidden="true" class="h-3 w-3 opacity-40" viewBox="0 0 12 12" fill="currentColor"><path d="M6 2L3 5h6L6 2zM6 10L3 7h6L6 10z"/></svg>
@@ -311,18 +352,18 @@
             <button
                 type="button"
                 wire:click="{{ $sortAction }}"
-                class="flex w-full items-center gap-1 {{ $justifyClass }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
+                class="flex w-full {{ $sortLayout }} px-[var(--padding-wk-x-md)] py-[var(--padding-wk-y-md)] [table[data-wk-compact]_&]:py-[var(--padding-wk-y-sm)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] rounded-[var(--radius-wk-sm)] cursor-pointer"
             >
-                {{ $slot }}
+                {{ $label }}
                 {!! $sortIndicator !!}
             </button>
         @else
-            <span class="inline-flex items-center gap-1">
-                {{ $slot }}
+            <span class="{{ $sideways ? 'inline-flex flex-col items-center gap-1' : 'inline-flex items-center gap-1' }}">
+                {{ $label }}
                 {!! $sortIndicator !!}
             </span>
         @endif
     @else
-        {{ $slot }}
+        {{ $label }}
     @endif
 </th>

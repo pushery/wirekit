@@ -212,6 +212,12 @@
         <canvas x-ref="canvas" aria-hidden="true" style="width: 100%; height: 100%;"></canvas>
     @endif
 </{{ $wrapperTag }}>
+{{-- The data half of the chart, OUTSIDE the `wire:ignore` above on purpose. The morph leaves
+     the chart root alone, attributes included, so new labels and series from a Livewire update
+     never reached a drawn chart. This element is updated like any other, and the factory
+     follows its attribute and updates the chart in place, with no rebuild and no entrance
+     animation. A `template` renders nothing. --}}
+<template data-wk-chart-data="{{ \Pushery\WireKit\Support\AlpinePayload::from($chartData) }}"></template>
 @if ($needsReplayWrapper)
     </{{ $wrapperTag }}>
 @endif

@@ -67,6 +67,19 @@
     'label' => null,
     'hideLabel' => false,
     'ariaLabel' => null,
+    // Search on the server instead of in the browser, for a list too long to render into the
+    // page. The typed text is sent as a `search-change` event with `{ value }` once it settles,
+    // and `options` are the results the application renders for it. The choice keeps its label
+    // after the results move on. Needs the search field, so it does nothing with `searchable`
+    // off.
+    'server' => false,
+    // Characters before the text is sent. Shorter text sends an empty value, once.
+    'searchMinLength' => config('wirekit.components.combobox.search-min-length', 2),
+    // Milliseconds of quiet before the text is sent: one request per settled search rather
+    // than one per character. 0 sends at once, for an application that throttles on its side.
+    'searchDebounce' => config('wirekit.components.combobox.search-debounce', 300),
+    // The application cut its results at a limit. The list then says there are more.
+    'truncated' => false,
     'scope' => null,
 ])
 
@@ -87,6 +100,10 @@
     $hideLabel = BooleanProp::from($hideLabel, false);
     $searchable = BooleanProp::from($searchable, true);
     $clearable = BooleanProp::from($clearable, true);
+    $server = BooleanProp::from($server, false) && $searchable;
+    $truncated = BooleanProp::from($truncated, false);
+    $searchMinLength = max(1, (int) $searchMinLength);
+    $searchDebounce = max(0, (int) $searchDebounce);
 
     // `@aware` reads a value from the parent component, but — unlike `@props` —
     // it does NOT remove that key from the attribute bag. So when the key is also
@@ -142,7 +159,12 @@
     // An array option may also carry a medium (`icon`, `image`, `avatar` or `flag`), a `description`,
     // `keywords` and a `selectedLabel`. OptionMedia validates them and adds only the keys an
     // option uses, so an option without them normalizes exactly as it did before they existed.
-    $normalizeOption = function ($key, $opt) {
+    //
+    // A LIST is decided by the ARRAY, never by one key: keys 0, 1, 2 … in order, and within a
+    // group by that group's own array. PHP turns a numeric string key into an integer, so
+    // deciding by the key's type read `[31 => 'Rain jacket']` and every `pluck('name', 'id')`
+    // as a list and submitted the NAMES instead of the ids.
+    $normalizeOption = function ($key, $opt, bool $inList) {
         if (is_array($opt)) {
             $value = (string) ($opt['value'] ?? $key);
             $label = (string) ($opt['label'] ?? $opt['value'] ?? $key);
@@ -154,22 +176,24 @@
             ] + \Pushery\WireKit\Support\OptionMedia::fields('combobox', $opt, $value, $label);
         }
 
-        return is_int($key)
+        return $inList
             ? ['value' => (string) $opt, 'label' => (string) $opt, 'disabled' => false]
             : ['value' => (string) $key, 'label' => (string) $opt, 'disabled' => false];
     };
 
     $normalized = [];
+    $optionsAreAList = array_is_list(collect($options)->all());
     foreach ($options as $key => $opt) {
         $isGroup = is_array($opt) && ! array_key_exists('label', $opt) && ! array_key_exists('value', $opt);
         if ($isGroup) {
+            $groupIsAList = array_is_list($opt);
             foreach ($opt as $subKey => $subOpt) {
-                $entry = $normalizeOption($subKey, $subOpt);
+                $entry = $normalizeOption($subKey, $subOpt, $groupIsAList);
                 $entry['group'] = (string) $key;
                 $normalized[] = $entry;
             }
         } else {
-            $entry = $normalizeOption($key, $opt);
+            $entry = $normalizeOption($key, $opt, $optionsAreAList);
             if (is_array($opt) && ! empty($opt['group'])) {
                 $entry['group'] = (string) $opt['group'];
             }
@@ -193,7 +217,31 @@
     // package the way the flag component resolves it.
     $normalized = \Pushery\WireKit\Support\FlagPackage::attach($normalized);
     $optionUses = \Pushery\WireKit\Support\OptionMedia::uses($normalized);
+    // A server search learns what its rows carry only from results that have not arrived yet,
+    // so it draws every row the rich way: a medium and a description appear per row, and a row
+    // without them looks exactly like a plain one.
+    if ($server) {
+        $optionUses = ['media' => true, 'descriptions' => true];
+    }
     $richRows = $optionUses['media'] || $optionUses['descriptions'];
+
+    // Server search. The results travel on an attribute of their own rather than in `x-data`,
+    // which Alpine reads once: Livewire patches the attribute on every render and the factory
+    // follows it (utils/server-search.js). The sentences are translated here, since a sentence
+    // put together in JavaScript cannot be.
+    $serverConfig = '';
+    $serverOptions = null;
+    if ($server) {
+        $serverConfig = ', server: true, searchMinLength: '.$searchMinLength.', searchDebounce: '.$searchDebounce
+            .', searchTexts: '.\Pushery\WireKit\Support\AlpinePayload::from([
+                'searching' => __('wirekit::Searching…'),
+                'prompt' => __('wirekit::Type to search'),
+                'tooShort' => trans_choice('wirekit::{1} Type at least :count character|[2,*] Type at least :count characters', $searchMinLength, ['count' => $searchMinLength]),
+                'truncated' => __('wirekit::More results. Keep typing to narrow them.'),
+                'empty' => __('wirekit::No results'),
+            ]);
+        $serverOptions = \Pushery\WireKit\Support\AlpinePayload::from(['options' => $normalized, 'truncated' => $truncated]);
+    }
 
     // The bag read is guarded on the name, exactly as field.blade.php does.
     // `MessageBag::has(null)` falls through to `any()`, so an unguarded read
@@ -421,7 +469,9 @@
         @endif
     @endif
 <div
-    x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ \Pushery\WireKit\Support\AlpinePayload::from($normalized) }}, listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $searchable ? '' : ', searchable: false' }} })"
+    {{-- In server mode the options are read from the attribute below, so they are not sent twice. --}}
+    x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ $server ? '[]' : \Pushery\WireKit\Support\AlpinePayload::from($normalized) }}, listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $searchable ? '' : ', searchable: false' }}{{ $serverConfig }} })"
+    @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @endif
     @click.outside="open = false"
     {{-- The chosen option, exposed by name so a binding on the component tag reaches
          the SELECTION. It used to reach the search field instead -- the bag below is
@@ -673,6 +723,8 @@
         aria-label="{{ $resolvedAriaLabel }}"
         class="{{ $listClasses }}"
         style="list-style: none; margin: 0; padding: 0;{{ $panelWidthStyle !== '' ? ' '.$panelWidthStyle : '' }}"
+        {{-- The results on screen answer an older search while a newer one is out. --}}
+        @if($server) x-bind:aria-busy="searchAriaBusy()" @endif
         x-show="open && filtered.length > 0"
         x-cloak
     >
@@ -719,6 +771,7 @@
                             'idExpression' => \Pushery\WireKit\Support\AlpinePayload::string($listId)." + '-opt-' + opt._idx",
                             'media' => $optionUses['media'],
                             'descriptions' => $optionUses['descriptions'],
+                            'mediaPerRow' => $server,
                             'mediaBox' => $rowMediaBox,
                             'mediaIcon' => $rowMediaIcon,
                             'mediaInitials' => $mediaInitials,
@@ -757,12 +810,27 @@
                 'idExpression' => \Pushery\WireKit\Support\AlpinePayload::string($listId)." + '-opt-' + idx",
                 'media' => $optionUses['media'],
                 'descriptions' => $optionUses['descriptions'],
+                'mediaPerRow' => $server,
                 'mediaBox' => $rowMediaBox,
                 'mediaIcon' => $rowMediaIcon,
                 'mediaInitials' => $mediaInitials,
                 'descriptionClasses' => $descriptionText.' text-[color:var(--color-wk-text-muted)]',
             ])@endif</li>
         </template>
+        @endif
+        @if($server)
+            {{-- Under results: a newer search still out, or results the application cut at its
+                 limit. An option that cannot be chosen, like the multi-select's empty row, since
+                 a listbox may hold nothing else; the highlight indexes `filtered` and never
+                 lands here. --}}
+            <li data-wk-prose-skip
+                role="option"
+                aria-disabled="true"
+                x-show="searchNote() !== ''"
+                x-text="searchNote()"
+                class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]"
+                style="list-style: none;"
+            ></li>
         @endif
     </ul>
     </template>
@@ -790,14 +858,22 @@
              region, and this node is teleported once and then only toggled, so
              the text arrives INTO a region that was already there — which is the
              condition for it being spoken at all. --}}
-        role="status"
+        {{-- In server mode the status region below speaks instead, since it also has to say that
+             a search is out while results are still on screen and this panel is hidden. --}}
+        @unless($server) role="status" @endunless
         class="{{ $listClasses }}"
         @if($panelWidthStyle !== '') style="{{ $panelWidthStyle }}" @endif
         x-ref="cbxEmpty"
-        x-show="open && filtered.length === 0 && query !== ''"
+        {{-- A server search shows this before anything is typed too: "Type to search" is the
+             answer to an empty field there, where the list is empty until the reader asks. --}}
+        @if($server)
+            x-show="open && filtered.length === 0"
+        @else
+            x-show="open && filtered.length === 0 && query !== ''"
+        @endif
         x-cloak
     >
-        <p data-wk-prose-skip class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]">{{ __('wirekit::No results') }}</p>
+        <p data-wk-prose-skip class="{{ $emptyRowClasses }} text-[color:var(--color-wk-text-muted)]" @if($server) x-text="searchEmptyText(typedQuery())" @endif>{{ __('wirekit::No results') }}</p>
     </div>
     </template>
 
@@ -805,6 +881,13 @@
          teleported panel, so a Livewire update renders them with the component; a `<use>`
          reference resolves anywhere in the document, so the panel reaches them from <body>. --}}
     {{ $iconSprite }}
+
+    @if($server)
+        {{-- The search status, spoken: a search still out, what an empty list means, or that the
+             results were cut. Present from the first render: a region that arrives together with
+             its text is a new node, and nothing is announced at all. --}}
+        <div class="sr-only" aria-live="polite" aria-atomic="true" x-text="searchAnnouncement(filtered.length, typedQuery())"></div>
+    @endif
 
     @if($showsError)
         <p data-wk-prose-skip id="{{ $errorId }}" @if($announceError) aria-live="polite" aria-atomic="true" @endif class="mt-[var(--padding-wk-y-xs)] text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-danger-text)]">{{ $errorMessage }}</p>

@@ -389,9 +389,9 @@ return [
         'file-upload' => ['size' => 'md', 'multiple' => false, 'accept' => null, 'capture' => null],
         // `placement`: where the options panel opens, any placement `dropdown` takes. `panel-width`:
         // `trigger` matches the field, `auto` fits the widest option, or a CSS length such as 20rem.
-        'combobox' => ['size' => 'md', 'placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger'],
-        'multi-select' => ['placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger'],
-        'otp-input' => ['length' => 6, 'masked' => false, 'justify' => 'start'],
+        'combobox' => ['size' => 'md', 'placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger', 'search-min-length' => 2, 'search-debounce' => 300],
+        'multi-select' => ['placeholder' => null, 'placement' => 'bottom-start', 'panel-width' => 'trigger', 'search-min-length' => 2, 'search-debounce' => 300],
+        'otp-input' => ['length' => 6, 'masked' => false, 'justify' => 'start', 'size' => 'md'],
         // `placeholder` is null rather than a literal so the component keeps resolving its
         // own translated default; set a string here to override it in every locale at once.
         'tags-input' => ['max-tags' => null, 'placeholder' => null],

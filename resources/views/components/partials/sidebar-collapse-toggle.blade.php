@@ -52,16 +52,8 @@
             :aria-label="collapsed ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Expand sidebar')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Collapse sidebar')) }}"
             class="{{ $collapseBtnClasses }}"
         >
-            {{-- A panel rather than a double chevron: the app rail's toggle draws the double chevron,
-                 and in one shell the two stood at the foot of neighboring columns reading as two
-                 versions of one button while they fold different things. The frame is the column,
-                 the rule inside it stands on the column's own side, and only the arrow turns. It
-                 points the way the column is about to move, so on the trailing side the two states
-                 swap, and the edge stays where the column is in both. --}}
-            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h12A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6Z" />
-                <path stroke-linecap="round" d="{{ $collapseGlyphEdge }}" />
-                <path stroke-linecap="round" stroke-linejoin="round" class="origin-center [transform-box:fill-box] transition-transform duration-[var(--transition-wk-duration)]" :class="{{ $chevronFlip }}" d="{{ $collapseGlyphArrow }}" />
-            </svg>
+            {{-- The glyph `sidebar.collapse-toggle` draws too, from one partial, so the two never read as
+                 different buttons. --}}
+            @include('wirekit::components.partials.sidebar-collapse-glyph')
         </button>
         </x-wirekit::tooltip>

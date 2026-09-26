@@ -62,18 +62,49 @@ final class ThemePresetRegistry
             'minimal' => [
                 'label' => 'Minimal',
                 'vars' => <<<'CSS'
-    /* Minimal — clean, borderless aesthetic */
-    --radius-wk-sm: 0px;
-    --radius-wk-md: 0px;
-    --radius-wk-lg: 0px;
-    --radius-wk-xl: 0px;
-    --radius-wk-full: 0px;
-    --ring-wk-width: 2px;
+    /* Minimal — radical reduction, function over form. The same block the
+       preset's page teaches, token for token, so the command and a pasted
+       block give the same theme. */
+    --radius-wk: 0px;
     --shadow-wk-sm: none;
     --shadow-wk-md: none;
     --shadow-wk-lg: none;
+    --shadow-wk-none: none;
+    --font-wk-heading-weight: 500;
+    --font-wk-letter-spacing: 0.01em;
+
+    /* No borders: the input fill below marks a field instead. The fill and
+       the border only work as a pair. A neutral-200 fill inside the stock
+       border puts that border at 2.47:1, under the 3:1 a control edge needs. */
+    --border-wk-width: 0px;
+
+    /* 2px meets the minimum focus area, flush where a border would be. */
+    --ring-wk-width: 2px;
+    --ring-wk-offset: 0px;
+    --transition-wk-duration: 100ms;
+
+    /* At 0.75 the primary label stays above 4.5:1 on the white page while
+       hovered. */
+    --opacity-wk-hover: 0.75;
+
+    /* Surfaces and the text inside fields. With no shadow and no border a
+       panel needs a surface step of its own, neutral-100 on the white page.
+       The input fill is neutral-200, and the two text tokens inside it step
+       down to neutral-600, which keeps them at 4.5:1 or more on that fill. */
+    --color-wk-bg-elevated: oklch(97% 0 none);
+    --color-wk-bg-input: oklch(92.2% 0 none);
+    --color-wk-text-subtle: oklch(43.9% 0 none);
+    --color-wk-text-placeholder: oklch(43.9% 0 none);
 CSS,
-                'dark_vars' => null,
+                'dark_vars' => <<<'CSS'
+    /* The dark halves of the four colors above. A `:root` value outranks the
+       dark defaults, so without them a panel would stay neutral-100 under
+       light dark-mode text. */
+    --color-wk-bg-elevated: oklch(20.5% 0 none);
+    --color-wk-bg-input: oklch(26.9% 0 none);
+    --color-wk-text-subtle: oklch(70.8% 0 none);
+    --color-wk-text-placeholder: oklch(70.8% 0 none);
+CSS,
             ],
             'soft' => [
                 'label' => 'Soft',
@@ -86,28 +117,31 @@ CSS,
     --color-wk-accent: oklch(0.541 0.281 293.009);
     /* Co-tuned label color. A preset that recolors --color-wk-accent
        MUST also pin --color-wk-accent-fg, otherwise the default near-white
-       fg pairs with the new accent by luck only. Near-white on this violet
-       clears WCAG AA at 5.63:1. Pinning it here keeps the pair aligned in
-       BOTH light and dark: `wirekit:theme` emits these via @theme → :root
+       fg pairs with the new accent by luck only. White on this violet
+       clears WCAG AA at 5.88:1, and it is the value the preset's page
+       teaches. Pinning it here keeps the pair aligned in BOTH light and
+       dark: `wirekit:theme` writes these into a plain `:root` block
        (specificity 0,1,0), which wins over the dark default's :where(.dark)
        accent-fg (specificity 0) in dark mode too, so accent + fg move
        together instead of the fg snapping to the dark-mode near-black. */
-    --color-wk-accent-fg: oklch(0.985 0 0);
+    --color-wk-accent-fg: #fff;
 CSS,
                 'dark_vars' => null,
             ],
             'material' => [
                 'label' => 'Material',
                 'vars' => <<<'CSS'
-    /* Material — tight radii, an indigo accent and a decelerating ease */
+    /* Material — tight radii, an indigo accent and a standard ease */
     --radius-wk-sm: 0.25rem;
     --radius-wk-md: 0.5rem;
     --radius-wk-lg: 0.75rem;
-    --color-wk-accent: oklch(0.457 0.24 277.023);
-    /* Co-tuned label color — near-white clears WCAG AA at 7.73:1 on this
+    /* indigo-600, the step the preset's page names. */
+    --color-wk-accent: oklch(0.511 0.262 276.966);
+    /* Co-tuned label color — white clears WCAG AA at 6.44:1 on this
        indigo; pinned for both modes (see the `soft` preset for the why). */
-    --color-wk-accent-fg: oklch(0.985 0 0);
-    --transition-wk-easing: cubic-bezier(0, 0, 0.2, 1);
+    --color-wk-accent-fg: #fff;
+    /* A short start, most of the distance early, then a long settle. */
+    --transition-wk-easing: cubic-bezier(0.2, 0, 0, 1);
 CSS,
                 'dark_vars' => null,
             ],
@@ -200,12 +234,13 @@ CSS,
             'retro-terminal' => [
                 'label' => 'Retro Terminal',
                 'vars' => <<<'CSS'
-    /* Retro Terminal — green-on-black hacker aesthetic */
-    --color-wk-accent: oklch(0.723 0.219 149.579);
-    /* This green is LIGHT (L=0.723), so the default near-white label only
-       reached 2.13:1 (WCAG fail) — a near-BLACK label is the correct pair,
-       clearing 8.06:1. Pinned for both modes (see the `soft` preset). */
-    --color-wk-accent-fg: oklch(0.205 0 0);
+    /* Retro Terminal — green-on-black hacker aesthetic, in the hex values of
+       the preset's page: it inherits no palette color from Default. */
+    --color-wk-accent: #00ff41;
+    /* This green is LIGHT, so a near-white label would fail WCAG; the
+       near-BLACK label clears 14.23:1. Pinned for both modes (see the
+       `soft` preset). */
+    --color-wk-accent-fg: #0d0d0d;
     --radius-wk-sm: 0px;
     --radius-wk-md: 0px;
     --radius-wk-lg: 0px;
@@ -222,10 +257,11 @@ CSS,
     --radius-wk-lg: 0.875rem;
     --radius-wk-xl: 1.75rem;
     --color-wk-accent: oklch(0.546 0.245 262.881);
-    /* Co-tuned label color — near-white clears WCAG AA at 5.03:1 on this
+    /* Co-tuned label color — white clears WCAG AA at 5.26:1 on this
        blue; pinned for both modes (see the `soft` preset for the why). */
-    --color-wk-accent-fg: oklch(0.985 0 0);
-    --transition-wk-easing: cubic-bezier(0, 0, 0.58, 1);
+    --color-wk-accent-fg: #fff;
+    /* A quadratic ease-out, the curve the preset's page teaches. */
+    --transition-wk-easing: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 CSS,
                 'dark_vars' => null,
             ],

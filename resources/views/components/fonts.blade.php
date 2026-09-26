@@ -141,7 +141,12 @@
          costs bandwidth and, worse, competes with the one font the reader is actually waiting
          on. `crossorigin` is not optional even same-origin — a font preload without it is
          ignored and the font is fetched a second time. --}}
-    @if($preloadSans = $preloadHref($sansPreset))
+    {{-- Not on the response to a `wire:navigate`, which Livewire requests with this header.
+         It merges that page's head into the one on screen, keeps stylesheets and scripts, and
+         replaces every other head element with the new copy, a preload included. The browser
+         would fetch the font a second time for a preload nothing reads, on every navigation,
+         while the font the first page loaded is already in use. --}}
+    @if(! request()->headers->has('X-Livewire-Navigate') && ($preloadSans = $preloadHref($sansPreset)))
         <link rel="preload" as="font" type="font/woff2" href="{{ $preloadSans }}" crossorigin>
     @endif
     <link rel="stylesheet"@if($wkNonce) nonce="{{ $wkNonce }}"@endif href="{{ $fontHref($sansPreset) }}">

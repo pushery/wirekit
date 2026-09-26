@@ -20,6 +20,8 @@
  *                                            translated — the template resolves them,
  *                                            because this file has no locale
  */
+import { strengthBarColor } from '../utils/strength.js';
+
 export default function wirekitPasswordInput(config = {}) {
     return {
         showPassword: false,
@@ -123,21 +125,13 @@ export default function wirekitPasswordInput(config = {}) {
         },
 
         /**
-         * The fill color of bar `index`, as a token reference.
-         *
-         * Tokens rather than literal colors, so a theme retint reaches the
-         * meter like everything else. Two of the four scores share the warning
-         * token on purpose: the ladder is four bars and three colors, because a
-         * distinct color per score would imply a precision the heuristic does
-         * not have.
+         * The fill color of bar `index`, as a token reference: the ladder the standalone
+         * `strength-meter` draws too, from one place (utils/strength.js). Four bars and three
+         * colors, because a distinct color per score would imply a precision the heuristic
+         * does not have.
          */
         barColor(index) {
-            if (index >= this.strength) return 'var(--color-wk-bg-muted)';
-            if (this.strength <= 1) return 'var(--color-wk-danger)';
-            if (this.strength === 2) return 'var(--color-wk-warning)';
-            if (this.strength === 3) return 'var(--color-wk-warning)';
-
-            return 'var(--color-wk-success)';
+            return strengthBarColor(index, this.strength, 4);
         },
     };
 }

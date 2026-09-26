@@ -30,10 +30,14 @@
  *                                      be wider than the field but never narrower
  * @param {boolean} [config.searchable] false renders a select-only trigger instead of a text field;
  *                                      see selectOnlyKeydown() for its keyboard
+ * @param {boolean} [config.server]     the options are the server's results for the typed text;
+ *                                      see utils/server-search.js, which also takes
+ *                                      `searchMinLength`, `searchDebounce` and `searchTexts`
  */
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
+import { serverSearchState } from '../utils/server-search.js';
 
 export default function wirekitCombobox(config = {}) {
     return {
@@ -53,6 +57,10 @@ export default function wirekitCombobox(config = {}) {
         // markMediaBroken() and showsInitials(), for an avatar whose photo fails to load.
         ...optionMediaState(),
 
+        // `search-change`, the options that follow the server, and the label the choice keeps
+        // after a new search replaced its list. Inert without `server`.
+        ...serverSearchState(config),
+
         // Without a search field the trigger is a select-only combobox: it never filters, so
         // `query` stays empty and `filtered` is always the whole list.
         _searchable: config.searchable !== false,
@@ -67,6 +75,12 @@ export default function wirekitCombobox(config = {}) {
         _typeAheadTimer: null,
 
         get filtered() {
+            // The server's results are already the answer to the text; filtering them again
+            // here would drop a typo-tolerant match the server found on purpose.
+            if (this._server) {
+                return this.allOptions;
+            }
+
             // ⚠️ The SEEDED label is not a search, and treating it as one made every option but
             // the current selection unreachable: the field pre-fills `query` with the chosen
             // row's label so it reads as the choice, and the filter then matched exactly that one
@@ -95,7 +109,7 @@ export default function wirekitCombobox(config = {}) {
          * choice would sit beside words that no longer name it.
          */
         get fieldMedia() {
-            const match = this.allOptions.find((o) => o.value === this.selected);
+            const match = this._knownOption(this.selected, this.allOptions);
 
             if (! match || ! match.media) {
                 return [];
@@ -111,7 +125,7 @@ export default function wirekitCombobox(config = {}) {
 
         /** The chosen option's text on a select-only trigger, or an empty string before a choice. */
         get selectedText() {
-            const match = this.allOptions.find((o) => o.value === this.selected);
+            const match = this._knownOption(this.selected, this.allOptions);
 
             return match ? chosenText(match) : '';
         },
@@ -155,8 +169,19 @@ export default function wirekitCombobox(config = {}) {
         },
 
         init() {
+            // In server mode the options come from their own attribute, so they are read before
+            // the initial value looks for its label among them.
+            this._startServerSearch((options) => {
+                this.allOptions = options;
+
+                // A new list is new rows under the old indexes, so the keyboard starts at the
+                // first enabled row again, as it does when the reader types.
+                this.highlight = -1;
+                this.highlightFirst();
+            });
+
             // Seed the query with the label of the initial value, if any.
-            const match = this.allOptions.find((o) => o.value === this.selected);
+            const match = this._knownOption(this.selected, this.allOptions);
 
             if (match && this._searchable) {
                 this.query = chosenText(match);
@@ -436,6 +461,7 @@ export default function wirekitCombobox(config = {}) {
             this._coordination = null;
             this._unplace();
             this._forgetTyping();
+            this._stopServerSearch();
         },
 
         // ── Opening ─────────────────────────────────────────────────────────
@@ -461,6 +487,21 @@ export default function wirekitCombobox(config = {}) {
             // with no active descendant rather than with the previous one.
             this.highlight = -1;
             this.highlightFirst();
+            this._queueSearch(this.typedQuery());
+        },
+
+        /** The text field, which a `search-change` starts from (see utils/server-search.js). */
+        _searchSource() {
+            const byId = this._inputId && typeof document !== 'undefined'
+                ? document.getElementById(this._inputId)
+                : null;
+
+            return byId ?? this.$refs?.cbxInput ?? null;
+        },
+
+        /** What the reader typed, which the label this component put into the field is not. */
+        typedQuery() {
+            return this.query === this._seededQuery ? '' : this.query;
         },
 
         /** Arrow into the list from the field. */
@@ -528,12 +569,16 @@ export default function wirekitCombobox(config = {}) {
          * a choice the component cannot show.
          */
         _syncQuery() {
-            const match = this.allOptions.find((o) => o.value === this.selected);
+            const match = this._knownOption(this.selected, this.allOptions);
 
             // A select-only trigger shows the choice through `selectedText` and never filters,
             // so its query stays empty and the whole list stays reachable.
             this.query = match && this._searchable ? chosenText(match) : '';
             this._seededQuery = this.query;
+
+            // The field now shows the choice, which is not a search: the application goes back
+            // to what it lists before one.
+            this._queueSearch('');
         },
 
         /**
@@ -831,6 +876,7 @@ export default function wirekitCombobox(config = {}) {
             this.selected = null;
             this.query = '';
             this.open = false;
+            this._queueSearch('');
 
             // Fire input on the hidden field so wire:model sees the cleared
             // value. Assigning `selected` alone updates the bound attribute and

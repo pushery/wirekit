@@ -158,6 +158,23 @@
         $stackClass,
     ])), $scope);
 
+    // Whether the title and the description come from their slots, asked as `hasActualContent()`.
+    // `filled()` counts the comment markers Livewire writes around an `@if` as content, and a
+    // call site that makes its `actions` slot conditional leaves two of them in the DEFAULT slot:
+    // the heading would render those instead of the `title` prop. A `description` passed as a
+    // slot has the same exposure; passed as a prop it is a string, and `filled()` is right for it.
+    $titleFromSlot = $slot->hasActualContent();
+    $hasDescription = $description instanceof \Illuminate\View\ComponentSlot
+        ? $description->hasActualContent()
+        : filled($description);
+
+    // A `meta` slot: short facts about the thing the title names, a status badge or a count,
+    // drawn in the title's row and outside the heading. Inside the heading they would become part
+    // of its accessible name; in `description` they would cost a second line; in `actions` they
+    // would sit at the far end, away from the name they describe. They wrap with the title and
+    // never into the actions.
+    $hasMeta = isset($meta) && $meta->hasActualContent();
+
     $actionsClasses = WireKit::resolveClasses('page-header', 'actions', implode(' ', [
         // Wraps inside itself too. Two buttons beside a title on a phone is the case the
         // report measured, and a row that cannot wrap puts the second one off-screen.
@@ -167,6 +184,11 @@
 
 <div data-wk-prose-skip {{ $attributes->class([$classes]) }}>
     <div class="{{ $columnClasses }}">
+        {{-- With meta, the heading and the meta share a row that wraps. Without it the heading is
+             the column's first child exactly as before, so no existing header changes. --}}
+        @if($hasMeta)
+            <div data-wk-page-header-title-row class="flex flex-wrap items-center gap-x-[var(--gap-wk-sm)] gap-y-[var(--gap-wk-xs)]">
+        @endif
         <x-wirekit::heading
             :level="$level"
             :size="$size"
@@ -176,10 +198,16 @@
             {{-- `null` rather than `false`, for the reason the line above already relies on:
                  Blade drops a null attribute, so "off" emits nothing at all. --}}
             :tabindex="$headingFocusable ? '-1' : null"
+            {{-- In the row the heading may shrink, so a title that truncates does so in its space. --}}
+            :class="$hasMeta ? 'min-w-0' : null"
             :scope="$scope"
-        >{{ filled($slot) ? $slot : $title }}</x-wirekit::heading>
+        >{{ $titleFromSlot ? $slot : $title }}</x-wirekit::heading>
+        @if($hasMeta)
+                <div data-wk-page-header-meta class="flex flex-wrap items-center gap-[var(--gap-wk-xs)]">{{ $meta }}</div>
+            </div>
+        @endif
 
-        @if(filled($description))
+        @if($hasDescription)
             {{-- `mt` from the SPACE ladder, which is the family a margin reads — a margin
                  taking a `--gap-wk-*` value is what `SpacingFamilyRatchetTest` freezes, and
                  it caught this line. The tight end of it, because the sentence belongs to
