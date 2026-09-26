@@ -112,8 +112,8 @@
      * caller saying nothing rather than naming a width.
      */
     $iconOnlyBelow = filled($iconOnlyBelow) ? (string) $iconOnlyBelow : null;
-    if ($iconOnlyBelow !== null && ! in_array($iconOnlyBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
-        \Pushery\WireKit\WireKit::validateProp('button', 'iconOnlyBelow', $iconOnlyBelow, ['sm', 'md', 'lg', 'xl', '2xl']);
+    if ($iconOnlyBelow !== null && ! in_array($iconOnlyBelow, ['xs', 'sm', 'md', 'lg', 'xl', '2xl'], true)) {
+        \Pushery\WireKit\WireKit::validateProp('button', 'iconOnlyBelow', $iconOnlyBelow, ['xs', 'sm', 'md', 'lg', 'xl', '2xl']);
         $iconOnlyBelow = null;
     }
 
@@ -405,7 +405,12 @@
         default => 'var(--size-wk-md)',
     };
 
+    // `xs` is not a Tailwind breakpoint, so it is written as the width it stands for: 22.5rem, the
+    // 360px of the smallest phones in common use. `sm` hides the label on every phone, including
+    // the 390px ones where a short bar still fits; this is the step below it. Reported from a top
+    // bar that needs 351px: it fits at 393px and scrolled the page sideways at 320px.
     $iconOnlyBelowClasses = match ($iconOnlyBelow) {
+        'xs' => 'max-[22.5rem]:w-[var(--wk-button-square)]',
         'sm' => 'max-sm:w-[var(--wk-button-square)]',
         'md' => 'max-md:w-[var(--wk-button-square)]',
         'lg' => 'max-lg:w-[var(--wk-button-square)]',
@@ -424,7 +429,37 @@
      * It leaves flex flow because `sr-only` positions absolutely, so the row's gap does not
      * reserve space for a label nobody can see.
      */
+    /*
+     * ON A TOUCH SCREEN THE SQUARE STAYS A SQUARE, and the finger gets its 44px as a patch.
+     *
+     * The stylesheet gives every `.wk-button` a 44px minimum height under `pointer: coarse`, and
+     * that floor turned a 32px icon-only square into a 32 x 44 pill whose hit area was still
+     * 32px wide. Measured in an application's user list with touch emulation. An icon control
+     * is what `wk-touch-target` exists for: a centered 44x44 patch that paints nothing, so the
+     * finger gets the full target and the drawn square keeps its size.
+     *
+     * The floor reads `--wk-touch-min` before its own 44px, and the button sets it to zero where
+     * it is the square: always for `iconOnly`, below the breakpoint for `iconOnlyBelow`, through
+     * the same `max-*` prefix as the square's width, so the two cannot disagree about where the
+     * breakpoint is. A custom property rather than a height utility, because the floor is an
+     * unlayered rule and no utility outranks it, while a property it merely reads is set here
+     * and nowhere else. Welded into a button group the stylesheet takes both back: the buttons
+     * touch there, and each patch would reach into its neighbor.
+     */
+    $touchClasses = $iconOnly
+        ? 'wk-touch-target [--wk-touch-min:0px]'
+        : match ($iconOnlyBelow) {
+            'xs' => 'wk-touch-target max-[22.5rem]:[--wk-touch-min:0px]',
+            'sm' => 'wk-touch-target max-sm:[--wk-touch-min:0px]',
+            'md' => 'wk-touch-target max-md:[--wk-touch-min:0px]',
+            'lg' => 'wk-touch-target max-lg:[--wk-touch-min:0px]',
+            'xl' => 'wk-touch-target max-xl:[--wk-touch-min:0px]',
+            '2xl' => 'wk-touch-target max-2xl:[--wk-touch-min:0px]',
+            default => '',
+        };
+
     $iconOnlyBelowLabelClass = match ($iconOnlyBelow) {
+        'xs' => 'max-[22.5rem]:sr-only',
         'sm' => 'max-sm:sr-only',
         'md' => 'max-md:sr-only',
         'lg' => 'max-lg:sr-only',
@@ -560,7 +595,7 @@
     @disabled($tag === 'button' && $isDisabled)
     @if($emitAriaBusy) aria-busy="true" @endif
     @if($computedRel) rel="{{ $computedRel }}" @endif
-    {{ $buttonBag->class([$baseClasses, $variantClasses, $sizeClasses, $heightClasses, $iconOnlyBelowClasses, $linkDisabledClasses]) }}
+    {{ $buttonBag->class([$baseClasses, $variantClasses, $sizeClasses, $heightClasses, $iconOnlyBelowClasses, $touchClasses, $linkDisabledClasses]) }}
     {{-- ⚠️ `disabled` IS INERT ON AN ANCHOR, so the link branch gets the treatment
          this component already uses for a disabled link instead. `wire:loading.attr`
          adds a `disabled` attribute, which a browser honors on a button and ignores

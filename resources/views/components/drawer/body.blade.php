@@ -30,7 +30,11 @@
     // scroll it. drawer.js keeps initial focus off this wrapper whenever the drawer holds a
     // control.
     $classes = WireKit::resolveClasses('drawer.body', 'base', implode(' ', [
-        'px-[var(--padding-wk-x-xl)] py-[var(--padding-wk-y-xl)]',
+        // ONE TOKEN ON ALL FOUR SIDES, and the header's. The sides used to take 1.5rem against 1rem
+        // above and below, so the title started 1rem from the panel's edge and the content under it
+        // 1.5rem, and the content sat further from the sides than from the bottom. Equal padding
+        // on one token keeps a single edge down the panel, and a theme cannot pull the sides apart.
+        'p-[var(--padding-wk-x-lg)]',
         'wk-scrollbar flex-1 overflow-y-auto',
         'text-[length:var(--text-wk-md)]',
         'font-[family-name:var(--font-wk-sans)]',

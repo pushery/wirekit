@@ -197,7 +197,14 @@
         'group-data-[indicator=edge]/wk-rail:after:bg-[var(--color-wk-rail-active-text)]',
     ]), $scope);
 
-    $iconClasses = WireKit::resolveClasses('app-rail.item', 'icon', 'h-5 w-5', $scope);
+    // The glyph follows the token the rail's width is built from, rather than a literal of the
+    // same size: a theme that set `--size-wk-rail-icon` widened the rail around icons that did
+    // not grow. Under the name (`labels="below"`) it follows its own token, which defaults to the
+    // same size, so the labeled rail can carry a larger icon without widening the narrow one.
+    $iconClasses = WireKit::resolveClasses('app-rail.item', 'icon', implode(' ', [
+        'size-[var(--size-wk-rail-icon)]',
+        'group-data-[labels=below]/wk-rail:size-[var(--size-wk-rail-icon-labeled)]',
+    ]), $scope);
 
     // `sr-only` is the RESTING state, never `hidden` — the string is the link's
     // accessible name and has to survive every mode.
@@ -220,8 +227,18 @@
         // measured at 17.5px → 108px → 16px in a single frame. The mode still decides HOW a
         // name is laid out (below, inline); this decides only WHETHER it is in the layout yet.
         'group-data-[wk-names]/wk-rail:not-sr-only',
-        'group-data-[labels=below]/wk-rail:w-full',
+        // `max-w-full`, NOT a full width, and the difference is the whole fix. The reset of
+        // `sr-only` on the line above sets `width: auto`, and it is emitted after the width
+        // utility at the same specificity, so the name was as wide as its text: no wrapping
+        // could apply, and "Benachrichtigungen" ran out of the rail. That reset does not touch
+        // `max-width`, so this bound holds in every build. (The reset's class name is not
+        // written out here: Tailwind reads this file as text and would compile it bare.)
+        'group-data-[labels=below]/wk-rail:max-w-full',
         'group-data-[labels=below]/wk-rail:break-words',
+        // A long compound word breaks at a syllable with a hyphen, where the document's `lang`
+        // tells the browser how; `break-words` above stays the fallback for a word it cannot
+        // hyphenate.
+        'group-data-[labels=below]/wk-rail:hyphens-auto',
         'group-data-[labels=below]/wk-rail:text-center',
         'group-data-[labels=below]/wk-rail:text-[length:var(--text-wk-xs)]',
         'group-data-[labels=below]/wk-rail:leading-tight',

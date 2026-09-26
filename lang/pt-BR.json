@@ -1,5 +1,6 @@
 {
     "wirekit::(opens in new tab)": "(abre em uma nova aba)",
+    "wirekit:::count more link|:count more links": ":count link adicional|:count links adicionais",
     "wirekit::Choose slide": "Escolher slide",
     "wirekit::Could not save. Change undone.": "Não foi possível salvar. Alteração desfeita.",
     "wirekit::Could not save. Your color is still here.": "Não foi possível salvar. Sua cor continua aqui.",
@@ -20,6 +21,8 @@
     "wirekit::Loading results": "Carregando resultados",
     "wirekit::Map tiles are not loaded because your browser asked for reduced data. The locations are listed alongside.": "Os blocos do mapa não são carregados porque seu navegador pediu dados reduzidos. Os locais estão na lista ao lado.",
     "wirekit::Merge": "Mesclagem",
+    "wirekit::More links": "Mais links",
+    "wirekit::More results. Keep typing to narrow them.": "Há mais resultados. Continue digitando para refiná-los.",
     "wirekit::Next slide": "Próximo slide",
     "wirekit::No results.": "Nenhum resultado.",
     "wirekit::Pick a color from the screen": "Escolher uma cor da tela",
@@ -28,6 +31,7 @@
     "wirekit::Scope": "Escopo",
     "wirekit::Search :label…": "Buscar :label…",
     "wirekit::Search commands": "Pesquisar comandos",
+    "wirekit::Searching…": "Pesquisando…",
     "wirekit::Sending": "Enviando",
     "wirekit::Show password": "Mostrar senha",
     "wirekit::Showing :first to :last of :total results": "Exibindo :first a :last de :total resultados",
@@ -38,11 +42,13 @@
     "wirekit::Tabs": "Abas",
     "wirekit::Thinking…": "Pensando…",
     "wirekit::Thought for :seconds s": "Pensou por :seconds s",
+    "wirekit::Type to search": "Digite para pesquisar",
     "wirekit::Typing…": "Digitando…",
     "wirekit::Uploading": "Enviando",
     "wirekit::Uploading :name": "Enviando :name",
     "wirekit::User": "Usuário",
     "wirekit::You're all caught up": "Você está em dia",
     "wirekit::Your browser writes dates in a different order than this page: :appDate is entered as :fieldDate.": "Seu navegador escreve datas em uma ordem diferente desta página: :appDate é digitado como :fieldDate.",
-    "wirekit::{1} :count unsaved change|[2,*] :count unsaved changes": "{1} :count alteração não salva|[2,*] :count alterações não salvas"
+    "wirekit::{1} :count unsaved change|[2,*] :count unsaved changes": "{1} :count alteração não salva|[2,*] :count alterações não salvas",
+    "wirekit::{1} Type at least :count character|[2,*] Type at least :count characters": "{1} Digite pelo menos :count caractere|[2,*] Digite pelo menos :count caracteres"
 }

@@ -132,7 +132,14 @@ export default function wirekitEditor(config = {}) {
                         ...(config.ariaRequired ? { 'aria-required': 'true' } : {}),
                     },
                 },
-                onCreate: () => { this._version++; this._writeOut(); this._updateCount(); },
+                // Nothing is written to the field on load. The engine's serialization of the
+                // stored value is not always the stored value (`<b>` for `<strong>`, a table an
+                // older engine did not know, whitespace), and writing it here fired `input`,
+                // which `wire:model` took as the reader's edit: the next save stored the
+                // engine's version of a document nobody had touched, and in one application
+                // that deleted a table. A plain form posted the rewrite the same way. The field
+                // keeps the server's bytes until the first real edit writes it.
+                onCreate: () => { this._version++; this._updateCount(); },
                 // The commit boundary for rich text is LEAVING the editor.
                 //
                 // Not `onUpdate`, and not the `change` this component emits from
@@ -140,7 +147,7 @@ export default function wirekitEditor(config = {}) {
                 // be a request every fifth of a second while someone types — a
                 // timer wearing an event's name, and the boundary has to be a
                 // real event. Blur is the moment the writing stopped.
-                onBlur: () => { this._commitOptimistic(); },
+                onBlur: () => { this._flushSync(); this._commitOptimistic(); },
                 onUpdate: () => { this._version++; this._docVersion++; this._scheduleSync(); this._updateCount(); },
                 onSelectionUpdate: () => { this._version++; },
                 onTransaction: () => { this._version++; },
@@ -181,6 +188,7 @@ export default function wirekitEditor(config = {}) {
 
         destroy() {
             clearTimeout(this._syncTimer);
+            this._syncTimer = null;
             clearTimeout(this._announceTimer);
             if (this._fallbackInput) {
                 this.$refs.input?.removeEventListener?.('input', this._fallbackInput);
@@ -258,7 +266,28 @@ export default function wirekitEditor(config = {}) {
         _scheduleSync() {
             // Debounce so wire:model.live doesn't round-trip on every keystroke.
             clearTimeout(this._syncTimer);
-            this._syncTimer = setTimeout(() => this._writeOut(), 200);
+            this._syncTimer = setTimeout(() => {
+                this._syncTimer = null;
+                this._writeOut();
+            }, 200);
+        },
+
+        /**
+         * Write a pending sync out at once.
+         *
+         * The form field follows the document 200 ms late, and leaving the editor is how a
+         * reader gets to a submit button, by pointer or by Tab. Without this, a submit right
+         * after the last change sent the text from before it. Only a pending sync is written,
+         * so leaving an editor that did not change dispatches no `input`.
+         */
+        _flushSync() {
+            if (this._syncTimer === null) {
+                return;
+            }
+
+            clearTimeout(this._syncTimer);
+            this._syncTimer = null;
+            this._writeOut();
         },
 
         _writeOut() {

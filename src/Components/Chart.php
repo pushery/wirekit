@@ -24,6 +24,19 @@ final class Chart extends Component
     /** @var array<string, mixed> */
     public array $chartConfig = [];
 
+    /**
+     * The data half of the config, the adapter's normalized labels and series without the
+     * options.
+     *
+     * The chart root carries `wire:ignore`, which keeps the drawn chart safe from the morph
+     * and also keeps every Livewire update out of it: a filter changed the table under a
+     * chart and left the chart on the data it loaded with. This is rendered on an element
+     * the morph DOES update, and the factory follows it (resources/js/utils/chart-server-data.js).
+     *
+     * @var array<string, mixed>
+     */
+    public array $chartData = [];
+
     public string $alpineComponent = '';
 
     /**
@@ -217,6 +230,7 @@ final class Chart extends Component
         }
 
         $this->chartConfig = array_merge($normalized, ['options' => $mergedOptions]);
+        $this->chartData = $normalized;
         $this->alpineComponent = $adapter->alpineComponent();
         $this->chartLibrary = $adapter->name();
         $this->mountElement = $adapter->rendersTo();

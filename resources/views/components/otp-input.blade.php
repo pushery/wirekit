@@ -79,6 +79,15 @@
     // suggests would be right for most call sites and wrong for backward compatibility,
     // and the second consideration wins in a minor.
     'justify' => config('wirekit.components.otp-input.justify', 'start'),
+    // The size of every box: `sm` 32px, `md` 40px (the one that shipped), `lg` 48px.
+    //
+    // A touch device already lifts the boxes to the touch target, through the
+    // `pointer: coarse` floor in the stylesheet. What it cannot reach is a surface that is
+    // worked by finger and reports a FINE pointer — a till or a kiosk with a mouse plugged
+    // in, where the boxes stayed 40px. `lg` clears 44px on any pointer, and the class list
+    // below gives each size its own box so the square survives. `md` by default, so no
+    // existing field changes size.
+    'size' => config('wirekit.components.otp-input.size', 'md'),
     // Focus the first box on load.
     //
     // A one-time-code screen is single-purpose: the reader arrived from a
@@ -283,17 +292,24 @@
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
 
+    // One box per size: width, height, the digit's text size and the corner. `md` carries the
+    // same four classes that shipped, so a field that passes nothing looks exactly as before.
+    $sizeClasses = match ($size) {
+        'sm' => 'w-8 h-[var(--size-wk-sm)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-sm)]',
+        'md' => 'w-10 h-[var(--size-wk-md)] text-[length:var(--text-wk-lg)] rounded-[var(--radius-wk-md)]',
+        'lg' => 'w-12 h-[var(--size-wk-lg)] text-[length:var(--text-wk-xl)] rounded-[var(--radius-wk-md)]',
+        default => WireKit::validateProp('otp-input', 'size', $size, ['sm', 'md', 'lg']),
+    };
+
     // Individual digit input classes
     $digitClasses = WireKit::resolveClasses('otp-input', 'digit', implode(' ', [
-        'w-10 h-[var(--size-wk-md)]',
+        $sizeClasses,
         'text-center tabular-nums',
         'font-[family-name:var(--font-wk-sans)]',
-        'text-[length:var(--text-wk-lg)]',
         'font-[number:var(--font-wk-heading-weight)]',
         'bg-[var(--color-wk-bg-input)]',
         'text-[color:var(--color-wk-text)]',
         'border-[length:var(--border-wk-width)]',
-        'rounded-[var(--radius-wk-md)]',
         'shadow-[var(--shadow-wk-sm)]',
         'transition-colors duration-[var(--transition-wk-duration)]',
         'focus:outline-hidden',
@@ -372,8 +388,9 @@
          arrow key navigation, and paste distribution across fields. --}}
     <div
         x-data="wirekitOtpInput({ length: {{ $length }}, name: {{ \Pushery\WireKit\Support\AlpinePayload::from($name) }}, alphabet: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetChars) }}, caseFold: {{ \Pushery\WireKit\Support\AlpinePayload::from($alphabetCaseFold) }} })"
-        {{-- flex-wrap because every digit box carries a hard `w-10` (40px) and is an
-             <input>, whose automatic minimum size resolves to that definite width —
+        {{-- flex-wrap because every digit box carries a hard width (`w-10`, 40px, at the
+             default size) and is an <input>, whose automatic minimum size resolves to that
+             definite width —
              the row cannot shrink, so without wrapping it overflows its parent. An
              eight-digit code needs 8x40 + 7x8 = 376px, and the sign-in card an OTP
              field normally sits in offers about 320px of content width, so it runs
@@ -388,6 +405,11 @@
              would still be a diff on every rendered page. --}}
         class="{{ trim('flex flex-wrap '.($group === null ? 'gap-2' : 'gap-4').' '.$justifyClass) }}"
         role="group"
+        {{-- Test hooks written at the call site land here, on the element that IS the
+             control to a reader and to a test. Only `dusk` and `data-*`: before this line
+             everything but `class`, `wire:model` and `aria-label` was dropped, so a suite
+             that finds its fields by `dusk` could not find this one at all. --}}
+        {{ $attributes->only(['dusk']) }} {{ $attributes->whereStartsWith('data-') }}
         @if($required) aria-required="true" @endif
         aria-label="{{ $label ?? $attributes->get('aria-label') ?? __('wirekit::One-time code') }}"
         {{-- On the GROUP as well as on every box: a reader who lands on the group

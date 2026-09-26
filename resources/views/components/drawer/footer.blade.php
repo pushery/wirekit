@@ -16,10 +16,17 @@
 
     // Footer classes — bottom section with top border and right-aligned buttons
     $classes = WireKit::resolveClasses('drawer.footer', 'base', implode(' ', [
-        'px-[var(--padding-wk-x-xl)] py-[var(--padding-wk-y-xl)]',
+        // ONE TOKEN ON ALL FOUR SIDES, and the header's. The sides used to take 1.5rem against 1rem
+        // above and below, so the title started 1rem from the panel's edge and the content under it
+        // 1.5rem, and the content sat further from the sides than from the bottom. Equal padding
+        // on one token keeps a single edge down the panel, and a theme cannot pull the sides apart.
+        'p-[var(--padding-wk-x-lg)]',
         'border-t',
         'border-[var(--color-wk-border-subtle)]',
-        'flex items-center justify-end gap-x-[var(--gap-wk-md)]',
+        // Wrapping, because what does not fit a row packed to its end leaves on its START side,
+        // and nothing scrolls to that side: three actions on a phone cut the first one off the
+        // panel, out of reach. Wrapped, they stack at the end; one line on a desktop, as before.
+        'flex flex-wrap items-center justify-end gap-x-[var(--gap-wk-md)] gap-y-[var(--gap-wk-md)]',
     ]), $scope);
 @endphp
 

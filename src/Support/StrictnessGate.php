@@ -124,6 +124,21 @@ final class StrictnessGate
     ];
 
     /**
+     * Names Blade itself takes out of a component tag before any of it reaches the bag.
+     *
+     * `:attributes="$bag"` hands a whole attribute bag on to a component, and it is the form
+     * `{{ $attributes }}` inside a tag compiles to. Blade merges that bag into the attributes
+     * and drops the key, so at render time no attribute called `attributes` ever exists. A
+     * reader of the TEMPLATE sees the name in the tag, though, and without this entry it
+     * would report correct Blade as an unknown prop.
+     *
+     * @var list<string>
+     */
+    public const BLADE_ATTRIBUTES = [
+        'attributes',
+    ];
+
+    /**
      * Attribute-name prefixes that are framework wiring and never a prop.
      *
      * ARIA, data-, Livewire `wire:`, Alpine `x-` / `@` / `:`, Vue `v-`.
@@ -510,6 +525,7 @@ final class StrictnessGate
             ...self::HTML_GLOBAL_ATTRIBUTES,
             ...self::HTML_ELEMENT_ATTRIBUTES,
             ...self::TOOLING_ATTRIBUTES,
+            ...self::BLADE_ATTRIBUTES,
         ];
         $prefixes = self::PASSTHROUGH_PREFIXES;
 

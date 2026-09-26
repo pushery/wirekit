@@ -341,12 +341,8 @@
             :aria-valuetext="strengthValueText"
             class="flex gap-1"
         >
-            <template x-for="i in 4" :key="i">
-                <div
-                    class="h-1 flex-1 rounded-full transition-colors duration-[var(--transition-wk-duration)]"
-                    :style="'background-color:' + barColor(i - 1)"
-                ></div>
-            </template>
+            {{-- The bars the standalone strength-meter draws too, from one partial. --}}
+            @include('wirekit::components.partials.strength-bars', ['count' => 4, 'colors' => []])
         </div>
 
         {{-- The described-by target, and the only thing a reader hears when the

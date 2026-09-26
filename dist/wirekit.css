@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.55.0 — MIT License
+ * WireKit CSS v2.56.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -642,6 +642,38 @@
     top: var(--wk-strip-height);
 }
 
+/* A button as a strip's action keeps to the strip's one line. Its own height stood over the line:
+   an `xs` button 0.25px over each edge on a desktop, and on a touch screen the 44px floor every
+   button takes 8.25px over each edge, past the top of the viewport and over the page below. It
+   takes the line's height here, whatever its size.
+
+   (0,3,1), so it beats the size utility and the touch floor's `button.wk-button` (0,1,1) alike. */
+[data-wk-viewport-strip] [data-wk-announcement-action] :is(button, a).wk-button {
+    height: var(--wk-strip-height);
+    min-height: 0;
+    padding-block: 0;
+}
+
+/* On a touch screen the finger still needs its 44px, so the hit area comes back as a centered
+   patch rather than as height: the same move as `wk-touch-target`, the drawn button unchanged. It
+   paints nothing and catches only taps meant for the button. */
+@media (pointer: coarse) {
+    [data-wk-viewport-strip] [data-wk-announcement-action] :is(button, a).wk-button {
+        position: relative;
+    }
+
+    [data-wk-viewport-strip] [data-wk-announcement-action] :is(button, a).wk-button::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: max(100%, var(--size-wk-touch-target));
+        height: var(--size-wk-touch-target);
+        transform: translate(-50%, -50%);
+        background: transparent;
+    }
+}
+
 /* ─── The navigation roles are REGISTERED, and that is load-bearing ─── */
 /* A custom property is computed on the element that declares it, and a descendant
    inherits the finished value, registered or not. So a role declared on the root is
@@ -716,6 +748,10 @@
        number: the entry's label has to sit in a line box no taller than this one, or
        the row grows the moment a name appears. */
     --size-wk-rail-icon: 1.25rem;
+    /* The glyph under which a rail entry shows its name (`labels="below"`). The same size by
+       default, so no rail changes; a larger one gives the icon the weight it has there, where it
+       is the anchor a module is recognized by, without widening the narrow rail. */
+    --size-wk-rail-icon-labeled: var(--size-wk-rail-icon);
     --size-wk-rail: calc(var(--size-wk-rail-icon) + (2 * var(--padding-wk-x-sm)) + (2 * var(--padding-wk-y-sm)) + var(--border-wk-width));
     /* Wide enough for a real module name, which is not a comfort setting.
        At the old 4.75rem the caption had 44px of room after the scroller's and the
@@ -805,6 +841,17 @@
     --color-wk-tooltip-bg: var(--color-wk-text);
     --color-wk-tooltip-text: var(--color-wk-bg);
 
+    /* ─── Flash ─── */
+    /* The tint a row lights up in when it changes (`x-wk-flash`), one per intent: the tone at
+       28%, over whatever the row paints. Read by the directive at the moment it plays, so a
+       theme that moves a tone moves its flash, and a stronger or quieter flash is one value. */
+    --color-wk-flash-success: color-mix(in oklab, var(--color-wk-success) 28%, transparent);
+    --color-wk-flash-warning: color-mix(in oklab, var(--color-wk-warning) 28%, transparent);
+    --color-wk-flash-danger: color-mix(in oklab, var(--color-wk-danger) 28%, transparent);
+    --color-wk-flash-info: color-mix(in oklab, var(--color-wk-info) 28%, transparent);
+    --color-wk-flash-primary: color-mix(in oklab, var(--color-wk-accent) 28%, transparent);
+    --color-wk-flash-neutral: color-mix(in oklab, var(--color-wk-text-muted) 20%, transparent);
+
     /* ─── Table ─── */
     /* The widest the frozen first column of a sticky-column table may get before its text
        wraps. Relative to the viewport on a phone, where the scroller is the viewport and a
@@ -812,6 +859,11 @@
        over from a tablet width up. A cap, not a width: a short label keeps its own width, and
        a table with room to spare still hands the column its share. */
     --size-wk-table-sticky-column-max: min(40vw, 16rem);
+    /* A tighter ceiling for the columns that scroll beside the frozen one. They are already
+       capped at the room beside it (the rule next to the frozen column's own, below), and
+       this default is never the smaller of the two, so that room decides until a length is
+       set here: `8rem` to show two narrow plans beside the frozen column instead of one. */
+    --size-wk-table-sticky-cell-max: 100vw;
 
     /* ─── Scrollbar ─── */
     --color-wk-scrollbar-thumb: oklch(87% 0 0);
@@ -1045,6 +1097,12 @@
     --color-wk-rail-ring: var(--color-wk-ring);
     --color-wk-tooltip-bg: var(--color-wk-text);
     --color-wk-tooltip-text: var(--color-wk-bg);
+    --color-wk-flash-success: color-mix(in oklab, var(--color-wk-success) 28%, transparent);
+    --color-wk-flash-warning: color-mix(in oklab, var(--color-wk-warning) 28%, transparent);
+    --color-wk-flash-danger: color-mix(in oklab, var(--color-wk-danger) 28%, transparent);
+    --color-wk-flash-info: color-mix(in oklab, var(--color-wk-info) 28%, transparent);
+    --color-wk-flash-primary: color-mix(in oklab, var(--color-wk-accent) 28%, transparent);
+    --color-wk-flash-neutral: color-mix(in oklab, var(--color-wk-text-muted) 20%, transparent);
     --reading-spine-color-idle: var(--color-wk-text-subtle);
     --reading-spine-color-active: var(--color-wk-text);
     --reading-spine-bg: color-mix(in srgb, var(--color-wk-bg-elevated) 92%, transparent);
@@ -1071,6 +1129,15 @@
     --reading-toc-color-active: var(--reading-spine-color-active);
 }
 /* mode-scopes: generated section ends ─────────────────────────────── */
+
+/* ─── Tooltip surface ────────────────────────────────────────── */
+/* `<x-wirekit::tooltip surface="elevated">` takes the surface menus and popovers use instead of
+   the inverted default. The pair is set on the wrapper, where the component reads both values and
+   copies them onto its teleported panel, so a value the caller sets inline still wins. */
+[data-wk-tooltip-surface="elevated"] {
+    --color-wk-tooltip-bg: var(--color-wk-bg-elevated);
+    --color-wk-tooltip-text: var(--color-wk-text);
+}
 
 /* ─── Scrollbar Utility ────────────────────────────────────── */
 /* Apply .wk-scrollbar to any scrollable container for a slim, */
@@ -1663,7 +1730,11 @@ input.wk-field::-webkit-datetime-edit-text {
    a reader who cannot separate the two colors loses the focus indicator entirely. The ring keeps
    its own meaning and the border carries the validity one — two statements on two channels. */
 @supports selector(:user-invalid) {
-    .wk-field:user-invalid {
+    /* `:not([data-wk-cleared])`: a field Livewire emptied after a successful action keeps the
+       browser's memory that the reader touched it, and only a form reset clears that memory.
+       The attribute marks such a field until the reader types into it again or tries to submit
+       it empty. See resources/js/utils/cleared-field.js. */
+    .wk-field:user-invalid:not([data-wk-cleared]) {
         border-color: var(--color-wk-border-error);
     }
 }
@@ -1753,7 +1824,22 @@ input.wk-field::-webkit-datetime-edit-text {
        emulation, which is load-bearing -- every rule in this block is behind `pointer: coarse`,
        and a narrow viewport alone is still a fine pointer reporting the desktop size. */
     button.wk-accordion-trigger {
-        min-height: var(--size-wk-touch-target);
+        /* `--wk-touch-min` is how a control that answers the finger another way steps out of the
+           floor: an icon-only button sets it to 0 and carries the `wk-touch-target` patch. Nothing
+           else sets it, so every other control takes the 44px as before. */
+        min-height: var(--wk-touch-min, var(--size-wk-touch-target));
+    }
+
+    /* Welded into a button group, the buttons touch: each 44px patch would reach into its
+       neighbor and take the taps on its edge. There the buttons keep the height floor instead
+       and draw no patch, whatever they asked for. Unlayered, so this outranks the button's own
+       utility for the property; the patch rule is (0,3,0) against the patch's own (0,1,0). */
+    [data-wk-button-group] > :is(button, a).wk-button {
+        --wk-touch-min: initial;
+    }
+
+    [data-wk-button-group] > .wk-button.wk-touch-target::before {
+        content: none;
     }
 
     /* A FRAMED field draws its box on a wrapper: `multi-select` and `tags-input` hold their pills
@@ -1772,6 +1858,16 @@ input.wk-field::-webkit-datetime-edit-text {
 
     div.wk-field-frame input.wk-field {
         min-height: 0;
+    }
+
+    /* The clear and copy buttons INSIDE a field frame take the touch target too. They draw a
+       24px chip, which meets WCAG 2.2 AA under a mouse and is too small for a finger at a till or
+       on a phone. The frame reaches 44px through the rule above, so a button of the same height
+       fits it exactly; element-qualified (0,1,1) so it beats the `min-w-[24px]` utility in any
+       build order. `lg` fields get the same size on every pointer, from the template. */
+    button.wk-field-affordance {
+        min-width: var(--size-wk-touch-target);
+        min-height: var(--size-wk-touch-target);
     }
 
     /* min-WIDTH on the FIELDS ONLY, and the exclusion of buttons is the whole
@@ -1868,6 +1964,112 @@ input.wk-field::-webkit-datetime-edit-text {
 
 }
 
+/* touch-surface: generated section begins ─────────────────────────
+   Everything down to the closing marker is written from the `@media (pointer: coarse)`
+   rules above. Edit those rules instead; a check fails when this section no longer
+   matches them.
+
+   `data-wk-touch` on an element applies them to everything inside it on any pointer:
+   a till worked by finger reports a fine pointer once a mouse is plugged in. A panel
+   teleported out of such an element carries the attribute along. */
+:where([data-wk-touch]) [data-wk-viewport-strip] [data-wk-announcement-action] :is(button, a).wk-button {
+    position: relative;
+}
+
+:where([data-wk-touch]) [data-wk-viewport-strip] [data-wk-announcement-action] :is(button, a).wk-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, var(--size-wk-touch-target));
+    height: var(--size-wk-touch-target);
+    transform: translate(-50%, -50%);
+    background: transparent;
+}
+
+:where([data-wk-touch]) .wk-range-thumb {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+:where([data-wk-touch]) select.wk-field,
+:where([data-wk-touch]) input.wk-field,
+:where([data-wk-touch]) textarea.wk-field {
+    font-size: var(--text-wk-touch-floor);
+}
+
+:where([data-wk-touch]) .wk-editor-content,
+:where([data-wk-touch]) [contenteditable="true"],
+:where([data-wk-touch]) [contenteditable=""] {
+    font-size: var(--text-wk-touch-floor);
+}
+
+:where([data-wk-touch]) button.wk-touch-text-floor,
+:where([data-wk-touch]) a.wk-touch-text-floor {
+    font-size: var(--text-wk-touch-floor);
+}
+
+:where([data-wk-touch]) select.wk-field,
+:where([data-wk-touch]) input.wk-field,
+:where([data-wk-touch]) textarea.wk-field,
+:where([data-wk-touch]) div.wk-field[role="combobox"],
+:where([data-wk-touch]) button.wk-button,
+:where([data-wk-touch]) a.wk-button,
+:where([data-wk-touch]) button.wk-accordion-trigger {
+    min-height: var(--wk-touch-min, var(--size-wk-touch-target));
+}
+
+:where([data-wk-touch]) [data-wk-button-group] > :is(button, a).wk-button {
+    --wk-touch-min: initial;
+}
+
+:where([data-wk-touch]) [data-wk-button-group] > .wk-button.wk-touch-target::before {
+    content: none;
+}
+
+:where([data-wk-touch]) div.wk-field-frame {
+    min-height: var(--size-wk-touch-target);
+}
+
+:where([data-wk-touch]) div.wk-field-frame input.wk-field {
+    min-height: 0;
+}
+
+:where([data-wk-touch]) button.wk-field-affordance {
+    min-width: var(--size-wk-touch-target);
+    min-height: var(--size-wk-touch-target);
+}
+
+:where([data-wk-touch]) select.wk-field,
+:where([data-wk-touch]) input.wk-field,
+:where([data-wk-touch]) textarea.wk-field {
+    min-width: var(--size-wk-touch-target);
+}
+
+:where([data-wk-touch]) .wk-touch-target:not(.fixed):not(.absolute):not(.sticky) {
+    position: relative;
+}
+
+:where([data-wk-touch]) .wk-touch-target::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--size-wk-touch-target);
+    height: var(--size-wk-touch-target);
+    transform: translate(-50%, -50%);
+    background: transparent;
+    pointer-events: auto;
+}
+
+:where([data-wk-touch]) [data-wk-assistant-citation] {
+    min-height: var(--size-wk-touch-target);
+    min-width: var(--size-wk-touch-target);
+}
+
+/* touch-surface: generated section ends ─────────────────────────── */
+
+
 /* <x-wirekit::calendar> renders at a fixed ~312px content width (inline-block)
    so the day grid stays compact on desktop. On phone-width viewports that reads
    as "too narrow", and in a padding-squeezed container the trailing weekday
@@ -1911,6 +2113,32 @@ input.wk-field::-webkit-datetime-edit-text {
            a whole pixel narrow, which nothing reports because the token is declared and the
            fallback only fires where the stylesheet is not loaded. */
         width: var(--size-wk-rail, 3.3125rem);
+    }
+}
+
+/* Below `lg` the rail and the menu share the navigation drawer, side by side, and the drawer is
+   as wide as the two together. With names under the rail's icons (`labels="below"`) that is the
+   labeled rail plus the menu's drawer width, 88 + 256 = 344px, which put 24px of the drawer past
+   a 320px screen: the width WCAG 1.4.10 asks to work without sideways scrolling, and the one a
+   desktop reaches at 400% zoom. The menu gives way rather than the rail, because the rail's
+   names are the reason the layout was chosen. From 344px up both keep their width.
+
+   `--wk-sidebar-w` as well as the width: the menu inside the column sizes itself by that
+   variable, and a column narrower than the menu it holds would only move the overflow inward.
+   The rail has no gutter below `lg`, so its width here is the token alone. */
+@media (width < 64rem) {
+    .wk-app-shell-rail:has(.wk-rail[data-labels='below']) + aside.wk-app-shell-aside {
+        --wk-sidebar-w: min(var(--size-wk-sidebar-drawer), calc(100vw - var(--size-wk-rail-labeled)));
+        width: var(--wk-sidebar-w);
+    }
+
+    /* A sidebar in the drawer shows its names whatever the reader chose at the desktop, so its
+       collapse control would change nothing on screen here, only the choice the next desktop
+       reads: a button that does nothing, as far as anyone looking can tell. It leaves the drawer
+       the way the rail's expander does, and comes back at the breakpoint. A sidebar outside the
+       shell keeps its control at every width. */
+    aside.wk-app-shell-aside .wk-sidebar [data-wk-sidebar-collapse] {
+        display: none;
     }
 }
 
@@ -2678,6 +2906,186 @@ input.wk-field::-webkit-datetime-edit-text {
     background-color: var(--color-wk-bg-subtle);
 }
 
+/* The columns that scroll are capped at the room beside the frozen one, and their
+   text wraps. Without it the table's natural width held every value on one line,
+   and a column wider than that room could never be seen whole: at the start its
+   end is past the edge, and scrolling slides its start under the frozen column
+   first. Measured on a pricing comparison at 375px, a 351px scroller and a first
+   plan column ending at 391.9px, in Blink and WebKit.
+
+   The room is the table's frame less the frozen column's own cap. `100cqi` reads
+   the frame, which is the component's size container; the cap is read here, on
+   the cell, so a table that sets its own frozen cap gets its own room. A header
+   on one line keeps its column as wide as its text, since a table column never
+   gets narrower than the longest thing that cannot wrap.
+
+   Only the component's own tables (`.wk-table`). A table the component did not
+   draw has no such frame to measure, and the data table freezes a second column
+   when rows are selectable, which this rule, unlayered like the rest of the sheet,
+   would uncap. */
+.wk-table[data-wk-sticky-column] > :is(thead, tbody, tfoot) > tr > :is(th, td):not(:first-child) {
+    max-inline-size: min(var(--size-wk-table-sticky-cell-max), calc(100cqi - var(--size-wk-table-sticky-column-max)));
+}
+
+/* ─── The same frozen column, below a breakpoint only ────────────────────────
+   `data-wk-sticky-column-below="md"` is `data-wk-sticky-column` for a table that needs the
+   frozen column on a narrow screen and should wrap into its box above that. The component's
+   `sticky-column-below` prop does this for its own markup with width utilities compiled in
+   the application's build, and a table a Markdown pipeline rendered cannot carry those. So the
+   attribute brings the width pair and the freezing rules itself, one media query per
+   breakpoint, and above the breakpoint none of it applies: the table lays out like any other
+   and its cells wrap, where the frozen column at every width would make a table with
+   sentences in its cells scroll sideways on a desktop.
+
+   The breakpoints are Tailwind's defaults (40, 48, 64, 80 and 96rem), because a stylesheet
+   shipped ready-made cannot read the application's theme. `:not(.wk-table)` leaves the
+   component deciding for its own markup, as in the width rule above, and the child
+   combinators leave a nested table alone. */
+@media (width < 40rem) {
+    [data-wk-sticky-column-below="sm"]:not(.wk-table) {
+        inline-size: max-content;
+        min-inline-size: 100%;
+    }
+
+    [data-wk-sticky-column-below="sm"]:not(.wk-table) > :is(thead, tbody, tfoot) > tr > :is(th, td):first-child {
+        position: sticky;
+        inset-inline-start: 0;
+        z-index: 1;
+        background-color: var(--color-wk-bg);
+        max-inline-size: var(--size-wk-table-sticky-column-max);
+        white-space: normal;
+    }
+
+    [data-wk-sticky-column-below="sm"]:not(.wk-table) > thead > tr > :is(th, td):first-child {
+        z-index: 20;
+        background-color: var(--color-wk-bg-subtle);
+    }
+}
+
+@media (width < 48rem) {
+    [data-wk-sticky-column-below="md"]:not(.wk-table) {
+        inline-size: max-content;
+        min-inline-size: 100%;
+    }
+
+    [data-wk-sticky-column-below="md"]:not(.wk-table) > :is(thead, tbody, tfoot) > tr > :is(th, td):first-child {
+        position: sticky;
+        inset-inline-start: 0;
+        z-index: 1;
+        background-color: var(--color-wk-bg);
+        max-inline-size: var(--size-wk-table-sticky-column-max);
+        white-space: normal;
+    }
+
+    [data-wk-sticky-column-below="md"]:not(.wk-table) > thead > tr > :is(th, td):first-child {
+        z-index: 20;
+        background-color: var(--color-wk-bg-subtle);
+    }
+}
+
+@media (width < 64rem) {
+    [data-wk-sticky-column-below="lg"]:not(.wk-table) {
+        inline-size: max-content;
+        min-inline-size: 100%;
+    }
+
+    [data-wk-sticky-column-below="lg"]:not(.wk-table) > :is(thead, tbody, tfoot) > tr > :is(th, td):first-child {
+        position: sticky;
+        inset-inline-start: 0;
+        z-index: 1;
+        background-color: var(--color-wk-bg);
+        max-inline-size: var(--size-wk-table-sticky-column-max);
+        white-space: normal;
+    }
+
+    [data-wk-sticky-column-below="lg"]:not(.wk-table) > thead > tr > :is(th, td):first-child {
+        z-index: 20;
+        background-color: var(--color-wk-bg-subtle);
+    }
+}
+
+@media (width < 80rem) {
+    [data-wk-sticky-column-below="xl"]:not(.wk-table) {
+        inline-size: max-content;
+        min-inline-size: 100%;
+    }
+
+    [data-wk-sticky-column-below="xl"]:not(.wk-table) > :is(thead, tbody, tfoot) > tr > :is(th, td):first-child {
+        position: sticky;
+        inset-inline-start: 0;
+        z-index: 1;
+        background-color: var(--color-wk-bg);
+        max-inline-size: var(--size-wk-table-sticky-column-max);
+        white-space: normal;
+    }
+
+    [data-wk-sticky-column-below="xl"]:not(.wk-table) > thead > tr > :is(th, td):first-child {
+        z-index: 20;
+        background-color: var(--color-wk-bg-subtle);
+    }
+}
+
+@media (width < 96rem) {
+    [data-wk-sticky-column-below="2xl"]:not(.wk-table) {
+        inline-size: max-content;
+        min-inline-size: 100%;
+    }
+
+    [data-wk-sticky-column-below="2xl"]:not(.wk-table) > :is(thead, tbody, tfoot) > tr > :is(th, td):first-child {
+        position: sticky;
+        inset-inline-start: 0;
+        z-index: 1;
+        background-color: var(--color-wk-bg);
+        max-inline-size: var(--size-wk-table-sticky-column-max);
+        white-space: normal;
+    }
+
+    [data-wk-sticky-column-below="2xl"]:not(.wk-table) > thead > tr > :is(th, td):first-child {
+        z-index: 20;
+        background-color: var(--color-wk-bg-subtle);
+    }
+}
+
+/* ─── A column head turned on its side ────────────────────────
+   `table.th sideways` puts its label on one line reading from bottom to top, so a
+   column of short values (a mark, a glyph, a two-digit number) is as wide as one
+   line of text rather than as its longest word.
+
+   `writing-mode: vertical-rl` with every glyph turned (`text-orientation: sideways`)
+   and the box turned half a turn is exactly what `writing-mode: sideways-lr` draws,
+   and each part of it sits inside the browser baseline. `sideways-lr` itself does
+   not: Chrome 132 and Safari 18.4. The half turn would leave an icon in the label
+   upside down, where `sideways-lr` keeps images upright, so an icon is turned back.
+   It is also put back on the line: Tailwind's base styles make every image a block,
+   and a block in a vertical label stacks beside the text, doubling the column.
+
+   The label is an inline block, so the cell's `text-align` still places it across
+   the column. `vertical-align: bottom` keeps it off the baseline, where an inline
+   block would leave a descender's gap under itself. */
+.wk-sideways {
+    display: inline-block;
+    vertical-align: bottom;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+    text-orientation: sideways;
+    rotate: 180deg;
+}
+
+.wk-sideways :is(svg, img) {
+    display: inline-block;
+    vertical-align: middle;
+    rotate: 180deg;
+}
+
+/* Every head in a row that holds a turned one stands on the row's floor, so the
+   labels share one line and the data starts right under all of them. Without it
+   the short heads float in the middle of a row as tall as the longest turned word.
+   This sheet is unlayered, so a utility on a head does not override it; the
+   important form (`!align-middle`) does. */
+tr:has(> th .wk-sideways) > th {
+    vertical-align: bottom;
+}
+
 /* ─── Data-list row separators ─────────────────────────────── */
 /* Horizontal data-list items carry a 1px bottom rule between rows.
    The separator lives here (not as an inline style on the item) so the
@@ -2808,6 +3216,14 @@ input.wk-field::-webkit-datetime-edit-text {
     .wk-prose h2:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip])),
     .wk-prose h3:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip])),
     .wk-prose h4:not(:where(.not-wk-prose, .not-wk-prose *, [data-wk-prose-skip])) {
+        text-wrap: balance;
+    }
+
+    /* The same polish on a component's own short text: a column head that breaks between its
+       words (`table.th wrap="words"`), a lightbox caption. Below the support, the text wraps as
+       it always did and only the last line is not evened up. A class rather than Tailwind's
+       utility, because the utility is written without the detection. */
+    .wk-lines-balanced {
         text-wrap: balance;
     }
 }
@@ -5602,6 +6018,61 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
 .wk-slider:disabled::-webkit-slider-thumb { cursor: not-allowed; }
 .wk-slider:disabled::-moz-range-thumb { cursor: not-allowed; }
 
+/* ─── Stepper: a compact form when a column is narrower than a word ─── */
+/* A horizontal stepper gives every step an equal column, and a label may break anywhere so it
+   never runs out of its column. With seven steps on a phone a column is about 50px, narrower
+   than an ordinary word, and the label breaks every word. Below 5rem per column the stepper
+   draws its compact form instead: the circles in their row, every label visually hidden (still
+   read with its step), and one line under the row naming the current step.
+
+   The column is measured rather than the viewport, so a stepper in a narrow dialog on a wide
+   screen takes the same form: each step is a size container. A size container takes its inline
+   size from its parent and not from its contents, so each step declares the width of its circle
+   as its intrinsic size; a stepper in a parent that sizes to its content therefore keeps the
+   width of its circles, in the compact form, instead of collapsing. That property arrived after
+   the supported baseline in one engine, so the compact form is feature-detected: without it the
+   stepper keeps a label in every column, as before.
+
+   5rem is written out because a container query cannot read a custom property. */
+@supports (contain-intrinsic-inline-size: 2rem) {
+    [data-wk-stepper="horizontal"] > [data-wk-stepper-step] {
+        container: wk-stepper-step / inline-size;
+        contain-intrinsic-inline-size: 2rem;
+    }
+}
+
+[data-wk-stepper-caption] {
+    display: none;
+}
+
+@container wk-stepper-step (max-width: 5rem) {
+    [data-wk-stepper-step] [data-wk-stepper-label] {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* The line under the row belongs to the current step and spans every column: moved back by
+       its own index and as wide as all of them together. `0.5rem` is the list's `gap-2`. It is
+       hidden from assistive technology, which reads the step's own label and `aria-current`. */
+    [data-wk-stepper-step][aria-current="step"] > [data-wk-stepper-caption] {
+        display: block;
+        align-self: flex-start;
+        inline-size: calc(var(--wk-stepper-count, 1) * (100% + 0.5rem) - 0.5rem);
+        margin-inline-start: calc(var(--wk-stepper-index, 0) * -1 * (100% + 0.5rem));
+        margin-block-start: var(--padding-wk-y-xs);
+        text-align: start;
+        font-size: var(--text-wk-sm);
+        color: var(--color-wk-text);
+    }
+}
+
 /* ─── Timeline item content padding ───────────────────────── */
 /* Every timeline item content area carries a `padding-bottom`  */
 /* that creates visual spacing between entries while keeping    */
@@ -7799,6 +8270,21 @@ input:checked + .wk-theme-switch-track > .wk-theme-switch-knob {
     nav [data-wk-navbar-items] {
         display: flex !important;
     }
+}
+
+/*
+ * The scrolling row of `navbar mobile="scroll"` paints no scrollbar. The row is the bar: a track
+ * under it would double the bar's height on a desktop with classic scrollbars, and on a phone it
+ * is a line across the entries. Hidden, not removed: touch, wheel and trackpad scroll the row, and
+ * Tab scrolls each link into view as it takes focus, which is also why the row needs no tab stop
+ * of its own. The same treatment as the shell bar's strip.
+ */
+.wk-navbar-scroll {
+    scrollbar-width: none;
+}
+
+.wk-navbar-scroll::-webkit-scrollbar {
+    display: none;
 }
 
 /*

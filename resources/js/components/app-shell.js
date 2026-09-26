@@ -358,7 +358,12 @@ export default function wirekitAppShell(config = {}) {
                 // frame. Filtering an absent event would leave exactly those readers with a
                 // drawer that never traps focus — the failure this settle exists to prevent,
                 // reintroduced by its own fix.
-                if (event && (! ['transform', 'visibility'].includes(event.propertyName) || event.target !== panel)) {
+                // `translate` joined the list with the panel's own transition: Tailwind 4
+                // writes `translate-x-*` as the standalone `translate` property, so a list
+                // naming only `transform` never animated the slide, and the drawer appeared at
+                // its open position in the first frame. Now it slides, and its `translate`
+                // end is as much the settle as `visibility`'s.
+                if (event && (! ['translate', 'transform', 'visibility'].includes(event.propertyName) || event.target !== panel)) {
                     return;
                 }
 

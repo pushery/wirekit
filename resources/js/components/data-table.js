@@ -11,11 +11,15 @@
  * input; sort + search emit `sort-change` / `search-change` so server mode can
  * re-query.
  *
- * What a render changes (the rows, their avatar tints, the sort and the filter the
- * server applied) arrives through a `<template data-wk-data-table-state>` carrier
- * rather than through `x-data`, so a Livewire render does not rebuild the component
+ * What a render changes (the rows, their avatar tints, the sort, the filter and the
+ * hidden columns the server applied) arrives through a `<template data-wk-data-table-state>`
+ * carrier rather than through `x-data`, so a Livewire render does not rebuild the component
  * and take the browser-only state with it. The carrier is read on init and after
  * every Livewire commit.
+ *
+ * Showing or hiding a column dispatches `wirekit:data-table-columns-changed` with the hidden
+ * and the visible keys, so an application can keep the choice with the reader's account and
+ * hand it back through `hidden` on the next visit.
  *
  * Lifecycle resources held on `this`: `_unhookServerState`, the Livewire commit hook, and
  * `_expectingTimer`, the bound on waiting for a round trip to start; both are released in
@@ -28,7 +32,8 @@
  *   own second line, its own intent, and its own avatar.
  * @param {Object} config.avatarTints - initials -> {bg,fg}, resolved in PHP
  * @param {string} config.rowKey  - unique id field (default 'id')
- * @param {Array}  config.hidden  - initially-hidden column keys
+ * @param {Array}  config.hidden  - initially-hidden column keys, used when there is no state
+ *   carrier or it names none
  * @param {string} config.density - 'comfortable' | 'compact'
  * @param {string} config.mode    - 'client' (sort/filter here) | 'server'
  * @param {string} config.emptyText - the already-translated "no rows" sentence,
@@ -44,6 +49,9 @@
  * stops accepting a word the other does.
  */
 const KNOWN_INTENTS = ['primary', 'accent', 'info', 'success', 'warning', 'danger', 'neutral'];
+
+/** Two lists of column keys name the same columns, in whatever order. */
+const sameKeys = (a, b) => a.length === b.length && [...a].sort().join('\u0000') === [...b].sort().join('\u0000');
 
 import { pluralize } from '../utils/plural.js';
 
@@ -247,6 +255,19 @@ export default function wirekitDataTable(config = {}) {
                     this.search = next.search;
                 }
             }
+
+            // The hidden columns are shared the same way. A render that names a list the server
+            // moved replaces the reader's, provided the reader has not changed theirs since: then
+            // the reader's own choice is on its way to the server and the answer to it is still
+            // coming. A render that names no list leaves the reader's alone.
+            if (Array.isArray(next.hidden)) {
+                const nextHidden = next.hidden.map(String);
+                const previousHidden = previous && Array.isArray(previous.hidden) ? previous.hidden.map(String) : null;
+
+                if (previousHidden === null || (! sameKeys(nextHidden, previousHidden) && sameKeys(this.hiddenKeys, previousHidden))) {
+                    this.hiddenKeys = nextHidden;
+                }
+            }
         },
 
         // ── Columns ──────────────────────────────────────────────────────
@@ -277,6 +298,13 @@ export default function wirekitDataTable(config = {}) {
             this.hiddenKeys = this.hiddenKeys.includes(key)
                 ? this.hiddenKeys.filter((k) => k !== key)
                 : [...this.hiddenKeys, key];
+
+            // The choice leaves the browser only through this event. Both lists, so a listener
+            // that stores the visible columns does not have to know the column set.
+            this.$dispatch('wirekit:data-table-columns-changed', {
+                hidden: [...this.hiddenKeys],
+                visible: this.visibleColumns.map((c) => c.key),
+            });
         },
 
         // ── Search + sort (client mode) ─────────────────────────────────

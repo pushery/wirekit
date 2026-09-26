@@ -16,6 +16,7 @@
 import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
+import { isRendered } from '../utils/rendered.js';
 
 // Long-press tuning. 500ms is the platform-conventional touch-hold threshold
 // (matches iOS/Android long-press); a 10px movement budget distinguishes a
@@ -376,7 +377,9 @@ export default function wirekitContextMenu() {
             const panel = this.$refs.panel;
             if (!panel) return [];
             return [...panel.querySelectorAll('[role="menuitem"]:not([aria-disabled="true"])')]
-                .filter((el) => !el.closest('[data-wk-submenu-panel]'));
+                .filter((el) => !el.closest('[data-wk-submenu-panel]'))
+                // Only the entries drawn; a hidden one cannot take focus (see utils/rendered.js).
+                .filter(isRendered);
         },
 
         /**

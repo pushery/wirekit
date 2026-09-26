@@ -120,6 +120,7 @@ export function overlayRoot() {
         // never reach it, and that is precisely the kind of setup most likely to have
         // the stylesheet wrong too.
         warnIfStylesheetMissing(root);
+        inheritTouchSurfaces(root);
 
         return root;
     }
@@ -139,8 +140,65 @@ export function overlayRoot() {
     document.body.appendChild(root);
 
     warnIfStylesheetMissing(root);
+    inheritTouchSurfaces(root);
 
     return root;
+}
+
+/** The attribute that asks for the touch sizes on any pointer, and the one panels inherit. */
+export const TOUCH_SURFACE_ATTRIBUTE = 'data-wk-touch';
+
+/**
+ * Mark a panel teleported out of a touch surface as one.
+ *
+ * `data-wk-touch` applies the stylesheet's touch sizes to everything inside the element it sits
+ * on, on any pointer (a till with a mouse plugged in reports a fine one). A dialog teleported here
+ * from inside that element is no longer inside it, so its fields and buttons took the mouse sizes
+ * again, in exactly the place the surface was meant to cover.
+ *
+ * Alpine keeps a pointer from a teleported clone back to the `<template>` it came from, so the
+ * question "did this come from a touch surface" has an answer at the moment the clone arrives.
+ * Asked by an observer on the container rather than by each component, so every panel that
+ * teleports here inherits it, the ones a developer writes included.
+ *
+ * Once per container: a `wire:navigate` builds a new one, and it gets its own observer. The old
+ * one is disconnected at the swap, by `releaseTouchSurfaces()`, rather than left watching a
+ * container that has left the page.
+ */
+function inheritTouchSurfaces(root) {
+    if (root._wkTouchSurfaces || typeof MutationObserver === 'undefined') {
+        return;
+    }
+
+    const mark = (node) => {
+        const origin = node && node.nodeType === 1 ? node._x_teleportBack : null;
+
+        if (origin && typeof origin.closest === 'function' && origin.closest(`[${TOUCH_SURFACE_ATTRIBUTE}]`)) {
+            node.setAttribute(TOUCH_SURFACE_ATTRIBUTE, '');
+        }
+    };
+
+    [...root.children].forEach(mark);
+
+    const observer = new MutationObserver((records) => {
+        for (const record of records) {
+            record.addedNodes.forEach(mark);
+        }
+    });
+
+    observer.observe(root, { childList: true });
+
+    // Kept on the container, so the navigation that discards it can stop it.
+    root._wkTouchSurfaces = observer;
+}
+
+/** Stop watching a container that leaves the page with the body a navigation replaced. */
+function releaseTouchSurfaces(root) {
+    root?._wkTouchSurfaces?.disconnect();
+
+    if (root) {
+        root._wkTouchSurfaces = null;
+    }
 }
 
 /** Set once, so a page with twenty dialogs says this once rather than twenty times. */
@@ -247,7 +305,14 @@ function bindNavigationListeners() {
         const onSwap = event?.detail?.onSwap;
 
         if (typeof onSwap === 'function') {
-            onSwap(() => overlayRoot());
+            // Read now, released at the swap: a navigation that is canceled before it swaps
+            // leaves the page, and the observer on its container, as they were.
+            const previous = document.getElementById(OVERLAY_ROOT_ID);
+
+            onSwap(() => {
+                releaseTouchSurfaces(previous);
+                overlayRoot();
+            });
         }
     });
 

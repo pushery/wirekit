@@ -50,6 +50,7 @@
  */
 import { position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
+import { isRendered } from '../utils/rendered.js';
 
 // Hover-out close delay. A short grace period lets the pointer travel
 // diagonally from the parent item onto the child panel without the submenu
@@ -412,7 +413,9 @@ export default function wirekitSubmenu(config = {}) {
                 + '[role="menuitemradio"]:not([aria-disabled="true"]),'
                 + '[role="menuitemcheckbox"]:not([aria-disabled="true"])'
             )]
-                .filter((el) => el.closest('[data-wk-submenu-panel]') === panel);
+                .filter((el) => el.closest('[data-wk-submenu-panel]') === panel)
+                // Only the entries drawn; a hidden one cannot take focus (see utils/rendered.js).
+                .filter(isRendered);
         },
 
         _focusFirstSubItem() {

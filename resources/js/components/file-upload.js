@@ -13,15 +13,28 @@
  * while clicking the label still worked — the kind of half-working that reads as
  * a browser quirk rather than a policy failure.
  *
- * Lifecycle resources held on `this`: NONE. Pure reactive state — no observers,
- * timers or document listeners, so no destroy() hook is required. The one thing
- * held outside `this` is the cached root element below, which is released with the
- * component object itself.
+ * The list also has to follow the input when something ELSE empties it, and three
+ * things do. Livewire clears a bound input by assigning `value` once the property goes
+ * back to empty, which is what a save action does; a native form reset clears it; and a
+ * page without either can ask for it with the `wirekit:file-upload-reset` event. None of
+ * the three fires `change`, so without listening for them the rows stayed on screen over
+ * an input and a property that held nothing, and the next submit failed as "required".
+ *
+ * Lifecycle resources held on `this`, each released in destroy():
+ *   - _unwatch (the unwatch function of `$wire.$watch`) — Livewire also releases it
+ *     when the element goes, so calling it here is belt and braces, and it is nulled so
+ *     a second destroy() cannot call it twice.
+ *   - _form + _formResetHandler (a `reset` listener on the input's own form).
+ *   - _resetHandler (a window listener for `wirekit:file-upload-reset`).
+ * The one thing held outside `this` is the cached root element below, which is released
+ * with the component object itself.
  *
  * @param {Object} config
  * @param {string} config.removeLabel  accessible name for the per-file remove button
  * @param {string} [config.removedMessage]  translated sentence spoken after a removal,
  *   with `:name` standing in for the file that went
+ * @param {string|null} [config.model]  the Livewire property the input is bound to, read
+ *   from its `wire:model` attribute; null when it is bound to nothing
  */
 export default function wirekitFileUpload(config = {}) {
     // The control's root element, resolved ONCE while something is still attached to
@@ -70,6 +83,102 @@ export default function wirekitFileUpload(config = {}) {
 
         /** What a screen reader is told after a removal. Empty until one happens. */
         fileAnnouncement: '',
+
+        model: typeof config.model === 'string' && config.model !== '' ? config.model : null,
+
+        _unwatch: null,
+        _form: null,
+        _formResetHandler: null,
+        _resetHandler: null,
+
+        /**
+         * Listen for the three things that empty the input without a `change` event.
+         *
+         * The watch mirrors Livewire's own: it clears a bound file input when the property
+         * becomes `null` or `''`, or an empty array on a `multiple` input, and this empties
+         * the list on the same transitions. Outside a Livewire component `$wire.$watch` is
+         * a no-op returning nothing, which is why the result is checked rather than assumed.
+         *
+         * The event is matched on the input's id, never taken as "every upload on the
+         * page": a form with two uploads that resets one would otherwise lose both lists.
+         */
+        init() {
+            const input = this.$refs?.input;
+
+            if (this.model !== null && this.$wire && typeof this.$wire.$watch === 'function') {
+                const unwatch = this.$wire.$watch(this.model, (value) => {
+                    // Exactly Livewire's condition for clearing the input, so the two never
+                    // disagree: an empty array counts only on a `multiple` input.
+                    const empty = value === null || value === ''
+                        || (Array.isArray(value) && value.length === 0 && input?.multiple === true);
+
+                    if (empty) {
+                        this.reset();
+                    }
+                });
+
+                this._unwatch = typeof unwatch === 'function' ? unwatch : null;
+            }
+
+            if (input && input.form && typeof input.form.addEventListener === 'function') {
+                this._form = input.form;
+                // `reset` fires BEFORE the browser resets the controls, so the input still
+                // holds the file at this point. The list is emptied without asking it.
+                this._formResetHandler = () => this.reset();
+                this._form.addEventListener('reset', this._formResetHandler);
+            }
+
+            if (typeof window !== 'undefined') {
+                this._resetHandler = (event) => {
+                    const id = event?.detail?.id;
+
+                    if (typeof id === 'string' && input && id === input.id) {
+                        this.reset();
+                    }
+                };
+                window.addEventListener('wirekit:file-upload-reset', this._resetHandler);
+            }
+        },
+
+        destroy() {
+            if (this._unwatch) {
+                this._unwatch();
+                this._unwatch = null;
+            }
+
+            if (this._form && this._formResetHandler) {
+                this._form.removeEventListener('reset', this._formResetHandler);
+            }
+
+            this._form = null;
+            this._formResetHandler = null;
+
+            if (this._resetHandler && typeof window !== 'undefined') {
+                window.removeEventListener('wirekit:file-upload-reset', this._resetHandler);
+            }
+
+            this._resetHandler = null;
+        },
+
+        /**
+         * Empty the list, and the input with it.
+         *
+         * Silent on purpose: nobody removed a file. The removal sentence is for a person
+         * who pressed a remove button, and reading it out after a save would announce a
+         * loss that did not happen. No `change` either — an input emptied by its owner has
+         * nothing to upload, and Livewire's own handler would only return early on it.
+         */
+        reset() {
+            this.files = [];
+            this._rawFiles = [];
+            this.dragging = false;
+
+            const input = this.$refs?.input;
+
+            if (input && input.files && input.files.length > 0) {
+                input.value = '';
+            }
+        },
 
         /**
          * A size a person can read.

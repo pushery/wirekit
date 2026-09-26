@@ -1,6 +1,7 @@
 import { resolveThemeColors, palette, withOpacity, themeModeOf } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
+import { followChartServerData } from '../utils/chart-server-data.js';
 
 /**
  * WireKit Chart.js Alpine Component.
@@ -111,6 +112,9 @@ export default function wirekitChartJs(config) {
         // Track which datasets had user-provided colors at init time.
         // These datasets are excluded from dark mode re-theming.
         _manualColorIndices: new Set(),
+        // Stops following the data the component renders beside the chart; set once the
+        // chart exists. See utils/chart-server-data.js.
+        _stopFollowingServerData: null,
 
         /**
          * Paint a visible advisory where the chart would have been.
@@ -410,6 +414,10 @@ Chart.register(...registerables);</pre>
                 this.chart = new Chart(ctx, rawConfig);
                 getRegistry().add(this.chart);
 
+                // A Livewire update renders new labels and series beside the chart, outside its
+                // `wire:ignore`; follow them and update the chart in place.
+                this._stopFollowingServerData = followChartServerData(this.$el, (payload) => this._applyServerData(payload));
+
                 // Set up dark mode observer AFTER chart is created.
                 // This avoids the race condition where the observer fires
                 // before $nextTick completes and this.chart is still null.
@@ -468,6 +476,55 @@ Chart.register(...registerables);</pre>
                     + 'Chart.register(annotationPlugin);'
                 );
             }
+        },
+
+        /**
+         * Take the labels and series of a Livewire update into the chart that is already drawn.
+         *
+         * The datasets are rebuilt the way the first render built them: a dataset the server
+         * colored keeps its colors and is recorded as manual, the rest take the theme palette by
+         * position. The existing dataset objects are updated in place rather than replaced, so
+         * Chart.js animates each series from its old values to its new ones instead of drawing
+         * it anew; a dataset the update no longer carries is dropped.
+         *
+         * @param {{data?: {labels?: Array, datasets?: Array<object>}}} payload
+         */
+        _applyServerData(payload) {
+            const chart = this.chart;
+            const next = payload?.data;
+
+            if (! chart || ! next || ! Array.isArray(next.datasets)) {
+                return;
+            }
+
+            const incoming = next.datasets.map((dataset) => ({
+                ...dataset,
+                data: Array.isArray(dataset.data) ? dataset.data.slice() : [],
+            }));
+
+            this._manualColorIndices = new Set();
+            incoming.forEach((dataset, i) => {
+                if (dataset.backgroundColor || dataset.borderColor) {
+                    this._manualColorIndices.add(i);
+                }
+            });
+
+            if (this.$refs?.canvas) {
+                this._applyThemeToDatasets({ type: chart.config.type, data: { datasets: incoming } }, this._resolveThemeColors(getComputedStyle(this.$refs.canvas)));
+            }
+
+            chart.data.labels = Array.isArray(next.labels) ? next.labels.slice() : [];
+
+            incoming.forEach((dataset, i) => {
+                if (chart.data.datasets[i]) {
+                    Object.assign(chart.data.datasets[i], dataset);
+                } else {
+                    chart.data.datasets.push(dataset);
+                }
+            });
+            chart.data.datasets.length = incoming.length;
+
+            try { chart.update(); } catch { /* defensive: the chart may be mid-teardown */ }
         },
 
         /**
@@ -617,6 +674,9 @@ Chart.register(...registerables);</pre>
             // A library that lands after this chart is gone must not build it.
             this._stopAwaitingLibrary?.();
             this._stopAwaitingLibrary = null;
+
+            this._stopFollowingServerData?.();
+            this._stopFollowingServerData = null;
 
             // Clear debounce timer first to prevent stale callbacks
             clearTimeout(this._darkModeDebounce);

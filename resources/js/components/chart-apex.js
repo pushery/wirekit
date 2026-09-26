@@ -1,6 +1,7 @@
 import { resolveThemeColors, palette, resolveCssVarsDeep, themeModeOf } from '../utils/chart-theme-colors.js';
 import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { awaitPeer } from '../utils/await-peer.js';
+import { followChartServerData } from '../utils/chart-server-data.js';
 
 /**
  * Unified tooltip renderer for every ApexCharts type. Emits ApexCharts'
@@ -236,6 +237,9 @@ export default function wirekitApexChart(config) {
     return {
         chart: null,
         _navCleanup: null,
+        // Stops following the data the component renders beside the chart; set once the
+        // chart exists. See utils/chart-server-data.js.
+        _stopFollowingServerData: null,
         _darkModeObserver: null,
         _darkModeDebounce: null,
 
@@ -584,6 +588,10 @@ window.ApexCharts = ApexCharts;</pre>
                 this.chart = new ApexCharts(mount, resolvedThemed);
                 this.chart.render();
                 this._removeHiddenTabStop(mount);
+
+                // A Livewire update renders new labels and series beside the chart, outside its
+                // `wire:ignore`; follow them and update the chart in place.
+                this._stopFollowingServerData = followChartServerData(this.$el, (payload) => this._applyServerData(payload));
 
                 // Radar tooltip — bypass ApexCharts' event system.
                 // Three previous iterations relying on themed.chart.events.
@@ -984,6 +992,37 @@ window.ApexCharts = ApexCharts;</pre>
         },
 
         /**
+         * Take the labels and series of a Livewire update into the chart that is already drawn.
+         *
+         * One `updateOptions` call carrying the series and the labels together, so the chart
+         * redraws once rather than once for the categories and again for the values. The theme
+         * lives in the options the first render set (palette, axis colors, fonts), and a merge
+         * keeps them. The chart TYPE is not taken from the payload: switching it in place is not
+         * something ApexCharts does cleanly, and a type change re-renders the component anyway.
+         *
+         * @param {{series?: Array, labels?: Array, xaxis?: {categories?: Array}}} payload
+         */
+        _applyServerData(payload) {
+            if (! this.chart || ! payload || ! Array.isArray(payload.series)) {
+                return;
+            }
+
+            const next = { series: payload.series };
+
+            if (Array.isArray(payload.labels)) {
+                next.labels = payload.labels;
+            }
+
+            if (Array.isArray(payload.xaxis?.categories)) {
+                next.xaxis = { categories: payload.xaxis.categories };
+            }
+
+            try {
+                this.chart.updateOptions(next, false, ! this._reducedMotion());
+            } catch { /* defensive: the chart may be mid-teardown */ }
+        },
+
+        /**
          * Wire-streaming for ApexCharts. Mirrors the Chart.js
          * factory's setup but uses ApexCharts' imperative APIs:
          *   - chart.appendData([{ data: [point] }, ...]) for cartesian charts
@@ -1305,6 +1344,9 @@ window.ApexCharts = ApexCharts;</pre>
             // A library that lands after this chart is gone must not build it.
             this._stopAwaitingLibrary?.();
             this._stopAwaitingLibrary = null;
+
+            this._stopFollowingServerData?.();
+            this._stopFollowingServerData = null;
 
             if (this._hiddenTabStopRaf) {
                 cancelAnimationFrame(this._hiddenTabStopRaf);

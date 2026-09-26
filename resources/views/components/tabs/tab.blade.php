@@ -24,6 +24,9 @@
     'disabled' => false,
     'icon' => null,
     'badge' => null,
+    // The badge's tone, one of the badge's own intents: `danger` for a count of errors in the panel,
+    // which in the neutral default reads like a counter. Null keeps the badge's default.
+    'badgeIntent' => null,
     'scope' => null,
 ])
 
@@ -94,6 +97,6 @@
     <span>{{ $slot }}</span>
 
     @if($badge !== null && $badge !== '')
-        <x-wirekit::badge size="sm">{{ $badge }}</x-wirekit::badge>
+        <x-wirekit::badge size="sm" :intent="$badgeIntent">{{ $badge }}</x-wirekit::badge>
     @endif
 </button>

@@ -23,6 +23,19 @@
     // first and then in the whole document, as Livewire's own pager does. False keeps the scroll
     // position. Read only with `livewire`, because a navigation starts at the top anyway.
     'scrollTo' => 'body',
+    // Offer a choice of page size beside the summary: `[10, 25, 50, 100]`. Null offers none and the
+    // pager renders exactly as before.
+    //
+    // With a choice on offer the pager also renders when everything fits one page, as the summary and
+    // the choice without page links. Otherwise picking the largest size removes the control that would
+    // undo it. An empty list still gets nothing: there the list's own empty state speaks.
+    //
+    // `wire:model` on the pager moves onto the select and sets that Livewire property; under
+    // `livewire` the change also goes back to the first page. Without `wire:model` the choice is a GET
+    // form that sends it as `perPageName`, keeps the parameters the page links carry, and drops the
+    // page number, so the list starts at its first page.
+    'perPageOptions' => null,
+    'perPageName' => 'per_page',
     'scope' => null,
 ])
 
@@ -35,10 +48,38 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('pagination', $attributes->getAttributes());
 
-    // Bail early if the paginator is empty or missing — avoids rendering an empty nav
-    if (! $paginator || ! method_exists($paginator, 'hasPages') || ! $paginator->hasPages()) {
+    // The page sizes on offer, as positive integers, ascending. A string is read for its numbers, so
+    // `per-page-options="10,25,50,100"` works as well as a bound array. The paginator's own size joins
+    // them when it is missing, or the select would show a size the list is not using.
+    $perPageChoices = [];
+
+    if (filled($perPageOptions) && $paginator && method_exists($paginator, 'perPage')) {
+        $sizes = is_array($perPageOptions)
+            ? $perPageOptions
+            : (preg_match_all('/\d+/', (string) $perPageOptions, $found) ? $found[0] : []);
+        $sizes = array_filter(array_map('intval', array_values($sizes)), static fn (int $size): bool => $size > 0);
+        $sizes[] = (int) $paginator->perPage();
+        $sizes = array_values(array_unique($sizes));
+        sort($sizes);
+
+        foreach ($sizes as $size) {
+            $perPageChoices[(string) $size] = (string) $size;
+        }
+    }
+
+    $offersPerPage = $perPageChoices !== [];
+
+    // Bail early if the paginator is missing, or there is nothing to page through and nothing to
+    // choose. A list that fits one page stays when a choice of size is on offer and it has rows.
+    $hasRows = $paginator && (method_exists($paginator, 'total')
+        ? $paginator->total() > 0
+        : (method_exists($paginator, 'isNotEmpty') && $paginator->isNotEmpty()));
+
+    if (! $paginator || ! method_exists($paginator, 'hasPages') || (! $paginator->hasPages() && ! ($offersPerPage && $hasRows))) {
         return;
     }
+
+    $singlePage = ! $paginator->hasPages();
 
     // A PAGINATOR THAT DOES NOT KNOW ITS LAST PAGE CAN ONLY DRIVE `mini`, so it gets `mini`
     // whatever was asked for. That is a cursor paginator, and it is also the plain paginator
@@ -183,6 +224,7 @@
     // the echo that prints it.
     $pageName = null;
     $pageAction = null;
+    $firstPageAction = null;
     $previousAction = null;
     $nextAction = null;
     $scrollHandler = null;
@@ -199,9 +241,12 @@
         if ($pagesByCursor) {
             $previousAction = 'setPage('.\Pushery\WireKit\Support\AlpinePayload::from((string) $paginator->previousCursor()?->encode()).', '.$pageNameJs.')';
             $nextAction = 'setPage('.\Pushery\WireKit\Support\AlpinePayload::from((string) $paginator->nextCursor()?->encode()).', '.$pageNameJs.')';
+            // No cursor is the first page.
+            $firstPageAction = 'setPage(null, '.$pageNameJs.')';
         } else {
             $previousAction = $pageAction($paginator->currentPage() - 1);
             $nextAction = $pageAction($paginator->currentPage() + 1);
+            $firstPageAction = $pageAction(1);
         }
 
         // The document is reached through the element rather than as a global: the expression has
@@ -211,10 +256,122 @@
             $scrollHandler = '($el.closest('.$selectorJs.') || $el.ownerDocument.querySelector('.$selectorJs.')).scrollIntoView()';
         }
     }
+
+    // The choice of page size, prepared for the partial that draws it.
+    $perPageCurrent = null;
+    $perPageLabelId = null;
+    $perPageSelectAttributes = null;
+    $perPageUsesForm = false;
+    $perPageAction = null;
+    $perPageQuery = [];
+
+    if ($offersPerPage) {
+        $perPageCurrent = (string) $paginator->perPage();
+        $pagingName = method_exists($paginator, 'getCursorName') ? $paginator->getCursorName() : $paginator->getPageName();
+        $perPageLabelId = \Pushery\WireKit\Support\DomId::unique('wk-per-page-'.$pagingName, 'wk-per-page-');
+
+        // The pager's own `wire:model` belongs to the select: on the nav it would bind nothing.
+        $perPageModel = $attributes->whereStartsWith('wire:model')->getAttributes();
+        $attributes = $attributes->whereDoesntStartWith('wire:model');
+
+        // Escaped here because a bag prints its values as they are, backslashing a quote rather
+        // than encoding it, and `gotoPage(1, "orders")` then ends the attribute at its first
+        // quote. Values from a tag arrive escaped by Blade; these four are built in this file.
+        $selectAttributes = ['name' => e($perPageName), 'aria-labelledby' => e($perPageLabelId)];
+
+        if ($perPageModel !== []) {
+            $selectAttributes += $perPageModel;
+
+            // The page the reader was on may not exist at the new size, and a page past the end
+            // shows no rows and, on a single page, no pager to change the size back with.
+            if ($firstPageAction !== null) {
+                $selectAttributes['wire:change'] = e($firstPageAction);
+            }
+        } else {
+            $perPageUsesForm = true;
+            $selectAttributes['x-on:change'] = e('$el.form.requestSubmit()');
+
+            // The form goes where the page links go and keeps what they keep: the query the
+            // paginator was given (`withQueryString()`, `appends()`), without its own page number,
+            // so the list starts at its first page, and without an earlier choice of size.
+            $sample = method_exists($paginator, 'getCursorName')
+                ? ($paginator->nextPageUrl() ?? $paginator->previousPageUrl())
+                : $paginator->url(1);
+            $perPageAction = $abs($paginator->path());
+            parse_str((string) parse_url((string) $sample, PHP_URL_QUERY), $kept);
+            unset($kept[$pagingName], $kept[$perPageName]);
+
+            // Flattened to the names form fields carry, so `filter[status]` survives the round trip.
+            foreach (array_filter(explode('&', http_build_query($kept))) as $pair) {
+                [$queryName, $queryValue] = array_pad(explode('=', $pair, 2), 2, '');
+                $perPageQuery[] = [urldecode($queryName), urldecode($queryValue)];
+            }
+        }
+
+        $perPageSelectAttributes = new \Illuminate\View\ComponentAttributeBag($selectAttributes);
+    }
 @endphp
 
 <nav role="navigation" aria-label="{{ $navLabel }}" {{ $attributes->class([$navClasses]) }}>
-    @if($variant === 'simple' || $variant === 'mini')
+    {{-- ONE translatable sentence, not four fragments. The earlier
+         form concatenated the fragments 'Showing' / 'to' / 'of' / 'results'
+         (deliberately written WITHOUT the translation-helper syntax here, so a
+         naive grep of this file for translation keys does not pick up four
+         phantom keys that never render)
+         around the numbers, which handed a translator four context-free words
+         ("to" is untranslatable without knowing it sits between two numbers)
+         and locked the output into English word order — a locale that puts the
+         total first simply could not be expressed.
+
+         The numbers keep their emphasis by passing pre-built markup as the
+         placeholder values, so the translator moves the placeholders freely
+         and the styling travels with them. {!! !!} is required for that, and
+         is safe here: every value is an integer straight off the paginator,
+         never developer input, and each is escaped before being wrapped. --}}
+    @php
+        $summary = null;
+
+        if (method_exists($paginator, 'total')) {
+            $emphasize = fn (int $value): string => '<span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">'.e((string) $value).'</span>';
+
+            // The markup is substituted AFTER translation, never passed through
+            // it. Laravel's translator also honors :Placeholder and :PLACEHOLDER
+            // as case variants, applying ucfirst / strtoupper to the value — and
+            // an uppercased value here would wreck the markup, since Tailwind
+            // classes and CSS custom-property names are case-sensitive. A
+            // translator writing ":TOTAL" for emphasis would silently lose the
+            // number styling. All-caps sentinels are immune: ucfirst and
+            // strtoupper both leave them unchanged, whichever case the
+            // translation uses.
+            $summary = __('wirekit::Showing :first to :last of :total results', [
+                'first' => 'WKPAGEFIRST',
+                'last' => 'WKPAGELAST',
+                'total' => 'WKPAGETOTAL',
+            ]);
+
+            $summary = str_replace(
+                ['WKPAGEFIRST', 'WKPAGELAST', 'WKPAGETOTAL'],
+                [
+                    $emphasize($paginator->firstItem() ?? 0),
+                    $emphasize($paginator->lastItem() ?? 0),
+                    $emphasize($paginator->total()),
+                ],
+                $summary,
+            );
+        }
+    @endphp
+
+    @if($singlePage)
+        {{-- Everything fits one page, and a choice of page size is on offer: the summary and the
+             choice, without page links that would all lead to this page. --}}
+        @if($summary !== null)
+            <div class="text-[color:var(--color-wk-text-muted)]">
+                {!! $summary !!}
+            </div>
+        @endif
+
+        @include('wirekit::components.partials.pagination-per-page')
+    @elseif($variant === 'simple' || $variant === 'mini')
         {{-- Simple: prev + next only (optionally with a "page X of Y" label) --}}
         <div class="flex items-center gap-2">
             {{-- A boundary edge is a link that cannot be followed, and this package has
@@ -264,54 +421,25 @@
                 <span class="{{ $buttonDisabled }}" role="link" aria-disabled="true">{{ $nextText }} <span aria-hidden="true">&raquo;</span></span>
             @endif
         </div>
+
+        @if($offersPerPage)
+            @include('wirekit::components.partials.pagination-per-page')
+        @endif
     @else
         {{-- Full: prev + numbered pages + next (standard Laravel paginator links) --}}
-        {{-- ONE translatable sentence, not four fragments. The earlier
-             form concatenated the fragments 'Showing' / 'to' / 'of' / 'results'
-             (deliberately written WITHOUT the translation-helper syntax here, so a
-             naive grep of this file for translation keys does not pick up four
-             phantom keys that never render)
-             around the numbers, which handed a translator four context-free words
-             ("to" is untranslatable without knowing it sits between two numbers)
-             and locked the output into English word order — a locale that puts the
-             total first simply could not be expressed.
+        @if($offersPerPage)
+            <div class="flex flex-wrap items-center gap-x-[var(--gap-wk-lg)] gap-y-[var(--gap-wk-sm)]">
+                <div class="text-[color:var(--color-wk-text-muted)]">
+                    {!! $summary !!}
+                </div>
 
-             The numbers keep their emphasis by passing pre-built markup as the
-             placeholder values, so the translator moves the placeholders freely
-             and the styling travels with them. {!! !!} is required for that, and
-             is safe here: every value is an integer straight off the paginator,
-             never developer input, and each is escaped before being wrapped. --}}
-        @php
-            $emphasize = fn (int $value): string => '<span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">'.e((string) $value).'</span>';
-
-            // The markup is substituted AFTER translation, never passed through
-            // it. Laravel's translator also honors :Placeholder and :PLACEHOLDER
-            // as case variants, applying ucfirst / strtoupper to the value — and
-            // an uppercased value here would wreck the markup, since Tailwind
-            // classes and CSS custom-property names are case-sensitive. A
-            // translator writing ":TOTAL" for emphasis would silently lose the
-            // number styling. All-caps sentinels are immune: ucfirst and
-            // strtoupper both leave them unchanged, whichever case the
-            // translation uses.
-            $summary = __('wirekit::Showing :first to :last of :total results', [
-                'first' => 'WKPAGEFIRST',
-                'last' => 'WKPAGELAST',
-                'total' => 'WKPAGETOTAL',
-            ]);
-
-            $summary = str_replace(
-                ['WKPAGEFIRST', 'WKPAGELAST', 'WKPAGETOTAL'],
-                [
-                    $emphasize($paginator->firstItem() ?? 0),
-                    $emphasize($paginator->lastItem() ?? 0),
-                    $emphasize($paginator->total()),
-                ],
-                $summary,
-            );
-        @endphp
-        <div class="text-[color:var(--color-wk-text-muted)]">
-            {!! $summary !!}
-        </div>
+                @include('wirekit::components.partials.pagination-per-page')
+            </div>
+        @else
+            <div class="text-[color:var(--color-wk-text-muted)]">
+                {!! $summary !!}
+            </div>
+        @endif
 
         <div class="flex flex-wrap items-center gap-1">
             {{-- Glyph-only, so the name has to come from the label — see the note on the

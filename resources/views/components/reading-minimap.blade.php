@@ -233,8 +233,10 @@
     </ol>
 
     {{-- Viewport overlay rectangle — translucent box showing the host's
-         visible region. Drag-pan when draggable is true. Painted above
-         the iframe (z-index: 1 in CSS) so it stays visible in rendered mode. --}}
+         visible region. Drag-pan when draggable is true, for a mouse or a pen: a
+         finger scrolls the page natively, so the overlay allows vertical panning
+         rather than blocking it. Painted above the iframe (z-index: 1 in CSS) so it
+         stays visible in rendered mode. --}}
     <div
         class="wk-reading-minimap__viewport absolute left-0 right-0 pointer-events-auto"
         aria-hidden="true"
@@ -244,7 +246,7 @@
             @pointermove.passive="moveDrag($event)"
             @pointerup="endDrag($event)"
             @pointercancel="endDrag($event)"
-            style="touch-action: none;"
+            style="touch-action: pan-y;"
         @endif
     ></div>
 

@@ -41,12 +41,14 @@
     $isVertical = $orientationValue === 'vertical';
 
     // Normalize $items at the template edge to a keyed map of per-tab metadata:
-    //   $tabs[key] = ['label' => string, 'icon' => ?string, 'badge' => ?scalar]
+    //   $tabs[key] = ['label' => string, 'icon' => ?string, 'badge' => ?scalar, 'badgeIntent' => ?string]
     // Accepts BOTH historical input shapes:
     //   - Keyed-assoc (legacy):  ['profile' => 'Profile', 'billing' => 'Billing']
     //   - Array-of-objects:      [['key' => 'profile', 'label' => 'Profile',
-    //                              'icon' => 'user', 'badge' => 3], ...]
-    // Only the array-of-objects shape can carry per-tab `icon` / `badge`.
+    //                              'icon' => 'user', 'badge' => 3, 'badgeIntent' => 'danger'], ...]
+    // Only the array-of-objects shape can carry per-tab `icon` / `badge`. `badgeIntent` is the
+    // badge's tone, one of the badge's own intents: a count of errors in a hidden panel reads as a
+    // neutral counter otherwise. Null keeps the badge's default.
     //
     // Detection: PHP 8.1+ array_is_list() returns true for a zero-indexed
     // sequential array (the shape of array-of-objects). Keyed-assoc returns false.
@@ -58,12 +60,13 @@
                     'label' => $item['label'] ?? $item['key'],
                     'icon' => $item['icon'] ?? null,
                     'badge' => $item['badge'] ?? null,
+                    'badgeIntent' => $item['badgeIntent'] ?? null,
                 ];
             }
         }
     } else {
         foreach ($items as $key => $val) {
-            $tabs[$key] = ['label' => $val, 'icon' => null, 'badge' => null];
+            $tabs[$key] = ['label' => $val, 'icon' => null, 'badge' => null, 'badgeIntent' => null];
         }
     }
 
@@ -224,7 +227,7 @@
                 @endif
                 <span>{{ $tab['label'] }}</span>
                 @if($tab['badge'] !== null && $tab['badge'] !== '')
-                    <x-wirekit::badge size="sm">{{ $tab['badge'] }}</x-wirekit::badge>
+                    <x-wirekit::badge size="sm" :intent="$tab['badgeIntent']">{{ $tab['badge'] }}</x-wirekit::badge>
                 @endif
             </button>
         @endforeach

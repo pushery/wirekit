@@ -12,9 +12,12 @@
  * @param {string} [config.placement] - Where the panel opens against the field (Floating UI placement)
  * @param {string} [config.panelWidth] - 'trigger' matches the field; anything else lets the panel
  *   be wider than the field but never narrower
+ * @param {boolean} [config.server] - the options are the server's results for the typed text; see
+ *   utils/server-search.js, which also takes `searchMinLength`, `searchDebounce` and `searchTexts`
  */
 import { position } from '../utils/floating.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
+import { serverSearchState } from '../utils/server-search.js';
 
 export default function wirekitMultiSelect(config = {}) {
     return {
@@ -36,6 +39,9 @@ export default function wirekitMultiSelect(config = {}) {
 
         // markMediaBroken() and showsInitials(), for an avatar whose photo fails to load.
         ...optionMediaState(),
+        // `search-change`, the options that follow the server, and the labels a chosen value
+        // keeps after a new search replaced its list. Inert without `server`.
+        ...serverSearchState(config),
         filter: '',
         dropdownOpen: false,
         // Where the keyboard is standing, as an index into `filteredOptions`.
@@ -74,6 +80,14 @@ export default function wirekitMultiSelect(config = {}) {
             this.$watch('highlight', () => {
                 this.$nextTick(() => this._revealHighlight());
             });
+
+            // A new list is new rows under the old indexes, so the keyboard starts at the top
+            // again, as it does when the reader types. Left alone, the index could also point
+            // past a shorter list, and `aria-activedescendant` would name a row nobody rendered.
+            this._startServerSearch((options) => {
+                this._options = options;
+                this.highlight = 0;
+            });
         },
 
         // Alpine teardown (Livewire morph / SPA nav): stop autoUpdate if the panel
@@ -81,6 +95,7 @@ export default function wirekitMultiSelect(config = {}) {
         destroy() {
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
+            this._stopServerSearch();
         },
         _options: config.options || [],
         // The stem every option id is built from. Handed in by the Blade rather
@@ -97,6 +112,12 @@ export default function wirekitMultiSelect(config = {}) {
          * Excludes already-selected values.
          */
         get filteredOptions() {
+            // The server's results are already the answer to the text; filtering them again
+            // here would drop a typo-tolerant match the server found on purpose.
+            if (this._server) {
+                return this._options.filter((opt) => ! this.selected.includes(opt.value));
+            }
+
             const term = this.filter.toLowerCase();
             return this._options.filter(
                 (opt) =>
@@ -109,7 +130,7 @@ export default function wirekitMultiSelect(config = {}) {
          * Get the label for a value.
          */
         getLabel(value) {
-            return this._options.find((o) => o.value === value)?.label || value;
+            return this._knownOption(value, this._options)?.label || value;
         },
 
         /**
@@ -118,7 +139,7 @@ export default function wirekitMultiSelect(config = {}) {
          * room and a listener is not.
          */
         pillLabel(value) {
-            const option = this._options.find((o) => o.value === value);
+            const option = this._knownOption(value, this._options);
 
             return option ? chosenText(option) : value;
         },
@@ -128,7 +149,7 @@ export default function wirekitMultiSelect(config = {}) {
          * `x-for` is the directive that gives the pill's medium an option to bind to.
          */
         pillMedia(value) {
-            const option = this._options.find((o) => o.value === value);
+            const option = this._knownOption(value, this._options);
 
             return option && option.media ? [option] : [];
         },
@@ -181,10 +202,20 @@ export default function wirekitMultiSelect(config = {}) {
             return this.selected.map((value) => this.getLabel(value)).join(', ');
         },
 
+        /** The text field, which a `search-change` starts from (see utils/server-search.js). */
+        _searchSource() {
+            const byId = this._id && typeof document !== 'undefined'
+                ? document.getElementById(this._id + '-input')
+                : null;
+
+            return byId ?? this.$refs?.filterInput ?? null;
+        },
+
         /** Typing narrows the list, so the old index means nothing — start over. */
         openAndReset() {
             this.dropdownOpen = true;
             this.highlight = 0;
+            this._queueSearch(this.filter);
         },
 
         /**
@@ -398,7 +429,12 @@ export default function wirekitMultiSelect(config = {}) {
          * got to. Clearing the stale filter text is safe; moving focus is not.
          */
         _afterToggle() {
-            this.filter = '';
+            // A server search keeps its text: the results on screen answer it, and a reader
+            // picking several of them would otherwise have to type the search again for each.
+            if (! this._server) {
+                this.filter = '';
+            }
+
             this._clampHighlight();
         },
 

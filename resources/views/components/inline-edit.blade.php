@@ -261,10 +261,11 @@
 
     // The trigger's visibility. `hover` is FORCED visible on focus and on a
     // coarse pointer — there is no hover on a touch screen, so without that the
-    // control would be invisible and unreachable on a phone.
+    // control would be invisible and unreachable on a phone. Inside a touch surface
+    // (`data-wk-touch`) too, which is worked by finger whatever pointer it reports.
     $triggerVisibility = match ($trigger) {
         'hover' => 'opacity-0 group-hover/inline-edit:opacity-100 focus-visible:opacity-100 '
-            .'[@media(pointer:coarse)]:opacity-100',
+            .'[@media(pointer:coarse)]:opacity-100 [[data-wk-touch]_&]:opacity-100',
         'focus-only' => 'sr-only focus:not-sr-only',
         default => '',
     };

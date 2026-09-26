@@ -82,12 +82,14 @@
              it reflects `current` and owns no navigation, which is the position
              docs/components/stepper.md takes and this component does not overturn. --}}
         <div>
+            {{-- `follow` binds the indicator to this component's `current`, so it moves with
+                 Next and Back instead of staying on the step the flow started on. --}}
             <x-wirekit::stepper
                 :steps="$stepNames"
                 :current="$current"
+                follow="current"
                 :orientation="$orientation"
                 :scope="$scope"
-               
             />
         </div>
     @endif

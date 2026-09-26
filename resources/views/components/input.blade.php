@@ -174,6 +174,10 @@
         $fontFamilyClass,
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
+        // Read-only takes the muted surface, so a field that accepts no typing does not look
+        // like one that does. Not the disabled treatment: the value stays fully legible,
+        // selectable and focusable, and it is still sent with the form.
+        '[&[readonly]]:bg-[var(--color-wk-bg-muted)]',
         'text-[color:var(--color-wk-text)]',
         'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-[length:var(--border-wk-width)]',
@@ -187,8 +191,8 @@
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
         'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
-        '[&:user-invalid]:border-[var(--color-wk-border-error)]',
-        '[&:user-invalid:focus-visible]:ring-[var(--color-wk-danger)]',
+        '[&:user-invalid:not([data-wk-cleared])]:border-[var(--color-wk-border-error)]',
+        '[&:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger)]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
     ]), $scope);
@@ -250,6 +254,14 @@
     // flex wrapper so the buttons sit as inline siblings; when set, the wrapper
     // also carries the tiny Alpine island that drives clear() / copy().
     $hasAffordances = $clearable || $copyable;
+
+    // How large the clear and copy buttons are. 24px meets WCAG 2.2 AA and is fine under a
+    // mouse, and too small for a finger. `lg` is the size a field worked by finger reaches for,
+    // so there they take the touch target on any pointer; on a coarse pointer every size does,
+    // through the `wk-field-affordance` rule in dist/wirekit.css.
+    $affordanceSizeClasses = $size === 'lg'
+        ? 'min-w-[var(--size-wk-touch-target)] min-h-[var(--size-wk-touch-target)]'
+        : 'min-w-[24px] min-h-[24px]';
     // The leading/trailing icon slots live INSIDE the field frame, so — like
     // prefix/suffix and the affordance buttons — they route the field through the
     // flex wrapper.
@@ -309,7 +321,13 @@
             @endif
             @class([
             'flex items-center',
+            // The frame is the field a finger aims at, so on a coarse pointer it takes the 44px
+            // floor and the input inside gives its own up (dist/wirekit.css). Without the marker
+            // a framed field stayed 40px tall on a phone while a plain one grew to 44.
+            'wk-field-frame',
             'bg-[var(--color-wk-bg-input)]',
+            // The frame paints the surface here, so read-only is read through it.
+            'has-[input[readonly]]:bg-[var(--color-wk-bg-muted)]',
             'border-[length:var(--border-wk-width)]',
             'shadow-[var(--shadow-wk-sm)]',
             'overflow-hidden',
@@ -323,8 +341,8 @@
             // Mirror the inner input's :user-invalid state onto the wrapper
             // so the border and focus ring on the wrapper turn red too. Uses
             // :has() so we don't need any JS sync between input and wrapper.
-            'has-[:user-invalid]:border-[var(--color-wk-border-error)]',
-            'has-[:user-invalid:focus-visible]:ring-[var(--color-wk-danger)]',
+            'has-[:user-invalid:not([data-wk-cleared])]:border-[var(--color-wk-border-error)]',
+            'has-[:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger)]',
             'hover:border-[var(--color-wk-border-strong-hover)]',
             $hasError
                 ? 'border-[var(--color-wk-border-error)]'
@@ -399,7 +417,7 @@
                     @if($disabled) disabled @endif
                     aria-label="{{ __('wirekit::Copy to clipboard') }}"
                     :aria-label="copied ? {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copied to clipboard')) }} : {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::Copy to clipboard')) }}"
-                    class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                    class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                 >
                     <svg x-show="! copied" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path d="M7 3.5A1.5 1.5 0 018.5 2h3.879a1.5 1.5 0 011.06.44l3.122 3.12A1.5 1.5 0 0117 6.622V12.5a1.5 1.5 0 01-1.5 1.5h-1v-3.379a3 3 0 00-.879-2.121L10.5 5.379A3 3 0 008.379 4.5H7v-1z"/>
@@ -421,7 +439,7 @@
                     @click="clear()"
                     @if($disabled) disabled @endif
                     aria-label="{{ __('wirekit::Clear input') }}"
-                    class="shrink-0 inline-flex items-center justify-center min-w-[24px] min-h-[24px] mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
+                    class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                 >
                     <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>

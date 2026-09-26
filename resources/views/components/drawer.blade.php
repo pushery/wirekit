@@ -62,7 +62,10 @@
     }
 
     // Title ID for aria-labelledby — links dialog to its header
-    $titleId = 'wk-drawer-title-' . ($name ?? \Illuminate\Support\Str::random(12));
+    // Counted, not random, when there is no name. The same dialog renders the same id on the next
+    // round trip, so Livewire's morph keeps the heading instead of replacing it, and a heading
+    // re-rendered on its own still carries the id the dialog's aria-labelledby names.
+    $titleId = $name !== null ? 'wk-drawer-title-' . $name : \Pushery\WireKit\Support\DomId::unique(null, 'wk-drawer-title-');
 
     // Backdrop classes — semi-transparent overlay behind the drawer
     // A caller-supplied `aria-label` names the DIALOG, not the wrapper it was landing on.
@@ -162,13 +165,14 @@
      the non-focusable panel div lets focus fall back to `document.body`, so
      focus-trap never sees the ESC and the overlay stays open. A window-level
      ESC listener bypasses this entirely: it catches the event regardless of
-     focus location and calls `close()` directly (which in turn deactivates the
-     focus trap). `close()` is guarded against re-entry, so the extra call is
-     safe even if focus-trap happens to catch it too. Only registered when the
+     focus location and calls `dismissByReader('escape')` directly (which closes, deactivates
+     the focus trap and announces `wirekit:drawer-dismissed`). It is guarded against re-entry, so
+     the extra call is safe even if focus-trap happens to catch it too, and the announcement is
+     made once. Only registered when the
      drawer is dismissible — non-dismissible drawers must never close on ESC. --}}
 <div
     x-data="wirekitDrawer({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }} })"
-    @if($dismissible) x-on:keydown.escape.window="open && isTopmost && close()" @endif
+    @if($dismissible) x-on:keydown.escape.window="open && isTopmost && dismissByReader('escape')" @endif
     {{ $attributes }}
 >
     {{-- Drawer overlay and panel — teleported to body --}}

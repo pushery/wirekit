@@ -7,7 +7,9 @@
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
+import { registerFlashDirective } from './utils/flash.js';
 import { registerFindableDirective } from './utils/findable.js';
+import { registerClearedFieldMemory } from './utils/cleared-field.js';
 import collapse from '@alpinejs/collapse';
 import { installOverlayRoot } from './utils/overlay-root.js';
 import wirekitChartJs from './components/chart.js';
@@ -28,6 +30,10 @@ import wirekitSidebarDisclosure from './components/sidebar-disclosure.js';
 import wirekitAppRail from './components/app-rail.js';
 import wirekitAppShell from './components/app-shell.js';
 import wirekitSidebarRail from './components/sidebar-rail.js';
+import wirekitSidebarCollapseToggle from './components/sidebar-collapse-toggle.js';
+import wirekitNavbarScroll from './components/navbar-scroll.js';
+import wirekitOverflowNav from './components/overflow-nav.js';
+import wirekitTableReorder from './components/table-reorder.js';
 import wirekitSidebarListbox from './components/sidebar-listbox.js';
 import wirekitWizard from './components/wizard.js';
 import wirekitClipboardButton from './components/clipboard-button.js';
@@ -62,6 +68,7 @@ import wirekitMultiSelect from './components/multi-select.js';
 import wirekitCombobox from './components/combobox.js';
 import wirekitDismissible from './components/dismissible.js';
 import wirekitRating from './components/rating.js';
+import wirekitStrengthMeter from './components/strength-meter.js';
 import wirekitReaction from './components/reaction.js';
 import wirekitRangeSlider from './components/range-slider.js';
 import wirekitPopover from './components/popover.js';
@@ -147,8 +154,12 @@ function registerComponents() {
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
     // apply it after EVERY render — not only the first. See utils/indeterminate.js.
     registerIndeterminateDirective(Alpine);
+    registerFlashDirective(Alpine);
     // Disclosure panels the browser find in page can open. See utils/findable.js.
     registerFindableDirective(Alpine);
+    // A field Livewire emptied after a successful action is not the reader's mistake.
+    // See utils/cleared-field.js.
+    registerClearedFieldMemory();
 
     Alpine.data('wirekitChartJs', wirekitChartJs);
     Alpine.data('wirekitDropdown', wirekitDropdown);
@@ -168,6 +179,10 @@ function registerComponents() {
     Alpine.data('wirekitAppRail', wirekitAppRail);
     Alpine.data('wirekitAppShell', wirekitAppShell);
     Alpine.data('wirekitSidebarRail', wirekitSidebarRail);
+    Alpine.data('wirekitSidebarCollapseToggle', wirekitSidebarCollapseToggle);
+    Alpine.data('wirekitNavbarScroll', wirekitNavbarScroll);
+    Alpine.data('wirekitOverflowNav', wirekitOverflowNav);
+    Alpine.data('wirekitTableReorder', wirekitTableReorder);
     Alpine.data('wirekitSidebarListbox', wirekitSidebarListbox);
     Alpine.data('wirekitWizard', wirekitWizard);
     Alpine.data('wirekitClipboardButton', wirekitClipboardButton);
@@ -200,6 +215,7 @@ function registerComponents() {
     Alpine.data('wirekitInlineEdit', wirekitInlineEdit);
     Alpine.data('wirekitMultiSelect', wirekitMultiSelect);
     Alpine.data('wirekitRating', wirekitRating);
+    Alpine.data('wirekitStrengthMeter', wirekitStrengthMeter);
     Alpine.data('wirekitReaction', wirekitReaction);
     Alpine.data('wirekitCombobox', wirekitCombobox);
     Alpine.data('wirekitDismissible', wirekitDismissible);

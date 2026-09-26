@@ -25,6 +25,16 @@
     // `--size-wk-container-*` tokens as the container component so
     // navbar + body align on the same vertical content-edge spine.
     'max' => null,
+    // What the entries do below the `md` breakpoint. `menu` (the default) folds them behind a
+    // toggle. `scroll` keeps them as one row at every width that scrolls sideways when it is
+    // too long, and brings the entry for the current page (`aria-current="page"`, what an
+    // `active` item carries) into view: a bar someone switches between screens with, who wants
+    // to see it rather than open it.
+    'mobile' => 'menu',
+    // How tightly the entries sit. `compact` sets them in the small text size with less padding,
+    // and draws the entries you are not on in the muted text color. `navbar.item` reads it from
+    // here, so one attribute on the bar sets every entry.
+    'density' => 'default',
     'scope' => null,
 ])
 
@@ -45,6 +55,10 @@
     $container = BooleanProp::from($container, false);
 
     $max ??= config('wirekit.components.navbar.max', 'xl');
+
+    $mobile = WireKit::validateProp('navbar', 'mobile', $mobile, ['menu', 'scroll']);
+    $scroll = $mobile === 'scroll';
+    WireKit::validateProp('navbar', 'density', $density, ['default', 'compact']);
 
     // Navbar — opinionated top navigation bar with responsive mobile menu.
     // Variants: default (with bottom border), bordered, transparent, sticky.
@@ -101,7 +115,9 @@
         : '';
 
     $containerClasses = WireKit::resolveClasses('navbar', 'container', implode(' ', array_filter([
-        'flex flex-wrap items-center justify-between',
+        // A scrolling row never wraps under the brand: it is one line at every width, and the
+        // row itself gives way. The gap keeps it off the brand and the actions it sits between.
+        $scroll ? 'flex flex-nowrap items-center justify-between gap-[var(--gap-wk-md)]' : 'flex flex-wrap items-center justify-between',
         'px-[var(--padding-wk-x-lg)]',
         // `min-h` below the breakpoint, a fixed height above it. The navigation list is one
         // node now and becomes a full-width second line when the disclosure opens, so the row
@@ -163,6 +179,18 @@
     // resolves the one list. Same override point, same subject — what the disclosure reveals.
     $navListClasses = WireKit::resolveClasses('navbar', 'mobile-menu', $navListClasses, $scope);
 
+    // The scrolling row. `min-w-0 flex-1` lets it take what the brand and the actions leave and
+    // no more, which is what makes it scroll instead of pushing them off the bar. Each entry keeps
+    // its width and its one line; `wk-navbar-scroll` hides the scrollbar (see dist/wirekit.css),
+    // and the row stays operable by touch, wheel and Tab, which scrolls each link into view.
+    $scrollListClasses = WireKit::resolveClasses('navbar', 'scroll', implode(' ', [
+        'wk-navbar-scroll',
+        'flex flex-row flex-nowrap items-center gap-1',
+        'min-w-0 flex-1',
+        'overflow-x-auto overscroll-x-contain',
+        '[&>*]:shrink-0 [&>*]:whitespace-nowrap',
+    ]), $scope);
+
     // The disclosure's id, and the string the hamburger's `aria-controls` points at.
     // Both were the literal `wk-navbar-mobile`, which is correct for exactly one navbar per
     // page — and a page with two (a `forceMobile` demo beside a live bar, a marketing header
@@ -219,6 +247,11 @@
              always-shown half is a stylesheet rule keyed on `data-wk-navbar-items` (see
              `dist/wirekit.css`). The marker is absent under `force-mobile`, which is what
              keeps that demo mobile at every width. --}}
+        @if($scroll)
+            <div data-wk-navbar-scroll x-data="wirekitNavbarScroll()" class="{{ $scrollListClasses }}">
+                {{ $slot }}
+            </div>
+        @else
         <div
             id="{{ $mobileId }}"
             @if(! $forceMobile) data-wk-navbar-items @endif
@@ -234,6 +267,7 @@
         >
             {{ $slot }}
         </div>
+        @endif
 
         {{-- Actions slot — the only render of it, at every width --}}
         @isset($actions)
@@ -242,7 +276,8 @@
             </div>
         @endisset
 
-        {{-- Mobile hamburger button --}}
+        {{-- Mobile hamburger button. None for a scrolling row: there is nothing to reveal. --}}
+        @unless($scroll)
         <button
             type="button"
             x-on:click="mobileOpen = !mobileOpen"
@@ -260,6 +295,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
             </svg>
         </button>
+        @endunless
     </div>
 
     {{-- No second menu block. Both slots are rendered once, in the bar above: the list is

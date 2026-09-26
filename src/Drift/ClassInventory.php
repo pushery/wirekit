@@ -541,15 +541,27 @@ final class ClassInventory
          * uses — attribute, `@class` key, `implode` array, `->class` — only the last one
          * came back empty.
          */
-        $pattern = '/(?:@class|->class)\(\s*\[(?P<body>.*?)\]\s*\)/su';
-
-        if (preg_match_all($pattern, $contents, $matches, PREG_OFFSET_CAPTURE) === false) {
+        /*
+         * ⚠️ THE BODY ENDS AT THE MATCHING `]`, NOT AT THE FIRST `])`. The pattern used to be
+         * `\[(?P<body>.*?)\]\s*\)`, and a class with an attribute selector inside `:not(…)` —
+         * `has-[:user-invalid:not([data-wk-cleared])]:border-…` — holds that very pair in its
+         * own text. The body stopped in the middle of the class, and it and every class after
+         * it in the call were reported as untraceable. Found by the reverse diff on the input
+         * component, whose user-invalid variants gained the `:not([…])` on 2026-09-25.
+         */
+        if (preg_match_all('/(?:@class|->class)\(\s*\[/u', $contents, $opens, PREG_OFFSET_CAPTURE) === false) {
             return;
         }
 
-        foreach ($matches['body'] as $match) {
-            [$body, $offset] = $match;
-            $line = $this->offsetToLine($contents, (int) $offset);
+        foreach ($opens[0] as [$openText, $openStart]) {
+            $offset = (int) $openStart + strlen($openText);
+            $body = $this->arrayBodyFrom($contents, $offset);
+
+            if ($body === null) {
+                continue;
+            }
+
+            $line = $this->offsetToLine($contents, $offset);
 
             /*
              * Drop the two NAME arguments of a nested `resolveClasses(…)` call.
@@ -661,58 +673,28 @@ final class ClassInventory
          * `[` / `(` depth so the closing `]` is matched correctly
          * even when array elements contain nested calls or arrays.
          */
-        $openPattern = '/implode\s*\(\s*(["\'])\s\1\s*,\s*\[/u';
+        /*
+         * `array_filter(` may wrap the array: it drops the empty strings a conditional entry
+         * leaves behind, and the catalog writes it that way wherever a class is optional. Without
+         * it here those arrays reached only the @php-block harvester, which rejects a bare word
+         * on purpose, so `justify-items-end` written in one was reported as untraceable.
+         */
+        $openPattern = '/implode\s*\(\s*(["\'])\s\1\s*,\s*(?:array_filter\s*\(\s*)?\[/u';
 
         if (preg_match_all($openPattern, $contents, $opens, PREG_OFFSET_CAPTURE) === false) {
             return;
         }
 
-        $len = strlen($contents);
         foreach ($opens[0] as $openMatch) {
             [$matchText, $matchStart] = $openMatch;
             $bodyStart = (int) $matchStart + strlen($matchText);
 
-            // Walk to the closing `]` of the array (depth = 1 at start).
-            $depth = 1;
-            $i = $bodyStart;
-            while ($i < $len && $depth > 0) {
-                $c = $contents[$i];
+            // The array's own closing `]`, found by the walker the `@class` harvester shares.
+            $body = $this->arrayBodyFrom($contents, $bodyStart);
 
-                if ($c === '"' || $c === "'") {
-                    // Skip the entire string literal — its contents
-                    // can contain `[` / `]` without affecting depth.
-                    $quote = $c;
-                    $i++;
-                    while ($i < $len) {
-                        if ($contents[$i] === '\\') {
-                            $i += 2;
-
-                            continue;
-                        }
-                        if ($contents[$i] === $quote) {
-                            break;
-                        }
-                        $i++;
-                    }
-                    $i++;
-
-                    continue;
-                }
-
-                if ($c === '[' || $c === '(') {
-                    $depth++;
-                }
-                if ($c === ']' || $c === ')') {
-                    $depth--;
-                }
-                $i++;
-            }
-
-            if ($depth !== 0) {
+            if ($body === null) {
                 continue;
             }
-
-            $body = substr($contents, $bodyStart, $i - 1 - $bodyStart);
 
             /*
              * Inside the body, every quoted string is a class-string
@@ -1403,6 +1385,27 @@ final class ClassInventory
          * its `/` happens to sit in the shape regex's body set, which is a coincidence rather
          * than a decision.
          */
+        /*
+         * An ATTRIBUTE NAME, not a class: `aria-describedby`, `data-wk-ready`. Tailwind's aria
+         * and data variants always carry a colon and a utility after it (`aria-selected:…`,
+         * `data-[state=open]:…`), so a bare one is never a utility. It reaches a class list
+         * as the argument of an attribute read inside an id list, `implode(' ', array_filter([
+         * … $attributes->get('aria-describedby') …]))`, which the implode harvester reads.
+         */
+        if (preg_match('/^(?:aria|data)-[a-z0-9-]+$/', $utilityForm) === 1) {
+            return false;
+        }
+
+        /*
+         * An Alpine or Livewire ATTRIBUTE NAME, not a class: `x-on:change`, `x-bind:disabled`,
+         * `wire:model.live`. They carry a colon, so they have the shape of a variant, and a
+         * component that builds its attribute bag in PHP writes them as array keys, which the
+         * @php harvester reads. No Tailwind variant is called `x-on`, `x-bind` or `wire`.
+         */
+        if (preg_match('/^(?:x-on|x-bind|wire):/', $utilityForm) === 1) {
+            return false;
+        }
+
         $hasTailwindStructuralChar = preg_match('/[-:\[]/', $utilityForm) === 1;
         if (! $hasTailwindStructuralChar && ! in_array($utilityForm, self::KNOWN_SINGLE_WORD_CLASSES, true)) {
             return false;
@@ -1461,6 +1464,46 @@ final class ClassInventory
         }
 
         return true;
+    }
+
+    /**
+     * The body of the array literal that opens just before `$bodyStart`, up to its MATCHING `]`.
+     *
+     * Brackets and parentheses are counted and string literals skipped, since a Tailwind class
+     * holds both kinds of bracket in its own text. Null when the array never closes.
+     */
+    private function arrayBodyFrom(string $contents, int $bodyStart): ?string
+    {
+        $len = strlen($contents);
+        $depth = 1;
+        $i = $bodyStart;
+
+        while ($i < $len && $depth > 0) {
+            $c = $contents[$i];
+
+            if ($c === '"' || $c === "'") {
+                $quote = $c;
+                $i++;
+
+                while ($i < $len && $contents[$i] !== $quote) {
+                    $i += $contents[$i] === '\\' ? 2 : 1;
+                }
+
+                $i++;
+
+                continue;
+            }
+
+            if ($c === '[' || $c === '(') {
+                $depth++;
+            } elseif ($c === ']' || $c === ')') {
+                $depth--;
+            }
+
+            $i++;
+        }
+
+        return $depth === 0 ? substr($contents, $bodyStart, $i - 1 - $bodyStart) : null;
     }
 
     /**

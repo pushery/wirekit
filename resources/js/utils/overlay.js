@@ -155,6 +155,11 @@ export function unlockScroll() {
  *   non-dismissible alert-dialogs still need an escape path so keyboard users
  *   aren't trapped (backdrop click stays gated by `dismissible` for the
  *   "don't approve destructive action by stray click" safety case).
+ * @param {string|null} [options.dismissedEvent=null] - Window event sent when the READER
+ *   dismisses the overlay: a click on the backdrop, Escape, or the built-in close button. Its
+ *   detail is `{ name, via }`. Never for a close the page asked for (the close event, a
+ *   `wire:model` set to false, a composed close control) nor for the forced close of a
+ *   navigation, so a page that closed its own overlay never hears about it a second time.
  * @returns {Object} Alpine component data object with overlay methods
  */
 export function createOverlay({
@@ -165,6 +170,7 @@ export function createOverlay({
     escapeAlwaysCloses = false,
     initialFocus = undefined,
     focusReturnTo = undefined,
+    dismissedEvent = null,
 }) {
     // Stable token identifying this overlay instance on the global stack —
     // not a string id, just an object reference equality check works.
@@ -478,6 +484,7 @@ export function createOverlay({
             popOverlay(stackToken);
             this.isTopmost = isTopmostOverlay(stackToken);
             broadcastStackChange();
+            this._announceDismissal('escape');
         },
 
         /**
@@ -522,8 +529,28 @@ export function createOverlay({
          */
         handleBackdropClick() {
             if (dismissible) {
-                this.dismissOverlay();
+                this.dismissByReader('backdrop');
             }
+        },
+
+        /**
+         * A close the READER made, with the overlay's own controls: Escape, the built-in close
+         * button, a click beside the panel. It is a dismissal (see `dismissOverlay`), and it is
+         * announced, because the page did not ask for it and may have state to clean up: a typed
+         * reason, a PIN, a search. Only when it actually closed something, so a second path
+         * reaching an overlay already closed announces nothing.
+         *
+         * @param {'escape'|'close-button'|'backdrop'} via
+         */
+        dismissByReader(via = 'close-button') {
+            if (!this.open) return;
+            this.dismissOverlay();
+            this._announceDismissal(via);
+        },
+
+        _announceDismissal(via) {
+            if (!dismissedEvent) return;
+            window.dispatchEvent(new CustomEvent(dismissedEvent, { detail: { name, via } }));
         },
 
         /**

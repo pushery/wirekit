@@ -148,7 +148,7 @@ final class SandboxSchemaRegistry
             // the swap it drives happens at another. What the reader sees change is the class
             // list and the box, which is what the prop is about; a refusal would have had to
             // claim the prop does nothing here, and it does.
-            'iconOnlyBelow' => ['type' => 'string', 'default' => null, 'allowed_values' => ['sm', 'md', 'lg', 'xl', '2xl']],
+            'iconOnlyBelow' => ['type' => 'string', 'default' => null, 'allowed_values' => ['xs', 'sm', 'md', 'lg', 'xl', '2xl']],
             // `body` is the SandboxRenderer convention for slot content —
             // `<x-wirekit::button>{body}</x-wirekit::button>`. Earlier
             // iterations used `label` here, which the renderer treated as
@@ -185,6 +185,8 @@ final class SandboxSchemaRegistry
             'icon' => ['type' => 'bool', 'default' => true],
             'bordered' => ['type' => 'bool', 'default' => true],
             'stripe' => ['type' => 'bool', 'default' => false],
+            // No default: without a title the callout draws no heading, which is what it does.
+            'title' => ['type' => 'string'],
             'body' => ['type' => 'string', 'default' => 'Callout body'],
         ]);
 
@@ -270,6 +272,9 @@ final class SandboxSchemaRegistry
             'truncate' => ['type' => 'bool', 'default' => false],
             'lineClamp' => ['type' => 'int', 'allowed_values' => [1, 2, 3, 4, 5, 6]],
             'break' => ['type' => 'string', 'allowed_values' => ['normal', 'anywhere', 'all']],
+            // No default: an unset leading keeps the theme's own line height.
+            'leading' => ['type' => 'string', 'allowed_values' => ['tight', 'normal', 'relaxed']],
+            'wrap' => ['type' => 'bool', 'default' => true],
             'body' => ['type' => 'string', 'default' => 'Text body'],
         ]);
 
@@ -289,6 +294,7 @@ final class SandboxSchemaRegistry
             // No default: an unset size inherits the surrounding text, which is what the component does.
             'size' => ['type' => 'string', 'allowed_values' => ['xs', 'sm', 'base', 'lg', 'xl']],
             'external' => ['type' => 'bool', 'default' => false],
+            'announceNewTab' => ['type' => 'bool', 'default' => true],
             'underline' => ['type' => 'string', 'default' => 'always', 'allowed_values' => ['always', 'hover', 'none']],
             'body' => ['type' => 'string', 'default' => 'Link'],
         ]);

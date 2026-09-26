@@ -59,16 +59,28 @@ final class DocsVisibility
      * stem lists answer where it does not. They are extracted FROM that
      * tree, and the two are held in lockstep by a test rather than by
      * hand.
+     *
+     * A component with no page of its own is as public as the page that
+     * documents it. One taught only on a page that is not publicly rendered
+     * answers STAGED, from the baked `staged-components.json`, in the
+     * checkout and in an installation alike: a public manifest drops it with
+     * its parent instead of publishing its whole API while the parent is
+     * unannounced.
      */
     public static function componentPageStatus(string $name): string
     {
         $root = dirname(__DIR__, 2);
 
-        if (is_dir($root.'/docs/components')) {
-            return self::pageStatus($root."/docs/components/{$name}.md");
+        $status = is_dir($root.'/docs/components')
+            ? self::pageStatus($root."/docs/components/{$name}.md")
+            : self::bakedPageStatus($root, $name);
+
+        if ($status === self::STATUS_MISSING
+            && in_array($name, self::bakedStems($root.'/resources/mcp/staged-components.json'), true)) {
+            return self::STATUS_STAGED;
         }
 
-        return self::bakedPageStatus($root, $name);
+        return $status;
     }
 
     /**

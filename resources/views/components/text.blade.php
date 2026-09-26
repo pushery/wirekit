@@ -11,6 +11,15 @@
     'truncate' => false,
     'lineClamp' => null,
     'break' => null,        // where an unbroken token may wrap: normal | anywhere | all. null → the default rules, no class
+    // The line height: tight | normal | relaxed, on the leading tokens. null keeps the theme's own
+    // line height, which is `normal`. A second line under a value in a table cell wants `tight`, so it
+    // stands close to the line it belongs to; a class from outside could not say so reliably, because
+    // two line-height utilities on one element are decided by stylesheet order.
+    'leading' => null,
+    // `false` keeps the text on one line without cutting it, where `truncate` cuts it with an
+    // ellipsis. For a short second line, a date or an amount, that must not double a row's height on
+    // a phone and must not lose its end either.
+    'wrap' => true,
     'as' => 'p',
     'scope' => null,
 ])
@@ -28,6 +37,7 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $truncate = BooleanProp::from($truncate, false);
+    $wrap = BooleanProp::from($wrap, true);
 
     $sizeClasses = match ($size) {
         'xs' => 'text-[length:var(--text-wk-xs,0.75rem)]',
@@ -58,8 +68,10 @@
         default => WireKit::validateProp('text', $intentPropName, $effectiveIntent, ['default', 'muted', 'subtle', 'accent', 'success', 'warning', 'danger']),
     };
 
+    // `normal` is the theme's body weight rather than a fixed 400, so text follows a theme that sets
+    // its running text lighter or heavier, as the rest of the body copy does.
     $weightClasses = match ($weight) {
-        'normal' => 'font-normal',
+        'normal' => 'font-[number:var(--font-wk-body-weight)]',
         'medium' => 'font-medium',
         'semibold' => 'font-semibold',
         'bold' => 'font-bold',
@@ -120,10 +132,18 @@
         default => WireKit::validateProp('text', 'break', (string) $break, ['normal', 'anywhere', 'all']),
     };
 
+    // Literal arms, as for the other props here: an assembled class has no rule behind it.
+    $leadingClasses = match ($leading === null ? null : (string) $leading) {
+        'tight' => 'leading-[var(--leading-wk-tight)]',
+        'relaxed' => 'leading-[var(--leading-wk-relaxed)]',
+        'normal', null => 'leading-[var(--font-wk-line-height,1.5)]',
+        default => WireKit::validateProp('text', 'leading', (string) $leading, ['tight', 'normal', 'relaxed']),
+    };
+
     $classes = WireKit::resolveClasses('text', 'base', implode(' ', array_filter([
         'font-[family-name:var(--font-wk-sans)]',
         'tracking-[var(--font-wk-letter-spacing)]',
-        'leading-[var(--font-wk-line-height,1.5)]',
+        $leadingClasses,
         $sizeClasses,
         $variantClasses,
         $weightClasses,
@@ -131,6 +151,7 @@
         $truncateClasses,
         $lineClampClasses,
         $breakClasses,
+        $wrap ? '' : 'whitespace-nowrap',
     ])), $scope);
 
     // `as` is interpolated straight into the opening tag, and Blade's escaping does

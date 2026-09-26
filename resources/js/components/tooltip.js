@@ -134,10 +134,32 @@ export default function wirekitTooltip(config = {}) {
 
         /**
          * Keyboard focus — show immediately.
+         *
+         * Only a VISIBLE focus, the one a keyboard gives. Focus that a script moved, like the
+         * first control a dialog focuses when it opens, showed the tooltip over the dialog with no
+         * input at all, and it stayed for as long as the dialog was open. A pointer already shows
+         * it on hover, so nothing is lost for a mouse.
          */
-        focusin() {
+        focusin(event) {
+            if (! this._focusIsVisible(event?.target)) {
+                return;
+            }
+
             clearTimeout(this._hideTimer);
             this.show();
+        },
+
+        _focusIsVisible(target) {
+            if (! target || typeof target.matches !== 'function') {
+                return true;
+            }
+
+            try {
+                return target.matches(':focus-visible');
+            } catch {
+                // An engine without the pseudo-class shows the tooltip on every focus, as before.
+                return true;
+            }
         },
 
         /**
@@ -292,7 +314,12 @@ export default function wirekitTooltip(config = {}) {
                     // ⚠️ That is an accessibility path rather than a cosmetic one. The trigger's
                     // `aria-describedby` still points at this panel, so a screen reader is
                     // describing a control with a box that is now nowhere near it.
-                    repairErasure: true,
+                    //
+                    // The same update removes the colors `_inheritThemeVars()` copied onto the
+                    // panel, since they sit in that `style` attribute too. The callback copies
+                    // them again before the placement is put back, so a tooltip restyled on its
+                    // wrapper keeps its colors across the update.
+                    repairErasure: (panel) => this._inheritThemeVars(panel),
                     // Without this a `placement="right"` tooltip runs off the
                     // right edge of a phone and stays there. Floating UI's
                     // default shift only moves along the placement's MAIN axis,

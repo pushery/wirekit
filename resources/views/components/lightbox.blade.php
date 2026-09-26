@@ -175,7 +175,13 @@
                                     <video :src="item.src" :poster="item.poster" controls preload="metadata" class="max-h-[85vh] w-auto max-w-[90vw] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]"></video>
                                 </template>
                                 <template x-if="item.type === 'embed'">
-                                    <iframe :src="item.src" :title="item.alt" loading="lazy" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox" class="aspect-video w-[90vw] max-w-[90vw] max-h-[85vh] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]" allowfullscreen></iframe>
+                                    {{-- The frame carries no binding: Alpine's CSP build evaluates nothing on an
+                                         `<iframe>`. The wrapper hands it its `src` and `title` through the
+                                         factory, which runs under both builds, and `contents` leaves the
+                                         layout to the frame. --}}
+                                    <div class="contents" x-init="embed($el, item)">
+                                        <iframe loading="lazy" sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox" class="aspect-video w-[90vw] max-w-[90vw] max-h-[85vh] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]" allowfullscreen></iframe>
+                                    </div>
                                 </template>
                                 <template x-if="! item.type || item.type === 'image'">
                                     {{-- Large images scale to fit the viewport: object-contain +
@@ -230,7 +236,7 @@
                         <figcaption
                             x-show="currentCaption"
                             x-text="currentCaption"
-                            class="max-w-3xl text-balance rounded-[var(--radius-wk-md)] bg-[var(--color-wk-overlay)] px-[var(--space-wk-sm)] py-[var(--space-wk-xs)] text-center text-[length:var(--text-wk-sm)] leading-relaxed text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]"
+                            class="max-w-3xl wk-lines-balanced rounded-[var(--radius-wk-md)] bg-[var(--color-wk-overlay)] px-[var(--space-wk-sm)] py-[var(--space-wk-xs)] text-center text-[length:var(--text-wk-sm)] leading-relaxed text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.6)]"
                         ></figcaption>
                     @endif
                 </figure>

@@ -21,13 +21,26 @@ import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.j
  * persisted flag and the marker the items read, in the app. So the state stays here
  * and the outside reaches it through a window event instead.
  *
+ * The reader's choice and what is on screen are two values, the way they are on `app-rail`.
+ * Below the shell's breakpoint the column is part of the navigation drawer, and a collapsed
+ * column there was a strip of nameless icons in an otherwise empty drawer, where a tap
+ * navigates before any tooltip could name anything. So in the drawer the column shows its
+ * names; the stored choice is not touched, and the next desktop draws the column the way the
+ * reader left it. A sidebar outside the shell keeps collapsing at every width.
+ *
  * @param {Object}       config
  * @param {boolean}      [config.collapsed]  state on a first visit, before storage
  * @param {string|null}  [config.persist]    localStorage key; null keeps it ephemeral
  */
 export default function wirekitSidebarRail(config = {}) {
     return {
+        // What is on screen, and what every binding reads: the width, `data-collapsed`, the
+        // disclosures through the merged scope.
         collapsed: config.collapsed === true,
+        // The reader's choice, which is what is stored.
+        _chosen: config.collapsed === true,
+        _viewport: null,
+        _onViewportChange: null,
 
         /**
          * True while the column is on its way back to full width and the names have not been
@@ -83,7 +96,26 @@ export default function wirekitSidebarRail(config = {}) {
         _settleFallback: null,
 
         init() {
-            this.collapsed = readPersistedFlag(this._persistKey, this.collapsed, this._persistDriver);
+            this._chosen = readPersistedFlag(this._persistKey, this._chosen, this._persistDriver);
+
+            // `64rem`, the shell's own breakpoint and rem-based like its `lg:` utilities, so a
+            // reader with a larger root font size crosses both at the same moment.
+            this._viewport = typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+                ? window.matchMedia('(min-width: 64rem)')
+                : null;
+            this.collapsed = this._presented();
+
+            // A rotation or a resize across the breakpoint moves the column into or out of the
+            // drawer, and with it what it shows. The choice stays as it was.
+            this._onViewportChange = () => {
+                const next = this._presented();
+
+                if (next !== this.collapsed) {
+                    this.collapsed = next;
+                    this._announce();
+                }
+            };
+            this._viewport?.addEventListener?.('change', this._onViewportChange);
 
             // One frame, then the width may animate. `requestAnimationFrame` is guarded
             // because a plain unit harness has no browser globals — the same reason `$el` is
@@ -144,6 +176,11 @@ export default function wirekitSidebarRail(config = {}) {
         },
 
         destroy() {
+            if (this._onViewportChange) {
+                this._viewport?.removeEventListener?.('change', this._onViewportChange);
+                this._onViewportChange = null;
+            }
+
             // Removed on teardown, not left behind: a Livewire navigation replaces the
             // sidebar, and a listener still holding the old component's `this` toggles
             // a node that is no longer in the document — the state then disagrees with
@@ -180,8 +217,30 @@ export default function wirekitSidebarRail(config = {}) {
 
         },
 
+        /** Whether the column sits in the shell's drawer right now: below the breakpoint, inside it. */
+        _inDrawer() {
+            return !! this._viewport && ! this._viewport.matches && !! this.$el?.closest?.('.wk-app-shell-aside');
+        },
+
+        /** What the column shows: the reader's choice, except in the drawer, which names its entries. */
+        _presented() {
+            return this._chosen && ! this._inDrawer();
+        },
+
         toggle() {
-            this.collapsed = ! this.collapsed;
+            this._chosen = ! this._chosen;
+            const next = this._presented();
+
+            // In the drawer a toggle changes the choice for the next desktop and nothing on
+            // screen, so there is no width to wait for.
+            if (next === this.collapsed) {
+                writePersistedFlag(this._persistKey, this._chosen, this._persistDriver);
+                this._announce();
+
+                return;
+            }
+
+            this.collapsed = next;
 
             if (this.collapsed) {
                 // Narrowing: the names go at once, which is the half that always looked right.
@@ -211,7 +270,7 @@ export default function wirekitSidebarRail(config = {}) {
                 }, longest + 80);
             }
 
-            writePersistedFlag(this._persistKey, this.collapsed, this._persistDriver);
+            writePersistedFlag(this._persistKey, this._chosen, this._persistDriver);
             this._announce();
         },
 

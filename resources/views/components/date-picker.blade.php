@@ -128,7 +128,10 @@
         }
     }
 
-    $dateId = $id ?? ($name ? 'wk-date-' . $name : 'wk-date-' . Str::random(6));
+    // The same on every render, or Livewire's morph REPLACES the input on each round trip and
+    // a reader typing a date into a `wire:model.live` field loses focus after the first key.
+    // Seeded from the bound property when there is no name, counted when there is neither.
+    $dateId = $id ?? ($name ? 'wk-date-' . $name : WireKit::stableId('wk-date', $attributes->whereStartsWith('wire:model')->first()));
     $errorId = $dateId . '-error';
     $hintId = $dateId . '-hint';
     $formatHintId = $dateId.'-format-hint';

@@ -87,8 +87,11 @@
     // Alert Dialog — specialized confirmation dialog for destructive actions.
     // Uses role="alertdialog" (not "dialog") to signal urgency to screen readers.
     // Non-dismissible by default — user must click Cancel or Confirm.
-    $titleId = 'wk-alert-dialog-title-' . ($name ?? \Illuminate\Support\Str::random(12));
-    $descId = 'wk-alert-dialog-desc-' . ($name ?? \Illuminate\Support\Str::random(12));
+    // Counted, not random, when there is no name. The same dialog renders the same id on the next
+    // round trip, so Livewire's morph keeps the heading instead of replacing it, and a heading
+    // re-rendered on its own still carries the id the dialog's aria-labelledby names.
+    $titleId = $name !== null ? 'wk-alert-dialog-title-' . $name : \Pushery\WireKit\Support\DomId::unique(null, 'wk-alert-dialog-title-');
+    $descId = $name !== null ? 'wk-alert-dialog-desc-' . $name : \Pushery\WireKit\Support\DomId::unique(null, 'wk-alert-dialog-desc-');
 
     // A caller-supplied `aria-label` names the DIALOG, not the wrapper it was landing on.
     // `{{ $attributes }}` sits on the roleless outer element, so `<x-wirekit::alert-dialog

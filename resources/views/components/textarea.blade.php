@@ -146,6 +146,10 @@
         'font-[family-name:var(--font-wk-sans)]',
         'tracking-[var(--font-wk-letter-spacing)]',
         'bg-[var(--color-wk-bg-input)]',
+        // Read-only takes the muted surface, the same answer `input` gives: a field that accepts
+        // no typing must not look like one that does, and unlike disabled it stays legible,
+        // selectable and part of the submitted form.
+        '[&[readonly]]:bg-[var(--color-wk-bg-muted)]',
         'text-[color:var(--color-wk-text)]',
         'placeholder:text-[color:var(--color-wk-text-placeholder)]',
         'border-[length:var(--border-wk-width)]',
@@ -159,8 +163,8 @@
         'focus-visible:ring-offset-[length:var(--ring-wk-offset)]',
         'focus-visible:ring-[var(--color-wk-ring)]',
         'focus-visible:ring-offset-[var(--color-wk-ring-offset)]',
-        '[&:user-invalid]:border-[var(--color-wk-border-error)]',
-        '[&:user-invalid:focus-visible]:ring-[var(--color-wk-danger)]',
+        '[&:user-invalid:not([data-wk-cleared])]:border-[var(--color-wk-border-error)]',
+        '[&:user-invalid:not([data-wk-cleared]):focus-visible]:ring-[var(--color-wk-danger)]',
         'disabled:opacity-[var(--opacity-wk-disabled)]',
         'disabled:cursor-not-allowed',
     ]), $scope);
