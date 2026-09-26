@@ -139,7 +139,7 @@ class GlassInstallCommand extends Command
         $this->newLine();
         $this->info('Usage in templates:');
         $this->line('  <div class="wk-glass">Frosted glass (all browsers)</div>');
-        $this->line('  <div class="wk-glass-refract">Refraction glass (Chrome, frosted fallback)</div>');
+        $this->line('  <div class="wk-glass-refract">Refraction glass (bends in Chromium, lightly frosted in Safari)</div>');
 
         return self::SUCCESS;
     }

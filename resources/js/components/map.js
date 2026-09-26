@@ -88,6 +88,10 @@ function engineFor(name) {
 }
 export default function wirekitMap(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _loadFailureWarned: null,
+
         /**
          * A marker's coordinates, to four decimals — roughly 11 meters, which is
          * the precision a list entry can usefully show.

@@ -23,6 +23,10 @@
 import { frameCoalesce } from '../utils/frame-coalesce.js';
 export default function wirekitAssistantMessage(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _changeFrame: null,
+
         // 'sentence' | 'all' | 'off'
         announce: config.announce ?? 'sentence',
         // Mirrors into the live region. Never bound to the visible body.

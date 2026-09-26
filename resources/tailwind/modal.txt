@@ -1410,6 +1410,7 @@ backdrop
 backdrop)
 background)
 background,
+background.
 bag
 bar
 bar's
@@ -1716,6 +1717,7 @@ could
 cover
 coverage
 covering
+covers.
 cramped
 cursor-pointer
 cursor.
@@ -1737,6 +1739,7 @@ data-orientation="{{
 data-stack-below="{{
 data-wk-modal-body
 data-wk-modal-header
+data-wk-modal-panel
 data-wk-prose-skip
 data-wk-title-id
 data-wk-title-id="{{
@@ -1833,6 +1836,7 @@ drawer
 drawer/close.blade.php.
 drawn
 draws
+dresses
 drift
 drifted
 drifts
@@ -2270,6 +2274,7 @@ last
 last:border-b-0
 last:border-e-0
 later
+layer
 layered
 layout
 layout,
@@ -2732,6 +2737,7 @@ reach.
 reach:
 reachable
 reaches
+reaching
 reacts
 read
 reader
@@ -3438,11 +3444,11 @@ x-on:click="dismissByReader('close-button')"
 x-on:click="handleBackdropClick()"
 x-on:click="show()"
 x-on:click="show()">
-x-on:keydown.escape.window="open
+x-on:keydown.escape.window="isOpen
 x-ref="panel"
 x-show/x-teleport
 x-show="dismissible"
-x-show="open"
+x-show="isOpen"
 x-teleport="#wk-overlay-root">
 x-transition:enter-end="opacity-100
 x-transition:enter-end="opacity-100"

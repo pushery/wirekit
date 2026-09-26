@@ -153,7 +153,7 @@ $valueArr),
 7h10"/></svg>
 8.95a.5.5
 :
-:aria-expanded="open"
+:aria-expanded="isOpen"
 :aria-label="{{
 :disabled="!canApply()"
 :key="f.key">
@@ -202,7 +202,7 @@ $valueArr),
 @click="apply()"
 @click="clearAll()"
 @click="close(true)"
-@click="open
+@click="isOpen
 @click="openEdit(i)"
 @click="remove(i)"
 @endif
@@ -941,7 +941,7 @@ x-model="draft.field"
 x-model="draft.op"
 x-model="draft.value"
 x-on:click.outside="close()"
-x-on:keydown.escape.window="open
+x-on:keydown.escape.window="isOpen
 x-on:keydown.tab="tabWithinPanel($event)"
 x-ref="fieldSelect"
 x-ref="model"
@@ -949,7 +949,7 @@ x-ref="panel"
 x-ref="search"
 x-ref="trigger"
 x-show="filters.length
-x-show="open"
+x-show="isOpen"
 x-teleport="#wk-overlay-root">
 x-text="chipText(filter)"></span>
 x-text="editIndex

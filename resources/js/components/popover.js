@@ -12,6 +12,7 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  */
 import { position } from '../utils/floating.js';
 import { createFocusTrap } from '../utils/focus-trap.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * @param {Object} config - Popover configuration from Blade
@@ -19,13 +20,13 @@ import { createFocusTrap } from '../utils/focus-trap.js';
  * @param {number} config.offset - Distance from trigger in px (default: 8)
  */
 export default function wirekitPopover(config = {}) {
-    return {
+    return withOpenAlias({
         /** Move the popup ARIA onto the trigger's focusable child. */
         initTriggerAria() {
             applyTriggerAria(this.$el, this.$watch.bind(this), { missingTriggerWarning: '[wirekit] popover: trigger slot has no focusable element (button/link). Keyboard users cannot open the popover. Wrap the trigger content in a <button>.' });
         },
 
-        open: false,
+        isOpen: false,
         _placement: config.placement || 'bottom',
         _offset: config.offset ?? 8,
         _trap: null,
@@ -64,15 +65,15 @@ export default function wirekitPopover(config = {}) {
          * Toggle popover open/close.
          */
         toggle() {
-            this.open ? this.close() : this.show();
+            this.isOpen ? this.close() : this.show();
         },
 
         /**
          * Show popover, position via Floating UI, activate focus trap.
          */
         async show() {
-            if (this.open) return;
-            this.open = true;
+            if (this.isOpen) return;
+            this.isOpen = true;
             this._coordination?.announce();
 
             await this.$nextTick();
@@ -153,8 +154,8 @@ export default function wirekitPopover(config = {}) {
          * Deliberately does NOT call deactivate() again — this runs from inside it.
          */
         _closeFromTrap() {
-            if (!this.open) return;
-            this.open = false;
+            if (!this.isOpen) return;
+            this.isOpen = false;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
             this._trap = null;
@@ -164,7 +165,7 @@ export default function wirekitPopover(config = {}) {
          * Close popover, deactivate the focus trap, and hand focus back.
          */
         close() {
-            if (!this.open) return;
+            if (!this.isOpen) return;
 
             // WAS THE READER INSIDE THE PANEL? The answer has to be taken BEFORE anything
             // hides, and it decides whether focus is ours to move.
@@ -185,7 +186,7 @@ export default function wirekitPopover(config = {}) {
             const panel = this.$refs.panel;
             const hadFocus = Boolean(panel && panel.contains(document.activeElement));
 
-            this.open = false;
+            this.isOpen = false;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
 
@@ -220,8 +221,8 @@ export default function wirekitPopover(config = {}) {
          * Force close without transitions — SPA navigation cleanup.
          */
         _forceClose() {
-            if (!this.open) return;
-            this.open = false;
+            if (!this.isOpen) return;
+            this.isOpen = false;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
 
@@ -230,5 +231,5 @@ export default function wirekitPopover(config = {}) {
                 this._trap = null;
             }
         },
-    };
+    });
 }

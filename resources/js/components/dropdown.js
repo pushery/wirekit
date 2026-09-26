@@ -8,6 +8,7 @@ import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { isRendered } from '../utils/rendered.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * @param {Object} config - Dropdown configuration from Blade
@@ -15,8 +16,8 @@ import { isRendered } from '../utils/rendered.js';
  * @param {number} config.offset - Distance between trigger and panel in px
  */
 export default function wirekitDropdown(config = {}) {
-    return {
-        open: false,
+    return withOpenAlias({
+        isOpen: false,
         // Read by the panel through the scope chain, which survives its teleport.
         panelId: config.panelId || '',
         _placement: config.placement || 'bottom-start',
@@ -74,7 +75,7 @@ export default function wirekitDropdown(config = {}) {
             this.$nextTick(() => this._applyPanelId());
 
             // Cleanup on Livewire SPA navigation
-            this._navCleanup = () => { this.open = false; };
+            this._navCleanup = () => { this.isOpen = false; };
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
 
             // Sibling dropdowns close when this one opens. Two panels standing
@@ -101,6 +102,22 @@ export default function wirekitDropdown(config = {}) {
             }
         },
 
+        /**
+         * The trigger's root element, the one the panel is placed against.
+         *
+         * `$refs.trigger` first, then the DOM marker, and the marker is the one that answers. The
+         * trigger declares its own `x-data`, so it is a scope root, and an `x-ref` registers into
+         * the closest one: the ref belongs to the trigger's scope, not to this component's. This
+         * component's methods read their own scope, so they see the panel's ref and not this one,
+         * whichever element called them.
+         *
+         * `$root`, not `$el`: `close()` also runs from a handler on the panel, and the panel does
+         * not contain the trigger.
+         */
+        _triggerElement() {
+            return this.$refs.trigger ?? this.$root?.querySelector('[data-wk-dropdown-trigger]') ?? null;
+        },
+
         destroy() {
             this._resetTypeAhead();
             this._coordination?.stop();
@@ -117,7 +134,7 @@ export default function wirekitDropdown(config = {}) {
          * Toggle dropdown open/close state.
          */
         toggle() {
-            if (this.open) {
+            if (this.isOpen) {
                 this.close();
             } else {
                 this.show();
@@ -128,13 +145,13 @@ export default function wirekitDropdown(config = {}) {
          * Open dropdown and position panel relative to trigger.
          */
         async show() {
-            this.open = true;
+            this.isOpen = true;
             this._coordination?.announce();
 
             // Wait for Alpine to render the panel, then position it
             await this.$nextTick();
 
-            const trigger = this.$refs.trigger;
+            const trigger = this._triggerElement();
             const panel = this.$refs.panel;
 
             if (trigger && panel) {
@@ -176,7 +193,7 @@ export default function wirekitDropdown(config = {}) {
          * and overlay.js (modal / drawer / alert-dialog).
          */
         close() {
-            if (!this.open) return;
+            if (!this.isOpen) return;
 
             // Forget what was typed. A buffer that survives a close would make the next
             // opening search for a word the reader typed into a menu that is gone, and a
@@ -213,8 +230,7 @@ export default function wirekitDropdown(config = {}) {
             // would return null and Tab would silently stop returning focus. `$root` is the
             // x-data element whichever child dispatched the event. Written as `$el` first and
             // caught by the guard that exists because this class has shipped twice before.
-            const triggerRoot = this.$refs.trigger
-                ?? this.$root?.querySelector('[data-wk-dropdown-trigger]');
+            const triggerRoot = this._triggerElement();
             const target = triggerRoot?.querySelector('button, [role="button"], a')
                 ?? triggerRoot;
 
@@ -228,7 +244,7 @@ export default function wirekitDropdown(config = {}) {
                 target?.focus({ preventScroll: true });
             }
 
-            this.open = false;
+            this.isOpen = false;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
         },
@@ -238,7 +254,7 @@ export default function wirekitDropdown(config = {}) {
          * Implements WAI-ARIA menu keyboard pattern.
          */
         handleKeydown(e) {
-            if (!this.open) return;
+            if (!this.isOpen) return;
 
             const items = this._getItems();
             if (!items.length) return;
@@ -434,5 +450,5 @@ export default function wirekitDropdown(config = {}) {
                 // arrow key landing on it left focus where it was.
                 .filter(isRendered);
         },
-    };
+    });
 }

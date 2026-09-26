@@ -3916,7 +3916,7 @@ x-show:
 x-show="!
 x-show="copied"
 x-show="hasValue"
-x-show="open"
+x-show="isOpen"
 x-teleport="#wk-overlay-root">
 x-text="announcement"></div>
 x-text="confirmAllowed

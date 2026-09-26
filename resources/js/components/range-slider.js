@@ -11,10 +11,22 @@
  * @param {number} config.minValue - Initial minimum selection
  * @param {number} config.maxValue - Initial maximum selection
  * @param {string} config.name - Input name for form submission
+ *
+ * Lifecycle resources held on `this`:
+ *   - _resizes (ResizeObserver) on the track and both badges, disconnected in destroy()
+ *     and null-guarded in its callback against a notification that arrives after it.
+ *   - _dragMove, _dragEnd (document listeners) during a drag, released in destroy().
+ *   - _measureFrame (a frame-coalesced measurement), canceled in destroy().
  */
 import { frameCoalesce } from '../utils/frame-coalesce.js';
 export default function wirekitRangeSlider(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _dragRect: null,
+        _measureFrame: null,
+        _resizes: null,
+
         minVal: config.minValue ?? config.min ?? 0,
         maxVal: config.maxValue ?? config.max ?? 100,
         _min: config.min ?? 0,
@@ -331,8 +343,42 @@ export default function wirekitRangeSlider(config = {}) {
          * would be the optimistic layer's worst case: a write nobody asked for, on a
          * surface that no longer exists to roll it back.
          */
+        /**
+         * Watch the track and both badges.
+         *
+         * Whether the badges merge compares their widths with the track's, and `x-effect` runs
+         * that comparison again only when a value moves. A web font that lands after the first
+         * measurement widens the badges, and a column that narrows shortens the track, with no
+         * value moving in either case, so the badges overlapped until the reader touched a thumb.
+         * The individual badges stay in layout when merged (opacity, not display), so a merge
+         * changes no size watched here and cannot answer itself.
+         */
+        init() {
+            if (typeof ResizeObserver !== 'function') {
+                return;
+            }
+
+            const watched = [this.$refs?.track, this.$refs?.minBubble, this.$refs?.maxBubble].filter(Boolean);
+
+            if (watched.length === 0) {
+                return;
+            }
+
+            this._resizes = new ResizeObserver(() => {
+                // A notification queued before destroy() can still arrive after it.
+                if (! this._resizes) {
+                    return;
+                }
+
+                this.remeasure();
+            });
+            watched.forEach((el) => this._resizes.observe(el));
+        },
+
         destroy() {
             this._releaseDragListeners();
+            this._resizes?.disconnect();
+            this._resizes = null;
             this._measureFrame?.cancel();
             this._measureFrame = null;
             this._dragging = null;

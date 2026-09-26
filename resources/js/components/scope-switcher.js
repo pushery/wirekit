@@ -22,6 +22,10 @@ import { pluralize } from '../utils/plural.js';
 
 export default function wirekitScopeSwitcher(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _observer: null,
+
         /** Current query, bound to the search input. */
         query: '',
 

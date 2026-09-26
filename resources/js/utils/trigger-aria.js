@@ -5,7 +5,7 @@
  * interactive role — on a generic `<div>` they fail axe-core's
  * aria-allowed-attr rule — and the wrapper both popover and hover-card render
  * is a generic element. So the attributes are applied to the first focusable
- * descendant, and kept in step with `open`.
+ * descendant, and kept in step with `isOpen`.
  *
  * Both components did this with an inline IIFE in `x-init`. That shape cannot
  * be parsed by Alpine's CSP build (an arrow function, a `const`, a `return`, and
@@ -70,7 +70,7 @@ export function applyTriggerAria(el, watch, options = {}) {
     }
 
     if (typeof watch === 'function') {
-        watch('open', (value) => {
+        watch('isOpen', (value) => {
             interactive.setAttribute('aria-expanded', value ? 'true' : 'false');
         });
     }

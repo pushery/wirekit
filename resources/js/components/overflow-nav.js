@@ -19,8 +19,16 @@
  * - `x-show` hides at once but shows on the next animation frame, so an entry shown through state
  *   and measured right after would still read as hidden. The inline styles `fit()` sets are what the
  *   measurement reads.
- * - Only a change of WIDTH asks for a new measurement, together with entries being added or removed.
- *   The height changes whenever an entry moves into the menu, and answering it would loop.
+ * - Only a change of WIDTH asks for a new measurement, of the row or of an entry, together with
+ *   entries being added or removed. The height changes whenever an entry moves into the menu, and
+ *   answering it would loop. The entries are watched as well as the row because an entry's width
+ *   changes with its label while the row keeps its own: a web font that lands after the first
+ *   measurement does exactly that, and the current entry, set in a heavier weight, can land in a
+ *   later batch than the rest.
+ *
+ * Lifecycle resources held on `this`: _resizes (ResizeObserver on the row and every entry) and
+ * _changes (MutationObserver on the row's children), both disconnected in destroy() and
+ * null-guarded in their callbacks; _pendingFrame (a scheduled measurement), canceled there.
  */
 
 /**
@@ -104,6 +112,16 @@ function normalizeLines(value) {
     return Number.isFinite(lines) && lines > 0 ? lines : 2;
 }
 
+/** The row's entries, in order, without the menu's button. */
+function entriesOf(row) {
+    return Array.from(row.children).filter((el) => el.hasAttribute('data-wk-overflow-index'));
+}
+
+/** Whether two lists of indexes are the same. */
+function sameIndexes(a, b) {
+    return a.length === b.length && a.every((index, position) => index === b[position]);
+}
+
 /** An element's width with its horizontal margins, the room it takes in a flex row. */
 function outerWidth(el) {
     const style = getComputedStyle(el);
@@ -121,7 +139,9 @@ export default function wirekitOverflowNav(options = {}) {
         _lines: normalizeLines(options.lines),
         _moreOne: String(options.moreOne || ''),
         _moreMany: String(options.moreMany || ''),
-        _rowWidth: null,
+        // The width each observed element last reported, so a notification about height alone
+        // asks for nothing.
+        _widths: null,
         _pendingFrame: null,
         _resizes: null,
         _changes: null,
@@ -134,19 +154,56 @@ export default function wirekitOverflowNav(options = {}) {
             }
 
             if (typeof ResizeObserver === 'function') {
+                this._widths = new WeakMap();
                 this._resizes = new ResizeObserver((entries) => {
-                    const width = entries[0]?.contentRect?.width;
+                    // A notification queued before destroy() can still arrive after it.
+                    if (! this._resizes) {
+                        return;
+                    }
 
-                    if (width !== this._rowWidth) {
-                        this._rowWidth = width;
+                    let changed = false;
+
+                    entries.forEach((entry) => {
+                        const width = entry.contentRect?.width;
+
+                        if (this._widths.get(entry.target) !== width) {
+                            this._widths.set(entry.target, width);
+                            changed = true;
+                        }
+                    });
+
+                    if (changed) {
                         this._schedule();
                     }
                 });
                 this._resizes.observe(row);
+                entriesOf(row).forEach((el) => this._resizes.observe(el));
             }
 
             if (typeof MutationObserver === 'function') {
-                this._changes = new MutationObserver(() => this._schedule());
+                this._changes = new MutationObserver((records) => {
+                    // A notification queued before destroy() can still arrive after it.
+                    if (! this._changes) {
+                        return;
+                    }
+
+                    // An entry a morph adds is watched like the first ones, and one it removes is
+                    // let go.
+                    records.forEach((record) => {
+                        Array.from(record.addedNodes || []).forEach((node) => {
+                            if (node.nodeType === 1 && node.hasAttribute('data-wk-overflow-index')) {
+                                this._resizes?.observe(node);
+                            }
+                        });
+                        Array.from(record.removedNodes || []).forEach((node) => {
+                            if (node.nodeType === 1) {
+                                this._resizes?.unobserve(node);
+                            }
+                        });
+                    });
+
+                    this._schedule();
+                });
                 this._changes.observe(row, { childList: true });
             }
 
@@ -158,6 +215,7 @@ export default function wirekitOverflowNav(options = {}) {
             this._changes?.disconnect();
             this._resizes = null;
             this._changes = null;
+            this._widths = null;
 
             if (this._pendingFrame !== null) {
                 cancelAnimationFrame(this._pendingFrame);
@@ -186,7 +244,7 @@ export default function wirekitOverflowNav(options = {}) {
             }
 
             const count = more.querySelector('[data-wk-overflow-count]');
-            const items = Array.from(row.children).filter((el) => el !== more && el.hasAttribute('data-wk-overflow-index'));
+            const items = entriesOf(row);
             const all = [...items, more];
             const displays = all.map((el) => el.style.display);
             const text = count ? count.textContent : '';
@@ -223,8 +281,14 @@ export default function wirekitOverflowNav(options = {}) {
                 count.textContent = text;
             }
 
-            this.overflowIndexes = overflowFor(measured)
+            const next = overflowFor(measured)
                 .map((position) => Number(items[position].dataset.wkOverflowIndex));
+
+            // Written only when it changed, so a measurement that confirms the last one re-runs
+            // nothing that reads it.
+            if (! sameIndexes(next, this.overflowIndexes)) {
+                this.overflowIndexes = next;
+            }
         },
 
         shownHere(index) {

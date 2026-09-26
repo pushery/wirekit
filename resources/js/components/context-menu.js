@@ -17,6 +17,7 @@ import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
 import { isRendered } from '../utils/rendered.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 // Long-press tuning. 500ms is the platform-conventional touch-hold threshold
 // (matches iOS/Android long-press); a 10px movement budget distinguishes a
@@ -40,8 +41,12 @@ const TAB_STOP = 'a[href], button:not([disabled]), input:not([disabled]), select
  * body never read it, so the doc described a channel that did not exist.
  */
 export default function wirekitContextMenu() {
-    return {
-        open: false,
+    return withOpenAlias({
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _onScroll: null,
+
+        isOpen: false,
         // NO `_focusIndex` HERE, AND ITS ABSENCE IS THE POINT. This component used to hold
         // the focused entry as a number and step it on every press, while `_getItems()` read
         // the list back from the DOM each time — so the number and the list could describe
@@ -73,7 +78,7 @@ export default function wirekitContextMenu() {
             // Release the placement observer whenever the menu closes, whichever way it closed.
             // Three separate places set `open` to false, so hooking one of them would leave an
             // observer alive on the other two — and a context menu opens and closes all day.
-            this.$watch('open', (isOpen) => {
+            this.$watch('isOpen', (isOpen) => {
                 if (isOpen) {
                     return;
                 }
@@ -102,7 +107,7 @@ export default function wirekitContextMenu() {
             // convention). In-panel scrolls (a long menu) keep working. Capture
             // catches every scroller; passive per perf-hygiene.
             this._onScroll = (e) => {
-                if (!this.open) return;
+                if (!this.isOpen) return;
                 const panel = this.$refs.panel;
                 if (panel && e.target instanceof Node && panel.contains(e.target)) return;
                 // Only a scroll that actually moved the trigger has stranded anything.
@@ -155,7 +160,7 @@ export default function wirekitContextMenu() {
 
             this._rememberAnchor();
 
-            this.open = true;
+            this.isOpen = true;
 
             await this.$nextTick();
 
@@ -206,7 +211,7 @@ export default function wirekitContextMenu() {
             });
 
             if (placement && typeof placement.stop === 'function') {
-                if (this.open) {
+                if (this.isOpen) {
                     this._stopRepair = placement.stop;
                 } else {
                     // Closed while the placement was in flight — its observer would outlive the
@@ -307,7 +312,7 @@ export default function wirekitContextMenu() {
             // shut. Without this return, each of those closed menus would run the focus
             // block below and the last one would win, pulling focus out of whatever the
             // reader just clicked.
-            if (!this.open) return;
+            if (!this.isOpen) return;
 
             // Was the reader inside the panel when it closed? The answer has to be taken
             // BEFORE anything hides, and it decides whether focus is ours to move.
@@ -336,7 +341,7 @@ export default function wirekitContextMenu() {
             // made on this tick, which would therefore accomplish nothing and leave focus
             // on <body> anyway. Moving focus out of the panel first means there is never a
             // moment where the focused element sits inside a subtree that is going away.
-            this.open = false;
+            this.isOpen = false;
         },
 
         /**
@@ -349,7 +354,7 @@ export default function wirekitContextMenu() {
          * either be pointless or would fight the element that is taking over.
          */
         _forceClose() {
-            this.open = false;
+            this.isOpen = false;
         },
 
         /**
@@ -437,7 +442,7 @@ export default function wirekitContextMenu() {
          * Handle keyboard navigation within the context menu.
          */
         handleKeydown(event) {
-            if (!this.open) return;
+            if (!this.isOpen) return;
 
             const items = this._getItems();
             if (!items.length) return;
@@ -512,7 +517,7 @@ export default function wirekitContextMenu() {
 
                         // NOT close(): focus has already been placed, and close() would take
                         // it straight back off the destination onto the trigger.
-                        this.open = false;
+                        this.isOpen = false;
                         break;
                     }
 
@@ -524,5 +529,5 @@ export default function wirekitContextMenu() {
                 }
             }
         },
-    };
+    });
 }

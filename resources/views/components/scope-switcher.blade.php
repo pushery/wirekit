@@ -259,11 +259,11 @@
         {{-- Reset from the popover's own state, not from an event.
              The overlay event vocabulary has show/close pairs for modal, drawer,
              alert-dialog and toast — the popover is not among them, so there is no
-             close event to listen for. `open` belongs to the popover's scope and is
+             close event to listen for. `isOpen` belongs to the popover's scope and is
              visible here through Alpine's scope inheritance, which survives the
              teleport, so watching it is both simpler and true whatever closed the
              panel: Escape, a click outside, or choosing a row. --}}
-        x-effect="syncOpen(open)"
+        x-effect="syncOpen(isOpen)"
     >
         {{-- Header. First focusable element in the panel, so the popover's focus trap lands
              here on open and a reader can type immediately. --}}

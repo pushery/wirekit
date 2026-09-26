@@ -18,6 +18,10 @@ import { prefersReducedMotion, watchReducedMotion } from '../utils/motion.js';
 import { pauseWhileHidden } from '../utils/page-visibility.js';
 export default function wirekitCarousel(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _visibility: null,
+
         current: 0,
         total: 0,
         autoplay: config.autoplay || false,

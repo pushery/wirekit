@@ -40,6 +40,11 @@
     // same mark at two widths — but a square app icon beside a wide wordmark is exactly
     // the case that needs its own value.
     'mobileLogoAspect' => null,
+    // How the browser fetches the logo images: `eager` or `lazy`. Eager by default, because a
+    // mark is almost always the first thing a page draws, above the fold; `lazy` suits one
+    // further down, such as a footer. Every image also decodes with `decoding="async"`, which
+    // keeps decoding the mark off the path that paints the rest of the page.
+    'logoLoading' => 'eager',
     'name' => null,
     // Where the mark links. `:href="false"` (or an empty string) renders NO link: the mark then
     // sits inside something that is already one, a rail's brand or a header's home link, where an
@@ -165,6 +170,10 @@
         ? WireKit::validateProp('brand', 'mobileBreakpoint', $mobileBreakpoint, ['sm', 'md', 'lg', 'xl'])
         : 'sm';
 
+    // Checked like the breakpoint: an unknown word throws in debug and falls back in production,
+    // rather than reaching the page as a `loading` value the browser ignores.
+    $wkLogoLoading = WireKit::validateProp('brand', 'logoLoading', (string) ($logoLoading ?? 'eager'), ['eager', 'lazy']);
+
     // Responsive show/hide classes resolved to FULL literal strings — never
     // `"{$resolvedBreakpoint}:hidden"`. Tailwind v4's content scanner reads the
     // raw template TEXT and cannot resolve a PHP variable, so an interpolated
@@ -214,28 +223,28 @@
              single element carrying both `{bp}:block` and `wk-dark-only` is a
              0,1,0 specificity tie decided by stylesheet load order (fragile).
              Splitting them onto the span vs the imgs keeps it deterministic. --}}
-        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
         <span class="hidden {{ $bpInlineFlex }} items-center">
-            <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
-            <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+            <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+            <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
         </span>
     @elseif($logo && $mobileLogo)
         {{-- Responsive logo swap: mobile-first wordmark below the breakpoint,
              full-width wordmark at + breakpoint. Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label handles the accessible name. --}}
-        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" aria-hidden="true" />
-        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="hidden {{ $wkLogoHeightClass }}w-auto {{ $bpBlock }}" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $mobileLogo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto {{ $bpHidden }}" style="{{ $wkMobileStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="hidden {{ $wkLogoHeightClass }}w-auto {{ $bpBlock }}" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
     @elseif($logo && $darkLogo)
         {{-- Mode-aware logo swap: light wordmark in light mode, dark wordmark
              under the `.dark` class (via the wk-light-only / wk-dark-only
              visibility pair in dist/wirekit.css). Both images carry the same
              accessibility shape (alt="" + aria-hidden="true") — the <a>'s
              aria-label / visible name handles the accessible name. --}}
-        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
-        <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="wk-light-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $darkLogo }}" alt="" class="wk-dark-only {{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
     @elseif($logo)
-        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" aria-hidden="true" />
+        <img data-wk-prose-skip src="{{ $logo }}" alt="" class="{{ $wkLogoHeightClass }}w-auto" style="{{ $wkLogoStyle }}" loading="{{ $wkLogoLoading }}" decoding="async" aria-hidden="true" />
     @endif
     @if($name)
         {{-- Same rule as the sidebar row and the profile row beside it: in a collapsed

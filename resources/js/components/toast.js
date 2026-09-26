@@ -65,6 +65,13 @@ export default function wirekitToast(config = {}) {
     };
 
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _eventName: null,
+        _scope: null,
+        _handler: null,
+        _livewireHandler: null,
+
         /** @type {Array<{id: number, title: string, message: string, variant: string, _timer: number|null}>} */
         toasts: [],
 

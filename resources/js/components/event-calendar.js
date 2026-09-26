@@ -78,6 +78,10 @@ export default function wirekitEventCalendar(config = {}) {
     const listFormat = new Intl.ListFormat(locale, { style: 'long', type: 'conjunction' });
 
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _visibility: null,
+
         events: Array.isArray(config.events) ? config.events.map((e) => ({ ...e })) : [],
         // Day-level markers (holidays / working days / notes) — a SEPARATE dimension
         // from timed events. `date` is parsed date-only at LOCAL midnight (slice to

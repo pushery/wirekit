@@ -3,7 +3,7 @@
 !!}</{{
 !!}{!!
 !==
-!open"
+!isOpen"
 "(opens
 "+3"
 "+7").
@@ -855,8 +855,8 @@ $x)`
 :active="$isStreaming"
 :active="$streaming"
 :alt="$speaker"
-:aria-expanded="open
-:class="open
+:aria-expanded="isOpen
+:class="isOpen
 :href="$citation['href']"
 :label',
 :label="$citation['label']"
@@ -4110,16 +4110,16 @@ x-cloak
 x-collapse
 x-collapse.
 x-data="wirekitAssistantMessage({{
+x-data="wirekitCollapsible({
 x-data="wirekitDismissible({
 x-data="wirekitPopover({
 x-data="wirekitTooltip({
-x-data="{
 x-init,
 x-init="initTriggerAria()"
-x-on:beforematch="open
+x-on:beforematch="isOpen
 x-on:click.outside="close()"
 x-on:click="dismiss()"
-x-on:click="open
+x-on:click="isOpen
 x-on:click="toggle()"
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
@@ -4135,7 +4135,7 @@ x-ref="panel"
 x-ref="tooltip"
 x-ref="trigger"
 x-show)
-x-show="open"
+x-show="isOpen"
 x-show="shown"
 x-teleport="#wk-overlay-root">
 x-teleport>`,
@@ -4150,7 +4150,7 @@ x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
-x-wk-findable.collapse="open"
+x-wk-findable.collapse="isOpen"
 xmlns="http://www.w3.org/2000/svg"
 yet.
 you
@@ -4172,7 +4172,6 @@ zoom,
 {{--
 ||
 }
-}"
 })"
 },
 };

@@ -28,6 +28,7 @@
  */
 import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * What counts as a tab stop, for the two edges of the teleported panel.
@@ -64,7 +65,7 @@ function isTabStop(el) {
 }
 
 export default function wirekitNotificationCenter(config = {}) {
-    return {
+    return withOpenAlias({
         // The summary's middle phrase is translated server-side and travels in,
         // because the expression that used to build the line lived in the
         // template and interpolated it there.
@@ -96,7 +97,7 @@ export default function wirekitNotificationCenter(config = {}) {
         items: Array.isArray(config.items) ? config.items.map((i) => ({ ...i })) : [],
         groupBy: config.groupBy || 'none',
         activeFilter: 'all',
-        open: !!config.open, // start open (inline embeds, docs demos)
+        isOpen: !!config.open, // start open (inline embeds, docs demos)
         _rt: null,
         _onScroll: null,
         // Disconnects the observer that puts the placement back after a framework update erases
@@ -123,7 +124,7 @@ export default function wirekitNotificationCenter(config = {}) {
             // Same pattern as the navigation-menu flyout.
             if (typeof window !== 'undefined') {
                 this._onScroll = (e) => {
-                    if (!this.open) return;
+                    if (!this.isOpen) return;
                     const panel = this.$refs.panel;
                     if (panel && e.target instanceof Node && panel.contains(e.target)) return;
                     // Only a scroll that moved the bell has stranded anything — utils/scroll-anchor.js.
@@ -132,12 +133,12 @@ export default function wirekitNotificationCenter(config = {}) {
                 };
                 window.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
                 // A resize invalidates the one-shot fixed anchor the same way.
-                this._onResize = () => { if (this.open) this.close(); };
+                this._onResize = () => { if (this.isOpen) this.close(); };
                 window.addEventListener('resize', this._onResize, { passive: true });
             }
             // Demos / inline embeds can start open — anchor the teleported panel
             // once it's in the DOM.
-            if (this.open) this.$nextTick(() => this._anchor());
+            if (this.isOpen) this.$nextTick(() => this._anchor());
         },
         destroy() {
             this._stopRepair?.();
@@ -188,8 +189,8 @@ export default function wirekitNotificationCenter(config = {}) {
 
         // ── Panel control ────────────────────────────────────────────────
         toggle() {
-            this.open = !this.open;
-            if (this.open) {
+            this.isOpen = !this.isOpen;
+            if (this.isOpen) {
                 this._anchorAt = anchorSnapshot(this.$refs.bell);
                 this.$nextTick(async () => {
                     await this._anchor();
@@ -199,7 +200,7 @@ export default function wirekitNotificationCenter(config = {}) {
             }
         },
         close(restoreFocus = false) {
-            this.open = false;
+            this.isOpen = false;
             this._stopRepair?.();
             this._stopRepair = null;
 
@@ -340,7 +341,7 @@ export default function wirekitNotificationCenter(config = {}) {
                 });
 
                 if (placement && typeof placement.stop === 'function') {
-                    if (this.open) {
+                    if (this.isOpen) {
                         this._stopRepair = placement.stop;
                     } else {
                         placement.stop();
@@ -411,5 +412,5 @@ export default function wirekitNotificationCenter(config = {}) {
                 this.$refs.model.dispatchEvent(new Event('input', { bubbles: true }));
             }
         },
-    };
+    });
 }

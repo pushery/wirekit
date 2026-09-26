@@ -36,6 +36,11 @@
     // page number, so the list starts at its first page.
     'perPageOptions' => null,
     'perPageName' => 'per_page',
+    // Draw the summary on a list that fits one page too: seven results say there are seven, the
+    // same way thirty do. Without it such a list renders nothing, as it always has. An empty
+    // list still renders nothing, since its own empty state speaks, and a paginator that does
+    // not know its total has no summary to give.
+    'summaryOnSinglePage' => false,
     'scope' => null,
 ])
 
@@ -75,7 +80,15 @@
         ? $paginator->total() > 0
         : (method_exists($paginator, 'isNotEmpty') && $paginator->isNotEmpty()));
 
-    if (! $paginator || ! method_exists($paginator, 'hasPages') || (! $paginator->hasPages() && ! ($offersPerPage && $hasRows))) {
+    // An unbound `summary-on-single-page="false"` arrives as the string "false", which is truthy.
+    $summaryOnSinglePage = BooleanProp::from($summaryOnSinglePage, false);
+
+    // The summary alone: one page, no choice of size, rows, and a paginator that knows its total.
+    $summaryAlone = $summaryOnSinglePage && $hasRows && ! $offersPerPage
+        && method_exists($paginator, 'hasPages') && ! $paginator->hasPages()
+        && method_exists($paginator, 'total');
+
+    if (! $paginator || ! method_exists($paginator, 'hasPages') || (! $paginator->hasPages() && ! ($offersPerPage && $hasRows) && ! $summaryAlone)) {
         return;
     }
 
@@ -312,54 +325,66 @@
     }
 @endphp
 
+{{-- ONE translatable sentence, not four fragments. The earlier
+     form concatenated the fragments 'Showing' / 'to' / 'of' / 'results'
+     (deliberately written WITHOUT the translation-helper syntax here, so a
+     naive grep of this file for translation keys does not pick up four
+     phantom keys that never render)
+     around the numbers, which handed a translator four context-free words
+     ("to" is untranslatable without knowing it sits between two numbers)
+     and locked the output into English word order — a locale that puts the
+     total first simply could not be expressed.
+
+     The numbers keep their emphasis by passing pre-built markup as the
+     placeholder values, so the translator moves the placeholders freely
+     and the styling travels with them. {!! !!} is required for that, and
+     is safe here: every value is an integer straight off the paginator,
+     never developer input, and each is escaped before being wrapped. --}}
+@php
+    $summary = null;
+
+    if (method_exists($paginator, 'total')) {
+        $emphasize = fn (int $value): string => '<span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">'.e((string) $value).'</span>';
+
+        // The markup is substituted AFTER translation, never passed through
+        // it. Laravel's translator also honors :Placeholder and :PLACEHOLDER
+        // as case variants, applying ucfirst / strtoupper to the value — and
+        // an uppercased value here would wreck the markup, since Tailwind
+        // classes and CSS custom-property names are case-sensitive. A
+        // translator writing ":TOTAL" for emphasis would silently lose the
+        // number styling. All-caps sentinels are immune: ucfirst and
+        // strtoupper both leave them unchanged, whichever case the
+        // translation uses.
+        $summary = __('wirekit::Showing :first to :last of :total results', [
+            'first' => 'WKPAGEFIRST',
+            'last' => 'WKPAGELAST',
+            'total' => 'WKPAGETOTAL',
+        ]);
+
+        $summary = str_replace(
+            ['WKPAGEFIRST', 'WKPAGELAST', 'WKPAGETOTAL'],
+            [
+                $emphasize($paginator->firstItem() ?? 0),
+                $emphasize($paginator->lastItem() ?? 0),
+                $emphasize($paginator->total()),
+            ],
+            $summary,
+        );
+    }
+@endphp
+
+@if($summaryAlone)
+    {{-- Everything fits one page, no page size is on offer, and the count was asked for: the
+         summary alone. Not a navigation landmark, because there is nothing here to navigate. --}}
+    <div {{ $attributes->class([$navClasses]) }}>
+        <div class="text-[color:var(--color-wk-text-muted)]">
+            {!! $summary !!}
+        </div>
+    </div>
+    @php return; @endphp
+@endif
+
 <nav role="navigation" aria-label="{{ $navLabel }}" {{ $attributes->class([$navClasses]) }}>
-    {{-- ONE translatable sentence, not four fragments. The earlier
-         form concatenated the fragments 'Showing' / 'to' / 'of' / 'results'
-         (deliberately written WITHOUT the translation-helper syntax here, so a
-         naive grep of this file for translation keys does not pick up four
-         phantom keys that never render)
-         around the numbers, which handed a translator four context-free words
-         ("to" is untranslatable without knowing it sits between two numbers)
-         and locked the output into English word order — a locale that puts the
-         total first simply could not be expressed.
-
-         The numbers keep their emphasis by passing pre-built markup as the
-         placeholder values, so the translator moves the placeholders freely
-         and the styling travels with them. {!! !!} is required for that, and
-         is safe here: every value is an integer straight off the paginator,
-         never developer input, and each is escaped before being wrapped. --}}
-    @php
-        $summary = null;
-
-        if (method_exists($paginator, 'total')) {
-            $emphasize = fn (int $value): string => '<span class="font-[number:var(--font-wk-heading-weight)] text-[color:var(--color-wk-text)]">'.e((string) $value).'</span>';
-
-            // The markup is substituted AFTER translation, never passed through
-            // it. Laravel's translator also honors :Placeholder and :PLACEHOLDER
-            // as case variants, applying ucfirst / strtoupper to the value — and
-            // an uppercased value here would wreck the markup, since Tailwind
-            // classes and CSS custom-property names are case-sensitive. A
-            // translator writing ":TOTAL" for emphasis would silently lose the
-            // number styling. All-caps sentinels are immune: ucfirst and
-            // strtoupper both leave them unchanged, whichever case the
-            // translation uses.
-            $summary = __('wirekit::Showing :first to :last of :total results', [
-                'first' => 'WKPAGEFIRST',
-                'last' => 'WKPAGELAST',
-                'total' => 'WKPAGETOTAL',
-            ]);
-
-            $summary = str_replace(
-                ['WKPAGEFIRST', 'WKPAGELAST', 'WKPAGETOTAL'],
-                [
-                    $emphasize($paginator->firstItem() ?? 0),
-                    $emphasize($paginator->lastItem() ?? 0),
-                    $emphasize($paginator->total()),
-                ],
-                $summary,
-            );
-        }
-    @endphp
 
     @if($singlePage)
         {{-- Everything fits one page, and a choice of page size is on offer: the summary and the

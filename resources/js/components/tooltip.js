@@ -5,6 +5,7 @@
  * Positioning via Floating UI with auto flip/shift.
  */
 import { position } from '../utils/floating.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * @param {Object} config - Tooltip configuration from Blade
@@ -14,8 +15,8 @@ import { position } from '../utils/floating.js';
  * @param {number} config.delayHide - Delay before hiding on mouseleave (ms)
  */
 export default function wirekitTooltip(config = {}) {
-    return {
-        open: false,
+    return withOpenAlias({
+        isOpen: false,
         // `||` is CORRECT here — placement is a string enum and '' is not a valid
         // placement, so there is no falsy-but-legitimate value to preserve.
         _placement: config.placement || 'top',
@@ -113,7 +114,7 @@ export default function wirekitTooltip(config = {}) {
             // cancel the pending hide (the line above) and nothing else; arming a
             // second show timer there would only fire into a `show()` that returns at
             // its first line. Same shape as the hover card, for the same reason.
-            if (! this.open) {
+            if (! this.isOpen) {
                 this._showTimer = setTimeout(() => this.show(), this._delayShow);
             }
         },
@@ -188,7 +189,7 @@ export default function wirekitTooltip(config = {}) {
             if (e.pointerType !== 'touch') return;
             clearTimeout(this._longPressTimer);
 
-            if (this.open) {
+            if (this.isOpen) {
                 // Auto-dismiss tooltip after 1.5 seconds on touch
                 this._autoDismissTimer = setTimeout(() => this.close(), 1500);
             }
@@ -245,7 +246,7 @@ export default function wirekitTooltip(config = {}) {
         },
 
         async show() {
-            if (this.open) return;
+            if (this.isOpen) return;
 
             // Checked HERE as well as in the handlers, because show() is public:
             // it is reachable from a call site that dispatches it directly, and a
@@ -274,7 +275,7 @@ export default function wirekitTooltip(config = {}) {
                 this._inheritThemeVars(this.$refs.tooltip);
             }
 
-            this.open = true;
+            this.isOpen = true;
 
             await this.$nextTick();
 
@@ -336,7 +337,7 @@ export default function wirekitTooltip(config = {}) {
                 });
 
                 if (placement && typeof placement.stop === 'function') {
-                    if (this.open) {
+                    if (this.isOpen) {
                         this._stopRepair = placement.stop;
                     } else {
                         // Hidden while the placement was in flight — its observer would outlive
@@ -383,7 +384,7 @@ export default function wirekitTooltip(config = {}) {
          * Hide tooltip and clear all pending timers.
          */
         close() {
-            this.open = false;
+            this.isOpen = false;
             this._stopRepair?.();
             this._stopRepair = null;
             this._clearAllTimers();
@@ -403,10 +404,10 @@ export default function wirekitTooltip(config = {}) {
          * Force close — used during SPA cleanup.
          */
         _forceClose() {
-            this.open = false;
+            this.isOpen = false;
             this._stopRepair?.();
             this._stopRepair = null;
             this._clearAllTimers();
         },
-    };
+    });
 }

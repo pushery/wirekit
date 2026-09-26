@@ -26,6 +26,10 @@ import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.j
  */
 export default function wirekitAppRail(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _onViewportChange: null,
+
         expanded: config.expanded === true,
 
         /**

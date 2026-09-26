@@ -247,6 +247,19 @@ return [
         'font_scale_property' => '--font-scale-wk',
     ],
 
+    /*
+     * Prop defaults and class overrides, one entry per component.
+     *
+     * A key with a dot names a sub-component ('card.header', 'dropdown.panel'), and under that
+     * key only `classes` is read. A sub-component's prop default is read through the dotted
+     * path, `config('wirekit.components.dropdown.panel.width')`, one segment at a time, so it
+     * belongs nested under its parent:
+     *
+     *     'dropdown' => ['panel' => ['width' => 'trigger']],
+     *
+     * A prop written under 'dropdown.panel' is never read. `WireKit::defaults()` takes either
+     * form and writes each value where it is read.
+     */
     'components' => [
         // Form components
         'button' => ['intent' => 'primary', 'surface' => 'filled', 'size' => 'md'],

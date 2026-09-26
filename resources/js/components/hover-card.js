@@ -33,6 +33,7 @@ import { applyTriggerAria } from '../utils/trigger-aria.js';
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/
  */
 import { position } from '../utils/floating.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * What counts as focusable inside the card. Same selector navigation-menu's
@@ -49,13 +50,13 @@ const CARD_FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), 
  * @param {number} config.delayHide - Delay before hiding (ms, default: 200)
  */
 export default function wirekitHoverCard(config = {}) {
-    return {
+    return withOpenAlias({
         /** Move the popup ARIA onto the trigger's focusable child. */
         initTriggerAria() {
             applyTriggerAria(this.$el, this.$watch.bind(this), {});
         },
 
-        open: false,
+        isOpen: false,
         _placement: config.placement || 'bottom',
         _offset: config.offset ?? 8,
         _delayShow: config.delayShow ?? 300,
@@ -103,7 +104,7 @@ export default function wirekitHoverCard(config = {}) {
          */
         mouseenter() {
             clearTimeout(this._hideTimer);
-            if (!this.open) {
+            if (!this.isOpen) {
                 this._showTimer = setTimeout(() => this.show(), this._delayShow);
             }
         },
@@ -236,7 +237,7 @@ export default function wirekitHoverCard(config = {}) {
          * looks like it sits, and the panel is the part that moved.
          */
         tabFromTrigger(event) {
-            if (! this.open || event.shiftKey) return;
+            if (! this.isOpen || event.shiftKey) return;
 
             const first = this._cardFocusables()[0];
 
@@ -323,8 +324,8 @@ export default function wirekitHoverCard(config = {}) {
          * Show hover card and position via Floating UI.
          */
         async show() {
-            if (this.open) return;
-            this.open = true;
+            if (this.isOpen) return;
+            this.isOpen = true;
             this._coordination?.announce();
 
             await this.$nextTick();
@@ -363,7 +364,7 @@ export default function wirekitHoverCard(config = {}) {
                 });
 
                 if (placement && typeof placement.stop === 'function') {
-                    if (this.open) {
+                    if (this.isOpen) {
                         this._stopRepair = placement.stop;
                     } else {
                         // Closed while the placement was in flight — its observer would outlive
@@ -378,7 +379,7 @@ export default function wirekitHoverCard(config = {}) {
          * Hide hover card.
          */
         close() {
-            this.open = false;
+            this.isOpen = false;
             clearTimeout(this._showTimer);
             clearTimeout(this._hideTimer);
             this._stopRepair?.();
@@ -389,11 +390,11 @@ export default function wirekitHoverCard(config = {}) {
          * Force close — used during SPA cleanup.
          */
         _forceClose() {
-            this.open = false;
+            this.isOpen = false;
             clearTimeout(this._showTimer);
             clearTimeout(this._hideTimer);
             this._stopRepair?.();
             this._stopRepair = null;
         },
-    };
+    });
 }

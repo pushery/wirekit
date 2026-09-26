@@ -96,6 +96,11 @@ function sweepStaleCharts() {
 
 export default function wirekitChartJs(config) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _motionCleanup: null,
+        _wireStreamHandler: null,
+
         chart: null,
         _navCleanup: null,
         _darkModeObserver: null,

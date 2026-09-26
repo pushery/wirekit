@@ -1,4 +1,5 @@
 import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * Sidebar disclosure — the folding section behind both `sidebar.group` and
@@ -12,21 +13,28 @@ import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.j
  * there and the click did nothing.
  *
  * @param {Object}       config
- * @param {boolean}      [config.open]     state on a first visit, before storage
- * @param {string|null}  [config.persist]  localStorage key; null keeps it ephemeral
+ * @param {boolean}      [config.open]       state on a first visit, before storage
+ * @param {string|null}  [config.persist]    localStorage key; null keeps it ephemeral
+ * @param {boolean}      [config.forceOpen]  open on every load, whatever storage says; a fold
+ *                                           still holds for the rest of the visit
  */
 export default function wirekitSidebarDisclosure(config = {}) {
-    return {
-        open: config.open === true,
+    return withOpenAlias({
+        isOpen: config.open === true || config.forceOpen === true,
         _persistKey: config.persist || null,
+        _forceOpen: config.forceOpen === true,
 
         init() {
-            this.open = readPersistedFlag(this._persistKey, this.open);
+            // A forced section opens on every load, so the group that holds the current page shows
+            // where the reader is even after they folded it on an earlier visit. Otherwise a stored
+            // state wins over the seed, as it always has. A fold is still written, and holds for
+            // the rest of this visit.
+            this.isOpen = this._forceOpen || readPersistedFlag(this._persistKey, this.isOpen);
         },
 
         toggle() {
-            this.open = ! this.open;
-            writePersistedFlag(this._persistKey, this.open);
+            this.isOpen = ! this.isOpen;
+            writePersistedFlag(this._persistKey, this.isOpen);
         },
 
         /**
@@ -52,10 +60,10 @@ export default function wirekitSidebarDisclosure(config = {}) {
          * re-run this.
          */
         childrenVisible() {
-            const isOpen = this.open === true;
+            const isOpen = this.isOpen === true;
             const railFolded = 'collapsed' in this && this.collapsed === true;
 
             return isOpen || railFolded;
         },
-    };
+    });
 }

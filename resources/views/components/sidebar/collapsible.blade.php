@@ -8,6 +8,10 @@
     // Optional localStorage key. When set, the open/closed state survives a reload —
     // same semantics as the sidebar component's own `persist`. Null keeps it ephemeral.
     'persist' => null,
+    // Open on every load whatever `persist` stored, for the section that holds the current page:
+    // `:force-open="$entry->isActive()"`. A reader who folds it keeps it folded for this visit.
+    // False leaves the stored state in charge, as without the prop.
+    'forceOpen' => false,
     // Trigger styling. 'default' looks like a sidebar.item (nav row). 'heading' makes
     // it a small uppercase tracked section label (matching a collapsible sidebar.group)
     // for designs that treat the group title as a section heading rather than a nav row.
@@ -28,6 +32,8 @@
     // `prop="false"` used to mean the opposite of what the call site reads as, silently.
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $open = BooleanProp::from($open, false);
+    $forceOpen = BooleanProp::from($forceOpen, false);
+    $open = $open || $forceOpen;
 
     $variant = WireKit::validateProp('sidebar.collapsible', 'variant', $variant, ['default', 'heading']);
 
@@ -142,7 +148,7 @@
 @endphp
 
 <div
-    x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
+    x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, forceOpen: {{ $forceOpen ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
     @if($groupRole) role="{{ $groupRole }}" @endif
     @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif
     {{ $attributes->except(['role', 'aria-label']) }}
@@ -156,7 +162,7 @@
     <button
         type="button"
         x-on:click="toggle()"
-        :aria-expanded="open ? 'true' : 'false'"
+        :aria-expanded="isOpen ? 'true' : 'false'"
         aria-controls="{{ $panelId }}"
         {{-- With no label the trigger's only contents are the aria-hidden icon and the
              aria-hidden chevron, so it reaches a screen reader as a bare "button"
@@ -194,8 +200,8 @@
                  work queues would have asserted an urgency the number cannot know. A prop
                  that takes a count cannot express "something is there" without saying how
                  much.
-                 Alpine's `open` is in scope here, so the caller decides WHEN it shows —
-                 `x-show="! open"` gives the common case, where the individual counters are
+                 Alpine's `isOpen` is in scope here, so the caller decides WHEN it shows —
+                 `x-show="! isOpen"` gives the common case, where the individual counters are
                  already visible once the group is expanded and a second summary of the same
                  quantity is one too many. Deliberately not decided for them: a dot that
                  means "unread" reads differently from one that means "attention", and only
@@ -205,7 +211,7 @@
         {{-- Chevron indicator — rotates when open; hidden in the collapsed rail. --}}
         <svg
             class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
-            :class="open ? 'rotate-90' : ''"
+            :class="isOpen ? 'rotate-90' : ''"
             fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
         >
             <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
@@ -219,7 +225,11 @@
          guard is mandatory — a sidebar.collapsible used inside a NON-collapsible
          <x-wirekit::sidebar> has no `collapsed` in Alpine scope, so a bare
          `open || collapsed` would throw a ReferenceError there. --}}
-    <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse x-cloak class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:ms-0 group-data-[collapsed]/wk-sidebar:ps-0 group-data-[collapsed]/wk-sidebar:border-s-0">
+    {{-- `x-cloak` only on a section the server renders closed, as in sidebar.group. --}}
+    <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse @unless($open) x-cloak @endunless class="{{ $childClasses }} group-data-[collapsed]/wk-sidebar:ms-0 group-data-[collapsed]/wk-sidebar:ps-0 group-data-[collapsed]/wk-sidebar:border-s-0">
         {{ $slot }}
     </div>
+    @if(is_string($persist) && $persist !== '' && ! $forceOpen)
+        @include('wirekit::components.partials.disclosure-persist-seed', ['seedKey' => $persist, 'seedOn' => $open])
+    @endif
 </div>

@@ -164,7 +164,7 @@
      modal is dismissible — non-dismissible modals must never close on ESC. --}}
 <div
     x-data="wirekitModal({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }} })"
-    @if($dismissible) x-on:keydown.escape.window="open && isTopmost && dismissByReader('escape')" @endif
+    @if($dismissible) x-on:keydown.escape.window="isOpen && isTopmost && dismissByReader('escape')" @endif
     {{ $attributes }}
 >
     {{-- Trigger slot — always visible, clicking opens the modal.
@@ -180,14 +180,14 @@
 
     {{-- Modal overlay and dialog — rendered when open --}}
     <template x-teleport="#wk-overlay-root">
-        <div x-show="open" x-cloak>
+        <div x-show="isOpen" x-cloak>
             {{-- Backdrop.
                  Leave transition intentionally omitted: pest-plugin-browser's
                  `assertDontSee()` is synchronous (no auto-wait), and any fade-out
                  (even 150ms) races against the assertion. Instant close is also
                  better UX — it matches the platform dialog convention. --}}
             <div
-                x-show="open"
+                x-show="isOpen"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100"
@@ -209,7 +209,7 @@
                      for the same reason as the backdrop above. --}}
                 <div
                     x-ref="panel"
-                    x-show="open"
+                    x-show="isOpen"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"
@@ -233,6 +233,10 @@
                     class="{{ $panelClasses }} {{ $sizeClass }}"
                     x-on:click.stop
                     wire:ignore.self
+                    {{-- The theme marker for the panel itself, the surface that paints the modal's
+                         background. A theme reaching only the body inside it dresses a layer the panel
+                         already covers. --}}
+                    data-wk-modal-panel
                     data-wk-title-id="{{ $titleId }}"
                 >
                     {{ $slot }}

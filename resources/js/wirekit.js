@@ -33,6 +33,7 @@ import wirekitSidebarRail from './components/sidebar-rail.js';
 import wirekitSidebarCollapseToggle from './components/sidebar-collapse-toggle.js';
 import wirekitNavbarScroll from './components/navbar-scroll.js';
 import wirekitOverflowNav from './components/overflow-nav.js';
+import wirekitCollapsible from './components/collapsible.js';
 import wirekitTableReorder from './components/table-reorder.js';
 import wirekitSidebarListbox from './components/sidebar-listbox.js';
 import wirekitWizard from './components/wizard.js';
@@ -182,6 +183,7 @@ function registerComponents() {
     Alpine.data('wirekitSidebarCollapseToggle', wirekitSidebarCollapseToggle);
     Alpine.data('wirekitNavbarScroll', wirekitNavbarScroll);
     Alpine.data('wirekitOverflowNav', wirekitOverflowNav);
+    Alpine.data('wirekitCollapsible', wirekitCollapsible);
     Alpine.data('wirekitTableReorder', wirekitTableReorder);
     Alpine.data('wirekitSidebarListbox', wirekitSidebarListbox);
     Alpine.data('wirekitWizard', wirekitWizard);

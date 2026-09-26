@@ -4832,7 +4832,7 @@ x-show.
 x-show="!getSortDirection({{
 x-show="endShadow"
 x-show="getSortDirection({{
-x-show="open"
+x-show="isOpen"
 x-show="startShadow"
 x-teleport="#wk-overlay-root">
 x-teleport>`,

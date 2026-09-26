@@ -99,10 +99,21 @@ class WireKit
             }
 
             foreach ($props as $prop => $value) {
-                // The component key is used LITERALLY. A sub-component carries a dot
-                // ('card.header'), and config() splits on dots — writing the dotted path would
-                // create a nested array the template never reads, which is the same silent
-                // no-op this method is being rescued from.
+                // A sub-component's PROP is read by its template through the dotted path,
+                // `config('wirekit.components.dropdown.panel.width')`, and config() walks that
+                // one segment at a time: 'dropdown', then 'panel'. So the value is written
+                // there, nested under the parent. Under the literal key 'dropdown.panel' it
+                // would be the silent no-op this method was rescued from once already.
+                if ($prop !== 'classes' && str_contains((string) $component, '.')) {
+                    config(["wirekit.components.{$component}.{$prop}" => $value]);
+
+                    continue;
+                }
+
+                // A top-level component, and `classes` of any component, keep the literal key.
+                // For a top-level name the two forms are the same thing. For `classes` the
+                // literal key is the one `resolveClasses()` reads first, and the shipped config
+                // declares every sub-component that way ('card.header' => []).
                 $components = config('wirekit.components', []);
                 $components[$component] = array_merge(
                     is_array($components[$component] ?? null) ? $components[$component] : [],

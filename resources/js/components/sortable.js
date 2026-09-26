@@ -75,6 +75,10 @@ let activeDrag = null;
  */
 export default function wirekitSortable(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _observer: null,
+
         /**
          * The live-region sentence. Exposed as state so a host that renders its
          * own `x-text` region gets it too, and written into the region below

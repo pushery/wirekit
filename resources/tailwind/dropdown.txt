@@ -2287,7 +2287,7 @@ x-data="wirekitDropdownTrigger({
 x-data="wirekitOptimistic({{
 x-data="wirekitSubmenu({
 x-data="{
-x-effect="open
+x-effect="isOpen
 x-init
 x-init,
 x-on:click.outside="close()"
@@ -2296,7 +2296,7 @@ x-on:click="$event.target.closest('[role=menuitem]:not([aria-disabled=true]),
 x-on:click="on
 x-on:click="toggle()"
 x-on:click="{{
-x-on:keydown.escape.window="open
+x-on:keydown.escape.window="isOpen
 x-on:keydown="handleKeydown"
 x-on:keydown="onSubKey"
 x-on:keydown="onTriggerKey"
@@ -2307,7 +2307,7 @@ x-ref="panel"
 x-ref="subPanel"
 x-ref="subTrigger"
 x-ref="trigger"
-x-show="open"
+x-show="isOpen"
 x-show="subOpen"
 x-show="{{
 x-teleport="#wk-overlay-root">

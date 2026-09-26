@@ -79,7 +79,7 @@
     x-data="wirekitNotificationCenter({ items: {{ \Pushery\WireKit\Support\AlpinePayload::from($itemsArr) }}, latestLabel: {{ \Pushery\WireKit\Support\AlpinePayload::from(__('wirekit::unread. Latest:')) }}, groupBy: {{ \Pushery\WireKit\Support\AlpinePayload::string($groupBy) }}, open: {{ filter_var($open, FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false' }}@if($realtimeEvent), realtimeEvent: {{ \Pushery\WireKit\Support\AlpinePayload::string($realtimeEvent) }}@endif })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
          escape stays here (window-scoped, teleport-agnostic). --}}
-    x-on:keydown.escape.window="open && close(true)"
+    x-on:keydown.escape.window="isOpen && close(true)"
     {{ $attributes->only('class')->class([$base]) }}
 >
     @if($name)
@@ -105,7 +105,7 @@
         type="button"
         x-ref="bell"
         @click="toggle()"
-        :aria-expanded="open"
+        :aria-expanded="isOpen"
         aria-haspopup="dialog"
         aria-label="{{ $titleResolved }}"
         {{-- Only :count is unknown server-side, so only :count is substituted here. --}}
@@ -140,7 +140,7 @@
          of the root's subtree. Near-full-width on small screens. --}}
     <template x-teleport="#wk-overlay-root">
     <div
-        x-show="open"
+        x-show="isOpen"
         x-cloak
         x-ref="panel"
         tabindex="-1"

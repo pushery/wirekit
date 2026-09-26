@@ -1,6 +1,6 @@
 !
 !==
-!open"
+!isOpen"
 "+2
 "3
 "4
@@ -294,7 +294,7 @@ $value]))
 8h12M2
 9L3
 :
-:aria-expanded="open"
+:aria-expanded="isOpen"
 :aria-label="columns.length
 :aria-pressed="density
 :aria-sort="ariaSort(col.key)"
@@ -353,9 +353,9 @@ $value]))
 @change="toggleColumn(col.key)"
 @change="toggleSelect(row)"
 @change="toggleSelectAll()"
-@click.outside="open
+@click.outside="isOpen
 @click="clearSelection()"
-@click="open
+@click="isOpen
 @click="setDensity('comfortable')"
 @click="setDensity('compact')"
 @click="toggleSort(col.key)"
@@ -378,7 +378,7 @@ $value]))
 @input{{
 @isset($empty)
 @isset($rowActions)
-@keydown.escape="open
+@keydown.escape="isOpen
 @php
 @props([
 @props.
@@ -2159,7 +2159,7 @@ x-ref="selModel"
 x-ref="startSentinel"
 x-show="endShadow"
 x-show="isEmpty"
-x-show="open"
+x-show="isOpen"
 x-show="selectedCount
 x-show="sortKey
 x-show="startShadow"

@@ -1,3 +1,5 @@
+import { withOpenAlias } from '../utils/open-alias.js';
+
 /**
  * WireKit FAB (speed dial) Alpine Component.
  *
@@ -10,7 +12,7 @@
  * hands focus back to the trigger on Escape, which is where the reader was.
  */
 export default function wirekitFab() {
-    return {
+    return withOpenAlias({
 
         /**
          * Close the panel once focus has left it entirely.
@@ -33,10 +35,10 @@ export default function wirekitFab() {
             const root = this.$refs?.actions ?? event?.currentTarget;
 
             if (root && typeof root.contains === 'function' && !root.contains(next)) {
-                this.open = false;
+                this.isOpen = false;
             }
         },
-        open: false,
+        isOpen: false,
         _onDocumentClick: null,
 
         init() {
@@ -46,8 +48,8 @@ export default function wirekitFab() {
             // $root, not $el — see _actions() below for why that distinction is
             // not pedantry.
             this._onDocumentClick = (event) => {
-                if (this.open && !this.$root.contains(event.target)) {
-                    this.open = false;
+                if (this.isOpen && !this.$root.contains(event.target)) {
+                    this.isOpen = false;
                 }
             };
 
@@ -65,11 +67,11 @@ export default function wirekitFab() {
         },
 
         toggle() {
-            this.open ? this.close() : this.show();
+            this.isOpen ? this.close() : this.show();
         },
 
         show() {
-            this.open = true;
+            this.isOpen = true;
 
             // Focus the first action once the browser will actually accept it.
             //
@@ -128,8 +130,8 @@ export default function wirekitFab() {
         },
 
         close({ restoreFocus = true } = {}) {
-            const wasOpen = this.open;
-            this.open = false;
+            const wasOpen = this.isOpen;
+            this.isOpen = false;
 
             // Give focus back to the trigger, but only if it was inside the menu
             // we just closed. Yanking focus from wherever the reader happens to
@@ -172,7 +174,7 @@ export default function wirekitFab() {
             // inside Alpine's CSP grammar: the obvious one-line fix,
             // `open && (move(1), $event.preventDefault())`, is a sequence expression, and an
             // expression the CSP build cannot parse goes inert with nothing reported.
-            if (! this.open) {
+            if (! this.isOpen) {
                 return;
             }
 
@@ -192,5 +194,5 @@ export default function wirekitFab() {
 
             actions[next].focus();
         },
-    };
+    });
 }

@@ -8,6 +8,7 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
  */
 import { createFocusTrap } from '../utils/focus-trap.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * @param {Object} config - Command palette configuration from Blade
@@ -19,9 +20,23 @@ import { createFocusTrap } from '../utils/focus-trap.js';
 export default function wirekitCommandPalette(config = {}) {
     const lockScroll = config.lockScroll !== false;
 
-    return {
-        open: false,
+    return withOpenAlias({
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _closeHandler: null,
+        _stateHandler: null,
+
+        isOpen: false,
         query: '',
+
+        // Where a remote source stands: 'idle', 'loading' or 'error'. The host owns the source,
+        // so the host reports it — see the `wirekit:command-palette-state` listener in init().
+        remoteState: 'idle',
+
+        // Whether the list holds at least one option. Read from the DOM, because the host owns
+        // the result set and the palette only ever sees what was rendered into its list.
+        _hasOptions: true,
+
         _activeIndex: -1,
         _trap: null,
         _observer: null,
@@ -83,6 +98,22 @@ export default function wirekitCommandPalette(config = {}) {
             this._closeHandler = () => this._forceClose();
             window.addEventListener('wirekit-command-palette-close', this._closeHandler);
 
+            /*
+             * The state of a remote source, reported by the host that queries it.
+             *
+             * "Nothing matched" and "the answer has not arrived" are different sentences, and
+             * the palette cannot tell them apart on its own: it renders whatever the host puts
+             * into its list and never sees the request. So the host says where the request
+             * stands, and the palette shows the matching slot and hides the empty state while
+             * it is not the truth.
+             *
+             * Page-global like `-show` and `-close`, which read no payload either: a page
+             * carries one palette. Livewire's `$this->dispatch(…, state: 'error')` arrives as
+             * `detail.state`, the same place an Alpine `$dispatch(…, { state })` puts it.
+             */
+            this._stateHandler = (event) => this._setRemoteState(event?.detail?.state);
+            window.addEventListener('wirekit:command-palette-state', this._stateHandler);
+
             // SPA cleanup
             this._navCleanup = () => this._forceClose();
             document.addEventListener('livewire:navigating', this._navCleanup, { once: true });
@@ -103,6 +134,10 @@ export default function wirekitCommandPalette(config = {}) {
                 window.removeEventListener('wirekit-command-palette-close', this._closeHandler);
                 this._closeHandler = null;
             }
+            if (this._stateHandler) {
+                window.removeEventListener('wirekit:command-palette-state', this._stateHandler);
+                this._stateHandler = null;
+            }
             if (this._navCleanup) {
                 document.removeEventListener('livewire:navigating', this._navCleanup);
             }
@@ -110,17 +145,28 @@ export default function wirekitCommandPalette(config = {}) {
         },
 
         toggle() {
-            this.open ? this.close() : this.show();
+            this.isOpen ? this.close() : this.show();
         },
 
         /**
          * Show command palette and activate focus trap.
          */
         show() {
-            if (this.open) return;
-            this.open = true;
+            if (this.isOpen) return;
+
+            // Read before the panel shows, in the same tick as `isOpen`, so the first frame
+            // already knows whether the list is empty. Waiting for the list observer would
+            // flash the empty state over a list that has results.
+            this._syncOptions();
+
+            this.isOpen = true;
             this.query = '';
             this._activeIndex = -1;
+
+            // A state left over from the last open describes a request nobody is waiting for.
+            // Reset BEFORE the query goes out below: a host that answers it synchronously with
+            // 'loading' must not have its report overwritten by this line.
+            this.remoteState = 'idle';
 
             // Clearing `query` is a plain assignment, and an assignment fires no
             // `input` event — so the only dispatcher, the input's own handler,
@@ -168,8 +214,8 @@ export default function wirekitCommandPalette(config = {}) {
          * Close triggered by focus-trap deactivation (ESC).
          */
         _closeFromTrap() {
-            if (!this.open) return;
-            this.open = false;
+            if (!this.isOpen) return;
+            this.isOpen = false;
             this._trap = null;
             this._releaseScroll();
         },
@@ -202,8 +248,8 @@ export default function wirekitCommandPalette(config = {}) {
          * Close command palette.
          */
         close() {
-            if (!this.open) return;
-            this.open = false;
+            if (!this.isOpen) return;
+            this.isOpen = false;
 
             if (this._trap) {
                 this._trap.deactivate();
@@ -217,7 +263,7 @@ export default function wirekitCommandPalette(config = {}) {
          * Force close — SPA navigation.
          */
         _forceClose() {
-            this.open = false;
+            this.isOpen = false;
 
             if (this._trap) {
                 this._trap.deactivate();
@@ -261,6 +307,13 @@ export default function wirekitCommandPalette(config = {}) {
 
                 return;
             }
+
+            // The list keys belong to the combobox input, and only to it. This handler sits on
+            // the panel, so it also hears keys meant for a button in the footer or the filter
+            // row; acting on those would swallow the button's Enter and activate the highlighted
+            // option instead, and move the list on an arrow key meant for a radio group. Escape
+            // above stays panel-wide on purpose — it closes the palette from anywhere inside it.
+            if (event.target && event.target !== this.$refs?.input) return;
 
             const items = this._getItems();
             if (!items.length) return;
@@ -363,10 +416,16 @@ export default function wirekitCommandPalette(config = {}) {
          * that merely re-rendered gets its highlight painted back on.
          */
         _watchList() {
+            // show() calls this on every open, and the observer from the last open is still
+            // attached — nothing disconnects it on close. Dropping it first keeps one observer
+            // per palette, however often it opens.
+            this._unwatchList();
+
             const list = this.$refs.list;
             if (!list || typeof MutationObserver === 'undefined') return;
 
             this._lastSignature = this._itemsSignature();
+            this._syncOptions();
 
             this._observer = new MutationObserver(() => {
                 const signature = this._itemsSignature();
@@ -376,6 +435,7 @@ export default function wirekitCommandPalette(config = {}) {
                     this._activeIndex = -1;
                 }
 
+                this._syncOptions();
                 this._paintActive();
             });
 
@@ -390,6 +450,64 @@ export default function wirekitCommandPalette(config = {}) {
                 this._observer.disconnect();
                 this._observer = null;
             }
+        },
+
+        /**
+         * Close once an option has been chosen, by click or by Enter (which clicks it).
+         *
+         * Bound on the list, so it runs AFTER the option's own handlers: the click reaches the
+         * option first and bubbles up, which keeps a `wire:click` or `x-on:click` on the item
+         * in charge of what the choice does. A disabled option, or a click on a group heading,
+         * chose nothing and leaves the palette open.
+         */
+        closeAfterChoice(event) {
+            const option = event?.target?.closest?.('[role="option"]');
+
+            if (!option || option.getAttribute('aria-disabled') === 'true') return;
+
+            this.close();
+        },
+
+        /**
+         * Read whether the list holds any option at all.
+         *
+         * A disabled option counts: it is a result the reader can see, only not one they can
+         * pick, and "nothing matched" beneath it would be false.
+         */
+        _syncOptions() {
+            const list = this.$refs?.list;
+
+            this._hasOptions = Boolean(list && list.querySelector('[role="option"]'));
+        },
+
+        /**
+         * Take the host's report on its remote source.
+         *
+         * Anything but the two named states means idle, a typo included. The alternative, keeping
+         * the previous state, would leave a palette showing "loading" for good after a host sent
+         * a word it thought meant done.
+         */
+        _setRemoteState(state) {
+            this.remoteState = state === 'loading' || state === 'error' ? state : 'idle';
+        },
+
+        /**
+         * The three bindings the template reads. Getters rather than inline comparisons, because
+         * an operator in a binding is outside the grammar of Alpine's CSP build, where the
+         * binding would silently never evaluate.
+         */
+        get isLoading() {
+            return this.remoteState === 'loading';
+        },
+
+        get hasError() {
+            return this.remoteState === 'error';
+        },
+
+        // Empty means the list holds no option AND no request is pending or failed. While one
+        // is, "nothing matched" is not yet known, or not true.
+        get showsEmpty() {
+            return this.remoteState === 'idle' && !this._hasOptions;
         },
 
         /**
@@ -419,5 +537,5 @@ export default function wirekitCommandPalette(config = {}) {
             const items = this._getItems();
             return items[this._activeIndex]?.id || null;
         },
-    };
+    });
 }

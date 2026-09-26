@@ -259,7 +259,7 @@ export function createOverlay({
         // their visibility with `x-show="dismissible"`. Non-reactive — the
         // value is set at init and never changes during the overlay lifetime.
         dismissible,
-        open: false,
+        isOpen: false,
         // Reactive `isTopmost` mirror of overlayStack[last] === stackToken.
         // Updated synchronously in show() / close() / _forceClose() /
         // _closeFromTrap() so x-bind:aria-modal and x-on:keydown.escape
@@ -309,7 +309,7 @@ export function createOverlay({
 
                 if (wireModelAttr) {
                     // Watch the Livewire property for changes
-                    this.$watch('open', (value) => {
+                    this.$watch('isOpen', (value) => {
                         this.$wire.set(wireModelAttr, value);
                     });
 
@@ -347,8 +347,8 @@ export function createOverlay({
          * Resolves $refs.panel lazily to avoid stale element references.
          */
         show() {
-            if (this.open) return;
-            this.open = true;
+            if (this.isOpen) return;
+            this.isOpen = true;
             dismissing = false;
 
             // Snapshot the opener's ancestor chain while it is still attached —
@@ -377,7 +377,7 @@ export function createOverlay({
                 /*
                  * Re-check the state the tick was queued under. It was not checked at all.
                  *
-                 * `show()` guards `if (this.open) return` at the TOP, which prevents a
+                 * `show()` guards `if (this.isOpen) return` at the TOP, which prevents a
                  * second show while one is open — and says nothing about the frame in
                  * between. Anything can close the overlay inside that tick: Escape, a
                  * `wirekit-overlay-close` event, a Livewire morph, `wire:model` flipping
@@ -391,7 +391,7 @@ export function createOverlay({
                  * close, show again within a frame) and the second would overwrite the first
                  * handle, orphaning a live trap the same way.
                  */
-                if (!this.open || this._trap) {
+                if (!this.isOpen || this._trap) {
                     return;
                 }
 
@@ -417,7 +417,7 @@ export function createOverlay({
                  * is armed anyway, because a late trap beats no trap at all.
                  */
                 const armWhenPanelIsShown = (attempt = 0) => {
-                    if (!this.open || this._trap) {
+                    if (!this.isOpen || this._trap) {
                         return;
                     }
 
@@ -474,11 +474,11 @@ export function createOverlay({
          * Skips deactivate() call since the trap is already deactivating.
          */
         _closeFromTrap() {
-            if (!this.open) return;
+            if (!this.isOpen) return;
             // Only Escape reaches this while the overlay is still open: every other close sets
-            // `open` false before it deactivates the trap. So this close is a dismissal.
+            // `isOpen` false before it deactivates the trap. So this close is a dismissal.
             dismissing = true;
-            this.open = false;
+            this.isOpen = false;
             this._trap = null;
             unlockScroll();
             popOverlay(stackToken);
@@ -491,8 +491,8 @@ export function createOverlay({
          * Close the overlay — deactivate focus trap and restore scroll.
          */
         close() {
-            if (!this.open) return;
-            this.open = false;
+            if (!this.isOpen) return;
+            this.isOpen = false;
 
             // Deactivate focus trap (returns focus to trigger automatically)
             if (this._trap) {
@@ -510,8 +510,8 @@ export function createOverlay({
          * Force close without transitions — used during SPA navigation cleanup.
          */
         _forceClose() {
-            if (!this.open) return;
-            this.open = false;
+            if (!this.isOpen) return;
+            this.isOpen = false;
 
             if (this._trap) {
                 this._trap.deactivate();
@@ -543,7 +543,7 @@ export function createOverlay({
          * @param {'escape'|'close-button'|'backdrop'} via
          */
         dismissByReader(via = 'close-button') {
-            if (!this.open) return;
+            if (!this.isOpen) return;
             this.dismissOverlay();
             this._announceDismissal(via);
         },
@@ -559,7 +559,7 @@ export function createOverlay({
          * return target, because nothing was acted on (see `resolveReturnFocus`).
          */
         dismissOverlay() {
-            if (!this.open) return;
+            if (!this.isOpen) return;
             dismissing = true;
             this.close();
         },

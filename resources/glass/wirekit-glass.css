@@ -6,14 +6,10 @@
  * said the day it was written — this one read v1.0.0 through a rewrite of the whole
  * detection strategy. The package's version is the one that moves.
  *
- * Tier 1: backdrop-filter (all modern browsers)
- * Tier 2: SVG feDisplacementMap refraction
- *
- * ⚠️ NOT "(Chrome/Chromium)", WHICH THIS LINE SAID AND THE BODY BELOW CONTRADICTS. There is
- * "no feature gate, deliberately" — both `filter: url()` and `backdrop-filter` sit inside
- * the supported-browser baseline, and the enhancement is additive: where the displacement
- * does not apply, what remains IS Tier 1. Naming one engine in the header reads as a
- * support claim the file spends a paragraph explaining it does not make.
+ * Tier 1: backdrop-filter, in every supported browser
+ * Tier 2: SVG feDisplacementMap refraction. Chromium paints the displacement. WebKit, the
+ *         engine of Safari and of every browser on iPhone and iPad, accepts the filter and
+ *         paints nothing from it, so there Tier 2 shows as clear glass under a light frost.
  * Requires: <x-wirekit::glass /> at the start of the layout body.
  *           Not the document's metadata section: the component emits an <svg>, which
  *           terminates it and reparents every tag after it.
@@ -37,8 +33,8 @@
 }
 
 /* ── Tier 1 — the frosted surface every browser gets ────────
-   Not a fallback in name only: the Tier 2 block further down is gated on the
-   detector class, so this survives wherever the displacement cannot paint. */
+   The Tier 2 block further down is gated on the detector class, so this is the
+   surface a page shows before the detector has run, and wherever it does not. */
 .wk-glass-refract {
     backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
     -webkit-backdrop-filter: blur(20px) saturate(1.8) brightness(1.05);
@@ -73,10 +69,10 @@
  * pseudo-element holds only the frosted backdrop, so the distortion lands on
  * the background and the text stays legible.
  *
- * No feature gate, deliberately. `filter: url()` and `backdrop-filter` are both
- * inside the supported-browser baseline, and the enhancement is additive: where
- * the displacement does not apply, what remains IS Tier 1. A gate that cannot
- * detect painting — the only thing that matters here — is worse than none.
+ * No `@supports` gate, deliberately: it cannot tell painting from parsing. The
+ * block is gated on the detector class instead, which says only that the filter
+ * parses. Chromium then paints the displacement; WebKit paints nothing from it,
+ * and the layer shows as clear glass under a light frost, without the bending.
  *
  * TIER 2 IS A DIFFERENT MATERIAL FROM TIER 1, NOT TIER 1 PLUS AN EFFECT. That
  * distinction is the whole reason this took four attempts, and it is the one
@@ -102,50 +98,27 @@
  * host an overflowing popover. Tier 1 is unaffected and remains the default.
  */
 /*
- * ⚠️ GATED ON THE DETECTOR CLASS, and this is a reversal worth explaining.
+ * Gated on the detector class. This block strips the element's own frosted backdrop because
+ * the pseudo-element below carries a thinner one instead, and without the gate it would strip
+ * it on every page: before the script has run, when it is blocked, and in a browser where the
+ * filter does not parse. Those pages keep Tier 1.
  *
- * This block strips the element's own frosted backdrop because the pseudo-element below
- * carries it instead. Ungated, it also stripped it on every browser that cannot paint the
- * SVG displacement — same selector, same specificity, later in the file, so it won. The
- * "Tier 1 fallback for non-Chrome" sixty lines up was dead: what a non-supporting browser
- * actually got was the pseudo-element's 3px blur at 0.22 opacity, not Tier 1's 20px at 0.72.
- *
- * The header above says the stylesheet no longer depends on `.wk-glass-tier2` because the
- * enhancement is additive — "where the displacement does not apply, what remains is Tier 1".
- * That was the intent and it was not what happened: what remained was a third, weaker thing
- * that nobody designed. The dependency comes back for the opposite reason it was removed —
- * not to gate the enhancement, but to stop it removing the fallback.
- *
- * The class is the only signal available. `@supports` answers "can I parse this", never
- * "will this paint", which is the measured lesson recorded further up this file.
+ * The class says the filter parses, never that it paints, because a script cannot see what a
+ * backdrop filter composites. Measured from pixels in both engines the lanes run: Chromium
+ * paints the displacement, and WebKit paints nothing from it, so there this block leaves the
+ * thin Tier 2 layer without the bending, a clear pane under a light frost.
+ */
+/*
+ * One reset for both modes. `.wk-glass-tier2 .wk-glass-refract` is (0,2,0), the same as the dark
+ * Tier 1 surface `.dark .wk-glass-refract` above, and it comes later, so source order carries it
+ * over the dark fill as well as the light one. A separate dark reset would need the detector
+ * class too: without it, it strips the dark Tier 1 surface on every page the class is missing
+ * from, before the script has run, when it is blocked, or where the filter does not parse.
  */
 .wk-glass-tier2 .wk-glass-refract {
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-
-/* The same reset, repeated at the specificity dark needs, and the repetition is
- * the point rather than an oversight.
- *
- * The rule above neutralizes the Tier-1 fallback by SOURCE ORDER: both are
- * (0,1,0), and the later one wins. `.dark .wk-glass-refract` is (0,2,0) and wins
- * wherever it sits, so the dark fallback's 78% fill survived a neutralization
- * that only ever reached the light one. What shipped in dark was neither tier —
- * an opaque slab with no blur (`backdrop-filter: none` above still applied,
- * because the dark fallback declares none) and the ::before then displacing that
- * fill. Roughly 15% of the page behind survived in dark against 78% in light, so
- * the refraction had nothing to bend: the exact silent zero the whole note above
- * is about, arriving through the mode nobody was measuring.
- *
- * Every property the reset touches is repeated here, including the two that
- * happen to need no override today — the trap was one rule declaring a subset,
- * and a subset is what makes the next addition to the fallback silently reopen
- * this. */
-.dark .wk-glass-refract {
     background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

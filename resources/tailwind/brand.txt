@@ -50,6 +50,7 @@ $wkLogoHeightStyle
 $wkLogoHeightStyle.$wkLogoAspect.'min-width:
 $wkLogoHeightStyle.$wkMobileAspect.'min-width:
 $wkLogoLength
+$wkLogoLoading
 $wkLogoStyle
 $wkMobileAspect
 $wkMobileStyle
@@ -73,6 +74,8 @@ $wkMobileStyle
 'aspect-ratio:
 'base',
 'darkLogo'
+'eager'),
+'eager',
 'flex
 'gap-[var(--gap-wk-sm)]',
 'h-8',
@@ -81,6 +84,7 @@ $wkMobileStyle
 'h-[var(--size-wk-xs)]',
 'height:
 'href'
+'lazy']);
 'lg'
 'lg',
 'lg:block',
@@ -88,6 +92,8 @@ $wkMobileStyle
 'lg:inline-flex',
 'logo'
 'logoAspect'
+'logoLoading'
+'logoLoading',
 'md'
 'md',
 'md:block',
@@ -122,6 +128,7 @@ $wkMobileStyle
 'xl:hidden',
 'xl:inline-flex',
 'xs'
+($logoLoading
 ($mobileLogoAspect
 ($relAttr
 ($resolvedBreakpoint)
@@ -213,6 +220,7 @@ Brand
 CSS
 CSS-first
 Caller-provided
+Checked
 Children
 ComponentSlot
 Composes
@@ -225,6 +233,7 @@ Default
 Defaults
 Dev-only
 EXPLICITLY,
+Eager
 Emitting
 Empty
 Every
@@ -232,6 +241,7 @@ FIRST
 FULL
 Fully
 HTML
+How
 IndieAuth/Mastodon
 Intrinsic
 It
@@ -281,6 +291,7 @@ WireKit::resolveClasses('brand',
 WireKit::validateProp('brand',
 Without
 [
+['eager',
 ['sm',
 ['xs',
 [null,
@@ -324,11 +335,16 @@ __('wirekit::Home')
 `aspect-ratio`
 `avatar`
 `dark:`
+`decoding="async"`,
 `dist/wirekit.css`
+`eager`
 `em`
 `false`
 `h-8
 `href`
+`lazy`
+`lazy`.
+`loading`
 `logo`
 `multi-select`
 `name`
@@ -355,6 +371,7 @@ accessible
 accident
 across
 against
+almost
 alone
 already
 already,
@@ -414,6 +431,7 @@ brand-bar
 breakpoint
 breakpoint,
 breakpoint.
+breakpoint:
 breakpoint;
 broke
 browser
@@ -474,6 +492,9 @@ debug
 debug,
 decided
 declared
+decodes
+decoding
+decoding="async"
 decoration:
 decorative
 default
@@ -500,6 +521,8 @@ does
 does.
 doesn't
 doubled-class
+down,
+draws,
 drives
 drop
 dropdown/item.blade.php.
@@ -523,16 +546,21 @@ exists
 fails
 fall
 fallback
+falls
 false)
 false],
+fetches
 file
 finds
+first
 fixed
 flags
 flips
 floor
+fold;
 follows
 footer
+footer.
 for
 forced
 from
@@ -569,9 +597,11 @@ href>`
 icon
 icons.
 if
+ignores.
 image
 image-src
 images
+images:
 img
 imgs
 implode('
@@ -622,6 +652,7 @@ literals
 live
 lives
 load
+loading="{{
 logo
 logo's
 logo-only
@@ -710,6 +741,8 @@ own.
 package's
 page
 page,
+page.
+paints
 pair
 passed
 path
@@ -724,6 +757,7 @@ presentation,
 prod
 prod).
 product
+production,
 profile
 prominent
 prop
@@ -740,6 +774,7 @@ ratio
 raw
 reach
 reaches
+reaching
 readers
 reads
 reappears
@@ -826,6 +861,7 @@ stylesheet
 styling
 such
 suite
+suits
 suppressed
 swap
 swap.
@@ -860,6 +896,7 @@ thing
 this
 throw
 thrown
+throws
 tie
 time)
 to

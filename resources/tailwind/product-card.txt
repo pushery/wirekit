@@ -5227,7 +5227,7 @@ x-on:pointerup="pointerup($event)"
 x-ref="tooltip"
 x-ref="trigger"
 x-show)
-x-show="open"
+x-show="isOpen"
 x-show="shown"
 x-teleport="#wk-overlay-root">
 x-teleport>`,

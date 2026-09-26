@@ -83,6 +83,9 @@ $focusableTrigger
 $footHostsToggle
 $footer
 $for
+$forceOpen
+$forceOpen)
+$forceOpen;
 $glyphArrow
 $glyphEdge
 $glyphOnEnd
@@ -109,6 +112,7 @@ $navLabelAttrs
 $notCurrentClasses
 $offset
 $open
+$open])
 $opensNewTab
 $optionId
 $panelId
@@ -253,6 +257,7 @@ $zoneInset
 'font-[number:var(--font-wk-body-weight)]',
 'font-[number:var(--font-wk-heading-weight)]',
 'for'
+'forceOpen'
 'function'
 'group'
 'group-data-[collapsed]/wk-sidebar:justify-center',
@@ -392,6 +397,7 @@ $zoneInset
 'zoneInset'
 (!
 (!el)
+(!panel)
 ("Fast
 ("cube")
 ($attributes->get('aria-label')
@@ -427,6 +433,7 @@ $zoneInset
 (accessible
 (an
 (and
+(cfg.wkDisclosureSeedOn
 (cfg.wkSeedOn
 (class
 (consistent
@@ -447,6 +454,7 @@ $zoneInset
 (non-string
 (not
 (on
+(on)
 (only
 (same
 (silent
@@ -564,10 +572,10 @@ $zoneInset
 :`,
 :aria-controls="$data.drawerId
 :aria-expanded="collapsed
-:aria-expanded="open
+:aria-expanded="isOpen
 :aria-expanded="sidebarOpen
 :aria-label="collapsed
-:class="open
+:class="isOpen
 :class="{
 :class="{{
 :data-collapsed="collapsed
@@ -659,11 +667,13 @@ $zoneInset
 @if((string)
 @if(filled($badge))
 @if(is_string($icon)
+@if(is_string($persist)
 @if(isset($collapsibleSelectionWarning))
 @if(isset($content))
 @if(isset($hrefInOptionWarning))
 @if(…)
 @include
+@include('wirekit::components.partials.disclosure-persist-seed',
 @include('wirekit::components.partials.nav-persist-seed',
 @include('wirekit::components.partials.sidebar-collapse-glyph')
 @include('wirekit::components.partials.sidebar-collapse-toggle')
@@ -678,6 +688,7 @@ $zoneInset
 @props([
 @props.
 @unless($label)
+@unless($open)
 A
 ABOVE
 ABSOLUTELY
@@ -731,6 +742,7 @@ BooleanProp::from($defaultCollapsed,
 BooleanProp::from($describes,
 BooleanProp::from($disabled,
 BooleanProp::from($focusableTrigger,
+BooleanProp::from($forceOpen,
 BooleanProp::from($open,
 BooleanProp::from($scrollShadows,
 BooleanProp::from($submenu,
@@ -783,6 +795,7 @@ Derived
 Describing
 Dev-only
 Dev-only,
+Directly
 Do
 Documented
 Done
@@ -804,6 +817,7 @@ FLUSH
 FORCE-SHOWN
 FULL,
 Fall
+False
 Fast
 Fills
 Firefox
@@ -918,6 +932,7 @@ On
 Once
 One
 Only
+Open
 Opt-in
 Optional
 Out
@@ -963,6 +978,7 @@ Riding
 SAME
 SAYS
 SCROLL
+SECTION.
 SEED
 SELECTION
 SETS
@@ -1100,6 +1116,7 @@ ZONE
 ['inverted',
 ['local',
 ['navigation',
+['seedKey'
 ['start',
 []
 [];
@@ -1176,6 +1193,7 @@ __()
 `:class`
 `:class`)
 `:data-collapsed`
+`:force-open="$entry->isActive()"`.
 `:has()`
 `:not([aria-current])`.
 `<a>`.
@@ -1272,6 +1290,7 @@ __()
 `focusable-trigger`
 `fonts.blade.php`
 `footer`
+`force-open`,
 `group-data-[collapsed]/wk-sidebar:*`.
 `group/wk-sidebar`
 `header`
@@ -1284,6 +1303,7 @@ __()
 `initListbox()`
 `inline-block`
 `inverted`
+`isOpen`
 `isolation:
 `isset($collapseBtnClasses)`.
 `keydownEscape()`
@@ -1300,6 +1320,7 @@ __()
 `ms-`,
 `mt-`
 `mt-auto`
+`nav-persist-seed`
 `navigation`
 `none`
 `offset`
@@ -1314,6 +1335,7 @@ __()
 `persist-driver`,
 `persist`
 `persist`).
+`persist`,
 `persist`.
 `pointer-events-none`
 `position:
@@ -1336,6 +1358,7 @@ __()
 `sidebar.collapse-toggle`
 `sidebar.collapse-toggle`,
 `sidebar.collapsible`
+`sidebar.collapsible`.
 `sidebar.group`
 `sidebar.item`
 `sidebar/item.blade.php`
@@ -1374,6 +1397,8 @@ __()
 `writeActiveMarker()`
 `x-bind:data-wk-tooltip-disabled="collapsed"`
 `x-bind`
+`x-cloak`
+`x-cloak`,
 `x-data`
 `x-data`,
 `x-show="!
@@ -1490,6 +1515,9 @@ app-shell's
 app.
 apparatus
 appear
+appeared
+appeared,
+appearing
 appears
 application
 applications
@@ -1745,6 +1773,7 @@ change,
 changed
 changes
 changes.
+charge,
 check
 check,
 checks
@@ -1766,6 +1795,7 @@ choices,
 choices:
 choosing,
 chose
+chose,
 chosen
 chrome
 churn
@@ -1810,6 +1840,8 @@ clone
 clone,
 close.
 closed
+closed,
+closed.
 closes
 closing-tag
 closing.
@@ -1884,6 +1916,7 @@ consistent
 console
 console.
 constant
+constant,
 construction.
 consume
 container
@@ -1944,10 +1977,13 @@ d="M3.75
 d="m8.25
 d="{{
 dark
+data
 data-*)
 data-[wk-ready]:duration-[var(--transition-wk-duration)]'])->merge($navLabelAttrs)
 data-[wk-ready]:transition-[width]
 data-collapsed
+data-wk-disclosure-seed-key="{{
+data-wk-disclosure-seed-on="{{
 data-wk-option-value="{{
 data-wk-prose-skip
 data-wk-seed-class-off="{{
@@ -2151,6 +2187,7 @@ equal
 equal-specificity
 error
 escape
+escaped
 escapes
 escaping
 escaping,
@@ -2276,6 +2313,7 @@ focused,
 fold
 fold.
 folded
+folding
 folds
 folds.
 follow
@@ -2293,6 +2331,7 @@ for
 for.
 force-override,
 force-shown
+forceOpen:
 forced
 forcing
 foreground
@@ -2561,6 +2600,7 @@ invocation`
 is
 is,
 is.
+isOpen"`
 is_string($for)
 is_string($tooltipPlacement)
 isolate`
@@ -2598,6 +2638,7 @@ keeping
 keeps
 kept
 key
+key)
 key.
 keyboard
 keyboard's
@@ -2681,6 +2722,7 @@ live.
 lives
 load
 load-bearing.
+load.
 loads
 loads,
 local
@@ -2926,7 +2968,6 @@ onmouseover=alert(1)"`
 onto
 open
 open"
-open"`
 open.
 open/closed
 open:
@@ -2991,6 +3032,7 @@ page
 page's
 page,
 page.
+page:
 paint
 paint,
 paint.
@@ -3005,6 +3047,8 @@ panel
 panel's
 panel,
 panel.
+panel.removeAttribute('x-cloak');
+panel.setAttribute('x-cloak',
 panel:
 paragraph
 paragraph's
@@ -3095,6 +3139,7 @@ pressed.
 prevent.
 prevent:
 previews
+previous
 previously
 private
 probe
@@ -3110,6 +3155,7 @@ promises.
 prop
 prop's
 prop,
+prop.
 prop:
 property
 property,
@@ -3249,6 +3295,7 @@ render-time
 render:
 rendered
 rendered),
+rendered).
 rendering
 renders
 renders.
@@ -3263,6 +3310,7 @@ replays
 repoint
 report
 reported
+requirement.
 requires
 reserved
 reserving
@@ -3366,6 +3414,7 @@ screen
 screen-reader
 screen.
 script
+script's
 scroll
 scroll.
 scrollbar
@@ -3416,6 +3465,7 @@ separator
 sequence
 serve
 server
+server's
 server-side
 set
 set"
@@ -3565,9 +3615,12 @@ stands.
 start
 starts
 starts,
+starts.
+starts;
 state
 state,
 state.
+state:
 stated
 states
 static
@@ -3588,6 +3641,8 @@ stops
 storage
 store
 stored
+stored,
+stored.
 stored;
 stores
 str_contains($icon,
@@ -3718,6 +3773,7 @@ themed,
 themes,
 themselves.
 then
+then,
 then.
 there
 there"
@@ -3728,6 +3784,7 @@ these
 they
 thing
 thing,
+thing:
 things
 things,
 things.
@@ -3947,6 +4004,7 @@ visible:
 visibly
 vision.
 visit,
+visit.
 visual
 visually
 w-5"
@@ -3997,6 +4055,7 @@ width.
 widths,
 will
 window
+window.localStorage.getItem(cfg.wkDisclosureSeedKey);
 window.localStorage.getItem(cfg.wkSeedKey);
 window.matchMedia
 winner
@@ -4080,7 +4139,7 @@ x-ref="topSentinel"
 x-ref="trigger"
 x-show="bottomShadow"
 x-show="childrenVisible()"
-x-show="open"
+x-show="isOpen"
 x-show="topShadow"
 x-teleport="#wk-overlay-root">
 x-teleport>`,

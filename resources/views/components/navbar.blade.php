@@ -183,8 +183,11 @@
     // no more, which is what makes it scroll instead of pushing them off the bar. Each entry keeps
     // its width and its one line; `wk-navbar-scroll` hides the scrollbar (see dist/wirekit.css),
     // and the row stays operable by touch, wheel and Tab, which scrolls each link into view.
+    // With no scrollbar, `wk-scroll-fade` fades the edge that has entries behind it: the row's
+    // script names that edge in `data-fade` as it scrolls, and without the script there is none.
     $scrollListClasses = WireKit::resolveClasses('navbar', 'scroll', implode(' ', [
         'wk-navbar-scroll',
+        'wk-scroll-fade',
         'flex flex-row flex-nowrap items-center gap-1',
         'min-w-0 flex-1',
         'overflow-x-auto overscroll-x-contain',
@@ -248,7 +251,7 @@
              `dist/wirekit.css`). The marker is absent under `force-mobile`, which is what
              keeps that demo mobile at every width. --}}
         @if($scroll)
-            <div data-wk-navbar-scroll x-data="wirekitNavbarScroll()" class="{{ $scrollListClasses }}">
+            <div data-wk-navbar-scroll data-fade-axis="x" x-data="wirekitNavbarScroll()" class="{{ $scrollListClasses }}">
                 {{ $slot }}
             </div>
         @else

@@ -33,6 +33,10 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
 
 export default function wirekitTabs(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _stopServerSync: null,
+
         active: config.active != null ? String(config.active) : '',
         labels: config.labels || {},
 

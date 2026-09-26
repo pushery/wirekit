@@ -2932,7 +2932,7 @@ x-ref="trigger"
 x-show)
 x-show="!toggleOn({{
 x-show="changedCount
-x-show="open"
+x-show="isOpen"
 x-show="shown"
 x-show="toggleOn({{
 x-show="tristateValue({{

@@ -58,6 +58,7 @@ import wirekitSidebarRail from './components/sidebar-rail.js';
 import wirekitSidebarCollapseToggle from './components/sidebar-collapse-toggle.js';
 import wirekitNavbarScroll from './components/navbar-scroll.js';
 import wirekitOverflowNav from './components/overflow-nav.js';
+import wirekitCollapsible from './components/collapsible.js';
 import wirekitTableReorder from './components/table-reorder.js';
 import wirekitSidebarListbox from './components/sidebar-listbox.js';
 import wirekitWizard from './components/wizard.js';
@@ -261,6 +262,7 @@ if (hostAlpine) {
     target.data('wirekitSidebarCollapseToggle', wirekitSidebarCollapseToggle);
     target.data('wirekitNavbarScroll', wirekitNavbarScroll);
     target.data('wirekitOverflowNav', wirekitOverflowNav);
+    target.data('wirekitCollapsible', wirekitCollapsible);
     target.data('wirekitTableReorder', wirekitTableReorder);
     target.data('wirekitSidebarListbox', wirekitSidebarListbox);
     target.data('wirekitWizard', wirekitWizard);

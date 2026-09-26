@@ -235,7 +235,7 @@ class ComponentRegistry
             // ── System ──
             'chart' => ['category' => 'System', 'description' => 'Chart.js wrapper component'],
             'fonts' => ['category' => 'System', 'description' => 'GDPR-compliant font loader'],
-            'glass' => ['category' => 'System', 'description' => 'Liquid Glass extension — include once in the layout head; takes no props and renders no slot'],
+            'glass' => ['category' => 'System', 'description' => 'Liquid Glass extension — include once as the first element of the layout body; takes no props and renders no slot'],
             'icon' => ['category' => 'System', 'description' => 'SVG icon with preset support'],
             'map' => ['category' => 'System', 'description' => 'Map adapter (MapLibre/Leaflet peer dependency) with markers and an accessible location list'],
             'structured-data' => ['category' => 'System', 'description' => 'JSON-LD script block emitter (XSS-safe via JSON_HEX_TAG)'],

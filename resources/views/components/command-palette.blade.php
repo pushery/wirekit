@@ -105,6 +105,25 @@
         'overflow-y-auto',
         'py-[var(--padding-wk-y-xs)]',
     ]), $scope);
+
+    // The row between the input and the list: controls that narrow what the list shows, which
+    // is why they sit ABOVE it. In the footer a filter would come after the results it filters.
+    $filtersClasses = WireKit::resolveClasses('command-palette', 'filters', implode(' ', [
+        'flex flex-wrap items-center',
+        'gap-[var(--gap-wk-xs)]',
+        'px-[var(--padding-wk-x-lg)]',
+        'py-[var(--padding-wk-y-sm)]',
+        'border-b border-[var(--color-wk-border)]',
+    ]), $scope);
+
+    // The `loading` and `error` slots, set like the empty state so the three read as one family.
+    $stateClasses = WireKit::resolveClasses('command-palette', 'state', implode(' ', [
+        'px-[var(--padding-wk-x-lg)]',
+        'py-[var(--padding-wk-y-xl)]',
+        'text-center',
+        'text-[length:var(--text-wk-md)]',
+        'text-[color:var(--color-wk-text-muted)]',
+    ]), $scope);
 @endphp
 
 <div
@@ -128,10 +147,10 @@
     @if($teleport)
     <template x-teleport="#wk-overlay-root">
     @endif
-        <div x-show="open" x-cloak>
+        <div x-show="isOpen" x-cloak>
             {{-- Backdrop --}}
             <div
-                x-show="open"
+                x-show="isOpen"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100"
@@ -152,7 +171,7 @@
             >
                 <div
                     x-ref="panel"
-                    x-show="open"
+                    x-show="isOpen"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"
@@ -215,12 +234,28 @@
                         />
                     </div>
 
+                    {{-- Filter row — between the input and the list, in that order for Tab as
+                         well: the reader types, then narrows. The list keys stay with the input
+                         (see handleKeydown), so a control here keeps its own Enter and arrows. --}}
+                    @isset($filters)
+                        <div class="{{ $filtersClasses }}">
+                            {{ $filters }}
+                        </div>
+                    @endisset
+
                     {{-- Command list --}}
                     <div
                         x-ref="list"
                         id="{{ $listId }}"
                         role="listbox"
                         aria-label="{{ $callerLabel ?: __('wirekit::Search commands') }}"
+                        {{-- Busy while a remote source is answering: the options still showing
+                             are the previous answer, and a reader should not take them as the
+                             new one. Absent otherwise, which is what `false` means. --}}
+                        x-bind:aria-busy="isLoading"
+                        {{-- Choosing an option closes the palette. On the list rather than on the
+                             option, so the option's own handlers run first. --}}
+                        x-on:click="closeAfterChoice"
                         {{-- `wk-command-list` is a MARKER CLASS, and it is documented in
                              `public-css-api.md` as a Stable styling hook. It never existed as
                              one: the id happened to carry the same string, and the drift guard
@@ -244,10 +279,40 @@
                          keeps `aria-expanded="true"` and reports no active descendant, so a
                          search that matched nothing was indistinguishable from a list the
                          reader had not touched. The sub-component carries `role="status"`
-                         for that half; this slot is the other half. --}}
+                         for that half; this slot is the other half.
+
+                         The palette decides WHEN it shows: only while the list holds no option
+                         and no remote request is pending or failed. Rendered whenever the slot
+                         is passed, the message would sit beneath a full list of results. --}}
                     @isset($empty)
-                        {{ $empty }}
+                        <div x-show="showsEmpty">
+                            {{ $empty }}
+                        </div>
                     @endisset
+
+                    {{-- Remote source — "not here yet" and "failed" are not "nothing matched".
+                         The host reports which one applies through the
+                         `wirekit:command-palette-state` event (see the factory).
+
+                         ONE region for both, and it is always rendered: a live region that
+                         appears together with its text is announced unreliably, while text
+                         appearing inside a region that already exists is announced. The slots
+                         therefore take plain content — a `role="status"` of their own inside
+                         this one would be announced twice. --}}
+                    @if(isset($loading) || isset($error))
+                        <div role="status">
+                            @isset($loading)
+                                <div x-show="isLoading" class="{{ $stateClasses }}">
+                                    {{ $loading }}
+                                </div>
+                            @endisset
+                            @isset($error)
+                                <div x-show="hasError" class="{{ $stateClasses }}">
+                                    {{ $error }}
+                                </div>
+                            @endisset
+                        </div>
+                    @endif
 
                     {{-- Optional footer slot --}}
                     @isset($footer)

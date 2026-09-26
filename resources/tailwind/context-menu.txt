@@ -998,12 +998,12 @@ x-cloak
 x-data
 x-data="wirekitContextMenu()"
 x-data="wirekitSubmenu({
-x-effect="open
+x-effect="isOpen
 x-on:click.outside="close()"
 x-on:click.stop="openSub(true)"
 x-on:click="close()"
 x-on:contextmenu="openAt($event)"
-x-on:keydown.escape.window="open
+x-on:keydown.escape.window="isOpen
 x-on:keydown="handleKeydown"
 x-on:keydown="onSubKey"
 x-on:keydown="onTriggerKey"
@@ -1018,7 +1018,7 @@ x-ref="panel"
 x-ref="subPanel"
 x-ref="subTrigger"
 x-ref="trigger"
-x-show="open"
+x-show="isOpen"
 x-show="subOpen"
 x-teleport
 x-teleport="#wk-overlay-root">

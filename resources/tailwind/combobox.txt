@@ -472,15 +472,15 @@ $value,
 80px
 99px
 :
-:aria-activedescendant="open
+:aria-activedescendant="isOpen
 :aria-describedby="opt.description
 :aria-disabled="opt.disabled
-:aria-expanded="open"
+:aria-expanded="isOpen"
 :aria-label="grp.label
 :aria-labelledby="{{
 :aria-selected="selected
 :class="$hideLabel
-:class="open
+:class="isOpen
 :class="opt.disabled
 :count
 :for="$comboId"
@@ -530,7 +530,7 @@ $value,
 ??
 ??=
 @aware(['announceErrors'
-@click.outside="open
+@click.outside="isOpen
 @click.stop="toggleAndFocus()"
 @click.stop="{{
 @click="toggleSelectOnly()"
@@ -542,7 +542,7 @@ $value,
 @endif>{{
 @endphp
 @endunless
-@focus="open
+@focus="isOpen
 @if(!
 @if(!$disabled
 @if($announceError)
@@ -573,7 +573,7 @@ $value,
 @keydown.arrow-up.prevent="moveHighlight(-1)"
 @keydown.end.prevent="openAtLast()"
 @keydown.enter.prevent="{{
-@keydown.escape="open
+@keydown.escape="isOpen
 @keydown.home.prevent="openAtFirst()"
 @keydown="{{
 @mousedown.prevent
@@ -2487,7 +2487,7 @@ x-on:error="markMediaBroken({{
 x-ref="cbxEmpty"
 x-ref="cbxInput"
 x-ref="cbxList"
-x-show="open
+x-show="isOpen
 x-show="searchNote()
 x-show="selected"
 x-show="selectedText

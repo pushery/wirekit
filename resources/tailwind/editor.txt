@@ -2368,7 +2368,7 @@ x-ref="toolbar"
 x-ref="toolbar">{{
 x-ref="tooltip"
 x-ref="trigger"
-x-show="open"
+x-show="isOpen"
 x-teleport="#wk-overlay-root">
 x-teleport>`,
 x-text="announcement"></div>

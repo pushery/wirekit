@@ -172,12 +172,12 @@
      drawer is dismissible — non-dismissible drawers must never close on ESC. --}}
 <div
     x-data="wirekitDrawer({ name: {{ \Pushery\WireKit\Support\AlpinePayload::string($name) }}, dismissible: {{ $dismissible ? 'true' : 'false' }} })"
-    @if($dismissible) x-on:keydown.escape.window="open && isTopmost && dismissByReader('escape')" @endif
+    @if($dismissible) x-on:keydown.escape.window="isOpen && isTopmost && dismissByReader('escape')" @endif
     {{ $attributes }}
 >
     {{-- Drawer overlay and panel — teleported to body --}}
     <template x-teleport="#wk-overlay-root">
-        <div x-show="open" x-cloak>
+        <div x-show="isOpen" x-cloak>
             {{-- Backdrop.
                  Leave transition intentionally omitted: pest-plugin-browser's
                  `assertDontSee()` is synchronous (no auto-wait), and any fade-out
@@ -186,7 +186,7 @@
                  delays the thing the reader asked for, and the close is not the
                  moment to be decorative. --}}
             <div
-                x-show="open"
+                x-show="isOpen"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100"
@@ -199,7 +199,7 @@
                  for the same reason as the backdrop above. --}}
             <div
                 x-ref="panel"
-                x-show="open"
+                x-show="isOpen"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="{{ $enterStart }}"
                 x-transition:enter-end="{{ $enterEnd }}"
@@ -217,6 +217,10 @@
                 class="{{ $panelClasses }} {{ $positionClasses }} {{ $sizeClass }}"
                 x-on:click.stop
                 wire:ignore.self
+                {{-- The theme marker for the panel itself, the surface that paints the drawer's
+                     background. A theme reaching only the body inside it dresses a layer the panel
+                     already covers. --}}
+                data-wk-drawer-panel
                 data-wk-title-id="{{ $titleId }}"
             >
                 {{ $slot }}

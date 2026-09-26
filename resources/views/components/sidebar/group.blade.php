@@ -10,6 +10,10 @@
     'collapsible' => false,
     'open' => true,
     'persist' => null,
+    // Open on every load whatever `persist` stored, for the section that holds the current page:
+    // `:force-open="$entry->isActive()"`. A reader who folds it keeps it folded for this visit.
+    // False leaves the stored state in charge, as without the prop.
+    'forceOpen' => false,
     'scope' => null,
 ])
 
@@ -26,6 +30,8 @@
     // against each prop's own default so a cast never flips a feature that was on.
     $collapsible = BooleanProp::from($collapsible, false);
     $open = BooleanProp::from($open, true);
+    $forceOpen = BooleanProp::from($forceOpen, false);
+    $open = $open || $forceOpen;
 
     // A group clusters related items under an optional label. The label acts
     // as a section heading (via aria-label on a role="group" container) so
@@ -122,7 +128,7 @@
     <div
         @if($groupRole) role="{{ $groupRole }}" @endif
         @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif
-        x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
+        x-data="wirekitSidebarDisclosure({ open: {{ $open ? 'true' : 'false' }}, forceOpen: {{ $forceOpen ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
         {{ $attributes->except(['role', 'aria-label'])->class([$groupClasses]) }}
     >
         {{-- The trigger and the section's own control sit side by side. The wrapper is
@@ -132,7 +138,7 @@
         <button
             type="button"
             x-on:click="toggle()"
-            :aria-expanded="open ? 'true' : 'false'"
+            :aria-expanded="isOpen ? 'true' : 'false'"
             aria-controls="{{ $panelId }}"
             {{-- No visible label to name the button? fall back to a generic name so the
                  disclosure control is never nameless (WCAG 4.1.2). --}}
@@ -148,7 +154,7 @@
             {{-- Chevron rotates when open; hidden in the collapsed icon rail (no room). --}}
             <svg
                 class="w-3.5 h-3.5 shrink-0 transition-transform duration-[var(--transition-wk-duration)] group-data-[collapsed]/wk-sidebar:hidden group-data-[settling]/wk-sidebar:hidden"
-                :class="open ? 'rotate-90' : ''"
+                :class="isOpen ? 'rotate-90' : ''"
                 fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
             >
                 <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
@@ -160,9 +166,17 @@
              the static sidebar.group + sidebar.collapsible. The `typeof collapsed`
              guard avoids a ReferenceError when the group sits in a non-collapsible
              sidebar (no `collapsed` in Alpine scope). --}}
-        <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse x-cloak class="flex flex-col gap-[2px]">
+        {{-- `x-cloak` only on a section the server renders closed. An open one paints with the
+             page instead of appearing once Alpine starts; a closed one stays hidden until then,
+             so it never shows its entries for a frame. --}}
+        <div id="{{ $panelId }}" x-show="childrenVisible()" x-collapse @unless($open) x-cloak @endunless class="flex flex-col gap-[2px]">
             {{ $slot }}
         </div>
+        {{-- Directly after the panel, so the script's previous sibling is this panel. Only with
+             `persist`, and not with `force-open`, which opens the section whatever was stored. --}}
+        @if(is_string($persist) && $persist !== '' && ! $forceOpen)
+            @include('wirekit::components.partials.disclosure-persist-seed', ['seedKey' => $persist, 'seedOn' => $open])
+        @endif
     </div>
 @else
     <div @if($groupRole) role="{{ $groupRole }}" @endif @if($groupLabel !== null) aria-label="{{ $groupLabel }}" @endif {{ $attributes->except(['role', 'aria-label'])->class([$groupClasses]) }}>
