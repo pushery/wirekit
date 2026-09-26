@@ -130,7 +130,7 @@
 
          It cannot double-fire: a node outside the wrapper cannot bubble through it. --}}
     x-on:keydown="handleKeydown"
-    x-show="open"
+    x-show="isOpen"
     {{-- The id is set from the factory (`_applyPanelId`), not bound here.
          `x-bind:id="panelId"` read the value out of the Alpine scope, which is right
          across the TELEPORT and wrong across a Livewire MORPH: on every morph the

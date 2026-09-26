@@ -81,6 +81,19 @@ function parseCounterTarget(target) {
 }
 
 export default () => ({
+    // Handles set while the component runs, declared so that they are its own: Alpine stores a
+    // property no scope declares on the outermost scope around the component.
+    _started: null,
+    _fallbackTimer: null,
+    _run: null,
+    _settleTimer: null,
+    _runCounter: null,
+    _replayListener: null,
+    _replayTargets: null,
+    _entranceListener: null,
+    _observer: null,
+    _destroyed: null,
+
     value: '0',
     // animating: true while counter is running (used by descriptionDeferred Option A
     // to hide/show the description span via x-show).

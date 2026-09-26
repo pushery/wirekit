@@ -97,13 +97,13 @@
 {{-- `wk-collapsible` is a marker with no rules of its own. The reduced-motion clamp matches a `wk-`
      class token and its descendants, and the chevron and the collapsing panel sit under this root.
      It stays outside `resolveClasses()`, so a scoped base class list cannot drop it. --}}
-<div x-data="{ open: {{ \Pushery\WireKit\Support\AlpinePayload::from($openBool) }} }" {{ $attributes->class(['wk-collapsible', $rootClasses]) }}>
+<div x-data="wirekitCollapsible({ open: {{ \Pushery\WireKit\Support\AlpinePayload::from($openBool) }} })" {{ $attributes->class(['wk-collapsible', $rootClasses]) }}>
     {{-- Trigger — a real <button> so it is keyboard-operable (Enter/Space) by default.
          aria-expanded announces state; aria-controls links it to the region below. --}}
     <button
         type="button"
-        x-on:click="open = !open"
-        :aria-expanded="open ? 'true' : 'false'"
+        x-on:click="isOpen = !isOpen"
+        :aria-expanded="isOpen ? 'true' : 'false'"
         aria-controls="{{ $uid }}"
         class="{{ $triggerClasses }}"
     >
@@ -111,7 +111,7 @@
         {{-- Chevron — rotates 180° when open. Decorative. --}}
         <svg
             class="w-4 h-4 shrink-0 transition-transform duration-[var(--transition-wk-duration)]"
-            :class="open ? 'rotate-180' : ''"
+            :class="isOpen ? 'rotate-180' : ''"
             fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true"
         >
             <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
@@ -127,8 +127,8 @@
              panel keeps its box. See utils/findable.js. --}}
         <div
             id="{{ $uid }}"
-            x-wk-findable.collapse="open"
-            x-on:beforematch="open = true"
+            x-wk-findable.collapse="isOpen"
+            x-on:beforematch="isOpen = true"
             @unless($openBool) hidden="until-found" @endunless
         >
             <div class="{{ $contentClasses }}">
@@ -136,7 +136,7 @@
             </div>
         </div>
     @else
-        <div id="{{ $uid }}" x-show="open" x-collapse x-cloak class="{{ $contentClasses }}">
+        <div id="{{ $uid }}" x-show="isOpen" x-collapse x-cloak class="{{ $contentClasses }}">
             {{ $slot }}
         </div>
     @endif

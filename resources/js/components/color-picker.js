@@ -9,11 +9,16 @@
 import { hsvToRgb, rgbToHsv, rgbToHex, parseColor, formatColor } from '../utils/color.js';
 import { position } from '../utils/floating.js';
 import { createFocusTrap } from '../utils/focus-trap.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
 export default function wirekitColorPicker(config = {}) {
-    return {
+    return withOpenAlias({
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _rect: null,
+
         /**
          * The alpha slider announces a whole percentage, not the 0–1 fraction it
          * stores. `Math` is unreachable from a directive under Alpine's CSP
@@ -24,7 +29,7 @@ export default function wirekitColorPicker(config = {}) {
             return Math.round(this.a * 100);
         },
 
-        open: false,
+        isOpen: false,
         // Floating UI autoUpdate teardown handle — set in _anchor(), cleared when
         // the panel closes (the open $watch else-branch) and on destroy(). Keeps the
         // fixed panel anchored to the swatch on scroll/resize without leaking
@@ -117,7 +122,7 @@ export default function wirekitColorPicker(config = {}) {
             // the same reason it needs the focus handling below: in the document it
             // sits LAST, so a reader who activated the swatch would otherwise tab
             // through the whole rest of the page to reach the sliders.
-            this.$watch('open', (isOpen) => {
+            this.$watch('isOpen', (isOpen) => {
                 if (isOpen) {
                     this.$nextTick(() => this._openPanel());
                 } else {
@@ -157,13 +162,13 @@ export default function wirekitColorPicker(config = {}) {
          * until either side moves.
          */
         togglePanel() {
-            if (this.open) {
+            if (this.isOpen) {
                 this.close();
 
                 return;
             }
 
-            this.open = true;
+            this.isOpen = true;
         },
 
         /**
@@ -173,7 +178,7 @@ export default function wirekitColorPicker(config = {}) {
          * programmatic `open = true` gets the same treatment as a click.
          */
         async _openPanel() {
-            if (! this.open) {
+            if (! this.isOpen) {
                 return;
             }
 
@@ -217,7 +222,7 @@ export default function wirekitColorPicker(config = {}) {
          * the window-level Escape handler in the template.
          */
         close() {
-            if (! this.open) {
+            if (! this.isOpen) {
                 return;
             }
 
@@ -241,7 +246,7 @@ export default function wirekitColorPicker(config = {}) {
                 this.$refs.trigger?.focus({ preventScroll: true });
             }
 
-            this.open = false;
+            this.isOpen = false;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
         },
@@ -253,12 +258,12 @@ export default function wirekitColorPicker(config = {}) {
          * The focus return is the trap's own, through `setReturnFocus` above.
          */
         _closeFromTrap() {
-            if (! this.open) {
+            if (! this.isOpen) {
                 return;
             }
 
             this._trap = null;
-            this.open = false;
+            this.isOpen = false;
             this._stopAutoUpdate?.();
             this._stopAutoUpdate = null;
         },
@@ -610,5 +615,5 @@ export default function wirekitColorPicker(config = {}) {
                 this.recents = [];
             }
         },
-    };
+    });
 }

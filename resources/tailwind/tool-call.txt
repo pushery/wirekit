@@ -1,7 +1,7 @@
 !
 !!}
 !==
-!open"
+!isOpen"
 "--shimmer-wk-duration:
 "Build
 "Change
@@ -535,9 +535,9 @@ $wrapperClasses
 :active
 :active="$isRunning">{{
 :active="$isStreaming"
-:aria-expanded="open
+:aria-expanded="isOpen
 :aria-label="copied
-:class="open
+:class="isOpen
 :id',
 :intent="$statusIntent"
 :label="__('wirekit::Arguments
@@ -2951,15 +2951,15 @@ x-collapse
 x-collapse.
 x-data
 x-data="wirekitCodeBlock({
+x-data="wirekitCollapsible({
 x-data="wirekitDismissible({
 x-data="wirekitTooltip({
-x-data="{
 x-if="!copied">
 x-if="copied">
-x-on:beforematch="open
+x-on:beforematch="isOpen
 x-on:click="copy()"
 x-on:click="dismiss()"
-x-on:click="open
+x-on:click="isOpen
 x-on:focusin="focusin($event)"
 x-on:focusout="focusout()"
 x-on:keydown.escape.window="keydownEscape()"
@@ -2971,7 +2971,7 @@ x-on:pointerup="pointerup($event)"
 x-ref="tooltip"
 x-ref="trigger"
 x-show)
-x-show="open"
+x-show="isOpen"
 x-show="shown"
 x-teleport="#wk-overlay-root">
 x-teleport>`,
@@ -2983,7 +2983,7 @@ x-transition:enter="transition
 x-transition:leave-end="opacity-0"
 x-transition:leave-start="opacity-100"
 x-transition:leave="transition
-x-wk-findable.collapse="open"
+x-wk-findable.collapse="isOpen"
 xmlns="http://www.w3.org/2000/svg"
 yet
 yet.
@@ -2997,7 +2997,6 @@ zoom,
 |
 ||
 }
-}"
 })"
 },
 };

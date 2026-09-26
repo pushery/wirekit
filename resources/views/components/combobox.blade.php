@@ -472,7 +472,7 @@
     {{-- In server mode the options are read from the attribute below, so they are not sent twice. --}}
     x-data="wirekitCombobox({ value: {{ \Pushery\WireKit\Support\AlpinePayload::from($value) }}, options: {{ $server ? '[]' : \Pushery\WireKit\Support\AlpinePayload::from($normalized) }}, listId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }}, emptyId: {{ \Pushery\WireKit\Support\AlpinePayload::string($listId.'-empty') }}, inputId: {{ \Pushery\WireKit\Support\AlpinePayload::string($comboId) }}, placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, panelWidth: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelWidth) }}{{ $searchable ? '' : ', searchable: false' }}{{ $serverConfig }} })"
     @if($serverOptions !== null) data-wk-server-options="{{ $serverOptions }}" @endif
-    @click.outside="open = false"
+    @click.outside="isOpen = false"
     {{-- The chosen option, exposed by name so a binding on the component tag reaches
          the SELECTION. It used to reach the search field instead -- the bag below is
          routed to the role="combobox" input, which already carries `x-model="query"`,
@@ -522,14 +522,14 @@
         id="{{ $comboId }}"
         role="combobox"
         aria-expanded="false"
-        :aria-expanded="open"
+        :aria-expanded="isOpen"
         aria-controls="{{ $listId }}"
-        :aria-activedescendant="open && filtered[highlight] ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + highlight : null"
+        :aria-activedescendant="isOpen && filtered[highlight] ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + highlight : null"
         aria-autocomplete="list"
         placeholder="{{ $placeholder }}"
         autocomplete="off"
         x-model="query"
-        @focus="open = true"
+        @focus="isOpen = true"
         @input="openAndReset()"
         @keydown.arrow-down.prevent="openAndMove(1)"
         @keydown.arrow-up.prevent="moveHighlight(-1)"
@@ -539,7 +539,7 @@
              `run(undefined)` would send the server a value nobody chose and then
              roll back from it. --}}
         @keydown.enter.prevent="{{ $optimisticConfig ? 'runIf(highlightedValue())' : 'activateHighlighted()' }}"
-        @keydown.escape="open = false"
+        @keydown.escape="isOpen = false"
         @if($disabled) disabled @endif
         @if($hasError) aria-invalid="true" @endif
         @if($describedBy) aria-describedby="{{ $describedBy }}" @endif
@@ -576,9 +576,9 @@
         tabindex="{{ $disabled ? '-1' : '0' }}"
         aria-haspopup="listbox"
         aria-expanded="false"
-        :aria-expanded="open"
+        :aria-expanded="isOpen"
         aria-controls="{{ $listId }}"
-        :aria-activedescendant="open && filtered[highlight] ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + highlight : null"
+        :aria-activedescendant="isOpen && filtered[highlight] ? {{ \Pushery\WireKit\Support\AlpinePayload::string($listId) }} + '-opt-' + highlight : null"
         @if($label) aria-labelledby="{{ $comboId }}-label" @elseif($resolvedAriaLabel) aria-label="{{ $resolvedAriaLabel }}" @endif
         @if($disabled)
             aria-disabled="true"
@@ -657,7 +657,7 @@
         tabindex="-1"
         aria-hidden="true"
         class="absolute end-3 top-1/2 -translate-y-1/2 p-0.5 rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-transform duration-[var(--transition-wk-duration)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-[var(--opacity-wk-disabled)]"
-        :class="open ? 'rotate-180' : ''"
+        :class="isOpen ? 'rotate-180' : ''"
     >
         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
@@ -670,7 +670,7 @@
     <span
         aria-hidden="true"
         class="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 p-0.5 text-[color:var(--color-wk-text-muted)] transition-transform duration-[var(--transition-wk-duration)]"
-        :class="open ? 'rotate-180' : ''"
+        :class="isOpen ? 'rotate-180' : ''"
     >
         <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.06l3.71-3.83a.75.75 0 111.08 1.04l-4.25 4.39a.75.75 0 01-1.08 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
@@ -725,7 +725,7 @@
         style="list-style: none; margin: 0; padding: 0;{{ $panelWidthStyle !== '' ? ' '.$panelWidthStyle : '' }}"
         {{-- The results on screen answer an older search while a newer one is out. --}}
         @if($server) x-bind:aria-busy="searchAriaBusy()" @endif
-        x-show="open && filtered.length > 0"
+        x-show="isOpen && filtered.length > 0"
         x-cloak
     >
         @if($hasGroups)
@@ -867,9 +867,9 @@
         {{-- A server search shows this before anything is typed too: "Type to search" is the
              answer to an empty field there, where the list is empty until the reader asks. --}}
         @if($server)
-            x-show="open && filtered.length === 0"
+            x-show="isOpen && filtered.length === 0"
         @else
-            x-show="open && filtered.length === 0 && query !== ''"
+            x-show="isOpen && filtered.length === 0 && query !== ''"
         @endif
         x-cloak
     >

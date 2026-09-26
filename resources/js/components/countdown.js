@@ -42,6 +42,10 @@ import { pluralize } from '../utils/plural.js';
 
 export default function wirekitCountdown(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _visibility: null,
+
         target: Number(config.target || 0),
         warnSeconds: config.warnSeconds ?? null,
         activeUnits: config.activeUnits || [],

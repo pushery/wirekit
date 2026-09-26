@@ -52,7 +52,7 @@
          through Escape on every one of its previews.
          Guarded on `open` so a page full of these does not run a handler each
          keystroke. --}}
-    @keydown.escape.window="open && close()"
+    @keydown.escape.window="isOpen && close()"
     {{ $attributes->class([$wrapperClasses]) }}
 >
     {{-- Trigger element.
@@ -111,7 +111,7 @@
     <template x-teleport="#wk-overlay-root">
         <div
             x-ref="panel"
-            x-show="open"
+            x-show="isOpen"
             x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"
             x-transition:enter-start="opacity-0 scale-95"
             x-transition:enter-end="opacity-100 scale-100"

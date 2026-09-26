@@ -1,5 +1,5 @@
 /*!
- * WireKit CSS v2.56.0 — MIT License
+ * WireKit CSS v2.57.0 — MIT License
  * https://github.com/pushery/wirekit
  * https://wirekit.app
  *
@@ -859,6 +859,11 @@
        over from a tablet width up. A cap, not a width: a short label keeps its own width, and
        a table with room to spare still hands the column its share. */
     --size-wk-table-sticky-column-max: min(40vw, 16rem);
+    /* The narrowest the frozen first column gets. When a table is wider than its box, the
+       browser hands every column its narrowest possible width, and a label that may wrap
+       anywhere keeps almost none: one letter a line. A floor keeps it readable. `0px` sets
+       none, and the floor never exceeds the cap above. */
+    --size-wk-table-sticky-column-min: 0px;
     /* A tighter ceiling for the columns that scroll beside the frozen one. They are already
        capped at the room beside it (the rule next to the frozen column's own, below), and
        this default is never the smaller of the two, so that room decides until a length is
@@ -2881,8 +2886,14 @@ input.wk-field::-webkit-datetime-edit-text {
    `:not(.wk-table)` is the honest lever: the component stamps `wk-table` on every table it
    renders, so it keeps deciding its own width through its own utilities — which is what the
    paragraph above always meant. A table this library did not render carries no `wk-table`,
-   gets the width pair, and that is the rendered Markdown table this block was written for. */
-[data-wk-sticky-column]:not(.wk-table) {
+   gets the width pair, and that is the rendered Markdown table this block was written for.
+
+   `data-wk-sticky-column-fit` beside either attribute keeps the width pair off a table that
+   should wrap into its box: every column of a `max-content` table is as wide as its longest
+   cell on one line, so a cell holding a sentence makes the whole table pan on a phone. With
+   it, only the first column is frozen and the table keeps the width its own CSS gives it.
+   Inside the same `:not()` as `.wk-table`, so the specificity of the rule is unchanged. */
+[data-wk-sticky-column]:not(.wk-table, [data-wk-sticky-column-fit]) {
     inline-size: max-content;
     min-inline-size: 100%;
 }
@@ -2895,6 +2906,7 @@ input.wk-field::-webkit-datetime-edit-text {
     /* A cap rather than a width: a short label keeps its own, and the column
        wraps instead of eating the width the other columns need to appear. */
     max-inline-size: var(--size-wk-table-sticky-column-max);
+    min-inline-size: min(var(--size-wk-table-sticky-column-min), var(--size-wk-table-sticky-column-max));
     white-space: normal;
 }
 
@@ -2904,6 +2916,64 @@ input.wk-field::-webkit-datetime-edit-text {
 [data-wk-sticky-column] > thead > tr > :is(th, td):first-child {
     z-index: 20;
     background-color: var(--color-wk-bg-subtle);
+}
+
+/* The frozen cell draws the lines along its own edges. In a collapsed table a line belongs
+   to the edge between two cells, and a sticky cell with a background is its own stacking
+   context: WebKit rounds that background onto whole pixels, so a line that sits on half a
+   pixel disappears under the frozen column while the columns beside it still show it.
+
+   The line is taken from where the table already draws it rather than restated: the cell
+   inherits its row's edge (the last header row first inherits the head's, the first footer
+   row the foot's), and a pseudo-element inherits it from the cell. A row that draws no line,
+   such as a record whose detail row is open, therefore draws none here either. The
+   pseudo-element sits centered on the edge, one line width out from the cell's padding box,
+   so where the engine already shows the line it lies exactly on top of it.
+
+   Only the component's own tables (`.wk-table`): a table another stylesheet styles may draw
+   its lines on the cells themselves, and inheriting the row's edge would replace them.
+
+   The frozen cell also paints its background inside its padding box. A line lies half in the
+   cell above it and half in the cell below, and each frozen cell is painted above the table's
+   own lines, the later one last: with its background on the whole box, the cell below covered
+   the lower half of a line, including the half drawn by the pseudo-element of the cell above.
+   The padding box ends where the line begins, so neither cell paints over it. */
+.wk-table[data-wk-sticky-column] > :is(thead, tbody, tfoot) > tr > :is(th, td):first-child {
+    background-clip: padding-box;
+}
+
+.wk-table[data-wk-sticky-column] > thead > tr:last-child {
+    border-bottom: inherit;
+}
+
+.wk-table[data-wk-sticky-column] > tfoot > tr:first-child {
+    border-top: inherit;
+}
+
+.wk-table[data-wk-sticky-column] > :is(thead, tbody) > tr > :is(th, td):first-child {
+    border-bottom: inherit;
+}
+
+.wk-table[data-wk-sticky-column] > tfoot > tr > :is(th, td):first-child {
+    border-top: inherit;
+}
+
+.wk-table[data-wk-sticky-column] > :is(thead, tbody) > tr > :is(th, td):first-child::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: calc(var(--border-wk-width) * -1);
+    border-bottom: inherit;
+    pointer-events: none;
+}
+
+.wk-table[data-wk-sticky-column] > tfoot > tr > :is(th, td):first-child::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    inset-block-start: calc(var(--border-wk-width) * -1);
+    border-top: inherit;
+    pointer-events: none;
 }
 
 /* The columns that scroll are capped at the room beside the frozen one, and their
@@ -2940,9 +3010,10 @@ input.wk-field::-webkit-datetime-edit-text {
    The breakpoints are Tailwind's defaults (40, 48, 64, 80 and 96rem), because a stylesheet
    shipped ready-made cannot read the application's theme. `:not(.wk-table)` leaves the
    component deciding for its own markup, as in the width rule above, and the child
-   combinators leave a nested table alone. */
+   combinators leave a nested table alone. `data-wk-sticky-column-fit` drops the width pair
+   here too, and the floor `--size-wk-table-sticky-column-min` applies as it does above. */
 @media (width < 40rem) {
-    [data-wk-sticky-column-below="sm"]:not(.wk-table) {
+    [data-wk-sticky-column-below="sm"]:not(.wk-table, [data-wk-sticky-column-fit]) {
         inline-size: max-content;
         min-inline-size: 100%;
     }
@@ -2953,6 +3024,7 @@ input.wk-field::-webkit-datetime-edit-text {
         z-index: 1;
         background-color: var(--color-wk-bg);
         max-inline-size: var(--size-wk-table-sticky-column-max);
+        min-inline-size: min(var(--size-wk-table-sticky-column-min), var(--size-wk-table-sticky-column-max));
         white-space: normal;
     }
 
@@ -2963,7 +3035,7 @@ input.wk-field::-webkit-datetime-edit-text {
 }
 
 @media (width < 48rem) {
-    [data-wk-sticky-column-below="md"]:not(.wk-table) {
+    [data-wk-sticky-column-below="md"]:not(.wk-table, [data-wk-sticky-column-fit]) {
         inline-size: max-content;
         min-inline-size: 100%;
     }
@@ -2974,6 +3046,7 @@ input.wk-field::-webkit-datetime-edit-text {
         z-index: 1;
         background-color: var(--color-wk-bg);
         max-inline-size: var(--size-wk-table-sticky-column-max);
+        min-inline-size: min(var(--size-wk-table-sticky-column-min), var(--size-wk-table-sticky-column-max));
         white-space: normal;
     }
 
@@ -2984,7 +3057,7 @@ input.wk-field::-webkit-datetime-edit-text {
 }
 
 @media (width < 64rem) {
-    [data-wk-sticky-column-below="lg"]:not(.wk-table) {
+    [data-wk-sticky-column-below="lg"]:not(.wk-table, [data-wk-sticky-column-fit]) {
         inline-size: max-content;
         min-inline-size: 100%;
     }
@@ -2995,6 +3068,7 @@ input.wk-field::-webkit-datetime-edit-text {
         z-index: 1;
         background-color: var(--color-wk-bg);
         max-inline-size: var(--size-wk-table-sticky-column-max);
+        min-inline-size: min(var(--size-wk-table-sticky-column-min), var(--size-wk-table-sticky-column-max));
         white-space: normal;
     }
 
@@ -3005,7 +3079,7 @@ input.wk-field::-webkit-datetime-edit-text {
 }
 
 @media (width < 80rem) {
-    [data-wk-sticky-column-below="xl"]:not(.wk-table) {
+    [data-wk-sticky-column-below="xl"]:not(.wk-table, [data-wk-sticky-column-fit]) {
         inline-size: max-content;
         min-inline-size: 100%;
     }
@@ -3016,6 +3090,7 @@ input.wk-field::-webkit-datetime-edit-text {
         z-index: 1;
         background-color: var(--color-wk-bg);
         max-inline-size: var(--size-wk-table-sticky-column-max);
+        min-inline-size: min(var(--size-wk-table-sticky-column-min), var(--size-wk-table-sticky-column-max));
         white-space: normal;
     }
 
@@ -3026,7 +3101,7 @@ input.wk-field::-webkit-datetime-edit-text {
 }
 
 @media (width < 96rem) {
-    [data-wk-sticky-column-below="2xl"]:not(.wk-table) {
+    [data-wk-sticky-column-below="2xl"]:not(.wk-table, [data-wk-sticky-column-fit]) {
         inline-size: max-content;
         min-inline-size: 100%;
     }
@@ -3037,6 +3112,7 @@ input.wk-field::-webkit-datetime-edit-text {
         z-index: 1;
         background-color: var(--color-wk-bg);
         max-inline-size: var(--size-wk-table-sticky-column-max);
+        min-inline-size: min(var(--size-wk-table-sticky-column-min), var(--size-wk-table-sticky-column-max));
         white-space: normal;
     }
 

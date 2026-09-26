@@ -376,7 +376,7 @@
              panel already handles Escape while focus is inside it; this stays as the
              path for an Escape pressed while focus sits elsewhere, and close() is a
              no-op on an already-closed picker. --}}
-        @keydown.escape.window="open && close()"
+        @keydown.escape.window="isOpen && close()"
     >
         @if($nativeOnMobile)
             {{-- nativeOnMobile trigger: on touch-primary devices (useNative, decided
@@ -423,7 +423,7 @@
                 id="{{ $pickerId }}"
                 x-ref="trigger"
                 @click="togglePanel()"
-                :aria-expanded="open ? 'true' : 'false'"
+                :aria-expanded="isOpen ? 'true' : 'false'"
                 aria-haspopup="dialog"
                 @if($disabled) disabled @endif
                 @if($hasError) aria-invalid="true" @endif
@@ -438,7 +438,7 @@
                 id="{{ $pickerId }}"
                 x-ref="trigger"
                 @click="togglePanel()"
-                :aria-expanded="open ? 'true' : 'false'"
+                :aria-expanded="isOpen ? 'true' : 'false'"
                 aria-haspopup="dialog"
                 aria-label="{{ $name ? __('wirekit:::name color', ['name' => Str::headline((string) $name)]) : __('wirekit::Color picker') }}"
                 @if($disabled) disabled @endif
@@ -466,7 +466,7 @@
              not the root, because teleporting moves the panel out of the subtree. --}}
         <template x-teleport="#wk-overlay-root">
         <div
-            x-show="open"
+            x-show="isOpen"
             x-cloak
             x-ref="panel"
             x-transition.opacity

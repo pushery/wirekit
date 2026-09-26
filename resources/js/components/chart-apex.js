@@ -235,6 +235,19 @@ export { renderUnifiedTooltip };
  */
 export default function wirekitApexChart(config) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _cellShapeTooltipCleanup: null,
+        _hoverPaused: null,
+        _hoverEnterHandler: null,
+        _hoverLeaveHandler: null,
+        _wireStreamFlushScheduled: null,
+        _mount: null,
+        _wireStreamQueue: null,
+        _wireStreamFlush: null,
+        _wireStreamHandler: null,
+        _detachRaf: null,
+
         chart: null,
         _navCleanup: null,
         // Stops following the data the component renders beside the chart; set once the

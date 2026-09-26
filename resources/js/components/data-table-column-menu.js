@@ -1,3 +1,5 @@
+import { withOpenAlias } from '../utils/open-alias.js';
+
 /**
  * Data table — the column-visibility menu's disclosure and its anchoring.
  *
@@ -31,8 +33,8 @@
  * `repairErasure`, which watches the attribute rather than the box.
  */
 export default function wirekitDataTableColumnMenu() {
-    return {
-        open: false,
+    return withOpenAlias({
+        isOpen: false,
 
         // The positioner's teardown handle, held only while the panel is open. Its own docblock
         // puts this duty on the caller: an observer left behind outlives every opening, and this
@@ -42,7 +44,7 @@ export default function wirekitDataTableColumnMenu() {
         init() {
             // Anchor AFTER the menu has been rendered: it is x-show'd, so at the
             // moment `open` flips it still has no box to measure.
-            this.$watch('open', (isOpen) => {
+            this.$watch('isOpen', (isOpen) => {
                 if (isOpen) {
                     this.$nextTick(() => {
                         this.place();
@@ -151,7 +153,7 @@ export default function wirekitDataTableColumnMenu() {
 
                 // Closed while the placement was in flight: the helper awaits frames and a promise,
                 // so the panel can be shut before this resolves and the observer would outlive it.
-                if (! this.open) {
+                if (! this.isOpen) {
                     result.stop();
 
                     return;
@@ -160,5 +162,5 @@ export default function wirekitDataTableColumnMenu() {
                 this._stopRepair = result.stop;
             });
         },
-    };
+    });
 }

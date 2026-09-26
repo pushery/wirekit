@@ -2945,7 +2945,7 @@ x-ref="trigger"
 x-show)
 x-show.
 x-show="active
-x-show="open"
+x-show="isOpen"
 x-show="shown"
 x-teleport="#wk-overlay-root">
 x-teleport>`,

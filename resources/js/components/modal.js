@@ -5,6 +5,7 @@
  * and event-based show/close via 'wirekit-modal-show' / 'wirekit-modal-close'.
  */
 import { createOverlay } from '../utils/overlay.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 import { firstControl } from '../utils/first-control.js';
 
 /**
@@ -24,7 +25,7 @@ export default function wirekitModal(config = {}) {
         initialFocus: (panelEl) => firstControl(panelEl, 'data-wk-modal-body'),
     });
 
-    return {
+    return withOpenAlias({
         ...overlay,
 
         init() {
@@ -34,5 +35,5 @@ export default function wirekitModal(config = {}) {
         destroy() {
             this.destroyOverlay();
         },
-    };
+    });
 }

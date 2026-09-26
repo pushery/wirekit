@@ -30,6 +30,13 @@ import { createFocusTrap } from '../utils/focus-trap.js';
  */
 export default function wirekitAppShell(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _onViewportChange: null,
+        _armTimer: null,
+        _arm: null,
+        _onInterimEscape: null,
+
         sidebarOpen: false,
 
         /** The id the toggle's `aria-controls` names. Empty when the shell has no drawer. */

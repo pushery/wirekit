@@ -72,7 +72,7 @@
          answer every Escape on the page. It cannot double-close either: when focus IS on
          an item the panel handler runs first and flips `open`, and this guard then reads
          false. Same binding, same reason, as dropdown.blade.php. --}}
-    x-on:keydown.escape.window="open && close()"
+    x-on:keydown.escape.window="isOpen && close()"
     {{ $attributes->class([$wrapperClasses]) }}
 >
     {{-- Trigger — the area that responds to right-click (desktop) and to a
@@ -128,7 +128,7 @@
     @endif
         <div
             x-ref="panel"
-            x-show="open"
+            x-show="isOpen"
             {{-- The menu keyboard model is bound HERE too, not only on the wrapper.
 
                  `x-teleport` MOVES this element to `#wk-overlay-root`; it does not re-route

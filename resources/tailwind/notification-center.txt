@@ -136,7 +136,7 @@ $title])
 9h18s-3-2-3-9M13.7
 :
 :aria-checked="activeFilter
-:aria-expanded="open"
+:aria-expanded="isOpen"
 :aria-label="unreadCount
 :class="activeFilter
 :class="item.read
@@ -954,7 +954,7 @@ x-for="t
 x-if="!item.href">
 x-if="item.href">
 x-on:click.outside="close()"
-x-on:keydown.escape.window="open
+x-on:keydown.escape.window="isOpen
 x-on:keydown.tab="tabWithinPanel($event)"
 x-ref="bell"
 x-ref="model"
@@ -962,10 +962,10 @@ x-ref="panel"
 x-show="!item.read"
 x-show="group.label"
 x-show="isEmpty"
+x-show="isOpen"
 x-show="item.actionLabel"
 x-show="item.body"
 x-show="item.timeLabel"
-x-show="open"
 x-show="types.length
 x-show="unreadCount
 x-teleport="#wk-overlay-root">

@@ -67,7 +67,7 @@ $wrapperClasses
 @focusin="focusin()"
 @focusout="focusout()"
 @keydown.escape.prevent="closeAndFocusTrigger()"
-@keydown.escape.window="open
+@keydown.escape.window="isOpen
 @mouseenter="mouseenter()"
 @mouseleave="mouseleave()"
 @php
@@ -459,7 +459,7 @@ x-on:keydown.tab="tabFromTrigger($event)"
 x-on:keydown.tab="tabWithinCard($event)"
 x-ref="panel"
 x-ref="trigger"
-x-show="open"
+x-show="isOpen"
 x-teleport="#wk-overlay-root">
 x-transition:enter-end="opacity-100
 x-transition:enter-start="opacity-0

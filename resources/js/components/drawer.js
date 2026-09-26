@@ -5,6 +5,7 @@
  * Differs in transitions (slide vs scale) and sizing (position-dependent).
  */
 import { createOverlay } from '../utils/overlay.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 import { firstControl } from '../utils/first-control.js';
 
 /**
@@ -26,7 +27,7 @@ export default function wirekitDrawer(config = {}) {
         initialFocus: (panelEl) => firstControl(panelEl, 'data-wk-drawer-body'),
     });
 
-    return {
+    return withOpenAlias({
         ...overlay,
 
         init() {
@@ -36,5 +37,5 @@ export default function wirekitDrawer(config = {}) {
         destroy() {
             this.destroyOverlay();
         },
-    };
+    });
 }

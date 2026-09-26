@@ -452,6 +452,7 @@ automatic
 back
 back.
 backdrop
+background.
 bare
 be
 bears
@@ -558,9 +559,11 @@ controls
 correct
 could
 coverage
+covers.
 cut
 d="M6
 data-wk-drawer-body
+data-wk-drawer-panel
 data-wk-title-id="{{
 deactivates
 debug
@@ -606,6 +609,7 @@ drawer.js
 drawer/close.blade.php.
 drawers
 drawn
+dresses
 duration-200"
 dynamic
 each
@@ -748,6 +752,7 @@ it.
 it:
 items-center
 its
+itself,
 justify-between',
 justify-center',
 justify-end
@@ -765,6 +770,7 @@ landmark
 lands
 larger
 later
+layer
 layout
 layout.
 leave
@@ -792,6 +798,7 @@ logs
 looking.
 made
 make
+marker
 marks
 markup,
 match
@@ -881,6 +888,7 @@ package.
 packed
 padding
 pages
+paints
 pair
 pair.
 panel
@@ -926,6 +934,7 @@ reach.
 reach:
 reached
 reaches
+reaching
 read.
 reader
 reads
@@ -1190,11 +1199,11 @@ x-on:click.stop
 x-on:click="close()"
 x-on:click="dismissByReader('close-button')"
 x-on:click="handleBackdropClick()"
-x-on:keydown.escape.window="open
+x-on:keydown.escape.window="isOpen
 x-ref="panel"
 x-show/x-teleport
 x-show="dismissible"
-x-show="open"
+x-show="isOpen"
 x-teleport="#wk-overlay-root">
 x-transition:enter-end="opacity-100"
 x-transition:enter-end="{{

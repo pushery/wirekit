@@ -132,7 +132,7 @@
     x-data="wirekitFilterBuilder({ fields: {{ \Pushery\WireKit\Support\AlpinePayload::from($fieldsArr) }}, value: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueArr) }}, announcements: {{ $filterAnnouncements }}, words: {{ $filterWords }} })"
     {{-- click.outside lives on the teleported panel (it's no longer in this subtree);
          escape stays here (window-scoped, teleport-agnostic). --}}
-    x-on:keydown.escape.window="open && close(true)"
+    x-on:keydown.escape.window="isOpen && close(true)"
     {{ $attributes->only('class')->class([$base]) }}
 >
     {{-- The set's own live region.
@@ -205,8 +205,8 @@
             <button
                 type="button"
                 x-ref="trigger"
-                @click="open ? close() : openAdd()"
-                :aria-expanded="open"
+                @click="isOpen ? close() : openAdd()"
+                :aria-expanded="isOpen"
                 aria-haspopup="dialog"
                 class="inline-flex items-center gap-1 px-[var(--padding-wk-x-sm)] py-[var(--padding-wk-y-sm)] text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border-strong)] border-dashed rounded-[var(--radius-wk-full)] hover:text-[color:var(--color-wk-text)] hover:border-[var(--color-wk-border-strong-hover)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] transition-colors cursor-pointer"
             >
@@ -220,7 +220,7 @@
                  because teleporting moves the panel out of the root's subtree. --}}
             <template x-teleport="#wk-overlay-root">
             <div
-                x-show="open"
+                x-show="isOpen"
                 x-cloak
                 x-ref="panel"
                 x-transition.origin.top.left

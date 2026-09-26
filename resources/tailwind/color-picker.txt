@@ -310,7 +310,7 @@ $wrapperClasses
 9-13.5"
 9l.4.4a2.1
 :
-:aria-expanded="open
+:aria-expanded="isOpen
 :aria-invalid="invalidInput
 :aria-label="copied
 :aria-label="format
@@ -414,7 +414,7 @@ $wrapperClasses
 @keydown.end.prevent="planeEnd()"
 @keydown.end.prevent="setAlpha(1)"
 @keydown.end.prevent="setHue(360)"
-@keydown.escape.window="open
+@keydown.escape.window="isOpen
 @keydown.home.prevent="planeHome()"
 @keydown.home.prevent="setAlpha(0)"
 @keydown.home.prevent="setHue(0)"
@@ -1896,7 +1896,7 @@ x-show="!cleared"@endif></span>
 x-show="!copied"
 x-show="copied"
 x-show="hasEyeDropper"
-x-show="open"
+x-show="isOpen"
 x-show="recents.length"
 x-teleport="#wk-overlay-root">
 x-text="announcement"></div>

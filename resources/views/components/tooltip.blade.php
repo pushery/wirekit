@@ -226,7 +226,7 @@
              one hide timer for the pair rather than two racing each other. --}}
         x-on:mouseenter="mouseenter()"
         x-on:mouseleave="mouseleave()"
-        x-show="open"
+        x-show="isOpen"
         x-transition:enter="transition ease-out duration-100"
         x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100"

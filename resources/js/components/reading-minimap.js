@@ -71,6 +71,11 @@ const RENDERED_MUTATION_DEBOUNCE_MS = 250;
 const IDLE_RESET_EVENTS = ['pointermove', 'scroll', 'pointerdown'];
 
 export default (options = {}) => ({
+    // Handles set while the component runs, declared so that they are its own: Alpine stores a
+    // property no scope declares on the outermost scope around the component.
+    _resizeFrame: null,
+    _tooltipEscapeHandler: null,
+
     // The hover-preview iframe's `title`. It carries `aria-hidden` and `tabindex="-1"`
     // so it is not exposed, but a title is still a user-visible string and costs nothing
     // to route. Server-translated, with the English kept as the fallback.

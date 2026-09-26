@@ -1292,6 +1292,7 @@ __toString
 `iconOnly`,
 `inbox`
 `inline-flex`
+`isOpen`
 `key`
 `key`,
 `label`
@@ -1312,7 +1313,6 @@ __toString
 `munchen`
 `name`.
 `onItemClick`'s
-`open`
 `option`
 `outline`
 `outlined`
@@ -3664,7 +3664,7 @@ x-cloak
 x-data
 x-data="wirekitPopover({
 x-data="wirekitScopeSwitcher({
-x-effect="syncOpen(open)"
+x-effect="syncOpen(isOpen)"
 x-init,
 x-init="initTriggerAria()"
 x-model="query"
@@ -3685,7 +3685,7 @@ x-ref="search"
 x-ref="topSentinel"
 x-ref="trigger"
 x-show="bottomShadow"
-x-show="open"
+x-show="isOpen"
 x-show="topShadow"
 x-show="visibleCount
 x-teleport="#wk-overlay-root">

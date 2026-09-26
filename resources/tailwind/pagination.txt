@@ -16,6 +16,7 @@
 "always
 "button"
 "disables
+"false",
 "is
 "mini"
 "next"
@@ -88,7 +89,7 @@ $found)
 $found[0]
 $hasError
 $hasRows
-$hasRows)))
+$hasRows)
 $hasSuccess
 $hasWireAction
 $hasWireAction;
@@ -257,6 +258,9 @@ $successMessage
 $successMessage)
 $summary
 $summary,
+$summaryAlone
+$summaryAlone))
+$summaryOnSinglePage
 $surface
 $surface);
 $surface)`
@@ -507,6 +511,7 @@ $wrapLabel
 'stackBelow',
 'start'
 'success'
+'summaryOnSinglePage'
 'surface'
 'surface',
 'text-[color:var(--color-wk-accent-fg)]',
@@ -522,6 +527,7 @@ $wrapLabel
 'total'
 'total')
 'total'))
+'total');
 'touchTextFloor'
 'tracking-[var(--font-wk-letter-spacing)]',
 'transition-colors',
@@ -866,6 +872,7 @@ $wrapLabel
 @if($singlePage)
 @if($stackBelow)
 @if($summary
+@if($summaryAlone)
 @if($tag
 @if($variant
 @if(is_array($optionLabel)
@@ -930,6 +937,7 @@ BooleanProp::from($livewire,
 BooleanProp::from($loading,
 BooleanProp::from($required,
 BooleanProp::from($reserveMessage,
+BooleanProp::from($summaryOnSinglePage,
 BooleanProp::from($touchTextFloor,
 BooleanProp::from($wrapLabel,
 BooleanProp::isFalse($success);
@@ -968,6 +976,7 @@ Default
 Degrading
 Dev-only
 Disabled
+Draw
 Dropdown
 EIGHT,
 ELEMENT,
@@ -1079,6 +1088,7 @@ Neutral
 No
 Nobody
 Normalized
+Not
 Nothing
 Null
 Numbered
@@ -1453,6 +1463,7 @@ __('wirekit::Showing
 `src/VariantResolver.php`,
 `stackBelow`
 `str_replace('h-[',
+`summary-on-single-page="false"`
 `surface`).
 `table.th
 `table.th`
@@ -1540,6 +1551,7 @@ allow-list.
 allows
 alone
 alone.
+alone:
 along
 along.
 alongside
@@ -2051,6 +2063,7 @@ dist/wirekit.css;
 distance
 distinguish:
 do
+do.
 docblock
 docs,
 docs.
@@ -2307,6 +2320,7 @@ get
 gets
 ghost()
 give
+give.
 given
 gives
 glob
@@ -2345,6 +2359,7 @@ happens
 hard-disabled
 hardcoded
 has
+has.
 hasActionForComponent()
 hasPages(),
 have
@@ -2531,6 +2546,7 @@ labeled
 labels
 labels,
 labels.
+landmark,
 lands
 lang
 lang="{{
@@ -2708,6 +2724,7 @@ nav's
 navigable
 navigable,
 navigate
+navigate.
 navigation
 nearest
 need
@@ -3104,6 +3121,7 @@ responsive
 restored
 result
 resulting
+results
 results',
 retargeted
 return;
@@ -3211,6 +3229,7 @@ sets
 setting
 setup
 seven
+seven,
 shadow-[var(--shadow-wk-none)]
 shadow-[var(--shadow-wk-sm)]
 shape
@@ -3283,6 +3302,7 @@ source-detection
 space
 space,
 span
+speaks,
 speaks.
 specificity
 spelling
@@ -3453,6 +3473,7 @@ these
 they
 thing.
 things
+thirty
 this
 this:
 those
@@ -3488,10 +3509,12 @@ tokens
 tokens.
 told
 too
+too:
 took
 toolbar
 top
 total
+total.
 touch
 touch-target
 toward
@@ -3526,6 +3549,7 @@ true,
 true:
 true;
 truthy
+truthy.
 turn
 turn.
 turn:

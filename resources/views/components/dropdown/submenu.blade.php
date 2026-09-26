@@ -98,14 +98,14 @@
      parent by Floating UI (right-start, collision-flip handled by the shared
      position() util). Purely additive — a flat menu never renders this.
 
-     x-effect="open || closeSub()" resets the submenu when the OUTER dropdown
+     x-effect="isOpen || closeSub()" resets the submenu when the OUTER dropdown
      closes (the outer scope's `open`), so a reopened dropdown never shows a
      stale-open submenu. The parent item's @click.stop keeps a click on the
      parent from bubbling to the dropdown root's auto-close delegated handler
      (which would otherwise dismiss the whole menu). --}}
 <div
     x-data="wirekitSubmenu({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }} })"
-    x-effect="open || closeSub()"
+    x-effect="isOpen || closeSub()"
     data-wk-submenu
     class="block w-full"
 >

@@ -261,9 +261,9 @@ $validated
 6M6
 6l12
 :
-:aria-expanded="open
-:aria-hidden="open
-:data-shown="open
+:aria-expanded="isOpen
+:aria-hidden="isOpen
+:data-shown="isOpen
 :name="$icon"
 </button>
 </div>
@@ -1756,7 +1756,7 @@ x-on:keydown.arrow-down="move(1,
 x-on:keydown.arrow-up="move(-1,
 x-on:keydown.escape.prevent="close()"
 x-ref="trigger"
-x-show="open"
+x-show="isOpen"
 yet.
 z-40',
 z-40`

@@ -392,12 +392,12 @@
                          (a landmark would make every table on the page the same region).
                          The scroll region keeps a keyboard model through that group role and
                          its focusable checkboxes, which the factory focuses on open. --}}
-                    <div x-data="wirekitDataTableColumnMenu()" @click.outside="open = false" @keydown.escape="open = false" class="relative">
-                        <button type="button" id="{{ $columnsButtonId }}" x-ref="colBtn" @click="open = !open" :aria-expanded="open" aria-controls="{{ $columnsPanelId }}" class="{{ $iconBtn }}">
+                    <div x-data="wirekitDataTableColumnMenu()" @click.outside="isOpen = false" @keydown.escape="isOpen = false" class="relative">
+                        <button type="button" id="{{ $columnsButtonId }}" x-ref="colBtn" @click="isOpen = !isOpen" :aria-expanded="isOpen" aria-controls="{{ $columnsPanelId }}" class="{{ $iconBtn }}">
                             <svg aria-hidden="true" class="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 4h12M2 8h12M2 12h12"/></svg>
                             {{ __('wirekit::Columns') }}
                         </button>
-                        <div x-show="open" x-cloak x-ref="colMenu" id="{{ $columnsPanelId }}" role="group" aria-labelledby="{{ $columnsButtonId }}" class="fixed z-[var(--z-wk-dropdown)] w-[12rem] max-h-[70vh] overflow-y-auto p-[var(--padding-wk-x-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]">
+                        <div x-show="isOpen" x-cloak x-ref="colMenu" id="{{ $columnsPanelId }}" role="group" aria-labelledby="{{ $columnsButtonId }}" class="fixed z-[var(--z-wk-dropdown)] w-[12rem] max-h-[70vh] overflow-y-auto p-[var(--padding-wk-x-sm)] bg-[var(--color-wk-bg-elevated)] border-[length:var(--border-wk-width)] border-[var(--color-wk-border)] rounded-[var(--radius-wk-md)] shadow-[var(--shadow-wk-lg)]">
                             <template x-for="col in columns" :key="col.key">
                                 <label class="flex items-center gap-2 px-[var(--padding-wk-x-sm)] py-1 text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text)] rounded-[var(--radius-wk-sm)] hover:bg-[var(--color-wk-bg-muted)] cursor-pointer">
                                     <input type="checkbox" :checked="isColumnVisible(col.key)" @change="toggleColumn(col.key)" class="{{ $checkboxClass }}" />

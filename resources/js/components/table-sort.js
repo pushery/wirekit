@@ -18,6 +18,10 @@ import { devWarn } from '../utils/dev-warning.js';
 
 export default function wirekitTableSort(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        __separators: null,
+
         sortColumn: null,
         sortDirection: null,
         _originalOrder: [],

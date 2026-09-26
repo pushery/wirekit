@@ -42,6 +42,7 @@
  */
 import { focusIsWithin, position } from '../utils/floating.js';
 import { anchorMoved, anchorSnapshot } from '../utils/scroll-anchor.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * What counts as focusable inside the popover. Same selector hover-card and
@@ -113,7 +114,7 @@ export default function wirekitFilterBuilder(config = {}) {
         config.words || {}
     );
 
-    return {
+    return withOpenAlias({
         /**
          * The filter tree, serialized for the hidden input a form
          * (or wire:model) submits. `JSON` is unreachable from a directive under
@@ -141,7 +142,7 @@ export default function wirekitFilterBuilder(config = {}) {
         filterAnnouncement: '',
 
         // Popover state.
-        open: false,
+        isOpen: false,
         editIndex: null, // null = adding a new filter; number = editing existing
         draft: { field: '', op: '', value: '' },
 
@@ -240,7 +241,7 @@ export default function wirekitFilterBuilder(config = {}) {
             // every scroller; passive per perf-hygiene.
             if (typeof window !== 'undefined') {
                 this._onScroll = (e) => {
-                    if (!this.open) return;
+                    if (!this.isOpen) return;
                     const panel = this.$refs.panel;
                     if (panel && e.target instanceof Node && panel.contains(e.target)) return;
                     // Only a scroll that moved the trigger has stranded anything — utils/scroll-anchor.js.
@@ -248,7 +249,7 @@ export default function wirekitFilterBuilder(config = {}) {
                     this.close();
                 };
                 window.addEventListener('scroll', this._onScroll, { passive: true, capture: true });
-                this._onResize = () => { if (this.open) this.close(); };
+                this._onResize = () => { if (this.isOpen) this.close(); };
                 window.addEventListener('resize', this._onResize, { passive: true });
             }
         },
@@ -273,21 +274,21 @@ export default function wirekitFilterBuilder(config = {}) {
             this.draft = { field: first ? first.key : '', op: '', value: '' };
             this._syncDraftDefaults();
             this._anchorAt = anchorSnapshot(this.$refs.trigger);
-            this.open = true;
+            this.isOpen = true;
             this._focusFirstControl();
         },
         openEdit(i) {
             this.editIndex = i;
             this.draft = { ...this.filters[i] };
             this._anchorAt = anchorSnapshot(this.$refs.trigger);
-            this.open = true;
+            this.isOpen = true;
             this._focusFirstControl();
         },
         // restoreFocus=true returns focus to the trigger (escape / cancel /
         // apply); click-outside passes false so we don't yank focus back when
         // the user deliberately clicked elsewhere.
         close(restoreFocus = false) {
-            this.open = false;
+            this.isOpen = false;
             this._stopRepair?.();
             this._stopRepair = null;
 
@@ -583,7 +584,7 @@ export default function wirekitFilterBuilder(config = {}) {
                     });
 
                     if (placement && typeof placement.stop === 'function') {
-                        if (this.open) {
+                        if (this.isOpen) {
                             this._stopRepair = placement.stop;
                         } else {
                             placement.stop();
@@ -596,5 +597,5 @@ export default function wirekitFilterBuilder(config = {}) {
                 }
             });
         },
-    };
+    });
 }

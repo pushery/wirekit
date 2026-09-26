@@ -74,7 +74,7 @@
         type="button"
         x-ref="trigger"
         x-on:click="toggle()"
-        :aria-expanded="open ? 'true' : 'false'"
+        :aria-expanded="isOpen ? 'true' : 'false'"
         {{-- `true`, not `menu`. `aria-haspopup="menu"` promises the APG menu keyboard model —
              one tab stop on the menu, arrow keys between items, Escape and a focus exit that
              close it — and this panel implements none of that: its actions are ordinary links
@@ -106,8 +106,8 @@
         <span class="relative inline-grid place-items-center">
             <span
                 class="wk-fab-icon col-start-1 row-start-1"
-                :aria-hidden="open ? 'false' : 'true'"
-                :data-shown="open ? 'true' : 'false'"
+                :aria-hidden="isOpen ? 'false' : 'true'"
+                :data-shown="isOpen ? 'true' : 'false'"
             >
                 <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -115,8 +115,8 @@
             </span>
             <span
                 class="wk-fab-icon col-start-1 row-start-1"
-                :aria-hidden="open ? 'true' : 'false'"
-                :data-shown="open ? 'false' : 'true'"
+                :aria-hidden="isOpen ? 'true' : 'false'"
+                :data-shown="isOpen ? 'false' : 'true'"
             >
                 {{ $trigger ?? '' }}
                 @unless(isset($trigger))
@@ -140,7 +140,7 @@
          closes when focus leaves it now, which it did not: a keyboard user could tab out of
          an open panel and leave it hanging over the page behind them. --}}
     <div
-        x-show="open"
+        x-show="isOpen"
         x-cloak
         role="group"
         {{-- A single method call, not an inline `if`. Alpine's CSP build parses a call and

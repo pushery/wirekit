@@ -133,7 +133,7 @@
              createFocusTrap returns focus to the trigger on close. --}}
         <template x-teleport="#wk-overlay-root">
             <div
-                x-show="open"
+                x-show="isOpen"
                 x-cloak
                 x-ref="stage"
                 role="dialog"
@@ -146,7 +146,7 @@
             >
                 {{-- Backdrop — click closes. Per-instance color via inline style. --}}
                 <div
-                    x-show="open"
+                    x-show="isOpen"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0"
                     x-transition:enter-end="opacity-100"
@@ -160,7 +160,7 @@
                      above (it holds the prev/next/close controls); this figure
                      holds only the slides + caption. --}}
                 <figure
-                    x-show="open"
+                    x-show="isOpen"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"

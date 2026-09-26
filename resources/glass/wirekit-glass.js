@@ -22,10 +22,13 @@
     // declaration without the url(). Parsing was never the thing to detect.
     //
     // Tier 2 now rides on `filter:` applied to a pseudo-element, which is what
-    // actually paints, so this tests THAT instead. The class stays because it is
-    // documented and applications may style on it; the stylesheet no longer
-    // depends on it, because the enhancement is additive — where the
-    // displacement does not apply, what remains is Tier 1.
+    // actually paints, so this tests whether THAT reference is kept. The stylesheet
+    // gates Tier 2 on the class: the rule that trades Tier 1's frosted surface for
+    // the thinner Tier 2 layer applies only under it. Keeping the reference is not
+    // painting it, and no script can see what a backdrop filter composites:
+    // Chromium paints the displacement, WebKit keeps the reference and paints
+    // nothing from it, so Safari shows the Tier 2 layer as clear glass under a
+    // light frost, without the bending. Applications may style on the class as well.
     var el = document.createElement('div');
     el.style.filter = 'url(#x)';
     var supportsRefract = el.style.filter !== '';

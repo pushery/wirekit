@@ -24,6 +24,10 @@ import { observeServerValue, WK_SERVER_VALUE_ATTRIBUTE } from '../utils/server-v
  */
 export default function wirekitPricingTable(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _stopServerSync: null,
+
         interval: config.interval != null ? String(config.interval) : '',
 
         init() {

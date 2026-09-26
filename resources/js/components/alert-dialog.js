@@ -8,6 +8,7 @@
  * @see https://www.w3.org/WAI/ARIA/apg/patterns/alertdialog/
  */
 import { createOverlay } from '../utils/overlay.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * Focusable descendants, in the order the browser would tab through them.
@@ -81,7 +82,7 @@ export default function wirekitAlertDialog(config = {}) {
         focusReturnTo: config.focusReturnTo || undefined,
     });
 
-    return {
+    return withOpenAlias({
         ...overlay,
 
         /**
@@ -216,5 +217,5 @@ export default function wirekitAlertDialog(config = {}) {
         destroy() {
             this.destroyOverlay();
         },
-    };
+    });
 }

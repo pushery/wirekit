@@ -15,6 +15,7 @@
 import { createFocusTrap } from '../utils/focus-trap.js';
 import { lockScroll, unlockScroll } from '../utils/overlay.js';
 import { FOCUSABLE } from '../utils/first-control.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 /**
  * The focusable control an event came from, or null. Duck-typed rather than `instanceof Element`,
@@ -45,8 +46,8 @@ export default function wirekitLightbox(config = {}) {
      */
     let host = null;
 
-    return {
-        open: false,
+    return withOpenAlias({
+        isOpen: false,
         current: 0,
         count: config.count || 0,
         loop: config.loop !== false,
@@ -187,7 +188,7 @@ export default function wirekitLightbox(config = {}) {
              * The index is set above, before this returns, so the navigation still happens —
              * it is only the arming that is skipped, because it has already been done.
              */
-            if (self.open && self._trap) {
+            if (self.isOpen && self._trap) {
                 return;
             }
 
@@ -195,7 +196,7 @@ export default function wirekitLightbox(config = {}) {
             self._returnTo = self._pendingTrigger;
             self._pendingTrigger = null;
 
-            self.open = true;
+            self.isOpen = true;
 
             /*
              * Hold the page still. This is `role="dialog" aria-modal="true"` and it took no
@@ -225,7 +226,7 @@ export default function wirekitLightbox(config = {}) {
                 // The state can have changed inside the tick — Escape during the frame, a
                 // Livewire morph, a close from anywhere. Arming here would put a trap on an
                 // overlay that is no longer shown, and nothing would ever take it off.
-                if (!self.open || self._trap) {
+                if (!self.isOpen || self._trap) {
                     return;
                 }
 
@@ -241,7 +242,7 @@ export default function wirekitLightbox(config = {}) {
                         // release has to be on this path too — it was the commonest way out
                         // of the viewer and would have left the page locked for good.
                         self._releaseScrollLock();
-                        self.open = false;
+                        self.isOpen = false;
                         self._trap = null;
                     },
                 });
@@ -257,7 +258,7 @@ export default function wirekitLightbox(config = {}) {
             if (self._trap) {
                 self._trap.deactivate();
             } else {
-                self.open = false;
+                self.isOpen = false;
             }
         },
 
@@ -327,5 +328,5 @@ export default function wirekitLightbox(config = {}) {
             // an unreleased hold freezes the page for every overlay that comes after.
             this._releaseScrollLock();
         },
-    };
+    });
 }

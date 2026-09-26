@@ -93,13 +93,13 @@
      submenu: parent menuitem (aria-haspopup="menu" + aria-expanded) opening a
      child role="menu" panel positioned by Floating UI. Purely additive.
 
-     x-effect="open || closeSub()" resets the submenu when the OUTER context
+     x-effect="isOpen || closeSub()" resets the submenu when the OUTER context
      menu closes — the context-menu's `open` is still in scope after the panel
      teleports out of the document flow (x-teleport preserves x-data scope). The parent's
      click is stopPropagation'd; leaf child items keep their own close(). --}}
 <div
     x-data="wirekitSubmenu({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }} })"
-    x-effect="open || closeSub()"
+    x-effect="isOpen || closeSub()"
     data-wk-submenu
     class="block w-full"
 >

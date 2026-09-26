@@ -148,10 +148,10 @@
 
     {{-- Alert dialog overlay and panel — teleported to body --}}
     <template x-teleport="#wk-overlay-root">
-        <div x-show="open" x-cloak>
+        <div x-show="isOpen" x-cloak>
             {{-- Backdrop --}}
             <div
-                x-show="open"
+                x-show="isOpen"
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0"
                 x-transition:enter-end="opacity-100"
@@ -172,7 +172,7 @@
             >
                 <div
                     x-ref="panel"
-                    x-show="open"
+                    x-show="isOpen"
                     x-transition:enter="transition ease-out duration-200"
                     x-transition:enter-start="opacity-0 scale-95"
                     x-transition:enter-end="opacity-100 scale-100"

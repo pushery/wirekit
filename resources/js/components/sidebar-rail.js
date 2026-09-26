@@ -34,6 +34,10 @@ import { readPersistedFlag, writePersistedFlag } from '../utils/persisted-flag.j
  */
 export default function wirekitSidebarRail(config = {}) {
     return {
+        // Handles set while the component runs, declared so that they are its own: Alpine stores a
+        // property no scope declares on the outermost scope around the component.
+        _arrivalTimer: null,
+
         // What is on screen, and what every binding reads: the width, `data-collapsed`, the
         // disclosures through the merged scope.
         collapsed: config.collapsed === true,

@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\LegacyAxisProps;
+use Pushery\WireKit\Support\PropsParser;
 use Pushery\WireKit\Support\StrictnessGate;
 use Pushery\WireKit\Support\SuggestSimilar;
 use RecursiveDirectoryIterator;
@@ -102,10 +103,25 @@ class DoctorPropsCommand extends Command
             return self::FAILURE;
         }
 
+        // An application's own components that hand their attributes to one WireKit component,
+        // read from the `components` directory of the scanned path. A call site of one is checked
+        // against the props of the component it hands them to.
+        $wrappers = $this->forwardingWrappers($path.'/components');
+
         foreach ($bladeFiles as $file) {
             $contents = (string) file_get_contents($file);
 
-            if (! str_contains($contents, '<x-wirekit::')) {
+            $usesWrapper = false;
+
+            foreach (array_keys($wrappers) as $wrapperName) {
+                if (str_contains($contents, '<x-'.$wrapperName)) {
+                    $usesWrapper = true;
+
+                    break;
+                }
+            }
+
+            if (! str_contains($contents, '<x-wirekit::') && ! $usesWrapper) {
                 continue;
             }
 
@@ -196,6 +212,43 @@ class DoctorPropsCommand extends Command
                     ];
                 }
             }
+
+            // Call sites of the application's forwarding components. Only the unknown-prop question
+            // is asked there: the wrapper sets what it sets, and the caller's attributes reach the
+            // WireKit component as they would on its own tag.
+            if ($usesWrapper) {
+                foreach (BladeParser::tagsFromSource($contents) as $tag) {
+                    $wrapperName = substr($tag['name'], 2);
+
+                    if (! str_starts_with($tag['name'], 'x-') || ! isset($wrappers[$wrapperName]) || $tag['terminator'] === '<') {
+                        continue;
+                    }
+
+                    $wrapper = $wrappers[$wrapperName];
+                    $declared = ComponentRegistry::acceptedPropNames($wrapper['target']);
+
+                    // A target whose props cannot be resolved would make every attribute unknown.
+                    if ($declared === []) {
+                        continue;
+                    }
+
+                    $declared = array_values(array_unique([...$declared, ...$wrapper['own']]));
+                    $attributes = array_values(array_unique(array_map(
+                        static fn (string $a): string => ltrim($a, ':'),
+                        $tag['attributes'],
+                    )));
+
+                    foreach (StrictnessGate::unknownPropNames(array_fill_keys($attributes, true), $declared) as $unknown) {
+                        $findings[] = [
+                            'file' => str_replace(base_path().'/', '', $file),
+                            'component' => $wrapper['target'],
+                            'prop' => $unknown,
+                            'suggestions' => SuggestSimilar::byLevenshtein($unknown, $declared),
+                            'via' => $wrapperName,
+                        ];
+                    }
+                }
+            }
         }
 
         if ($findings === [] && $slotFindings === [] && $slotAttributeFindings === [] && $legacyFindings === []) {
@@ -253,9 +306,11 @@ class DoctorPropsCommand extends Command
 
         foreach ($findings as $finding) {
             $this->line(sprintf(
-                '  <fg=yellow>%s</> — <x-wirekit::%s> has no prop <fg=red>%s</>%s',
+                '  <fg=yellow>%s</> — %s has no prop <fg=red>%s</>%s',
                 $finding['file'],
-                $finding['component'],
+                isset($finding['via'])
+                    ? "<x-{$finding['via']}>, which hands its attributes to <x-wirekit::{$finding['component']}>,"
+                    : "<x-wirekit::{$finding['component']}>",
                 $finding['prop'],
                 $finding['suggestions'] === []
                     ? ''
@@ -395,6 +450,70 @@ class DoctorPropsCommand extends Command
         }
 
         return $hits;
+    }
+
+    /**
+     * The application's components that hand their attributes to exactly one WireKit component.
+     *
+     * An application often gives a component a role of its own, `<x-button.main>` for a
+     * `<x-wirekit::button surface="filled" intent="primary" {{ $attributes }}>`, and every
+     * attribute a caller writes on the role reaches the WireKit component. A misspelled prop there
+     * lands in the attribute bag exactly as it does on the WireKit tag, so it is checked against
+     * the same props, and against the props the wrapper declares for itself.
+     *
+     * Only a template that passes `$attributes` to exactly ONE WireKit tag counts: with two, which
+     * of them a caller's attribute is meant for cannot be known. A wrapper of a wrapper is not
+     * followed.
+     *
+     * @return array<string, array{target: string, own: list<string>}> tag name => WireKit component and the wrapper's own props
+     */
+    private function forwardingWrappers(string $componentsDir): array
+    {
+        if (! is_dir($componentsDir)) {
+            return [];
+        }
+
+        $wrappers = [];
+        $root = rtrim($componentsDir, '/');
+
+        foreach ($this->collectBladeFiles($root) as $file) {
+            $contents = (string) file_get_contents($file);
+
+            if (! str_contains($contents, '<x-wirekit::') || ! str_contains($contents, '$attributes')) {
+                continue;
+            }
+
+            $targets = [];
+
+            foreach (BladeParser::tagsFromSource($contents) as $tag) {
+                if (! str_starts_with($tag['name'], 'x-wirekit::') || $tag['terminator'] === '<') {
+                    continue;
+                }
+
+                if (str_contains(substr($contents, $tag['attrStart'], $tag['attrEnd'] - $tag['attrStart']), '$attributes')) {
+                    $targets[] = substr($tag['name'], strlen('x-wirekit::'));
+                }
+            }
+
+            if (count($targets) !== 1 || preg_match('/^[a-z0-9\-.]+$/', $targets[0]) !== 1) {
+                continue;
+            }
+
+            // `button/main.blade.php` is `<x-button.main>`, and `button/index.blade.php` is `<x-button>`.
+            $name = str_replace('/', '.', substr($file, strlen($root) + 1, -strlen('.blade.php')));
+            $name = (string) preg_replace('/(^|\.)index$/', '', $name);
+
+            if ($name === '') {
+                continue;
+            }
+
+            $wrappers[$name] = [
+                'target' => $targets[0],
+                'own' => array_column(PropsParser::parseSource($contents), 'name'),
+            ];
+        }
+
+        return $wrappers;
     }
 
     /**

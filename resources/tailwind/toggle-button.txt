@@ -3737,7 +3737,7 @@ x-on:pointerleave="pointerleave($event)"
 x-on:pointerup="pointerup($event)"
 x-ref="tooltip"
 x-ref="trigger"
-x-show="open"
+x-show="isOpen"
 x-teleport="#wk-overlay-root">
 x-teleport>`,
 x-text="announcement"></div>

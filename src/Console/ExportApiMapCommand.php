@@ -104,7 +104,7 @@ class ExportApiMapCommand extends Command
             'docs_base' => WireKit::DOCS_URL,
             'groups' => [
                 $this->componentsGroup(),
-                $this->themesGroup(),
+                $this->themesGroup($packageRoot),
                 $this->fontsGroup(),
                 $this->iconsGroup(),
                 $this->layoutsGroup($packageRoot),
@@ -184,21 +184,113 @@ class ExportApiMapCommand extends Command
     }
 
     /**
-     * @return array{id: string, count: int, items: array<int, array<string, string>>}
+     * Every preset with the palette its page prints, light and dark.
+     *
+     * The palette is the complete block from the preset's page, baked into
+     * `resources/mcp/preset-palettes.json` because `docs/` does not ship. It is
+     * deliberately not what `wirekit:theme` writes: the command appends the
+     * preset's modifier set, the few tokens that carry its character, and a tool
+     * that previews or applies a preset needs the whole of it.
+     *
+     * A preset registered at runtime has no page, so its registry block is its
+     * only definition and is carried as the palette. `palette_source` says which
+     * of the two a palette is.
+     *
+     * @return array{id: string, count: int, items: array<int, array<string, mixed>>}
      */
-    private function themesGroup(): array
+    private function themesGroup(string $packageRoot): array
     {
-        $presets = ThemePresetRegistry::keys();
-        $items = array_map(fn (string $p): array => [
-            'id' => $p,
-            'install' => 'php artisan wirekit:theme '.$p,
-            // Each preset moved to its own page; the per-preset headings that made
-            // `#aurora` resolve are gone from the parent page, so the anchor form
-            // pointed all eight at nothing.
-            'docs_url' => WireKit::DOCS_URL.'/theming/'.$p,
-        ], $presets);
+        $palettes = $this->presetPalettes($packageRoot);
+        $items = [];
+
+        foreach (ThemePresetRegistry::all() as $key => $preset) {
+            $fromPage = $palettes[$key] ?? null;
+            $palette = $fromPage ?? [
+                'light' => $this->declarations($preset['vars']),
+                'dark' => $this->declarations($preset['dark_vars'] ?? ''),
+            ];
+
+            $items[] = [
+                'id' => $key,
+                'label' => $preset['label'],
+                'install' => 'php artisan wirekit:theme '.$key,
+                // Each preset moved to its own page; the per-preset headings that made
+                // `#aurora` resolve are gone from the parent page, so the anchor form
+                // pointed all eight at nothing. A preset without a public page gets no
+                // URL rather than one that resolves to nothing, as a component does.
+                'docs_url' => $fromPage !== null ? WireKit::DOCS_URL.'/theming/'.$key : null,
+                // Objects even when empty, so a reader gets one shape for every mode of
+                // every preset, `default` included, which sets nothing.
+                'palette' => ['light' => (object) $palette['light'], 'dark' => (object) $palette['dark']],
+                'palette_source' => $fromPage !== null ? 'page' : 'registry',
+            ];
+        }
 
         return ['id' => 'themes', 'count' => count($items), 'items' => $items];
+    }
+
+    /**
+     * The baked page palettes, or none when the file is absent or unreadable.
+     *
+     * None is a safe answer: every preset then falls back to its registry block
+     * and says so in `palette_source`, rather than the export failing.
+     *
+     * @return array<string, array{light: array<string, string>, dark: array<string, string>}>
+     */
+    private function presetPalettes(string $packageRoot): array
+    {
+        $path = $packageRoot.'/resources/mcp/preset-palettes.json';
+        $decoded = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+
+        if (! is_array($decoded)) {
+            return [];
+        }
+
+        $palettes = [];
+
+        foreach ($decoded as $key => $palette) {
+            if (! is_string($key) || ! is_array($palette)) {
+                continue;
+            }
+
+            $palettes[$key] = ['light' => [], 'dark' => []];
+
+            foreach (['light', 'dark'] as $mode) {
+                $declared = $palette[$mode] ?? null;
+
+                if (! is_array($declared)) {
+                    continue;
+                }
+
+                foreach ($declared as $token => $value) {
+                    if (is_string($token) && is_string($value)) {
+                        $palettes[$key][$mode][$token] = $value;
+                    }
+                }
+            }
+        }
+
+        return $palettes;
+    }
+
+    /**
+     * The custom-property declarations of a registry block, comments stripped: a
+     * token named inside a comment is prose, not a declaration.
+     *
+     * @return array<string, string>
+     */
+    private function declarations(string $css): array
+    {
+        $css = (string) preg_replace('!/\*.*?\*/!s', '', $css);
+        preg_match_all('/(--[a-z0-9-]+)\s*:\s*([^;]+);/i', $css, $matches, PREG_SET_ORDER);
+
+        $declarations = [];
+
+        foreach ($matches as $match) {
+            $declarations[trim($match[1])] = (string) preg_replace('/\s+/', ' ', trim($match[2]));
+        }
+
+        return $declarations;
     }
 
     /**

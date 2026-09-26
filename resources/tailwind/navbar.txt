@@ -144,6 +144,7 @@ $variantClasses,
 'wk-navbar-mobile',
 'wk-navbar-mobile-'
 'wk-navbar-scroll',
+'wk-scroll-fade',
 'xl'
 'xl');
 'xl',
@@ -321,6 +322,7 @@ Widening
 WireKit::resolveClasses('navbar',
 WireKit::resolveClasses('navbar.item',
 WireKit::validateProp('navbar',
+With
 [
 [&>*]:whitespace-nowrap',
 ['default',
@@ -352,6 +354,7 @@ __('wirekit::Toggle
 `container=true`.
 `container`
 `cta`
+`data-fade`
 `data-wk-navbar-items`
 `display:
 `dist/wirekit.css`).
@@ -379,6 +382,7 @@ __('wirekit::Toggle
 `wk-dropdown-panel-1`
 `wk-navbar-mobile`,
 `wk-navbar-scroll`
+`wk-scroll-fade`
 `x-show`
 `xl`
 a
@@ -535,6 +539,7 @@ current
 cursor-pointer
 d="M3.75
 d="M6
+data-fade-axis="x"
 data-wk-navbar-items
 data-wk-navbar-scroll
 data-wk-prose-skip
@@ -597,6 +602,7 @@ except('rel')
 existing
 exists
 explicit
+fades
 fallback
 false
 false),
@@ -697,6 +703,7 @@ is
 it
 it,
 it.
+it:
 item
 items,
 items-center
@@ -774,6 +781,7 @@ muted
 mx-auto',
 n/a
 name
+names
 narrower
 narrowest
 nav
@@ -785,6 +793,7 @@ never
 new
 no
 node
+none.
 none;
 none`,
 noopener
@@ -900,6 +909,7 @@ room
 rounded-[var(--radius-wk-lg)]
 rounded-[var(--radius-wk-sm)]
 row
+row's
 row.
 row:
 rule
@@ -907,11 +917,14 @@ same
 sat
 scope
 screens
+script
 scripts
 scroll
 scrollbar
+scrollbar,
 scrolling
 scrolls
+scrolls,
 second
 security
 see

@@ -91,7 +91,7 @@
         {{-- Theme marker — see docs/theming.md "Theme markers". --}}
         data-wk-popover
         x-ref="panel"
-        x-show="open"
+        x-show="isOpen"
         x-transition:enter="transition ease-out duration-[var(--transition-wk-duration)]"
         x-transition:enter-start="opacity-0 scale-95"
         x-transition:enter-end="opacity-100 scale-100"

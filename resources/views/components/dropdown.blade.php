@@ -102,7 +102,7 @@
          null the moment the element leaves the component. --}}
     x-data="wirekitDropdown({ placement: {{ \Pushery\WireKit\Support\AlpinePayload::string($placement) }}, offset: {{ (int) $offset }}, panelId: {{ \Pushery\WireKit\Support\AlpinePayload::string($panelId) }} })"
     x-on:keydown="handleKeydown"
-    x-on:keydown.escape.window="open && close()"
+    x-on:keydown.escape.window="isOpen && close()"
     x-on:click.outside="close()"
     {{-- The same exact-match trap as `_getItems()`: `[role=menuitem]` does not match a
          `menuitemradio` or `menuitemcheckbox` row, so a radio menu did not match here

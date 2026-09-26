@@ -38,10 +38,11 @@ import { coordinateOverlay } from '../utils/overlay-coordination.js';
 import { chosenText, optionMatches, optionMediaState } from '../utils/option-media.js';
 import { typeAheadIndex } from '../utils/roving-focus.js';
 import { serverSearchState } from '../utils/server-search.js';
+import { withOpenAlias } from '../utils/open-alias.js';
 
 export default function wirekitCombobox(config = {}) {
-    return {
-        open: false,
+    return withOpenAlias({
+        isOpen: false,
         query: '',
         selected: config.value ?? null,
         highlight: 0,
@@ -204,11 +205,11 @@ export default function wirekitCombobox(config = {}) {
 
             this._coordination = coordinateOverlay({
                 channel: 'wirekit:combobox-open',
-                onOther: () => { this.open = false; },
+                onOther: () => { this.isOpen = false; },
             });
 
             // Announce on every transition into the open state so siblings close.
-            this.$watch('open', (val) => {
+            this.$watch('isOpen', (val) => {
                 if (! val) {
                     // A hidden panel has nothing to follow, and its followers would go on
                     // recomputing against a field the reader has moved away from.
@@ -400,7 +401,7 @@ export default function wirekitCombobox(config = {}) {
                     // Closed while the placement was in flight: `position()` awaits frames and
                     // a promise, so the list can be shut before this resolves. Its follower
                     // would then outlive the panel it follows.
-                    if (! this.open) {
+                    if (! this.isOpen) {
                         result.stop();
 
                         return;
@@ -480,7 +481,7 @@ export default function wirekitCombobox(config = {}) {
          * that did not, and it is the one the user reaches by typing.
          */
         openAndReset() {
-            this.open = true;
+            this.isOpen = true;
 
             // Seeded to "nothing" first, because `highlightFirst()` only assigns when it
             // finds an enabled option — a list filtered down to disabled rows has to end
@@ -506,23 +507,23 @@ export default function wirekitCombobox(config = {}) {
 
         /** Arrow into the list from the field. */
         openAndMove(delta) {
-            this.open = true;
+            this.isOpen = true;
             this.moveHighlight(delta);
         },
 
         openAtFirst() {
-            this.open = true;
+            this.isOpen = true;
             this.highlightFirst();
         },
 
         openAtLast() {
-            this.open = true;
+            this.isOpen = true;
             this.highlightLast();
         },
 
         /** The chevron toggles, and returns focus to the field either way. */
         toggleAndFocus() {
-            this.open = ! this.open;
+            this.isOpen = ! this.isOpen;
 
             if (this.$refs.cbxInput) {
                 this.$refs.cbxInput.focus();
@@ -550,7 +551,7 @@ export default function wirekitCombobox(config = {}) {
             }
 
             this.selected = opt.value;
-            this.open = false;
+            this.isOpen = false;
             this._syncQuery();
         },
 
@@ -674,14 +675,14 @@ export default function wirekitCombobox(config = {}) {
          * every other way of opening does.
          */
         toggleSelectOnly() {
-            if (this.open) {
-                this.open = false;
+            if (this.isOpen) {
+                this.isOpen = false;
 
                 return;
             }
 
             this._highlightChoice();
-            this.open = true;
+            this.isOpen = true;
         },
 
         /**
@@ -733,19 +734,19 @@ export default function wirekitCombobox(config = {}) {
                 return undefined;
             }
 
-            if (! this.open) {
+            if (! this.isOpen) {
                 if (key === 'ArrowDown' || key === 'ArrowUp' || key === 'Enter' || key === ' ') {
                     event.preventDefault();
                     this._highlightChoice();
-                    this.open = true;
+                    this.isOpen = true;
                 } else if (key === 'Home' || key === 'End') {
                     event.preventDefault();
-                    this.open = true;
+                    this.isOpen = true;
                     key === 'Home' ? this.highlightFirst() : this.highlightLast();
                 } else if (printable) {
                     event.preventDefault();
                     this._highlightChoice();
-                    this.open = true;
+                    this.isOpen = true;
                     this._typeAhead(key);
                 }
 
@@ -764,7 +765,7 @@ export default function wirekitCombobox(config = {}) {
             }
 
             if (key === 'Escape') {
-                this.open = false;
+                this.isOpen = false;
             } else if (key === 'ArrowDown' && ! altKey) {
                 event.preventDefault();
                 this.moveHighlight(1);
@@ -800,7 +801,7 @@ export default function wirekitCombobox(config = {}) {
         _closeWithChoice() {
             const value = this.highlightedValue();
 
-            this.open = false;
+            this.isOpen = false;
             this._forgetTyping();
 
             return value;
@@ -875,7 +876,7 @@ export default function wirekitCombobox(config = {}) {
         clearSelection() {
             this.selected = null;
             this.query = '';
-            this.open = false;
+            this.isOpen = false;
             this._queueSearch('');
 
             // Fire input on the hidden field so wire:model sees the cleared
@@ -893,5 +894,5 @@ export default function wirekitCombobox(config = {}) {
                 hidden.dispatchEvent(new Event('input', { bubbles: true }));
             }
         },
-    };
+    });
 }
