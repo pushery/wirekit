@@ -58,7 +58,7 @@ $trailing
 ($density)
 ($densityValue)
 (`--wk-strip-inset`),
-(`flex-wrap
+(`flex-wrap`,
 (a
 (action
 (badges,
@@ -96,6 +96,7 @@ $trailing
 A
 AND
 Adding
+At
 BELOW
 Blade
 BooleanProp::from($sticky,
@@ -141,8 +142,11 @@ Without
 ])
 ])),
 `<x-wirekit::editor.toolbar>`
+`align`
+`align`,
 `flex-1
 `flex-wrap`
+`justify-between`
 `min-w-0`
 `prop="false"`
 `px-*`
@@ -150,8 +154,10 @@ Without
 `role="group"`
 `role="group"`,
 `role="toolbar"`
+`w-full`)
 a
 above
+across
 action
 action-bar
 actions
@@ -202,6 +208,7 @@ caller
 can
 cast
 catalog
+child,
 children
 chips)
 class="flex
@@ -228,12 +235,14 @@ could:
 cramming
 date-separator.
 debug
+decides
 default
 default-slot
 defaults
 defect,
 density
 did
+distribute
 do
 documented
 does
@@ -260,6 +269,7 @@ filters
 filters/trailing
 first
 fit
+fixed
 flags
 flex
 flex-1
@@ -270,6 +280,7 @@ for
 forcing
 four
 frame.
+free
 from
 full
 gap-[var(--space-wk-sm,0.5rem)]
@@ -295,11 +306,13 @@ is
 it
 it,
 it.
+items
 items-center
 items-center',
 its
 jump
-justify-between
+justify
+justify,
 keep
 keyboard
 keys
@@ -358,6 +371,7 @@ one
 one)
 one.
 one:
+only
 onto
 opposite
 optimistic-ui:
@@ -366,6 +380,7 @@ out
 over
 own
 own,
+own.
 owns
 page
 page's
@@ -385,6 +400,7 @@ promise:
 prop's
 props
 pushes
+put
 py-[var(--space-wk-sm,0.5rem)]',
 py-[var(--space-wk-xs,0.25rem)]',
 qualified:
@@ -408,6 +424,7 @@ responsive
 result
 role
 role="group"
+root's
 root.
 roving
 row
@@ -430,7 +447,9 @@ shipped
 shown
 shrinks
 silently.
+single
 sit
+sit:
 site
 sits
 slot
@@ -438,7 +457,9 @@ slots.
 so
 space
 spare
+spread
 squeezed
+start
 stayed
 sticks
 sticky
@@ -493,7 +514,6 @@ view's
 viewport
 visually
 w-full">
-w-full`)
 walks
 wanted,
 was

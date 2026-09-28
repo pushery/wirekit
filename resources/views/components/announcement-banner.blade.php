@@ -14,7 +14,7 @@
     // strip its height back, sticky page bars stick BELOW it. So the application moves down by
     // exactly the strip and changes nothing else, whichever shell it uses.
     //
-    // ⚠ ONE LINE ON PURPOSE, and it is what makes "changes nothing" true from the first frame.
+    // One line on purpose, and it is what makes "changes nothing" true from the first frame.
     // A strip whose height a script had to measure would let the page jump once it ran. A fixed
     // height lets the stylesheet know it before anything paints. Text that does not fit is cut
     // on screen and stays whole in the accessible name; an announcement that needs several
@@ -55,14 +55,12 @@
     'dismissible' => null,
     // Accessible name for the region — and the LANDMARK waits for it.
     //
-    // ⚠️ THE DEFAULT USED TO BE `__('wirekit::Announcement')`, WHICH MADE EVERY BANNER THE
-    // SAME LANDMARK. `position` validates against top AND bottom, so a page with a promo bar
-    // above and a notice below is a first-class composition — and it produced two
-    // `role="region"` landmarks both called "Announcement". Somebody paging through landmarks
-    // meets two regions with one name and cannot tell them apart, which is the failure the
-    // house rule on named landmarks was written against — a component may not invent the name
-    // that turns itself into one. Eight siblings in this catalog already gate the role on
-    // `filled()`; this component was the outlier.
+    // No default name, because one would make every banner the same landmark. `position`
+    // validates against top and bottom, so a page with a promo bar above and a notice below
+    // is a first-class composition, and a shared default would give it two `role="region"`
+    // landmarks both called "Announcement" that somebody paging through landmarks cannot tell
+    // apart. A component may not invent the name that turns itself into a landmark, so the
+    // role is gated on `filled()`, as in its siblings.
     //
     // Null, so the role is gated on the CALLER having supplied a name rather than on this file
     // being able to invent one. The dismiss button still gets a composed name below, because a

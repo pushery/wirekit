@@ -51,7 +51,7 @@ class MakeCommand extends Command
      */
     /*
      * PUBLIC because `McpCatalog` reads it. The alternative was a second list somewhere
-     * else, and a second list of the eleven recipes is a second thing to keep in step —
+     * else, and a second list of the recipes is a second thing to keep in step —
      * the failure the whole MCP catalog is arranged against. One source, two readers.
      */
     public const RECIPES = [
@@ -303,10 +303,9 @@ class MakeCommand extends Command
      * `generateClass()` emits `render()` and nothing else, so a recipe that binds
      * `wire:model="search"` scaffolds two files, prints "Created:" twice, exits 0 — and throws
      * `PropertyNotFoundException` on the developer's first page load. `toolbar-filter-bar`
-     * binds four members and was the only stub of the eleven that neither declared them nor
-     * mentioned them.
+     * binds four members and was the only stub that neither declared them nor mentioned them.
      *
-     * ⚠️ Derived from the stub rather than listed per recipe, which is the whole point. A
+     * Derived from the stub rather than listed per recipe, which is the whole point. A
      * hand-kept list is a second thing to update when a stub changes, and it would be right on
      * the day it was written and silently wrong afterwards — the failure this command's own
      * RECIPES constant is arranged against one level up. Reading the file that was just written
@@ -318,22 +317,7 @@ class MakeCommand extends Command
      */
     private function reportRequiredMembers(string $viewBody, string $className): void
     {
-        // `wire:model` and its modifier chain (`.live`, `.debounce.300ms`, `.blur`) always
-        // names a PROPERTY. Everything is captured from the written view, so a stub that stops
-        // binding something stops being reported without anyone editing this method.
-        preg_match_all('/wire:model[\w.]*="([^"(]+)"/', $viewBody, $properties);
-
-        // The action directives name a METHOD. `wire:poll` is deliberately absent: without a
-        // value it re-renders and needs nothing, and with one it is already matched here.
-        preg_match_all('/wire:(?:click|submit|change|keydown|keyup|blur|focus)[\w.]*="([^"]+)"/', $viewBody, $methods);
-
-        $needed = array_values(array_unique($properties[1]));
-        $calls = array_values(array_unique(array_map(
-            // `resetFilters` and `resetFilters()` are the same method; the parentheses are
-            // Livewire's argument syntax, not part of the name.
-            static fn (string $call): string => rtrim(strtok($call, '('), ' '),
-            $methods[1]
-        )));
+        ['properties' => $needed, 'methods' => $calls] = self::membersBoundBy($viewBody);
 
         if ($needed === [] && $calls === []) {
             return;
@@ -351,5 +335,44 @@ class MakeCommand extends Command
         foreach ($calls as $method) {
             $this->line("    public function {$method}(): void { /* … */ }");
         }
+    }
+
+    /**
+     * The Livewire members a view binds, in the shape the class behind it declares them.
+     *
+     * Everything is captured from the view, so a stub that stops binding something stops
+     * being reported without anyone editing this method.
+     *
+     * @return array{properties: list<string>, methods: list<string>}
+     *
+     * @internal
+     */
+    public static function membersBoundBy(string $viewBody): array
+    {
+        // `wire:model` and its modifier chain (`.live`, `.debounce.300ms`, `.blur`) always
+        // names a PROPERTY.
+        preg_match_all('/wire:model[\w.]*="([^"(]+)"/', $viewBody, $properties);
+
+        // The action directives name a METHOD, `wire:poll` and `wire:init` included: Livewire
+        // calls their value as one, and only a directive without a value falls back to
+        // `$refresh`. A modifier may carry a hyphen (`.keep-alive`, `.page-down`).
+        preg_match_all('/wire:(?:click|submit|change|keydown|keyup|blur|focus|poll|init)(?:\.[\w-]+)*="([^"]+)"/', $viewBody, $methods);
+
+        $calls = array_map(
+            // `resetFilters` and `resetFilters()` are the same method; the parentheses are
+            // Livewire's argument syntax, not part of the name.
+            static fn (string $call): string => trim((string) strtok($call, '(')),
+            $methods[1],
+        );
+
+        return [
+            'properties' => array_values(array_unique($properties[1])),
+            // A magic action (`$refresh`, `$set(…)`, `$toggle(…)`) is Livewire's own and needs
+            // no member, and anything that is not a plain name is not a method to declare.
+            'methods' => array_values(array_unique(array_filter(
+                $calls,
+                static fn (string $name): bool => preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $name) === 1,
+            ))),
+        ];
     }
 }

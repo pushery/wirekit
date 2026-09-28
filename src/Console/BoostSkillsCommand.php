@@ -10,14 +10,19 @@ use Pushery\WireKit\Boost\BoostManifest;
 use Pushery\WireKit\Support\VersionResolver;
 
 /**
- * `wirekit:boost-skills` — publish a Laravel Boost skill manifest.
+ * `wirekit:boost-skills` — write a JSON manifest of the installed package.
  *
  * Writes `.boost/wirekit.json` into the developer's project: a typed bundle of
- * component / prop / preset / command data an AI-augmented editor loads for
- * WireKit-aware autocomplete. The sibling of `wirekit:cursor-rules` for the
- * Laravel Boost surface; the manifest is auto-generated from source (see
- * {@see BoostManifest}) so it never drifts. Re-running is the documented refresh
- * path after a WireKit upgrade.
+ * component / prop / preset / command data, auto-generated from source (see
+ * {@see BoostManifest}) so it never drifts. Re-running is the refresh path after
+ * a WireKit upgrade.
+ *
+ * Laravel Boost does not read this file, whatever its directory suggests. Boost
+ * takes a package's guidance from `<package>/resources/boost/guidelines` and
+ * `<package>/resources/boost/skills`, and WireKit ships both, so an application
+ * with Boost picks them up on `boost:install` or `boost:update` without this
+ * command. The manifest stays for the tools and scripts that read it, and its
+ * success message says where Boost's guidance comes from.
  *
  * `--check` answers the same question without writing: does the published file
  * still describe the installed package? A published manifest freezes at the
@@ -41,7 +46,7 @@ final class BoostSkillsCommand extends Command
         {--force : Overwrite an existing .boost/wirekit.json}
         {--check : Report whether .boost/wirekit.json still matches the installed package, and write nothing}';
 
-    protected $description = 'Publish a Laravel Boost skill manifest (.boost/wirekit.json) so AI editors autocomplete WireKit components, props, presets, and commands';
+    protected $description = 'Write .boost/wirekit.json, a JSON manifest of the installed components, props, presets and commands (Laravel Boost loads the guidelines WireKit ships instead)';
 
     public function handle(): int
     {
@@ -72,6 +77,7 @@ final class BoostSkillsCommand extends Command
 
         $componentCount = \count($manifest['skills'][0]['components'] ?? []);
         $this->info(".boost/wirekit.json written — {$componentCount} components across ".\count($manifest['skills']).' skills.');
+        $this->line('Laravel Boost does not read this file. It loads the guidelines and the wirekit-development skill that WireKit ships; run `php artisan boost:install` or `boost:update` to pick them up.');
 
         return self::SUCCESS;
     }
@@ -90,7 +96,7 @@ final class BoostSkillsCommand extends Command
     /**
      * Compare the published manifest against the installed package and say what differs.
      *
-     * ⚠️ The comparison is over the WHOLE structure, never the version stamp
+     * The comparison is over the WHOLE structure, never the version stamp
      * alone. A stamp-only check is green over a manifest that describes
      * components wrongly — a minor release that adds a prop changes the catalog
      * and the stamp together, so an agreeing stamp proves only that both sides

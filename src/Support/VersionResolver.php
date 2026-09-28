@@ -14,11 +14,15 @@ use Composer\InstalledVersions;
  *
  * Priority order:
  *
+ *   0. Composer's runtime API, `InstalledVersions::getPrettyVersion()` — the
+ *      canonical source when WireKit is installed via Composer (the normal
+ *      case on docs.wirekit.app and in any Laravel app that pulled the
+ *      package via `composer require pushery/wirekit`). Returns the exact
+ *      tag the app pulled, wherever the project's `vendor-dir` points.
+ *
  *   1. Composer's `vendor/composer/installed.json` in the adopting application
- *      — the canonical source when WireKit is installed via Composer (the
- *      normal case on docs.wirekit.app and in any Laravel app that pulled
- *      the package via `composer require pushery/wirekit`). Returns the
- *      exact tag the app pulled.
+ *      — the same answer read from the default location, for a load without
+ *      Composer's runtime present.
  *
  *   2. The package's own `composer.json` `version` field if present
  *      — only set during local-development checkouts that pin a value.
@@ -43,14 +47,12 @@ final class VersionResolver
     {
         // Path 0 — Composer's own API, which is location-independent.
         //
-        // ⚠️ PATH 1 BELOW READS `base_path('vendor/composer/installed.json')`, AND
-        // `vendor-dir` IS A CONFIGURABLE SETTING. On a project that sets it — Composer
-        // treats that as ordinary — the hand-rolled path resolves to nothing, the chain
-        // falls through, and every artifact stamped by this resolver reports a
-        // development version for a tagged install: `/components.json`, `/api-map.json`,
-        // `/blocks.json` and the project-root schema, all of which are fed to IDE
-        // extensions and AI tooling. Reproduced against a tree laid out the way Composer
-        // lays one out under `config.vendor-dir: "vendor2"`.
+        // Path 1 below reads `base_path('vendor/composer/installed.json')`, and
+        // `vendor-dir` is a configurable setting. On a project that sets it — Composer
+        // treats that as ordinary — the hand-rolled path resolves to nothing, and without
+        // this path every artifact stamped by this resolver would report a development
+        // version for a tagged install: `/components.json`, `/api-map.json`, `/blocks.json`
+        // and the project-root schema, all of which are fed to IDE extensions and AI tooling.
         //
         // `InstalledVersions` is what the ecosystem uses for exactly this, and Laravel's
         // own console commands call it. Guarded on `class_exists` — the same guard

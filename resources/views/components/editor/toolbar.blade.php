@@ -22,12 +22,10 @@
     // exactly that bug) where the convention is pictographic (link, undo/redo,
     // task-list). Static blade-authored markup, never developer-controlled.
     //
-    // ⚠️ THE LABEL GOES THROUGH THE TRANSLATOR, AND IT SHIPPED HARDCODED. It reaches the
-    // page twice — as the button's `aria-label` and as the VISIBLE tooltip text below it —
-    // so an untranslated literal here means a German application renders a fully translated
-    // form with a toolbar that announces and hovers "Bold", "Italic", "Bullet list". The
-    // container one block down was already translated, which is what made the gap hard to
-    // see: the group announced itself as "Editor-Befehle" and every control in it did not.
+    // The label goes through the translator. It reaches the page twice — as the button's
+    // `aria-label` and as the visible tooltip text below it — so an untranslated literal
+    // here would give a German application a translated form with a toolbar that announces
+    // and hovers "Bold", "Italic", "Bullet list".
     // The keys are written out LITERALLY, one `__()` per row, for the same reason
     // countdown.blade.php gives: `lang:extract` and TranslationKeyDriftTest read the source,
     // so a key built from a variable is a key no reference file can ever know about.
@@ -60,7 +58,7 @@
 
     $buttonClasses = implode(' ', [
         'inline-flex items-center justify-center shrink-0',
-        'h-8 min-w-8 px-[var(--padding-wk-x-sm)]',
+        'h-[var(--size-wk-sm)] min-w-[var(--size-wk-sm)] px-[var(--padding-wk-x-sm)]',
         'rounded-[var(--radius-wk-sm)]',
         'text-[length:var(--text-wk-md)]',
         'text-[color:var(--color-wk-text-muted)]',
@@ -142,7 +140,7 @@
             <x-wirekit::tooltip :text="$label" placement="bottom" focusable-trigger="false">
                 <button
                     type="button"
-                    {{-- Keep editor focus + selection while running the command (Pitfall #7). --}}
+                    {{-- A toolbar click must not take the editor's focus or selection before the command runs on it. --}}
                     x-on:mousedown.prevent=""
                     x-on:click="cmd({{ \Pushery\WireKit\Support\AlpinePayload::string($command) }})"
                     @if(isset($historyGuard[$command]))

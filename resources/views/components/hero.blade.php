@@ -9,8 +9,8 @@
     'layout' => 'balanced',
     // Only valid when layout="balanced". Tunes the copy:aside ratio from
     // the default 50/50 to one of: 1/3 | 2/5 | 3/5 | 2/3. Under any
-    // non-balanced layout this prop throws via validateProp (debug) or is
-    // silently ignored (production).
+    // non-balanced layout this prop is reported through the strictness gate
+    // and has no effect on the columns.
     'asideWidth' => null,
     // Optional reveal animation. Null = no animation (default, v1.5.0-identical).
     'animateIn' => null,
@@ -59,12 +59,12 @@
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'hero');
 
-    // Validate `size` against the three-tier enum. Off-enum values
-    // surface debug-mode validation; production silently falls back
-    // to `lg` (the safest default).
+    // Validate `size` against the three-tier enum. An off-enum value is reported through the
+    // strictness gate, and where the gate does not throw it renders the FIRST allowed value,
+    // which is why `lg`, the default, leads the list.
     $validSize = in_array($size, ['sm', 'md', 'lg'], true)
         ? $size
-        : WireKit::validateProp('hero', 'size', $size, ['sm', 'md', 'lg']);
+        : WireKit::validateProp('hero', 'size', $size, ['lg', 'md', 'sm']);
 
     // Responsive vertical-padding utility — combines per-component opt-in
     // responsive utility with the `size` prop for explicit override.
@@ -122,12 +122,11 @@
     // near-white in dark mode. `accent` stays a colored surface (no `.dark`,
     // it isn't dark); its token-surfaced children read the page mode, which is
     // fine because the accent surface is colored, not near-white.
-    $variantClasses = match ($variant) {
+    $variantClasses = match (WireKit::validateProp('hero', 'variant', $variant, ['default', 'dark', 'accent', 'muted'])) {
         'default' => 'bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
         'dark' => 'dark bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
         'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
         'muted' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
-        default => WireKit::validateProp('hero', 'variant', $variant, ['default', 'dark', 'accent', 'muted']),
     };
 
     // Layout map: drives outer flex direction, copy/aside column flex factors, and text alignment.
@@ -162,7 +161,7 @@
             '2/3' => ['flex-[1]', 'flex-[2]'],
         ];
         if ($validLayout !== 'balanced') {
-            // Non-balanced layout — fail-fast in debug, ignore silently otherwise.
+            // Non-balanced layout: report it through the gate and leave the columns alone.
             // Pass an empty allowed-values list so the message is "asideWidth is
             // only valid when layout=balanced; got {asideWidth} under {layout}".
             WireKit::validateProp(
@@ -208,10 +207,9 @@
     };
     $gradientClasses = $gradient ? $gradientOverlayClass : '';
 
-    // Heading level (1-6). An invalid value signals in debug (validateProp throws with a
-    // did-you-mean) and falls back to the default in production — never to h1, which is
-    // what validateProp's own first-allowed fallback would produce and which would break
-    // the outline worse than the default does.
+    // Heading level (1-6). An invalid value is reported through the strictness gate, with a
+    // did-you-mean, and where the gate does not throw it renders the default level, which
+    // for a hero is h1: it carries the page's main heading.
     $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 1;
     if ($levelValue !== (int) $level) {
         WireKit::validateProp('hero', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);

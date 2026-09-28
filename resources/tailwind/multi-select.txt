@@ -459,11 +459,11 @@ Change
 Characters
 Container
 DECLARED
-DENSE,
 DESCRIPTIONS.
 DOM
 DROPS
 Declared
+Dense,
 Dev-only
 Dropdown
 EFFECT
@@ -482,7 +482,6 @@ HTML
 Hidden
 Home/End
 How
-INDEXES
 INSIDE
 IconSprite
 Icons
@@ -492,7 +491,6 @@ Inside
 It
 JS
 JavaScript
-KEY
 KEY.
 Keep
 LIST
@@ -505,17 +503,14 @@ MORPH
 Measured
 Milliseconds
 Mirrors
-MultiSelectRenderTest
 NAMES
 NESTS
 NEW
 NOT
-Neither
 No
 Normalize
 Normalized
 Not
-Nothing
 OF
 ONE
 ONLY
@@ -539,9 +534,9 @@ Present
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 ROW
+Reading
 Rendered
 Renders
-Reported
 Required
 SCROLL
 SECOND
@@ -562,7 +557,6 @@ StrictnessGate
 Strip
 Support\DomId
 THE
-TOP
 TRUE
 Teleported
 That
@@ -639,16 +633,15 @@ _place()
 `<use>`
 `@aware`
 `@props`
-`Gru00fce`.
+`DomId`),
+`Gru00fce`,
 `Grüße`
 `ReferenceError`
+`Support/AlpinePayload.php`
 `['value'
 `[31
 `[overflow-wrap:anywhere]`
-`\\`
-`\n`,
-`\r`,
-`\t`,
+`\u00fc`,
 `after:
 `args`
 `aria-activedescendant`
@@ -682,7 +675,7 @@ _place()
 `keywords`
 `label`
 `loading="lazy"`,
-`ms-0.5`
+`ms-0.5`,
 `multi-select`.
 `name`
 `name`/`placeholder`
@@ -723,7 +716,6 @@ _place()
 `x-text`
 `{
 `{{
-`ü`.
 a
 able
 about
@@ -735,11 +727,11 @@ across
 action
 active
 adds
-adopting
 affordances
 after
 again
 against
+agree
 all
 all.
 alongside
@@ -773,7 +765,6 @@ appearance
 appears
 appended
 application
-application.
 apply
 arbitration
 are
@@ -804,7 +795,7 @@ array_is_list(collect($options)->all());
 array_values((array)
 array_values(array_filter(array_map('trim',
 array_values(array_map(fn
-arrays
+arrays,
 arrays.
 arrive
 arrived
@@ -832,7 +823,6 @@ axe
 axe's
 back
 back.
-backslash
 bag
 bag.
 balanced
@@ -880,7 +870,6 @@ branch
 branches
 break
 bridge
-broken
 browser,
 build
 but
@@ -890,7 +879,6 @@ call,
 call.
 caller's
 caller's.
-callers
 can
 cannot
 cannot.
@@ -899,7 +887,6 @@ caret,
 carries
 carry
 carrying
-case
 cast
 certifies
 changed.
@@ -990,10 +977,11 @@ copy
 correctly.
 costs
 could
+count
+counted
 counterpart,
 country
 courtesy
-coverage
 cursor
 cursor-pointer"
 cut
@@ -1009,12 +997,14 @@ debug
 decided
 decides.
 deciding
+decode:
 decoration:
 decorative
 default
 deliberately
 dense.
 denylist
+derived
 descendant
 describes
 description
@@ -1054,7 +1044,6 @@ duration-[var(--transition-wk-duration)]"
 duration-[var(--transition-wk-duration)]',
 each
 eager
-earlier
 early.
 ease-in
 ease-out
@@ -1071,7 +1060,6 @@ empty,
 empty.
 empty:
 encode
-entry
 error
 escapes
 even
@@ -1150,7 +1138,6 @@ for
 for.
 for="$id">
 form
-formats
 formatting.
 forms
 frame
@@ -1178,7 +1165,6 @@ had.
 hairline
 half
 hand-mount
-handled
 hangs
 happen
 happens
@@ -1242,7 +1228,6 @@ including
 incoming
 independent:
 index
-index.
 indexes
 indicator
 indistinguishable
@@ -1335,7 +1320,6 @@ list
 list,
 list.
 listbox
-listbox,
 listener
 listens
 literal
@@ -1346,6 +1330,7 @@ load,
 load.
 loading="lazy"
 long
+look
 looked
 looks
 lose
@@ -1480,7 +1465,6 @@ order
 order.
 origin.
 other
-others.
 out
 out,
 out.
@@ -1507,8 +1491,8 @@ paragraph
 parent
 parent's
 parser
+part
 parts
-passed
 passthrough
 past
 patch:
@@ -1524,7 +1508,6 @@ pick
 pick,
 picker
 picking
-picks
 pill
 pillMedia(val)"
 pills
@@ -1570,10 +1553,9 @@ py-1',
 py-y-sm
 qualified:
 quiet
-quote,
-random
 rather
 re-emitted
+re-renders
 reach
 reaches
 read
@@ -1603,6 +1585,7 @@ render:
 rendered
 rendered,
 renders
+renders.
 replaced
 report
 request
@@ -1615,6 +1598,7 @@ resolver
 resolves
 resort.
 rest
+restart
 restarts
 restore
 restoring
@@ -1712,13 +1696,13 @@ set
 sets
 settled
 settles,
-seven
 several
 shadow-[var(--shadow-wk-lg)]
 shape
 shape,
 shapes
 shared
+ship
 short
 showing.
 shown
@@ -1733,7 +1717,6 @@ sides
 sides.
 sideways.
 silently.
-simply
 since
 single
 sit
@@ -1755,7 +1738,6 @@ space
 span
 speaker
 specific
-spelled
 spelling
 spellings
 splices
@@ -1780,7 +1762,6 @@ stray
 string
 string)
 string,
-stringified
 strings
 strings,
 style
@@ -1845,11 +1826,11 @@ thought
 three
 three-artwork
 three:
-threw,
 throttles
 through
 through,
-throws;
+thrown
+thrown.
 tight
 time
 timing,
@@ -1860,10 +1841,11 @@ together,
 toggleValue()
 token
 token,
-tokenizer
+tokenizers
 tokens
 too
 too,
+top
 top.
 top/bottom
 touch
@@ -1900,7 +1882,6 @@ unaffected:
 unanchored
 unconditionally
 under
-understands
 undo
 undone
 undone.'),
@@ -1931,7 +1912,7 @@ value:
 values
 values,
 variable
-version
+versions.
 vertical
 via
 view's
@@ -1988,7 +1969,6 @@ write
 writes
 written
 wrong
-wrong.
 wrote.
 x-bind:aria-busy="isPending"
 x-bind:aria-busy="searchAriaBusy()"
@@ -2070,4 +2050,3 @@ z-[var(--z-wk-dropdown)]
 —
 …
 ≈
-⚠️

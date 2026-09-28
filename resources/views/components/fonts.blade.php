@@ -96,7 +96,7 @@
      * one of the twenty-one families carries exactly one Regular face. Parsing the `src` the
      * browser would parse anyway means the two can never disagree.
      *
-     * ⚠️ ONLY WHEN PUBLISHED AS A STATIC FILE. The route-served fallback resolves through PHP
+     * Only when published as a static file. The route-served fallback resolves through PHP
      * with a cache-busting query, so a preload of it would be a second, differently-keyed
      * request for the same bytes — the opposite of the point.
      */

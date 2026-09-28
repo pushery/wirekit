@@ -23,7 +23,8 @@
     // Sweep the fill from empty to its value on first paint, and animate later
     // value changes instead of snapping. Purely additive polish: gated by
     // prefers-reduced-motion, and the ring is complete without it (the on-load
-    // sweep is above-baseline progressive enhancement — see dist/wirekit.css).
+    // sweep is a keyframe animation over the registered `--wk-radial-value`, and
+    // `@property` is inside the browser baseline — see dist/wirekit.css).
     'animate' => false,
     'scope' => null,
 ])
@@ -69,8 +70,8 @@
     }
 
     // The exact map progress uses, so a dashboard reads the same in both shapes.
-    // info falls to the accent fill because there is no distinct --color-wk-info
-    // base token (only --color-wk-info-text); neutral takes the muted text token
+    // info falls to the accent fill because info has no surface token
+    // (--color-wk-info is the tone the charts and the flash tint read); neutral takes the muted text token
     // for a low-emphasis ring. Full literal token per arm — the drift auditor
     // reads these statically and cannot follow an interpolated name.
     $fillToken = match ($effectiveIntent) {
@@ -93,8 +94,8 @@
     $classes = WireKit::resolveClasses('radial-progress', 'base', implode(' ', array_filter([
         'wk-radial',
         $sizeClass,
-        // Opt-in sweep — the class carries the transition + @starting-style (see
-        // dist/wirekit.css), all gated by prefers-reduced-motion.
+        // Opt-in sweep — the class carries a keyframe animation from 0 to the inline
+        // `--wk-radial-value` (see dist/wirekit.css), gated by prefers-reduced-motion.
         $animate ? 'wk-radial-animate' : '',
         'relative inline-grid place-items-center shrink-0',
         'font-[family-name:var(--font-wk-sans)]',
@@ -125,7 +126,7 @@
          a translatable generic name so the role is never anonymous. --}}
     aria-label="{{ $label ?? __('wirekit::Progress') }}"
     {{-- Opt the animated ring INTO the docs.wirekit.app replay button so the sweep
-         can be re-watched — a re-mount re-fires @starting-style. No-op in a
+         can be re-watched — a re-mount restarts the animation. No-op in a
          developer app (no such button); it only adds the attribute. --}}
     @if($animate) data-replayable="true" @endif
     data-wk-radial-progress

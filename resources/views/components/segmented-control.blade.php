@@ -107,10 +107,10 @@
     // Resolving both branches here and interpolating the results keeps the runtime
     // behavior identical while making both reachable.
     //
-    // NOTE: these class strings now only exist inside PHP, so Tailwind's content
-    // scanner no longer sees them where it used to. They are listed literally in
-    // resources/views/_safelist.blade.php — without that entry they get purged
-    // and the segments render unstyled.
+    // The class strings stay literals in this file, so Tailwind's content scanner
+    // still finds them here, through the views glob and through this component's
+    // own source list alike: the scanner reads the text of the file, not the
+    // branch of PHP that uses it.
     $segmentSelectedClasses = WireKit::resolveClasses('segmented-control', 'segment-selected', implode(' ', [
         'bg-[var(--color-wk-bg-elevated)]',
         'text-[color:var(--color-wk-text)]',
@@ -125,19 +125,18 @@
 
     // Individual segment button classes
     //
-    // ⚠️ THE HEIGHT HAS A FLOOR. It used to come from padding plus line height and nothing
-    // else — both values a host re-themes — so the target of a primary control depended on
-    // the host's typography: shrink `--text-wk-sm` and the `sm` segments fell below 24px
-    // without a sound. `--size-wk-target-min` is the WCAG 2.5.8 floor the kit holds itself
-    // to; at the default tokens the segments measure above it, so nothing visible moves.
+    // The height has a floor. Padding plus line height alone are both values a host
+    // re-themes, so the target of a primary control would depend on the host's typography:
+    // shrink `--text-wk-sm` and the `sm` segments would fall below 24px without a sound.
+    // `--size-wk-target-min` is the WCAG 2.5.8 floor the kit holds itself to; at the default
+    // tokens the segments measure above it.
     // `inline-flex` + centering keep the label in the middle once the floor is what sets
     // the height.
     $segmentClasses = implode(' ', [
         'relative',
         'inline-flex items-center justify-center',
         // Inside a track that scrolls, a segment allowed to shrink wraps its label instead, and
-        // the bar loses its single height — measured in an application at 54px where one label wrapped.
-        // `tabs` gives its triggers the same rule.
+        // the bar loses its single height. `tabs` gives its triggers the same rule.
         'shrink-0 whitespace-nowrap',
         'min-h-[var(--size-wk-target-min)]',
         'cursor-pointer',

@@ -13,7 +13,7 @@
      opened and nothing about which one. Five of this catalog's six menu panels carry a name;
      this was the sixth.
 
-     ⚠️ NOT DERIVED FROM THE TRIGGER, which would be better and is not reachable. The three
+     Not derived from the trigger, which would be better and is not reachable. The three
      submenus point `aria-labelledby` at their own trigger because trigger and panel live in
      ONE file. Here the caller composes `<x-wirekit::dropdown.trigger>` and
      `<x-wirekit::dropdown.panel>` as separate siblings, and this repository's parent-to-child
@@ -21,7 +21,7 @@
      cannot see the trigger's id at render time. Binding one at runtime is what the note
      further down warns about.
 
-     ⚠️ NO GENERIC FALLBACK, and the sibling `context-menu` has one on purpose. "Context menu"
+     No generic fallback, and the sibling `context-menu` has one on purpose. "Context menu"
      says what KIND of menu opened, so it earns its place. A dropdown falling back to "Menu" is
      announced as "Menu, menu" — the name repeats the role, and the reader is left exactly
      where they were, one word later. --}}
@@ -58,8 +58,8 @@
         //
         // Set to the same token as the block padding, so the inset reads as one frame
         // rather than as two decisions. `--radius-wk-nav-item` on the item is then
-        // literally "panel radius minus this padding", which is what that token already
-        // computes everywhere else in the library.
+        // "panel radius minus this padding": the stylesheet sets it on this panel, with the
+        // arithmetic it applies to every rounded navigation container.
         'px-[var(--padding-wk-y-xs)]',
         'bg-[var(--color-wk-bg-elevated)]',
         'border-[length:var(--border-wk-width)]',

@@ -7,10 +7,8 @@
     'container' => false,
     'padding' => config('wirekit.components.main.padding', 'lg'),
     // cap the content width by default so dashboards don't stretch
-    // edge-to-edge on 1900px+ monitors. Default '2xl' matches the
-    // container component's '2xl' tier — most full-page layouts
-    // already wrap the slot in a container with that cap, so adopting
-    // the same default here unifies the two surfaces. Opt out with
+    // edge-to-edge on 1900px+ monitors. The default is the '2xl' tier,
+    // one above the container component's default 'xl'. Opt out with
     // max="none" to preserve the pre-2.3.0 unbounded behavior.
     // Reads from config to allow per-app overrides.
     'max' => null,
@@ -48,13 +46,12 @@
     // `<x-wirekit::header>`, so a sibling Header + Main pair (the canonical
     // app-shell layout) shares one vertical alignment line. Vertical padding
     // stays on the generic `--space-wk-{size}` scale for breathing room.
-    $paddingClasses = match ($padding) {
+    $paddingClasses = match (WireKit::validateProp('main', 'padding', $padding, ['none', 'sm', 'md', 'lg', 'xl'])) {
         'none' => '',
         'sm' => 'px-[var(--padding-wk-x-sm)] py-[var(--space-wk-sm,0.5rem)]',
         'md' => 'px-[var(--padding-wk-x-md)] py-[var(--space-wk-md,1rem)]',
         'lg' => 'px-[var(--padding-wk-x-lg)] py-[var(--space-wk-lg,1.5rem)]',
         'xl' => 'px-[var(--padding-wk-x-xl)] py-[var(--space-wk-xl,2.5rem)]',
-        default => WireKit::validateProp('main', 'padding', $padding, ['none', 'sm', 'md', 'lg', 'xl']),
     };
 
     // Resolve max-width tier. `null` reads config (default `2xl`);
@@ -62,7 +59,10 @@
     // for back-compat. Anything else maps to a `--size-wk-container-*`
     // token via the same scale as `<x-wirekit::container>`.
     $resolvedMax = $max ?? config('wirekit.components.main.max', '2xl');
-    $maxClass = match ($resolvedMax) {
+    // Validated before the match, so an unknown value renders what the first allowed value
+    // renders (no cap) instead of emitting the value's key as a class. The empty string is the
+    // back-compat spelling of `none` and is not in the list, so it skips the validator.
+    $maxClass = match ($resolvedMax === '' ? '' : WireKit::validateProp('main', 'max', (string) $resolvedMax, ['none', 'sm', 'md', 'lg', 'xl', '2xl', 'full'])) {
         'none', '' => null,
         'sm' => 'max-w-[var(--size-wk-container-sm)]',
         'md' => 'max-w-[var(--size-wk-container-md)]',
@@ -70,7 +70,6 @@
         'xl' => 'max-w-[var(--size-wk-container-xl)]',
         '2xl' => 'max-w-[var(--size-wk-container-2xl,96rem)]',
         'full' => 'max-w-full',
-        default => WireKit::validateProp('main', 'max', (string) $resolvedMax, ['none', 'sm', 'md', 'lg', 'xl', '2xl', 'full']),
     };
 @endphp
 

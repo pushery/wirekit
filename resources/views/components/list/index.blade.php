@@ -25,7 +25,10 @@
         ? (in_array($type, $orderedTypes, true) ? 'ol' : 'ul')
         : WireKit::tagName('list', (string) $as);
 
-    $typeClasses = match ($type) {
+    $typeClasses = match (WireKit::validateProp('list', 'type', $type, [
+            'disc', 'decimal', 'none',
+            'lower-roman', 'upper-roman', 'lower-alpha', 'upper-alpha',
+        ])) {
         'disc' => 'list-disc',
         'decimal' => 'list-decimal',
         'none' => 'list-none',
@@ -35,21 +38,17 @@
         'upper-roman' => 'list-[upper-roman]',
         'lower-alpha' => 'list-[lower-alpha]',
         'upper-alpha' => 'list-[upper-alpha]',
-        default => WireKit::validateProp('list', 'type', $type, [
-            'disc', 'decimal', 'none',
-            'lower-roman', 'upper-roman', 'lower-alpha', 'upper-alpha',
-        ]),
     };
 
     // wk-list-spacing-{sm|md|none} pairs with the CSS rules in wirekit.css
-    // that use `!important` to win over developer typography wrappers
+    // that win by doubled-class specificity (no `!important`) over developer
+    // typography wrappers
     // (`.prose`, `.docs-prose`, etc.) which otherwise inject vertical
     // margin into <ol>/<ul>/<li> and compound across nesting depth.
-    $spacingClasses = match ($spacing) {
+    $spacingClasses = match (WireKit::validateProp('list', 'spacing', $spacing, ['none', 'sm', 'md'])) {
         'none' => 'wk-list-spacing-none',
         'sm' => 'wk-list-spacing-sm',
         'md' => 'wk-list-spacing-md',
-        default => WireKit::validateProp('list', 'spacing', $spacing, ['none', 'sm', 'md']),
     };
 
     $classes = WireKit::resolveClasses('list', 'base', implode(' ', [

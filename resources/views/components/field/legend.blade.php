@@ -17,12 +17,11 @@
     // Standalone <legend> for a hand-built <fieldset> — the caption element on its
     // own, with the library's typography and the configuration seam already wired.
     //
-    // ⚠️ NOT for the DEFAULT slot of <x-wirekit::field.set>. That slot sits inside a
+    // Not for the DEFAULT slot of <x-wirekit::field.set>. That slot sits inside a
     // spacing <div>, so a <legend> written there is the fieldset's GRANDCHILD, which
     // makes it an ordinary inline box rather than the group's caption: the <fieldset>
     // ends up with no accessible name and nothing is announced before the controls.
     // The text still renders where the author put it, so the loss is invisible.
-    // This docblock claimed the opposite until 2026-09-04 and the claim was the bug.
     //
     // Rich content inside a <x-wirekit::field.set> goes through its named caption slot,
     // which renders ahead of that <div>:

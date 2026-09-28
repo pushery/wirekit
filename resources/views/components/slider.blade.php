@@ -98,11 +98,10 @@
      * the same form, on the same submit. The explicit prop still wins; the bag is the
      * fallback, exactly as in input.blade.php.
      *
-     * ⚠️ GUARDED ON `$name`, and that guard is not defensive noise. `$errors->first(null)`
-     * returns the FIRST error in the bag whatever its key — so a slider with no name
-     * rendered `aria-invalid="true"` because some other field failed validation, and
-     * announced an error message about that field. Six sibling controls already write it
-     * this way; this one was added without the guard.
+     * Guarded on `$name`, and that guard is not defensive noise. `$errors->first(null)`
+     * returns the first error in the bag whatever its key, so a slider with no name would
+     * render `aria-invalid="true"` because some other field failed validation, and announce
+     * an error message about that field. The sibling controls write it the same way.
      */
     $error ??= $name ? ($errors ?? null)?->first($name) : null;
     // Whether a message line renders below the control: the error, or the hint when there is none.
@@ -188,14 +187,13 @@
         // A list element is a POSITION, never a spec, so an array element settles it: the
         // caller wrote a map and PHP's key numbering is a coincidence.
         //
-        // ⚠️ AND A POSITION IS A NUMBER, which the array test alone does not say. A label map
+        // And a position is a number, which the array test alone does not say. A label map
         // written the most natural way for a small ordered scale — `[0 => 'Neutral', 1 =>
         // 'Ja', 2 => 'Hoch']` — has contiguous keys from zero, so `array_is_list()` calls it a
-        // list, and the branch below then read `'Neutral'` as a POSITION and subtracted the
-        // minimum from it. That is a TypeError, so the page was an HTTP 500 rather than a
-        // misplaced mark.
+        // list, and the branch below would read `'Neutral'` as a position and subtract the
+        // minimum from it: a TypeError, so an HTTP 500 rather than a misplaced mark.
         //
-        // The neighboring shapes all worked and hid it: `[0 => 'Low', 50 => 'Mid']` has gaps,
+        // The neighboring shapes do not reach it: `[0 => 'Low', 50 => 'Mid']` has gaps,
         // `[1 => 'A', 2 => 'B']` does not start at zero, and an array spec is caught above —
         // only a zero-based contiguous label map reaches it.
         $marksIsList = array_is_list($marks)
@@ -219,14 +217,6 @@
                 'label' => $mLabel,
                 'pct' => $pct,
                 'description' => $mDescription,
-                // A per-mark id, needed because the description is referenced by
-                // `aria-describedby` and a page can hold several sliders.
-                'descId' => $mDescription === null
-                    ? null
-                    : \Pushery\WireKit\Support\DomId::unique(
-                        ($attributes->get('id') ?: $name).'-mark-'.preg_replace('/[^a-z0-9-]/i', '', (string) $mValue),
-                        'slider-mark-'
-                    ),
             ];
             $hasLabeledMarks = $hasLabeledMarks || $mLabel !== '';
         }
@@ -300,7 +290,7 @@
     // `bottom-full` (pt-7 ≈ bubble + gap) and the tick marks hang `top-full`
     // (pb-6 with labels, pb-2 ticks-only). Without the reservation the bubble
     // clips inside overflow-hidden ancestors and labeled marks overlap the
-    // content below. a bare `min-w` of 16rem is the same usability floor as
+    // content below. A `min(16rem, 100%)` minimum width is the same usability floor as
     // range-slider: in any shrink-to-fit context (flex/grid auto item, table
     // cell, fit-content wrapper) a w-full track has no intrinsic width and
     // collapses to a few px — far too narrow to drag.
@@ -314,14 +304,12 @@
         $valueBelow
             ? 'grid items-center gap-[var(--gap-wk-sm)] w-full '.($label ? 'grid-cols-[auto_minmax(0,1fr)]' : 'grid-cols-[minmax(0,1fr)]')
             : 'flex items-center gap-[var(--padding-wk-x-sm)] w-full',
-        // ⚠️ `min(16rem, 100%)`, NOT a bare `16rem`. The floor keeps a shrink-to-fit
+        // `min(16rem, 100%)`, not a bare `16rem`. The floor keeps a shrink-to-fit
         // context (a flex or grid auto item, a table cell, a fit-content wrapper) from
-        // collapsing the track to a few unusable pixels — but `min-width` is a HARD floor,
-        // so a bare value does NOT "shrink to 100% of a narrower parent", which is what the
-        // comment here used to claim. In the documentation preview column, roughly 280px
-        // wide at phone width, 256px of track plus 32px of card padding is 288px: the
-        // control pushed past its own container. `min()` gives the intended behavior —
-        // 16rem where there is room, the parent's width where there is not.
+        // collapsing the track to a few unusable pixels, but `min-width` is a hard floor,
+        // so a bare value does not shrink to a narrower parent: in a column roughly 280px
+        // wide, 256px of track plus 32px of card padding would push past its own container.
+        // `min()` gives 16rem where there is room, the parent's width where there is not.
         //
         // (The same comment also argued for a 20rem floor while shipping 16rem. Whichever
         // of the two was meant, one of them was wrong in the source of truth; 16rem is what
@@ -358,23 +346,18 @@
      * THE WIDEST TEXT THIS BOX WILL EVER SHOW, so it can reserve that width once and stop
      * resizing while the thumb is held.
      *
-     * ⚠️ The value span is a SIBLING of the track inside a `w-full` flex row, so the track's
+     * The value span is a SIBLING of the track inside a `w-full` flex row, so the track's
      * width is the row minus the gap minus this box. Anything that changes this box's width
-     * moves the track — under the pointer that is dragging it. Reported from an adopting
-     * application using `valueTextMap`, where the text is a WORD and the width changes with
-     * every step.
+     * moves the track — under the pointer that is dragging it. With `valueTextMap` the text
+     * is a word, and the width changes with every step.
      *
-     * ⚠️ AND IT IS NOT ONLY THE WORD CASE, which is why the reservation is computed rather
-     * than switched on a prop. Measured on the plain numeric preview, 0 to 100: the track is
-     * 481.5px at "0" and "7" and **477.7px at "100"** — the old two-and-a-half character
-     * minimum covers two digits and the third one costs 3.8px. A fix keyed on `valueTextMap`
-     * would have left that.
+     * And it is not only the word case, which is why the reservation is computed rather
+     * than switched on a prop: on a plain numeric scale from 0 to 100, a two-and-a-half
+     * character minimum covers two digits, and the third would still move the track.
      *
-     * ⚠️ That floor is described in words on purpose, and so is the numeric variant a few
-     * lines down. Tailwind scans this directory as RAW TEXT, so a utility spelled out in a
-     * comment is compiled — and then the reverse drift audit reports a selector no source
-     * emits, because the only source was the sentence explaining its removal. `app.css` says
-     * the same thing about why it excludes `tests/`.
+     * That floor is described in words on purpose, and so is the numeric variant a few
+     * lines down: Tailwind scans this directory as raw text, so a utility spelled out in a
+     * comment would be compiled into a selector no element uses.
      *
      * `valueText` is `marksMap[current] ?? String(current)`, so the candidate set is exactly
      * the map's labels plus the numeric ends. The ghost below renders the longest of them
@@ -592,19 +575,14 @@
             {{-- Tick marks under the track. Decorative; the native input announces value/min/max. --}}
             <div class="pointer-events-none absolute inset-x-0 top-full mt-1" aria-hidden="true">
                 @foreach($normalizedMarks as $mark)
-                    {{-- `title` AND a screen-reader description, not either/or.
-                         `title` is a hover affordance and there is no hover on
-                         touch, so alone it would hide the meaning from exactly the
-                         readers most likely to be guessing at it. The sr-only span
-                         carries the same text and is referenced by
-                         `aria-describedby`, so it reaches assistive technology
-                         without a pointer. --}}
+                    {{-- `title` for a pointer. `title` is a hover affordance and there is
+                         no hover on touch, so assistive technology gets the same text
+                         through `aria-valuetext` on the input instead (see below). --}}
                     {{-- `pointer-events-auto` ONLY on a tick that carries a title, and only
                          because the container above is `pointer-events-none` so ticks cannot
                          swallow a drag. Without it the title can never appear: no pointer
                          event reaches the element, so the browser has nothing to show a
-                         tooltip for. Measured — the attribute was there and the tooltip was
-                         unreachable. Ticks without a description stay transparent to the
+                         tooltip for. Ticks without a description stay transparent to the
                          pointer, which keeps dragging over them unaffected. --}}
                     {{-- Positioned the way the value bubble above is: a mark moves back by its own
                          position as a share of its own width, so a label at 0% starts where the row
@@ -624,12 +602,11 @@
                         @if($mark['label'] !== '')
                             <span class="mt-0.5 whitespace-nowrap text-[length:var(--text-wk-xs)] tabular-nums text-[color:var(--color-wk-text-muted)]">{{ $mark['label'] }}</span>
                         @endif
-                        {{-- No `sr-only` description span here, and no `aria-describedby`.
-                             Both were shipped and both were inert: this whole container is
-                             `aria-hidden="true"` — correctly, because a tick label duplicates
-                             the value — so the span was dropped from the accessibility tree
-                             and the `aria-describedby` pointing at it resolved to nothing. An
-                             `aria-describedby` on a non-focusable div is inert regardless.
+                        {{-- No `sr-only` description span here, and no `aria-describedby`:
+                             this whole container is `aria-hidden="true"` — correctly, because
+                             a tick label duplicates the value — so a span here would be dropped
+                             from the accessibility tree, and an `aria-describedby` on a
+                             non-focusable div is inert regardless.
                              The description reaches assistive technology through
                              `aria-valuetext` on the input, which announces the meaning of the
                              CURRENT position rather than reading every mark at once. --}}

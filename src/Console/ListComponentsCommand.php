@@ -18,10 +18,9 @@ class ListComponentsCommand extends Command
     protected $description = 'List all WireKit components grouped by category';
 
     /**
-     * Output formats supported by --as=…. Each value below maps to a
-     * handler method `outputAs<Format>($components, $grouped, $total)`
-     * dispatched in handle(). Adding a new format = adding an entry
-     * here PLUS the corresponding method.
+     * Output formats supported by --as=…. Each value below is a case of
+     * emitMachineFormat(), so adding a format means an entry here PLUS its
+     * case there.
      */
     private const FORMATS = ['count', 'json', 'slugs', 'categories'];
 

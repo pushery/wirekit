@@ -133,21 +133,12 @@ final class ApexChartsAdapter implements ChartAdapter
                 'show' => true,
                 'position' => 'top',
             ],
-            // Tooltip — uniform BEHAVIOR + STYLING across every apex demo,
-            // modeled on the /components/charts-apex/scatter-bubble Basic
-            // Example, the one shape that reads correctly for every type.
-            //
-            // `shared: false` + `intersect: true`: tooltip fires when the
-            // cursor is ON a data element (bar / bubble / line point / pie
-            // slice) and shows ONE tooltip for that exact element. Native
-            // ApexCharts defaults differ per chart type (bar / line use
-            // `shared: true, intersect: false`; scatter / bubble use
-            // `shared: false, intersect: true`) which produced visibly
-            // different tooltip placement between, say, /charts-apex/bar
-            // (panel anchored at the column edge) and /charts-apex/scatter-
-            // bubble (panel anchored at the bubble center). Forcing the
-            // scatter-style defaults across all types gives every demo
-            // the same hover affordance.
+            // Tooltip — uniform STYLING on every type, and hover BEHAVIOR per type family (see
+            // defaultTooltip()). Per-element types (scatter, bubble, pie, radar, heatmap,
+            // treemap and the rest of that list) get `shared: false` + `intersect: true`, so
+            // one tooltip belongs to the element under the pointer; `mixed` and `annotated`
+            // track the cursor across all series; the line, area and bar family keeps
+            // ApexCharts' own per-type defaults, which follow the cursor along the x axis.
             //
             // `fillSeriesColor: false` + `marker.show: true` standardize
             // the color-swatch as an unfilled circle. `style.fontSize:
@@ -230,13 +221,9 @@ final class ApexChartsAdapter implements ChartAdapter
             // (the default, so most demos require no extra options).
             'column' => 'bar',
             /*
-             * ApexCharts has no `funnel` chart type either: its funnel is a horizontal bar
-             * with `plotOptions.bar.isFunnel`. `funnel` was listed as supported and passed
-             * straight through, so `type="funnel"` handed ApexCharts a type it does not know —
-             * measured, the emitted config carried `"type":"funnel"` and no `isFunnel` at all.
-             * The documentation page advertising the type demonstrates the hand-rolled
-             * `bar` + `isFunnel` composition instead, so the advertised route had zero
-             * coverage AND did not work.
+             * A funnel is a horizontal bar with `plotOptions.bar.isFunnel`. ApexCharts releases
+             * before 5.12 know no `funnel` chart type; later ones take it as a bar-family alias.
+             * Emitted as `bar` with `isFunnel` set, it draws on both.
              *
              * The plotOptions half is supplied by `defaultOptions()`, which is where every
              * other type-specific default lives and where a developer override still wins.
@@ -293,7 +280,7 @@ final class ApexChartsAdapter implements ChartAdapter
         // `intersect: true` ApexCharts radar internally cursor-tracks
         // until the data-vertex is hit, producing a "tooltip not pinned"
         // symptom. Explicit follow-cursor opt-out fixes it.
-        if (in_array($type, ['radar', 'heatmap', 'treemap'], true)) {
+        if ($type === 'radar') {
             $base['followCursor'] = false;
         }
 
@@ -314,18 +301,10 @@ final class ApexChartsAdapter implements ChartAdapter
             $base['intersect'] = false;
         }
 
-        // Heatmap + treemap are intentionally NOT in either branch above.
-        // ApexCharts doesn't expose a "anchor tooltip at hovered cell
-        // center" API — `intersect: true, followCursor: false` makes the
-        // tooltip render in a chart-corner fallback far from the hovered
-        // cell; `followCursor: true` (the native default) keeps the
-        // tooltip near the cursor but with visible jitter as the mouse
-        // moves within the cell. The cursor-follow native default is
-        // the lesser evil — the tooltip stays USEFUL (near where the
-        // user is looking) at the cost of some jitter. A proper center-
-        // of-cell anchor would need a custom positioning layer outside
-        // the ApexCharts tooltip API (post-hover DOM measurement +
-        // direct style.left/top mutation).
+        // Heatmap and treemap take the per-element options but keep ApexCharts' own
+        // `followCursor`. A heatmap tooltip is anchored above the hovered cell either way; a
+        // treemap tooltip stays at the pointer inside the cell only with the type default, and
+        // forced to `false` it is placed away from the cell (ApexCharts 7.6, Blink and WebKit).
 
         return $base;
     }

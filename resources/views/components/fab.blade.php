@@ -48,18 +48,14 @@
 <div
     x-data="wirekitFab()"
     x-on:keydown.escape.prevent="close()"
-    {{-- ⚠️ NO `.prevent` ON THE ARROWS, and the reason is the order Alpine applies its
-         modifiers. `.prevent` wraps the handler and calls `preventDefault()` BEFORE the
-         expression is evaluated, so an `open &&` guard inside the expression decides
-         whether focus moves — never whether the default is canceled. On a component that
-         is `fixed z-40` and therefore reachable by Tab on every page that renders one,
-         that meant ArrowUp and ArrowDown did NOTHING while the menu was closed, instead of
-         scrolling the page: a control that is not a composite widget in that state had
-         taken a global key.
-         Every other arrow binding in the catalog sits on the widget itself, where
-         swallowing the key IS the correct behavior. This root was the only exception.
-         The cancellation now lives inside `move()`, which is the one place that knows
-         whether the menu is open. --}}
+    {{-- No `.prevent` on the arrows, and the reason is the order Alpine applies its
+         modifiers. `.prevent` wraps the handler and calls `preventDefault()` before the
+         expression is evaluated, so an `open &&` guard inside the expression would decide
+         whether focus moves, never whether the default is canceled. On a component that is
+         `fixed z-40`, reachable by Tab on every page that renders one, ArrowUp and ArrowDown
+         would then do nothing while the menu is closed instead of scrolling the page. So the
+         cancellation lives inside `move()`, the one place that knows whether the menu is
+         open. --}}
     x-on:keydown.arrow-up="move(-1, $event)"
     x-on:keydown.arrow-down="move(1, $event)"
     data-wk-fab
@@ -84,13 +80,10 @@
         aria-label="{{ $label }}"
         data-wk-fab-trigger
         {{-- The box reads --size-wk-fab rather than a literal, for the reason `fab.button`
-             states beside its own copy of this line: a developer laying out AROUND a fixed
+             states beside its own copy of this line: a developer laying out around a fixed
              control has to be able to read its size, and `wk-fab-clearance` does exactly that.
-             ⚠️ THE SPEED DIAL HAS ITS OWN TRIGGER AND IT KEPT THE LITERAL when the standalone
-             button was moved onto the token, so this one stayed 56px on every viewport while
-             its sibling stepped down on a phone. Two implementations of one control is why
-             the browser case measures the trigger the DOCS render rather than the one this
-             file happens to be about. --}}
+             With a literal here the speed dial's trigger would stay 56px on every viewport
+             while the standalone button steps down on a phone. --}}
         class="flex h-[var(--size-wk-fab)] w-[var(--size-wk-fab)] cursor-pointer items-center justify-center rounded-[var(--radius-wk-full)] bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)] shadow-[var(--shadow-wk-lg)] transition-transform duration-[var(--transition-wk-duration)] hover:brightness-110 focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)] focus-visible:ring-offset-2"
     >
         {{-- The plus turns into a close mark. Both icons stay in the DOM so the
@@ -143,10 +136,9 @@
         x-show="isOpen"
         x-cloak
         role="group"
-        {{-- A single method call, not an inline `if`. Alpine's CSP build parses a call and
-             nothing more — no `if`, no `!`, no member access — so an inline condition here is
-             never evaluated on that bundle and the panel silently stops closing. The repo's
-             own csp-expression-audit catches it, which is how this line was found. --}}
+        {{-- A single method call, not an inline `if`. Alpine's CSP build parses expressions,
+             not statements, so an `if` here would never be evaluated on that bundle and the
+             panel would stop closing. `php artisan wirekit:csp-audit` reports such a binding. --}}
         @focusout="closeIfFocusLeft($event)"
         aria-label="{{ $label }}"
         data-wk-fab-actions

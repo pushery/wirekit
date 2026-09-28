@@ -19,9 +19,8 @@ class ListFontsCommand extends Command
     protected $description = 'List every font preset shipped with WireKit, grouped by category';
 
     /**
-     * Output formats supported by --as=…. Each value below maps to a
-     * handler method `outputAs<Format>($fonts, $grouped, $total)`
-     * dispatched in handle(). Mirrors ListComponentsCommand's API.
+     * Output formats supported by --as=…. Each value below is a case of
+     * dispatch(). Mirrors ListComponentsCommand's API.
      */
     private const FORMATS = ['count', 'json', 'slugs', 'categories'];
 

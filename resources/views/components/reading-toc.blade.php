@@ -96,7 +96,7 @@
         : '0';
 
     // Marker class — drives the print-stylesheet hide rule + reduced-motion
-    // gating + doubled-class specificity for any developer overrides.
+    // gating.
     // Sticky positioning + top/bottom offset are owned by the
     // `.wk-reading-toc` rule in `dist/wirekit.css` (selected per
     // `data-position` attribute below).
@@ -133,25 +133,22 @@
     {{-- The landmark's name is the one string this component writes on the
          developer's behalf, so it asks the catalog rather than freezing English
          into the markup. `merge()` still keeps it a DEFAULT: a caller passing
-         `aria-label="…"` wins, exactly as before. The key already ships in
-         every locale file — reading-minimap names the same landmark with it. --}}
+         `aria-label="…"` wins, exactly as before. The key ships in every locale
+         file. reading-minimap names its own landmark differently, because two
+         navigation landmarks with one name cannot be told apart. --}}
     {{ $attributes->class([$rootClass])->merge(['aria-label' => __('wirekit::Page sections')]) }}
     style="--reading-toc-offset: {{ $offsetCss }};"
 >
     {{--
-        Inline-style the load-bearing list primitives because docs.wirekit.app
-        sandbox iframe renders previews WITHOUT developer Tailwind. The
-        Tailwind utility classes (`list-none` via preflight, `flex flex-row`,
-        the spacing values) only apply when the developer's compiled CSS is in
-        scope — without it, the browser falls back to `<ol>`'s defaults
-        (`list-style: decimal`, `padding-inline-start: 40px`, block layout)
-        and the TOC strip renders as a vertical numbered list with massive
-        indentation instead of a horizontal pill row. /recipes/marketing-
-        landing-toc surfaced the bug shape: visible "1. 2. 3." markers,
-        offset/staggered link text, gaping whitespace above the content.
-        Same lesson as the sparkline-inline + chart-wrapper-width fixes:
-        utility classes for decoration, inline style for load-bearing
-        layout primitives.
+        Inline-style the load-bearing list primitives. The Tailwind utility
+        classes (`list-none`, `flex flex-row`, the spacing values) exist only
+        where a Tailwind build scanned this view; in a page whose stylesheet
+        did not, the browser falls back to `<ol>`'s defaults (`list-style:
+        decimal`, `padding-inline-start: 40px`, block layout) and the TOC strip
+        renders as a vertical numbered list with deep indentation instead of a
+        horizontal pill row: visible "1. 2. 3." markers, staggered link text,
+        whitespace above the content. Utility classes for decoration, inline
+        style for load-bearing layout primitives.
     --}}
     <ol data-wk-prose-skip role="list"
         class="wk-reading-toc__list wk-scrollbar flex flex-row items-center gap-[var(--reading-toc-gap)] py-[var(--reading-toc-padding-y)] px-[var(--reading-toc-padding-x)] overflow-x-auto"

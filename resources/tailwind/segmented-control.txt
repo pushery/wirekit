@@ -145,7 +145,6 @@ $value
 />
 2.5.8
 24px
-54px
 :
 :aria-checked="selected
 :class="selected
@@ -211,20 +210,17 @@ CSP
 Change
 Container
 Content-Security-Policy
-DENSE,
 DOM
 Declared
+Dense,
 Deriving
 Determine
 Dev-only
 Disable
 Discrete
 Extra
-FLOOR.
 Fully
 GROUP:
-HAS
-HEIGHT
 HTML
 Hidden
 Home/End
@@ -244,7 +240,6 @@ Mirrors
 Must
 NESTS
 NOT
-NOTE:
 No
 Normalized
 ONE
@@ -252,7 +247,9 @@ OWN
 On
 One
 Outside
+PHP
 PHP,
+Padding
 Pass
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
@@ -261,7 +258,6 @@ RENDER
 RUNTIME
 Rendered
 Renders
-Reported
 Required
 Resolving
 Roll")
@@ -273,14 +269,11 @@ Set
 So
 Static
 Support\DomId
-THE
-TOP
 TRACK
 Tailwind's
 That
 The
 These
-They
 This
 UNBOUND
 USED
@@ -343,7 +336,7 @@ _focusAt()
 `label`
 `main`
 `max-w-full
-`ms-0.5`
+`ms-0.5`,
 `optimistic="method"`
 `overflow-x-auto`
 `overflow-y-hidden`
@@ -376,10 +369,10 @@ action
 active
 actually
 adopt
-adopting
 after
 again.
 against
+alike:
 all
 all,
 all.
@@ -408,8 +401,6 @@ appearance.
 appears
 appears.
 appended
-application
-application.
 arbitration
 are
 arguments
@@ -484,6 +475,7 @@ boots.
 both
 bound,
 boxes
+branch
 branch:
 branches
 brand
@@ -540,7 +532,6 @@ close
 collapses
 colors
 column,
-come
 comes
 comment
 commonest
@@ -585,7 +576,7 @@ default
 defect
 defect.
 dense.
-depended
+depend
 description
 design
 destroys
@@ -618,7 +609,6 @@ element
 element,
 element.
 elevated
-else
 elsewhere)
 empty
 empty:
@@ -626,7 +616,6 @@ end
 end-0
 end.
 ends,
-entry
 error
 error/hint
 evaluator
@@ -635,7 +624,6 @@ ever
 every
 everything
 exactly
-exist
 existed
 exists,
 explicit
@@ -646,18 +634,20 @@ extra:
 factory
 factory's
 fails.
+fall
 false
 false);
 false,
 feature
 feeds
-fell
 few
 field
 field's
 file
+file,
 fill.
 fills
+finds
 first
 first,
 fit,
@@ -668,6 +658,7 @@ flex
 flight
 flips
 floor
+floor.
 flushes
 focus
 focus-visible:ring-[length:var(--ring-wk-width)]
@@ -683,9 +674,9 @@ full
 gap
 gate
 generic
-get
 give
 gives
+glob
 global
 group
 group,
@@ -780,12 +771,10 @@ line
 list
 listed
 listener
-literally
 literals
 little
 live
 live.
-longer
 loses
 losing
 machinery
@@ -797,7 +786,6 @@ mean
 means
 meant
 measure
-measured
 meets
 message
 method
@@ -817,7 +805,6 @@ morph,
 motion,
 move
 moves
-moves.
 ms-0.5"
 multi-statement
 must
@@ -937,7 +924,6 @@ prop
 prop's
 properties
 props
-purged
 purpose:
 pushed
 put
@@ -954,7 +940,7 @@ radiogroup;
 radios,
 rather
 re-initializes
-re-themes
+re-themes,
 reach
 reachable.
 reaches
@@ -981,7 +967,6 @@ replaced
 resolve
 resolveClasses
 resolves
-resources/views/_safelist.blade.php
 result
 results
 return-trip
@@ -1047,7 +1032,6 @@ session
 set
 sets
 setting
-seven
 shadow
 shape
 shown
@@ -1069,6 +1053,7 @@ slot,
 snapshots,
 so
 sound.
+source
 space
 span
 specific
@@ -1082,6 +1067,7 @@ starting
 state
 state-dependent
 static
+stay
 sticks
 still
 stop
@@ -1131,7 +1117,6 @@ themes
 then
 there
 there,
-these
 they
 thing
 this
@@ -1140,12 +1125,12 @@ through
 time
 timing,
 to
-to.
 to;
 together
 token
 tokens
 too
+top
 track
 trades
 tree
@@ -1173,7 +1158,6 @@ unlike
 unreachable,
 unreliable.
 unselected
-unstyled.
 untestable.
 until
 up
@@ -1195,6 +1179,7 @@ vertical
 via
 view
 view's
+views
 visible
 visibly
 w-0
@@ -1278,4 +1263,3 @@ z-[1]
 }}`
 —
 …
-⚠️

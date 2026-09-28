@@ -138,13 +138,13 @@
          at all (WCAG 2.1.1, Level A). The annotation is the generic-scroll-region shape
          this library prescribes for itself, the same one scroll-area uses.
 
-         ⚠️ THE TWO HALVES ARE SPLIT, AND THE SPLIT IS THE POINT. `tabindex` is what WCAG 2.1.1
+         The two halves are split, and the split is the point. `tabindex` is what WCAG 2.1.1
          and axe's `scrollable-region-focusable` ask for, and it is unconditional. The role is
-         what makes the element a LANDMARK, and a landmark is only worth having when its name
-         tells it apart from its neighbors. The language-derived name could not: in a table
-         with a diff per row every row's language is the same, so the name meant to distinguish
-         the regions is what made them identical — twenty rotor entries called "PHP code", which
-         axe reports as `landmark-unique`.
+         what makes the element a landmark, and a landmark is only worth having when its name
+         tells it apart from its neighbors. A language-derived name cannot: in a table with a
+         diff per row every row's language is the same, so such a name would make the regions
+         identical — twenty rotor entries called "PHP code", which axe reports as
+         `landmark-unique`.
 
          So a block the caller has not named renders `tabindex="0"` and no role. Nothing is lost
          that a reader could use: an unnamed landmark in a list of twenty was never a way to

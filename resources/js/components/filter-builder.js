@@ -72,12 +72,11 @@ export default function wirekitFilterBuilder(config = {}) {
     // The component's root element, resolved ONCE while something is still attached
     // to resolve it from.
     //
-    // ⚠️ `$root` IS RESOLVED WHEN IT IS READ, by walking up from `$el` to the nearest
+    // `$root` is resolved when it is read, by walking up from `$el` to the nearest
     // `[x-data]`. `remove()` runs from a chip's own remove button, so `$el` is that
     // button — and the focus move waits for `$nextTick`, by which time removing the
     // last chip has taken the button with it. The walk from a detached node reaches
-    // nothing. Same defect, same shape, as the ones fixed in `toast.js` and
-    // `tags-input.js`.
+    // nothing. `toast.js` and `tags-input.js` resolve it the same way.
     //
     // A closure variable rather than a property: a DOM node stored on the reactive
     // object comes back out as a Proxy, and `.focus()` through that proxy is not the
@@ -342,12 +341,12 @@ export default function wirekitFilterBuilder(config = {}) {
         /**
          * Tab pressed inside the popover — handle both of its edges.
          *
-         * ⚠️ NEITHER EDGE IS WHAT THE BROWSER WOULD DO, because the panel is
+         * Neither Edge is what the browser would do, because the panel is
          * teleported to the end of `<body>` while it is drawn beside the trigger,
          * and sequential focus order follows the DOM rather than the screen.
          * Opening the popover moves focus into it (`_focusFirstControl`), so
-         * before this existed a Tab off Apply left the DOCUMENT for the browser
-         * chrome, and a Shift+Tab off the field select landed on whatever
+         * on its own a Tab off Apply would leave the document for the browser
+         * chrome, and a Shift+Tab off the field select would land on whatever
          * precedes the overlay root — somewhere else entirely on screen, with the
          * dialog still open and painted over the page.
          *

@@ -35,11 +35,10 @@
     // measured. It is NOT `reading-progress` either — that one is driven by scroll
     // position and says where you are, not that something is in flight.
 
-    $heightToken = match ($height) {
+    $heightToken = match (WireKit::validateProp('page-progress', 'height', (string) $height, ['sm', 'md', 'lg'])) {
         'sm' => 'var(--page-progress-height-sm)',
         'lg' => 'var(--page-progress-height-lg)',
         'md' => 'var(--page-progress-height-md)',
-        default => WireKit::validateProp('page-progress', 'height', (string) $height, ['sm', 'md', 'lg']),
     };
 
     // Every intent honors the --page-progress-fill override, which is what a
@@ -47,19 +46,13 @@
     // call site. 'info' aliases 'primary', the same visual-synonym the alert family
     // uses. 'auto' falls back to currentColor for an embedded context where the bar
     // should take the color of the text around it.
-    $fillColor = match ($intent) {
+    $fillColor = match (WireKit::validateProp('page-progress', 'intent', (string) $intent, ['primary', 'neutral', 'success', 'warning', 'danger', 'info', 'auto'])) {
         'success' => 'var(--page-progress-fill, var(--color-wk-success))',
         'warning' => 'var(--page-progress-fill, var(--color-wk-warning))',
         'danger' => 'var(--page-progress-fill, var(--color-wk-danger))',
         'neutral' => 'var(--page-progress-fill, var(--color-wk-text-muted))',
         'auto' => 'var(--page-progress-fill, currentColor)',
         'primary', 'info' => 'var(--page-progress-fill, var(--color-wk-accent))',
-        default => WireKit::validateProp(
-            'page-progress',
-            'intent',
-            (string) $intent,
-            ['primary', 'neutral', 'success', 'warning', 'danger', 'info', 'auto']
-        ),
     };
 
     // Marker class — reduced-motion and print rules in dist/wirekit.css scope to it,
@@ -84,11 +77,10 @@
          and start affecting the height it is supposed to float over. The tokens stay
          theme-aware either way.
 
-         ⚠️ It does NOT carry `--wk-scrollbar-inset`, and that is deliberate rather than
-         forgotten. That token exists for a fixed surface that keeps a GAP from the inline
+         It does not carry `--wk-scrollbar-inset`, and that is deliberate. That token exists for a fixed surface that keeps a GAP from the inline
          edge, where a classic scrollbar eats into the gap. This bar keeps no gap — it is
-         full bleed, so running under the gutter is where it belongs. The five components
-         that do take the inset all sit inset from an edge. 
+         full bleed, so running under the gutter is where it belongs. The components that do
+         take the inset all sit inset from an edge.
 
          It DOES take `--wk-strip-inset`, which is the other edge and a different question: a
          strip above the page is browser chrome, and the bar reports the application's request,
@@ -97,7 +89,7 @@
         ->merge(['style' => 'position: fixed; inset-block-start: var(--wk-strip-inset, 0px); inset-inline: 0; z-index: var(--z-wk-tooltip); pointer-events: none; height: '.$heightToken.';'])
         ->class([$rootClass]) }}
 >
-    {{-- ⚠️ THE ANCHOR IS DECLARED TWICE AND MIRRORED ONCE, AND BOTH HALVES ARE LOAD-BEARING.
+    {{-- The anchor is declared twice and mirrored once, and both halves are load-bearing.
          A bar that grows from the start edge is direction-encoded: under `dir="rtl"` the
          reader travels the other way while a scaleX anchored at the physical start still
          grows rightward. `transform-origin` has no logical keyword in any shipped browser,

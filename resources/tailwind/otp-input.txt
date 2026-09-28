@@ -156,7 +156,7 @@ $wrapperClasses
 'label'
 'length'
 'lg'
-'lg']),
+'lg']))
 'masked'
 'md'
 'md'),
@@ -188,9 +188,9 @@ $wrapperClasses
 'tracking-[var(--font-wk-letter-spacing)]',
 'transition-colors
 'value'
-'w-10
-'w-12
-'w-8
+'w-[var(--size-wk-lg)]
+'w-[var(--size-wk-md)]
+'w-[var(--size-wk-sm)]
 'wrapper',
 (!
 ($alphabet
@@ -198,9 +198,9 @@ $wrapperClasses
 ($group
 ($hasError
 ($justify)
-($size)
 (@aware
-(`w-10`,
+(WireKit::validateProp('otp-input',
+(`--size-wk-md`,
 (auto
 (bool)
 (int)
@@ -210,7 +210,6 @@ $wrapperClasses
 (string
 (string)
 (the
-(throw
 (when
 )))
 ).']';
@@ -239,7 +238,6 @@ $wrapperClasses
 376px,
 4+4
 40px
-40px,
 40px.
 44px
 48px.
@@ -299,7 +297,6 @@ $wrapperClasses
 A
 A11y:
 ABCDEFGHJKMNPQRSTUVWXYZ23456789
-AND
 ANY
 Alignment
 Alphabet:
@@ -312,22 +309,19 @@ BooleanProp::from($disabled,
 BooleanProp::from($masked,
 BooleanProp::from($required,
 BooleanProp::stripFalseHtmlFlags($attributes);
-CALL
 COMPLETE
 COMPLETE,
-COULD
 Case
 Characters
 Content-Security-Policy
 DECLARED
-DENSE,
-DIRECTLY,
 DOCUMENTED
 DOES
 DOM
 Declared
 Default
 Defaults
+Dense,
 Deriving
 Dev-only
 Digit
@@ -351,7 +345,6 @@ Hidden
 How
 I/1,
 IS
-IT,
 Individual
 It
 KEEPS
@@ -364,7 +357,6 @@ Livewire
 Measured
 Mirrors
 NOT
-NOTE.
 NOTHING
 Names
 Native
@@ -380,16 +372,13 @@ One
 Only
 Own
 PRESENCE,
-PROP
 Placeholders
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-REACH
 Rendered
 Renders
 Reported
 Required
-SITE
 Same
 See
 Selects
@@ -399,9 +388,6 @@ Somebody
 StrictnessGate
 Strip
 Support\DomId
-THE
-THIS
-TOP
 Tab
 Test
 That
@@ -414,15 +400,14 @@ Uses
 Validated
 WCAG
 WHICH
-WHY
 WebKit
 What
 When
 Where
 Which
+WireKit
 WireKit::resolveClasses('label',
 WireKit::resolveClasses('otp-input',
-WireKit::validateProp('otp-input',
 WireKit::warnUnknownProps('otp-input',
 With
 Without
@@ -508,7 +493,7 @@ __('wirekit::Saving'),
 `lg`
 `maxlength="1"`
 `md`
-`ms-0.5`
+`ms-0.5`,
 `name`
 `onInput`
 `pattern`
@@ -524,6 +509,7 @@ __('wirekit::Saving'),
 `value`
 `wire:model`
 `wirekit:otp-complete`
+`wirekitOtpInput`
 `xor`:
 `{{
 a
@@ -578,9 +564,7 @@ anywhere.
 appears
 appended
 appending
-application
 application,
-application.
 approximately.
 are
 are:
@@ -645,6 +629,7 @@ behaved
 behaves
 behavior
 behavior.
+behavior:
 being
 below
 between
@@ -683,6 +668,7 @@ bug
 build
 building.
 built
+bundle.
 but
 button
 by
@@ -814,8 +800,8 @@ data-wk-optimistic-announcer
 data-wk-prose-skip
 day
 debug
-debug,
 decides
+decision,
 dedupe
 deduped
 dedupes
@@ -826,7 +812,6 @@ definite
 deletion
 deliberately
 dense.
-dependency
 depends
 derived
 descendant
@@ -845,6 +830,7 @@ digit
 digit's
 digits
 digits,
+directly,
 disabled
 disables
 disarm,
@@ -919,8 +905,9 @@ exposed
 expression
 extra
 factory
+factory,
 failure
-fall
+fallback
 fallback:
 false
 false),
@@ -985,6 +972,7 @@ full
 fully
 gap
 gap-2'
+gate
 gets
 give
 gives
@@ -994,7 +982,6 @@ go.
 goes.
 group
 group.
-grouping
 groups
 guard
 h-[var(--size-wk-lg)]
@@ -1052,7 +1039,6 @@ indicator
 information:
 inherit
 init()
-inlined
 input
 input,
 inputmode="{{
@@ -1067,6 +1053,7 @@ invisible
 is
 it
 it,
+it.
 items
 its
 itself
@@ -1124,7 +1111,6 @@ live
 lives
 load-bearing.
 load.
-logic
 look
 looked
 looks
@@ -1205,6 +1191,7 @@ normally
 not
 not,
 note
+note,
 nothing
 nothing,
 nothing.
@@ -1253,7 +1240,6 @@ out.
 outer
 output
 over
-over,
 over.
 overflows
 overwrites
@@ -1297,7 +1283,6 @@ presentational
 previous
 previous,
 prod).
-production,
 promise
 promises
 prop
@@ -1333,12 +1318,12 @@ refusal
 refuses
 refutes
 region
+registered
 rejecting
 rejects
 relaxed
 remove
 remove.
-removed
 render
 rendered
 rendered.
@@ -1365,7 +1350,7 @@ rounded-[var(--radius-wk-sm)]',
 route.
 row
 row,
-row.
+row:
 rows
 rule
 run
@@ -1401,7 +1386,6 @@ served
 server
 server-side
 set
-seven
 shape
 shape,
 shared
@@ -1526,6 +1510,7 @@ tokens
 told
 too.
 took
+top
 touch
 touches
 trailing
@@ -1577,7 +1562,6 @@ via
 view's
 visible
 visibly
-warn
 was
 way
 way.
@@ -1602,7 +1586,6 @@ width.
 widths:
 wins
 wire:model.
-wirekit.js
 with
 without
 word
@@ -1659,4 +1642,3 @@ xor
 ──────────────
 ─────────────────────────────────────────────────────────
 ──────────────────────────────────────────────────────────
-⚠️

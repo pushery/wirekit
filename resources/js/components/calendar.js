@@ -384,11 +384,9 @@ export default function wirekitCalendar(config = {}) {
                 isRangeEnd: end !== null && dateStr === hi,
                 isInRange,
                 isProvisionalEnd,
-                // The attribute VALUE, computed here rather than in the template.
-                // Alpine's CSP build holds one member access per directive — a
-                // ternary with `&&` and `!` in it does not parse there, and the
-                // failure is a directive that silently does nothing under a policy
-                // the library promises to support.
+                // The attribute VALUE, computed with the rest of this cell's range
+                // state: `''` sets `data-wk-in-range` and `null` removes it, which
+                // is what the stylesheet selects on.
                 rangeMarker: (isInRange || isProvisionalEnd) && dateStr !== this.selected && dateStr !== this.selectedEnd ? '' : null,
             };
         },
@@ -465,14 +463,11 @@ export default function wirekitCalendar(config = {}) {
             // month focusOffset is always 0, so fYear/fMonth === view*, lastOffset
             // is 0, and every cross-grid branch below is skipped.
             //
-            // ⚠️ This said "byte-identical to the classic single-month behavior",
-            // and that stopped being the goal once the classic behavior turned out
-            // to be wrong: at a month boundary ArrowUp and ArrowDown fell through to
-            // `prevMonth()` / `nextMonth()`, which land on the 1st, while the
-            // documented model promises the same weekday one week away. Both else-
-            // branches now compute the day the way the cross-grid branches beside
-            // them already did, so the two modes answer identically instead of the
-            // single-month one preserving an omission.
+            // At a month boundary ArrowUp and ArrowDown move to the same weekday one
+            // week away, as the documented model promises, not to the 1st that
+            // `prevMonth()` / `nextMonth()` land on. Both else-branches compute the
+            // day the way the cross-grid branches beside them do, so the single-month
+            // and multi-month modes answer identically.
             const fBase = new Date(this.viewYear, this.viewMonth + this.focusOffset, 1);
             const fYear = fBase.getFullYear();
             const fMonth = fBase.getMonth();

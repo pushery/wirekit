@@ -26,7 +26,7 @@
     // afterwards could not say so — the nearest thing was rebuilding the kit's own cookie read
     // in a layout, superglobal fallback and all.
     //
-    // ⚠️ BOTH DRIVERS ANSWER THIS THE SAME WAY, which is the half that makes it one idea rather
+    // Both drivers answer this the same way, which is the half that makes it one idea rather
     // than two. The cookie driver seeds the first RENDER from here; the local driver renders
     // from here and then hands this same value to the store read as its fallback, so an empty
     // localStorage keeps it instead of collapsing to `false`.
@@ -95,6 +95,11 @@
     // prop's own default so a cast never engages a mode that was meant off.
     $expandable = BooleanProp::from($expandable, false);
     $persistDriver = WireKit::validateProp('app-rail', 'persistDriver', $persistDriver, ['local', 'cookie']);
+
+    // Whether the CALLER set `expanded`, taken before anything below answers it. The factory and
+    // the seed script both need it: an explicit value wins over the store, and both used to
+    // read the store anyway, so a pinned rail opened or closed a frame after the server render.
+    $expandedPinned = $expanded !== null;
 
     // The server half of the cookie driver. Which store is asked, and in what order, is
     // `PersistedCookie`'s to say: the sidebar reads the same kind of flag, and one read keeps
@@ -225,10 +230,11 @@
          The state lives in resources/js/components/app-rail.js. It cannot live in
          an inline object literal here: Alpine's CSP build cannot declare methods
          that way, so under a strict policy the toggle would render and do nothing.
-         `persist` goes through AlpinePayload; the booleans are written as literals
-         because a non-empty payload renders as JSON.parse(…) and JSON is a global
-         the CSP evaluator cannot resolve. --}}
-    x-data="wirekitAppRail({ expandable: {{ $expandable ? 'true' : 'false' }}, persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::string($persistDriver) }}, expanded: {{ $expanded ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
+         `persist` and the driver go through AlpinePayload, which writes a plain
+         JavaScript literal (Js::from would write JSON.parse(…), and JSON is a global
+         the CSP evaluator cannot resolve); the booleans are written as `true` and
+         `false` directly. --}}
+    x-data="wirekitAppRail({ expandable: {{ $expandable ? 'true' : 'false' }}, persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::string($persistDriver) }}, expanded: {{ $expanded ? 'true' : 'false' }}, pinned: {{ $expandedPinned ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }} })"
     :data-expanded="expanded ? '' : null"
     {{-- ONE attribute drives every per-mode style below, and that is deliberate.
          Items react through `group-data-[labels=…]/wk-rail:` variants; if the live
@@ -432,7 +438,7 @@
      answered by the server above, and re-answering it here would be a second source for one
      value. Only when the state was not pinned by the caller either — an explicit `expanded`
      turns the seeding off by design, and storage must not override it. --}}
-@if($persist !== null && $persistDriver === 'local' && $expandable)
+@if($persist !== null && $persistDriver === 'local' && $expandable && ! $expandedPinned)
     @include('wirekit::components.partials.nav-persist-seed', [
         'seedKey' => $persist,
         'seedOn' => $expanded,

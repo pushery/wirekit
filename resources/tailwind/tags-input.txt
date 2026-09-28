@@ -250,9 +250,9 @@ COPY,
 Consumed
 Container
 DECLARED
-DENSE,
 DOM
 Declared
+Dense,
 Dev-only
 Dimming
 Documented
@@ -290,7 +290,6 @@ Pushery\WireKit\WireKit;
 REMOVAL
 Removing
 Renders
-Reported
 Required
 Set
 So
@@ -300,7 +299,6 @@ Strip
 Support\DomId
 Symmetric
 TEMPLATES
-TOP
 TYPED,
 Tag
 Text
@@ -362,7 +360,7 @@ __('wirekit::Saving'),
 `keep`
 `label`
 `label`).
-`ms-0.5`
+`ms-0.5`,
 `multi-select`
 `name`
 `null`
@@ -401,7 +399,6 @@ actually
 addition
 addressable
 adds
-adopting
 affects
 after
 against
@@ -428,7 +425,6 @@ anyway,
 appear
 appears
 appended
-application.
 are
 arguments
 aria
@@ -1006,7 +1002,6 @@ set
 set's
 set,
 set.
-seven
 shape
 shapes
 shipped
@@ -1216,4 +1211,3 @@ x-text="tagAnnouncement"></div>
 }}@if($required)<span
 }}`
 —
-⚠️

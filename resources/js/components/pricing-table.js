@@ -33,18 +33,14 @@ export default function wirekitPricingTable(config = {}) {
         init() {
             // Seed from the server attribute when the caller passed none.
             //
-            // The seed used to be interpolated into `x-data`. That looked free —
-            // Alpine reads the attribute once — but a Livewire morph REWRITES it,
-            // and Alpine re-initializes on the change. Measured on the sibling
-            // component by object identity: the scope is replaced on every round
-            // trip, and an effect queued against the pre-morph scope flushes
-            // afterwards and writes the pre-morph value LAST. It is invisible on
-            // an outward change (old and new agree) and shows only when the value
-            // returns to one it already held.
-            //
-            // Reading it here keeps the attribute byte-identical across renders,
-            // so the scope survives and the observer below is the single path a
-            // server-side change travels — which is what its own comment claims.
+            // The value is not interpolated into `x-data`, so that attribute stays
+            // byte-identical across renders. A morph that changed it would make
+            // Alpine initialize the component again (a new scope before Alpine 3.16,
+            // the same one reset to the seed from 3.16), and an effect queued before
+            // the morph would then write the old value last. That shows only when
+            // the value returns to one it already held. With `x-data` unchanged the
+            // scope survives, and the observer below is the one path a server-side
+            // change travels.
             // The observer attribute is CONDITIONAL here — it is only rendered
             // when the server actually drives the interval. So the fallback is
             // the `default` prop rather than nothing: without it a table the

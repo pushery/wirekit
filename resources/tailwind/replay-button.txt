@@ -9,12 +9,13 @@ $slot
 $slot->hasActualContent())
 $target
 'aria-label'
+'base',
 'button',
 'class'
 'label'
 'target'
 'type'
-'wk-replay-button',
+'wk-replay-button'),
 (16×16).
 (an
 (badge[dismissible],
@@ -77,6 +78,7 @@ That
 The
 WireKit
 [data-replay-target]
+\Pushery\WireKit\WireKit::resolveClasses('replay-button',
 \Pushery\WireKit\WireKit::warnUnknownProps('replay-button',
 ])
 __('wirekit::Replay'),

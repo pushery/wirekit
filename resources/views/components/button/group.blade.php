@@ -30,9 +30,9 @@
     // `stackBelow` names the width below which the group becomes a column. Both shapes live in
     // `.wk-button-group[data-stack-below="…"]` in dist/wirekit.css and are declared per breakpoint:
     // joining squares the seam edges, and a squared corner cannot be restored from a media query
-    // without knowing which radius token the child was drawn with. An unknown value throws in debug
-    // and stacks nothing in production; a vertical group drops it, because it already stacks at
-    // every width and the two shapes would otherwise be declared over each other.
+    // without knowing which radius token the child was drawn with. An unknown value is reported
+    // through the strictness gate and stacks nothing; a vertical group drops it, because it already
+    // stacks at every width and the two shapes would otherwise be declared over each other.
     $stackBelow = filled($stackBelow) ? (string) $stackBelow : null;
 
     if ($stackBelow !== null && ! in_array($stackBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {

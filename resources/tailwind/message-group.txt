@@ -143,19 +143,19 @@ $total
 'var(--color-wk-success)',
 'var(--color-wk-text-muted)',
 'var(--color-wk-warning)',
-'w-10
-'w-12
 'w-16
 'w-2
 'w-2.5
 'w-3
 'w-3.5
-'w-6
-'w-8
+'w-[var(--size-wk-lg)]
+'w-[var(--size-wk-md)]
+'w-[var(--size-wk-sm)]
+'w-[var(--size-wk-xs)]
 'wk-avatar-group',
 'wk-message-group',
 'xl'
-'xl']),
+'xl']))
 'xs'
 'xs',
 ($author['avatar']
@@ -177,7 +177,6 @@ $total
 (for
 (int)
 (no
-(removed
 (silent
 (string)
 (with
@@ -269,6 +268,7 @@ Fully
 Hidden
 How
 Ignored
+Inline
 It
 Literal
 Measured
@@ -301,7 +301,6 @@ Through
 Tighter
 Two
 UNBOUND
-Uses
 When
 WireKit
 WireKit::resolveClasses('avatar',
@@ -332,6 +331,7 @@ __('wirekit::Offline'),
 __('wirekit::Online'),
 `$author`
 `$component->withAttributes()`
+`--color-wk-bg-elevated`,
 `.wk-message-group`
 `:remaining="7"`
 `aria-label`
@@ -341,9 +341,12 @@ __('wirekit::Online'),
 `max-w-full`
 `message`
 `prop="false"`
+`ring-*`
+`ring-offset-*`
 `role="group"`
 `shape="cirlce"`
 `size`
+`size`,
 `src`),
 `statusVariant="Dot"`
 `status`
@@ -377,6 +380,7 @@ anything
 anywhere
 application
 applies
+are
 aria-hidden="true"
 aria-hidden="{{
 aria-label
@@ -399,7 +403,6 @@ avatar-only
 avatars
 avatars.
 background
-background,
 base
 be
 because
@@ -455,6 +458,7 @@ component
 component's
 component,
 component.
+computed
 concentric
 config('wirekit.components.avatar.shape',
 config('wirekit.components.avatar.size',
@@ -474,6 +478,7 @@ d="M12
 data-wk-message-group-author
 data-wk-prose-skip
 debug
+declaration
 default
 deliberate
 dense
@@ -492,6 +497,7 @@ early.
 edge
 element,
 element.
+elevated
 ellipsis.
 else
 emitted
@@ -539,21 +545,22 @@ group
 group's
 grouping:
 guard
-h-10
-h-12
 h-16
 h-2',
 h-2.5',
 h-3',
 h-3.5',
 h-3/5
-h-6
-h-8
+h-[var(--size-wk-lg)]
+h-[var(--size-wk-md)]
+h-[var(--size-wk-sm)]
+h-[var(--size-wk-xs)]
 h-full
 had
 half
 happened:
 has
+has:
 hash
 hash.
 header
@@ -620,6 +627,7 @@ like
 line
 line.
 list
+literal
 live
 live-region
 logical
@@ -688,7 +696,6 @@ over
 overflow
 overrides
 own
-page
 painted
 paints
 pair
@@ -753,7 +760,6 @@ right
 right-0',
 ring
 ring-[var(--color-wk-bg-elevated)]',
-ring-offset-*
 role
 role="group"
 role="img"
@@ -815,6 +821,7 @@ standing
 starts
 state
 status
+status.
 status:
 stays
 still
@@ -825,6 +832,7 @@ string,
 strings
 style
 stylesheet
+surface
 surface-color
 surrounds
 tag
@@ -845,6 +853,7 @@ than
 that
 the
 their
+them
 theme-independent.
 there
 these
@@ -877,8 +886,8 @@ unnamed
 use
 used
 uses:
-utilities
-v4).
+utilities,
+v4
 validator,
 values
 var(--color-wk-bg-elevated),
@@ -907,6 +916,7 @@ whose
 why
 wide
 width,
+widths
 with
 without
 work
@@ -935,4 +945,3 @@ you
 …,
 …].
 →
-⚠️

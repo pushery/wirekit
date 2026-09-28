@@ -143,7 +143,6 @@ Fail
 Fully
 In
 It
-NOT
 No
 Normalized
 OUTSIDE
@@ -182,7 +181,7 @@ __('wirekit::Dismiss')
 __('wirekit::Resume
 __('wirekit::Resume')
 `'container'`
-`.wk-bottom-nav`;
+`.wk-bottom-nav`
 `.wk-fab`
 `.wk-reading-bookmark__resume`
 `__dismiss`
@@ -201,10 +200,8 @@ __('wirekit::Resume')
 `prop="false"`
 a
 against
-agent's
 all
 all.
-already
 an
 ancestor
 ancestor;
@@ -213,12 +210,14 @@ announced
 any
 anyway.
 appeared
+applies,
 are
 aria-atomic="true"
 aria-hidden="true"
 aria-label="{{
 aria-live="polite"
 arrives
+arrow
 article'
 article';
 article).
@@ -247,6 +246,7 @@ bottom-[var(--padding-wk-x-lg)]
 boundary
 box
 browser
+browser's
 browser.
 browsing,
 build,
@@ -266,12 +266,12 @@ class="wk-reading-bookmark__dismiss
 class="wk-reading-bookmark__label">{{
 class="wk-reading-bookmark__resume
 classes
+clear
 client-only
 compiles
 component
 component's
 contained
-control
 control's
 controls
 convention
@@ -285,12 +285,12 @@ data-reading-bookmark-key="{{
 debug
 declarations
 default
-default`
 demo
 dev
 developer,
 developer-supplied
 did
+did),
 disambiguate
 dismiss
 dist/wirekit.css
@@ -336,9 +336,8 @@ for
 frame
 from
 gap-3
-given
 green
-h-6
+h-[var(--size-wk-target-min)]
 handed
 headless
 heard.
@@ -347,7 +346,7 @@ home
 hooks
 hover:bg-[var(--color-wk-accent-hover)]
 hover:text-[color:var(--color-wk-text)]
-iPhone,
+iPhone.
 if
 iframe
 iframe,
@@ -355,9 +354,8 @@ iframes
 implode('
 imports
 in
-indicator
+indicator,
 inert
-inherited
 inline-flex
 inset
 inset,
@@ -372,6 +370,7 @@ items-center
 its
 itself
 justify-center
+keeps
 key
 key),
 key:
@@ -379,7 +378,6 @@ key="article-{{
 later
 least
 left
-library
 likely
 list
 list.
@@ -387,6 +385,7 @@ listener,
 live
 lives
 localStorage
+longer
 loud
 max(0,
 max(0.0,
@@ -418,7 +417,6 @@ null,
 null;
 of
 off?');
-offsets
 on
 on.
 once
@@ -447,7 +445,7 @@ pill.
 pills
 pins
 placeholder
-pointer),
+pointer`
 position
 positioned
 positioned,
@@ -497,10 +495,8 @@ right-[var(--padding-wk-x-lg)]'
 role="status"
 rounded-[var(--radius-wk-md)]
 rounded-full
-rule
 run.
 same
-sat
 saved
 saves
 says
@@ -517,12 +513,10 @@ session
 sets
 shape
 shape.
-ships
 sibling
 sidebar
 silently,
 silently.
-simply
 simultaneously
 sit
 site
@@ -533,7 +527,6 @@ spell
 spent
 starting
 state.
-states
 static
 still
 storage-disabled.
@@ -548,7 +541,6 @@ sync
 takes
 target:
 target=null
-term.
 test
 text
 text-[color:var(--color-wk-accent-fg)]
@@ -560,7 +552,6 @@ that
 the
 their
 there
-these
 they
 thing
 this
@@ -598,10 +589,9 @@ viewBox="0
 viewport
 viewport-pinned;
 w-4"
-w-6
+w-[var(--size-wk-target-min)]
 was
 we
-were
 what
 when
 where
@@ -609,6 +599,7 @@ wherever
 which
 while
 whole
+whose
 why
 wins).
 wire
@@ -641,4 +632,3 @@ you
 }},
 }}</span>
 —
-⚠️

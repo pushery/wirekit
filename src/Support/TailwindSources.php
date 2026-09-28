@@ -27,8 +27,15 @@ final class TailwindSources
     /** Where the generated sources live, relative to the package root. */
     public const DIRECTORY = 'resources/tailwind';
 
-    /** The template listing the classes `VariantResolver` builds at runtime. */
+    /** The template listing the classes built in PHP at runtime, which no template spells out. */
     private const RUNTIME_CLASSES = '_safelist.blade.php';
+
+    /**
+     * The classes that build those strings. A template naming one of them resolves classes in
+     * PHP, so the closure it belongs to needs the runtime list: `VariantResolver` for intent and
+     * surface, `TablistStyles` for the tab bar.
+     */
+    private const RUNTIME_CLASS_EMITTERS = ['VariantResolver', 'TablistStyles'];
 
     /**
      * The generated source of every registry component, keyed by component name.
@@ -144,10 +151,14 @@ final class TailwindSources
                 $queue[] = $part;
             }
 
-            // Intent and surface classes resolved in PHP never appear in the template; the
-            // runtime class list carries them for any closure that resolves them.
-            if (str_contains($source, 'VariantResolver')) {
-                $queue[] = $views.'/'.self::RUNTIME_CLASSES;
+            // Classes resolved in PHP never appear in the template; the runtime class list
+            // carries them for any closure that uses one of the classes that build them.
+            foreach (self::RUNTIME_CLASS_EMITTERS as $emitter) {
+                if (str_contains($source, $emitter)) {
+                    $queue[] = $views.'/'.self::RUNTIME_CLASSES;
+
+                    break;
+                }
             }
         }
 

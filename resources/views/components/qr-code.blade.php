@@ -35,43 +35,50 @@
     // echoing the raw $value, which is often a URL — leaking it as the
     // screen-reader announcement is rarely useful and can be a privacy concern.
     //
-    // ⚠️ Through the catalog, and this is the one string where it decides the
-    // whole experience: a QR code is opaque, so `aria-label` is ALL a screen
-    // reader has to work with. Frozen to English it announced "QR code" inside
-    // a fully German application, with nothing visible to give it away.
+    // Through the catalog, and this is the one string where it decides the
+    // whole experience: a QR code is opaque, so `aria-label` is all a screen
+    // reader has to work with. Frozen to English it would announce "QR code"
+    // inside a fully German application, with nothing visible to give it away.
     //
-    // ⚠️ A passthrough `aria-label` is READ here and then taken OUT of the bag,
+    // A passthrough `aria-label` is read here and then taken out of the bag,
     // and both halves are load-bearing. Both render branches below write
-    // `aria-label` before the attribute bag, so a caller's own attribute used
-    // to arrive as a SECOND aria-label on the same element — and an HTML parser
-    // keeps the first, which is ours. The override looked applied in the markup
-    // and changed nothing that a screen reader says. `accessibleLabel` still
-    // wins over both; this only decides what happens when a caller reaches for
-    // the attribute instead of the prop, which the docs page used to recommend.
+    // `aria-label` before the attribute bag, so a caller's own attribute left in
+    // the bag would arrive as a second aria-label on the same element, and an
+    // HTML parser keeps the first, which is ours: the override would look
+    // applied in the markup and change nothing a screen reader says.
+    // `accessibleLabel` still wins over both; this only decides what happens
+    // when a caller reaches for the attribute instead of the prop.
     $resolvedLabel = $accessibleLabel ?: ($attributes->get('aria-label') ?: __('wirekit::QR code'));
     $attributes = $attributes->except('aria-label');
 
     $hasQrLibrary = class_exists('\BaconQrCode\Renderer\ImageRenderer');
     $svgContent = null;
 
+    // The colors in any of the four CSS hex forms (`#fff` is `#ffffff`; the alpha of `#rgba` and
+    // `#rrggbbaa` becomes the fill's opacity), and the error-correction level from its four.
+    // Checked HERE, outside the try below: that catch exists for the library's own failures, and
+    // a typo in a prop must reach the developer through the strictness gate rather than turn into
+    // the placeholder there. Splitting `fff` into pairs used to read it as rgb(255, 15, 0).
+    $hexColor = static fn (string $prop, string $value, string $default): array => \Pushery\WireKit\Support\HexColor::parse($value)
+        ?? \Pushery\WireKit\Support\HexColor::parse(\Pushery\WireKit\Support\StrictnessGate::reject('qr-code', $prop, $value, 'a hex color: #rgb, #rgba, #rrggbb or #rrggbbaa', $default))
+        ?? [0, 0, 0, null];
+    $fgRgba = $hexColor('color', (string) $color, '#000000');
+    $bgRgba = $hexColor('background', (string) $background, '#ffffff');
+    $errorCorrection = WireKit::validateProp('qr-code', 'errorCorrection', strtoupper((string) $errorCorrection), ['L', 'M', 'Q', 'H']);
+
     if ($hasQrLibrary && $value) {
         try {
-            // Parse hex color strings into BaconQrCode Rgb color objects.
-            $fgHex = ltrim($color, '#');
-            $bgHex = ltrim($background, '#');
-            $fgColor = new \BaconQrCode\Renderer\Color\Rgb(
-                (int) hexdec(substr($fgHex, 0, 2)),
-                (int) hexdec(substr($fgHex, 2, 2)),
-                (int) hexdec(substr($fgHex, 4, 2)),
-            );
-            $bgColor = new \BaconQrCode\Renderer\Color\Rgb(
-                (int) hexdec(substr($bgHex, 0, 2)),
-                (int) hexdec(substr($bgHex, 2, 2)),
-                (int) hexdec(substr($bgHex, 4, 2)),
-            );
+            // The parsed channels as the library's colors. It takes alpha as 0 to 100.
+            $baconColor = static function (array $rgba): \BaconQrCode\Renderer\Color\ColorInterface {
+                $rgb = new \BaconQrCode\Renderer\Color\Rgb($rgba[0], $rgba[1], $rgba[2]);
+
+                return $rgba[3] === null ? $rgb : new \BaconQrCode\Renderer\Color\Alpha((int) round($rgba[3] / 255 * 100), $rgb);
+            };
+            $fgColor = $baconColor($fgRgba);
+            $bgColor = $baconColor($bgRgba);
 
             // Map string error correction level to BaconQrCode enum.
-            $ecLevel = match (strtoupper($errorCorrection)) {
+            $ecLevel = match ($errorCorrection) {
                 'M' => \BaconQrCode\Common\ErrorCorrectionLevel::M(),
                 'Q' => \BaconQrCode\Common\ErrorCorrectionLevel::Q(),
                 'H' => \BaconQrCode\Common\ErrorCorrectionLevel::H(),

@@ -19,18 +19,27 @@ namespace Pushery\WireKit\Contracts;
 interface ChartAdapter
 {
     /**
-     * Stable library identifier used in error messages, license-tier guards,
-     * and config-comparison shortcuts. MUST be stable across patch releases —
-     * developer config compatibility depends on it.
+     * Stable library identifier, used in error messages and as the value of the chart's
+     * `data-wk-chart` marker, which a host's lazy-loader keys on. MUST be stable across
+     * patch releases — developer config and those loaders depend on it.
      *
      * Examples: 'chartjs' / 'apexcharts' / developer-defined slug.
      */
     public function name(): string;
 
     /**
-     * JavaScript assets that must be loaded in the <head>.
-     * Returns URLs or asset() paths. Empty array when the developer installs
-     * the JS library themselves via npm (current built-in adapters return []).
+     * Script URLs the page needs for this library, as full URLs or asset() paths — the
+     * library itself when the developer does not install it from npm, in the order they
+     * must run. Return an empty array when the developer installs it, as both built-in
+     * adapters do.
+     *
+     * The chart component emits one `<script src defer>` per URL, next to the first chart
+     * in a response that uses this adapter, and never twice for the same URL, however many
+     * charts ask for it. Each tag carries the page's CSP nonce and `data-navigate-once`.
+     * Deferred scripts run once the document is parsed, in the order listed, and before
+     * Livewire's injected script starts Alpine on DOMContentLoaded. A script that arrives in
+     * a Livewire update does not run, so a chart that first appears through an update needs
+     * its library on the page already: load it in the layout, or install it from npm.
      *
      * @return array<string>
      */

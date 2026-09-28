@@ -110,7 +110,7 @@ WireKit::resolveClasses('action-bar',
 ]),
 __('wirekit::Bulk
 `$visible`
-`.wk-bottom-nav`;
+`.wk-bottom-nav`
 `.wk-fab`
 `:visible="true"`)
 `:visible`
@@ -178,6 +178,7 @@ check
 children
 chrome.
 class="sr-only">
+clear
 comment
 compiles
 component
@@ -187,7 +188,6 @@ composite
 composite-widget
 content
 content.
-control
 controls
 controls,
 costs
@@ -198,7 +198,6 @@ dedicated
 default
 did
 display-none
-dist/wirekit.css
 distinction
 do
 docs
@@ -211,7 +210,6 @@ empty
 ends.
 every
 everybody,
-exact
 exactly
 exists
 exists.
@@ -236,7 +234,6 @@ flows
 for
 from
 gap-[var(--gap-wk-md)]',
-given
 green
 guard
 has
@@ -244,11 +241,11 @@ headless
 here
 home
 hover
-iPhone,
+iPhone.
 implode('
 imports
 in
-indicator
+indicator,
 inline
 inset
 inset,
@@ -275,7 +272,6 @@ language.
 later
 layout
 left-1/2
-library
 list
 literal
 live
@@ -302,7 +298,6 @@ nothing
 nothing.
 null,
 of
-offsets
 on
 on.
 one
@@ -357,24 +352,20 @@ roving
 rule
 run.
 same
-sat
 says
 screen
 screen-reader
 scrolls.
 selected.
 set
-ships
 should
 shown
 shown,
 silently.
-simply
 site
 sits
 so
 somebody,
-states
 stays
 stop
 string,
@@ -383,7 +374,6 @@ surrounding
 survived
 swaps
 tab
-term.
 test
 text
 than
@@ -392,7 +382,6 @@ the
 their
 them
 there
-these
 this
 this:
 tip
@@ -443,4 +432,3 @@ z-[var(--z-wk-sticky)]'
 }}"
 —
 →
-⚠️

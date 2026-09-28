@@ -275,16 +275,10 @@ export default function wirekitTreeView() {
         /**
          * Activate the currently focused node.
          *
-         * ⚠️ This used to dispatch `tree-node-select` itself, which made the event
-         * KEYBOARD-ONLY: a leaf row carries no click handler at all, and a branch row's
-         * handler only toggles. So `@tree-node-select` — the documented way to respond to a
-         * selection — never fired for a mouse user, on a control whose primary gesture is a
-         * click. Nothing reported it: the tree renders, the row highlights, and the developer's
-         * handler simply is not called.
-         *
-         * Both gestures now go through ONE path. `click()` bubbles to the tree root, whose
-         * handler dispatches exactly once, so the keyboard cannot fire the event twice on a
-         * branch node the way a naive fix would.
+         * One path for both gestures: `click()` bubbles to the tree root, whose handler
+         * dispatches `tree-node-select` exactly once. A leaf row carries no click handler at
+         * all and a branch row's handler only toggles, so a dispatch here alone would never
+         * fire for a mouse user, and a second one would fire twice on a branch node.
          */
         selectFocused() {
             const focused = document.activeElement;

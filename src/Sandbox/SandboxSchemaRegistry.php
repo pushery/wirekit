@@ -13,7 +13,8 @@ namespace Pushery\WireKit\Sandbox;
  *       'type' => 'string|int|bool|array|mixed',
  *       'required' => false,
  *       'default' => '...',
- *       'allowed_values' => [...]   // optional enum
+ *       'allowed_values' => [...],  // optional enum
+ *       'allowed_schemes' => [...], // see below
  *     ],
  *     ...
  *   ]
@@ -46,30 +47,38 @@ namespace Pushery\WireKit\Sandbox;
  * list to the component's own `validateProp()` list, in both directions.
  * `SandboxSchemaDecidesEveryPropTest` holds the other half: every prop of a
  * registered component is offered here or refused there, with a reason.
+ *
+ * `allowed_schemes` is REQUIRED on every prop whose value reaches an `href`,
+ * `src` or `action` attribute, in a schema you register as much as in a built-in
+ * one. It lists the URL schemes a value may carry (`['http', 'https', 'mailto']`),
+ * and it is the only thing between `javascript:` and that attribute: the
+ * validator refuses a string whose scheme is not on the list, and a prop without
+ * the key is not checked at all.
+ *
+ * @phpstan-type SandboxPropSpec array{type: string, required?: bool, default?: mixed, allowed_values?: array<int, mixed>, allowed_schemes?: list<string>}
  */
 final class SandboxSchemaRegistry
 {
     /**
-     * @var array<string, array<string, array{type: string, required?: bool, default?: mixed, allowed_values?: array<int, mixed>}>>
+     * @var array<string, array<string, SandboxPropSpec>>
      */
     private static array $schemas = [];
 
     private static bool $seeded = false;
 
     /**
-     * @param  array<string, array{type: string, required?: bool, default?: mixed, allowed_values?: array<int, mixed>}>  $schema
+     * @param  array<string, SandboxPropSpec>  $schema
      */
     public static function register(string $name, array $schema): void
     {
-        // ⚠️ SEED FIRST, or a registration made BEFORE the first read is silently
-        // discarded. The seed is lazy — it runs on the first `has()`/`get()`/`names()`
-        // — and it writes through this same method, so a caller who registered their
-        // own `button` schema at boot had it overwritten by the built-in the moment
-        // anything read the registry. Nothing failed and nothing was logged; the
-        // schema simply was not theirs.
+        // Seed first, or a registration made before the first read would be discarded.
+        // The seed is lazy — it runs on the first `has()`/`get()`/`names()` — and it
+        // writes through this same method, so a schema a caller registers at boot would
+        // otherwise be overwritten by the built-in the moment anything reads the
+        // registry, with nothing failing and nothing logged.
         //
         // This cannot recurse: `ensureSeeded()` sets its flag BEFORE calling `seed()`,
-        // so the eleven nested `register()` calls the seed makes short-circuit here.
+        // so the nested `register()` calls the seed makes short-circuit here.
         // That ordering was already re-entrancy protection; it just had no second
         // caller until now.
         self::ensureSeeded();
@@ -85,7 +94,7 @@ final class SandboxSchemaRegistry
     }
 
     /**
-     * @return array<string, array{type: string, required?: bool, default?: mixed, allowed_values?: array<int, mixed>}>|null
+     * @return array<string, SandboxPropSpec>|null
      */
     public static function get(string $name): ?array
     {

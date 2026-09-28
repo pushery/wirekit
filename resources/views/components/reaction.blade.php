@@ -129,7 +129,7 @@
          duplicate aria-label that the browser ignores (first wins). --}}
     {{ $attributes->merge(['aria-label' => $ariaLabel])->class([$baseClasses, $stateClasses]) }}
 >
-    <span class="font-[font-variant-emoji:emoji]" aria-hidden="true">{{ $emoji }}</span>
+    <span class="[font-variant-emoji:emoji]" aria-hidden="true">{{ $emoji }}</span>
     @if($reactionOptimistic)
         {{-- Shown whenever the live count is above zero, which the server-only
              variant decides once at render time. --}}

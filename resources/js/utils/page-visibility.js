@@ -7,7 +7,7 @@
  * whatever slide the clock happened to land on rather than the one they left. That last
  * part is why this is a correctness question and not only a battery one.
  *
- * ⚠️ THIS IS FOR WORK WHOSE RESULT IS RE-DERIVABLE ON RETURN, and every current caller
+ * This is for work whose result is re-derivable on return, and every current caller
  * qualifies for the same reason: they read the clock. A countdown recomputes from
  * `Date.now()`, a calendar's current-time line from `new Date()` — so the ticks missed
  * while hidden were not carrying state, and the first tick after `onShow` is already

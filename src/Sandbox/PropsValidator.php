@@ -26,23 +26,22 @@ namespace Pushery\WireKit\Sandbox;
  *      value passed to a component as a prop: the component escapes it on
  *      output, and escaping it here as well put the escape on the page.
  *
- * ⚠️ THIS LIST READ AS FIVE RULES UNTIL 2026-09-09, AND THE TWO IT LEFT OUT
- * WERE THE VALUE-LEVEL ONES. Rule 6 is a security control, not a formatting
- * nicety: `SandboxSchemaRegistry` records that without it
- * `javascript:alert(document.domain)` reached a rendered href verbatim through
- * the endpoint documented as the boundary for untrusted payloads. This
- * summary is what a reviewer reads before deciding a new schema entry is
- * safe — so a URL-bearing prop could be added with no `allowed_schemes` key
- * and nothing here would suggest one was needed. That is how the hole was
- * opened the first time. `SandboxUrlSchemeTest` now pins the invariant.
+ * Rule 6 is a security control, not a formatting nicety: without it
+ * `javascript:alert(document.domain)` reaches a rendered href verbatim through
+ * the endpoint documented as the boundary for untrusted payloads. This summary
+ * is what a reviewer reads before deciding a new schema entry is safe, so a
+ * URL-bearing prop needs its `allowed_schemes` key as much as the registry
+ * says it does.
  *
- * ⚠️ Rule 7 also said the wrong thing: `htmlspecialchars()` ESCAPES, it does
- * not strip. A reviewer who believes tags are removed reasons differently
- * about what reaches a slot.
+ * Rule 7 escapes rather than strips: `htmlspecialchars()` leaves the tags in
+ * the text, encoded. A reviewer who believes tags are removed reasons
+ * differently about what reaches a slot.
  *
  * Returns a `ValidationResult` carrying either the validated payload
  * or a list of violations. Never throws — the caller decides whether
  * to render or 422.
+ *
+ * @phpstan-import-type SandboxPropSpec from SandboxSchemaRegistry
  */
 final class PropsValidator
 {
@@ -51,7 +50,7 @@ final class PropsValidator
     private const MAX_ARRAY_DEPTH = 5;
 
     /**
-     * @param  array<string, array{type: string, required?: bool, default?: mixed, allowed_values?: array<int, mixed>}>  $schema
+     * @param  array<string, SandboxPropSpec>  $schema
      * @param  array<string, mixed>  $payload
      */
     public static function validate(array $schema, array $payload): ValidationResult
@@ -155,7 +154,8 @@ final class PropsValidator
      * the declared target shape:
      *   - 'int':   /^-?\d+$/ → (int) cast
      *   - 'float': numeric (PHP's is_numeric) → (float) cast
-     *   - 'bool':  exact 'true' / 'false' / '1' / '0' / 'on' → bool cast
+     *   - 'bool':  'true' / '1' / 'on' → true, 'false' / '0' / 'off' / '' → false,
+     *              compared case-insensitively
      *
      * Anything else passes through unchanged so the strict type check that
      * follows still catches genuine mismatches (e.g. `body: 42` against

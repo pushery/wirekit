@@ -1,9 +1,11 @@
 /**
  * WireKit Core Bundle (IIFE).
  *
- * Contains the chart and image-compare Alpine components plus the one
- * directive the zero-JS form primitives need. For projects that only use the
- * core form components, charts and the before/after slider.
+ * Contains the chart and image-compare Alpine components, the `x-wk-indeterminate`
+ * and `x-wk-findable` directives the zero-JS form and disclosure primitives need,
+ * and the memory for a field Livewire emptied after a successful action. For
+ * projects that only use the core form components, charts and the before/after
+ * slider.
  *
  * No overlay COMPONENTS, but it does install the overlay ROOT — see the call in
  * registerCoreComponents(). A missing teleport target throws and takes the page

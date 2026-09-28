@@ -9,13 +9,10 @@
  * `aria-valuenow` at all. A screen reader then hears "progressbar" with no
  * number, which for `role="progressbar"` is the one attribute carrying the state.
  *
- * ⚠️ EVERY DERIVED VALUE IS A METHOD, AND THAT IS THE CSP CONSTRAINT RATHER THAN
- * A STYLE CHOICE. Under Alpine's CSP build there is no expression evaluator, so
- * `x-bind:style="'width: ' + percent + '%'"` is never evaluated and the binding
- * goes inert with nothing reported. A call to a method on the component's own
- * data IS allowed — `reading-progress` already binds `x-bind:style="fillStyle()"`
- * for the same reason. So the arithmetic lives here, and the template only ever
- * names a method.
+ * Every derived value is a method, and each one starts from the same clamped
+ * number, so the fill, `aria-valuenow` and the readout cannot disagree: none of
+ * them does arithmetic of its own in the template, which only ever names a
+ * method.
  *
  * The value itself is read through Alpine's scope chain: a nested `x-data` sees
  * the properties of the one above it, so `from: 'percent'` resolves against the
@@ -91,14 +88,13 @@ export default function wirekitProgress(config = {}) {
         /**
          * The fill's class SET, not one class on top of a static list.
          *
-         * ⚠️ The two states differ in LAYOUT, not just in appearance: the
-         * indeterminate keyframes animate `left`, so that variant needs
-         * `absolute inset-y-0` and supplies its own width, while the determinate
+         * The two states differ in layout, not just in appearance: the
+         * indeterminate keyframes move the bar across the track, so that variant
+         * needs `absolute inset-y-0` and supplies its own width, while the determinate
          * one is `h-full` with a width transition. Binding a single class on top
          * of a static list cannot express that — and worse, Alpine only removes
          * classes it added itself, so a statically present `wk-progress-indeterminate`
-         * survives every binding. Measured in the browser: the value resolved and
-         * the width was right while the bar still animated.
+         * survives every binding.
          *
          * Both strings arrive from Blade so the Tailwind literals stay in the
          * template, where the class-drift guards can see them.

@@ -13,10 +13,10 @@ namespace Pushery\WireKit\Support;
  * shortened it and nothing warned, because an append is not an error. Measured in this
  * package's own test skeleton before the cap: 33 sessions, 321 MB, a single line of 9.7 MB.
  *
- * The reader is where that becomes expensive rather than merely untidy. `--rollback` loads
- * the whole file to use its LAST line, so on a log that has been allowed to grow, the command
- * that undoes a bad install is the one that runs out of memory — a safety net failing exactly
- * when it is reached for.
+ * The reader is where that becomes expensive rather than merely untidy. `--rollback` replays
+ * the LAST line, and `lastSessionLine()` below reads it without loading the file: loading a
+ * grown log whole to use one line would make the command that undoes a bad install the one
+ * that runs out of memory, a safety net failing exactly when it is reached for.
  *
  * Only the last session is ever replayed, so keeping five costs nothing that was being used
  * and leaves a developer enough history to see what the previous installs touched.
@@ -62,9 +62,8 @@ final class InstallLog
      * `--rollback` used to do `explode("\n", file_get_contents($path))` and then take
      * `end()` of it — reading the whole file, doubling it in an array, and using one line.
      * Measured against a log holding its five retained sessions of this package's own
-     * publishable tree (99 files, 6.92 MB on disk, 8.95 MB per line once binaries are
-     * base64'd): a 44.7 MB log peaked at **91.5 MB** and died outright at
-     * `memory_limit=64M`. The command that undoes a bad install was the one that ran out
+     * publishable tree, binaries base64'd: the log peaked at about twice its own size in
+     * memory and died outright at `memory_limit=64M`. The command that undoes a bad install was the one that ran out
      * of memory — a safety net failing exactly when it is reached for.
      *
      * This file's own docblock already described that defect. The WRITE path was fixed with

@@ -193,7 +193,7 @@ export default function wirekitNavigationMenu() {
                     // Measured on /overlays across one refresh: `top` 949px → empty, still shown,
                     // box unchanged at 105x67.
                     //
-                    // ⚠️ The unchanged box is why this is `repairErasure` and not
+                    // The unchanged box is why this is `repairErasure` and not
                     // `autoReposition`: no resize means `autoUpdate` sees nothing, since it
                     // observes boxes rather than the style attribute.
                     repairErasure: true,

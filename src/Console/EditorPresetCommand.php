@@ -29,8 +29,14 @@ use Pushery\WireKit\Support\SuggestSimilar;
  *
  * The `basic` preset matches `toolbar="basic"` (bold / italic / strike / link
  * / lists); `full` matches `toolbar="full"` (adds underline, headings, quote,
- * code block, history). `full` additionally needs `@tiptap/extension-underline`,
- * which StarterKit does not bundle — the emitted npm line includes it.
+ * code block, history).
+ *
+ * The snippet is written for Tiptap 3, which an unversioned `npm install` gets.
+ * Its StarterKit carries Link and Underline itself, so Link is configured through
+ * StarterKit rather than registered beside it: a second Link is the extension
+ * twice, with a warning and two click handlers, and the one StarterKit adds
+ * opens a link on click inside the editor. `basic` switches Underline off, as its
+ * toolbar has no button for it. The snippet says what differs on Tiptap 2.
  */
 class EditorPresetCommand extends Command
 {
@@ -94,43 +100,38 @@ class EditorPresetCommand extends Command
     {
         $isFull = $preset === 'full';
 
-        // npm packages: StarterKit covers bold/italic/strike/lists/headings/
-        // quote/code-block/history; Link + Placeholder are always wired; the
-        // `full` preset's underline button needs the extra underline extension.
-        $packages = ['@tiptap/core', '@tiptap/starter-kit', '@tiptap/extension-link', '@tiptap/extension-placeholder'];
-        if ($isFull) {
-            $packages[] = '@tiptap/extension-underline';
-        }
+        // npm packages: in Tiptap 3 StarterKit covers bold/italic/strike/underline/link/lists/
+        // headings/quote/code-block/history; Placeholder lives in @tiptap/extensions.
+        $packages = ['@tiptap/core', '@tiptap/starter-kit', '@tiptap/extensions'];
 
         $imports = [
             "import { Editor } from '@tiptap/core';",
             "import StarterKit from '@tiptap/starter-kit';",
-            "import Link from '@tiptap/extension-link';",
-            "import Placeholder from '@tiptap/extension-placeholder';",
+            "import { Placeholder } from '@tiptap/extensions';",
         ];
-        if ($isFull) {
-            $imports[] = "import Underline from '@tiptap/extension-underline';";
-        }
 
-        // Extension list inside the factory. The Link config restricts protocols
-        // (blocks javascript: URLs) and disables open-on-click — the same
-        // security-correct shape the editor docs require.
+        // Link is configured INSIDE StarterKit: protocols restricted (blocks javascript:
+        // URLs) and no open-on-click, the security-correct shape the editor docs require.
+        // A Link registered beside it would be a second one, and StarterKit's own opens
+        // links on click. `basic` has no underline button, so it leaves Underline out.
+        $starterKit = $isFull
+            ? "StarterKit.configure({ link: { protocols: ['http', 'https', 'mailto'], openOnClick: false } }),"
+            : "StarterKit.configure({ underline: false, link: { protocols: ['http', 'https', 'mailto'], openOnClick: false } }),";
         $extensions = [
-            'StarterKit,',
+            $starterKit,
+            "Placeholder.configure({ placeholder: config.placeholder ?? 'Write something...' }),",
         ];
-        if ($isFull) {
-            $extensions[] = 'Underline,';
-        }
-        $extensions[] = "Link.configure({ protocols: ['http', 'https', 'mailto'], openOnClick: false }),";
-        $extensions[] = "Placeholder.configure({ placeholder: config.placeholder ?? 'Write something...' }),";
 
         $importBlock = implode("\n", $imports);
         $extensionBlock = implode("\n        ", $extensions);
 
         return <<<JS
         // WireKit editor factory ({$preset} preset) — paste into your app.js.
-        // 1. Install the Tiptap peer dependencies first:
+        // 1. Install the Tiptap peer dependencies first (Tiptap 3):
         //    npm install {$this->joinPackages($packages)}
+        //    On Tiptap 2, StarterKit carries neither Link nor Underline: install and list
+        //    @tiptap/extension-link (and @tiptap/extension-underline for `full`) beside it,
+        //    and import Placeholder from @tiptap/extension-placeholder.
         {$importBlock}
 
         // 2. Expose the factory WireKit calls at Alpine init(). It receives

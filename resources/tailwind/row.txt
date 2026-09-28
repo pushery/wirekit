@@ -23,7 +23,7 @@ $wrapMode
 '',
 ',
 '2xl'
-'2xl']),
+'2xl']))
 'align'
 'align',
 'alignFields'
@@ -33,7 +33,7 @@ $wrapMode
 'as'
 'base',
 'baseline'
-'baseline']),
+'baseline']))
 'between'
 'between',
 'center'
@@ -42,7 +42,7 @@ $wrapMode
 'end'
 'end',
 'evenly'
-'evenly']),
+'evenly']))
 'false'
 'flex
 'flex-wrap
@@ -99,11 +99,9 @@ $wrapMode
 'xl',
 'xs'
 'xs',
-($align)
-($gap)
-($justify)
 ($wrapMode)
 (BooleanProp::from($wrap,
+(WireKit::validateProp('row',
 (a
 (default)
 (silent
@@ -126,7 +124,7 @@ $wrapMode
 @props([
 @props.
 A
-AN
+An
 Blade
 Blade's
 BooleanProp::from($alignFields,
@@ -134,7 +132,6 @@ Both
 COLUMNS
 CONTROLS
 Children
-DEFAULT,
 Declared
 Default
 Dev-only
@@ -142,19 +139,15 @@ Flipping
 Fully
 Line
 Measured
-NEW
 Normalized
 Nothing
-OPT-IN
 Opt-in,
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RATHER
 Renders
 Resolved
 So
 TEXT,
-THAN
 TRI-STATE,
 Tailwind
 The
@@ -282,6 +275,7 @@ debug
 decided
 decision.
 default
+default,
 defines
 derived.
 describe
@@ -387,6 +381,7 @@ names
 neighbors
 neither
 never
+new
 no
 not
 nothing.
@@ -402,6 +397,7 @@ ones
 only
 opening
 opposite
+opt-in
 optimistic-ui:
 or
 out
@@ -554,4 +550,3 @@ wrote
 }}>
 ·
 —
-⚠️

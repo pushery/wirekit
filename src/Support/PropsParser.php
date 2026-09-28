@@ -476,13 +476,10 @@ final class PropsParser
                     // the raw default; strip from normalized.
                     $current['default_tokens'][] = $token;
                 } elseif ($current['state'] === 'expect-key') {
-                    // ⚠️ A STANDALONE COMMENT ABOVE A PROP IS THAT PROP'S DOCUMENTATION, and
-                    // this branch used to drop it on the floor. Only the trailing same-line
-                    // form was captured, so the moment a prop's docs outgrew one line the
-                    // schema export lost them — measured on `data-table.columns`, whose
-                    // comment became `null` in the export in the same release that made it
-                    // richer. The documentation got better and its visibility got worse, and
-                    // nothing went red: the export runs green either way.
+                    // A standalone comment above a prop is that prop's documentation, kept like
+                    // the trailing same-line form. Otherwise a prop whose docs outgrow one line
+                    // would lose them in the schema export, and nothing would go red: the export
+                    // runs green either way.
                     //
                     // Collected here rather than looked up later because the token stream is
                     // already at the right place; a second pass would have to re-find it.

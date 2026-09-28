@@ -7,7 +7,7 @@
      cleverness: this component IS the button, so there is nowhere inside it to
      put the announcer — a live region there becomes part of the accessible name.
      A `display: contents` wrapper gives the announcer a sibling without changing
-     the layout, and it is the same mechanism four other components already use.
+     the layout, and it is the mechanism the other optimistic components use too.
 
      THE PRICE, and it belongs on this page rather than in a commit message:
      `display: contents` preserves the LAYOUT, not the selector structure. With
@@ -47,8 +47,9 @@
     // A hint shown on hover and focus. On a toggle with no visible label it is ALSO the accessible
     // name, because a glyph is not a name and a hover never happens on a touch screen.
     'tooltip' => null,
-    // The color of the icon while pressed, from the canonical intents. Color is never the state on
-    // its own here: the surface changes either way.
+    // The color of the icon while pressed: `accent` or one of the four status intents, with
+    // `primary` accepted as `accent`, the color it names everywhere else. Color is never the state
+    // on its own here: the surface changes either way.
     'activeIntent' => 'accent',
     // A label per state, such as "Sound on" and "Sound off". A button whose label says its state
     // is not a toggle in the ARIA sense, so it renders WITHOUT aria-pressed: announcing "Sound on,
@@ -76,7 +77,10 @@
     $isPressed = filter_var($pressed, FILTER_VALIDATE_BOOLEAN);
     $selfTogglesLocally = filter_var($selfToggle, FILTER_VALIDATE_BOOLEAN);
 
-    $activeIntent = WireKit::validateProp('toggle-button', 'activeIntent', (string) $activeIntent, ['accent', 'success', 'warning', 'danger', 'info']);
+    // `primary` is the accent color everywhere else in the catalog, so it is taken as `accent`.
+    $activeIntentAliases = ['primary' => 'accent'];
+    $activeIntent = $activeIntentAliases[(string) $activeIntent] ?? (string) $activeIntent;
+    $activeIntent = WireKit::validateProp('toggle-button', 'activeIntent', $activeIntent, ['accent', 'success', 'warning', 'danger', 'info']);
 
     // A developer mistake that would otherwise render something half-working says so: loudly
     // where it can be fixed, as a log line in a request, the split every validator here makes.
@@ -215,8 +219,8 @@
      shape. --}}
 @if($optimisticConfig)
 {{-- `display: contents` so the announcer gets a sibling without the button
-     leaving its layout position — the same mechanism calendar, combobox,
-     multi-select and segmented-control already use. See the note at the top for
+     leaving its layout position — the mechanism the other optimistic components
+     use too. See the note at the top for
      what it costs a caller's selectors. --}}
 <div x-data="wirekitOptimistic({{ $optimisticConfig }})" style="display: contents">
 @endif

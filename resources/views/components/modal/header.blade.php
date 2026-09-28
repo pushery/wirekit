@@ -24,11 +24,10 @@
     // title sits on the start and the close button on the end. Without the
     // close button the original single-child layout is preserved.
     $classes = WireKit::resolveClasses('modal.header', 'base', implode(' ', [
-        // ⚠️ ONE TOKEN ON ALL FOUR SIDES. The top used to get `--padding-wk-y-md` (0.5rem)
-        // against `--padding-wk-x-lg` (1rem) at the sides: compact under a one-line title,
-        // cramped the moment the header grows — an avatar, a name and a subtitle read as text
-        // stuck to the top edge while the sides kept their air. Equal padding is the
-        // requirement, so it is ONE token, and a theme cannot pull the sides apart.
+        // One token on all four sides. A smaller top padding looks compact under a one-line
+        // title and cramped the moment the header grows: an avatar, a name and a subtitle read
+        // as text stuck to the top edge while the sides keep their air. Equal padding is the
+        // requirement, so it is one token, and a theme cannot pull the sides apart.
         'p-[var(--padding-wk-x-lg)]',
         'border-b',
         'border-[var(--color-wk-border-subtle)]',
@@ -36,9 +35,9 @@
         'font-[number:var(--font-wk-heading-weight)]',
         'font-[family-name:var(--font-wk-sans)]',
         'text-[color:var(--color-wk-text)]',
-        // ⚠️ `items-start`, NOT `items-center`: the close button belongs in the top corner,
-        // however tall the header grows. Centered, it drifted to half the height of a header
-        // carrying an avatar and a three-line subtitle.
+        // `items-start`, not `items-center`: the close button belongs in the top corner,
+        // however tall the header grows. Centered, it would drift to half the height of a
+        // header carrying an avatar and a three-line subtitle.
         'flex items-start justify-between',
         'gap-[var(--gap-wk-md)]',
     ]), $scope);

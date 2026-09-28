@@ -10,7 +10,7 @@
      why, with the measurements). An avatar shows its photo until the photo fails to load, and its
      initials from then on, or from the start when it has no photo at all.
 
-     ⚠️ Every <img> here is `loading="lazy"`, and the reason is the list rather than the image. An
+     Every <img> here is `loading="lazy"`, and the reason is the list rather than the image. An
      option list is a SCROLL region: every row exists in the DOM the moment the panel opens, while
      roughly eight of them are on screen.
 

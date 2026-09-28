@@ -265,7 +265,6 @@ A11y:
 AA
 AND
 Aligning
-Auto-generate
 Base
 Blade
 BooleanProp::from($hideLabel,
@@ -276,10 +275,11 @@ BooleanProp::stripFalseHtmlFlags($attributes);
 Border
 Change
 Compared
-DENSE,
 DOM
 Declared
+Dense,
 Dev-only
+DomId
 Dropdown
 Error
 Extra
@@ -288,7 +288,6 @@ Flat:
 Fully
 Grouped:
 HTML
-ID
 INT
 It
 Keep
@@ -316,7 +315,6 @@ Pushery\WireKit\WireKit;
 READ
 Rendered
 Renders
-Reported
 Required
 See
 Set
@@ -325,7 +323,6 @@ So
 Strip
 Success
 Support\DomId
-TOP
 Tailwind's
 The
 Tri-state
@@ -374,7 +371,7 @@ __('wirekit::Saving'),
 `items-end`
 `items-start`
 `lang`
-`ms-0.5`
+`ms-0.5`,
 `name`
 `overflow-hidden`
 `prop="false"`
@@ -396,7 +393,6 @@ accept
 accepts
 across
 action
-adopting
 after
 against
 agreed
@@ -421,7 +417,6 @@ appearance-none
 appearing
 appears
 appended
-application.
 applied.
 apply,
 are
@@ -542,6 +537,7 @@ controls
 copy,
 could
 counted
+counts
 d="M5.23
 danger-text
 dark
@@ -639,7 +635,6 @@ freely):
 from
 further
 gap
-generate
 give
 global
 got
@@ -666,7 +661,6 @@ id
 id;
 id="{{
 identical
-if
 ignores
 implode('
 imports
@@ -743,11 +737,12 @@ must
 mutation
 n/a
 name
+name;
 name="{{
 native
 needed).
 needs
-neither
+neither,
 never
 new
 newline
@@ -819,7 +814,6 @@ prop,
 prop:
 proper-name
 props
-provided
 pull
 purpose:
 pushed
@@ -827,7 +821,6 @@ pushes
 qualified:
 question
 radius
-random
 rather
 re-anchors
 reach
@@ -850,6 +843,7 @@ rendered
 rendered.
 renders
 reports
+request.
 resolve
 result
 right-0
@@ -878,7 +872,6 @@ separate
 server
 server-side
 set.
-seven
 shapes
 sharper
 should
@@ -954,6 +947,7 @@ toggle:
 token
 tokens
 toolbar
+top
 trim(
 true
 true);
@@ -1054,4 +1048,3 @@ zero
 }}{{
 —
 →
-⚠️

@@ -723,12 +723,12 @@ export default function wirekitEventCalendar(config = {}) {
                     // of it. Measured on /overlays across one refresh: `top` 1699px → empty,
                     // still shown, box unchanged at 274x28.
                     //
-                    // ⚠️ This bubble is NOT teleported, and it makes no difference. It is
+                    // This bubble is NOT teleported, and it makes no difference. It is
                     // `position: fixed`, so with no `top` it falls back to its STATIC position —
                     // which for a div declared at the end of the calendar root is wherever that
                     // div happens to sit, far from the chip it belongs to.
                     //
-                    // ⚠️ The unchanged box is why this is `repairErasure` and not
+                    // The unchanged box is why this is `repairErasure` and not
                     // `autoReposition`: no resize means `autoUpdate` sees nothing, since it
                     // observes boxes rather than the style attribute.
                     repairErasure: true,

@@ -7,13 +7,12 @@
     'hideBelow' => null, // sm | md | lg | xl | 2xl — the same value as the column's header
     // Hide the column below a width of the TABLE, not of the window.
     //
-    // ⚠️ `hideBelow` asks the viewport, and beside a sidebar that is the wrong question.
-    // Measured in an app shell: the table has 649px at a 1024px viewport and 702px at 768px,
-    // because the sidebar steps beside the content at `lg`. A column that appears at `md`
-    // therefore appears exactly where the table has least room — a reported table ran 141px
-    // past its frame at 1024px for that reason.
+    // `hideBelow` asks the viewport, and beside a sidebar that is the wrong question: in an
+    // app shell the table can have less room at a 1024px viewport than at 768px, because the
+    // sidebar steps beside the content at `lg`, so a column that appears at `md` appears
+    // exactly where the table has least room.
     //
-    // ⚠️ THE SCALE IS THE CONTAINER SCALE AND IT IS NOT THE VIEWPORT ONE. Tailwind's container
+    // The scale is the container scale and it is not the viewport one. Tailwind's container
     // sizes are their own ladder: `3xl` here is 48rem of TABLE width, where `hide-below="md"`
     // is 48rem of WINDOW. Same numbers, different subject — so the two props are deliberately
     // not interchangeable and a call site should pick one.
@@ -44,8 +43,8 @@
     // hides only below the breakpoint, so above it the cell keeps the display the table gives it
     // instead of one this component would have to restate. The header and every cell of the column
     // take the same value: a header hidden without its cells, or cells without their header, would
-    // put every value under the wrong heading. An unknown value throws in debug and hides nothing
-    // in production.
+    // put every value under the wrong heading. An unknown value is reported through the strictness
+    // gate and, where the gate does not throw, hides nothing.
     $hideBelow = filled($hideBelow) ? (string) $hideBelow : null;
     if ($hideBelow !== null && ! in_array($hideBelow, ['sm', 'md', 'lg', 'xl', '2xl'], true)) {
         WireKit::validateProp('table.td', 'hideBelow', $hideBelow, ['sm', 'md', 'lg', 'xl', '2xl']);

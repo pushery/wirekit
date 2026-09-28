@@ -205,19 +205,18 @@ AA
 AT
 Accessible
 Arabic
-Auto-generate
-BOTH
 Blade
 BooleanProp::from($groupError,
 BooleanProp::from($hideLabel,
 BooleanProp::stripFalseHtmlFlags($attributes);
+Both
 CLASS
 Change
-DIRECTIONS
 DOM
 Declared
 Dev-only
 Developer
+DomId
 EMPTY.
 English
 Error
@@ -225,7 +224,6 @@ Every
 Extra
 HTML
 Hebrew
-ID
 It
 Knob
 Knob:
@@ -243,10 +241,8 @@ Null
 OFF
 OR
 ORDER
-OUTSIDE
 Old
 One
-PER
 PRESENCE,
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
@@ -255,7 +251,6 @@ RTL
 Read,
 Render
 Rendered
-SIZE,
 SOME
 Same
 Set
@@ -316,7 +311,6 @@ __('wirekit::Saving'),
 `md`
 `name`
 `peer
-`personalize()`
 `required`
 `sm`,
 `start-0.5`,
@@ -332,7 +326,6 @@ able
 above
 above,
 accepts
-accessibility
 accessible
 action
 actionable,
@@ -410,7 +403,6 @@ belongs
 below
 beside
 bg-muted
-block
 boolean
 border
 both
@@ -477,6 +469,7 @@ controls;
 copy,
 correctly
 correctly.
+counts
 cursor-pointer">
 data-wk-optimistic-announcer
 data-wk-prose-skip
@@ -497,12 +490,12 @@ description
 designed
 detection:
 dev-warning
-developer
 developer's
 diameter
 direct
 direction
 direction;
+directions
 disables
 discipline
 distance
@@ -531,7 +524,6 @@ exposed
 factory
 fails
 failure:
-fall
 fallback:
 false
 false));
@@ -591,10 +583,10 @@ hide
 hint
 hit-area
 humanized
+id
 id;
 id="{{
 identical
-identifier
 if
 implode('
 in
@@ -657,12 +649,14 @@ moves.
 ms-0.5"
 name
 name)
+name;
 name="{{
 names
 native
 nearly
 needs
 neither
+neither,
 network
 never
 new
@@ -699,6 +693,7 @@ other
 otherwise
 out
 out.
+outside
 own
 padding
 page
@@ -729,7 +724,6 @@ pushed
 puts
 queue
 queueing
-random
 rather
 reaches
 read
@@ -748,7 +742,7 @@ remove
 render
 renders
 repairing
-replacing
+request.
 required"
 requires
 reserve.
@@ -805,6 +799,7 @@ site
 sits
 sitting
 size
+size,
 slides
 so
 somebody,
@@ -893,7 +888,6 @@ untouched.
 up
 use
 uses
-uses,
 uses.
 validation
 value
@@ -956,4 +950,3 @@ x-text="announcement"></div>
 ~1.04:1
 —
 ≥3:1.
-⚠️

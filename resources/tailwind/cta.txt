@@ -28,7 +28,7 @@ $variantClasses])
 '5',
 '6']);
 'accent'
-'accent']),
+'accent']))
 'animateIn'
 'base',
 'bg-[var(--color-wk-accent)]
@@ -53,6 +53,7 @@ $variantClasses])
 'size'
 'size',
 'sm'
+'sm',
 'text-center',
 'variant'
 'variant',
@@ -60,12 +61,11 @@ $variantClasses])
 'wk-cta',
 ($levelValue
 ($validSize)
-($variant)
 (1-6).
 (<
 (=
+(WireKit::validateProp('cta',
 (code-block,
-(debug-mode
 (default
 (int)
 (mirrors
@@ -74,7 +74,6 @@ $variantClasses])
 (silent
 (string)
 (the
-(validateProp
 (white-on-white
 --color-wk-*
 --color-wk-bg
@@ -120,6 +119,7 @@ Declared
 Default
 Defaults
 Dev-only
+FIRST
 Fully
 Heading
 Lighthouse.
@@ -145,6 +145,7 @@ WireKit::validateProp('cta',
 [
 ['1',
 ['default',
+['md',
 ['sm',
 [1,
 \Pushery\WireKit\WireKit::warnUnknownProps('cta',
@@ -159,7 +160,7 @@ WireKit::validateProp('cta',
 `lg`.
 `max-width:
 `md`
-`md`).
+`md`,
 `size`
 `sm`
 `w-full`
@@ -168,6 +169,7 @@ a
 action
 action,
 against
+allowed
 an
 and
 animation
@@ -179,7 +181,6 @@ at
 auto-derived
 axe
 axe's
-back
 band
 banner
 bare
@@ -217,8 +218,9 @@ data-variant="{{
 data-wk-prose-skip
 debug
 default
+default,
 developer
-did-you-mean)
+did-you-mean,
 docs.wirekit.app
 docs/extending/spine-contract.md
 document
@@ -228,11 +230,10 @@ drops
 early.
 element,
 entrance
-enum
+enum.
 establishes
 every
 fallback
-falls
 file
 first-allowed
 flags
@@ -246,6 +247,8 @@ from
 full
 full-width
 gap-[var(--gap-wk-sm)]
+gate
+gate,
 genuinely
 guard
 guessed
@@ -281,9 +284,11 @@ kept
 know
 later
 leading-[var(--font-wk-heading-line-height,1.25)]
+leads
 level
 light
 list
+list.
 live
 lives
 load-bearing
@@ -306,6 +311,7 @@ not
 nothing
 null,
 of
+off-enum
 old
 on
 one
@@ -322,7 +328,6 @@ presentational
 preview
 prod).
 produce
-production
 prop).
 props
 prose
@@ -336,6 +341,7 @@ reason
 refutes
 render
 renders
+reported
 reports,
 resolves
 result
@@ -350,8 +356,6 @@ section.
 sets
 shape
 shown
-signals
-silent
 sits,
 skipped
 sm
@@ -365,6 +369,7 @@ so
 source-detection
 spine.
 stays
+strictness
 strings
 subtree,
 suites
@@ -381,7 +386,8 @@ the
 there
 this
 three-tier
-throws
+through
+throw
 tier
 title
 to
@@ -393,8 +399,8 @@ unknown
 use
 usually
 validateProp's
-validation,
 value
+value,
 vertical-padding
 vertical-rhythm
 view's
@@ -408,6 +414,7 @@ where
 which
 who
 whose
+why
 wirekit:spine-participant
 with
 without

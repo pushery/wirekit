@@ -9,7 +9,7 @@ $variantClasses
 $variantClasses,
 ',
 'accent'
-'accent']),
+'accent']))
 'base',
 'border-[var(--color-wk-accent)]',
 'border-[var(--color-wk-border)]',
@@ -26,7 +26,7 @@ $variantClasses,
 'text-[length:var(--text-wk-md)]',
 'variant'
 'variant',
-($variant)
+(WireKit::validateProp('blockquote',
 (silent
 --}}
 //
@@ -49,7 +49,6 @@ Measured
 Pushery\WireKit\WireKit;
 Renders
 WireKit::resolveClasses('blockquote',
-WireKit::validateProp('blockquote',
 [
 ['default',
 \Pushery\WireKit\WireKit::warnUnknownProps('blockquote',
@@ -67,7 +66,6 @@ component's
 could
 data-wk-prose-skip
 debug
-default
 does
 early.
 element,

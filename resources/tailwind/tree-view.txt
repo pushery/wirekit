@@ -7,7 +7,7 @@
 "tree
 "tree"s.
 $attributes->class([$nodeClasses])
-$attributes->class([$sizeClasses]);
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -53,6 +53,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -128,7 +129,7 @@ $validated
 ($shouldSetHidden)
 ($size
 ($svgHtml
-('xs')
+('xs').
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
@@ -236,15 +237,12 @@ APG
 API:
 ARIA
 AT
-ATTEMPTED
 Adding
 Alpine
 Alpine's
 Alpine.
 An
 ArrowRight/ArrowLeft
-BECAUSE
-BELOW,
 BENEATH
 Blade
 Blade-heroicons'
@@ -252,10 +250,7 @@ BladeUI\Icons\Svg
 BooleanProp::from($expanded,
 BooleanProp::from($selected,
 Bound
-CAN
-CANNOT
 CLASS
-CONDITION
 COUNTED
 CSP
 Catching
@@ -270,16 +265,10 @@ ENT_QUOTES).'"',
 EVERY
 Every
 Expand/collapse
-FAIL
 Fully
 Graceful
-HERE,
 HTTP
 Htmlable,
-IN
-INSIDE
-IS
-IT
 Icon
 IconResolver,
 If
@@ -315,7 +304,6 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\Support\DomId;
 Pushery\WireKit\WireKit;
 RECEIVES
-RENDER
 Reapply
 Render
 Renders
@@ -323,7 +311,6 @@ Reported
 Resolve
 Roving
 RuntimeException
-SEE.
 SVG
 SVG:
 Silent
@@ -334,7 +321,6 @@ SvgNotFound
 SvgNotFound.
 Symmetric
 TAG
-THE
 TOKEN
 That
 The
@@ -349,7 +335,6 @@ Unlike
 Uses
 VISIBLE,
 WAI-ARIA
-WAY
 We
 WireKit
 WireKit::resolveClasses('tree-view',
@@ -371,6 +356,7 @@ __toString
 `-1`
 `-1`,
 `0`
+`<span>`
 `Svg
 `aria-hidden="true"`
 `aria-label`
@@ -380,6 +366,7 @@ __toString
 `class="h-12
 `data-reduce-motion`
 `heroicon-m-inbox`
+`icon`
 `inbox`
 `label`
 `prop="false"`
@@ -449,6 +436,7 @@ as,
 asked
 asserted:
 at
+attempted
 attribute
 attribute,
 audience.
@@ -465,6 +453,7 @@ be
 because
 becomes
 below
+below,
 below.
 binding
 blade-heroicons
@@ -517,12 +506,14 @@ chose
 claimed
 clamp
 clamped
+class
 class,
 class="h-4
 class="list-none
 class="shrink-0"
 class="truncate">{{
 class="{{
+classes
 click
 clickable
 clicking
@@ -563,7 +554,6 @@ data-wk-prose-skip
 data-wk-tree-node
 dead
 debug
-debug,
 decided
 decision,
 decision:
@@ -631,6 +621,7 @@ fact,
 factory
 factory's
 factory:
+fail
 fallback
 fallback,
 fallback.
@@ -673,6 +664,8 @@ function
 function).
 function_exists('svg'))
 gap-1',
+gate
+gate,
 get
 gets
 give
@@ -703,6 +696,7 @@ heavier
 height
 helper
 here
+here,
 hidden
 hidden/shown
 hint
@@ -710,6 +704,7 @@ historical
 house
 hover
 icon
+icon's
 icon-only
 icon;
 icons
@@ -728,7 +723,6 @@ in
 including
 indent
 indistinguishable
-inert
 information
 informative
 informative.
@@ -906,6 +900,7 @@ path
 pattern.
 per
 per-set
+personalization
 pick
 pl-4"
 place
@@ -929,7 +924,6 @@ previous
 printable
 problem
 prod).
-production.
 project,
 promotes
 prop's
@@ -966,6 +960,7 @@ renders
 replace
 replaced
 replaces
+reported
 reproduced
 request
 require
@@ -1003,6 +998,7 @@ rung
 same
 screen
 screen-reader-skipping
+see.
 seeds
 sees
 select-none',
@@ -1046,6 +1042,7 @@ stop,
 stop.
 stopped
 storage/logs/laravel.log.
+strictness
 string
 string,
 strip
@@ -1092,6 +1089,7 @@ this
 three
 through
 throw
+throw,
 throws
 tile
 tint
@@ -1199,4 +1197,3 @@ yet.
 }}"
 }}</span>
 —
-⚠️

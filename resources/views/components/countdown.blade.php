@@ -226,13 +226,12 @@
          `expired`, `urgent`, `done`, `srText`, and `expiredText` are all
          available — e.g. Resend in <span x-text="remaining.totalSeconds"></span>s.
 
-         ⚠️ THAT EXAMPLE USED TO INTERPOLATE, AND IT WAS A DEAD CONTROL WHEREVER IT WAS
-         COPIED. Its binding was a template literal, and Alpine's CSP build has none — its
-         parser answers `Unexpected token: OPERATOR` and the binding is never evaluated. Nothing throws, nothing logs, the page looks right and
-         the number never appears. An example in a docblock is the version people paste, so
-         it is API surface: the surrounding text carries the words and the binding names a
-         property. Where an interpolation is genuinely needed, compute it as a property on
-         the scope and bind THAT.
+         The example binds a property, not a template literal: Alpine's CSP build has no
+         template literals, its parser answers `Unexpected token: OPERATOR`, and the binding
+         is never evaluated, with nothing thrown or logged. An example in a docblock is the
+         version people paste, so it is API surface: the surrounding text carries the words
+         and the binding names a property. Where an interpolation is genuinely needed,
+         compute it as a property on the scope and bind that.
          The default sr <time>/units are intentionally NOT rendered here so the
          developer's own copy is the single source of truth. --}}
     {{ $slot }}

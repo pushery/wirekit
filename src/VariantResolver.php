@@ -114,11 +114,10 @@ class VariantResolver
                 'shadow-[var(--shadow-wk-sm)]',
             ]),
             // 'info' is a visual synonym of 'primary' — both tint with the
-            // accent color. The tokens --color-wk-info / --color-wk-info-fg /
-            // --color-wk-info-hover do NOT exist in dist/wirekit.css; only
-            // --color-wk-info-text exists (aliases accent-content). Reuse
-            // the accent token chain so the button is theme-aware and the
-            // CssTokenDriftTest guard passes.
+            // accent color. Info has no surface tokens (no --color-wk-info-fg or
+            // --color-wk-info-hover): --color-wk-info is the tone the charts and the flash tint read, and
+            // --color-wk-info-text aliases accent-content. Reusing the accent
+            // token chain keeps the button theme-aware.
             'info' => implode(' ', [
                 'bg-[var(--color-wk-accent)]',
                 'text-[color:var(--color-wk-accent-fg)]',
@@ -203,10 +202,9 @@ class VariantResolver
         // uses, needs no new token, and follows the theme in both modes because
         // `--color-wk-bg` is the half that switches.
         //
-        // ⚠️ `neutral` is NOT `bg-subtle`, and the difference is the whole reason it is written
-        // out here. `filled()` pairs muted with subtle, and measured against a real theme that
-        // is L=0.972 → L=0.985 in light mode: the hover gets BRIGHTER by 1.3 points, which is
-        // at the threshold of perception and pointing the way a reader parses as fading out.
+        // `neutral` is not `bg-subtle`. `filled()` pairs muted with subtle, which in a light
+        // theme makes the hover slightly brighter, at the threshold of perception and pointing
+        // the way a reader parses as fading out.
         // Mixing the surface toward the TEXT color instead is correct in both modes by
         // construction — the text is dark on a light theme and light on a dark one, so the
         // hover always moves AWAY from the background rather than in a fixed direction.
@@ -234,14 +232,9 @@ class VariantResolver
             default => '--color-wk-text',
         };
 
-        // ⚠️ THE SAME DEFECT `soft()` DIAGNOSED, LEFT IN PLACE ONE FUNCTION LOWER.
-        //
-        // This was `hover:bg-[var(--color-wk-bg-subtle)]` — the exact form the comment
-        // in `soft()` above calls "at the threshold of perception". Reported from real
-        // use on 2026-09-05: a workspace switcher rendered as a ghost button "has no
-        // hover highlight, unlike the other menu items", and the measurement agrees —
-        // `--color-wk-bg-subtle` is L=0.985 against a page at L=1.0, a step of 1.5
-        // points, while the rail items beside it move by 3.
+        // Not `hover:bg-[var(--color-wk-bg-subtle)]`, for the reason `soft()` gives above:
+        // on a light page that step sits at the threshold of perception, and a ghost button
+        // beside other menu items would look as if it had no hover at all.
         //
         // Mixing toward the TEXT color is the construction `soft()` already settled on,
         // and it is a better fit here than there: ghost has NO surface of its own, so

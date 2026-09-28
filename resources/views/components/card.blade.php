@@ -56,7 +56,7 @@
     // behind it, and the failure is silent because the attribute is present and
     // simply does nothing.
     //
-    // ⚠️ `auto` is the one arm that turns the card's own box into a SCROLL CONTAINER, so it
+    // `auto` is the one arm that turns the card's own box into a SCROLL CONTAINER, so it
     // carries the keyboard contract with it. WCAG 2.1.1 asks that a region which scrolls be
     // reachable and operable without a mouse, and a `<div>` that scrolls is neither: there is
     // no tab stop on it, so the content past the fold cannot be panned at all. The ring rides
@@ -117,11 +117,12 @@
     // With the seam an application REPLACES the block in its own scope instead of hanging
     // something beside it, which is the one shape that cannot be decided by an ordering
     // nobody controls.
+    $outlinedClasses = implode(' ', [
+        'border-[length:var(--border-wk-width)]',
+        'border-[var(--color-wk-border)]',
+    ]);
     $variantClasses = WireKit::resolveClasses('card', 'variant', match ($variant) {
-        'outlined' => implode(' ', [
-            'border-[length:var(--border-wk-width)]',
-            'border-[var(--color-wk-border)]',
-        ]),
+        'outlined' => $outlinedClasses,
         'elevated' => implode(' ', [
             'shadow-[var(--shadow-wk-md)]',
             'border-[length:var(--border-wk-width)]',
@@ -135,9 +136,15 @@
         // Named after the prop the CALL SITE used, and listing the values in that prop's own
         // spelling: a developer who wrote `surface` is told about `outline`, which is what
         // button takes, rather than about a `variant` they never set.
-        default => WireKit::validateProp('card', $axis, $variant, $axis === 'surface'
+        //
+        // What comes back is the first allowed value in that spelling, which is the outlined card
+        // either way; it is drawn as one rather than emitted as a class name (`outline` is a real
+        // utility, and drew an outline around the card).
+        default => match (WireKit::validateProp('card', $axis, $variant, $axis === 'surface'
             ? ['outline', 'elevated', 'flat']
-            : ['outlined', 'elevated', 'flat']),
+            : ['outlined', 'elevated', 'flat'])) {
+            'outline', 'outlined' => $outlinedClasses,
+        },
     }, $scope);
 
     // The interactive treatment is keyed on whether the card DOES something when it is

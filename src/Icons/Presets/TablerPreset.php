@@ -180,11 +180,9 @@ final class TablerPreset implements IconPreset
             // spellings on one glyph is what this vocabulary already does for
             // settings/gear, book/book-open and billing/credit-card.
             //
-            // It points at the target `layers` already ships, which is the part that
-            // matters here specifically: this preset's package cannot be installed
-            // against the Laravel versions the library supports, so nothing verifies
-            // its targets. Reusing an existing one adds no name that no test can
-            // check — see IconPresetTargetTest.
+            // It points at the target `layers` already ships, so the two words share
+            // one glyph; IconPresetTargetTest checks the target against the installed
+            // Tabler set.
             'stack' => 'tabler-stack-2',
 
             // ─── The overflow affordance, and five words an adopting application
@@ -241,12 +239,10 @@ final class TablerPreset implements IconPreset
             'truck' => 'tabler-truck',
             'package' => 'tabler-package',
             'barcode' => 'tabler-barcode',
-            // The one family that draws it and the one this repo cannot check locally:
-            // the Tabler Blade package will not install against the Laravel versions
-            // WireKit requires, so the target-existence test skips this preset by design.
-            // Verified against Tabler's own source instead of guessed —
-            // `icons/outline/cash-register.svg`, category E-commerce, shipped since 3.4.
-            // The name follows the same rule as its neighbors: the file name, prefixed.
+            // The one family that draws it: `icons/outline/cash-register.svg`, category
+            // E-commerce, shipped since 3.4. IconPresetTargetTest checks it against the
+            // installed Tabler set. The name follows the same rule as its neighbors: the
+            // file name, prefixed.
             'cash-register' => 'tabler-cash-register',
             'user-add' => 'tabler-user-plus',
             'user-remove' => 'tabler-user-minus',
@@ -284,17 +280,11 @@ final class TablerPreset implements IconPreset
             //     `cube-transparent` beside `cube`, gives the vocabulary two ways to ask
             //     for one picture, and a reader has no way to guess which.
             //
-            // ⚠️ This list named `sparkles` and `cube` as well, and both are declared
-            // below it — in this file and in the three sibling presets, which carried
-            // the same paragraph word for word. The reason it gave was that a cognate
-            // existed but was ALREADY another alias's target, and that is not the rule
-            // this vocabulary follows. Sharing a glyph is ordinary here: measured across
-            // the four base presets, 10 to 14 targets each carry more than one alias, on
-            // purpose. `danger` and `x-circle` are the same picture; so are `settings`,
-            // `gear` and `cog-6-tooth`. Two words for two INTENTS that happen to look
-            // alike is the pattern. Two spellings of one word is not, and that is the
-            // line above. (It also cited lucide's inventory as the evidence, in all four
-            // files — including the two that are not about lucide.)
+            // Sharing a glyph is ordinary here, and several targets in each base preset
+            // carry more than one alias on purpose. `danger` and `x-circle` are the same
+            // picture; so are `settings`, `gear` and `cog-6-tooth`. Two words for two
+            // intents that happen to look alike is the pattern. Two spellings of one word
+            // is not, and that is the line above.
 
             'arrow-down' => 'tabler-arrow-down',
             'arrow-right' => 'tabler-arrow-right',

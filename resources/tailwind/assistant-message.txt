@@ -50,10 +50,10 @@ $attributes->class([$classes,
 $attributes->class([$classes])
 $attributes->class([$classes]);
 $attributes->class([$groupClasses])
-$attributes->class([$sizeClasses]);
 $attributes->class([$wrapperClasses])
 $attributes->class(['relative
 $attributes->class(['wk-collapsible',
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->except($as
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
@@ -199,6 +199,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeClasses,
 $sizeClasses])
 $sizeMap
@@ -441,7 +442,7 @@ $x)`
 'hover'
 'hover',
 'hover:bg-[var(--color-wk-bg-muted)]
-'hover:opacity-80',
+'hover:opacity-[var(--opacity-wk-hover)]',
 'hover:underline
 'href'
 'img';
@@ -459,6 +460,7 @@ $x)`
 'leadingIcon'
 'lg'
 'lg',
+'lg']))
 'lg']),
 'max-w-[var(--size-wk-tooltip-max)]',
 'md'
@@ -474,7 +476,7 @@ $x)`
 'model'
 'ms-auto'
 'muted'
-'muted']),
+'muted']))
 'name'
 'neutral'
 'neutral'),
@@ -483,7 +485,7 @@ $x)`
 'no-underline',
 'none'
 'none',
-'none']),
+'none']))
 'noopener')
 'off']);
 'off'],
@@ -587,7 +589,7 @@ $x)`
 'tooltip'
 'top'),
 'trailingIcon'
-'transition-colors',
+'transition-[color,text-decoration-color,opacity]',
 'transition-opacity
 'transparent',
 'trigger'
@@ -607,15 +609,15 @@ $x)`
 'var(--color-wk-warning)',
 'variant'
 'variant',
-'w-10
-'w-12
 'w-16
 'w-2
 'w-2.5
 'w-3
 'w-3.5
-'w-6
-'w-8
+'w-[var(--size-wk-lg)]
+'w-[var(--size-wk-md)]
+'w-[var(--size-wk-sm)]
+'w-[var(--size-wk-xs)]
 'w-max',
 'warning'
 'warning',
@@ -635,7 +637,7 @@ $x)`
 'wrapper',
 'x-circle'
 'xl'
-'xl']),
+'xl']))
 'xs'
 'xs',
 'z-[var(--z-wk-tooltip)]',
@@ -649,7 +651,6 @@ $x)`
 ($intent)
 ($intentValue)
 ($isInformative
-($measure)
 ($preset
 ($relAttr
 ($resolvedAriaHidden
@@ -663,29 +664,28 @@ $x)`
 ($style
 ($surface)
 ($svgHtml
-($underline)
-($variant)
-('xs')
-(0.5
-(0.75
+('xs').
 (0.75rem):
-(2.5
-(60)
 (AA
 (Alpine
 (Blade
 (CTA
 (Enter/Space)
 (NOT
-(Note:
 (RTL-safe)
 (SOFT
+(Tailwind
 (WCAG
 (WireKit::validateProp('avatar',
+(WireKit::validateProp('link',
+(WireKit::validateProp('prose',
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
+(`--z-wk-dropdown`),
+(`--z-wk-tooltip`)
 (`.wk-scroll-fade…:focus-within
+(`Support/AlpinePayload.php`
 (`data-wk-tooltip-surface`
 (a
 (adapts
@@ -729,7 +729,6 @@ $x)`
 (inert
 (info).
 (int)
-(it
 (keyboard
 (left,
 (low
@@ -743,7 +742,6 @@ $x)`
 (preserving
 (provides
 (regex
-(removed
 (right),
 (same
 (set
@@ -759,6 +757,7 @@ $x)`
 (true
 (true)
 (typical
+(v3
 (warning),
 (which
 (white-space:
@@ -773,6 +772,7 @@ $x)`
 -
 --border-wk-badge-width
 --border-wk-width
+--color-wk-info
 --measure-wk-wide.
 --measure-wk.
 --measure-wk;
@@ -898,6 +898,7 @@ $x)`
 <ol
 <path
 <pre>
+<pre>,
 <pre><code>
 <span
 <span>
@@ -995,7 +996,6 @@ APPLICATION
 ARIA
 ASCII
 AT
-ATTEMPTED
 Accept
 Accessible
 Actions
@@ -1012,11 +1012,6 @@ Assistant
 Aurora
 Auto-detect
 AvatarPalette::for((string)
-BAG
-BE
-BECAUSE
-BEFORE
-BELOW,
 BOTH
 Base
 Bind
@@ -1044,14 +1039,11 @@ Border
 Both
 Box-shadow
 CALLER's
-CAN
-CANNOT
 CAREFUL:
 CLASS,
 COLUMN
 COMPLETE
 COMPONENT
-CONDITION
 CONTEXT
 CSP
 CSS
@@ -1066,8 +1058,6 @@ Collapsible
 Combine
 Counter
 DEFAULT
-DESCENDANT
-DEVELOPER'S
 DO
 DOM
 Declared
@@ -1086,7 +1076,6 @@ Done
 Dot
 Driven
 Drop
-EMITTED
 ENT_QUOTES).'"',
 EVERY
 Each
@@ -1096,11 +1085,9 @@ Enter.
 Escape
 Escape,
 Every
-FAIL
 FAQ
 FILTER_VALIDATE_BOOLEAN);
 FIRST
-FIRST,
 Fast
 Findable:
 Fixed
@@ -1115,7 +1102,6 @@ GROWS
 Generate
 German
 Graceful
-HERE
 HERE,
 HOVER,
 HOVERABLE:
@@ -1128,14 +1114,9 @@ HoverCard
 How
 Htmlable,
 ID
-IN
-INACCESSIBLE.
 INHERITED
 INNER
-INSIDE
 IS
-IT
-IT,
 Icon
 IconResolver,
 If
@@ -1162,8 +1143,6 @@ Livewire-native
 Logger
 Long-form
 Long-token
-MADE
-MARKUP
 MORPH
 MORPHS
 MOST
@@ -1186,7 +1165,6 @@ Nothing
 Null
 Null,
 OFF
-ON
 ON,
 ONE
 ONLY
@@ -1201,6 +1179,7 @@ OUTLINE:
 OWN
 On
 Only
+Opacity
 Operating
 Opt-IN,
 Optimized
@@ -1208,7 +1187,6 @@ Optional
 Overlap
 Overrides
 PERFECTLY
-POINTING
 POST
 Per-instance
 Pick
@@ -1220,11 +1198,7 @@ Pushery\WireKit\Support\AvatarPalette;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Putting
-RATHER
-RENDER
-RESOLVED
 RTL-correct
-RULE
 Reaches
 React-only
 Readable
@@ -1237,10 +1211,10 @@ Renders
 Replay"
 Reported
 Resolve
+Resolved
 Rich
 Ring
 RuntimeException
-SEE.
 SHAPE
 SIBLING.
 SOFT
@@ -1248,7 +1222,6 @@ SOLID
 SOLID:
 SR
 SR-hint
-STABLE
 STATIC
 SUBMIT
 SVG
@@ -1274,6 +1247,7 @@ State
 Status
 Streaming
 Strip
+Such
 Surface
 SvgNotFound
 SvgNotFound.
@@ -1281,11 +1255,8 @@ Switch
 Symmetric
 TAG
 TEXT,
-THAN
 THE
 THIS
-THROUGH
-TO
 TRIGGER
 Table
 Tailwind
@@ -1314,7 +1285,6 @@ UI,
 UIs
 UNBOUND
 URLs
-USED
 Ugly
 Unconditional,
 Unlike
@@ -1324,10 +1294,8 @@ Validate
 WAI-ARIA
 WANTS
 WAS
-WAY
 WCAG
 WIDTH
-WINDOW,
 WITHOUT
 WRAPPER,
 We
@@ -1489,6 +1457,8 @@ __toString
 `$announceValue`
 `$as`
 `$refs`
+`(string)
+`--color-wk-bg-elevated`,
 `--padding-wk-y-md`
 `--padding-wk-y-sm`
 `--padding-wk-y-xl`
@@ -1505,6 +1475,7 @@ __toString
 `<p>`
 `<pre
 `<pre>`
+`<span>`
 `<template
 `<template>`
 `<x-wirekit::brand-bar>`
@@ -1516,8 +1487,8 @@ __toString
 `ComponentRegistry::category(string
 `Foo::bar(string
 `Illegal
-`Str::random(12)`
 `Svg
+`\u00fc`,
 `_x_dataStack`,
 `active="false"`
 `anywhere`
@@ -1569,6 +1540,7 @@ __toString
 `focusable-trigger`
 `heroicon-m-inbox`
 `hidden="until-found"`
+`icon`
 `inbox`
 `info`
 `initials`
@@ -1610,12 +1582,14 @@ __toString
 `reasoning-seconds="soon"`
 `rel`.
 `resolveClasses()`,
+`ring-*`
+`ring-offset-*`
 `role="dialog"`,
 `role="img"`.
-`scrollable-region-focusable`
 `sentence|all|off`
 `shape="cirlce"`
 `size`
+`size`,
 `sm`,
 `soft`
 `span`:
@@ -1631,10 +1605,11 @@ __toString
 `target="_blank"`
 `text`'s
 `this.$refs.tooltip`
+`transition-colors`
 `type="button"`
 `type="submit"`.
 `type`
-`u00fc`.
+`u00fc`
 `var()`
 `variant="outlined"`;
 `wide`
@@ -1660,7 +1635,6 @@ __toString
 `x-wk-findable.collapse`
 `xl`.
 `xs`,
-`ü`
 a
 a)
 a11y
@@ -1673,7 +1647,6 @@ above:
 absence
 absent,
 accent
-accent),
 accent-fg
 accept
 accessibility
@@ -1760,7 +1733,6 @@ applies
 applying
 arbitrary
 arbitrary-value
-arbitrary-variant
 are
 area's
 aria-allowed-attr
@@ -1804,6 +1776,7 @@ arrives
 arrives,
 arriving
 arrow
+arrow,
 article
 articles
 as
@@ -1819,6 +1792,7 @@ assistant
 assistive
 association
 at
+attempted
 attribute
 attribute,
 attribute-passed
@@ -1833,14 +1807,12 @@ auto-derived
 auto-injection
 auto-invokes
 automatic
-available
 avatar
 avatar,
 avatar.
 avatars
 avatars.
 avoid
-axe's
 axe-core's
 axis
 axis,
@@ -1936,7 +1908,6 @@ border-[var(--color-wk-text)]',
 border-[var(--color-wk-warning)]',
 border.
 bordered-only
-borrows
 both
 bottom
 bottom-0
@@ -2029,6 +2000,7 @@ centering,
 change
 changes
 characters
+charts
 chat
 check
 checked.
@@ -2075,7 +2047,6 @@ class="{{
 classes
 classes:
 classic
-clean.
 cleanly
 clears
 click
@@ -2121,7 +2092,6 @@ common
 compare
 compete
 compile
-compiler
 compiles
 component
 component's
@@ -2129,6 +2099,7 @@ components
 components;
 composer
 composes
+computed
 concentric
 concept,
 condition
@@ -2239,13 +2210,12 @@ data-wk-prose-skip>
 data-wk-tooltip-describedby="{{
 data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
-dead
 dead.
 debug
-debug,
 decided
 decision,
 decision:
+declaration
 declared
 declaring
 decoration.
@@ -2259,8 +2229,6 @@ default);
 default.
 default:
 default;
-default`
-default`,
 defaults
 defaults,
 define('WIREKIT_BLADE_ICONS_WARNED',
@@ -2299,7 +2267,6 @@ dialect
 dialog
 did
 did.
-difference
 different
 differentiator:
 dim
@@ -2345,7 +2312,6 @@ drift
 drives
 drop
 dropdown
-dropdown/sticky
 dropdowns
 drops
 duplicates
@@ -2437,6 +2403,7 @@ fact
 factory,
 factory:
 fade="…">`
+fail
 fail,
 failed"
 fails
@@ -2466,7 +2433,7 @@ file:
 files
 fill
 fill,
-fill;
+fill:
 fill="currentColor"
 fill="none"
 filled
@@ -2480,7 +2447,6 @@ fine).
 finish
 finished
 fire
-fired
 fires
 first
 first,
@@ -2494,6 +2460,7 @@ fixed-height
 fixed`
 fixes
 flags
+flash
 flashes
 flatten
 flattened
@@ -2516,6 +2483,7 @@ focus-visible:ring-[length:var(--ring-wk-width)]
 focus-visible:ring-[var(--color-wk-ring)]',
 focus-within
 focusable
+focusable,
 focused,
 follow
 followable.
@@ -2539,7 +2507,6 @@ foreground
 foreground.
 form
 form)
-form,
 found
 found.`
 four
@@ -2572,15 +2539,15 @@ gap-[var(--space-wk-xs,0.25rem)]
 gap-[var(--space-wk-xs,0.25rem)]">
 gap-x-1',
 gap="sm"`
+gate
+gate,
 gave
 generic
-generous
 genuinely
 get
 gets
 give.
 given,
-gives
 glance
 global
 glyph
@@ -2607,8 +2574,6 @@ guess
 guess:
 gutter
 h-1.5
-h-10
-h-12
 h-16
 h-2',
 h-2.5',
@@ -2618,8 +2583,10 @@ h-3.5',
 h-3/5
 h-4
 h-5
-h-6
-h-8
+h-[var(--size-wk-lg)]
+h-[var(--size-wk-md)]
+h-[var(--size-wk-sm)]
+h-[var(--size-wk-xs)]
 h-full
 h/w
 h2
@@ -2647,12 +2614,13 @@ harder
 harvest
 harvests
 has
+has.
+has:
 hash
 hash.
 hatch
 have
 have)
-have:
 having
 header
 header,
@@ -2678,6 +2646,7 @@ hides
 hiding
 high
 high-contrast
+higher
 hint
 hint)
 historical
@@ -2702,6 +2671,7 @@ however
 href="{{
 hurts
 icon
+icon's
 icon,
 icon-only
 icon;
@@ -2742,11 +2712,13 @@ indicator
 individual
 inert
 inflate
+info
 information
 informative
 informative.
 inherited
 inherited-color
+inherits
 inherits,
 init
 init),
@@ -2791,7 +2763,6 @@ into
 invalid
 inventory
 inverted
-invisible
 invocation`
 is
 is_numeric($reasoningSeconds)
@@ -2817,6 +2788,7 @@ itself
 itself,
 itself.
 json_encode
+jumped.
 just
 justify-between
 justify-center
@@ -2849,6 +2821,7 @@ landing.
 lands
 language.
 large
+larger
 latency
 later
 layer
@@ -2885,12 +2858,14 @@ lines
 lines.
 lines:
 link
+link,
 link-styled
 link.
 linked
 links
 list
 list-none
+list:
 listens
 literal
 literal,
@@ -3065,7 +3040,6 @@ noreferrer')
 normal
 normalizes
 not
-not.
 not:
 note
 nothing
@@ -3080,6 +3054,7 @@ null);
 null,
 null.
 null;
+null`
 number
 numbered
 object,
@@ -3095,7 +3070,6 @@ offers
 offset:
 often
 ol,
-old
 omission.
 on
 on-color
@@ -3118,6 +3092,7 @@ onto
 open
 open.
 open:
+open;
 opened
 opened.
 opening
@@ -3137,6 +3112,7 @@ other.
 otherwise
 our
 out
+out,
 out.
 outer
 outline
@@ -3149,7 +3125,6 @@ overflow
 overflow,
 overflow-x-auto)
 overflow.
-overflows
 overhead.
 overlay
 override
@@ -3179,7 +3154,6 @@ paints
 pair
 pair).
 pairing
-pairing.)
 pairing;
 pairs
 palette
@@ -3242,7 +3216,9 @@ point
 point.
 pointed
 pointer
+pointer),
 pointer-events
+pointer`),
 pointing
 popover
 popover's
@@ -3282,7 +3258,6 @@ problem
 prod).
 produced
 produced:
-production.
 project,
 prominent
 prop
@@ -3297,7 +3272,6 @@ provide
 provides
 proxy
 pt-[var(--padding-wk-y-lg)]
-purpose
 purpose,
 purpose.
 pushed
@@ -3329,12 +3303,11 @@ random
 rate)
 rather
 raw
-re-emitted
 re-inject
 re-introducing
 re-read
 re-renders
-re-renders,
+re-renders.
 re-size
 re-thrown
 reach
@@ -3344,6 +3317,7 @@ reached
 reaches
 read
 read,
+read;
 readability
 readable
 reader
@@ -3379,6 +3353,7 @@ registers.
 registry
 regular,
 regularly
+rejects.
 rel
 rel="noopener
 rel="prev"),
@@ -3386,7 +3361,6 @@ rel="{{
 relative
 reliably
 rem
-rem)
 remove
 removed
 removes
@@ -3425,7 +3399,6 @@ response…");
 rest
 rests
 result
-resurrect
 retrieval
 return
 returns
@@ -3440,7 +3413,6 @@ right-edge
 ring
 ring,
 ring-[var(--color-wk-bg-elevated)]',
-ring-offset-*
 role
 role's
 role,
@@ -3500,10 +3472,8 @@ scale-100"
 scale-95"
 scale.
 scaling
-scan
 scanner
 scanner.
-scans
 scope
 scope,
 scoped
@@ -3524,11 +3494,10 @@ scrolls.
 second
 section
 see
+see.
 seeded
 sees
 sees.
-selector
-selector,
 semantic
 sending.
 sensible
@@ -3544,7 +3513,6 @@ server.
 set
 set,
 sets
-sets,
 setting
 settle
 settles
@@ -3553,16 +3521,15 @@ shadow.
 shadows:
 shape
 shape,
-shapes
 share
 shared
+shares
 shift.
 shimmer
 shimmers
 ship.
 shipped
 ships
-short
 should
 show
 shown
@@ -3601,13 +3568,13 @@ sizes
 sizes,
 sizing
 sizing.
+skips
 slot
 slot's
 slot.
 small
 smaller
 smooth
-snippets,
 so
 so,
 so:
@@ -3615,7 +3582,9 @@ soft
 soft).
 soft-chip
 soft-tone
+solid
 solved
+some
 somebody
 something
 somewhere
@@ -3646,7 +3615,6 @@ stable
 stack
 stack.
 stacking
-stacking).
 stacking-context
 stadium
 stand
@@ -3662,6 +3630,7 @@ state;
 states
 static
 status
+status.
 status:
 stay
 stays
@@ -3680,6 +3649,7 @@ stream
 stream.
 streamed
 streaming
+strictness
 string
 string,
 stringly
@@ -3699,7 +3669,6 @@ styled
 styles
 stylesheet
 stylesheet's
-stylesheet),
 stylesheet).
 submitted
 subtle
@@ -3724,10 +3693,8 @@ svg()
 svg(),
 swapped
 sweep
-sweeps
 switch
 switches
-syntax
 system
 tab
 tab)"
@@ -3759,7 +3726,6 @@ teleported
 tells
 template
 test
-tested
 tests
 text
 text,
@@ -3824,6 +3790,7 @@ those
 three
 through
 throw
+throw,
 throws
 tick
 tidy
@@ -3857,10 +3824,11 @@ toggles
 token
 token,
 token-driven.
-tokenizer
+tokenizers
 tokens
 tokens.
 told
+tone
 too
 too,
 too.
@@ -3868,7 +3836,6 @@ took
 took,
 tooltip
 tooltip,
-tooltip-level
 tooltip.
 tooltips
 top
@@ -3922,7 +3889,6 @@ tuning
 tuning.
 turn
 turn,
-turned
 turns
 twice
 twice.
@@ -3939,7 +3905,6 @@ ul,
 unaffected
 unaffected,
 unaffected.
-unbalanced
 unbound
 unbreakable
 unbroken
@@ -3980,17 +3945,18 @@ users
 uses
 uses.
 using
-utilities
+utilities,
 utility
 utility.
 utils/findable.js.
+v4
 v4's
-v4).
 valid
 validate
 validateProp
 validated
 validator,
+validator:
 value
 value,
 values
@@ -4002,6 +3968,7 @@ variable,
 variant
 variant),
 variant,
+versions).
 vertical
 very
 via
@@ -4074,6 +4041,8 @@ width
 width)
 width,
 width;
+widths
+window,
 wins
 wire:click
 wire:key="wk-assistant-reasoning-{{
@@ -4203,4 +4172,3 @@ zoom,
 —
 →
 ≥4.5:1
-⚠️

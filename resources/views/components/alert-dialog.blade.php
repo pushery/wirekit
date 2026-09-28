@@ -17,17 +17,15 @@
     'scope' => null,
     // Close the dialog once the destructive action has fired.
     //
-    // ⚠️ DEFAULT FALSE, and that is back-compat rather than a recommendation. Leaving it
-    // false is what every dialog shipped before this prop did, and a caller who wants the
-    // close today writes `x-on:click="close()"` on their own control — which works, because
-    // `close()` is in this component's Alpine scope, and is exactly the line this prop
-    // exists to stop everyone from writing.
+    // Default false, and that is back-compat rather than a recommendation: a dialog written
+    // before this prop keeps its panel up. Without it a caller writes `x-on:click="close()"`
+    // on their own control, which works because `close()` is in this component's Alpine
+    // scope, and is exactly the line this prop spares them.
     //
-    // ⚠️ `alert-dialog.confirm` IS NOT THE SAME THING, whatever its name suggests. That
-    // component is a PHRASE GUARD: it refuses an activation until the confirmation string
+    // `alert-dialog.confirm` is not the same thing, whatever its name suggests. That
+    // component is a phrase guard: it refuses an activation until the confirmation string
     // is typed. It fires nothing and closes nothing, so swapping a hand-written
-    // `x-on:click="close()"` for it removes the close and takes the announcement defect
-    // back — on a part whose name promises the opposite.
+    // `x-on:click="close()"` for it removes the close.
     'closeOnConfirm' => config('wirekit.components.alert-dialog.close-on-confirm', false),
     // The exact string a developer must type before `alert-dialog.confirm` will fire —
     // the brake in front of an action nobody can undo. Unset (the default), nothing about
@@ -86,7 +84,8 @@
 
     // Alert Dialog — specialized confirmation dialog for destructive actions.
     // Uses role="alertdialog" (not "dialog") to signal urgency to screen readers.
-    // Non-dismissible by default — user must click Cancel or Confirm.
+    // A backdrop click does not close it by default; Escape always does, so a keyboard
+    // reader is never trapped, and a stray click cannot approve the action.
     // Counted, not random, when there is no name. The same dialog renders the same id on the next
     // round trip, so Livewire's morph keeps the heading instead of replacing it, and a heading
     // re-rendered on its own still carries the id the dialog's aria-labelledby names.

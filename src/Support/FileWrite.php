@@ -14,11 +14,11 @@ use RuntimeException;
  * permission error, a full disk or a read-only mount arrives as SUCCESS: the command prints
  * "published", exits 0, and nothing is on disk.
  *
- * ⚠️ THAT IS THE WORST SHAPE A FAILURE CAN TAKE HERE, because the developer's next step is to
+ * That is the worst shape a failure can take here, because the developer's next step is to
  * use what was supposedly published. They hit a missing asset, and the command that was
- * supposed to put it there has already told them it did. The publish commands did this at
- * seven call sites — every `mkdir`, `copy` and `file_put_contents` in `PublishFontsCommand`
- * and `PublishIconsCommand`.
+ * supposed to put it there has already told them it did. Every `mkdir`, `copy` and
+ * `file_put_contents` in `PublishFontsCommand` and `PublishIconsCommand` goes through here for
+ * that reason.
  *
  * The `@` suppression is deliberate and paired: PHP's own warning is discarded because the
  * exception carries the same information plus the path, and a bare warning to STDERR in the
@@ -77,9 +77,9 @@ final class FileWrite
 
         $written = @file_put_contents($path, $contents);
 
-        // `false` is the failure PHP documents; a SHORT write is the one it does not — a full
-        // disk returns the byte count it managed rather than false, so a file that exists and
-        // is half its content passes a `!== false` check.
+        // A short write (a full disk, a file-size limit) returns `false` with a warning, like
+        // any other failure. The length comparison is a second check on the same promise: the
+        // file holds exactly `$contents`, or this throws.
         if ($written === false || $written !== strlen($contents)) {
             throw new RuntimeException(sprintf(
                 'Could not write %s (%s). Check free space and that the path is writable.',
@@ -92,7 +92,7 @@ final class FileWrite
     /**
      * Best-effort delete for a CLEANUP path, where failing is not worth reporting.
      *
-     * ⚠️ This exists so the difference is visible in the call, and it has exactly one correct
+     * This exists so the difference is visible in the call, and it has exactly one correct
      * use: removing a temp file while already handling a failure. Throwing there would replace
      * the exception the caller is about to raise — the one that says what actually went wrong
      * — with one about the leftover, which is the less useful of the two.

@@ -20,24 +20,38 @@ use JsonException;
  *
  * That does not merely lose the payload. An `x-data` that throws while BUILDING
  * leaves the element with an empty scope, so every directive on it goes quiet —
- * an event calendar handed a week of events renders "No events in this range"
- * and logs nothing.
+ * an event calendar handed a week of events renders "No events in this range",
+ * and the only report is an `Alpine Expression Error` in the browser console.
  *
  * A plain JS literal has no such problem: Alpine's CSP parser accepts object and
  * array literals, and its evaluator returns them as-is. So that is what this
  * emits.
  *
- * ## The two escaping traps, both measured rather than assumed
+ * ## The three escaping traps, all measured rather than assumed
  *
  * **Unicode must stay literal.** `json_encode` escapes non-ASCII as `\u00fc` by
  * default, and Alpine's CSP tokenizer understands only `\n`, `\t`, `\r`, `\\`
  * and the quote — every other backslash is dropped, keeping the letters. So
  * `Grüße` arrives as `Gru00fce`: not an error, just quietly wrong text. That
- * describes @alpinejs/csp 3.16.3. The 3.17.2 tokenizer decodes a four-digit
- * escape of that kind, and still drops the backslash of a hex or a code-point
- * escape. A page runs whichever Alpine its Livewire bundles, which this package
- * does not pin, so this emits the one form every tokenizer measured reads back:
- * the literal character. `JSON_UNESCAPED_UNICODE` is therefore not a preference.
+ * describes @alpinejs/csp 3.16.3, and the tokenizers Livewire 4.0.0 and 4.3.5
+ * bundle. The 3.17.2 tokenizer decodes a four-digit escape of that kind, and
+ * still drops the backslash of a hex or a code-point escape. A page runs
+ * whichever Alpine its Livewire bundles, which this package does not pin, so
+ * this emits the one form every tokenizer measured reads back: the literal
+ * character. `JSON_UNESCAPED_UNICODE` is therefore not a preference, and neither
+ * is `JSON_UNESCAPED_LINE_TERMINATORS`: without it U+2028 and U+2029, which
+ * arrive in text pasted from PDF and office documents, are escaped as well and
+ * read back as the letters `u2028`.
+ *
+ * **A control character has no form every tokenizer reads.** JSON must escape
+ * the characters below U+0020. Newline, tab and carriage return keep the three
+ * escapes the tokenizer knows; every other one would arrive wrong — `\f` reads
+ * back as the letter `f` and `\b` as `b` in every tokenizer measured, and
+ * `\u0001` as `u0001` below Alpine 3.17 — and written raw it would put a control
+ * character into an HTML attribute. So each becomes U+FFFD, the replacement
+ * character, which is also what the HTML parser itself puts in place of a NUL in
+ * an attribute value. Replaced rather than removed, so two words a stray control
+ * character separated do not quietly become one.
  *
  * **The quotes are HTML's problem, not JavaScript's.** The result contains `"`,
  * which would end the attribute it sits in — so it MUST be echoed through
@@ -67,13 +81,31 @@ use JsonException;
 final class AlpinePayload
 {
     /**
+     * `mixed`, because encoding any value a component hands an Alpine directive is the whole
+     * job: a string, a number, a list, a map. What JSON cannot represent throws.
+     *
      * @throws JsonException when the value cannot be represented as JSON
      */
     public static function from(mixed $value): string
     {
-        return json_encode(
+        $json = json_encode(
             $value,
-            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_LINE_TERMINATORS
+        );
+
+        // Most payloads carry no escape at all, and then there is nothing to rewrite.
+        if (! str_contains($json, '\\')) {
+            return $json;
+        }
+
+        // The escapes are consumed left to right, so the `b` in an escaped backslash
+        // followed by a letter (`\\b`, a Windows path) is never read as a control escape.
+        // What is left after the flags above: `\"`, `\\`, `\n`, `\t`, `\r`, and the
+        // control characters JSON must escape, as `\b`, `\f` or `\u00XX`.
+        return (string) preg_replace_callback(
+            '/\\\\(u[0-9a-fA-F]{4}|.)/',
+            static fn (array $escape): string => self::isControlEscape($escape[1]) ? "\u{FFFD}" : $escape[0],
+            $json,
         );
     }
 
@@ -97,10 +129,26 @@ final class AlpinePayload
      *
      * `null` casts to `''`, which is what Blade already echoed for it.
      *
+     * `mixed`, for the same reason `{{ }}` takes anything: the value is a prop, and the cast is
+     * what makes it a string.
+     *
      * @throws JsonException when the value cannot be represented as JSON
      */
     public static function string(mixed $value): string
     {
         return self::from((string) $value);
+    }
+
+    /**
+     * Whether an escape, without its backslash, stands for a control character other than
+     * newline, tab and carriage return, the three every tokenizer measured reads back.
+     */
+    private static function isControlEscape(string $escape): bool
+    {
+        if ($escape === 'b' || $escape === 'f') {
+            return true;
+        }
+
+        return strlen($escape) === 5 && hexdec(substr($escape, 1)) < 0x20;
     }
 }

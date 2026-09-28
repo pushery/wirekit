@@ -30,10 +30,11 @@
  *
  * The consequence is worse than one dead binding: an `x-data` that names a
  * global throws while BUILDING the component, so the element ends up with an
- * empty scope and every directive on it silently does nothing. Measured in a
- * real browser under `script-src 'self'`: an event-calendar handed one event
- * rendered "No events in this range", `Alpine.$data(el)` returned an object
- * with zero keys, and nothing was logged where a developer would look.
+ * empty scope and every directive on it does nothing. The only report is the
+ * `Alpine Expression Error` the build writes to the browser console. Measured in
+ * a real browser under `script-src 'self'`: an event-calendar handed one event
+ * rendered "No events in this range", and `Alpine.$data(el)` returned an object
+ * with zero keys.
  *
  * The list is written out rather than read from this process's `globalThis`,
  * because node's globals and a browser's differ in both directions — deriving

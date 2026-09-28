@@ -6,7 +6,6 @@
 "Phantom
 "maximum
 "min
-"shrink
 $announceError
 $announceErrors
 $attributes
@@ -200,7 +199,6 @@ ${minPercent}%`
 (decorative)
 (exactly
 (is_array($valueTextMap))
-(no
 (not
 (now
 (only
@@ -262,7 +260,6 @@ ${minPercent}%`
 20rem
 256px
 280px
-288px:
 28px
 2px
 2rem;"
@@ -388,13 +385,13 @@ Change
 Compute
 Concatenating
 DECLARED
-DENSE,
 DO
 DOCUMENTED
 DOM
 DOM.
 Declared
 Decorative;
+Dense,
 Description
 Dev-only
 Disable
@@ -410,7 +407,6 @@ Every
 Extra
 Fully
 GROUP
-HARD
 HTML
 Handles
 Hidden
@@ -419,7 +415,6 @@ Home/End
 IDREF
 INSIDE
 IS
-In
 It
 Its
 JS
@@ -466,7 +461,6 @@ REPLACES
 REQUIRED
 Rendered
 Renders
-Reported
 Required
 Routing
 SAME
@@ -486,7 +480,6 @@ Structure
 Support\DomId
 THIS
 THUMB's
-TOP
 TRACK
 TUPLE:
 Tailwind
@@ -503,6 +496,7 @@ WHICH
 We
 When
 Whichever
+WireKit
 WireKit::resolveClasses('label',
 WireKit::resolveClasses('range-slider',
 WireKit::warnUnknownProps('range-slider',
@@ -580,7 +574,7 @@ _ready
 `minVal
 `minVal`,
 `minVal`/`maxVal`,
-`ms-0.5`
+`ms-0.5`,
 `name`
 `null`
 `optimistic="method"`
@@ -602,6 +596,7 @@ _ready
 `width:
 `wire:model{modifiers}="prop.max"`.
 `wire:model{modifiers}="prop.min"`
+`wirekitRangeSlider`
 `x-show`
 `x-show`.
 `{{
@@ -618,7 +613,6 @@ accessible
 across
 action
 actually
-adopting
 after
 against
 against,
@@ -647,7 +641,6 @@ anyway,
 app
 appears
 appended
-application.
 apps
 arbitration
 are
@@ -718,7 +711,6 @@ been
 before
 before,
 behaves
-behavior
 belongs
 below
 between
@@ -760,6 +752,7 @@ bubbles
 build
 builds
 bullet
+bundle.
 but
 by
 byte.
@@ -789,7 +782,6 @@ check.
 child
 children,
 circle's
-claim.
 clamp
 clamp.
 clamps
@@ -816,7 +808,7 @@ collapses
 collapsing
 colliding
 colors
-column,
+column
 come
 comes
 comment
@@ -880,7 +872,6 @@ defaults:
 defers
 dense.
 depend
-dependency
 described
 describedby
 describes
@@ -904,7 +895,6 @@ div)
 div,
 div.
 document
-documentation
 does
 does),
 doesn't
@@ -1072,6 +1062,7 @@ handlers,
 handles
 hang
 happened
+hard
 hardcoded
 has
 have
@@ -1111,7 +1102,6 @@ indicator
 individual
 initial
 inline
-inlined
 inner
 input
 input.blade.php.
@@ -1120,7 +1110,6 @@ inside
 instead
 instead.
 integration
-intended
 interactive
 interchangeable:
 interrupt
@@ -1178,7 +1167,6 @@ listener
 live
 load-bearing:
 locale
-logic
 long
 longer
 looked
@@ -1341,8 +1329,8 @@ pair
 pair,
 paragraph
 parent
-parent",
 parent's
+parent:
 parses
 part
 partial
@@ -1359,10 +1347,9 @@ per-thumb
 percent
 percentages
 perf
-phone
 picks
 pixel-identical:
-pixels
+pixels,
 place
 placed
 placeholder
@@ -1398,7 +1385,7 @@ props
 props-table
 public
 purpose:
-pushed
+push
 put
 put:
 puts
@@ -1438,6 +1425,7 @@ region
 region)
 region,
 region.
+registered
 relative
 remain
 remove
@@ -1503,7 +1491,6 @@ server
 server-side
 set
 sets
-seven
 shadow-[var(--shadow-wk-sm)]
 shape
 shape.
@@ -1518,6 +1505,7 @@ showed
 shown
 shown,
 shows
+shrink
 shrink-to-fit
 siblings
 side
@@ -1772,11 +1760,10 @@ who
 whole
 whose
 why
-wide
+wide,
 wider
 widest
 width
-width,
 width/height
 win
 window
@@ -1785,7 +1772,6 @@ wins,
 wins;
 wire:model
 wire:model*
-wirekit.js
 wiring.
 with
 withdrawal.
@@ -1856,4 +1842,3 @@ z-30"
 —
 …
 →
-⚠️

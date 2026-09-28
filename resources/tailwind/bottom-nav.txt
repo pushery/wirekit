@@ -11,7 +11,7 @@ $accessibleName
 $active
 $attributes
 $attributes->class([$classes])
-$attributes->class([$sizeClasses]);
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->except('rel')->class([$classes])
 $attributes->except(['interactive']);
 $attributes->get('aria-hidden');
@@ -66,6 +66,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -158,7 +159,7 @@ $validated
 ($size
 ($svgHtml
 ('.($active
-('xs')
+('xs').
 (-top-1.5
 (Alpine),
 (WCAG
@@ -241,23 +242,17 @@ ALSO
 AND
 API:
 AT
-ATTEMPTED
 Adding
 Alpine
 AlpinePayload,
 An
 Auto-inject
-BECAUSE
-BELOW,
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
 BooleanProp::from($active,
 BooleanProp::from($interactive,
 BooleanProp::from($mobileOnly,
-CAN
-CANNOT
-CONDITION
 CSP
 CSS
 Catching
@@ -272,21 +267,15 @@ EMPTY
 ENT_QUOTES).'"',
 EVERY
 Every
-FAIL
 FILTER_VALIDATE_BOOLEAN);
 Fully
 Graceful
-HERE,
 HTML
 HTTP
 Handy
 Hide
 Htmlable,
-IN
 INITIAL
-INSIDE
-IS
-IT
 Icon
 IconResolver,
 If
@@ -318,7 +307,6 @@ PERFECTLY
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RENDER
 Read
 Reapply
 Render
@@ -327,7 +315,6 @@ Renders
 Reported
 Resolve
 RuntimeException
-SEE.
 SVG
 SVG:
 Silent
@@ -338,14 +325,13 @@ SvgNotFound
 SvgNotFound.
 Symmetric
 TAG
-THE
+TOKEN
 The
 This
 Throwing
 UNBOUND
 Unconditional,
 Vertical
-WAY
 We
 What
 Which
@@ -372,6 +358,7 @@ With
 __('wirekit::Main'),
 __toString
 `$href`:
+`<span>`
 `@aware`
 `@props`
 `Svg
@@ -384,6 +371,7 @@ __toString
 `fab.action`
 `heroicon-m-inbox`
 `href`
+`icon`
 `inbox`
 `interactive`,
 `label`
@@ -447,6 +435,7 @@ as
 as,
 asserted:
 at
+attempted
 attribute
 attribute,
 auto-derived
@@ -466,6 +455,7 @@ because
 becomes
 behavior
 belongs
+below,
 below.
 bg-[var(--color-wk-danger)]
 binding
@@ -510,10 +500,12 @@ chevrons,
 choice
 chose
 claims,
+class
 class="absolute
 class="h-6
 class="relative
 class="truncate">{{
+classes
 click
 clicking
 clicks
@@ -557,7 +549,6 @@ data-wk-bottom-nav-badge
 data-wk-bottom-nav-item
 data-wk-prose-skip
 debug
-debug,
 decided
 decision,
 decision:
@@ -623,6 +614,7 @@ exhausting
 exists.
 explicitly
 factory:
+fail
 fallback
 fallback,
 fallback.
@@ -662,6 +654,8 @@ function
 function).
 function_exists('svg'))
 gap-1',
+gate
+gate,
 gates
 get
 gets
@@ -687,6 +681,7 @@ header,
 heavier
 helper
 here
+here,
 here.
 hidden
 hint
@@ -696,6 +691,7 @@ house
 href
 href="{{
 icon
+icon's
 icon)
 icon-only
 icon;
@@ -714,7 +710,6 @@ in
 including
 indicator,
 indicator.
-inert
 informative
 informative.
 initial
@@ -761,6 +756,7 @@ ladder
 landmark
 landmark,
 later
+layer
 layout
 leading-4
 leave
@@ -803,6 +799,7 @@ mode
 mode's
 more
 move
+moves
 n/a
 name
 name,
@@ -838,6 +835,7 @@ null);
 null,
 null;
 number
+number,
 number.
 occurrence
 of
@@ -880,6 +878,7 @@ path
 pattern
 per-set
 person
+personalization
 phone
 pinned
 place
@@ -896,7 +895,6 @@ preserves
 preset
 problem
 prod).
-production.
 project,
 prop
 prop's
@@ -935,6 +933,7 @@ renders
 replace
 replaced
 replaces
+reported
 reproduced
 request
 require
@@ -968,6 +967,7 @@ screen-reader
 screen-reader-skipping
 second,
 see
+see.
 seeds
 sees
 self-contained
@@ -1012,6 +1012,7 @@ str_contains($relAttr,
 str_contains($targetAttr,
 straight
 stray
+strictness
 string
 string,
 strip
@@ -1044,6 +1045,8 @@ that
 that,
 the
 their
+them.
+theme
 then
 there
 there,
@@ -1053,12 +1056,14 @@ this
 three
 through
 throw
+throw,
 throws
 tile
 to
 to.
 toHtml().
 tokenizer
+too.
 top
 touches
 track
@@ -1142,7 +1147,7 @@ written
 x-data="{
 yet.
 you
-z-40',
+z-[var(--z-wk-sticky)]',
 {
 {!!
 {{
@@ -1156,4 +1161,3 @@ z-40',
 }}</span>
 }}`
 —
-⚠️

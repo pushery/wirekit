@@ -19,7 +19,7 @@ $attributes
 $attributes->class([
 $attributes->class([$classes])
 $attributes->class([$classes]);
-$attributes->class([$sizeClasses]);
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -75,6 +75,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -203,7 +204,7 @@ $variantValue
 ($svgHtml
 ($variant)
 ($variantValue)
-('xs')
+('xs').
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
@@ -293,12 +294,9 @@ AND
 ANNOUNCED.
 API:
 AT
-ATTEMPTED
 Adding
 An
 Animation
-BECAUSE
-BELOW,
 Bind
 Blade
 Blade-heroicons'
@@ -306,9 +304,6 @@ BladeUI\Icons\Svg
 BooleanProp::from($active,
 BooleanProp::from($shimmer,
 BooleanProp::from($status,
-CAN
-CANNOT
-CONDITION
 CSS
 Catching
 Check
@@ -321,20 +316,14 @@ Dev-only
 Drop
 ENT_QUOTES).'"',
 EVERY
-FAIL
 Full
 Fully
 Giving
 Graceful
 HERE
-HERE,
 HTTP
 Horizontal
 Htmlable,
-IN
-INSIDE
-IS
-IT
 Icon
 IconResolver,
 If
@@ -365,7 +354,6 @@ Present
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RENDER
 React-only
 Reapply
 Render
@@ -373,7 +361,6 @@ Renders
 Reported
 Resolve
 RuntimeException
-SEE.
 SVG
 SVG:
 Semantic
@@ -386,7 +373,6 @@ SvgNotFound
 SvgNotFound.
 Symmetric
 TAG
-THE
 THIS
 That
 The
@@ -397,7 +383,6 @@ UNBOUND
 Use
 Validate
 Vertical
-WAY
 WITHOUT
 We
 Whether
@@ -428,6 +413,7 @@ With
 __toString
 `:aria-label`
 `:label`
+`<span>`
 `<x-wirekit::divider
 `Svg
 `active="false"`
@@ -441,6 +427,7 @@ __toString
 `config()`
 `date-separator`
 `heroicon-m-inbox`
+`icon`
 `inbox`
 `prop="false"`
 `role="img"`.
@@ -512,6 +499,7 @@ asked
 asserted:
 assistive
 at
+attempted
 attribute
 attribute,
 auditor
@@ -525,6 +513,7 @@ because
 become
 becomes
 below
+below,
 below.
 between
 blade-heroicons
@@ -566,6 +555,7 @@ caller,
 calling
 calmer,
 can
+cannot
 carries
 carry
 case
@@ -583,6 +573,7 @@ class
 class;
 class="shrink-0
 class="shrink-0"
+classes
 cleanly
 close
 close-icons,
@@ -618,7 +609,6 @@ data-wk-chat-marker-content>
 data-wk-prose-skip
 date
 debug
-debug,
 decided
 decision,
 decision:
@@ -685,6 +675,7 @@ explaining
 explicit
 explicitly
 factory:
+fail
 fallback
 fallback,
 fallback.
@@ -721,6 +712,8 @@ function
 function).
 function_exists('svg'))
 gap-[var(--gap-wk-sm)]',
+gate
+gate,
 get
 gets
 global
@@ -747,11 +740,13 @@ have
 have)
 helper
 here
+here,
 here:
 hidden
 historical
 house
 icon
+icon's
 icon-only
 icon;
 icons
@@ -903,6 +898,7 @@ passes
 path
 pb-[var(--space-wk-sm)]',
 per-set
+personalization
 place
 placeholder
 plain
@@ -919,7 +915,6 @@ preserves
 preset
 problem
 prod).
-production.
 progress
 project,
 prop's
@@ -959,6 +954,7 @@ renders
 renders,
 replaced
 replaces
+reported
 reproduced
 request
 require
@@ -990,6 +986,7 @@ same
 say
 screen-reader-skipping
 see
+see.
 sees
 semantic
 sensible
@@ -1040,6 +1037,7 @@ stop
 stopped
 storage/logs/laravel.log.
 streaming
+strictness
 string
 string,
 strings
@@ -1081,6 +1079,7 @@ this
 three
 through
 throw
+throw,
 throws
 tile
 to
@@ -1143,6 +1142,7 @@ what
 when
 when:
 whenever
+where
 wherever
 whether
 which
@@ -1182,4 +1182,3 @@ yet.
 }}>
 }}>{{
 —
-⚠️

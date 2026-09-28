@@ -43,7 +43,7 @@
 <button
     {{ $attributes->merge([
         'type' => 'button',
-        'class' => 'wk-replay-button',
+        'class' => \Pushery\WireKit\WireKit::resolveClasses('replay-button', 'base', 'wk-replay-button'),
         'aria-label' => $label,
     ]) }}
     @if($target)

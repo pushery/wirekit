@@ -24,6 +24,7 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('sidebar.group', $attributes->getAttributes());
 
     use Pushery\WireKit\Support\BooleanProp;
+    use Pushery\WireKit\Support\DomId;
     use Pushery\WireKit\WireKit;
 
     // Blade compiles an UNBOUND attribute to a string, and 'false' is truthy — normalize
@@ -88,35 +89,32 @@
         $groupLabel !== null || $attributes->has('aria-labelledby') ? 'group' : null
     );
 
-    // The disclosed region's id, so the trigger's `aria-controls` can name it. Seeded
-    // rather than randomized: a per-render id makes Livewire's morph replace the live
-    // region with a clone, which replays the collapse transition.
+    // The disclosed region's id, so the trigger's `aria-controls` can name it. Seeded:
+    // a per-render id would make Livewire's morph replace the live region with a clone,
+    // which replays the collapse transition.
     // Suffixed because the bag emits a caller-supplied `id` on the ROOT, and two
     // elements sharing one id is a defect of its own.
     // Only the collapsible branch has a region to name, so a static group computes
     // nothing — the id would be a value nothing reads.
     //
-    // The seed falls back PAST the label, because an unlabeled collapsible group is a
+    // The seed falls back past the label, because an unlabeled collapsible group is a
     // shipped shape here rather than an edge case: the trigger below carries a generic
-    // name for exactly it. `stableId` with no seed returns a random suffix, so seeding
-    // from the label alone would re-randomize that shape's id on every render and hand
-    // it the morph churn this seeding exists to prevent. `persist` comes next because
-    // two unlabeled groups that both persist their fold state must already carry
-    // distinct keys to keep distinct state.
+    // name for exactly it. `persist` comes next because two unlabeled groups that both
+    // persist their fold state must already carry distinct keys to keep distinct state.
+    // With neither, `stableId` counts, which is page-unique and the same on the next
+    // render.
     //
-    // The constant is last, and it DOES collide: two unlabeled, unpersisted collapsible
-    // groups on one page share a panel id. That is the deliberate trade — the collision
-    // needs two anonymous groups on one page, while the random id was wrong on every
-    // render of every one of them. `sidebar.collapsible` keeps a random fallback for its
-    // own anonymous case on purpose, and says so there; the shapes differ because that
-    // one has an icon to seed from and this one has nothing.
+    // A seed can still repeat on one page: the same label in two sidebars, or in two
+    // previews of one documentation page. The deduper keeps the first id as it is and
+    // appends `-2` to a repeat, so each trigger names its own region. An id the caller
+    // chose is used as given.
     $panelId = $collapsible
-        ? ($attributes->get('id') ?: WireKit::stableId(
+        ? ($attributes->get('id') ?: DomId::unique(WireKit::stableId(
             'wk-sidebar-group',
             (string) $label !== ''
                 ? (string) $label
-                : (is_string($persist) && $persist !== '' ? $persist : 'section')
-        )).'-panel'
+                : (is_string($persist) && $persist !== '' ? $persist : null)
+        ), 'wk-sidebar-group-')).'-panel'
         : null;
 @endphp
 

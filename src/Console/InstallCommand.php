@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 use InvalidArgumentException;
 use Pushery\WireKit\Fonts\FontPreset;
 use Pushery\WireKit\Fonts\FontRegistry;
+use Pushery\WireKit\Support\AppCss;
 use Pushery\WireKit\Support\ComponentManifest;
 use Pushery\WireKit\Support\FileWrite;
 use Pushery\WireKit\Support\InstallLog;
@@ -101,8 +102,7 @@ class InstallCommand extends Command
 
         // Pre-flight validation — collects EVERY error in one pass so the
         // user sees the full picture, not just the first failure. Errors
-        // always abort. Warnings abort under default-strict OR under
-        // `--strict` (legacy spelling — kept as alias), proceed under
+        // always abort. Warnings abort by default and proceed under
         // `--no-strict` or `--force`. Decision matrix documented in
         // docs/cli-reference.md.
         [$errors, $warnings] = $this->preflightValidate();
@@ -176,24 +176,25 @@ class InstallCommand extends Command
                 $this->trackInstallAction('apply-theme-preset', $appCssForTheme, (string) file_get_contents($appCssForTheme));
             }
             $themeResult = $this->call('wirekit:theme', ['preset' => $preset]);
-            if ($themeResult !== self::SUCCESS && ! $this->option('ignore-failed-flags')) {
-                $this->error('Install aborted — theme preset application failed.');
-                $this->closeInstallLog(failed: true);
-
-                return $themeResult;
+            if ($themeResult !== self::SUCCESS && $this->stopAfterFailedFlag('Install aborted — theme preset application failed.')) {
+                return self::FAILURE;
             }
         }
 
         $apexLicenseResult = $this->processApexLicenseFlag();
-        if ($apexLicenseResult !== self::SUCCESS) {
-            $this->closeInstallLog(failed: true);
-
-            return $apexLicenseResult;
+        if ($apexLicenseResult !== self::SUCCESS && $this->stopAfterFailedFlag('Install aborted — --apex-license could not be applied.')) {
+            return self::FAILURE;
         }
 
         $this->line('');
-        $verifyResult = $this->call('wirekit:verify');
-        if ($verifyResult !== self::SUCCESS && ! $this->option('ignore-failed-flags')) {
+        // Without --ignore-failed-flags a failed verify ends the run as a failure. With it the
+        // install is finished and recorded like any other, and the exit code stays with the
+        // flags: that is the option's contract, and what lets an install run where verify cannot
+        // pass yet (no app.css, assets not built). What it no longer does is call that a
+        // success.
+        $verifyFailed = $this->call('wirekit:verify') !== self::SUCCESS;
+        if ($verifyFailed && ! $this->option('ignore-failed-flags')) {
+            $this->error('Install incomplete — `wirekit:verify` reported a problem. See output above for details.');
             $this->closeInstallLog(failed: true);
 
             return self::FAILURE;
@@ -204,11 +205,18 @@ class InstallCommand extends Command
         $this->line('');
         if ($this->failedFlagCount > 0) {
             $this->components->warn(sprintf(
-                'WireKit installed with %d failed flag(s). See output above for details.',
-                $this->failedFlagCount
+                'WireKit installed with %d failed flag(s)%s. See output above for details.',
+                $this->failedFlagCount,
+                $verifyFailed ? ', and `wirekit:verify` reported a problem' : ''
             ));
 
             return self::FAILURE;
+        }
+
+        if ($verifyFailed) {
+            $this->components->warn('WireKit installed, but `wirekit:verify` reported a problem. See output above for details; --ignore-failed-flags keeps the exit code at 0 for it.');
+
+            return self::SUCCESS;
         }
 
         $this->info('WireKit installed successfully!');
@@ -218,6 +226,31 @@ class InstallCommand extends Command
 
     /** Counter for --ignore-failed-flags reporting. */
     private int $failedFlagCount = 0;
+
+    /**
+     * One answer for a flag that failed mid-install, so no flag branch can fall through
+     * uncounted.
+     *
+     * Returns true when the install stops here. Under --ignore-failed-flags the failure is
+     * counted and the remaining steps still run; the count decides the exit code at the end,
+     * which is 1 whenever it is above zero. Without the option the install log is closed as
+     * failed and the caller returns FAILURE.
+     *
+     * The font flags count their own failures, one per flag, in processFontFlags().
+     */
+    private function stopAfterFailedFlag(string $abortMessage): bool
+    {
+        if ($this->option('ignore-failed-flags')) {
+            $this->failedFlagCount++;
+
+            return false;
+        }
+
+        $this->error($abortMessage);
+        $this->closeInstallLog(failed: true);
+
+        return true;
+    }
 
     /**
      * Pending install-log entries, flushed on closeInstallLog(success).
@@ -477,24 +510,29 @@ class InstallCommand extends Command
     }
 
     /**
-     * Finalize the install log. Successful installs flush the pending
-     * entries to base_path('.wirekit-install.log') as a JSON-Lines file
-     * (one entry per line, append-only within the retained window — see
-     * InstallLog::SESSIONS_KEPT). Failed installs discard the pending
-     * entries — they reflect partial state that rollback wouldn't know
-     * how to reason about.
+     * Finalize the install log: flush the pending entries to
+     * base_path('.wirekit-install.log') as a JSON-Lines file (one entry per
+     * line, append-only within the retained window — see
+     * InstallLog::SESSIONS_KEPT).
+     *
+     * An aborted run is recorded too, marked `failed`. By the time a flag or
+     * the verify step fails, the config, the assets and the edits to app.css
+     * and the layout are already on disk, and each entry holds what its file
+     * looked like before. Discarding them left those changes with no record,
+     * and `--rollback` then reversed the session BEFORE the failed one,
+     * restoring files to an older state while the failed run stayed. A run
+     * that stops before its first change (pre-flight) has nothing pending and
+     * writes nothing.
      */
     private function closeInstallLog(bool $failed): void
     {
-        if ($failed || $this->pendingInstallLog === []) {
-            $this->pendingInstallLog = [];
-
+        if ($this->pendingInstallLog === []) {
             return;
         }
 
         $logPath = base_path('.wirekit-install.log');
         $sessionId = uniqid('install-', true);
-        $sessionHeader = ['session_id' => $sessionId, 'started_at' => date('c'), 'actions' => $this->pendingInstallLog];
+        $sessionHeader = ['session_id' => $sessionId, 'started_at' => date('c'), 'failed' => $failed, 'actions' => $this->pendingInstallLog];
 
         $lines = [];
         $lines[] = json_encode($sessionHeader, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
@@ -503,7 +541,9 @@ class InstallCommand extends Command
             // Through InstallLog rather than File::append, because the write and the window
             // belong together: an append that does not trim is the unbounded form this had.
             InstallLog::append($logPath, implode("\n", $lines));
-            $this->line('  <fg=gray>i</> Install actions recorded in .wirekit-install.log (use `wirekit:install --rollback` to reverse).</>');
+            $this->line($failed
+                ? '  <fg=gray>i</> The changes this run made before it stopped are recorded in .wirekit-install.log (use `wirekit:install --rollback` to reverse them).</>'
+                : '  <fg=gray>i</> Install actions recorded in .wirekit-install.log (use `wirekit:install --rollback` to reverse).</>');
         } catch (\Throwable $e) {
             // Log-write is non-fatal — installs still succeed.
         }
@@ -572,16 +612,11 @@ class InstallCommand extends Command
 
         $lastSession = json_decode($lastLine, true);
 
-        // ⚠️ A SECOND --rollback USED TO SILENTLY RE-APPLY THE SAME SESSION AND REPORT
-        // SUCCESS. The handler read the last line and never consumed it, so running it
-        // twice wrote the identical before-snapshots again: the project stayed where the
-        // first rollback had put it, the command printed "Rollback complete — N file(s)
-        // restored." and exited 0. There was no error, no warning and no output difference
-        // from a genuine second step, so a developer stepping back two installs believed
-        // they had reached a baseline they never left.
-        //
-        // A completed rollback now appends a marker, which is what makes the log a record
-        // of what HAPPENED rather than only of what was installed.
+        // A completed rollback appends a marker, so a second --rollback refuses instead of
+        // re-applying the same session and reporting success. Re-applying would write the
+        // identical before-snapshots again, and a developer stepping back two installs would
+        // believe they had reached a baseline they never left. The marker is what makes the
+        // log a record of what happened rather than only of what was installed.
         if (is_array($lastSession) && isset($lastSession['rolled_back'])) {
             $this->error('The most recent install session has already been rolled back.');
             $this->line(sprintf('  Session %s was undone at %s.', $lastSession['rolled_back'], $lastSession['at'] ?? 'an earlier time'));
@@ -597,7 +632,12 @@ class InstallCommand extends Command
             return self::FAILURE;
         }
 
-        $this->info(sprintf('Rolling back session %s (%d action(s))…', $lastSession['session_id'] ?? '?', count($lastSession['actions'])));
+        $this->info(sprintf(
+            'Rolling back session %s%s (%d action(s))…',
+            $lastSession['session_id'] ?? '?',
+            ($lastSession['failed'] ?? false) === true ? ', an install that was aborted' : '',
+            count($lastSession['actions'])
+        ));
         $this->line('');
 
         $restored = 0;
@@ -606,7 +646,7 @@ class InstallCommand extends Command
             /*
              * The path is CONFINED to the project before anything is written or deleted.
              *
-             * ⚠️ `$action['file']` comes out of `.wirekit-install.log`, a JSON file in the
+             * `$action['file']` comes out of `.wirekit-install.log`, a JSON file in the
              * project root — so it is data this command reads, not data it produced in this
              * process. `base_path('../../.ssh/authorized_keys')` resolves outside the project
              * happily, and the two branches below are `File::delete()` and `File::put()`. A
@@ -618,11 +658,11 @@ class InstallCommand extends Command
              * not exist yet on the restore branch, and a non-existent path has no realpath.
              */
             /*
-             * ⚠️ THE SHAPE IS CHECKED BEFORE THE KEY IS READ, AND THIS LINE SITS OUTSIDE THE
-             * `try` BELOW — so an entry without a `file` key did not fail this one entry, it
-             * threw out of the loop and ended the whole rollback. Laravel's error handler
+             * The shape is checked before the key is read, and this line sits outside the
+             * `try` below, so an entry without a `file` key would not fail this one entry: it
+             * would throw out of the loop and end the whole rollback. Laravel's error handler
              * turns an undefined-index warning into an `ErrorException`, and the `catch` that
-             * would have contained it starts eight lines further down.
+             * would contain it starts further down.
              *
              * That is the worst moment for an abort: earlier entries have already been
              * restored, so the project is left half-undone with no record of where it stopped.
@@ -712,7 +752,9 @@ class InstallCommand extends Command
             $this->line('    <fg=yellow>!</> '.str_replace(base_path().'/', '', $appCss).' (does NOT exist — install would emit a manual-action hint)');
         } else {
             $contents = (string) file_get_contents($appCss);
-            $needsSource = ! (str_contains($contents, 'wirekit') && str_contains($contents, '@source'));
+            // The same reading the install itself makes, so the dry run cannot promise a line the
+            // install would then skip, or the other way round.
+            $needsSource = ! AppCss::includesWireKitTemplates($contents);
             if ($needsSource) {
                 $this->line('    <fg=cyan>~</> resources/css/app.css (would inject @source directive)');
             }
@@ -878,15 +920,9 @@ class InstallCommand extends Command
      * without it is not a failure. An unknown tier is a FAILURE with the allowed values
      * named, because a typo here would otherwise be written into the config silently.
      *
-     * ⚠️ THE NOTICE IS PRINTED BEFORE THE CONFIG IS TOUCHED, and that order is the point:
+     * The notice is printed before the config is touched, and that order is the point:
      * the flag records acceptance, it does not gate the notice. A developer who skips the
      * installer still meets it on the chart docs page and from `wirekit:doctor`.
-     *
-     * ⚠️ This method carried the docblock of `processFontFlags()` — "Routes each `--font*`
-     * flag through the font-override injector" — which is a description of a different
-     * method a hundred lines further down, and one that already has its own. `src/` ships to
-     * Packagist, so that sentence was what an editor showed a developer hovering a method
-     * that writes a license tier.
      */
     private function processApexLicenseFlag(): int
     {
@@ -928,8 +964,11 @@ class InstallCommand extends Command
         $this->line('');
 
         // Persist into config/wirekit.php — load existing config, merge,
-        // write back.
-        $this->writeApexConfig($tier);
+        // write back. The success line is printed only once the file says so:
+        // it used to follow every call, including the three that wrote nothing.
+        if (! $this->writeApexConfig($tier)) {
+            return self::FAILURE;
+        }
 
         $this->info(sprintf('Set charts.library => apexcharts and charts.apex_license => %s', $tier));
 
@@ -939,9 +978,10 @@ class InstallCommand extends Command
     /**
      * Persist charts.library => 'apexcharts' AND charts.apex_license => <tier>
      * to the developer's config/wirekit.php. Falls back to a console hint when
-     * the file is unwritable (e.g. read-only deploy).
+     * the file is missing, cannot be rewritten or cannot be written (e.g. a
+     * read-only deploy), and returns false in each of those cases.
      */
-    private function writeApexConfig(string $tier): void
+    private function writeApexConfig(string $tier): bool
     {
         $configPath = config_path('wirekit.php');
         if (! file_exists($configPath)) {
@@ -951,7 +991,7 @@ class InstallCommand extends Command
                 $tier,
             ));
 
-            return;
+            return false;
         }
 
         $contents = (string) file_get_contents($configPath);
@@ -968,7 +1008,7 @@ class InstallCommand extends Command
 
         // Add or replace 'apex_license' => '<tier>' inside the charts block.
         //
-        // ⚠️ `preg_match` ANSWERS 1, 0 **OR FALSE**, and only the third is an error. Read
+        // `preg_match` answers 1, 0 **or false**, and only the third is an error. Read
         // as a boolean, a failed scan is indistinguishable from "no apex_license line",
         // which sends it down the INSERT branch — and that branch's own `preg_replace`
         // then fails for the same reason and returns NULL. Compared against 1 explicitly,
@@ -994,8 +1034,8 @@ class InstallCommand extends Command
         }
 
         /*
-         * ⚠️ NOTHING IS WRITTEN UNLESS THE REWRITE PRODUCED A FILE, AND THE FIRST CALL
-         * ABOVE ALREADY KNEW IT.
+         * Nothing is written unless the rewrite produced a file, and the first call
+         * above already knew it.
          *
          * `preg_replace` returns NULL on any PCRE failure, and a `/u` pattern over a
          * subject that is not valid UTF-8 is one — `PREG_BAD_UTF8_ERROR`. That is not
@@ -1018,18 +1058,16 @@ class InstallCommand extends Command
                 $tier,
             ));
 
-            return;
+            return false;
         }
 
         /*
          * Tracked BEFORE the write, so `--rollback` can undo it.
          *
-         * ⚠️ It was not, and this is the mutation most worth undoing: `--apex-license` edits
-         * `config/wirekit.php`, a file the developer owns and may have hand-tuned. Every other
-         * config-touching step in this command records a before-snapshot; this one wrote and
-         * said nothing, so a rollback restored the rest of the install and left the chart
-         * adapter switched. The developer is then looking at a config they did not write, in
-         * a file the command told them it had reset.
+         * This is the mutation most worth undoing: `--apex-license` edits `config/wirekit.php`,
+         * a file the developer owns and may have hand-tuned. Like every other config-touching
+         * step in this command it records a before-snapshot, so a rollback does not leave the
+         * chart adapter switched in a file the command says it has reset.
          *
          * The snapshot is $contents — the copy read at the top of this method, before the
          * `preg_replace` ran. Re-reading the file here would capture whatever else has
@@ -1048,7 +1086,11 @@ class InstallCommand extends Command
             FileWrite::put($configPath, $replaced);
         } catch (\RuntimeException $e) {
             $this->components->error($e->getMessage());
+
+            return false;
         }
+
+        return true;
     }
 
     /**
@@ -1286,19 +1328,11 @@ CSS;
     /**
      * Publish ONE font preset's directory — its CSS and that family's woff2 files.
      *
-     * ⚠️ THIS USED TO PUBLISH THE WHOLE TREE, once per `--font*` flag. `--tag=wirekit-fonts`
-     * copies 5.8 MB across 90 files in 21 preset directories, and the provider's own comment
-     * says so; an app that activates two families uses roughly 430 KB of it. So
-     * `wirekit:install --font=inter` wrote 5.8 MB into `public/` for one family, up to three
-     * times in a run, and the recommended `post-autoload-dump` wiring re-copied all of it on
-     * every `composer install`.
-     *
-     * It also compounded the rollback path: those 68 binary files are what inflate one
-     * install-log session from 1.33 MB to 8.95 MB — a 6.7x amplification of the file
-     * `--rollback` then has to read.
-     *
-     * The per-preset tags already existed, derived from the same registry the flag's key
-     * comes from, so the key was in hand at the call site the whole time.
+     * One preset, not the whole tree: `--tag=wirekit-fonts` copies every preset directory,
+     * several megabytes, while an app that activates two families uses a small part of it,
+     * and a whole-tree copy per `--font*` flag would also be recorded in the install log
+     * that `--rollback` has to read. The per-preset tags are derived from the same registry
+     * the flag's key comes from.
      *
      * Non-overwriting (`--force=false`) — re-running won't clobber developer
      * customizations. Idempotent: silently skips already-published files.
@@ -1366,7 +1400,11 @@ CSS;
 
         $contentBefore = (string) file_get_contents($appCss);
 
-        if (str_contains($contentBefore, 'wirekit') && str_contains($contentBefore, '@source')) {
+        // A directive that names WireKit's templates, not the two words anywhere in the file: a
+        // comment, an exclusion of the package's tests or an `@import` of its stylesheet beside the
+        // pagination `@source` carried both, the line was skipped, and `wirekit:verify` then
+        // reported it missing in the same run.
+        if (AppCss::includesWireKitTemplates($contentBefore)) {
             $this->line('  <fg=yellow>!</> Tailwind @source already configured — skipping');
 
             return;
@@ -1428,7 +1466,7 @@ CSS;
 
         // Fresh Laravel + Livewire 4 projects (no starter kit) ship NO app layout
         // at any canonical path, so Livewire page components fail at runtime with
-        // "Livewire page component layout view not found: [components.layouts.app]".
+        // "Livewire page component layout view not found: [layouts::app]".
         // Livewire OWNS layout creation via its own `livewire:layout` command (it
         // writes the layout at the config('livewire.component_layout') convention —
         // by default resources/views/layouts/app.blade.php, Livewire 4's 'layouts::app').
@@ -1638,20 +1676,16 @@ CSS;
 
         try {
             /*
-             * ⚠️ THIS BUILT THE MANIFEST A SECOND TIME, AND THE TWO HAD DRIFTED APART.
+             * The same builder as `wirekit:export-json`. Three documented places tell an
+             * integrator the two files are the same manifest, and one builder is what makes
+             * that true: a second one re-deriving slots and sub-components here would drift
+             * from the export entry by entry.
              *
-             * The loop that stood here mirrored `wirekit:export-json` — its own comment said
-             * "same output shape, single source of truth" — and re-derived slots and
-             * sub-components through private helpers of this class. By the time anyone
-             * compared them, the feeder had lost `component_kind` and `tag_alias` from every
-             * entry and `released_version` from the document, and was writing `sub_components`
-             * as bare dotted strings where the export writes `{name, tag, props}` records.
-             *
-             * Three documented places tell an integrator the two files are the same manifest.
-             * One builder is what makes that true; a comment claiming it is what stopped
-             * anyone checking.
+             * Public components only. The file lands in the developer's repository and their
+             * assistant reads it, so a component whose page is not published yet stays out of
+             * it, the rule `wirekit:export-json --public` applies.
              */
-            $document = ComponentManifest::document();
+            $document = ComponentManifest::document(true);
 
             $flags = JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_PRETTY_PRINT;
             $json = json_encode($document, $flags);

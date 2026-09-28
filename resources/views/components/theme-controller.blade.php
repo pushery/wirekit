@@ -13,7 +13,8 @@
     // sunset leaves this page behind.
     'variant' => config('wirekit.components.theme-controller.variant', 'button'),
     // Button-variant chrome (ignored by switch/select/menu).
-    //   size:    'sm' (32px) | 'md' (36px, default) — matches the button size scale
+    //   size:    'sm' (32px) | 'md' (36px, default) — 36px is the button scale's `md-compact`,
+    //            not its 40px `md`
     //   surface: 'filled' (bordered, elevated — the default) | 'ghost' (borderless,
     //            transparent, muted) so the toggle sits flush next to
     //            surface="ghost" size="sm" buttons in a top bar.
@@ -66,8 +67,8 @@
     // OWN 'control' block (the wrapper 'base' block only ever reached the outer
     // <div>), so config/scoped classes can now restyle the button too.
     $controlSize = match ($size) {
-        'sm' => 'h-8 w-8',
-        default => 'h-9 w-9',
+        'sm' => 'h-[var(--size-wk-sm)] w-[var(--size-wk-sm)]',
+        default => 'h-[var(--size-wk-md-compact)] w-[var(--size-wk-md-compact)]',
     };
     $iconSize = match ($size) {
         'sm' => 'h-4 w-4',
@@ -221,13 +222,12 @@
 
              So this is a real button with a real menu: the trigger names the active mode AND
              shows its glyph, and all three modes are listed with theirs. The dropdown brings
-             the keyboard model, the focus trap and the escape handling with it rather than
-             this file rebuilding them.
+             the keyboard model and the escape handling with it rather than this file
+             rebuilding them; a menu has no focus trap, and Tab closes it.
 
              THREE SPANS RATHER THAN ONE EXPRESSION. `x-show` per mode keeps every string in
-             the markup where a translator and a CSP evaluator can both see it; building the
-             label from `theme` would put copy inside an Alpine expression, which the CSP
-             build cannot evaluate and no locale file can reach. --}}
+             the markup, rendered from the locale file; building the label from `theme` would
+             move the copy into an Alpine expression as JavaScript string literals. --}}
         {{-- The menu takes the control's name, the way a submenu takes its trigger's. --}}
         <x-wirekit::dropdown placement="bottom-start" :label="$label">
             <x-slot:trigger>
@@ -263,25 +263,24 @@
                      would resolve to the empty string for all three. So the item's active pair is
                      reproduced as an Alpine binding instead.
 
-                     `aria-current` cannot hold this on its own, and the reason is worth writing
-                     down so the class binding does not get deleted as redundant: the only
-                     `[aria-current]` rules the package ships are scoped to the reading spine and
-                     the table of contents. On a menu row the attribute paints nothing at all — it
-                     is announced, and it is invisible. Both lines stay, one per audience.
+                     `aria-checked` cannot hold this on its own, and the reason is worth writing
+                     down so the class binding does not get deleted as redundant: the package ships
+                     no `[aria-checked]` rule for a menu row, so the attribute is announced and
+                     invisible. Both lines stay, one per audience.
 
                      The class pair is copied verbatim from `dropdown.item`'s non-danger `$activeClasses`
                      — weight and text color, never a background, because hover and focus already own
                      the surface and a third one would be indistinguishable from them at exactly the
                      moment it matters. Keep the two in step: if that pair changes there, it changes
                      here. Written literally rather than assembled so the Tailwind scanner sees it. --}}
-                {{-- ⚠️ `menuitemradio`, NOT `menuitem` + `aria-current`, and this row is why the
-                     item component grew a `role` prop. The three modes are mutually exclusive
+                {{-- `menuitemradio`, not `menuitem` + `aria-current`, which is why the item
+                     component has a `role` prop. The three modes are mutually exclusive
                      by construction — the loop is the whole set and `select()` writes exactly
                      one value — which is the APG menu pattern's radio case. `aria-current` is a
                      global attribute meaning "the current item within a set of related items";
-                     it carries no group membership, so a reader heard "System, current" instead
-                     of "System, radio button, checked, 1 of 3" and was never told the three are
-                     one choice.
+                     it carries no group membership, so a reader would hear "System, current"
+                     instead of "System, radio button, checked, 1 of 3" and never be told the
+                     three are one choice.
 
                      `aria-checked` is bound to `'false'`, never dropped, because a radio that
                      omits the attribute is not an unchecked radio — it is a radio with no state

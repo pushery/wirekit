@@ -31,11 +31,11 @@
     // Counter chip mirrors the avatar size dims + circle shape so it sits flush
     // in the stack. Literal class strings per size for the Tailwind scanner.
     $chipSize = match ($size) {
-        'xs' => 'w-6 h-6 text-[length:var(--text-wk-sm)]',
-        'sm' => 'w-8 h-8 text-[length:var(--text-wk-sm)]',
-        'lg' => 'w-12 h-12 text-[length:var(--text-wk-lg)]',
+        'xs' => 'w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] text-[length:var(--text-wk-sm)]',
+        'sm' => 'w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] text-[length:var(--text-wk-sm)]',
+        'lg' => 'w-[var(--size-wk-lg)] h-[var(--size-wk-lg)] text-[length:var(--text-wk-lg)]',
         'xl' => 'w-16 h-16 text-[length:var(--text-wk-lg)]',
-        default => 'w-10 h-10 text-[length:var(--text-wk-md)]',
+        default => 'w-[var(--size-wk-md)] h-[var(--size-wk-md)] text-[length:var(--text-wk-md)]',
     };
 
     $chipClasses = implode(' ', [

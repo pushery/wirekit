@@ -86,10 +86,10 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // Heading level (1-6). An invalid value signals in debug (validateProp throws with a
-    // did-you-mean) and falls back to the default in production — never to h1, which is
-    // what validateProp's own first-allowed fallback would produce and which would break
-    // the outline worse than the default does.
+    // Heading level (1-6). An invalid value is reported through the strictness gate, with a
+    // did-you-mean, and where the gate does not throw it renders the default level — never
+    // h1, which is what validateProp's own first-allowed fallback would produce and which
+    // would break the outline worse than the default does.
     $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 3;
     if ($levelValue !== (int) $level) {
         WireKit::validateProp('product-card', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);
@@ -154,13 +154,11 @@
                          than as two unrelated numbers. A reader hears both amounts and the
                          relation between them; the badge adds nothing they would miss.
 
-                         ⚠️ THIS SAID the price announces "was X, N% off", AND IT DOES NOT.
                          The card passes `:base` and never `:delta`, and `price` derives no
                          percentage from a base — its `$formattedDelta` is guarded on an
-                         explicit `delta`. The claim was load-bearing, because it is the
-                         stated reason this badge may stay decorative, and it invited the
-                         next author to leave a discount percentage unannounced in the
-                         belief that it already reached assistive technology. --}}
+                         explicit `delta`. So no discount percentage reaches assistive
+                         technology from here; a design that shows one has to announce it
+                         too. --}}
                     <span data-wk-product-card-sale>
                         <x-wirekit::badge intent="danger" surface="solid" size="sm">{{ __('wirekit::Sale') }}</x-wirekit::badge>
                     </span>
@@ -191,13 +189,13 @@
                 {{-- stretched-link: the whole card is clickable by pointer while
                      the LINK is still just the name. The pointer target and the
                      accessible name do not have to be the same rectangle. --}}
-                {{-- On card hover the name dims to 80% — the SAME cue WireKit links
-                     use (hover:opacity-80). The whole card is the pointer target
+                {{-- On card hover the name dims — the SAME cue WireKit links use,
+                     the `--opacity-wk-hover` token. The whole card is the pointer target
                      (stretched link), so the reaction belongs on the name it points
                      at. Opacity, not an accent color: on the stock theme accent
                      (oklch 20.5%) barely differs from text (14.5%) and in dark mode
                      they are identical, so a color hover would be invisible. --}}
-                <a data-wk-prose-skip href="{{ $href }}" data-wk-product-card-link class="wk-product-card-link transition-opacity duration-[var(--transition-wk-duration)] group-hover:opacity-80 focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
+                <a data-wk-prose-skip href="{{ $href }}" data-wk-product-card-link class="wk-product-card-link transition-opacity duration-[var(--transition-wk-duration)] group-hover:opacity-[var(--opacity-wk-hover)] focus:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]">
                     {{ $name }}
                 </a>
             @else
@@ -228,11 +226,10 @@
                  Re-implementing the sale story here would be a second copy to keep in
                  step, and this is the reason the badge above can stay decorative.
 
-                 ⚠️ THIS QUOTED "€39, was €59, 34% off", A STRING NOTHING EMITS. `price`
-                 computes a percentage only from an explicit `:delta`, which this card does
-                 not pass. Adding one would put a discount figure on every product card
-                 that is on sale — a visible design change rather than a comment repair,
-                 and not a decision this file gets to make on its own. --}}
+                 `price` computes a percentage only from an explicit `:delta`, which this
+                 card does not pass, so no percentage is announced. Passing one would put a
+                 discount figure on every product card that is on sale, which is a visible
+                 design change. --}}
             <span data-wk-product-card-price class="mt-auto">
                 <x-wirekit::price
                     :amount="$price"

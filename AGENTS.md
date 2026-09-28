@@ -32,9 +32,9 @@ editor, the WireKit MCP server exposes the same catalog as live tools.
   tokens. Never hardcode colors, never use Tailwind palette classes (`gray-*`,
   `zinc-*`), and never use the `dark:` prefix inside WireKit markup — tokens
   auto-switch under the `.dark` class.
-- Spacing/rhythm comes from `stack` / `row` / `grid` / `section` plus their `gap`
-  prop (the prop is `gap`, not `space`). Components carry no outer margins, so do
-  not hand-roll `space-y-*` / `mb-*`.
+- Spacing/rhythm comes from `stack` / `row` / `grid` plus their `gap` prop (the
+  prop is `gap`, not `space`); a page band is a `section`, spaced by its `padding`
+  prop. Components carry no outer margins, so do not hand-roll `space-y-*` / `mb-*`.
 - For a signed-in dashboard, compose the `app-shell` + `sidebar` + `header` +
   `main` system. `navbar` is a separate, alternative top-nav shell with its own
   mobile menu — do not nest it inside the app-shell header.

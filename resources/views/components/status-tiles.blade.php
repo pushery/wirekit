@@ -124,7 +124,9 @@
     $counts = array_fill_keys($intents, 0);
     foreach ($items as $item) {
         $intent = in_array($item['intent'] ?? 'neutral', $intents, true) ? $item['intent'] : 'neutral';
-        $href = ($item['href'] ?? null) ?: null;
+        // Tiles come from a database, and a target that could run script draws as a tile
+        // without a link, the same as a tile that never had one.
+        $href = \Pushery\WireKit\Support\SafeUrl::href($item['href'] ?? null) ?: null;
 
         // The word the tile SAYS, which is not the same question as how severe it is.
         //

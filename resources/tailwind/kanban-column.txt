@@ -20,8 +20,8 @@
 $as
 $as);
 $attributes->class([$baseClasses])
-$attributes->class([$sizeClasses]);
 $attributes->class(['relative
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -95,6 +95,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeClasses])
 $sizeMap
 $sizeMap[$validated];
@@ -322,12 +323,11 @@ $wrap
 ($size)
 ($surface)
 ($svgHtml
-('xs')
+('xs').
 (AA
 (Alpine
 (Blade
 (CTA
-(Note:
 (SOFT
 (WCAG
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -351,7 +351,6 @@ $wrap
 (icon
 (inert
 (int)
-(it
 (matches
 (not
 (or
@@ -373,6 +372,7 @@ $wrap
 -
 --border-wk-badge-width
 --border-wk-width
+--color-wk-info
 --shadow-wk-badge
 --}}
 -text
@@ -470,7 +470,6 @@ AND
 API:
 ARIA
 AT
-ATTEMPTED
 Accept
 Adding
 Alpine
@@ -479,8 +478,6 @@ Also
 An
 Any
 Aurora
-BECAUSE
-BELOW,
 BOTH
 Back
 Base
@@ -498,9 +495,6 @@ BooleanProp::from($wrap,
 Border
 Both
 CALLER's
-CAN
-CANNOT
-CONDITION
 CUT
 Catching
 Check
@@ -524,7 +518,6 @@ EVERY
 EXISTS.
 English
 Escape
-FAIL
 FILTER_VALIDATE_BOOLEAN);
 Fast
 Floating
@@ -537,7 +530,6 @@ Generate
 Generic
 German
 Graceful
-HERE,
 HOVER,
 HOVERABLE:
 HTML,
@@ -545,10 +537,7 @@ HTTP
 Header
 Htmlable,
 ID
-IN
-INSIDE
 IS
-IT
 Icon
 IconResolver,
 If
@@ -590,13 +579,11 @@ On
 Operating
 Optional
 PERFECTLY
-POINTING
 Pick
 Position
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RENDER
 Reapply
 Render
 Rendered
@@ -607,13 +594,11 @@ Resolve
 Rich
 RuntimeException
 SAME
-SEE.
 SHAPE
 SIBLING.
 SOFT
 SOLID
 SOLID:
-STABLE
 STATIC
 SVG
 SVG:
@@ -626,6 +611,7 @@ Silent
 Single-line
 Size
 So
+Stable
 Strip
 Surface
 SvgNotFound
@@ -635,7 +621,6 @@ Symmetric
 TAG
 TEMPLATES
 THE
-THIS
 Tailwind
 Teleporting
 That
@@ -654,10 +639,8 @@ Use
 Uses
 Validate
 WAS
-WAY
 WCAG
 WIDTH
-WINDOW,
 WITHOUT
 WRAPPER,
 We
@@ -716,12 +699,12 @@ __toString
 `<button>`
 `<div>`
 `<p>`
+`<span>`
 `<template
 `<template>`
 `<x-wirekit::scroll-area
 `=`,
 `Illegal
-`Str::random(12)`
 `Svg
 `_x_dataStack`,
 `aria-describedby`
@@ -755,6 +738,7 @@ __toString
 `from.column`
 `header`
 `heroicon-m-inbox`
+`icon`
 `inbox`
 `info`
 `inverted`
@@ -811,7 +795,6 @@ above.
 absence
 absent,
 accent
-accent),
 accent-fg
 accept
 accessibility
@@ -895,6 +878,7 @@ assertion
 assignment
 association
 at
+attempted
 attribute
 attribute,
 attribute.
@@ -919,7 +903,6 @@ baked
 bakes
 bar.
 bare
-base
 base;
 based
 be
@@ -977,7 +960,6 @@ border-[var(--color-wk-warning)]',
 border-t
 border.
 bordered-only
-borrows
 both
 bound
 box
@@ -1034,6 +1016,7 @@ caught
 cell
 change
 changes
+charts
 cheaper
 check
 checks
@@ -1084,11 +1067,9 @@ columns
 come
 comes
 comment
-comments
 common
 compete
 compile
-compiler
 compiles
 component
 component's
@@ -1146,7 +1127,6 @@ data-wk-tooltip-disabled="true"
 data-wk-tooltip-surface="elevated"
 dead.
 debug
-debug,
 decided
 decision,
 decision:
@@ -1256,7 +1236,6 @@ event
 event.
 event:
 events
-ever
 every
 everyone.
 exactly
@@ -1277,6 +1256,7 @@ factory's
 factory,
 factory:
 fade="…">`
+fail
 failed"
 fails
 failure:
@@ -1303,7 +1283,7 @@ field,
 file
 files
 fill
-fill;
+fill:
 filled
 filled($label);
 filled-background
@@ -1313,7 +1293,6 @@ fine).
 finish
 finished
 fire
-fired
 fires
 first
 fix
@@ -1324,6 +1303,7 @@ fixed`
 fixes
 flag
 flags
+flash
 flatten
 flattened
 flattens
@@ -1373,6 +1353,8 @@ gap
 gap-[var(--space-wk-sm,0.5rem)]
 gap-[var(--space-wk-sm,0.5rem)]">
 gap-x-1',
+gate
+gate,
 gave
 get
 gets
@@ -1439,6 +1421,7 @@ hover:opacity-100',
 how
 however
 icon
+icon's
 icon,
 icon-only
 icon;
@@ -1466,6 +1449,7 @@ included.
 including
 indicator
 inert
+info
 informative
 informative.
 init
@@ -1524,7 +1508,6 @@ just
 justify-between
 justify-center',
 keeps
-kept
 key
 keyboard
 keyboard,
@@ -1681,7 +1664,6 @@ of
 off
 offers
 offset:
-old
 omission.
 on
 on,
@@ -1740,7 +1722,6 @@ pages
 pair
 pair).
 pairing
-pairing.)
 pairing;
 pairs
 panel
@@ -1767,6 +1748,7 @@ per
 per-instance
 per-set
 per-surface
+personalization
 phrasing
 picked
 pill
@@ -1780,6 +1762,7 @@ plain
 pointed
 pointer
 pointer-events
+pointing
 popover's
 popovers
 popular"
@@ -1805,7 +1788,6 @@ problem
 prod).
 produced
 produces,
-production.
 project,
 prop
 prop's
@@ -1814,7 +1796,6 @@ props
 props,
 provides
 proxy
-purpose
 purpose,
 put
 puts
@@ -1841,12 +1822,13 @@ random
 rather
 raw
 re-inject
-re-renders,
+re-renders.
 re-thrown
 reach
 reachable
 reaches
 read
+read;
 reader
 reading
 reads
@@ -1929,7 +1911,6 @@ same
 say
 says
 scanner
-scans
 scope
 scope,
 screen
@@ -1938,6 +1919,7 @@ screen-reader-skipping
 scroll
 second
 see
+see.
 sees
 sees.
 semantic
@@ -1956,6 +1938,7 @@ shape
 shape,
 shapes,
 shared
+shares
 shipped
 should
 show
@@ -1989,6 +1972,7 @@ soft
 soft).
 soft-chip
 soft-tone
+solid
 somebody
 something
 sortable
@@ -2021,6 +2005,7 @@ stops
 storage/logs/laravel.log.
 strategy:
 stream's
+strictness
 string
 string",
 string,
@@ -2047,7 +2032,6 @@ svg(),
 swapped
 sweep
 switches
-syntax
 tab
 tab-stop
 tabbed
@@ -2105,6 +2089,7 @@ this
 three
 through
 throw
+throw,
 throws
 tick
 tidy
@@ -2115,6 +2100,7 @@ time.
 timer
 timer,
 timer;
+tint
 tinted
 tip
 tip.
@@ -2125,7 +2111,7 @@ to.
 toHtml().
 token
 token,
-too
+tone
 tooltip
 tooltip,
 tooltip.
@@ -2166,7 +2152,6 @@ type="button"
 typography,
 unaffected
 unaffected.
-unbalanced
 unbound
 uncaught
 unchanged.
@@ -2252,6 +2237,7 @@ why
 widening
 width
 width)
+window,
 wins
 wire:key="wk-tooltip-panel"
 with
@@ -2331,4 +2317,3 @@ zoom,
 }}@if($limit)/{{
 —
 ≥4.5:1
-⚠️

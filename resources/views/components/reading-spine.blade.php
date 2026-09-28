@@ -103,11 +103,9 @@
     // settable from a `style` attribute or from CSS, and the utility carries the
     // default rather than a second declaration that could drift away from it.
     //
-    // ⚠️ The two step utilities are deliberately NOT named here. Tailwind scans the raw
-    // file, comments included, so writing them would emit them into the compiled CSS —
-    // while the drift harvester parses Blade properly and skips comments. The result is
-    // a selector in the stylesheet that no source emits, and the reverse diff goes red
-    // over a sentence. Measured here, on the first run after this change.
+    // The two step utilities are deliberately not named here: Tailwind scans the raw file,
+    // comments included, so writing them would emit them into the compiled CSS as selectors
+    // no element uses.
     $positionClass = match ($position) {
         'left' => 'left-[var(--reading-spine-edge-offset,1rem)]',
         default => 'right-[var(--reading-spine-edge-offset,1rem)]',
@@ -182,8 +180,8 @@
         ? 'absolute top-0 z-[var(--z-wk-sticky)]'
         : 'fixed top-1/2 -translate-y-1/2 z-[var(--z-wk-sticky)]';
 
-    // Marker class drives the print-stylesheet hide rule + reduced-motion
-    // gating + doubled-class specificity for any developer overrides.
+    // Marker class drives the print-stylesheet hide rule, the reduced-motion
+    // gating and the component's base rules in the stylesheet.
     // `tabindex="0"` + `focus-visible:` ring on the scroll-overflow
     // container satisfies WCAG 2.1.1 (keyboard operability) — when the
     // navigation links overflow vertically, the spine itself is reachable
@@ -245,7 +243,8 @@
      rides along — so the spine stays pinned instead of scrolling with content.
      height:0 keeps it out of the article's flow (no pushed-down content); the
      spine's hover-expand still overlays. Viewport mode skips this (the aside is
-     `fixed`). Inline-styled so it works in the docs sandbox without Tailwind. --}}
+     `fixed`). Inline-styled so it holds without a Tailwind build that scanned
+     this view. --}}
 <div style="position: sticky; top: var(--reading-spine-offset-top, 1rem); height: 0; z-index: var(--z-wk-sticky);">
 @endif
 <aside
@@ -278,12 +277,12 @@
     <nav>
         {{--
             Inline-style the list primitives so the spine renders correctly
-            in the docs sandbox iframe, where developer Tailwind isn't loaded
-            — `<ol>` would otherwise show its UA decimal markers and 40px
-            indent. See the sibling reading-toc note for the full rationale.
+            in a page whose stylesheet does not come from a Tailwind build that scanned this view,
+            where `<ol>` would otherwise show its UA decimal markers and 40px
+            indent. The sibling reading-toc note has the full rationale.
         --}}
         {{--
-            Inline-style guard for the docs-sandbox iframe context (no Tailwind):
+            Inline for the same reason:
             `padding: var(--reading-spine-padding-y) var(--reading-spine-padding-x)`
             gives the ticks/labels a guttered inset from the aside's left+right
             edges (without it the ticks sit flush against the right edge — the
@@ -305,11 +304,9 @@
                         it the literal text "item.level" appears inside the CSS
                         calc(), which is invalid and the browser drops the rule
                         entirely — every heading rendered at the same indent,
-                        H3-under-H2 nesting invisible. Same bug class as inline
-                        Tailwind utilities not resolving in the sandbox iframe;
-                        the fix is the same shape too (compute layout values via
-                        inline style instead of relying on a class system that
-                        only applies when Tailwind is loaded).
+                        H3-under-H2 nesting invisible. The value is computed in
+                        an inline style, like the list styles above, rather than
+                        through a class a build would have to generate.
                     --}}
                     <a data-wk-prose-skip
                         :href="'#' + item.id"
@@ -324,9 +321,10 @@
                             Tick — visual indicator that the spine menu exists
                             and can be hovered to expand. Width depends on
                             heading level (declared via `[data-level]` CSS
-                            rules in dist/wirekit.css, since the `tickWidthClass`
-                            Tailwind utilities don't resolve in the docs-
-                            sandbox iframe). `display: block` is inline-styled
+                            rules in dist/wirekit.css, since the `w-*` classes
+                            `tickWidthClass` returns live in the JavaScript, which
+                            a build scanning the views never reads). `display:
+                            block` is inline-styled
                             so the width rule actually paints — without it,
                             a default `<span>` stays `display: inline`,
                             ignores `width`, and renders 0 px wide → the
@@ -373,12 +371,12 @@
                  OR when scrollY > 0 (you're past the top).
 
                  `cursor-pointer` is spelled out because nothing else supplies
-                 it: Tailwind v4's preflight sets `cursor: default` on `button`,
-                 and `.wk-reading-spine__back-to-top` has no declarations in
+                 it: Tailwind v4's preflight no longer sets `cursor: pointer` on
+                 `button` (v3 did), and `.wk-reading-spine__back-to-top` has no declarations in
                  dist/wirekit.css — it is a styling hook, not a style. --}}
             <button
                 type="button"
-                class="wk-reading-spine__back-to-top mt-2 ml-2 inline-flex items-center justify-center cursor-pointer w-8 h-8 rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
+                class="wk-reading-spine__back-to-top mt-2 ml-2 inline-flex items-center justify-center cursor-pointer w-[var(--size-wk-sm)] h-[var(--size-wk-sm)] rounded-full bg-[var(--color-wk-bg-elevated)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]"
                 aria-label="{{ __('wirekit::Back to top') }}"
                 @click="scrollToTop()"
             >

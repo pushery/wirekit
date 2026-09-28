@@ -53,7 +53,7 @@ final class CitationList
             $normalized[] = [
                 'number' => count($normalized) + 1,
                 'label' => $label,
-                'href' => self::text(self::field($citation, 'href')),
+                'href' => self::href(self::text(self::field($citation, 'href'))),
                 'snippet' => self::text(self::field($citation, 'snippet')),
             ];
         }
@@ -78,6 +78,20 @@ final class CitationList
         }
 
         return data_get($citation, $key);
+    }
+
+    /**
+     * The link of a source, or null when it has none or its target could run script.
+     *
+     * A citation is whatever the retrieval layer returned, and an answer's sources can be steered
+     * by a prompt, so a `javascript:` target is as likely here as anywhere. Null draws the source
+     * as plain text, the same as an entry that never had a link.
+     */
+    private static function href(?string $text): ?string
+    {
+        $href = SafeUrl::href($text);
+
+        return $href === '' ? null : $href;
     }
 
     /**

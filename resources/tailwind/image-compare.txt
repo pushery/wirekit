@@ -233,7 +233,6 @@ Form
 Fully
 Handle
 Hidden
-IS
 ITSELF
 Implements
 Its
@@ -319,7 +318,6 @@ arbitrary
 aria-atomic="true">
 aria-hidden="true"
 aria-label="{{
-aria-live
 aria-live="polite"
 aria-orientation="{{
 aria-valuemax="100"
@@ -375,7 +373,6 @@ can
 cannot
 case
 cast
-changes
 chevrons
 class;
 class="sr-only"
@@ -428,7 +425,6 @@ driven
 drives
 dropped
 drops
-during
 each
 edge
 element
@@ -456,7 +452,6 @@ fill
 fill="none"
 fires
 first
-flag
 flags
 flips
 floating
@@ -510,7 +505,6 @@ injecting
 input
 inset-0
 insets
-interaction.
 interactive
 into
 intrinsic
@@ -523,7 +517,7 @@ it.
 its
 keeps
 key
-keyboard
+keyboard.
 label
 label-anchor
 labels
@@ -550,10 +544,10 @@ mean
 means
 min(100,
 misalignment
-missing.
 mode
 mode),
 modifier
+moves
 n/a
 name
 name,
@@ -597,6 +591,7 @@ owns,
 parse
 paths
 pattern
+percentage
 pick
 place-items-center',
 plain
@@ -607,7 +602,6 @@ pointing
 position.
 positions
 preg_match('/^[A-Za-z0-9_.\-]+$/',
-present
 previous
 prod).
 prop
@@ -632,6 +626,7 @@ rendered
 rendered.
 requiring
 rest,
+revealed
 revealed'))
 right-2'
 right-2'"

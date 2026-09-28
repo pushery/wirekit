@@ -182,19 +182,17 @@
     // controls already had to be corrected for exactly this.
     $id = $attributes->get('id') ?: DomId::unique('inline-edit', 'inline-edit-');
 
-    // ⚠️ THE LABEL'S `for` AND THE CONTROL'S `id` WERE TWO DIFFERENT STRINGS.
+    // The label's `for` and the control's `id` have to be one string.
     //
-    // `$id` is registered here, and the control component then runs the SAME value through
-    // `DomId::unique()` again — which finds it taken and hands back `inline-edit-2`. So the
-    // label pointed at `inline-edit` while the <input> was `inline-edit-2`, and every
-    // labeled inline-edit shipped a control with no accessible name at all (WCAG 4.1.2).
-    // Nothing looked wrong: both elements were present, both carried plausible ids, and
-    // the visible label sat right above the field.
+    // `$id` is registered here, and the control component runs whatever id it is handed
+    // through `DomId::unique()` again. Handed `$id`, it would find it taken and answer
+    // `inline-edit-2`: the label would point at `inline-edit`, the <input> would be
+    // `inline-edit-2`, and the control would have no accessible name (WCAG 4.1.2) with
+    // nothing looking wrong.
     //
-    // The control gets its OWN id, derived from `$id` and — deliberately — NOT registered
-    // here. Registering it was the first attempt and it reproduced the same defect one
-    // level down: the control component dedups whatever id it is handed, so a
-    // pre-registered value comes back with `-2` appended and the label misses again.
+    // So the control gets its own id, derived from `$id` and deliberately not registered
+    // here: a pre-registered value would come back from the control with `-2` appended,
+    // and the label would miss again.
     // `$id` is already page-unique, so `$id-control` is too, and the single registration
     // that does happen is the control's own.
     $controlId = $id.'-control';

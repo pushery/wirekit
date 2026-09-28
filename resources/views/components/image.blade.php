@@ -28,6 +28,18 @@
     'rounded' => false,
     // Native lazy-loading. Eager only for above-the-fold hero images.
     'loading' => 'lazy',
+    // Responsive sources and the width the image takes in the layout, written on the <img>:
+    // srcset="a-800.jpg 800w, a-1600.jpg 1600w" with sizes="(min-width: 60rem) 50vw, 100vw".
+    'srcset' => null,
+    'sizes' => null,
+    // The image's intrinsic size in pixels, written on the <img>. The browser reserves the box
+    // from their ratio before the file arrives, which is what keeps a layout without `ratio`
+    // from shifting.
+    'width' => null,
+    'height' => null,
+    // Fetch priority for the image a page shows first: 'high', 'low' or 'auto'. Null leaves the
+    // choice to the browser.
+    'fetchpriority' => null,
     'scope' => null,
 ])
 
@@ -49,7 +61,7 @@
         \Illuminate\Support\Facades\Log::warning(
             'WireKit [image]: no `alt` given, so the image renders as decorative (alt=""). '
             .'Pass alt="…" for a content image, or alt="" to say decorative on purpose. '
-            .'src: '.(string) $src
+            .'src: '.\Pushery\WireKit\Support\LogValue::quote((string) $src)
         );
     }
 
@@ -63,6 +75,12 @@
         default => WireKit::validateProp('image', 'fit', $fit, ['cover', 'contain']),
     };
     $fitClass = $fitValue === 'contain' ? 'object-contain' : 'object-cover';
+
+    $fetchpriorityValue = match (true) {
+        $fetchpriority === null || $fetchpriority === '' => null,
+        in_array($fetchpriority, ['auto', 'high', 'low'], true) => $fetchpriority,
+        default => WireKit::validateProp('image', 'fetchpriority', (string) $fetchpriority, ['auto', 'high', 'low']),
+    };
     $roundedClass = $rounded ? 'rounded-[var(--radius-wk-md)]' : '';
 
     $figureClasses = WireKit::resolveClasses('image', 'base', implode(' ', [
@@ -70,8 +88,8 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // A ratio boxes the image (absolute-fill inside a sized wrapper) so the space
-    // is reserved before load. The ratio lives DIRECTLY on the <img> (modern
+    // A ratio reserves the image's space before load. The ratio lives directly on
+    // the <img> (modern
     // aspect-ratio + object-fit) rather than on a wrapper with an absolutely-
     // positioned fill image: an absolute-fill image contributes nothing to its
     // parent's intrinsic width, so a `width: fit-content` context (e.g. the docs
@@ -88,6 +106,11 @@
         alt="{{ $alt ?? '' }}"
         loading="{{ $loading }}"
         decoding="async"
+        @if(filled($srcset)) srcset="{{ $srcset }}" @endif
+        @if(filled($sizes)) sizes="{{ $sizes }}" @endif
+        @if(filled($width)) width="{{ $width }}" @endif
+        @if(filled($height)) height="{{ $height }}" @endif
+        @if($fetchpriorityValue !== null) fetchpriority="{{ $fetchpriorityValue }}" @endif
         @if($ratio) style="aspect-ratio: {{ $ratio }}" @endif
         class="{{ $imgClasses }}"
     />

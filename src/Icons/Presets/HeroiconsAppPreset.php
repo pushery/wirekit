@@ -28,12 +28,10 @@ use Pushery\WireKit\Contracts\IconPreset;
  *
  *     'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
  *
- * ⚠️ Two guarantees used to stand here and both were about an empty set: that all identifiers
- * use the Mini style, and that the aliases do not overlap the base or marketing presets. There
- * are no identifiers and no aliases. A promise nothing can break reads as a property of the
- * class, so the next reader looks for the entries it describes. If this file gains an alias
- * again, both rules apply — and the rule that matters is stated above: a name is only taken
- * when all four interchangeable presets have a genuine glyph for it.
+ * The set is empty: no identifiers and no aliases, so it makes no promise about the Mini style
+ * or about overlapping the base and marketing presets. If this file gains an alias, both apply,
+ * and so does the rule stated above: a name is only taken when all four interchangeable
+ * presets have a genuine glyph for it.
  *
  * @see https://heroicons.com
  */

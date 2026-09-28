@@ -51,9 +51,9 @@
     // Square-with-soft-corners, not a pill: `01` in a pill reads as a badge, and
     // a badge is a label about something else. A step marker IS the step.
     $sizeClasses = match ($size) {
-        'sm' => 'h-8 w-8 text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-sm)]',
-        'lg' => 'h-12 w-12 text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-lg)]',
-        default => 'h-10 w-10 text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-md)]',
+        'sm' => 'h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] text-[length:var(--text-wk-xs)] rounded-[var(--radius-wk-sm)]',
+        'lg' => 'h-[var(--size-wk-lg)] w-[var(--size-wk-lg)] text-[length:var(--text-wk-md)] rounded-[var(--radius-wk-lg)]',
+        default => 'h-[var(--size-wk-md)] w-[var(--size-wk-md)] text-[length:var(--text-wk-sm)] rounded-[var(--radius-wk-md)]',
     };
 
     $classes = WireKit::resolveClasses('step-marker', 'base', implode(' ', [

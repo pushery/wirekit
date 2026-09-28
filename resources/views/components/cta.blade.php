@@ -33,11 +33,12 @@
 
     $animateAttr = WireKit::resolveAnimateIn($animateIn, 'cta');
 
-    // Validate `size` against the three-tier enum (debug-mode validation,
-    // production silent fallback to `md`).
+    // Validate `size` against the three-tier enum. An off-enum value is reported through the
+    // strictness gate, and where the gate does not throw it renders the FIRST allowed value,
+    // which is why `md`, the default, leads the list.
     $validSize = in_array($size, ['sm', 'md', 'lg'], true)
         ? $size
-        : WireKit::validateProp('cta', 'size', $size, ['sm', 'md', 'lg']);
+        : WireKit::validateProp('cta', 'size', $size, ['md', 'sm', 'lg']);
 
     // Responsive vertical-padding (same shape as hero). Static class
     // strings keep Tailwind source-detection happy.
@@ -69,17 +70,16 @@
     // is identical in light mode and stays genuinely dark in dark mode (the old
     // `bg-inverse` flipped it to near-white in dark mode). See hero.blade.php for
     // the full rationale; kept in lock-step.
-    $variantClasses = match ($variant) {
+    $variantClasses = match (WireKit::validateProp('cta', 'variant', $variant, ['default', 'dark', 'accent'])) {
         'default' => 'bg-[var(--color-wk-bg-muted)] text-[color:var(--color-wk-text)]',
         'dark' => 'dark bg-[var(--color-wk-bg)] text-[color:var(--color-wk-text)]',
         'accent' => 'bg-[var(--color-wk-accent)] text-[color:var(--color-wk-accent-fg)]',
-        default => WireKit::validateProp('cta', 'variant', $variant, ['default', 'dark', 'accent']),
     };
 
-    // Heading level (1-6). An invalid value signals in debug (validateProp throws with a
-    // did-you-mean) and falls back to the default in production — never to h1, which is
-    // what validateProp's own first-allowed fallback would produce and which would break
-    // the outline worse than the default does.
+    // Heading level (1-6). An invalid value is reported through the strictness gate, with a
+    // did-you-mean, and where the gate does not throw it renders the default level — never
+    // h1, which is what validateProp's own first-allowed fallback would produce and which
+    // would break the outline worse than the default does.
     $levelValue = in_array((int) $level, [1, 2, 3, 4, 5, 6], true) ? (int) $level : 2;
     if ($levelValue !== (int) $level) {
         WireKit::validateProp('cta', 'level', (string) $level, ['1', '2', '3', '4', '5', '6']);

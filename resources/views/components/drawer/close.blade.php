@@ -1,7 +1,5 @@
-{{-- optimistic-ui: n/a — presentational
-     Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+{{-- optimistic-ui: n/a — client-only
+     The drawer's close button, rendered by the shared overlay-close partial. It closes. --}}
 @props([
     'scope' => null,
 ])

@@ -189,7 +189,6 @@ $warnThreshold
 @unless($attributes->has('aria-label')
 A
 ABSOLUTE
-AND
 API
 APPLICATION's
 Absolute,
@@ -204,8 +203,6 @@ BooleanProp::from($separators,
 BooleanProp::from($showSeconds,
 BooleanProp::from(),
 Both
-CONTROL
-COPIED.
 CSP
 Carbon
 Carbon,
@@ -217,11 +214,9 @@ Carbon::now()->getTimestampMs();
 Carbon::parse((string)
 Carbon\Carbon;
 Change
-DEAD
 Declared
 Decorative
 Dev-only
-EXAMPLE
 Each
 English
 English-configured
@@ -236,14 +231,11 @@ German.
 Getters
 HTML
 Headless
-INTERPOLATE,
 ISO-8601
-IT
 Include
 Intl.PluralRules.
 Invalid
 It
-Its
 JavaScript
 Keeping
 LAST
@@ -255,11 +247,10 @@ Machine-readable
 Making
 NOT
 Normalized
-Nothing
 Null
 Number-agreeing
 ONE
-OPERATOR`
+OPERATOR`,
 Only
 Or
 Overdue
@@ -277,9 +268,6 @@ Same
 Seconds-remaining
 Six
 Style
-THAT
-THAT.
-TO
 Text
 That
 The
@@ -287,9 +275,6 @@ Their
 These
 Turn
 UNBOUND
-USED
-WAS
-WHEREVER
 Where
 Which
 WireKit
@@ -380,7 +365,6 @@ anywhere,
 app
 app()->getLocale());
 appear
-appears.
 are
 aria-hidden="true"
 aria-label="{{
@@ -410,6 +394,7 @@ bg-[var(--color-wk-bg-elevated)]
 big
 bind
 binding
+binds
 blindness
 block
 block,
@@ -530,7 +515,7 @@ enters
 entries
 error
 estimated.
-evaluated.
+evaluated,
 event
 event,
 every
@@ -649,9 +634,10 @@ list
 list).
 listed
 literal
-literal,
+literal:
 literally
 literally:
+literals,
 little
 live
 lives
@@ -660,10 +646,9 @@ locale,
 locale.
 locale:
 locales
-logs,
+logged.
 look.
 looked
-looks
 looped
 lowercased
 machine
@@ -698,7 +683,6 @@ needs
 never
 no
 node
-none
 normalization
 normalized
 not
@@ -771,6 +755,7 @@ prop
 prop's
 prop-reading
 property
+property,
 property.
 props
 pulse
@@ -891,6 +876,7 @@ text-[length:var(--text-wk-xs)]
 text-only
 than
 that
+that.
 the
 then
 there
@@ -900,7 +886,7 @@ three
 threshold
 through
 throwing.
-throws,
+thrown
 tick,
 tick.
 ticking
@@ -1023,4 +1009,3 @@ zero-units
 }}[seg.unit]"></span>
 —
 →
-⚠️

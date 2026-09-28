@@ -213,13 +213,9 @@
     // is idempotent on already-absolute URLs.
     $abs = static fn (?string $u): ?string => $u === null ? null : url()->to($u);
 
-    // The nav's accessible name. __('wirekit::Pagination') is intended as a JSON string key, but
-    // on a case-insensitive filesystem it ALSO matches Laravel's own pagination.php GROUP
-    // lang file and resolves to that ARRAY — so guard it, or a bare (untranslated) render
-    // echoes an array into aria-label and crashes. A real JSON translation still wins
-    // (the translator checks JSON before the group), so localization is unaffected.
+    // The nav's accessible name. The `wirekit::` prefix keeps the lookup out of the
+    // application's lang groups, so it resolves to a string from the package's JSON catalog.
     $navLabel = __('wirekit::Pagination');
-    $navLabel = is_string($navLabel) ? $navLabel : 'Pagination';
 
     // Resolved once. `?:` rather than `??` on purpose: an empty string is a caller asking
     // for nothing, and rendering an unlabeled arrow would be worse than the default.
@@ -262,11 +258,12 @@
             $firstPageAction = $pageAction(1);
         }
 
-        // The document is reached through the element rather than as a global: the expression has
-        // to hold under Alpine's CSP build, which resolves no global names.
+        // One call to a magic, which finds the target (the nearest matching ancestor, else the
+        // first match in the document) and scrolls it into view. Reaching the document inside the
+        // expression is refused by Alpine's CSP build, however the expression gets there, and a
+        // target that is not an ancestor of the pager is the common case.
         if ($scrollTo !== false && $scrollTo !== null && $scrollTo !== '') {
-            $selectorJs = \Pushery\WireKit\Support\AlpinePayload::from((string) $scrollTo);
-            $scrollHandler = '($el.closest('.$selectorJs.') || $el.ownerDocument.querySelector('.$selectorJs.')).scrollIntoView()';
+            $scrollHandler = '$wkScrollTo('.\Pushery\WireKit\Support\AlpinePayload::from((string) $scrollTo).')';
         }
     }
 

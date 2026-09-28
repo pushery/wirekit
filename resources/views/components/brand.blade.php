@@ -21,7 +21,7 @@
     // Intrinsic aspect ratio of `$logo` / `$darkLogo`, as `'width/height'` — e.g. `'4/1'`
     // for a wide wordmark.
     //
-    // Every logo here is `h-8 w-auto`: the height is fixed and the WIDTH is whatever the
+    // Every logo here is `w-auto` under a fixed height: the height is known and the WIDTH is whatever the
     // image turns out to be. Until its bytes arrive there is nothing to derive that width
     // from, so the element is 0 px wide and everything beside it — the product name, the
     // navigation, the whole header row — sits further left than it will a moment later,
@@ -29,8 +29,8 @@
     // of the page, and it happens on every page load rather than once.
     //
     // The ratio is the missing input and the only one: `width`/`height` attributes would
-    // say the same thing less directly, since the `h-8 w-auto` this component ships
-    // overrides both and leaves the browser using them for their ratio anyway.
+    // say the same thing less directly, since the height class and `w-auto` this component
+    // ships override both and leave the browser using them for their ratio anyway.
     //
     // Unset is not left to shift: the images carry a min-width of one logo height, so the
     // worst case is a square reservation rather than nothing. Almost every wordmark is
@@ -94,7 +94,7 @@
         'xs' => 'h-[var(--size-wk-xs)]',
         'md' => 'h-[var(--size-wk-md)]',
         'lg' => 'h-[var(--size-wk-lg)]',
-        default => 'h-8',
+        default => 'h-[var(--size-wk-sm)]',
     };
     // The height class with its trailing space, or nothing. `w-auto` stays literal in every
     // `<img>` below, where a scan of this template for class names finds it.
@@ -106,7 +106,7 @@
         'xs' => 'var(--size-wk-xs)',
         'md' => 'var(--size-wk-md)',
         'lg' => 'var(--size-wk-lg)',
-        default => '2rem',
+        default => 'var(--size-wk-sm)',
     };
     $wkLogoHeightStyle = $wkLogoLength !== null ? 'height: '.$wkLogoLength.'; ' : '';
     $wkLogoStyle = $wkLogoHeightStyle.$wkLogoAspect.'min-width: '.$wkLogoFloor.';';
@@ -163,15 +163,15 @@
     //   - mobile <img>: visible below the breakpoint, hidden at + breakpoint
     //   - main <img>:   hidden below the breakpoint, visible at + breakpoint
     // When $mobileLogo is null, only the main <img> renders (back-compat).
-    // Validates the breakpoint against the Tailwind responsive enum;
-    // unknown values throw in debug, fall back to 'sm' in prod via the
-    // central strictness gate.
+    // Validates the breakpoint against the Tailwind responsive enum through
+    // the central strictness gate: an unknown value is reported there and,
+    // where the gate does not throw, falls back to 'sm'.
     $resolvedBreakpoint = $logo && $mobileLogo
         ? WireKit::validateProp('brand', 'mobileBreakpoint', $mobileBreakpoint, ['sm', 'md', 'lg', 'xl'])
         : 'sm';
 
-    // Checked like the breakpoint: an unknown word throws in debug and falls back in production,
-    // rather than reaching the page as a `loading` value the browser ignores.
+    // Checked like the breakpoint: an unknown word is reported and falls back to `eager`, rather
+    // than reaching the page as a `loading` value the browser ignores.
     $wkLogoLoading = WireKit::validateProp('brand', 'logoLoading', (string) ($logoLoading ?? 'eager'), ['eager', 'lazy']);
 
     // Responsive show/hide classes resolved to FULL literal strings — never

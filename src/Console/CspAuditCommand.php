@@ -81,11 +81,11 @@ class CspAuditCommand extends Command
      * `null` until the oracle has run, and `null` is never read as either answer — a run that
      * could not ask must not print advice that depends on the answer.
      *
-     * ⚠️ This is a property rather than a constant because the answer CHANGED, and the
-     * constraint in `package.json` is `^3.15.12`, so both answers are live in the field. Up to
-     * `@alpinejs/csp` 3.17.2 the tokenizer emitted a KEYWORD for `delete`, `new`, `typeof` and
-     * the rest of that set wherever they stood, so `$wire.delete(1)` was a dead button. 3.17.3
-     * accepts it. Measured both ways against the real package, not read out of a release note.
+     * This is a property rather than a constant because the answer depends on the parser, and
+     * the parser is the `@alpinejs/csp` installed in the project running the audit, so both
+     * answers are live in the field. Up to `@alpinejs/csp` 3.17.2 the tokenizer emits a keyword
+     * for `delete`, `new`, `typeof` and the rest of that set wherever they stand, so
+     * `$wire.delete(1)` is a dead button there; 3.17.3 accepts it.
      *
      * The advice block below used to state the 3.17.2 behavior unconditionally, and it prints
      * whenever there is ANY offender — so a developer on 3.17.3 with an arrow-function problem
@@ -127,10 +127,17 @@ class CspAuditCommand extends Command
      * eleven of twenty-seven rejections were `x-teleport="#wk-overlay-root"` —
      * so nearly half of what the audit reported was the audit misreading its own
      * input, in a command whose only value is that its output can be trusted.
+     *
+     * `x-wk-findable` is WireKit's own and belongs here for the reason the others do: it
+     * takes the place of `x-show` on a disclosure panel and hands its value to
+     * `evaluateLater()`, so under the CSP build it meets the same parser. Its `.collapse`
+     * modifier is covered by the modifier part of the name pattern. The kit's other two
+     * directives, `x-wk-indeterminate` and `x-wk-flash`, evaluate nothing and stay off.
      */
     private const EXPRESSION_ATTRIBUTES = [
         'x-data', 'x-show', 'x-if', 'x-text', 'x-html', 'x-model', 'x-modelable',
         'x-init', 'x-effect', 'x-bind', 'x-on', 'x-intersect', 'x-id',
+        'x-wk-findable',
     ];
 
     /**
@@ -284,7 +291,7 @@ class CspAuditCommand extends Command
                 continue;
             }
 
-            // ⚠️ FOR `x-data` THE GRAMMAR ANSWERS THE WRONG QUESTION, and it answers it
+            // For `x-data` the grammar answers the wrong question, and it answers it
             // affirmatively in both directions that matter. `x-data="{ open: false }"`
             // parses and is exactly the form a CSP build has no factory for;
             // `x-data="wirekitAlertDialog({…})"` parses and leaves the element WITHOUT A
@@ -296,12 +303,11 @@ class CspAuditCommand extends Command
             // it is dead — which reads as a layout bug, not as a missing script.
             //
             // Measured in an adopting application: this command reported PASS over a tree
-            // with 81 unregistered kit components and six inline `x-data` beside them.
+            // full of unregistered kit components with inline `x-data` beside them.
             //
-            // ⚠️ AND NOT OVER A SUBSTITUTION. An `x-data="@js(…)"` reaches this loop as a
-            // placeholder, and a placeholder is a bare identifier — so the very first run of
-            // this check reported six of this command's own fixtures as unregistered
-            // factories. That is the same trap `$unchecked` exists for one branch down: a
+            // And not over a substitution. An `x-data="@js(…)"` reaches this loop as a
+            // placeholder, and a placeholder is a bare identifier, so judging it would report
+            // the substitution as an unregistered factory. That is the same trap `$unchecked` exists for one branch down: a
             // verdict about Blade dressed as a verdict about the template.
             $judgeable = $entry['unresolved'] === null
                 && ! BladeParser::hasServerSideConstruct($entry['expression']);
@@ -353,9 +359,21 @@ class CspAuditCommand extends Command
             $offenders[] = $entry;
         }
 
+        // An attribute with a Blade block is parsed once per rendering, and what several
+        // renderings share is still one fact about one attribute. Each list keeps it once, from
+        // the first rendering that shows it; a different error, warning or factory name in
+        // another rendering stays an entry of its own. The scanned total counts attributes for
+        // the same reason: it is the number a reader can check against the template.
+        $offenders = self::oncePerAttribute($offenders, 'error');
+        $unchecked = self::oncePerAttribute($unchecked);
+        $warnings = self::oncePerAttribute($warnings, 'warning');
+        $unresolved = self::oncePerAttribute($unresolved);
+        $unregistered = self::oncePerAttribute($unregistered, 'name');
+        $scanned = count(array_filter($found, static fn (array $entry): bool => $entry['rendering'] === 0));
+
         if ($this->option('json')) {
             $this->line((string) json_encode([
-                'scanned' => count($found),
+                'scanned' => $scanned,
                 // What the parser that produced these verdicts actually does, not what a
                 // version somebody tested against did. `null` means the run could not ask.
                 // A build step that branches on the offender list without this reads a verdict
@@ -372,13 +390,13 @@ class CspAuditCommand extends Command
                 'surface' => array_values($paths),
                 'unscanned_namespaces' => $unscanned,
                 'failed' => count($offenders),
-                'offenders' => $offenders,
+                'offenders' => self::withoutBookkeeping($offenders),
                 'unchecked' => count($unchecked),
-                'unparsable' => $unchecked,
+                'unparsable' => self::withoutBookkeeping($unchecked),
                 'warned' => count($warnings),
-                'warnings' => $warnings,
+                'warnings' => self::withoutBookkeeping($warnings),
                 'unresolved' => count($unresolved),
-                'unresolved_expressions' => $unresolved,
+                'unresolved_expressions' => self::withoutBookkeeping($unresolved),
                 'encoder_in_script' => count($inScript),
                 'encoder_in_script_hits' => $inScript,
                 // Both halves, because a reader of this payload has the same blind spot a
@@ -397,19 +415,19 @@ class CspAuditCommand extends Command
                 // boolean is the whole of it.
                 'x_data_checked' => $registrationScan['names'] !== [],
                 'unregistered' => count($unregistered),
-                'unregistered_components' => $unregistered,
+                'unregistered_components' => self::withoutBookkeeping($unregistered),
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG));
 
             return $offenders === [] && $inScript === [] && $unregistered === [] ? self::SUCCESS : self::FAILURE;
         }
 
-        return $this->report($found, $offenders, $unchecked, $warnings, $unresolved, $inScript, $paths, $unscanned, $unregistered, $registrationScan);
+        return $this->report($scanned, $offenders, $unchecked, $warnings, $unresolved, $inScript, $paths, $unscanned, $unregistered, $registrationScan);
     }
 
     /**
      * The Alpine registrations this run can see, and where it looked.
      *
-     * ⚠️ AN EMPTY SCAN IS NOT A FINDING, and the whole `x-data` check is gated on that.
+     * An empty scan is not a finding, and the whole `x-data` check is gated on that.
      * A pattern that reads a bundle full of registrations as empty produces the same
      * output as an application that registered nothing — and the second reading turns
      * every `x-data` in the tree into an offender. So zero registrations disables the
@@ -418,11 +436,10 @@ class CspAuditCommand extends Command
      * The reporting side names the surface for the same reason the view surface is named:
      * "nothing unregistered" and "nothing looked at" have to be different sentences.
      *
-     * ⚠️ AT LEAST ONE TOOL OUTSIDE THIS PACKAGE RECOVERS THIS METHOD'S DEFAULT REGISTRATION
-     * SET BY MATCHING THE SIGNATURE OUT OF THIS FILE, WITH A REGEX. Renaming it, or changing
+     * At least one tool outside this package recovers this method's default registration
+     * set by matching the signature out of this file, with a regex. Renaming it, or changing
      * its visibility or parameter list, therefore breaks readers that no reference here can
-     * point at — adding the `$paths` parameter already did, against a pattern that expected
-     * empty parentheses. Nothing in this repository can test for that and nothing should
+     * point at. Nothing in this repository can test for that and nothing should
      * try; the coupling belongs to the reader. The note exists so the blast radius is
      * visible to whoever reshapes the method, rather than being discovered elsewhere as a
      * failure that is not about that code at all.
@@ -466,14 +483,10 @@ class CspAuditCommand extends Command
         // here as "named by a view, registered by nothing": the same words as a genuinely
         // dead panel, and the opposite meaning.
         //
-        // ⚠️ This overturns a decision that was written down two methods below, and the
-        // objection there is worth answering rather than deleting: going looking on its own
-        // "would mean guessing a package layout, and a wrong guess re-introduces the same
-        // ambiguity one level down". The reason that does not apply is that nothing here
-        // guesses -- `registrationSourceIn()` probes three concrete directory names with
-        // `is_dir()` and returns null when none is there. The command ALREADY trusts that
-        // probe enough to print its result as a paste-ready command; a path good enough to
-        // hand a developer is good enough to read.
+        // Looking on its own does not mean guessing a package layout: `registrationSourceIn()`
+        // probes three concrete directory names with `is_dir()` and returns null when none is
+        // there. The command already trusts that probe enough to print its result as a
+        // paste-ready command, and a path good enough to hand a developer is good enough to read.
         //
         // Scoped to the packages already in the scan surface, deliberately. Reading every
         // package under vendor/ would answer a question nobody asked, and a stale bundle in
@@ -501,11 +514,8 @@ class CspAuditCommand extends Command
         // prints `--registrations=<package source>`, and under the old replacing semantics
         // that one flag threw away the application's own bundles on the way in.
         //
-        // ⚠️ ISOLATION IS STILL REACHABLE, and it had to stay: replacing was not only a
-        // default, it was the only way to ask "what does THIS bundle register, and nothing
-        // else". Making the flag additive without a replacement for that would have removed
-        // a working capability silently -- no test would have failed for the right reason,
-        // and the answer would just quietly have become a different question.
+        // Isolation stays reachable through `--registrations-only`: it is the only way to ask
+        // "what does this bundle register, and nothing else".
         $candidates = $this->option('registrations-only') === true
             ? $given
             : array_merge($candidates, $given);
@@ -533,7 +543,7 @@ class CspAuditCommand extends Command
         }
 
         /*
-         * ⚠️ AND THE BLADE FILES OF THE SCANNED SURFACE, because a registration does not
+         * And the Blade files of the scanned surface, because a registration does not
          * have to live in a `.js` file to be real.
          *
          * Livewire's documented way to register an Alpine component is an `@script` block
@@ -572,8 +582,7 @@ class CspAuditCommand extends Command
         $names = AlpineRegistrations::inFiles($files);
 
         /*
-         * ⚠️ ONLY THE `@script` REGIONS OF A BLADE FILE, NEVER THE WHOLE FILE — and the
-         * difference is the one the reporter warned about before this was written.
+         * Only the `@script` regions of a Blade file, never the whole file.
          *
          * `@script` is the only placement that actually registers: Livewire re-runs it when
          * the component initializes, which is before its directives are evaluated. A bare
@@ -769,7 +778,7 @@ class CspAuditCommand extends Command
      * sequence ends the block and turns everything after it into markup. The docblock is a
      * true statement that only reaches whoever reads it; this reaches the build.
      *
-     * ⚠️ This is the arm rather than the flag, and the difference is reach. Escaping every
+     * This is the arm rather than the flag, and the difference is reach. Escaping every
      * slash in the output defuses ONE vector of a context the encoder was never meant for —
      * it makes the placement less harmful without making it right, and it costs every
      * developer a source full of escaped slashes for a mistake most of them never make. A
@@ -844,7 +853,7 @@ class CspAuditCommand extends Command
 
     /**
      * @param  array<int, string>  $paths
-     * @return array<int, array{file: string, line: int, attribute: string, expression: string, unresolved: string|null}>
+     * @return array<int, array{file: string, line: int, attribute: string, expression: string, unresolved: string|null, tag: string, offset: int, rendering: int}>
      */
     private function collectExpressions(array $paths): array
     {
@@ -871,6 +880,8 @@ class CspAuditCommand extends Command
                         'expression' => $hit['expression'],
                         'unresolved' => $hit['unresolved'],
                         'tag' => $hit['tag'],
+                        'offset' => $hit['offset'],
+                        'rendering' => $hit['rendering'],
                     ];
                 }
             }
@@ -897,7 +908,7 @@ class CspAuditCommand extends Command
      * is Blade's question and lives next to the walk; choosing what replaces them is a
      * statement about Alpine's grammar and belongs to this command.
      *
-     * @return array<int, array{line: int, attribute: string, expression: string, unresolved: string|null, tag: string}>
+     * @return array<int, array{line: int, attribute: string, expression: string, unresolved: string|null, tag: string, offset: int, rendering: int}>
      */
     private function expressionsIn(string $contents): array
     {
@@ -923,6 +934,10 @@ class CspAuditCommand extends Command
                     // The element the expression sits on: the build refuses every expression on
                     // some elements, whatever it says.
                     'tag' => strtolower($tag['name']),
+                    // Where the attribute starts in the file. The readings of one attribute share
+                    // it, and two attributes of one name on one line do not.
+                    'offset' => $tag['attrStart'] + $attribute['offset'],
+                    'rendering' => $attribute['rendering'],
                 ];
             }
         }
@@ -1004,7 +1019,10 @@ class CspAuditCommand extends Command
     /**
      * The Alpine-evaluated attributes inside one tag's attribute region.
      *
-     * @return array<int, array{name: string, expression: string, unresolved: string|null, offset: int}>
+     * One entry per reading of a value: an attribute holding a conditional Blade block is read
+     * once for each rendering, and `rendering` numbers those readings from 0.
+     *
+     * @return array<int, array{name: string, expression: string, unresolved: string|null, offset: int, rendering: int}>
      */
     private function attributesIn(string $region, bool $isComponent): array
     {
@@ -1092,45 +1110,60 @@ class CspAuditCommand extends Command
             // position a hole was found in. Permissive is the right direction here — a false
             // violation costs a developer a hunt through a template that is fine, and after
             // one of those they stop reading the report that was their only warning.
+            //
+            // A conditional block is the one hole a placeholder cannot fill:
+            // `{ a: 1, @if($x) b: 2, @endif }` is a fragment, and no token turns it into an
+            // expression. What the browser receives is one of its renderings, so each
+            // rendering is parsed, and nothing inside a block goes unread. A value whose
+            // blocks this reading does not understand is handed on whole, and a rejection of
+            // it lands with the unchecked expressions rather than with the clean ones.
             $raw = $match['expr'][0];
-            $expression = trim(BladeParser::substituteServerSideConstructs($raw, 'BLADE'));
+            $renderings = BladeParser::conditionalBranches($raw) ?? [$raw];
+            $seen = [];
 
-            if ($expression === '') {
-                continue;
+            foreach ($renderings as $rendering) {
+                $expression = trim(BladeParser::substituteServerSideConstructs($rendering, 'BLADE'));
+
+                if ($expression === '' || isset($seen[$expression])) {
+                    continue;
+                }
+
+                $seen[$expression] = true;
+
+                // What the substitution COST is recorded, because the placeholder is the point
+                // at which this audit stops measuring and starts assuming.
+                //
+                // `BLADE` parses anywhere an identifier parses, which is what makes the check
+                // usable at all — but it also means the expression passes on the strength of a
+                // token that stands in for text nobody here has seen. The rendered form can be
+                // anything, and one of the things it commonly is happens to be the exact
+                // failure this command exists to find.
+                //
+                // The version that reported `JSON.parse(…)` as unresolvable therefore caught
+                // the form nobody writes by hand and passed the form everyone writes, in the
+                // same file on the same line — and a reader checking whether the fix had landed
+                // planted a literal probe, watched it fire, and concluded the opposite of the
+                // truth. That is the worst direction for an audit to be wrong in: it does not
+                // merely miss, it actively certifies.
+                $unresolved = self::unresolvedReason($rendering);
+
+                // A Livewire action is judged as Livewire PRESENTS it. `wire:click="alert"`
+                // never reaches Alpine as the bare identifier `alert` — it is rewritten to a
+                // member of the component proxy first — so reading the raw source declares a
+                // working handler dead whenever a method name happens to collide with a
+                // browser global.
+                if (str_starts_with($name, 'wire:')) {
+                    $expression = self::asLivewireEvaluatesIt($expression);
+                }
+
+                $found[] = [
+                    'name' => $name,
+                    'expression' => $expression,
+                    'unresolved' => $unresolved,
+                    'offset' => (int) $match[0][1],
+                    'rendering' => count($seen) - 1,
+                ];
             }
-
-            // What the substitution COST is recorded, because the placeholder is the point
-            // at which this audit stops measuring and starts assuming.
-            //
-            // `BLADE` parses anywhere an identifier parses, which is what makes the check
-            // usable at all — but it also means the expression passes on the strength of a
-            // token that stands in for text nobody here has seen. The rendered form can be
-            // anything, and one of the things it commonly is happens to be the exact
-            // failure this command exists to find.
-            //
-            // The version that reported `JSON.parse(…)` as unresolvable therefore caught
-            // the form nobody writes by hand and passed the form everyone writes, in the
-            // same file on the same line — and a reader checking whether the fix had landed
-            // planted a literal probe, watched it fire, and concluded the opposite of the
-            // truth. That is the worst direction for an audit to be wrong in: it does not
-            // merely miss, it actively certifies.
-            $unresolved = self::unresolvedReason($raw);
-
-            // A Livewire action is judged as Livewire PRESENTS it. `wire:click="alert"`
-            // never reaches Alpine as the bare identifier `alert` — it is rewritten to a
-            // member of the component proxy first — so reading the raw source declares a
-            // working handler dead whenever a method name happens to collide with a
-            // browser global.
-            if (str_starts_with($name, 'wire:')) {
-                $expression = self::asLivewireEvaluatesIt($expression);
-            }
-
-            $found[] = [
-                'name' => $name,
-                'expression' => $expression,
-                'unresolved' => $unresolved,
-                'offset' => (int) $match[0][1],
-            ];
         }
 
         return $found;
@@ -1344,7 +1377,52 @@ class CspAuditCommand extends Command
     }
 
     /**
-     * @param  array<int, array{file: string, line: int, attribute: string, expression: string}>  $found
+     * One list with each fact about an attribute kept once.
+     *
+     * An attribute holding a conditional Blade block is parsed once per rendering, and a fact
+     * several renderings share is one fact. The first rendering that shows it is kept; an entry
+     * that differs in one of the named fields is a fact of its own. An attribute is told apart
+     * by its file and where it starts in it, so two attributes of one name on one line stay two.
+     *
+     * @template T of array{file: string, offset: int}
+     *
+     * @param  array<int, T>  $entries
+     * @return list<T>
+     */
+    private static function oncePerAttribute(array $entries, string ...$fields): array
+    {
+        $kept = [];
+
+        foreach ($entries as $entry) {
+            $key = $entry['file']."\0".$entry['offset'];
+
+            foreach ($fields as $field) {
+                $key .= "\0".json_encode($entry[$field] ?? null);
+            }
+
+            $kept[$key] ??= $entry;
+        }
+
+        return array_values($kept);
+    }
+
+    /**
+     * A list as the JSON payload carries it: where an attribute starts in its file and which
+     * rendering of it was read are this command's bookkeeping, not part of a finding.
+     *
+     * @param  array<int, array<string, mixed>>  $entries
+     * @return list<array<string, mixed>>
+     */
+    private static function withoutBookkeeping(array $entries): array
+    {
+        return array_values(array_map(
+            static fn (array $entry): array => array_diff_key($entry, ['offset' => true, 'rendering' => true]),
+            $entries
+        ));
+    }
+
+    /**
+     * @param  int  $scanned  The attributes read, each counted once however many renderings it was parsed in.
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, error: string}>  $offenders
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, error: string}>  $unchecked
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, warning: string}>  $warnings
@@ -1355,7 +1433,7 @@ class CspAuditCommand extends Command
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, name: string}>  $unregistered
      * @param  array{names: list<string>, files: list<string>}  $registrationScan
      */
-    private function report(array $found, array $offenders, array $unchecked, array $warnings = [], array $unresolved = [], array $inScript = [], array $paths = [], array $unscanned = [], array $unregistered = [], array $registrationScan = ['names' => [], 'files' => []]): int
+    private function report(int $scanned, array $offenders, array $unchecked, array $warnings = [], array $unresolved = [], array $inScript = [], array $paths = [], array $unscanned = [], array $unregistered = [], array $registrationScan = ['names' => [], 'files' => []]): int
     {
         // Named rather than implied. "Scanned" reads as "checked, and it works", and
         // the difference between what this measures and what a reader hears is the
@@ -1363,7 +1441,7 @@ class CspAuditCommand extends Command
         // FIX for them passed here, and it was just as dead. The audit had produced
         // well-founded confidence, and on the second round that confidence did not
         // hold.
-        $this->line(sprintf('Scanned %d Alpine expression(s) for GRAMMAR and resolvability.', count($found)));
+        $this->line(sprintf('Scanned %d Alpine expression(s) for GRAMMAR and resolvability.', $scanned));
 
         // WHERE, on the same footing as WHAT. The count is true of the directories that were
         // read, and a reader cannot tell from it which those were.
@@ -1371,7 +1449,7 @@ class CspAuditCommand extends Command
             $this->line(sprintf('Surface: %s', implode(', ', $paths)));
         }
 
-        // ⚠️ AND THE ONE THING IT CANNOT DECIDE FROM THE SOURCE, NAMED IN THE SAME BREATH.
+        // And the one thing it cannot decide from the source, named in the same breath.
         //
         // "Resolvability" here means: does the identifier exist in a scope this audit can
         // see in the template. It cannot mean: does that scope SURVIVE the rendered markup.
@@ -1601,7 +1679,7 @@ class CspAuditCommand extends Command
             $this->line('an audit that fails your build over one gets deleted rather than read.');
         }
 
-        // ⚠️ REPORTED BEFORE THE VERDICT, because a scope that was never registered is not a
+        // Reported before the verdict, because a scope that was never registered is not a
         // grammar problem and would otherwise sit under a PASS.
         //
         // What it looks like on the page: the element gets no scope, `x-show` cannot
@@ -1609,7 +1687,7 @@ class CspAuditCommand extends Command
         // `x-cloak` regardless. The panel is VISIBLE with every control in it dead — so the
         // symptom points at the stylesheet and the cause is a missing script.
         if ($unregistered !== []) {
-            // ⚠️ TWO DIFFERENT SENTENCES, AND ONLY ONE OF THEM JUSTIFIES A TICKET.
+            // Two different sentences, and only one of them justifies a ticket.
             //
             // "`x` is not registered" is a claim about the world: no scope, so the panel
             // renders visible and dead. "`x` was not among the registrations I read" is a
@@ -1744,9 +1822,9 @@ class CspAuditCommand extends Command
         $this->line('coalescing, spread, `new`, function expressions, and several statements in one');
         $this->line('attribute.');
 
-        // ⚠️ Printed only when the parser that just judged your files actually rejects it.
-        // `@alpinejs/csp` accepted a reserved word as a member name from 3.17.3 on, and this
-        // block fires on ANY offender — so stating it unconditionally told developers on a
+        // Printed only when the parser that just judged your files actually rejects it.
+        // `@alpinejs/csp` accepts a reserved word as a member name from 3.17.3 on, and this
+        // block fires on any offender, so stated unconditionally it would tell developers on a
         // current build to rewrite methods that work. `null` means the run could not ask, and
         // then it says nothing: silence is recoverable, a confident wrong instruction is not.
         if ($this->reservedWordAsMember === false) {
@@ -1802,24 +1880,22 @@ class CspAuditCommand extends Command
     /**
      * The question that comes BEFORE the repair, when an offending view is a package's.
      *
-     * ⚠️ Reported from a starter kit whose gate stayed red over a package that was
-     * CORRECT. A package that serves its bundle from its own route — a deliberate
-     * choice, because an inline `<script>` under a nonce-less `script-src 'self'` is
-     * refused with no error and no log — appears in neither of the sources this run
-     * defaults to. Every factory it registers then reads as "named by a view, registered
-     * by nothing", which is word-for-word the report for a genuinely dead panel. The two
-     * cases are indistinguishable in the output.
+     * A package that serves its bundle from its own route — a deliberate choice, because an
+     * inline `<script>` under a nonce-less `script-src 'self'` is refused, and the browser
+     * reports that only as a policy violation the page itself never shows — appears in neither
+     * of the sources this run defaults to. Every factory it
+     * registers then reads as "named by a view, registered by nothing", which is word for
+     * word the report for a genuinely dead panel.
      *
      * That matters because the repair printed above is expensive in the wrong direction:
      * a reader who follows it files a false ticket against a correct package and turns a
      * working screen off. The ticket costs somebody else's time; the shutdown is noticed
      * only when a person misses the panel.
      *
-     * So this asks whether the run READ the package's own source, and hands over the
-     * command that answers it. What it deliberately does NOT do is go looking on its own:
-     * that would mean guessing a package layout, and a wrong guess here re-introduces the
-     * same ambiguity one level down. The flag exists and is documented — what was missing
-     * is the pointer to it at the place somebody needs it.
+     * So this says, per package, whether the run read the package's own source. When it did
+     * and the name is still unregistered, the finding stands; when there is no source to
+     * point at, it says so; otherwise it hands over the command that points the run at it,
+     * at the place somebody needs it.
      *
      * @param  array<int, array{file: string, line: int, attribute: string, expression: string, name: string}>  $unregistered
      * @param  array{names: list<string>, files: list<string>}  $registrationScan

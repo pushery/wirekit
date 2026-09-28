@@ -82,11 +82,10 @@ export default function wirekitCombobox(config = {}) {
                 return this.allOptions;
             }
 
-            // ⚠️ The SEEDED label is not a search, and treating it as one made every option but
-            // the current selection unreachable: the field pre-fills `query` with the chosen
-            // row's label so it reads as the choice, and the filter then matched exactly that one
-            // row. Opening the picker showed a list of length 1 -- a reader had to select-all and
-            // delete before they could see anything else.
+            // The seeded label is not a search, and treating it as one would make every option
+            // but the current selection unreachable: the field pre-fills `query` with the chosen
+            // row's label so it reads as the choice, and the filter would then match exactly that
+            // one row.
             //
             // Measured 2026-09-18 on a standalone combobox with an initial selection: 5 options,
             // 1 filtered, before this component was embedded anywhere. It contradicts the
@@ -282,15 +281,12 @@ export default function wirekitCombobox(config = {}) {
             // any arithmetic: a `fixed` element with no top/left sits at its static
             // position, and getComputedStyle reports that resolved.
             //
-            // ⚠️ THE TELEPORT IS NOT THE CAUSE, and this comment said it was for
-            // long enough to teach it. Alpine DOES carry a ref across an
+            // The teleport is not the cause. Alpine carries a ref across an
             // `x-teleport`: the directive sets `_x_teleportBack` on the clone, and
             // `findClosest` hops that back-pointer before it walks up the DOM, so
-            // `x-ref` still registers into the scope that declared the template.
-            // Read in the installed Alpine 3.16.3 rather than inferred, and
-            // `context-menu.blade.php` says the same thing in prose while
-            // `context-menu.js` reads `this.$refs.panel` on a teleported panel and
-            // works. The real cause is the nested scope, immediately below.
+            // `x-ref` still registers into the scope that declared the template
+            // (`context-menu.js` reads `this.$refs.panel` on a teleported panel).
+            // The cause is the nested scope, immediately below.
             const panels = [
                 this._listId ? document.getElementById(this._listId) : this.$refs.cbxList,
                 this._emptyId ? document.getElementById(this._emptyId) : this.$refs.cbxEmpty,
@@ -332,7 +328,7 @@ export default function wirekitCombobox(config = {}) {
                     // `auto` or a length sizes itself and is only bounded here.
                     matchReferenceWidth: this._panelWidth === 'trigger',
                     minReferenceWidth: this._panelWidth !== 'trigger',
-                    // ⚠️ KEEP FOLLOWING THE FIELD — a single placement does not survive a
+                    // Keep following the field — a single placement does not survive a
                     // Livewire update, and the panel does not recover on its own.
                     //
                     // Everything the positioner computes is written as INLINE STYLE: `top`,
@@ -358,8 +354,8 @@ export default function wirekitCombobox(config = {}) {
                     // component ships to pages that have no Livewire at all.
                     autoReposition: true,
 
-                    // ⚠️ AND the erasure repair, because `autoReposition` covers that case only
-                    // BY ACCIDENT here — it works, and it works for a reason this component does
+                    // And the erasure repair, because `autoReposition` covers that case only
+                    // by accident here — it works, and it works for a reason this component does
                     // not control.
                     //
                     // `autoUpdate` recomputes on a BOX change, never on an attribute change. What
@@ -368,11 +364,10 @@ export default function wirekitCombobox(config = {}) {
                     // whether the repair happens depends on whether the width being removed was
                     // BINDING on that panel, on that page.
                     //
-                    // ⚠️ Predicted that `panelWidth` other than `trigger` would break it, since
-                    // that path writes `minWidth`/`maxWidth` rather than a width. MEASURED, and
-                    // the prediction was wrong: on a wide field the `minWidth` is binding too, so
-                    // the panel still collapses and the repair still happens. The hole is not
-                    // where it was expected.
+                    // A `panelWidth` other than `trigger` writes `minWidth`/`maxWidth` rather
+                    // than a width, and that does not change the case: on a wide field the
+                    // `minWidth` is binding too, so the panel still collapses and the repair
+                    // still happens.
                     //
                     // It is kept anyway, and the reason is what the measurement showed rather than
                     // what it failed to show: the repair rests on a coincidence between two
@@ -384,7 +379,7 @@ export default function wirekitCombobox(config = {}) {
                     repairErasure: true,
                 });
 
-                // ⚠️ The global is documented as something a component asks for WITHOUT depending
+                // The global is documented as something a component asks for WITHOUT depending
                 // on it, so it may be absent — and by the same reasoning it may be something other
                 // than this package's own helper. A stub that returns a non-thenable makes `.then`
                 // throw, which is a worse failure than the missing placement it replaces.
@@ -470,9 +465,9 @@ export default function wirekitCombobox(config = {}) {
         /**
          * Typing opens the list and restarts the highlight at the first ENABLED option.
          *
-         * ⚠️ THIS SET `highlight = 0` AND THAT IS NOT THE TOP, it is the first ROW. When
-         * row 0 is disabled — which typing makes ordinary, because the filter decides what
-         * lands there — `aria-activedescendant` then named an option nobody can choose:
+         * Not `highlight = 0`: that is the first row, not the top. When row 0 is disabled —
+         * which typing makes ordinary, because the filter decides what lands there —
+         * `aria-activedescendant` would name an option nobody can choose:
          * no visible highlight, because the template paints the highlight and the disabled
          * style separately, and Enter silently doing nothing while a screen reader has
          * just announced that option as the active one.

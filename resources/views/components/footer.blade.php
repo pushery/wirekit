@@ -31,14 +31,13 @@
     // Inner-container max-width resolution — reads the same
     // `--size-wk-container-*` token family as `<x-wirekit::container>`.
     // No hardcoded fallback values: the token IS the source of truth.
-    $innerMaxClass = match ($max) {
+    $innerMaxClass = match (WireKit::validateProp('footer', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full'])) {
         'sm' => 'max-w-[var(--size-wk-container-sm)]',
         'md' => 'max-w-[var(--size-wk-container-md)]',
         'lg' => 'max-w-[var(--size-wk-container-lg)]',
         'xl' => 'max-w-[var(--size-wk-container-xl)]',
         '2xl' => 'max-w-[var(--size-wk-container-2xl)]',
         'full' => 'max-w-full',
-        default => WireKit::validateProp('footer', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full']),
     };
 
     // Footer — landing page footer with brand, columns, and legal slots.

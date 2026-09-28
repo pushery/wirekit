@@ -54,6 +54,7 @@ const KNOWN_INTENTS = ['primary', 'accent', 'info', 'success', 'warning', 'dange
 const sameKeys = (a, b) => a.length === b.length && [...a].sort().join('\u0000') === [...b].sort().join('\u0000');
 
 import { pluralize } from '../utils/plural.js';
+import { safeHref } from '../utils/safe-href.js';
 
 export default function wirekitDataTable(config = {}) {
     return {
@@ -88,8 +89,8 @@ export default function wirekitDataTable(config = {}) {
         // prominence -> class, resolved in PHP so Tailwind compiles the literals and the drift
         // inventory can trace them. Read through a method rather than indexed in the template:
         // the fallback needs `??`, which is outside Alpine's CSP grammar, and an expression
-        // outside that grammar is never evaluated on the CSP bundle — the binding goes inert
-        // and nothing reports it.
+        // outside that grammar is never evaluated on the CSP bundle: the binding goes inert,
+        // and the only report is an `Alpine Expression Error` in the console.
         prominenceClasses: config.prominenceClasses && typeof config.prominenceClasses === 'object' ? config.prominenceClasses : {},
 
         // ── State from the server ────────────────────────────────────────
@@ -283,9 +284,9 @@ export default function wirekitDataTable(config = {}) {
          * the frozen cell with it instead of freezing something the reader cannot see.
          *
          * It lives here rather than in the directive because the shape it needs there —
-         * `visibleColumns[0]?.key` — is outside Alpine's CSP grammar. An expression the CSP
-         * build cannot parse is never evaluated, so the binding would be silently inert on
-         * that bundle and the column would simply not freeze, with nothing reporting it.
+         * `visibleColumns[0]?.key` — is outside Alpine's CSP grammar. The CSP build never
+         * evaluates such an expression; it logs `Alpine Expression Error`, and the column does
+         * not freeze on that bundle.
          * Every column is hideable, so the empty case is reachable: guard the lookup rather
          * than compare against `undefined`.
          */
@@ -439,31 +440,16 @@ export default function wirekitDataTable(config = {}) {
          * The URL a link cell points at, or '' for a row without one.
          *
          * Only a URL that cannot run script comes back. Rows are data, often data somebody typed,
-         * and a `javascript:` value bound to an href runs on the click. Browsers drop tabs and
-         * newlines anywhere in a URL, and control characters and spaces before it, before they
-         * read the scheme, so the scheme is read here the same way; a check on the raw string
-         * lets `java\tscript:` through.
+         * and a `javascript:` value bound to an href runs on the click. `safeHref` reads the
+         * scheme the way the browser does, so `java\tscript:` is refused as well; a check on the
+         * raw string lets it through.
          */
         cellHref(row, col) {
             if (col.cellType !== 'link' || ! col.hrefKey) {
                 return '';
             }
 
-            const raw = row[col.hrefKey];
-            const href = raw === null || raw === undefined ? '' : String(raw).trim();
-            let start = 0;
-
-            while (start < href.length && href.charCodeAt(start) <= 0x20) {
-                start++;
-            }
-
-            const scheme = href.slice(start).replace(/[\t\n\r]/g, '').match(/^([a-z][a-z0-9+.-]*):/i);
-
-            if (scheme && ! ['http', 'https', 'mailto', 'tel'].includes(scheme[1].toLowerCase())) {
-                return '';
-            }
-
-            return href;
+            return safeHref(row[col.hrefKey]);
         },
         /**
          * Whether a cell draws as plain text: a text column, a link column whose row has no URL,
@@ -491,7 +477,7 @@ export default function wirekitDataTable(config = {}) {
          * Deliberately a SECOND KEY rather than a template. A template per column is the
          * complete answer and a much larger one: the body is an Alpine `x-for` over rows, so
          * there is no Blade cell to hand back, and getting one means a real API. This covers
-         * the measured majority, costs one optional field, and forecloses none of it — a
+         * the two-line cells measured above, costs one optional field, and forecloses none of it — a
          * column can gain a template later and this stays the shortcut for the common case.
          *
          * Empty behaves as absent: a row whose sub-field is null renders one line, not one

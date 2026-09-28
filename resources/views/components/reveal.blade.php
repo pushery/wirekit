@@ -7,7 +7,8 @@
     //   scale, zoom, flip, rotate, bounce, spring
     'preset' => null,
     // Trigger mode: 'viewport' (IntersectionObserver), 'click', or 'manual'
-    // (developer dispatches Alpine.$dispatch('wirekit:reveal')).
+    // (fires on a `wirekit:reveal` event at window: `$dispatch('wirekit:reveal')`
+    // in Alpine, or window.dispatchEvent(new CustomEvent('wirekit:reveal'))).
     'trigger' => null,
     // Duration token: 'fast' (150ms), 'normal' (300ms, default), 'slow' (600ms).
     'duration' => null,
@@ -106,7 +107,9 @@
         $delay === null => null,
         is_int($delay) && $delay >= 0 => $delay.'ms',
         in_array($delay, ['none', 'sm', 'md', 'lg', 'xl'], true) => "var(--motion-wk-delay-{$delay})",
-        default => WireKit::validateProp('reveal', 'delay', $delay, ['none', 'sm', 'md', 'lg', 'xl']),
+        // An unknown value is reported, and then delayed like the first allowed token rather
+        // than written into the style as its bare name.
+        default => 'var(--motion-wk-delay-'.WireKit::validateProp('reveal', 'delay', (string) $delay, ['none', 'sm', 'md', 'lg', 'xl']).')',
     };
 
     // Compose caller's `style=…` with our internal `animation-delay` into
@@ -127,14 +130,10 @@
     /*
      * The one base class, routed through the resolver so `scope` is not a decoration.
      *
-     * ⚠️ `scope` HAS BEEN A DECLARED, DOCUMENTED PROP THAT DID NOTHING. This component made no
-     * `resolveClasses()` call at all, so a registered `WireKit::scope('marketing', ['reveal' =>
-     * …])` could never be consulted — and because the prop IS declared, `warnUnknownProps` is
-     * silent too. A developer got total silence: no effect, no warning, and `docs/customization.md`
-     * presenting scoped personalization as one of four supported levels.
-     *
-     * Proven before and after by registering one scope carrying an override for `reveal` and a
-     * sibling component, then rendering both: only the sibling picked it up.
+     * Without a `resolveClasses()` call a registered `WireKit::scope('marketing', ['reveal' =>
+     * …])` could never be consulted, and because the prop is declared, `warnUnknownProps` would
+     * be silent too: no effect and no warning, for one of the four personalization levels
+     * `docs/customization.md` documents.
      */
     $baseClasses = WireKit::resolveClasses('reveal', 'base', 'w-full', $scope);
 @endphp

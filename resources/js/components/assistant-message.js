@@ -17,6 +17,7 @@
  *
  * Cleanup contract:
  *   - _observer (MutationObserver on the body) — disconnected in destroy()
+ *   - _changeFrame (frameCoalesce, the observer's frame) — canceled in destroy()
  *   Callbacks null-guard `_body` first: browser-queued observer callbacks can
  *   fire AFTER destroy() has torn the component down.
  */

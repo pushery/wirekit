@@ -193,8 +193,8 @@ final class BaseLocaleJsonLoader implements Loader
         // to keep winning key by key.
         $ours = array_merge($english, $catalog, $own);
 
-        // ⚠️ THE UN-PREFIXED COPY, AT THE VERY BOTTOM, AND IT IS A COMPATIBILITY LAYER RATHER
-        // THAN A LEFTOVER.
+        // The un-prefixed copy, at the very bottom, and it is a compatibility layer rather
+        // than a leftover.
         //
         // Registering this package's lang directory as a JSON path had a side effect nobody
         // designed: its keys were plain English words, so an APPLICATION calling `__('Close')`
@@ -230,7 +230,7 @@ final class BaseLocaleJsonLoader implements Loader
      * from an application that had already adopted the prefix, and a plain `Select...` from one
      * that has not. Whichever it wrote, it wrote it about this string.
      *
-     * ⚠️ NOT GATED ON `$legacyKeyBridge`, and the difference is deliberate. That flag governs
+     * Not gated on `$legacyKeyBridge`, and the difference is deliberate. That flag governs
      * whether a plain key is INFERRED to mean ours — an inference an application may reasonably
      * decline, and one the docs say goes away in the next major. This is not an inference: the
      * application named a key this package used to ship, and the only question is whether the
@@ -253,14 +253,12 @@ final class BaseLocaleJsonLoader implements Loader
                 continue;
             }
 
-            // ⚠️ THE TWO SPELLINGS ANSWER TO DIFFERENT RULES, and the first draft read both
-            // unconditionally. The PREFIXED old key is not an inference — the application
+            // The two spellings answer to different rules. The PREFIXED old key is not an inference — the application
             // named a key this package used to ship, so a rename must not take it away
             // whatever the flag says. A PLAIN old key IS the inference `$legacyKeyBridge`
             // governs: an application that switched the flag off has said "do not read my
             // bare keys as yours", and honoring it here anyway re-opens exactly the door
-            // they closed. Caught by the control in the bridge-off case, which expected the
-            // package's own wording and got the application's.
+            // they closed.
             $candidates = [$was];
 
             if ($this->legacyKeyBridge) {
@@ -290,12 +288,11 @@ final class BaseLocaleJsonLoader implements Loader
      * error anywhere. That is precisely the failure mode the rename was reported for, and
      * shipping it as the fix would have been the worst possible answer to it.
      *
-     * ⚠️ THE PRICE IS NAMED RATHER THAN HIDDEN: for an application that has the collision, the
+     * The price is named rather than hidden: for an application that has the collision, the
      * bridge PRESERVES it. If their `Map` means "to map" and ours means "a map", the bridge
      * still hands their wording to our component. That application has to act — rename their
-     * key, adopt `wirekit::Map`, or turn the bridge off. What the change buys them is that
-     * `wirekit:verify` can now NAME the collision, and that adopting the namespaced key is a
-     * way out that did not exist before.
+     * key, adopt `wirekit::Map`, or turn the bridge off. What it gives them is that
+     * `wirekit:verify` names the collision, and that adopting the namespaced key is a way out.
      *
      * @param  array<string, string>  $ours  This package's own catalog for this locale, namespaced.
      * @param  array<string, mixed>  $merged  The stacked result the bridge writes into.

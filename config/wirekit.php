@@ -38,20 +38,24 @@ return [
     | Decides how WireKit reacts when a component is rendered with a value
     | outside the allowed list — invalid prop value, unknown icon alias,
     | etc. See `Pushery\WireKit\Support\StrictnessGate` for the gate's
-    | central decision.
+    | central decision, and https://docs.wirekit.app/strict-validation for
+    | the full matrix.
     |
-    | null  — Default. Strict in debug (APP_DEBUG=true), lenient in prod.
-    |         Most apps want this — invalid props blow up in development
-    |         where the developer can fix them, but a typo doesn't crash
-    |         a customer-facing page in production.
+    | Two settings decide it together. `strict` sets how loudly an invalid
+    | prop is reported; `throw_on_invalid` below decides whether a strict
+    | report is an exception. A prop only throws when both say so.
     |
-    | true  — Force strict everywhere (CI / staging hardening).
-    |         InvalidArgumentException is thrown with a Did-you-mean hint
-    |         on every miss, in dev AND in prod.
+    | null  — Default. Strict when APP_DEBUG=true, lenient otherwise.
     |
-    | false — Force lenient everywhere (snapshot CI, deliberate fallback).
-    |         The first allowed value is returned silently after a
-    |         logger->warning() call. No exception, even in debug.
+    | true  — Strict everywhere. An invalid prop throws where
+    |         `throw_on_invalid` allows it (by default a console or test
+    |         run) and is logged at ERROR level with the fallback rendered
+    |         everywhere else, an HTTP request included. For a staging
+    |         environment that should fail loudly, set both.
+    |
+    | false — Lenient everywhere. An invalid prop is logged at WARNING
+    |         level and the first allowed value is rendered. No exception,
+    |         whatever `throw_on_invalid` says.
     |
     */
 
@@ -63,8 +67,9 @@ return [
         // context: console / artisan / test fail fast so a typo breaks the build
         // loudly, while an HTTP request degrades so one bad value cannot 500 a
         // whole view (an unknown icon renders an inert placeholder). Set true to
-        // always throw, false to always degrade — an explicit value wins in both
-        // directions.
+        // throw, false to degrade — an explicit value wins in both directions.
+        // A prop value throws only while `strict` is on as well; an unknown icon
+        // alias reads this setting alone.
         'throw_on_invalid' => env('WIREKIT_THROW_ON_INVALID'),
     ],
 
@@ -96,6 +101,23 @@ return [
         //
         // 0 restores the old read-everything behavior.
         'scan_logs_window_hours' => env('WIREKIT_DOCTOR_SCAN_LOGS_WINDOW_HOURS', 24),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sandbox Audit Log
+    |--------------------------------------------------------------------------
+    |
+    | The sandbox renderer writes one line per request to
+    | storage/logs/sandbox/YYYY-MM-DD.log. The client address is kept only as
+    | a digest of its network (an IPv4 /24, an IPv6 /48), keyed with the
+    | application key. Daily files older than the retention below are deleted
+    | when a new day's file is opened; null keeps them all.
+    |
+    */
+
+    'sandbox' => [
+        'audit_log_retention_days' => env('WIREKIT_SANDBOX_AUDIT_RETENTION_DAYS', 14),
     ],
 
     /*
@@ -539,9 +561,10 @@ return [
         // `php artisan wirekit:doctor` now answers this for your installation: it
         // names any configured preset whose package is absent, and it names the
         // config entry rather than the package, because two presets can need the
-        // same one. Worth running after changing the line below — a preset whose
-        // package is missing does not degrade to a placeholder, it throws when a
-        // page renders.
+        // same one. Worth running after changing the line below. A preset whose
+        // package is missing decides by `validation.throw_on_invalid`: by default
+        // an HTTP request renders the icon placeholder and logs which package to
+        // install, while a console or test run throws.
         // 'presets' => ['heroicons', 'heroicons-marketing'],
 
         // Override individual aliases (optional).
@@ -711,22 +734,14 @@ return [
     | 'core' — The chart and image-compare Alpine components, plus the one
     |          directive the zero-JS form primitives need.
     |          For projects that only use the form components, charts and the
-    |          before/after slider. It installs the overlay ROOT but registers no
+    |          before/after slider. It installs the overlay root but registers no
     |          overlay component: `x-teleport` throws when its target is missing
     |          and takes the page down, where an unregistered component is merely
     |          inert.
-    |          ⚠️ No kilobyte figure here on purpose. The pointer above is the
-    |          measured source; a number copied into this block has nothing behind
-    |          it and rots. It said "~4 KB gzip" while the bundle measured 6.51 KB
-    |          — 63% out — and the file is published, so that copy is frozen in the
-    |          application at whatever it said on install day.
-    |
-    |          ⚠️ This block said "Only chart Alpine component" while
-    |          image-compare had been in the bundle for several releases —
-    |          `resources/js/wirekit.core.js` records that, and the two other
-    |          places a developer looks were corrected without this one. This
-    |          file is published by `vendor:publish`, so a wrong line here is
-    |          frozen into the application and never updated again.
+    |          The measured sizes live at the address above rather than here:
+    |          this file is copied into your application when you publish it,
+    |          and a figure written into it would stay behind as the bundle
+    |          changes.
     |
     | 'csp'  — For a Content-Security-Policy without `script-src 'unsafe-eval'`.
     |
@@ -737,31 +752,31 @@ return [
     |          against Alpine's CSP distribution, which parses and interprets
     |          expressions instead.
     |
-    |          ONE DIFFERENCE THAT MATTERS: unlike 'full' and 'core', this
-    |          bundle CONTAINS Alpine and starts it. Do not also load your own —
-    |          two Alpines on a page is its own class of bug.
+    |          One difference matters: unlike 'full' and 'core', this bundle
+    |          contains Alpine and starts it. Do not also load your own — two
+    |          Alpines on a page is its own class of bug.
     |
     |          Every directive in the catalog runs under this bundle. An audit
     |          drives Alpine's own parser and evaluator over each one on every
     |          build, and the budget for failures is zero.
     |
-    |          WHAT IT DOES NOT COVER: Livewire brings its own directives and
+    |          What it does not cover: Livewire brings its own directives and
     |          compiles them at runtime the same way. Livewire ships a CSP
     |          distribution for that — without it the page still needs
     |          'unsafe-eval', whichever WireKit bundle you load.
     |
-    |          ⚠️ ON A LIVEWIRE PAGE THIS BUNDLE'S PARSER NEVER RUNS, and the
-    |          order is fixed by the tags rather than by the source: Livewire's
-    |          script carries no `defer` and executes while the document is
-    |          parsed, setting window.Alpine; this bundle is deferred and runs
-    |          after. It then finds an Alpine already there, registers its
-    |          components on THAT one, and never starts its own — the runtime
-    |          says so in a console warning. So the choice costs about 70 KB
-    |          more than 'full' and buys no CSP guarantee at all.
+    |          On a Livewire page this bundle's parser never runs, and the order
+    |          is fixed by the tags rather than by the source: Livewire's script
+    |          carries no `defer` and executes while the document is parsed,
+    |          setting window.Alpine; this bundle is deferred and runs after. It
+    |          then finds an Alpine already there, registers its components on
+    |          that one, and never starts its own — the runtime says so in a
+    |          console warning. So the choice downloads a second Alpine that
+    |          never starts, and buys no CSP guarantee at all.
     |
     |          The lever on a Livewire page is Livewire's own: `csp_safe` in
     |          `config/livewire.php`, with `bundle` left at 'full'. This bundle
-    |          is the answer for a page WITHOUT Livewire, where it really is the
+    |          is the answer for a page without Livewire, where it really is the
     |          Alpine that evaluates your expressions.
     |
     | An unrecognized value falls back to 'full' rather than to no script at all.

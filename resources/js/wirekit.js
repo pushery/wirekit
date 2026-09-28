@@ -6,6 +6,7 @@
  */
 import { position } from './utils/floating.js';
 import { registerAncestorDataMagic } from './utils/ancestor-data.js';
+import { registerScrollToMagic } from './utils/scroll-to.js';
 import { registerIndeterminateDirective } from './utils/indeterminate.js';
 import { registerFlashDirective } from './utils/flash.js';
 import { registerFindableDirective } from './utils/findable.js';
@@ -120,24 +121,18 @@ function registerComponents() {
 
     // Alpine's collapse plugin, registered before any component.
     //
-    // Four components ask for `x-collapse` — collapsible, sidebar/group,
-    // sidebar/collapsible and tree-view/node — and nothing registered it. Alpine
-    // warns once per element and the directive does nothing, so the region
-    // appeared and vanished instantly instead of animating, exactly as if the
-    // animation had been chosen against. One of those files even says
-    // "(already bundled)".
+    // The disclosure components ask for `x-collapse` (`grep -rl x-collapse
+    // resources/views` lists them). Without the plugin Alpine warns once per element
+    // and the directive does nothing, so a region appears and vanishes at once
+    // instead of animating.
     //
-    // Narrower than the report, and worth writing down: in a LIVEWIRE app this
-    // already worked, because Livewire bundles the same plugin and registers it
-    // (`Alpine.directive("collapse", …)` in its own dist). The four components
-    // were dead only where Livewire is absent — an Alpine-only app on
-    // `wirekit-alpine.js`, or `wirekit.js` beside a bare Alpine.
-    //
-    // Registering it here is still right, for a reason the report did not give:
-    // the components must not depend on a peer happening to provide a plugin
-    // they ask for. Measured cost is +1397 bytes raw, +585 gzip on the main
-    // bundle, paid by every developer including those who render no disclosure.
-    // That trade was the owner's to make.
+    // In a LIVEWIRE app the directive is there anyway: Livewire bundles the same
+    // plugin and registers it (`Alpine.directive("collapse", …)` in its own dist).
+    // Without Livewire, on `wirekit-alpine.js` in an Alpine-only app or `wirekit.js`
+    // beside a bare Alpine, this registration is the only one. The components must
+    // not depend on a peer happening to provide a plugin they ask for; the cost is
+    // part of every bundle's size in `dist/README.md`, paid by every developer
+    // including those who render no disclosure.
     //
     // `collapse(Alpine)`, NOT `Alpine.plugin(collapse)`, and the difference is
     // not style. Alpine's own `plugin(cb)` is `cb(alpine_default)` — it hands the
@@ -151,6 +146,7 @@ function registerComponents() {
 
     // Magics before components: a component's own expressions may use them.
     registerAncestorDataMagic(Alpine);
+    registerScrollToMagic(Alpine);
 
     // `indeterminate` is a DOM property with no HTML attribute, so something has to
     // apply it after EVERY render — not only the first. See utils/indeterminate.js.
@@ -281,14 +277,6 @@ if (window.Alpine?.version) {
 // which is what happens on the core bundle, where Floating UI is deliberately not shipped.
 // Imported directly, the dependency would follow the import into every bundle that carries
 // either component and the smallest bundle would stop being small.
-//
-// ⚠️ THIS SAID THE HELPER EXISTED FOR COMPONENTS WHOSE ALPINE LOGIC LIVES INLINE IN THEIR
-// BLADE VIEW, "combobox is the case that forced this (291 lines of inline x-data)". That was
-// true once and is not: combobox has had a module since, and its view now mounts
-// `x-data="wirekitCombobox({...})"` like every other component. Neither caller is inline, so
-// the reason a reader was given for the global no longer applied to anything — and the
-// obvious conclusion from it, that the global can go once the inline view is cleaned up, is
-// wrong.
 //
 // Assigned unconditionally so it is available whether Alpine starts before or after this
 // bundle loads.

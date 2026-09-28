@@ -137,14 +137,20 @@
     @elseif($slot->hasActualContent())
         {{-- Default-slot path: content passed WITHOUT the named leading/
              filters/trailing slots. This wrapper must mirror the toolbar's
-             own responsive flex behavior (`flex-wrap justify-between
-             w-full`) so default-slot content still wraps to a second row on
+             own responsive flex behavior (`flex-wrap`, the `align` justify,
+             `w-full`) so default-slot content still wraps to a second row on
              a narrow viewport instead of cramming on one line — the
              named-slot path already wraps via the root. Without `flex-wrap`
              here, a search field + filter selects + an action button dumped
              into the default slot were squeezed onto one line and the
-             leading field collapsed to nothing on mobile. --}}
-        <div class="flex flex-wrap items-center justify-between gap-[var(--space-wk-sm,0.5rem)] w-full">
+             leading field collapsed to nothing on mobile.
+
+             The justify is the toolbar's own. At full width this wrapper is
+             the root's only child, so the root's justify has no free space to
+             distribute and this one decides where the items sit: a fixed
+             `justify-between` put a single button at the start for every
+             `align`, and spread several across the row. --}}
+        <div class="flex flex-wrap items-center {{ $justifyClass }} gap-[var(--space-wk-sm,0.5rem)] w-full">
             {{ $slot }}
         </div>
     @endif

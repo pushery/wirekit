@@ -53,18 +53,17 @@
 
     $max ??= config('wirekit.components.brand-bar.max', 'xl');
 
-    $paddingClass = match ($padding) {
+    $paddingClass = match (WireKit::validateProp(
+            'brand-bar',
+            'padding',
+            $padding,
+            ['none', 'sm', 'md', 'lg', 'xl']
+        )) {
         'none' => '',
         'sm' => 'px-[var(--padding-wk-x-sm)]',
         'md' => 'px-[var(--padding-wk-x-md)]',
         'lg' => 'px-[var(--padding-wk-x-lg)]',
         'xl' => 'px-[var(--padding-wk-x-xl)]',
-        default => WireKit::validateProp(
-            'brand-bar',
-            'padding',
-            $padding,
-            ['none', 'sm', 'md', 'lg', 'xl']
-        ),
     };
 
     $dividerClass = match ($divider) {
@@ -80,14 +79,13 @@
     $isContainerWrapped = filter_var($container, FILTER_VALIDATE_BOOL);
     // No hardcoded fallback values — the `--size-wk-container-*` tokens
     // are the canonical source of truth and ship in dist/wirekit.css.
-    $maxClass = match ($max) {
+    $maxClass = match (WireKit::validateProp('brand-bar', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full'])) {
         'sm' => 'max-w-[var(--size-wk-container-sm)]',
         'md' => 'max-w-[var(--size-wk-container-md)]',
         'lg' => 'max-w-[var(--size-wk-container-lg)]',
         'xl' => 'max-w-[var(--size-wk-container-xl)]',
         '2xl' => 'max-w-[var(--size-wk-container-2xl)]',
         'full' => 'max-w-full',
-        default => WireKit::validateProp('brand-bar', 'max', $max, ['sm', 'md', 'lg', 'xl', '2xl', 'full']),
     };
 
     // When container-wrapped, the OUTER element keeps the chrome

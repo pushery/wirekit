@@ -119,7 +119,7 @@ $wkCmdSlug(trim(strip_tags((string)
 'input',
 'leading-none',
 'lg'
-'lg']),
+'lg']))
 'list',
 'lockScroll'
 'max-h-[var(--wk-command-palette-list-max-height,18rem)]',
@@ -174,9 +174,9 @@ $wkCmdSlug(trim(strip_tags((string)
 'wk-scrollbar',
 ($href
 ($relAttr
-($size)
 ($wkCmdDerivedId
 (Cmd/Ctrl+K).
+(WireKit::validateProp('kbd',
 (an
 (avoids
 (debounced)
@@ -204,7 +204,6 @@ $wkCmdSlug(trim(strip_tags((string)
 2
 24-unit
 288px
-325.
 4.1.2,
 :
 :aria-activedescendant="activeDescendant"
@@ -340,7 +339,6 @@ Set
 So
 Someone
 Stable
-Str::random
 Tab
 Tailwind
 That
@@ -357,7 +355,6 @@ WireKit::resolveClasses('command-palette.empty',
 WireKit::resolveClasses('command-palette.group',
 WireKit::resolveClasses('command-palette.item',
 WireKit::resolveClasses('kbd',
-WireKit::validateProp('kbd',
 Without
 Wrapped
 [
@@ -382,6 +379,7 @@ __('wirekit::Search
 `<x-wirekit::command-palette
 `<x-wirekit::command-palette.empty>`
 `_paintActive()`
+`_paintActive()`.
 `aria-activedescendant`
 `aria-activedescendant`,
 `aria-controls`
@@ -492,7 +490,6 @@ backing.
 bare
 be
 because
-been
 before
 behavior.
 behind
@@ -586,12 +583,12 @@ context.
 contract
 control
 controls
-converted.
 copy
 correct
 could
 counter
 counts
+covers
 dark
 data-wk-prose-skip
 debug
@@ -657,7 +654,6 @@ explicit
 factory
 factory).
 failed.
-fallback
 false
 false);
 false,
@@ -741,7 +737,7 @@ implode('
 imports
 in
 indistinguishable
-inert
+inert,
 inline
 input
 input's
@@ -813,10 +809,10 @@ longer
 looked
 looks
 magnifier
+make
 makes
 managed
 mark,
-markActive()
 markup,
 markup.
 match
@@ -1011,7 +1007,6 @@ remote
 render
 rendered:
 renders
-replaces
 report
 reports
 reproduced
@@ -1299,4 +1294,3 @@ z-[var(--z-wk-modal)]',
 ~540px,
 —
 …)`
-⚠️

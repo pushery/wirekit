@@ -149,7 +149,7 @@ class ComponentMakeCommand extends Command
             // A dot here is a SUB-COMPONENT separator (`card.header`,
             // `table.th`), never a path segment, which is why `..` cannot be a
             // legal value — both halves of it would have to be component names.
-            // All 267 shipped components match this shape.
+            // Every shipped component name matches this shape.
             if (! preg_match('/^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/', $explicit)) {
                 $this->error("Invalid base component '{$explicit}'. Use a component name (e.g. 'button' or 'card.header').");
                 $this->line('  Run `php artisan wirekit:list` to see all top-level components.');

@@ -213,15 +213,12 @@
 
     // Encode options for Alpine — convert to array of {value, label} objects.
     //
-    // ⚠️ Three call shapes reach this and the docs page promises all three: an
+    // Three call shapes reach this and the docs page promises all three: an
     // associative `key => label` map, a list of plain strings, and a list of
-    // `['value' => ..., 'label' => ...]` arrays. The earlier version handled
-    // only the first — it read the KEY as the value unconditionally — so a list
-    // of strings submitted array INDEXES (0, 1, 2) under labels that looked
-    // right, and a list of arrays stringified each entry to the literal word
-    // "Array" and submitted its index. Neither shape threw, neither shape
-    // rendered an empty listbox, and every case in MultiSelectRenderTest passed
-    // an associative map, so the two broken formats had no coverage at all.
+    // `['value' => ..., 'label' => ...]` arrays. Reading the key as the value
+    // unconditionally would submit array indexes (0, 1, 2) for a list of strings
+    // under labels that look right, and the literal word "Array" for a list of
+    // arrays, with nothing thrown and nothing empty on screen.
     // Mirrors the ungrouped half of combobox's own $normalizeOption; multi-select
     // has no grouped-option shape, so the group branch does not apply here.
     //
@@ -353,10 +350,9 @@
 
          Both payloads go through AlpinePayload rather than json_encode, and that is not
          interchangeable here: an option label is developer text, and a plain encode escapes
-         non-ASCII as `ü`. Alpine's CSP tokenizer understands only `\n`, `\t`, `\r`, `\\`
-         and the quote, so it drops that backslash and keeps the letters — `Grüße` arrives in
-         the listbox as `Gru00fce`. Nothing throws; the option a reader picks from is simply
-         spelled wrong. --}}
+         non-ASCII as `\u00fc`, which some of the CSP tokenizers Alpine and Livewire ship do
+         not decode: `Grüße` would arrive in the listbox as `Gru00fce`, with nothing thrown.
+         `Support/AlpinePayload.php` names the versions. --}}
     <div
         {{ $attributes->except('aria-describedby')->class(['relative']) }}
         x-modelable="selected"
@@ -476,9 +472,10 @@
                  `dropdownOpen` resolves against the global object, which does not
                  have it — a `ReferenceError` on every update, from a panel nobody
                  opened, with a stack that names nothing on the page.
-                 `$id` falls back to a random value only when the call site supplies
-                 neither an id nor a name, so this reaches some callers and not
-                 others. STATIC on purpose: the morph patches a teleported node
+                 `$id` falls back to a counted value when the call site supplies
+                 neither an id nor a name, and a count can restart when only part
+                 of the page re-renders (see `DomId`), so a key derived from it
+                 would not agree across renders. STATIC on purpose: the morph patches a teleported node
                  against its own counterpart, one to one, never against a keyed
                  sibling, so several multi-selects on a page do not compete. --}}
             wire:key="wk-multi-select-listbox"

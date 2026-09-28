@@ -37,7 +37,7 @@
     use Pushery\WireKit\WireKit;
 
     // Each timeline item: vertical connector line + dot/icon + content area.
-    // The connector line is drawn via a pseudo-element on the dot container.
+    // The connector line is its own `<div>` below the dot.
     $classes = WireKit::resolveClasses('timeline.item', 'base', implode(' ', [
         'relative',
         'flex',

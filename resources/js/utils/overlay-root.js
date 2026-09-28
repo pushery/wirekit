@@ -15,11 +15,8 @@
  * smallest correct answer: it is a landmark, it does not claim to be navigation or a main,
  * and it says what it holds.
  *
- * ⚠️ NO COUNT HERE, DELIBERATELY, and the same note stands in `dev-warning.js` for the same
- * reason. This said "Twenty-four components" — which was the number of teleport SITES, six
- * components carrying two — so the sentence was wrong about its own subject on the day it
- * was written, and would have drifted from the tree besides. The set is greppable in one
- * command; a number in a shipped comment is a second copy that nothing keeps honest.
+ * No count here, deliberately, for the reason `dev-warning.js` gives: the set is greppable in
+ * one command, and a number in a shipped comment is a second copy that nothing keeps honest.
  *
  * CREATED FROM JAVASCRIPT rather than emitted by a Blade directive, and that is deliberate.
  * `x-teleport` throws when its selector matches nothing, so a container that depended on a

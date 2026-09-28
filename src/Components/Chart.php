@@ -56,6 +56,15 @@ final class Chart extends Component
     public string $mountElement = 'canvas';
 
     /**
+     * The script URLs the active adapter names in {@see ChartAdapter::scripts()}, which the
+     * view emits once per response. Empty for both built-in adapters, whose libraries the
+     * developer installs from npm.
+     *
+     * @var array<int, string>
+     */
+    public array $adapterScripts = [];
+
+    /**
      * True when no chart adapter is configured AND the constructor took
      * the debug-mode soft-fallback path (rendered a placeholder div
      * instead of throwing). Used by render() to switch to the
@@ -131,10 +140,11 @@ final class Chart extends Component
         // custom tooltip to N decimal places; `valuePrefix` / `valueSuffix`
         // wrap each formatted number (e.g. "€", " ms", "%"). All three are
         // null by default → today's behavior (raw value, no affix) preserved
-        // byte-for-byte. `valueDecimals` is typed `int|string|null` so both
-        // `valueDecimals="2"` (plain attribute) and `:valueDecimals="2"`
-        // (bound int) work — strict_types would reject a string on a bare
-        // `?int` param.
+        // byte-for-byte. `valueDecimals` is typed `int|string|null` because a
+        // plain attribute arrives as a string. A numeric one would coerce to a
+        // bare `?int` anyway (Blade builds the component through the container,
+        // which does not declare strict_types), but a non-numeric one would be a
+        // TypeError; with the union, the normalization below turns it into null.
         public int|string|null $valueDecimals = null,
         public ?string $valuePrefix = null,
         public ?string $valueSuffix = null,
@@ -234,6 +244,13 @@ final class Chart extends Component
         $this->alpineComponent = $adapter->alpineComponent();
         $this->chartLibrary = $adapter->name();
         $this->mountElement = $adapter->rendersTo();
+
+        // An empty entry is dropped rather than emitted: `<script src="">` requests the page
+        // it sits on.
+        $this->adapterScripts = array_values(array_filter(
+            $adapter->scripts(),
+            static fn (string $src): bool => trim($src) !== '',
+        ));
     }
 
     public function render(): View

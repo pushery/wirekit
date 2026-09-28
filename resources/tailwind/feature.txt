@@ -5,7 +5,7 @@
 "heroicon-m-inbox"
 $animateAttr
 $attributes->class([$classes])
-$attributes->class([$sizeClasses]);
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -53,6 +53,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeMap
 $sizeMap[$validSize];
 $sizeMap[$validated];
@@ -151,7 +152,7 @@ $validated
 ($shouldSetHidden)
 ($size
 ($svgHtml
-('xs')
+('xs').
 (1-6).
 (64×64
 (\BladeUI\Icons\Exceptions\SvgNotFound
@@ -176,7 +177,6 @@ $validated
 (string)
 (the
 (true
-(validateProp
 );
 +
 -
@@ -239,18 +239,12 @@ ALSO
 AND
 API:
 AT
-ATTEMPTED
 Adding
 An
-BECAUSE
-BELOW,
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
 CALL
-CAN
-CANNOT
-CONDITION
 CTA
 Catching
 Check
@@ -262,19 +256,13 @@ Drop
 ENT_QUOTES).'"',
 EVERY
 Escape
-FAIL
 Feature
 Fully
 Graceful
-HERE,
 HTTP
 Heading
 Hero).
 Htmlable,
-IN
-INSIDE
-IS
-IT
 Icon
 IconResolver,
 If
@@ -299,7 +287,6 @@ PERFECTLY
 Preferring
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\WireKit;
-RENDER
 Reapply
 Render
 Renders
@@ -307,7 +294,6 @@ Reported
 Resolve
 Resolved
 RuntimeException
-SEE.
 SITE
 SVG
 SVG,
@@ -321,12 +307,10 @@ SvgNotFound
 SvgNotFound.
 Symmetric
 TAG
-THE
 The
 This
 Throwing
 Tone
-WAY
 WCAG
 We
 WireKit
@@ -339,10 +323,10 @@ With
 [$chipSizeClasses,
 ['1',
 ['data-wk-icon-missing'
-['w-10
-['w-12
 ['w-16
-['w-8
+['w-[var(--size-wk-lg)]
+['w-[var(--size-wk-md)]
+['w-[var(--size-wk-sm)]
 [1,
 [chipDimensionClasses,
 \Pushery\WireKit\Icons\IconSetPackages::reportMissingSetOnce((string)
@@ -352,6 +336,7 @@ With
 ]),
 ];
 __toString
+`<span>`
 `<x-wirekit::feature
 `Svg
 `aria-hidden="true"`
@@ -360,6 +345,7 @@ __toString
 `class="h-12
 `heading-order`
 `heroicon-m-inbox`
+`icon`
 `inbox`
 `info
 `info`
@@ -410,6 +396,7 @@ array_keys($toneMap));
 as
 asserted:
 at
+attempted
 attribute
 attribute,
 auto-derived
@@ -417,7 +404,6 @@ auto-switching
 axe
 axe's
 axis,
-back
 back-compat
 backgrounds,
 badge
@@ -429,6 +415,7 @@ be
 because
 becomes
 below
+below,
 below.
 best-practice
 blade-heroicons
@@ -475,6 +462,7 @@ class
 class="flex
 class="text-[length:var(--text-wk-lg)]
 class="text-[length:var(--text-wk-sm)]
+classes
 cleanly.
 close
 close-icons,
@@ -507,7 +495,6 @@ danger.
 data-replayable="true"
 data-wk-prose-skip
 debug
-debug,
 decided
 decision,
 decision:
@@ -529,7 +516,7 @@ dev
 developer
 developer's
 did
-did-you-mean)
+did-you-mean,
 didn't
 direct
 docs
@@ -560,10 +547,10 @@ exhausting
 exists.
 explicitly
 factory:
+fail
 fallback
 fallback,
 fallback.
-falls
 false)
 false),
 feature
@@ -594,6 +581,8 @@ full
 function
 function).
 function_exists('svg'))
+gate
+gate,
 get
 gets
 global
@@ -604,11 +593,11 @@ grid
 guarantees
 guard
 guessed
-h-10
-h-12
 h-16
 h-5
-h-8
+h-[var(--size-wk-lg)]
+h-[var(--size-wk-md)]
+h-[var(--size-wk-sm)]
 h/w
 h1,
 half
@@ -622,6 +611,7 @@ have
 have)
 helper
 here
+here,
 hero-row
 hidden
 historical
@@ -646,7 +636,6 @@ in
 in_array((int)
 including
 individual
-inert
 info
 informative
 informative.
@@ -773,6 +762,7 @@ pages
 path
 pattern
 per-set
+personalization
 place
 placeholder
 post-process
@@ -789,8 +779,6 @@ primary
 problem
 prod).
 produce
-production
-production.
 progress)
 progress,
 project,
@@ -821,6 +809,7 @@ rendered
 renders
 replaced
 replaces
+reported
 reports,
 reproduced
 request
@@ -851,6 +840,7 @@ rung
 same
 screen-reader-skipping
 scrolls
+see.
 sees
 semantic
 sends
@@ -860,7 +850,6 @@ set.
 sets
 should
 shown
-signals
 single
 site
 sits,
@@ -883,6 +872,7 @@ stay
 still
 stopped
 storage/logs/laravel.log.
+strictness
 string
 strip
 style="display:inline-block;"></span>
@@ -917,6 +907,7 @@ than
 that
 the
 their
+them.
 then
 there
 they
@@ -926,6 +917,7 @@ though
 three
 through
 throw
+throw,
 throws
 tile
 tinted
@@ -1015,4 +1007,3 @@ yet.
 …)
 …).
 →
-⚠️

@@ -15,18 +15,15 @@
      and reaches it through `document.currentScript.previousElementSibling`, so it needs no id
      and cannot collide with a second column on the same page.
 
-     ⚠️ EVERY VALUE ARRIVES AS A DATA ATTRIBUTE ON THIS TAG, AND THE BODY IS A CONSTANT.
-     That is not a style choice. `AlpinePayload` is the encoder for a directive ATTRIBUTE; in a
+     Every value arrives as a data attribute on this tag, and the body is a constant.
+     That is not a style choice. `AlpinePayload` is the encoder for a directive attribute; in a
      script body HTML escaping does not apply, so a payload carrying the closing-tag sequence
-     would end the block and everything after it would parse as markup. That rule is a
-     deliberate decision rather than an oversight, and it is machine-held — by
-     `CspAuditFindsAnEncoderInAScriptBlockTest`,
-     `AlpinePayloadContextGuardTest` and `OwnViewsCspGrammarTest` — and this partial shipped in
-     the wrong shape first and was caught by all three at once. Attributes go through Blade's
+     would end the block and everything after it would parse as markup. Attributes go through
+     Blade's
      ordinary escaping, `dataset` hands them back as plain strings, and the body then has no
      interpolation left to get wrong.
 
-     ⚠️ IT IS A CORRECTION AND NEVER A REQUIREMENT. Blocked by a policy, thrown by a browser
+     It is a correction and never a requirement. Blocked by a policy, thrown by a browser
      with storage switched off, or simply never reached, the column keeps exactly the behavior
      it has today: Alpine reads the same value and applies the same class one frame later. That
      is what makes it safe to ship unconditionally — the failure mode is the status quo.

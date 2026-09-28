@@ -1,7 +1,8 @@
 {{-- Recipe: On-Page TOC — page-scoped reading progress + a right-edge sticky spine.
      Full reference: https://docs.wirekit.app/blueprints/recipes/on-page-toc
-     The spine builds its link list from the headings inside <main>; give every
-     heading you want surfaced an id, or the scroll-to-anchor links land nowhere. --}}
+     The spine builds its link list from the headings inside <main> and gives a
+     heading without an id one derived from its text. Set an id yourself where a
+     link should survive an edit of the heading's wording. --}}
 <div>
     {{-- Page-scoped: this bar tracks the whole document, not the article. --}}
     <x-wirekit::reading-progress />

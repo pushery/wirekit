@@ -17,7 +17,7 @@ $slot
 'inline-flex
 'leading-none',
 'lg'
-'lg']),
+'lg']))
 'md'
 'md',
 'rounded-[var(--radius-wk-sm)]',
@@ -29,7 +29,7 @@ $slot
 'text-[length:var(--text-wk-md)]
 'text-[length:var(--text-wk-sm)]
 'text-[length:var(--text-wk-xs,0.75rem)]
-($size)
+(WireKit::validateProp('kbd',
 (silent
 --}}
 //
@@ -47,7 +47,6 @@ Measured
 Pushery\WireKit\WireKit;
 Renders
 WireKit::resolveClasses('kbd',
-WireKit::validateProp('kbd',
 [
 ['sm',
 \Pushery\WireKit\WireKit::warnUnknownProps('kbd',
@@ -63,7 +62,6 @@ block,
 component's
 could
 debug
-default
 does
 early.
 element,

@@ -13,20 +13,21 @@ namespace Pushery\WireKit\Support;
  * props playground, an agent picking one) had to guess from that prose. This class is the source
  * the manifest publishes from.
  *
- * THREE SPELLINGS, and a reader that knows only one is worse than none: a short allow-list looks
+ * FOUR SPELLINGS, and a reader that knows only one is worse than none: a short allow-list looks
  * exactly like a complete one, and nothing goes red over it.
  *
  *   1. A literal array — `['sm', 'md', 'lg']`, the common case.
  *   2. `array_keys($map)`, where `$map` is a literal map assigned earlier in the same template.
- *      `spinner` picks its intents that way, `grid` its 36 column tokens.
- *   3. A class constant — `\Pushery\WireKit\VariantResolver::INTENTS`, which `button` uses for
+ *      `spinner` picks its intents that way, `grid` its column tokens.
+ *   3. A variable holding a literal array assigned earlier in the same template.
+ *   4. A class constant — `\Pushery\WireKit\VariantResolver::INTENTS`, which `button` uses for
  *      the two props every other component's button copies. Resolved THROUGH the constant, so a
  *      seventh intent arrives here the day it is added rather than when somebody retypes it.
  *
- * A fourth spelling must not pass silently, so an argument this class cannot resolve comes back
- * as an entry with an empty `values` and its `expression` intact. `ProseSkipsComponentElements`'
- * sibling guard on the catalog asserts there are none: a new shape is then a red test rather than
- * a quietly shorter list.
+ * A fifth spelling must not pass silently, so an argument this class cannot resolve comes back
+ * as an entry with an empty `values` and its `expression` intact. The catalog case of this
+ * class's unit test allows exactly one such entry, the allow-list built at runtime: a new shape
+ * is then a red test rather than a quietly shorter list.
  *
  * An allow-list is not the whole contract, either. `card` turns `variant="outline"` into `outlined`
  * a line above its call, so a caller's spelling can be one `validateProp()` never sees. Each entry
@@ -83,10 +84,9 @@ final class PropValidationParser
 
             foreach (self::propBranches($arguments[1], $arguments[3], $source) as [$prop, $list]) {
                 if ($prop === null) {
-                    // ⚠️ AN UNREADABLE PROP NAME IS NAMED, NOT DROPPED. This arm used to `continue`,
-                    // so a call whose name was a variable left no trace at all: six of them, and the
-                    // manifest published no values for callout, alert, text, card, feature or
-                    // reading-progress while every guard over this class stayed green.
+                    // An unreadable prop name is named, not dropped: skipped, a call whose name
+                    // is a variable would leave no trace at all, and the manifest would publish no
+                    // values for that prop while every guard over this class stays green.
                     $found[] = [
                         'component' => $component,
                         'prop' => $arguments[1],
@@ -398,8 +398,8 @@ final class PropValidationParser
      * The allow-list an argument stands for: its values, an empty list when the argument is a
      * MESSAGE rather than an enumeration, or null when the shape is one this class cannot prove.
      *
-     * ⚠️ THE MESSAGE SHAPE IS NOT AN ALLOW-LIST, AND READING IT AS ONE PUBLISHES NONSENSE.
-     * Four call sites hand `validateProp()` a single sentence — `['a CSS length such as 14rem,
+     * The message shape is not an allow-list, and reading it as one publishes nonsense.
+     * Some call sites hand `validateProp()` a single sentence — `['a CSS length such as 14rem,
      * 20ch, 280px']` — from inside an `if (! valid)` branch, so the array is the error text and
      * the rule itself is the pattern above it. A manifest that published that sentence as an
      * accepted value would offer it in a props playground's dropdown. A value token never
@@ -534,7 +534,7 @@ final class PropValidationParser
      * The keys of a literal map assigned to `$variable` in the same template.
      *
      * Every key, not the first one on each line: the maps are written several pairs per line, and
-     * a line-anchored read of `grid`'s columns kept every third key — 12 of 36 — while staying
+     * a line-anchored read of `grid`'s columns kept only every third key while staying
      * green, because an allow-list that comes back short only makes a check demand less.
      *
      * @return list<string>

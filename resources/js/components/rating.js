@@ -50,18 +50,14 @@ export default function wirekitRating(config = {}) {
         init() {
             // Seed from the server attribute when the caller passed none.
             //
-            // The seed used to be interpolated into `x-data`. That looked free —
-            // Alpine reads the attribute once — but a Livewire morph REWRITES it,
-            // and Alpine re-initializes on the change. Measured on the sibling
-            // component by object identity: the scope is replaced on every round
-            // trip, and an effect queued against the pre-morph scope flushes
-            // afterwards and writes the pre-morph value LAST. It is invisible on
-            // an outward change (old and new agree) and shows only when the value
-            // returns to one it already held.
-            //
-            // Reading it here keeps the attribute byte-identical across renders,
-            // so the scope survives and the observer below is the single path a
-            // server-side change travels — which is what its own comment claims.
+            // The value is not interpolated into `x-data`, so that attribute stays
+            // byte-identical across renders. A morph that changed it would make
+            // Alpine initialize the component again (a new scope before Alpine 3.16,
+            // the same one reset to the seed from 3.16), and an effect queued before
+            // the morph would then write the old value last. That shows only when
+            // the value returns to one it already held. With `x-data` unchanged the
+            // scope survives, and the observer below is the one path a server-side
+            // change travels.
             //
             // `$root` is capability-checked, not assumed. Alpine hands a real element
             // here, but the ESM harness constructs each factory with a deliberately
@@ -90,9 +86,9 @@ export default function wirekitRating(config = {}) {
             this._stopServerSync = observeServerValue(this.$root, (value) => {
                 const next = Number(value);
 
-                // Guarded twice: a non-number would blank the row, and an
-                // unchanged value arrives on every morph, including the ones
-                // that must not disturb a choice just made.
+                // Guarded twice: a non-number would blank the row, and a server
+                // value equal to the rating on screen (the reader's own pick coming
+                // back from the server) needs nothing done.
                 if (Number.isNaN(next) || next === this.rating) {
                     return;
                 }

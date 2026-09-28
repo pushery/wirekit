@@ -12,12 +12,11 @@ namespace Pushery\WireKit\Support;
  * than the directory, so a file the manifest does not name is never served, and no URL is built
  * for a flag that does not exist.
  *
- * ⚠️ THE ARTWORK USED TO LIVE IN A SEPARATE PACKAGE, and this class is named after it. Owner
- * decision 2026-09-18: it belongs here, for the reason the fonts are already here — 115 font
- * files and 5.82 MB ship unconditionally and are only LOADED when `<x-wirekit::fonts />` asks
- * for them. The flags are 1.43 MB against that, which is 16% of the package and 1.5% of a
- * typical application's vendor directory, and a second repository would have cost a CI lane, a
- * release cycle, a Packagist registration and a hand-kept version pairing for it.
+ * The class is named after the separate package the artwork once lived in. It ships here for
+ * the reason the fonts do: they ship unconditionally and are only loaded when
+ * `<x-wirekit::fonts />` asks for them, the flags are small against them, and a second
+ * repository would cost a CI lane, a release cycle, a Packagist registration and a hand-kept
+ * version pairing.
  *
  * The NAME stays because the country-picker recipe calls `FlagPackage::isoCodes()` in published
  * documentation. Renaming it is a breaking change, and a breaking change needs a major version.
@@ -257,13 +256,12 @@ final class FlagPackage
     }
 
     /**
-     * Log, once per process, that the flag artwork could not be found where it should be.
+     * Log that the flag artwork could not be found where it should be: once per request through
+     * the static flag, and once per hour across requests through {@see LogThrottle}.
      *
-     * ⚠️ This used to mean "the optional package is not installed", which was the ONLY way it
-     * could fire. The artwork now ships with WireKit, so a missing root means one thing instead:
-     * `wirekit.flags.path` points somewhere that holds no `flags.json`. That is a configuration
-     * mistake rather than a missing dependency, and the message says so — telling somebody to
-     * install a package that no longer exists is worse than saying nothing.
+     * The artwork ships with WireKit, so a missing root means one thing: `wirekit.flags.path`
+     * points somewhere that holds no `flags.json`. That is a configuration mistake rather than a
+     * missing dependency, and the message says so.
      *
      * Guarded the way the icon system guards its own degradation log: this renders in contexts
      * with no container behind it, and a diagnostic that throws is worse than silence.
@@ -275,6 +273,10 @@ final class FlagPackage
         }
 
         self::$reportedMissing = true;
+
+        if (! LogThrottle::firstAcrossRequests('flags-missing')) {
+            return false;
+        }
 
         if (function_exists('logger')) {
             logger()->warning('WireKit: a flag was drawn as a placeholder because no flags.json was found. The artwork ships with WireKit, so check `wirekit.flags.path` — it is set and points somewhere that holds none.');
@@ -298,7 +300,7 @@ final class FlagPackage
         self::$reportedUnknown[$code] = true;
 
         if (function_exists('logger')) {
-            logger()->warning(sprintf('WireKit: there is no flag for "%s", so a placeholder was drawn. resources/flags/flags.json lists the codes it carries.', $code));
+            logger()->warning(sprintf('WireKit: there is no flag for "%s", so a placeholder was drawn. resources/flags/flags.json lists the codes it carries.', LogValue::quote($code)));
         }
 
         return true;

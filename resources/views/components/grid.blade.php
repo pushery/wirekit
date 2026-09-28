@@ -185,7 +185,7 @@
     $colsTokens = preg_split('/\s+/', trim(is_numeric($cols) ? (string) $cols : $cols));
 
     if ($responsiveTemplate) {
-        // ⚠ With breakpoints `cols` is no longer a fallback — it is the ACTIVE value at every
+        // With breakpoints `cols` is no longer a fallback — it is the ACTIVE value at every
         // breakpoint the template leaves free, including the default. `cols="1"
         // template="lg:[1fr_20rem]"` needs `grid-cols-1` below `lg`: dropped as an unrequested
         // default (the rule above), the phone would get no column definition at all, and
@@ -246,7 +246,7 @@
     // generates an arbitrary utility only from a literal it can read, and a composed class
     // would render a gap that silently does nothing.
     $gapClasses = $scale === 'gap'
-        ? match ($gap) {
+        ? match (WireKit::validateProp('grid', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'])) {
             'none' => '',
             'xs' => 'gap-[var(--gap-wk-xs,0.25rem)]',
             'sm' => 'gap-[var(--gap-wk-sm,0.5rem)]',
@@ -254,9 +254,8 @@
             'lg' => 'gap-[var(--gap-wk-lg,1rem)]',
             'xl' => 'gap-[var(--gap-wk-xl,1.5rem)]',
             '2xl' => 'gap-[var(--gap-wk-2xl,2rem)]',
-            default => WireKit::validateProp('grid', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
         }
-        : match ($gap) {
+        : match (WireKit::validateProp('grid', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'])) {
             'none' => '',
             'xs' => 'gap-[var(--space-wk-xs,0.25rem)]',
             'sm' => 'gap-[var(--space-wk-sm,0.5rem)]',
@@ -264,16 +263,14 @@
             'lg' => 'gap-[var(--space-wk-lg,1.5rem)]',
             'xl' => 'gap-[var(--space-wk-xl,2.5rem)]',
             '2xl' => 'gap-[var(--space-wk-2xl,4rem)]',
-            default => WireKit::validateProp('grid', 'gap', $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
         };
 
-    $alignClasses = match ($align) {
+    $alignClasses = match ($align === null ? null : WireKit::validateProp('grid', 'align', $align, ['start', 'center', 'end', 'stretch'])) {
         'start' => 'items-start',
         'center' => 'items-center',
         'end' => 'items-end',
         'stretch' => 'items-stretch',
         null => '',
-        default => WireKit::validateProp('grid', 'align', $align, ['start', 'center', 'end', 'stretch']),
     };
 
     $classes = WireKit::resolveClasses('grid', 'base', implode(' ', array_filter([

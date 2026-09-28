@@ -69,10 +69,10 @@
     $hasHeader = str_contains((string) $slot, 'data-wk-modal-header');
 
     if ($resolvedAriaLabel === null && ! $hasHeader) {
-        // Say it where the developer will see it — throws in debug, logs in
-        // production, the house strictness gate. Nothing downstream can recover a
-        // name that was never given, and a nameless dialog is a WCAG 4.1.2 failure
-        // that no automated scan of the page will catch.
+        // Say it where the developer will see it: through the house strictness gate, as
+        // an exception or a log line depending on its settings. Nothing downstream can
+        // recover a name that was never given, and a nameless dialog is a WCAG 4.1.2
+        // failure that no automated scan of the page will catch.
         WireKit::validateProp('modal', 'ariaLabel', '', [
             'a non-empty label, or an <x-wirekit::modal.header> to name the dialog',
         ]);
@@ -96,12 +96,12 @@
 
     // Container classes — positions the dialog on screen.
     //
-    // ⚠️ `items-start` HERE AND `my-auto` ON THE PANEL, NOT `items-center`. A flex item taller
+    // `items-start` here and `my-auto` on the panel, not `items-center`. A flex item taller
     // than its scroll container is pushed past the START of the scrollable area by
     // `items-center`: `scrollTop: 0` already sits below the panel's top edge and there is no
-    // negative scroll, so the header and the first lines of a long dialog were unreachable —
-    // the text began mid-sentence. Auto margins center the panel exactly as before while it
-    // fits and resolve to zero once it does not, which keeps its top inside the scrollable
+    // negative scroll, so the header and the first lines of a long dialog would be
+    // unreachable. Auto margins center the panel while it fits and resolve to zero once it
+    // does not, which keeps its top inside the scrollable
     // area. The panel's own cap below makes that case rare; this keeps it reachable when a
     // caller overrides the cap.
     $containerClasses = WireKit::resolveClasses('modal', 'container', implode(' ', [
@@ -114,9 +114,9 @@
 
     // Panel classes — the dialog surface with shadow and rounded corners.
     //
-    // ⚠️ CAPPED TO THE VIEWPORT, AND A COLUMN. The panel had no height limit, so it grew with
-    // its content, and `overflow-hidden` limited nothing: it only clips what overflows a box
-    // whose height the content itself decides. The cap is the viewport minus the container's
+    // Capped to the viewport, and a column. Without a height limit the panel would grow with
+    // its content, and `overflow-hidden` would limit nothing: it only clips what overflows a
+    // box whose height the content itself decides. The cap is the viewport minus the container's
     // padding on both edges, in `dvh` so a mobile browser's toolbars cannot eat the bottom
     // edge — the drawer caps itself the same way. `flex-col` lets the header and footer keep
     // their height while modal.body, which may shrink, scrolls between them.
@@ -151,15 +151,13 @@
 
 {{-- Modal component — teleported to body for proper stacking context.
 
-     ESC handling: the JS component uses `focus-trap` with `escapeDeactivates`
-     for in-page interaction, BUT `focus-trap` ignores keydowns whose target is
-     not inside the trap container. Playwright's `locator.press('Escape')` on
-     the non-focusable panel div lets focus fall back to `document.body`, so
-     focus-trap never sees the ESC and the overlay stays open. A window-level
-     ESC listener bypasses this entirely: it catches the event regardless of
-     focus location and calls `dismissByReader('escape')` directly (which closes, deactivates
-     the focus trap and announces `wirekit:modal-dismissed`). It is guarded against re-entry, so
-     the extra call is safe even if focus-trap happens to catch it too, and the announcement is
+     ESC handling: the JS component uses `focus-trap` with `escapeDeactivates`,
+     which listens on the document once the trap is active. The trap is armed
+     after the panel has settled, so a window-level ESC listener covers the time
+     before that: it catches the event regardless of focus location and calls
+     `dismissByReader('escape')` directly (which closes, deactivates the focus trap
+     and announces `wirekit:modal-dismissed`). It is guarded against re-entry, so the extra
+     call is safe when focus-trap catches the key too, and the announcement is
      made once. Only registered when the
      modal is dismissible — non-dismissible modals must never close on ESC. --}}
 <div

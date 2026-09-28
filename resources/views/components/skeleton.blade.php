@@ -69,13 +69,15 @@
     // a skeleton that is off screen, and the hint keeps the page from jumping when one scrolls
     // in.
     //
-    // ⚠️ It first shipped in Safari 18.0 — ABOVE this library's floor of 16.4 — so the
+    // It first shipped in Safari 18.0 — above this library's floor of 16.4 — so the
     // declaration itself lives behind an `@supports` block in the stylesheet rather than as an
     // inline style here. Nothing depends on it: without support every skeleton renders
-    // normally, which is what they all did before the optimization existed.
+    // normally.
     //
-    // Per-type defaults are tuned for the variant shape; developers override them by setting
-    // `--wk-skeleton-intrinsic-size` in their own CSS or via the `style` attribute.
+    // Per-type defaults are tuned for the variant shape. The value is set inline on this
+    // element, so a developer overrides it through the `style` attribute, whose declarations
+    // are merged after this one; a stylesheet rule loses to the inline value unless it is
+    // `!important`.
     $intrinsicSize = match ($type) {
         'avatar' => 'auto 60px',
         'card' => 'auto 200px',

@@ -118,7 +118,6 @@
     // announce-error precedence: explicit prop > form container (@aware announceErrors) > global config.
     $announceError ??= $announceErrors ?? config('wirekit.a11y.announce_error', true);
 
-    use Illuminate\Support\Str;
     use Pushery\WireKit\WireKit;
 
     // HTML reads a boolean attribute by PRESENCE, so `disabled="false"` disables the
@@ -131,13 +130,13 @@
     //   https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
     // Key behavior: user types to filter options, uses arrow keys to navigate
     // the filtered list, Enter to select, Escape to close.
-    // STABLE across re-renders, which the old `Str::random(6)` was not. The listbox
-    // teleports to #wk-overlay-root, so it sits OUTSIDE the subtree Livewire morphs:
-    // a fresh id per render updates the input's aria-controls while the panel still in
-    // the document carries the id from the render before it. combobox.js compounds it —
-    // it freezes _listId/_inputId at init and resolves them with getElementById, so after
-    // one round trip _place() resolves null and positions nothing. Same defect, same
-    // reason, same fix as `dropdown`; its comment carries the full reasoning.
+    // Stable across re-renders. The listbox teleports to #wk-overlay-root, so it sits
+    // outside the subtree Livewire morphs: a fresh id per render would update the input's
+    // aria-controls while the panel still in the document carries the id from the render
+    // before it, and combobox.js freezes _listId/_inputId at init and resolves them with
+    // getElementById, so after one round trip _place() would resolve null and position
+    // nothing. `dropdown` keys its panel the same way; its comment carries the full
+    // reasoning.
     $comboId = \Pushery\WireKit\Support\DomId::unique(
         $id ?? ($name ? 'wk-combobox-'.$name : null),
         'wk-combobox-'
@@ -680,21 +679,17 @@
 
     {{-- Listbox — filtered options rendered via x-for. Each option gets a
          unique id + role=option so AT can announce them as the user navigates. --}}
-    {{-- Teleported to <body>, for the reason command-palette's overlay already
-         states: `position: fixed` escapes a clipping ancestor but NOT a stacking
-         context. Any ancestor with `contain: layout`, a transform or a filter
-         scopes this panel's z-index inside itself, and anything painted after
-         that ancestor then covers the list however high the z-index goes.
-         Reported from the documentation site, whose preview area carries
-         `contain: layout`: the open list rendered UNDER the code block below it.
-         `$refs` do NOT survive the teleport, and the comment that used to say so
-         here was an assumption nobody had measured. Once the panel moves to
-         `<body>`, `$refs.cbxList` is null — so `_place()` looped over two nulls,
-         positioned nothing, and left a `fixed` panel at its static position:
-         measured at 0,1117 while the field sat at 12,451. It never corrected,
-         because the positioner had not run at all.
-         `_place()` resolves both panels by id now, handed in through the factory
-         config. An id survives anything a teleport can do to a node. --}}
+    {{-- Teleported to `#wk-overlay-root`, for the reason command-palette's overlay
+         already states: `position: fixed` escapes a clipping ancestor but NOT a
+         stacking context. Any ancestor with `contain: layout`, a transform or a
+         filter scopes this panel's z-index inside itself, and anything painted
+         after that ancestor then covers the list however high the z-index goes. A
+         preview area with `contain: layout`, as on the documentation site, is one.
+         `_place()` finds both panels by id, handed in through the factory config,
+         rather than through `$refs`. A ref survives the teleport, but with
+         `optimistic` set every ref of this component registers into the nested
+         optimistic scope, which `_place()` cannot read. An id depends on
+         neither. --}}
     <template x-teleport="#wk-overlay-root">
     <ul data-wk-prose-skip
         {{-- THE MORPH KEY. Without it the id below is what Livewire uses to
@@ -708,11 +703,9 @@
              not a word the global object answers to, so this one raises a
              `ReferenceError` rather than the `Illegal invocation` a panel bound on
              `open` produces — the same defect, reported under a different name.
-             The exposure is conditional on the call site: `$listId` is derived from
-             an explicit id or name when one is given and randomized when neither
-             is, so the bug reaches only the callers who left both off. That is a
-             worse shape than an unconditional one, not a milder one — it makes the
-             failure look like something about the page rather than the component.
+             `$listId` is derived from an explicit id or name when one is given and
+             counted when neither is, and a count can restart when only part of the
+             page re-renders, so the key does not follow it.
              STATIC on purpose: a teleported node is patched against its own
              counterpart, one to one, never against a keyed sibling, so several
              comboboxes on a page do not compete for this value. --}}

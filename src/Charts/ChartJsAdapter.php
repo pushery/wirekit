@@ -95,13 +95,8 @@ final class ChartJsAdapter implements ChartAdapter
         // charts with dataset.fill = true. We map the type to 'line' here
         // and `normalizeData()` in this same class sets `fill => true` on every dataset —
         // per-dataset when a dataset declares `type => 'area'`, and for all of them when the
-        // chart-level type is `area`. Either way the developer's own `fill` wins.
-        //
-        // ⚠️ This used to credit the Alpine factory's `_applyThemeToDatasets`, "carried through
-        // the rawConfig.data.areaIntent flag". That method exists and does not touch `fill`;
-        // `areaIntent` does not exist anywhere in the tree. A reader following the comment
-        // would have gone looking for a client-side mechanism to change, and found nothing to
-        // change it in.
+        // chart-level type is `area`. Either way the developer's own `fill` wins, and nothing on
+        // the client side changes it.
         // 'column' maps to 'bar' too (Chart.js bars are vertical by default;
         // ApexCharts splits horizontal/vertical into bar/column).
         return match ($type) {
@@ -130,10 +125,9 @@ final class ChartJsAdapter implements ChartAdapter
                     ],
                 ],
                 // `position: 'nearest'` anchors the tooltip at the data
-                // element nearest the cursor, with the default 2 px
-                // `caretPadding` between cursor and panel — matches the
-                // ApexCharts adapter's `followCursor: true` behavior
-                // so tooltips read uniformly across chart libraries.
+                // element nearest the cursor, and `caretPadding: 4` puts
+                // 4 px between the caret and that element (Chart.js'
+                // default is 2).
                 'tooltip' => [
                     'enabled' => true,
                     'mode' => 'index',

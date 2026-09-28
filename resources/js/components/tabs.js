@@ -15,8 +15,9 @@
  * expression was evaluated; written as a factory method the distinction is real,
  * and `$root` is the one that holds regardless of which child dispatched.
  *
- * Lifecycle resources held on `this`: NONE. The $watch is torn down with the
- * component, and nothing else is registered.
+ * Lifecycle resources held on `this`:
+ *   - _stopServerSync (the observer `observeServerValue()` returns) — called in
+ *     destroy(). The $watch is torn down with the component.
  *
  * @param {Object} config
  * @param {string} config.active     key of the tab open at render time

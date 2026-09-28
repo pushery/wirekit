@@ -12,7 +12,7 @@
 "list,
 $after
 $attributes->class([$classes])
-$attributes->class([$sizeClasses]);
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -56,6 +56,7 @@ $shouldSetHidden
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -132,7 +133,7 @@ $variant;
 ($shouldSetHidden)
 ($size
 ($svgHtml
-('xs')
+('xs').
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
@@ -227,23 +228,18 @@ ALSO
 AND
 API:
 AT
-ATTEMPTED
 Adding
 Ahead
 An
-BECAUSE
-BELOW,
 Blade
 Blade-heroicons'
 BladeUI\Icons\Svg
 BooleanProp::from($after,
 BooleanProp::from($before,
 Bottom
-CAN
-CANNOT
 CHANGES
-CONDITION
 CSS
+CSS;
 Carbon
 Catching
 Check
@@ -260,19 +256,14 @@ ENT_QUOTES).'"',
 EVERY
 Each
 Every
-FAIL
 Fully
 Graceful
 HAS
-HERE,
 HTML
 HTTP
 Hidden
 Htmlable,
-IN
-INSIDE
 IS
-IT
 IT.
 Icon
 IconResolver,
@@ -302,14 +293,12 @@ Padding
 Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RENDER
 Reapply
 Render
 Renders
 Reported
 Resolve
 RuntimeException
-SEE.
 SEPARATE
 SVG
 SVG:
@@ -332,7 +321,6 @@ UNBOUND
 Uses
 Vertical
 VoiceOver
-WAY
 WCAG
 WHY
 WITHOUT
@@ -362,6 +350,7 @@ __toString
 `!important`),
 `:has()`
 `:nth-last-child(2)`.
+`<div>`
 `<ol>`
 `<span>`
 `<span>`,
@@ -380,6 +369,7 @@ __toString
 `datetime`
 `default`
 `heroicon-m-inbox`
+`icon`
 `inbox`
 `intent`
 `list-style`
@@ -440,6 +430,7 @@ as
 as,
 asserted:
 at
+attempted
 attribute
 attribute,
 auto-derived
@@ -457,6 +448,7 @@ because
 becomes
 before
 below
+below,
 below.
 between
 black);
@@ -480,6 +472,7 @@ break
 browser-default
 bug
 build
+built-in
 but
 button
 buttons).
@@ -503,7 +496,6 @@ catch
 caught
 center;
 center;">
-centered
 changes
 changing
 check
@@ -519,6 +511,7 @@ class="sr-only">{{
 class="text-[color:var(--color-wk-accent-fg)]"
 class="text-[length:var(--text-wk-md)]
 class="{{
+classes
 cleanly.
 close
 close-icons,
@@ -526,7 +519,6 @@ collapsed
 color
 column;
 comes
-compact
 compiles
 component
 component's
@@ -542,7 +534,6 @@ console
 console).
 consuming
 container
-container.
 content
 context
 continuation
@@ -556,13 +547,13 @@ creates
 danger.
 dashed
 data-wk-prose-skip
+data-wk-timeline
 data-wk-timeline-item-content>
 data-wk-timeline="{{
 datetime
 datetime="{{
 datetime="…">`
 debug
-debug,
 decided
 decides.
 decimal
@@ -597,10 +588,9 @@ dist/wirekit.css
 documentation
 does
 dot
+dot.
 dot/icon
-dotted
 down
-drawn
 draws
 drift
 dropdown
@@ -640,6 +630,7 @@ explicitly
 factory:
 fade-in
 fade-out
+fail
 failed,
 failure
 fallback
@@ -671,11 +662,14 @@ forbidden
 forcing
 found.`
 framework
+free-form
 from
 function
 function).
 function_exists('svg'))
 gaps).
+gate
+gate,
 get
 gets
 gets,
@@ -699,12 +693,15 @@ heard
 height:
 helper
 here
+here,
 hidden
 historical
+hook
 hours
 house
 human
 icon
+icon's
 icon-only
 icon;
 icons
@@ -723,7 +720,6 @@ indent.
 indicates
 indicator
 indicator.
-inert
 informative
 informative.
 injected
@@ -768,6 +764,7 @@ ladder
 last
 later
 layout
+layouts
 leave
 like
 line
@@ -881,6 +878,7 @@ path
 per
 per-set
 permit
+personalization
 phrase
 pipeline
 place
@@ -901,13 +899,11 @@ preset
 previously
 problem
 prod).
-production.
 project,
 prop
 prop's
 props
 provides
-pseudo-element
 put
 qualified:
 rather
@@ -970,6 +966,7 @@ same
 saying
 screen
 screen-reader-skipping
+see.
 sees
 selector
 semantic
@@ -1011,6 +1008,7 @@ still
 stopped
 stops
 storage/logs/laravel.log.
+strictness
 string
 string,
 string.
@@ -1047,6 +1045,7 @@ than
 that
 the
 their
+them.
 then
 there
 thing
@@ -1056,6 +1055,7 @@ this:
 three
 through
 throw
+throw,
 throws
 tile
 time,
@@ -1097,6 +1097,7 @@ var(--color-wk-border);
 var(--color-wk-border);"
 var(--size-wk-xs,
 variant
+verbatim
 vertical
 via
 view's
@@ -1118,6 +1119,7 @@ we
 what
 when
 when:
+where
 wherever
 whether
 which
@@ -1132,8 +1134,10 @@ without
 word
 wording
 would
+written
 yet.
 yields
+your
 {
 {!!
 {{
@@ -1152,4 +1156,3 @@ yields
 }}>
 —
 →
-⚠️

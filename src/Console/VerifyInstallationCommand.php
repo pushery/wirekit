@@ -13,6 +13,7 @@ use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontCss;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\AppCss;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
 use Pushery\WireKit\Support\BladeParser;
 use Pushery\WireKit\Support\DirectoryHash;
@@ -108,7 +109,7 @@ class VerifyInstallationCommand extends Command
     /**
      * The severities `--fail-on` accepts, in ascending strictness.
      *
-     * Same reason as TIERS. `wirekit:doctor-a11y` carries the identical set for the identical
+     * Same reason as TIERS. `wirekit:doctor:a11y` carries the identical set for the identical
      * flag; the two are separate constants because neither command depends on the other, and
      * a shared one would couple them for the sake of three strings.
      *
@@ -226,7 +227,7 @@ class VerifyInstallationCommand extends Command
         if ($this->failed > 0) {
             $this->line('');
             $this->error('Integration incomplete — see failures above.');
-            $this->line('  Reference: https://docs.wirekit.app/getting-started/integration');
+            $this->line('  Reference: '.WireKit::DOCS_URL.'/getting-started/integration');
 
             return $failOn === 'none' ? self::SUCCESS : self::FAILURE;
         }
@@ -241,7 +242,7 @@ class VerifyInstallationCommand extends Command
             // still exited 0, so a pipeline asking "is this install sound?" was told yes.
             //
             // Raised by threshold rather than by promoting drift to a failure: the WARN tier
-            // has 27 call sites, and turning any of them red by default would fail hosts that
+            // is reported from many call sites, and turning any of them red by default would fail hosts that
             // are working fine today over a finding they have consciously accepted. The
             // caller says which severity matters to them, exactly as `wirekit:doctor:a11y`
             // and `wirekit:doctor:props` already let them.
@@ -323,7 +324,7 @@ class VerifyInstallationCommand extends Command
                 $this->line('  Hint: public/vendor/wirekit/ exists but is empty.');
                 $this->line('        Wire `vendor:publish --tag=wirekit-assets --force` into your post-deploy hook.');
                 $this->line('        Default `wirekit:install` adds the dir to .gitignore, so deploys strip it.');
-                $this->line('        See https://docs.wirekit.app/getting-started/integration "Deploy Checklist" for Forge / Envoyer / GitHub Actions snippets.');
+                $this->line('        See '.WireKit::DOCS_URL.'/getting-started/integration "Deploy Checklist" for Forge / Envoyer / GitHub Actions snippets.');
             }
         }
     }
@@ -462,75 +463,6 @@ class VerifyInstallationCommand extends Command
     }
 
     /**
-     * Strip CSS comments, ignoring comment syntax that occurs inside a quoted string.
-     *
-     * A Tailwind `@source` argument is a quoted path, and a glob is made of the same two
-     * characters a comment is: `views/**` + `/*.blade.php` reads as a comment to anything
-     * that does not know where the strings are. Tracking the quote state is what separates
-     * a configuration line from a commented-out one, and both shapes are ordinary.
-     */
-    private static function withoutCssComments(string $css): string
-    {
-        $out = '';
-        $quote = null;
-        $length = strlen($css);
-
-        for ($i = 0; $i < $length; $i++) {
-            $char = $css[$i];
-
-            if ($quote !== null) {
-                // A backslash escape keeps the next character out of the quote decision, so
-                // a path ending in one cannot close the string early.
-                if ($char === '\\' && $i + 1 < $length) {
-                    $out .= $char.$css[$i + 1];
-                    $i++;
-
-                    continue;
-                }
-
-                // A raw newline ends it. A CSS string cannot contain one — the spec calls it a
-                // parse error — and without this rule a single stray apostrophe anywhere in the
-                // file swallows every comment after it, which turns the strip back off exactly
-                // where it matters: a directive commented out during a migration would read as
-                // configuration again.
-                if ($char === $quote || $char === "\n") {
-                    $quote = null;
-                }
-
-                $out .= $char;
-
-                continue;
-            }
-
-            if ($char === '"' || $char === "'") {
-                $quote = $char;
-                $out .= $char;
-
-                continue;
-            }
-
-            if ($char === '/' && ($css[$i + 1] ?? '') === '*') {
-                $end = strpos($css, '*/', $i + 2);
-
-                // An unterminated comment swallows the rest, which is what a CSS parser
-                // does with it too — the file is broken either way, and reporting a missing
-                // directive is the honest answer.
-                if ($end === false) {
-                    return $out;
-                }
-
-                $i = $end + 1;
-
-                continue;
-            }
-
-            $out .= $char;
-        }
-
-        return $out;
-    }
-
-    /**
      * Check that resources/css/app.css has a @source directive scanning WireKit Blade templates.
      * Without this, Tailwind v4 won't generate utility classes used by WireKit components.
      */
@@ -573,36 +505,30 @@ class VerifyInstallationCommand extends Command
             // are generated from, which is what the PASS line claims — a directive naming
             // some other part of the package (`…/wirekit/dist/**`) generates none of them.
             //
-            // ⚠️ `views`, NOT `resources/views`, and the difference is a whole class of
+            // `views`, not `resources/views`, and the difference is a whole class of
             // correct installs. A Tailwind `@source` path is relative to the CSS file it
             // sits in, so from `resources/css/app.css` the two canonical spellings are
             // `../../vendor/pushery/wirekit/resources/views/**` and — once the views are
             // published — `../views/vendor/wirekit/**`. The second one never contains the
-            // longer literal, so requiring it told a correctly configured developer their
-            // integration was missing, which is the same sentence pointed the other way.
+            // longer literal, so requiring it would tell a correctly configured developer
+            // their integration is missing.
             //
             // The two halves are checked inside ONE directive rather than across the file,
             // and in either order: the published-views form says the same thing backwards.
             //
-            // ⚠️ AND THE COMMENT STRIP IS STRING-AWARE, BECAUSE A TAILWIND GLOB IS COMMENT
-            // SYNTAX. `preg_replace('~/\*.*?\*/~s', …)` over this file is not a comment
+            // And the comment strip is string-aware, because a Tailwind glob is comment
+            // syntax. `preg_replace('~/\*.*?\*/~s', …)` over this file is not a comment
             // strip, it is a hazard: `views/**/*.blade.php` contains a complete empty
             // comment pair, and `views/*.blade.php` contains an UNPAIRED opener. Put an
             // ordinary Laravel pagination `@source` above the WireKit one and everything
-            // between them is swallowed — including the WireKit path. Reported from a
-            // consuming site whose build was correct, whose app.css carried 1777 `wk-`
-            // rules, and whose next line of the same output said so.
+            // between them is swallowed, including the WireKit path.
             //
             // That is the very sentence this comment warns about two paragraphs up, pointed
             // the other way, and it shipped anyway — because the hardening was written
             // against CSS-as-text and the argument of a `@source` is a QUOTED STRING.
             // Skipping comment openers inside quotes is the whole fix, and it keeps what
             // the strip was for: a directive commented out during a migration is still text.
-            $withoutComments = self::withoutCssComments($content);
-
-            preg_match_all('~@source\s+(?!not\b)([^;]*);~i', $withoutComments, $directives);
-
-            foreach ($directives[1] as $argument) {
+            foreach (AppCss::sourceArguments($content) as $argument) {
                 $lower = strtolower($argument);
 
                 if (str_contains($lower, 'wirekit') && str_contains($lower, 'views')) {
@@ -786,23 +712,16 @@ class VerifyInstallationCommand extends Command
         // for every component times each of its blocks, and the entry is a full class
         // string a developer replaces rather than a default they tweak.
         //
-        // ⚠️ The count that stood here was 264 and matched nothing: the registry holds 180
-        // names and the component tree 267 files. A number in a comment has no guard, so it
-        // drifts silently and then argues with the reader about a fact it gets wrong. The
-        // sentence does not need one.
-        //
-        // So every correct use of a supported seam was reported as an option that had been
-        // removed. Measured in an adopting application: eleven `<x-wirekit::link>` and one
-        // `<x-wirekit::segmented-control>` carrying the house colors, reported as residue.
-        // With `--fail-on=warning`, which the shared CI lane runs, that is a red gate, and
-        // the three ways out are all bad — throw away working styling, run red forever, or
+        // So without this entry every correct use of a supported seam would be reported as
+        // an option that had been removed, and with `--fail-on=warning` that is a red gate
+        // whose three ways out are all bad: throw away working styling, run red forever, or
         // stop reading the lane.
         //
         // A `*` matches exactly one path segment. That precision is the point: it exempts
         // `components.button.classes.base` and leaves `components.button.legacyRounding`
         // reportable, which is the case the counter-check next door pins.
         'components.*.classes',
-        // ⚠️ AND THE SAME SEAM ONE SEGMENT DEEPER, because a SUB-component's name is
+        // And the same seam one segment deeper, because a SUB-component's name is
         // dotted. `card.header` and `sidebar.item` are single components with two-segment
         // names, so their seam is `components.sidebar.item.classes.active` — which
         // `components.*.classes` cannot match, since `*` is exactly one segment and that
@@ -816,7 +735,7 @@ class VerifyInstallationCommand extends Command
         // like a regression rather than the half that was never covered.
         //
         // Two segments and no more: sub-components nest exactly one level in this catalog
-        // (measured: 179 flat names, 88 singly-dotted, maximum depth 2), so a third `*`
+        // (a registry key is a flat name or a singly-dotted one, never deeper), so a third `*`
         // would exempt paths that do not exist and weaken the counter-case next door.
         'components.*.*.classes',
     ];
@@ -934,13 +853,9 @@ class VerifyInstallationCommand extends Command
         // and that is the common case: sections are added rarely, options within
         // them every release.
         //
-        // ⚠️ THE SAME THREE FILTERS AS THE OTHER DIRECTION, AND THIS SIDE HAD NONE.
-        // Reported from an adopting application whose release gate this made impassable: a
-        // configuration with four working `icons.aliases` was told the option was MISSING,
-        // and the printed remedy — `vendor:publish --force` — would have overwritten the
-        // aliases it was complaining about. Reproduced by that report as a positive control:
-        // with the aliases filled, 31 passed / 2 warnings; with `aliases => []`, 32 passed /
-        // 1 warning. Using the feature is what turned a green check red.
+        // The same three filters as the other direction. Without them a configuration with
+        // working `icons.aliases` would be told the option is missing, and the printed remedy
+        // — `vendor:publish --force` — would overwrite the aliases it is complaining about.
         //
         // The mechanism is the leaf/branch case below, mirrored. The stub carries
         // `icons.aliases => []`, a LEAF. A project that uses the feature carries
@@ -1042,8 +957,16 @@ class VerifyInstallationCommand extends Command
         // Two different facts, so two different sentences. "Predates" tells the reader
         // to republish; an orphan tells them to delete a line, and reporting both under
         // one heading would send them to the wrong remedy for half of it.
+        //
+        // And two different severities. An option the published file does not show still
+        // resolves, because the configuration is merged recursively, so nothing is
+        // misconfigured: this is information, and it does not trip `--fail-on=warning`.
+        // Reported as a warning, it turned the gate of every application that runs with
+        // that threshold red after each release that added an option, although nothing in
+        // those applications had changed. An orphan below stays a warning: it is a setting
+        // the developer believes is doing something.
         if ($missingSections !== [] || $missingComponents !== [] || $missingLeaves !== []) {
-            $this->reportWarn('published config predates options this version offers');
+            $this->reportInfo('published config predates options this version offers');
         }
 
         if ($missingSections !== []) {
@@ -1148,6 +1071,8 @@ class VerifyInstallationCommand extends Command
      * array is summarized by its size: knowing an option defaults to eleven entries is
      * the useful part, and printing all eleven would push the NEXT missing option off
      * the screen.
+     *
+     * `mixed`, because a config default is any value a PHP config file can return.
      */
     private static function describeConfigValue(mixed $value): string
     {
@@ -1393,9 +1318,9 @@ class VerifyInstallationCommand extends Command
         if (! file_exists($appCss)) {
             return false;
         }
-        // Strip CSS comments first (see stripCssComments) so a commented
+        // Strip CSS comments first (see AppCss::withoutComments()) so a commented
         // reference to an @import of wirekit.css isn't read as a real one.
-        $content = $this->stripCssComments((string) file_get_contents($appCss));
+        $content = AppCss::withoutComments((string) file_get_contents($appCss));
 
         return (bool) preg_match('/@import\b[^;]*wirekit\.css/', $content);
     }
@@ -1507,7 +1432,7 @@ class VerifyInstallationCommand extends Command
 
         $manifests = [
             '.boost/wirekit.json' => 'php artisan wirekit:boost-skills --force',
-            '.wirekit-schema.json' => 'php artisan wirekit:export-json --pretty > .wirekit-schema.json',
+            '.wirekit-schema.json' => 'php artisan wirekit:export-json --public --pretty > .wirekit-schema.json',
         ];
 
         foreach ($manifests as $relative => $refreshCmd) {
@@ -1841,8 +1766,9 @@ class VerifyInstallationCommand extends Command
      *
      * Returns true when EITHER a single conventional layout file exists
      * (`views/components/layout.blade.php`) OR any `.blade.php` file lives
-     * inside one of the conventional layout DIRECTORIES (Laravel 12's
-     * `views/components/layouts/` or the legacy `views/layouts/`).
+     * inside one of the conventional layout DIRECTORIES (`views/layouts/`,
+     * where Livewire 4 registers `layouts::`, or `views/components/layouts/`,
+     * the Livewire 3 location).
      * The directory-scan flavor matches real-world projects that ship
      * multiple sibling layouts (`app.blade.php`, `guest.blade.php`, etc.).
      */
@@ -1896,7 +1822,7 @@ class VerifyInstallationCommand extends Command
 
         // Strip CSS comments first — a commented "(not an @import of
         // wirekit.css)" note must not trip a false @import PASS.
-        $content = $this->stripCssComments((string) file_get_contents($appCss));
+        $content = AppCss::withoutComments((string) file_get_contents($appCss));
 
         if (preg_match('/@import\b.*wirekit\.css/', $content)) {
             $this->reportPass('wirekit.css is @import-ed in app.css (valid setup path)');
@@ -1916,13 +1842,11 @@ class VerifyInstallationCommand extends Command
      * Reported from an adopting application on 2026-08-29, which lost time to exactly that and
      * said so even though it was not asking for anything.
      *
-     * ⚠️ IT COMPARES `source.reference`, NEVER `dist.reference`, and that is the difference
+     * It compares `source.reference`, never `dist.reference`, and that is the difference
      * between a useful check and a permanent false alarm. A path repository — which is how
      * this package's own sample app installs it — has no `source` key at all and a
      * `dist.reference` that is a CONTENT HASH, not a commit. Comparing that against the
-     * installed reference reports a mismatch on every healthy run. Measured before building:
-     * the sample's entry has `"dist": {"type": "path"}` and no source, while 151 other
-     * packages in the same lockfile do carry `source.reference`.
+     * installed reference reports a mismatch on every healthy run.
      *
      * So a path install is reported as NOT MEASURED rather than as clean. An answer nobody
      * could give and an all-clear must not print the same way.
@@ -2011,9 +1935,8 @@ class VerifyInstallationCommand extends Command
      * rendered across 173 surfaces. The other three were harmless only because those components
      * were not in use yet — they would have landed on first use, with nothing turning red.
      *
-     * ⚠️ This does NOT resolve the design question (a namespaced catalog, `wirekit::Map`). It
-     * removes the part every adopting application was paying separately: each one had to build
-     * this detection itself to find out.
+     * This does not resolve the design question (a namespaced catalog, `wirekit::Map`). It
+     * spares every application building this detection itself.
      */
     private function checkTranslationKeyCollisions(): void
     {
@@ -2408,13 +2331,14 @@ class VerifyInstallationCommand extends Command
      *
      * The published config carries a commented line offering the stacked shape:
      *
-     *     // 'presets' => ['heroicons', 'heroicons-app', 'heroicons-marketing'],
+     *     // 'presets' => ['heroicons', 'heroicons-marketing'],
      *
      * Uncommenting it on a phosphor, lucide or tabler installation trades a missing
-     * alias for a RESOLVING alias onto a glyph that is not installed — and that
-     * throws when the page renders rather than degrading to the inert placeholder.
-     * The failure therefore lands on a visitor's page, in whichever view happened to
-     * use the word, and says nothing about the config line that caused it.
+     * alias for a RESOLVING alias onto a glyph that is not installed. By default a
+     * request then renders the icon placeholder and logs the package to install,
+     * and a console or test run throws. Either way the finding surfaces in whichever
+     * view happened to use the word, and says nothing about the config line that
+     * caused it.
      *
      * A WARNING rather than a failure, and rather than a boot-time abort. An abort
      * would be a behavior change on a shipped configuration; this is purely additive
@@ -2440,8 +2364,8 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
-        // ⚠️ THIS ASKED COMPOSER WHETHER THE PACKAGE WAS INSTALLED, AND THAT IS A DIFFERENT
-        // QUESTION FROM THE ONE THAT DECIDES WHETHER A PAGE RENDERS.
+        // Whether Composer installed the package is a different question from the one that
+        // decides whether a page renders, so this asks the second one.
         //
         // An application may ship the glyphs itself: derive the subset its tree actually uses,
         // drop them under the preset's prefix, register that set in its own `blade-icons` config
@@ -2716,7 +2640,7 @@ class VerifyInstallationCommand extends Command
         // different question from whether it reaches the page. The adapter reads
         // `window.ApexCharts` and nothing puts it there on its own — an app that installs
         // the npm package and never writes the assignment ships a bundle that finds
-        // nothing, and every chart stays blank with no error.
+        // nothing, and every chart shows an "ApexCharts is not loaded" notice instead of drawing.
         //
         // A heuristic over the app's own JS, so it WARNS rather than fails: a project may
         // assign the global from a file this scan does not know about, and a check that
@@ -2728,7 +2652,7 @@ class VerifyInstallationCommand extends Command
         } else {
             $this->reportWarn(
                 'no `window.ApexCharts = …` assignment found under resources/js. The adapter reads '
-                .'that global and nothing sets it for you, so every chart renders blank with no error. '
+                .'that global and nothing sets it for you, so every chart shows an "ApexCharts is not loaded" notice instead of drawing. '
                 .'Add `import ApexCharts from "apexcharts"; window.ApexCharts = ApexCharts;` to your '
                 .'entry point — or to the chart route\'s own entry, if you would rather not put '
                 .'850 KB on pages that have no chart. Ignore this if you assign it somewhere this '
@@ -2859,9 +2783,11 @@ class VerifyInstallationCommand extends Command
      * gap: developer flipped `charts.library` to `chartjs` AND ran
      * `npm install chart.js` BUT didn't add the
      * `Chart.register(...registerables)` line to `resources/js/app.js`.
-     * The chart component renders + mounts; the Alpine adapter runs;
-     * Chart.js then prints a friendly "Chart.js is not loaded" error
-     * to the browser console (chart.js:107) and silently fails to draw.
+     * The chart component renders + mounts; the Alpine adapter runs, and
+     * no chart draws: with nothing assigning `window.Chart` each one shows a
+     * "Chart.js is not loaded" notice and the browser console names the fix,
+     * and with the global assigned but no controllers registered Chart.js
+     * throws in the console.
      *
      * Doctor catches this UPSTREAM by scanning `resources/js/app.js`
      * for the canonical registration pattern. WARN with the actionable
@@ -2914,7 +2840,7 @@ class VerifyInstallationCommand extends Command
         // is required only for the tree-shaken ESM import.
         //
         // Without this branch the doctor told applications whose charts demonstrably
-        // draw that every chart "renders but draws nothing" — a warning that is not
+        // draw that no chart would draw — a warning that is not
         // just noise but actively misleading, and it was reported from an app doing
         // exactly the supported thing.
         if ($this->providesChartUmdBuild()) {
@@ -2927,8 +2853,8 @@ class VerifyInstallationCommand extends Command
         $this->line('    import { Chart, registerables } from \'chart.js\';');
         $this->line('    Chart.register(...registerables);');
         $this->line('');
-        $this->line('  Without this, every <x-wirekit-chart> renders but draws nothing — chart.js logs a friendly');
-        $this->line('  console.error at runtime and gives up. See '.WireKit::DOCS_URL.'/getting-started/integration#optional-dependencies');
+        $this->line('  Without this, no <x-wirekit-chart> draws: each shows a "Chart.js is not loaded" notice, or Chart.js');
+        $this->line('  throws for an unregistered controller. See '.WireKit::DOCS_URL.'/getting-started/integration#optional-dependencies');
         $this->line('  for the full setup walkthrough.');
     }
 
@@ -3002,7 +2928,7 @@ class VerifyInstallationCommand extends Command
      * disconnect scan reads "the three lines above this one". Deleting the lines would move every
      * call site away from its own context.
      *
-     * ⚠️ Quote state is tracked so a `//` inside a string literal stays put — `'https://…'` would
+     * Quote state is tracked so a `//` inside a string literal stays put — `'https://…'` would
      * otherwise swallow the rest of its line, and with it any call that shares it. A REGEX literal
      * carrying a quote (`/['"]/`) is the shape this does not model; it would flip the state and
      * blank too much or too little from there to the end of the file. Named rather than hidden:
@@ -3323,11 +3249,11 @@ class VerifyInstallationCommand extends Command
     {
         $lockPath ??= base_path('composer.lock');
 
-        // `file_exists` is true for a DIRECTORY and for a file the process cannot read, and in
-        // both cases `file_get_contents` returns false. Under strict_types that is a TypeError
-        // inside `wirekit:verify` — a fatal on the machine of the person running the doctor to
-        // find out what is wrong. The five other json_decode sites in this file already cast;
-        // this one did not.
+        // `file_exists` is true for a DIRECTORY and for a file the process cannot read. On a
+        // directory `file_get_contents` returns an empty string with a notice, on an unreadable
+        // file it returns false, and false under strict_types is a TypeError inside
+        // `wirekit:verify`, a fatal for the person running the doctor to find out what is wrong.
+        // So both are ruled out before the read.
         if (! is_file($lockPath) || ! is_readable($lockPath)) {
             return 0;
         }
@@ -3382,12 +3308,9 @@ class VerifyInstallationCommand extends Command
      * developer should look at). INFO is "this is the natural state of a
      * fresh install; here's the next step if you want to act on it."
      *
-     * ⚠️ IT COUNTS TOWARD NOTHING, AND IT USED TO COUNT AS A PASS. The old
-     * docblock said so — "so the summary line doesn't read as if something
-     * failed" — and the reason is answered by the `0 failed` sitting right
-     * beside it in the same line. What it cost was worse: most INFO lines
-     * here say "skipped" or "NOT measured", so counting them as passes
-     * claimed a result for checks that never ran.
+     * It counts toward nothing, not as a pass: most INFO lines here say
+     * "skipped" or "NOT measured", and counting them as passes would claim a
+     * result for checks that never ran.
      *
      * That was only half the damage. Twelve other sites printed the same
      * glyph through a raw `$this->line()` and incremented nothing, so the
@@ -3433,7 +3356,7 @@ class VerifyInstallationCommand extends Command
      *   --shadow      ↔ --shadow-wk
      *
      * Skips any pair where either side is a `var(...)` reference (the developer
-     * is intentionally aliasing) or unset. Emits ✓ when families match, ⚠ when
+     * is intentionally aliasing) or unset. Emits `✓` when families match, `⚠` when
      * they differ with actionable hint.
      */
     private function checkTokenAlignment(): void
@@ -3452,7 +3375,7 @@ class VerifyInstallationCommand extends Command
         // Strip CSS comments first — the per-pair scanner greps the FIRST
         // `--token: value` it finds, so an example pasted in a comment
         // above the real declaration would otherwise mask it.
-        $content = $this->stripCssComments((string) file_get_contents($appCss));
+        $content = AppCss::withoutComments((string) file_get_contents($appCss));
 
         $checks = [
             ['Sans font', '--font-sans', '--font-wk-sans', 'php artisan wirekit:install --font=<key>'],
@@ -3511,29 +3434,6 @@ class VerifyInstallationCommand extends Command
         } else {
             $this->reportWarn("  {$label}: mismatch — Tailwind `{$twValue}` vs WireKit `{$wkValue}`. Fix: {$hint}");
         }
-    }
-
-    /**
-     * Strip CSS block comments before any raw-text scan of app.css.
-     *
-     * Several checks grep app.css as plain text (the @import-path
-     * detection, the token-alignment scanner, the :root/.dark block
-     * extractor). A CSS comment that happens to contain the scanned phrase
-     * — e.g. a commented "not an @import of wirekit.css" note, or an
-     * example "--font-wk-sans: …" pasted above the real declaration —
-     * would otherwise be read as if it were live CSS, producing a false
-     * PASS or masking the real value. This mirrors the Blade-comment strip
-     * in checkBladeDirectives() and the JS comment strip in
-     * checkChartJsRegistration(): sanitize once, scan the live CSS only.
-     * (parseColorTokens() already strips its block the same way; this
-     * centralizes the pattern for every app.css reader.)
-     */
-    private function stripCssComments(string $css): string
-    {
-        // Non-greedy across newlines (/s) so each comment span is removed
-        // individually; a CSS value never contains a comment delimiter, so
-        // this can't corrupt a real declaration.
-        return preg_replace('~/\*.*?\*/~s', '', $css) ?? $css;
     }
 
     /**
@@ -3615,7 +3515,7 @@ class VerifyInstallationCommand extends Command
         }
         // Strip CSS comments first so a `:root {` / `.dark {` written
         // inside a comment can't mis-anchor extractCssBlock().
-        $content = $this->stripCssComments($content);
+        $content = AppCss::withoutComments($content);
 
         $rootBlock = $this->extractCssBlock($content, ':root');
         $darkBlock = $this->extractCssBlock($content, '.dark');
@@ -3710,13 +3610,13 @@ class VerifyInstallationCommand extends Command
      *  - **any `@layer`**, for that second reason alone: `dist/wirekit.css` ships unlayered, and
      *    unlayered CSS beats layered CSS whatever the specificity.
      *
-     * ⚠️ The layer half is deliberately narrow, and a real adopting application is why. The cascade only
+     * The layer half is deliberately narrow, and a real adopting application is why. The cascade only
      * compares declarations that apply to the SAME element, so a custom property set on a
      * DESCENDANT shadows the inherited one whether it sits in a layer or not — an adopting
      * application scopes `--size-wk-fab` to one component that way, correctly. Only a rule that
      * targets the root competes with WireKit's own declaration, so only those are read here.
      *
-     * ⚠️ And it reads `--<family>-wk-<name>`, not `--wk-<name>`. The second shape is a lever a page
+     * And it reads `--<family>-wk-<name>`, not `--wk-<name>`. The second shape is a lever a page
      * sets for a component to read off its own element (`--wk-fab-lift`), which is a different
      * contract with different rules; flagging it here would be a guess dressed as a check.
      */
@@ -3730,7 +3630,7 @@ class VerifyInstallationCommand extends Command
             return;
         }
 
-        $content = $this->stripCssComments($content);
+        $content = AppCss::withoutComments($content);
         $offenders = [];
 
         // Declared straight inside `@theme`. Nested blocks come out first so a rule written in
@@ -4027,7 +3927,7 @@ class VerifyInstallationCommand extends Command
         foreach ($issues as $relativePath => $detected) {
             $this->line("    <fg=gray>•</> {$relativePath}: ".implode(', ', $detected));
         }
-        $this->line('    <fg=gray>See: https://docs.wirekit.app/extending/authoring-custom-alpine-plugins</>');
+        $this->line('    <fg=gray>See: '.WireKit::DOCS_URL.'/extending/authoring-custom-alpine-plugins</>');
         $this->line('    <fg=gray>Opt out per-file with a `// wirekit-doctor: cleanup-ok` comment if intentional.</>');
     }
 
@@ -4566,9 +4466,10 @@ class VerifyInstallationCommand extends Command
             $matches
         ));
         $this->reportWarn(sprintf(
-            "silent prop-typo signals found in storage/logs: %d `WireKit [...]` ERROR/WARNING line(s). Examples:\n      %s\n      Fix each component prop value to match its allowed enum. See https://docs.wirekit.app/strict-validation.",
+            "silent prop-typo signals found in storage/logs: %d `WireKit [...]` ERROR/WARNING line(s). Examples:\n      %s\n      Fix each component prop value to match its allowed enum. See %s/strict-validation.",
             $matchCount,
-            $exampleLines
+            $exampleLines,
+            WireKit::DOCS_URL,
         ));
     }
 }

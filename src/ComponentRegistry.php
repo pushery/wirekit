@@ -275,7 +275,7 @@ class ComponentRegistry
      * @var array<string, string>
      */
     private const TAG_OVERRIDES = [
-        // Class-based via WireKitServiceProvider::registerComponents() —
+        // Class-based, registered in WireKitServiceProvider::boot() —
         // the anonymous file at resources/views/components/chart.blade.php
         // exists but is meant to be reached via the class component, which
         // injects the `$alpineComponent` variable into the view context.
@@ -459,17 +459,12 @@ class ComponentRegistry
      * an entry mapping the component name → its class. Both paths
      * return the same shape so downstream callers don't branch.
      *
-     * **Breaking change in v2.0.0** — the prior return shape (flat
+     * **Breaking change in v2.1.0** — the prior return shape (flat
      * name→default-string map) is gone. Developers reading the old
      * shape must migrate; the new fields make inline-comment metadata
      * available without source-grepping AND close two data-corruption
      * bug classes (truncated `config(...)` defaults, leaked inline
      * comments) that the prior regex parser silently shipped.
-     *
-     * ⚠️ `values` and `value_type` joined the record when the manifest gained them, and this
-     * annotation did not follow. Nothing at runtime noticed — the keys were there — but the
-     * annotation is what a reader and static analysis treat as the contract, and `McpCatalog`
-     * declared a shape its own input could not satisfy for a whole cycle.
      *
      * @return list<array{name: string, default: ?string, default_normalized: ?string, type_hint: ?string, comment: ?string, examples: list<string>, values: ?list<string>, value_type: ?string}>
      */
@@ -523,11 +518,9 @@ class ComponentRegistry
      * key written directly on the tag therefore arrives and takes effect; measured on
      * `<x-wirekit::accordion.item variant="separated">`, which renders the separated chrome.
      *
-     * ⚠️ THE UNION USED TO BE WRITTEN OUT AT ITS ONE CALLER, AND A SECOND CALLER THEN GOT IT
-     * WRONG. The unknown-prop warning unions both and says why; `wirekit:doctor:props` asks the
-     * identical question from `extractProps()` alone, and reported `variant` on
-     * `accordion.item` — a call in this package's own `faq-item` — as a typo. The two readers of
-     * one question now share one answer instead of one of them carrying a copy.
+     * Both readers of this question, the unknown-prop warning and `wirekit:doctor:props`, call
+     * this method rather than writing the union out themselves, so neither can report an
+     * `@aware` key such as `variant` on `accordion.item` as a typo.
      *
      * @return list<string>
      */

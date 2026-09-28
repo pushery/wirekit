@@ -70,9 +70,9 @@
     };
 
     // Fill color changes with semantic intent — always via design tokens.
-    // Mapping mirrors badge's intent palette: info shares the accent fill (no
-    // distinct --color-wk-info base token exists), neutral uses the muted text
-    // token for a low-emphasis gray bar.
+    // Mapping mirrors badge's intent palette: info shares the accent fill (info
+    // has no surface token, and --color-wk-info is the tone the charts and the flash tint read),
+    // neutral uses the muted text token for a low-emphasis gray bar.
     $fillColor = match ($variantValue) {
         'success' => 'bg-[var(--color-wk-success)]',
         'warning' => 'bg-[var(--color-wk-warning)]',
@@ -100,17 +100,13 @@
     $fillClasses = $isIndeterminate ? $fillIndeterminate : $fillDeterminate;
 
     // The id that links label → progressbar via aria-labelledby, and it has to be
-    // STABLE across re-renders. It was `Str::random(6)` per render, which is a
-    // defect that only shows where this component is most used: inside a
-    // `wire:poll` region, every poll produced a new id, so the accessible name was
-    // re-resolved on a control whose whole purpose is being watched while it
-    // changes. Nothing looked wrong in the markup — both halves always agreed
-    // with each other; they just agreed on a different value every second.
+    // stable across re-renders: inside a `wire:poll` region a new id per render would
+    // re-resolve the accessible name on a control whose whole purpose is being watched
+    // while it changes.
     //
-    // Derived from the caller's `id` when there is one, so the same progress bar
-    // keeps the same id across renders. With no `id`, `DomId::unique` still falls
-    // back to a random suffix — unavoidable without one, and page-unique — but it
-    // is then stable for the life of that render pass rather than per element.
+    // Derived from the caller's `id` when there is one. With no `id`, `DomId::unique`
+    // counts per request and prefix, so the same bar gets the same number on the next
+    // render.
     $labelId = \Pushery\WireKit\Support\DomId::unique(
         $attributes->get('id') ? $attributes->get('id').'-label' : null,
         'progress-label-'
@@ -130,8 +126,8 @@
          the track, so a scope on the track leaves `valueText()` unresolvable there.
          Measured in the browser — the width and `aria-valuenow` were right while the
          readout stayed empty, which is the half the report called "not visual-only".
-         The arithmetic lives in the factory because Alpine's CSP build has no
-         expression evaluator; every binding below only names a method. --}}
+         The arithmetic lives in the factory, where the fill, `aria-valuenow` and the
+         readout share one clamped number; every binding below only names a method. --}}
     <div x-data="wirekitProgress({ from: {{ \Pushery\WireKit\Support\AlpinePayload::from($valueExpression) }}, max: {{ $max + 0 }}, determinate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillDeterminate) }}, indeterminate: {{ \Pushery\WireKit\Support\AlpinePayload::from($fillIndeterminate) }} })" {{ $attributes->class(['w-full font-[family-name:var(--font-wk-sans)]']) }}>
 @else
 <div {{ $attributes->class(['w-full font-[family-name:var(--font-wk-sans)]']) }}>

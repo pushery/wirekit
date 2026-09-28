@@ -69,10 +69,9 @@
     // The grand total is the one row that is read before anything else on the panel, so it is
     // emphasized on TWO channels rather than one: size and weight. Color alone would be the
     // color-only signal this repository bans for prices.
-    // \u26a0 `--text-wk-lg` rather than `-md`, and that is measured rather than chosen. The parts
-    // render at `md`, so `md` here would leave the two channels at one: a browser check
-    // comparing the computed styles found weight 600 against 400 and size 14px against 14px,
-    // which is exactly the single-channel emphasis the claim above says it is not.
+    // `--text-wk-lg` rather than `-md`: the parts render at `md`, so `md` here would leave the
+    // two channels at one, the same size with only the weight different, which is the
+    // single-channel emphasis the claim above says it is not.
     $totalLabelClasses = WireKit::resolveClasses('cart-summary', 'total-label', implode(' ', [
         'font-[number:var(--font-wk-heading-weight)]',
         'text-[length:var(--text-wk-lg)]',

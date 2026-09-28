@@ -287,18 +287,18 @@ $wrapperClasses
 'var(--color-wk-text-muted)',
 'var(--color-wk-warning)',
 'viewBox'
-'w-10
-'w-12
 'w-16
 'w-2
 'w-2.5
 'w-3
 'w-3.5
-'w-6
-'w-8
+'w-[var(--size-wk-lg)]
+'w-[var(--size-wk-md)]
+'w-[var(--size-wk-sm)]
+'w-[var(--size-wk-xs)]
 'wk-avatar-group',
 'xl'
-'xl']),
+'xl']))
 'xs'
 'xs',
 '{
@@ -342,7 +342,6 @@ $wrapperClasses
 (no
 (non-Latin
 (rating
-(removed
 (silent
 (string)
 (the
@@ -380,7 +379,6 @@ $wrapperClasses
 1.34-8
 1.5,
 1.54-.5
-1.5rem;';
 1.79
 1.79-4
 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73V11z',
@@ -595,10 +593,10 @@ Combine
 Company
 Counter
 DECLARED
-DENSE,
 DOM
 Declared
 Deliberately
+Dense,
 Derive
 Dev-only
 EMPTY
@@ -676,7 +674,6 @@ Read
 Readonly:
 Rendered
 Renders
-Reported
 Required
 Ring
 SCORE,
@@ -699,7 +696,6 @@ Support
 Support\DomId
 Supports
 THIS
-TOP
 TWICE
 Tailwind
 Take
@@ -715,7 +711,6 @@ UNBOUND
 UTF-8.
 Undeclared,
 Until
-Uses
 WCAG
 WHICH
 What
@@ -767,6 +762,7 @@ __('wirekit::Saving'),
 `$this->validate()`
 `'3/1'`.
 `'width/height'`
+`--color-wk-bg-elevated`,
 `:class`
 `:error`
 `:remaining="7"`
@@ -793,28 +789,32 @@ __('wirekit::Saving'),
 `disabled="false"`
 `error`
 `for`,
-`h-6
 `id`
 `initials`
 `inline-block`:
 `input`:
 `label`
 `logoAspect`:
-`ms-0.5`
+`ms-0.5`,
 `name`
 `prop="false"`
 `rating`,
 `rating`;
 `required`
+`ring-*`
+`ring-offset-*`
 `run()`.
 `shape="cirlce"`
 `size`
+`size`,
 `src`),
 `statusVariant="Dot"`
 `status`
 `this`,
 `value`
+`w-auto`
 `x-data`,
+`xs`
 `{{
 a
 able
@@ -827,7 +827,6 @@ accounts).
 across
 action
 added
-adopting
 affects
 after
 after-hook
@@ -869,7 +868,6 @@ app
 appears
 appended
 application
-application.
 applies
 arbitration
 are
@@ -935,7 +933,6 @@ back
 back"
 back.
 background
-background,
 bag
 bag,
 bag.
@@ -1037,7 +1034,7 @@ class="block
 class="cursor-default">
 class="flex
 class="flex-1
-class="h-6
+class="h-[var(--size-wk-xs)]
 class="inline-flex
 class="min-w-0
 class="relative
@@ -1078,6 +1075,7 @@ component,
 component.
 component:
 components
+computed
 concentric
 config('app.debug'),
 config('wirekit.a11y.announce_error',
@@ -1130,6 +1128,7 @@ data-wk-testimonial-role
 debug
 decimal
 decision
+declaration
 decoration
 decorative-image
 deduped
@@ -1195,6 +1194,7 @@ either.
 element
 element,
 element.
+elevated
 else
 elsewhere)
 embeds
@@ -1322,16 +1322,16 @@ gray
 grid
 group
 guard
-h-10
-h-12
 h-16
 h-2',
 h-2.5',
 h-3',
 h-3.5',
 h-3/5
-h-6
-h-8
+h-[var(--size-wk-lg)]
+h-[var(--size-wk-md)]
+h-[var(--size-wk-sm)]
+h-[var(--size-wk-xs)]
 h-full
 had
 half
@@ -1339,6 +1339,7 @@ hand-mount
 happened:
 hardcoded
 has
+has:
 hash
 hash.
 have
@@ -1459,6 +1460,7 @@ line-height)
 list
 listener
 lit
+literal
 live
 live-region
 lives
@@ -1765,7 +1767,6 @@ right
 right-0',
 ring
 ring-[var(--color-wk-bg-elevated)]',
-ring-offset-*
 role
 role="group"
 role="img"
@@ -1829,7 +1830,6 @@ server's
 server-side
 set
 set,
-seven
 shadows:
 shape
 shapes
@@ -1900,6 +1900,7 @@ state
 state.
 static
 status
+status.
 status:
 stays
 stepping
@@ -2037,9 +2038,9 @@ update
 use
 used
 uses
-utilities
+utilities,
 utility
-v4).
+v4
 valid
 validation
 validator,
@@ -2051,6 +2052,7 @@ value.
 value="{{
 values
 var(--color-wk-bg-elevated),
+var(--size-wk-xs);';
 variable
 variant
 variant,
@@ -2069,7 +2071,6 @@ w-4',
 w-6',
 w-8',
 w-auto
-w-auto`,
 warning,
 was
 way
@@ -2096,6 +2097,7 @@ why:
 wider
 width
 width,
+widths
 window
 winning
 wins,
@@ -2164,4 +2166,3 @@ zero,
 …"
 …").
 →
-⚠️

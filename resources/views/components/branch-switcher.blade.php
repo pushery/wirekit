@@ -53,13 +53,14 @@
     ]), $scope);
 
     $buttonClasses = WireKit::resolveClasses('branch-switcher', 'button', implode(' ', [
-        // `cursor-pointer` because preflight gives a button `cursor: default`, and the touch
-        // target floor because these two are the smallest controls on an answer.
+        // `cursor-pointer` because a button shows the browser's default arrow (Tailwind v4's
+        // preflight no longer sets a pointer), and the touch target floor because these two
+        // are the smallest controls on an answer.
         'inline-flex cursor-pointer items-center justify-center wk-touch-target',
         'size-[var(--size-wk-sm)] rounded-[var(--radius-wk-full)]',
         'text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-text)]',
         'hover:bg-[var(--color-wk-bg-muted)]',
-        'disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent',
+        'disabled:cursor-not-allowed disabled:opacity-[var(--opacity-wk-disabled)] disabled:hover:bg-transparent',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'wk-transition',
     ]), $scope);

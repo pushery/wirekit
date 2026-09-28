@@ -96,7 +96,6 @@ $title])
 (rightward)
 (see
 (silent
-(sort
 (subtle
 (the
 (window-scoped,
@@ -298,7 +297,7 @@ __('wirekit::Unread.')
 `group`
 `label`
 `landmark-unique`).
-`name`,
+`name`:
 `notification-action`
 `prop="false"`
 `role="region"`
@@ -310,6 +309,7 @@ action.
 actionLabel
 actions
 activate(item),
+active
 affordance
 against
 alert/badge).
@@ -431,7 +431,6 @@ closes
 collect($itemsArr)->reject(fn
 color
 color/dot
-columns,
 come
 comment
 comments
@@ -471,7 +470,7 @@ defaults
 demo
 demos)
 derived
-destroy-and-rebuild
+destroy-and-rebuild,
 developer
 different
 dispatches
@@ -547,7 +546,7 @@ gates
 generous
 ghost
 given.
-goes
+go
 group.items"
 groupBy:
 groups
@@ -646,7 +645,6 @@ matching
 max-w-[calc(100vw-2rem)]
 may
 mean
-means
 middle-click
 min-w-[1rem]
 mirroring
@@ -691,7 +689,6 @@ opens
 opposite
 opt
 optimistic-ui:
-order,
 order:
 other
 otherwise)
@@ -704,8 +701,8 @@ page
 paired
 panel
 panel),
+panel,
 panel:
-panels)
 per
 pill
 place
@@ -727,7 +724,6 @@ qualified:
 radio
 raw
 re-announces
-re-randomized
 reach
 read
 read"
@@ -742,7 +738,6 @@ record
 region
 relative
 render
-render:
 rendered
 renders
 replaces

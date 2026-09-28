@@ -4,8 +4,8 @@
      the optimistic contract has nothing to arbitrate. --}}
 @props([
     // What was called. This is the name a reader recognizes — `search_docs`, `get_weather` —
-    // and it is also the accessible name of the whole block, so it is required in practice:
-    // a tool call nobody can name is a spinner with extra steps.
+    // and it names the arguments block and the settled announcement, so it is required in
+    // practice: a tool call nobody can name is a spinner with extra steps.
     'name' => null,
     // Where the call stands:
     //   pending — queued, nothing has happened yet
@@ -82,6 +82,19 @@
 
     $toolName = is_string($name) ? trim($name) : '';
 
+    // What the status region says once the call has settled: the tool AND its state, because a
+    // reader who hears "Done" on its own cannot tell which of five calls it was. A block without a
+    // name says the state alone rather than a sentence that starts with a colon. Nothing while the
+    // call is pending or running: `aria-busy` covers those, and announcing "Queued" and "Running…"
+    // as well would be three announcements for one call.
+    $isSettled = $status === 'done' || $isFailed;
+
+    $announcement = match (true) {
+        ! $isSettled => '',
+        $toolName === '' => $statusLabel,
+        default => __('wirekit:::label: :value', ['label' => $toolName, 'value' => $statusLabel]),
+    };
+
     /*
      * `min-w-0` is load-bearing, and it was measured rather than added defensively. A grid or
      * flex item's `min-width` defaults to `auto`, which means "never narrower than my content" —
@@ -99,9 +112,8 @@
     ]), $scope);
 @endphp
 
-{{-- `aria-busy` while the call is in flight, so assistive technology knows the region is still
-     changing; the polite status below announces the settled state once, and only once, because
-     it is rendered with the state rather than swapped into an existing live region. --}}
+{{-- `aria-busy` while the call is in flight, so assistive technology knows the block is still
+     changing. The settled state is said by the status region in the header row. --}}
 <div
     data-wk-tool-call
     data-status="{{ $status }}"
@@ -114,6 +126,15 @@
         <x-wirekit::badge :intent="$statusIntent" size="sm" data-wk-tool-call-status>
             <x-wirekit::shimmer :active="$isRunning">{{ $statusLabel }}</x-wirekit::shimmer>
         </x-wirekit::badge>
+
+        {{-- Rendered in EVERY state and empty until the call has settled, so the sentence arrives
+             inside a region that already exists. A live region that appears at the same moment as
+             its text is inert to assistive technology, and a region that only exists once the
+             call is done would be exactly that. It sits in this row, before the blocks that come
+             and go, so a Livewire morph finds it where it left it and patches its text instead of
+             inserting a new one. Once said, the text stays as it is, so a later re-render with the
+             same state changes nothing and announces nothing. --}}
+        <span class="sr-only" role="status" aria-live="polite" data-wk-tool-call-announcer>{{ $announcement }}</span>
     </div>
 
     @if($argumentsText !== null)

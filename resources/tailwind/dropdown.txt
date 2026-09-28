@@ -351,7 +351,6 @@ $widthStyle]
 A
 ACCESSIBILITY
 ACCIDENT,
-ACTUALLY
 ALWAYS
 ALWAYS-visible
 AND
@@ -399,8 +398,6 @@ Color
 ComponentSlot
 Cupertino-style
 DEFAULT
-DERIVED
-DIRECT
 DIRECTLY.
 DOM
 DOM.
@@ -423,12 +420,9 @@ English
 Escape
 Explicit
 Extra
-FALLBACK,
 FALLBACK.
 FILTER_VALIDATE_BOOLEAN),
-FOR
 FORMS
-FROM
 Fills
 Five
 Floating
@@ -438,7 +432,6 @@ GENERIC
 Gap
 Gated
 HERE,
-HERE.
 HTML
 Hence
 Here
@@ -448,12 +441,10 @@ Honor
 Hover
 I
 IIFE
-IN
 INNER
 INSIDE
 IS
 IT
-ITEM
 In
 Inline
 Inside
@@ -476,20 +467,19 @@ MUTUALLY
 Measured
 Measured,
 NAME
-NAMED
 NO
 NOT
 Named-slot
 Nested
 No
+Nor
 Normalized
+Not
 OBSTACLE
-OBSTACLES
 ONE
 ONE,
 OR
 OS
-OTHER
 OUTER
 OUTSIDE
 Only
@@ -510,7 +500,6 @@ Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Quick
 REAL,
-RIGHT
 RING
 RING,
 ROOT
@@ -525,7 +514,6 @@ Resting
 SAME
 SCOPE,
 SETTLED
-SETTLED,
 SR
 STABLE
 STACKING
@@ -543,7 +531,6 @@ TELEPORT
 THE
 THERE
 TRIGGER
-TRIGGER,
 TWO
 Teleported
 That
@@ -565,16 +552,12 @@ Uses
 Visual
 WAI-ARIA
 WAS
-WAY
-WAY.
-WERE
-WHAT
 WHICH
 WHOLE
 WHY
 WINDOW
-WRONGLY
 Weight
+What
 Width
 WireKit
 WireKit::resolveClasses(
@@ -882,7 +865,6 @@ between
 bg-[var(--color-wk-accent)]
 bg-[var(--color-wk-accent)]"></span>
 bg-elevated.
-bind
 binding
 binding.
 bindings
@@ -997,6 +979,7 @@ collision-flip
 color
 color,
 column.
+columns
 come
 comment
 common
@@ -1005,7 +988,6 @@ comparison
 compiles
 component
 component's
-component,
 component.
 components
 composed
@@ -1015,7 +997,7 @@ composes.
 composition
 composition.
 computed
-computes
+concentric
 conditional,
 config('app.debug'))
 config('app.debug'),
@@ -1087,6 +1069,8 @@ defect;
 delegated
 delegation
 deliberately
+derived
+derives
 deriving
 descendant
 descendants,
@@ -1168,7 +1152,6 @@ element:
 element;
 elements
 elevated
-else
 else.
 empty
 empty-name
@@ -1198,7 +1181,6 @@ events
 every
 everyone
 everything.
-everywhere
 exact
 exact-match
 exactly
@@ -1219,6 +1201,7 @@ factory
 fails
 failure
 fallback
+fallback,
 fallback.
 falling
 false);
@@ -1274,6 +1257,7 @@ form:
 forms
 found
 frame
+frame.
 fresh
 from
 frozen
@@ -1331,7 +1315,6 @@ here
 here",
 here".
 here.
-here:
 heuristic
 hidden
 hidden`
@@ -1377,7 +1360,6 @@ incoming
 indicator
 indistinguishable
 inferred,
-inherited
 inherits
 inject
 inline
@@ -1443,7 +1425,6 @@ labelFallback:
 labels
 land
 landed.
-landing
 lands
 last
 later
@@ -1465,7 +1446,6 @@ legible
 less
 level
 library
-library.
 light
 like
 lines"
@@ -1473,7 +1453,6 @@ list
 listener.
 listing
 literal
-literally
 little
 live
 lives
@@ -1508,6 +1487,7 @@ match
 match.
 matches
 matching
+matters
 matters.
 may
 mean
@@ -1517,6 +1497,7 @@ measured
 measurement
 measures
 mechanism
+mechanism.
 membership
 menu
 menu"
@@ -1526,6 +1507,7 @@ menu's
 menu).
 menu,
 menu.
+menu:
 menuitemcheckbox
 menuitemcheckbox).
 menuitemradio).
@@ -1536,6 +1518,7 @@ min-width
 minted
 minus
 mismatch
+missing
 mistake
 mode
 model
@@ -1555,6 +1538,7 @@ move
 moved
 moves
 moves.
+much
 must
 muted
 mutually
@@ -1664,7 +1648,7 @@ ownership.
 owns
 owns,
 padding
-padding",
+padding":
 padding,
 page
 page.
@@ -1679,7 +1663,6 @@ panelId:
 panels
 panels,
 panels:
-paragraph
 parent
 parent's
 parent-level
@@ -1734,7 +1717,6 @@ production
 programmatic
 promise
 promise.
-promise:
 prop
 prop"),
 prop's
@@ -1765,6 +1747,7 @@ race
 radio
 radio-item's
 radius
+radius:
 raised
 ran
 random
@@ -1837,7 +1820,6 @@ resets
 resolution,
 resolve
 resolved
-resolved.
 resolves
 resources/js/components/dropdown-trigger.js,
 responsive
@@ -1886,7 +1868,7 @@ rule:
 run
 run,
 runs
-runs,
+runs.
 runtime
 safe
 said
@@ -2006,7 +1988,6 @@ states
 static
 stay
 stayed
-staying
 stays
 still
 stop
@@ -2107,8 +2088,6 @@ throws
 time.
 timing,
 to
-to".
-today.
 together
 toggle-button
 toggled,
@@ -2122,7 +2101,6 @@ top.
 touching
 toward
 tracks
-transfers
 transform
 transition
 transition-colors
@@ -2135,6 +2113,7 @@ tree,
 trees,
 trigger
 trigger's
+trigger,
 trigger-aria.js),
 trigger.
 trigger/panel
@@ -2182,7 +2161,6 @@ user's
 user,
 users
 uses
-uses.
 util
 util).
 utilities
@@ -2215,8 +2193,8 @@ walls,
 warning
 warns
 was
-was,
 way
+way.
 ways
 we
 webkit
@@ -2342,4 +2320,3 @@ zero
 }}><path
 ~150ms
 —
-⚠️

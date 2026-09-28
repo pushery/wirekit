@@ -22,7 +22,7 @@ $slot
 'div',
 'false'
 'full'
-'full']),
+'full']))
 'lg'
 'lg',
 'max'
@@ -51,9 +51,8 @@ $slot
 'xl'
 'xl'),
 'xl',
-'xl']),
-($max)
-($padding)
+'xl']))
+(WireKit::validateProp('container',
 (developers
 (silent
 (string)
@@ -86,7 +85,6 @@ See
 UNBOUND
 Vertical
 WireKit::resolveClasses('container',
-WireKit::validateProp('container',
 ['none',
 ['sm',
 \Pushery\WireKit\WireKit::tagName('container',

@@ -106,12 +106,9 @@ export default function wirekitEditor(config = {}) {
                 content: this._initialContent(),
                 editable: this._editable,
                 extensions: config.extensions || [],
-                // ⚠️ `placeholder` REACHED THIS FILE AND STOPPED HERE. The Blade puts it in the
-                // Alpine config, the props table documents it, and the integration snippet the
-                // docs tell developers to paste reads `config.placeholder` on the object handed
-                // to their factory — an object this call builds, and which did not carry it. So
-                // `Placeholder.configure({ placeholder: config.placeholder ?? 'Write something…' })`
-                // always resolved to its own fallback, for everyone.
+                // `placeholder` is passed on to the factory: the Blade puts it in the Alpine
+                // config, and the integration snippet the docs tell developers to paste reads
+                // `config.placeholder` on the object handed to their factory, which is this one.
                 placeholder: config.placeholder ?? null,
                 editorProps: {
                     attributes: {
@@ -119,9 +116,9 @@ export default function wirekitEditor(config = {}) {
                         // wk-editor-content is REAL shipped CSS (typography + flex-fill +
                         // outline:none + wrap rules in dist/wirekit.css) — never put Tailwind
                         // utility classes here: Tailwind doesn't scan JS config strings, so
-                        // they'd silently not exist in the developer's build (the old
-                        // outline-suppressing utility formerly here was exactly that trap — the browser's
-                        // default contenteditable outline showed INSIDE the field).
+                        // they'd silently not exist in the developer's build, and an
+                        // outline-suppressing utility here would leave the browser's default
+                        // contenteditable outline showing inside the field.
                         role: 'textbox',
                         'aria-multiline': 'true',
                         class: 'wk-editor-content',
@@ -134,11 +131,11 @@ export default function wirekitEditor(config = {}) {
                 },
                 // Nothing is written to the field on load. The engine's serialization of the
                 // stored value is not always the stored value (`<b>` for `<strong>`, a table an
-                // older engine did not know, whitespace), and writing it here fired `input`,
-                // which `wire:model` took as the reader's edit: the next save stored the
-                // engine's version of a document nobody had touched, and in one application
-                // that deleted a table. A plain form posted the rewrite the same way. The field
-                // keeps the server's bytes until the first real edit writes it.
+                // older engine did not know, whitespace), and writing it here would fire `input`,
+                // which `wire:model` takes as the reader's edit: the next save would store the
+                // engine's version of a document nobody had touched, and a plain form would post
+                // it the same way. The field keeps the server's bytes until the first real edit
+                // writes it.
                 onCreate: () => { this._version++; this._updateCount(); },
                 // The commit boundary for rich text is LEAVING the editor.
                 //
@@ -452,11 +449,11 @@ export default function wirekitEditor(config = {}) {
                     fn().run();
                 } catch (e) {
                     // A command whose Tiptap extension isn't registered throws here —
-                    // Underline / TaskList / TextAlign are NOT in StarterKit, so a
-                    // `toolbar="full"` editor wired with only StarterKit hits this on an
-                    // Underline click. Surface a DX hint instead of letting an uncaught
-                    // error break the editor (same "never silently broken" contract as
-                    // the missing-factory fallback above).
+                    // TaskList / TextAlign are NOT in StarterKit (and on Tiptap 2 neither
+                    // is Underline), so an `align-*` or `task-list` button wired with only
+                    // StarterKit hits this on a click. Surface a DX hint instead of letting
+                    // an uncaught error break the editor (same "never silently broken"
+                    // contract as the missing-factory fallback above).
 
                     console.error(
                         `[wirekit] editor: command "${name}" failed — is its editor `
@@ -581,8 +578,8 @@ export default function wirekitEditor(config = {}) {
 
         // Resolve the developer-supplied editor factory. The contract name is
         // engine-neutral: `window.wirekitEditor` is canonical; `window.tiptapEditor`
-        // is a deprecated alias kept working through the whole v2.x line (removed in
-        // v3.0.0). A one-time console.info nudges old-name integrators to rename,
+        // is a deprecated alias that keeps working, and no removal is scheduled.
+        // A one-time console.info nudges old-name integrators to rename,
         // gated on a window flag so a page with N editors hints ONCE, not N times.
         // (No collision with the `wirekitEditor` Alpine.data component: that name lives
         // in Alpine's registry, never on `window`. The bundles do put a few names on
@@ -604,8 +601,8 @@ export default function wirekitEditor(config = {}) {
 
                     console.info(
                         '[wirekit] editor: window.tiptapEditor is a deprecated alias — rename your '
-                        + 'factory to window.wirekitEditor. The old name keeps working through the '
-                        + 'v2.x line and is removed in v3.0.0.'
+                        + 'factory to window.wirekitEditor. The old name keeps working, and no '
+                        + 'removal is scheduled.'
                     );
                 }
 

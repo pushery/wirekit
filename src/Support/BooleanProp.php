@@ -32,8 +32,8 @@ final class BooleanProp
      * behaves as it did before this helper existed, rather than silently becoming
      * false and turning a feature off.
      *
-     * A bare attribute (`<x-wirekit::faq schema>`) compiles to the string "true"
-     * in Blade, so it keeps meaning "on".
+     * A bare attribute (`<x-wirekit::faq schema>`) is compiled by Blade as the
+     * bound expression `true`, so it arrives as PHP `true` and keeps meaning "on".
      */
     public static function from(mixed $value, bool $default = false): bool
     {
@@ -53,7 +53,7 @@ final class BooleanProp
             }
 
             // An empty attribute (`schema=""`) reads as "present but blank". Blade
-            // itself treats a bare attribute as "true", so blank is the one string
+            // itself treats a bare attribute as `true`, so blank is the one string
             // that should NOT inherit that meaning — it is an explicit nothing.
             if (trim($value) === '') {
                 return false;
@@ -122,8 +122,8 @@ final class BooleanProp
 
             $value = $attributes->get($flag);
 
-            // A bare attribute compiles to "true" in Blade and must stay on. Only
-            // an explicitly false-ish value is stripped.
+            // A bare attribute arrives as `true` (Blade binds it as the expression
+            // `true`) and must stay on. Only an explicitly false-ish value is stripped.
             if (! self::from($value, true)) {
                 $attributes = $attributes->except($flag);
             }

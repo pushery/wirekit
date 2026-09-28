@@ -18,9 +18,12 @@
  *
  * ## Why it matters that it is exact
  *
- * The failure is SILENT. An expression outside the grammar is never evaluated:
- * it throws nothing, logs nothing, and the page looks correct while the control
- * is dead. There is no symptom to notice, so the only defense is to check.
+ * The failure shows only when the directive runs. An expression outside the
+ * grammar is never evaluated: the build logs `Alpine Expression Error` to the
+ * console and rethrows it asynchronously, while the page looks correct and the
+ * control is dead. A handler such as `@click` reports nothing until somebody
+ * clicks it, so a control nobody operated ships broken. Checking every
+ * expression up front does not depend on anyone operating each control.
  *
  * ## Protocol
  *
@@ -176,17 +179,16 @@ try {
 
     // Does THIS parser accept a reserved word as a member name?
     //
-    // ⚠️ The answer changed under us. Up to `@alpinejs/csp` 3.17.2 the tokenizer emitted a
-    // KEYWORD for `delete`, `new`, `typeof` and the rest of that set wherever they appeared, so
-    // `$wire.delete(1)` died with `Expected IDENTIFIER but got KEYWORD "delete"` — the dead-button
-    // class this command was written for. 3.17.3 accepts it. Measured both ways rather than read
-    // out of a release note: the same probe against a downgraded `@alpinejs/csp` fails and against
-    // the current one passes, while `items.filter(i => i.done)` is rejected by both.
+    // The answer depends on the installed version. Up to `@alpinejs/csp` 3.17.2 the tokenizer
+    // emits a keyword for `delete`, `new`, `typeof` and the rest of that set wherever they appear,
+    // so `$wire.delete(1)` dies with `Expected IDENTIFIER but got KEYWORD "delete"`, a dead
+    // button; 3.17.3 accepts it, while `items.filter(i => i.done)` is rejected by both.
     //
-    // It is reported rather than assumed because the constraint here is `^3.15.12`: a developer
-    // running this command can legitimately be on either side of that line, and the advice we
-    // print about index access is TRUE on one side and FALSE on the other. A sentence that tells
-    // somebody to rewrite working code is the same class of damage as a missed violation.
+    // It is reported rather than assumed because this parser is the one installed in the project
+    // running the command, so a developer can legitimately be on either side of that line, and
+    // the advice we print about index access is TRUE on one side and FALSE on the other. A
+    // sentence that tells somebody to rewrite working code is the same class of damage as a
+    // missed violation.
     let reservedWordAsMember = true;
 
     try {

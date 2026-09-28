@@ -1,6 +1,6 @@
-{{-- optimistic-ui: n/a — presentational
-     A workspace mark and its name. It renders no interactive element of its own unless the
-     developer gives it an href, and a link is navigation rather than a mutation. --}}
+{{-- optimistic-ui: n/a — navigation
+     A workspace mark and its name. With an href it renders a link, and a link leaves the
+     page rather than changing state; without one it renders no interactive element. --}}
 @props([
     // The workspace's name. Drawn only where the rail is wide enough to read it; it stays
     // the mark's accessible name in every mode regardless, so a narrow rail is not an
@@ -12,7 +12,7 @@
     // Makes the whole block a link. Leave it out for a switcher — wrap the component in a
     // dropdown trigger instead, so the control is a button and announces itself as one.
     'href' => null,
-    // ⚠️ THERE IS A SECOND MARK SLOT, `expanded`, AND IT IS NOT DECLARED HERE because a named
+    // There is a second mark slot, `expanded`, and it is not declared here because a named
     // slot is not a prop. It is documented here because this is where a reader looks.
     //
     // A rail that opens has two widths, and a brand usually has two forms: a signet that fits
@@ -24,7 +24,7 @@
     // for byte as before. The markers below are emitted only when there is something to swap
     // with, so a rail with one mark carries no rule that could hide it.
     //
-    // ⚠️ THE ACCESSIBLE NAME COMES FROM `name` AND IS UNAFFECTED, which is what makes the swap
+    // The accessible name comes from `name` and is unaffected, which is what makes the swap
     // safe. Both forms are presentation: the hidden one is `display: none` and reaches no
     // accessibility tree, while `name` stays in it at every width. A developer who instead
     // labels the images themselves gets two names for one thing, and only one of them at a
@@ -73,22 +73,20 @@
         // held by a browser guard that compares the two CENTERS rather than the two edges, so
         // a change to either size fails loudly instead of drifting six pixels at a time.
         //
-        // ⚠️ IT READS THE MODULE'S OWN PADDING TOKEN, not the tier directly, and that is what
+        // It reads the module's own padding token, not the tier directly, and that is what
         // keeps this true beside an inset panel. There the modules take a wider inline padding
         // so their glyphs land on the column's axis; a mark subtracting from the fixed tier
         // would have stayed put while the glyphs moved, and the two would part by exactly the
         // amount the modules gained. Reading the same token means the mark follows whatever
         // the modules do, in every shell, with no second rule to keep in step.
         //
-        // ⚠️ AND IT CARRIES THE RAIL'S OWN INSET, because the zone this lands in does not.
-        // A module's padding is measured from the START OF THE MODULE LIST, and the rail insets
+        // And it carries the rail's own inset, because the zone this lands in does not.
+        // A module's padding is measured from the start of the module list, and the rail insets
         // that list by `--wk-rail-inset-start`. The brand slot is rendered into a zone with no
-        // inline padding at all, so a mark placed straight into that slot began its measurement
-        // one inset earlier than every glyph below it — and the optical correction above, which
-        // is right, then pulled it a further half-mark to the left. Reported from an adopting
-        // application beside an inset panel: mark left 4, glyph left 18, the 14 being the 8px
-        // inset plus the 6px correction. Only the wide rail; centered modes never had it,
-        // because symmetric padding does not move a centered mark.
+        // inline padding at all, so without the inset a mark would begin its measurement one
+        // inset earlier than every glyph below it, and the optical correction above would pull
+        // it a further half-mark to the left. Only the wide rail needs it: symmetric padding
+        // does not move a centered mark.
         //
         // The inset is taken from a variable rather than added outright, because there are TWO
         // shapes and only one of them is short of it. Put inside a shell-bar — the shape the
@@ -161,9 +159,8 @@
          on its own anyway; one that does is the developer's decision to make. --}}
     @isset($expanded)
         {{-- Two forms, swapped by the same live conjunction the name uses. The rule is in the
-             shipped stylesheet, for the reason stated there: two `group-data-*` variants of ONE
-             group stack into a descendant selector, which asks the rail to contain itself, and
-             a bare Tailwind class exists only where a developer's build scanned this package. --}}
+             shipped stylesheet, for the reason stated there: a bare Tailwind class exists only
+             where a developer's build scanned this package. --}}
         <span data-wk-rail-brand-mark class="shrink-0">{{ $slot }}</span>
         <span data-wk-rail-brand-mark-wide class="min-w-0 shrink-0">{{ $expanded }}</span>
     @else
@@ -175,16 +172,16 @@
              identifies the workspace, and a screen-reader user gets no visual mark to fall
              back on.
 
-             ⚠️ THE MARKER DOES THE DECIDING NOW, NOT PHP. This used to read a boolean
-             derived from `labels` at render time — so an `expandable` rail that started
-             narrow hid its name and kept it hidden at every width, because widening is an
-             Alpine change that happens long after. The modules never had the bug: they
-             follow the rail's live attributes. The mark took part in neither.
+             The marker does the deciding, not PHP. A boolean derived from `labels` at
+             render time would keep the name of an `expandable` rail that starts narrow
+             hidden at every width, because widening is an Alpine change that happens long
+             after. Like the modules, the mark follows the rail's live attributes.
 
              The rule is in the shipped stylesheet rather than on this element, and the
-             comment there carries the reasoning: the condition is a CONJUNCTION of the mode
+             comment there carries the reasoning: the condition is a conjunction of the mode
              and the words-are-settled marker, each half preventing a different regression,
-             and two `group-data-*` variants of one group cannot express it. --}}
+             and a bare Tailwind class exists only where a developer's build scanned this
+             package. --}}
         <span data-wk-rail-brand-name class="min-w-0 flex flex-col">
             <span class="{{ $nameClasses }}">{{ $name }}</span>
             @if(filled($description))

@@ -9,14 +9,16 @@
  * Three trigger modes:
  *   'viewport' — IntersectionObserver, threshold 0.4. (Default.)
  *   'click'    — wait for click on the host element.
- *   'manual'   — developer dispatches `Alpine.$dispatch('wirekit:reveal')`
- *                from anywhere; the helper listens for that custom event.
+ *   'manual'   — fires when a `wirekit:reveal` event reaches `window`:
+ *                `$dispatch('wirekit:reveal')` in an Alpine expression, or
+ *                `window.dispatchEvent(new CustomEvent('wirekit:reveal'))` in a
+ *                script. The Alpine object itself has no `$dispatch`.
  *
  * Honors `prefers-reduced-motion: reduce` — when the OS-level setting is
  * on, the class is added immediately (final state visible) but the
- * animation itself is gated by the global @media block in dist/wirekit.css
- * which snaps animation-duration to 0.01ms. So the visual result is a
- * snap-to-final with no motion, regardless of trigger.
+ * animation itself is cut short by the global reduced-motion rule in
+ * dist/wirekit.css. So the visual result is a snap-to-final with no motion,
+ * regardless of trigger.
  *
  * Usage examples:
  *   <div x-data="wirekitAnimate('fade-in')">…</div>
@@ -84,8 +86,8 @@ export default (preset, options = {}) => ({
 
     bindViewport() {
         // Reduced-motion: still trigger (so final state is visible) but the
-        // global @media block snaps duration to 0.01ms — visually identical
-        // to no-animation. The opacity-from-0 keyframes would otherwise leave
+        // global reduced-motion rule in dist/wirekit.css cuts the duration short,
+        // which reads as no animation. The opacity-from-0 keyframes would otherwise leave
         // the element invisible if we skipped triggering entirely.
         //
         // "Enough of it is in view" has two readings, and a tall target needs the second. A

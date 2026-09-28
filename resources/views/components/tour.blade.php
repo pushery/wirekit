@@ -21,13 +21,11 @@
         'font-[family-name:var(--font-wk-sans)]',
     ]), $scope);
 
-    // Reset the per-render sequential counter so every child
-    // `<x-wirekit::tour.step>` whose `$index` is null gets auto-
-    // assigned 0, 1, 2, … in document order. Without this, every
-    // step defaulted to `data-wk-tour-step="0"` and the tour's
-    // next() JS could only locate the first step. See
-    // `Pushery\WireKit\Support\TourStepCounter` for the full
-    // mechanism + multi-tour-on-same-page rationale.
+    // This tour's steps have already drawn 0, 1, 2, … from the counter:
+    // Blade renders a component's slot before its view. The reset readies
+    // the counter for the next tour on the page. See
+    // `Pushery\WireKit\Support\TourStepCounter` for the full mechanism and
+    // the per-request reset the first tour relies on.
     TourStepCounter::reset();
 @endphp
 

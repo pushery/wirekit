@@ -21,20 +21,37 @@
  * transitions go through `_push` / `_finish` / `_fail`) so it is unit-testable in
  * node without a DOM, which is how it is unit-tested.
  *
- * Cleanup contract: the only cleanup-requiring resource is the `EventSource`
- * (`_source`). It is opened in `_open()`, closed in `_close()`, and `_close()` runs
- * from `destroy()` (Alpine teardown), from every terminal transition, and is
- * null-guarded so a queued `error` event firing after teardown cannot throw.
+ * Cleanup contract: three resources need it, one per transport — the `EventSource`
+ * (`_source`, 'sse'), the `AbortController` of an in-flight request (`_abort`,
+ * 'fetch') and the simulation interval (`_simTimer`, `simulate`). `_close()` releases
+ * all three; it runs from `destroy()` (Alpine teardown) and from every terminal
+ * transition, and is null-guarded so a queued `error` event firing after teardown
+ * cannot throw.
  *
  * @param {Object}  config
- * @param {string}  config.url          - SSE endpoint.
+ * @param {string}  config.url          - SSE endpoint, or the request URL with source 'fetch'.
+ * @param {string} [config.source]      - 'sse' (default, `EventSource`), 'fetch' (sends a
+ *                                         request and reads the response body) or 'manual'
+ *                                         (no transport; driven through push()/finish()/fail()
+ *                                         or the wirekit-stream-* events).
+ * @param {string} [config.method]      - Request method with source 'fetch' (default 'POST').
+ * @param {*}      [config.body]        - Request body with source 'fetch'.
+ * @param {Object} [config.headers]     - Request headers with source 'fetch'.
+ * @param {string} [config.name]        - Name a wirekit-stream-* event may address.
  * @param {string} [config.eventName]   - SSE event to listen for (default 'message').
  * @param {string} [config.doneSignal]  - Payload that ends the stream (default '[DONE]').
- * @param {string} [config.announce]    - 'result' (announce final text once) or
- *                                         'status' (announce only "ready"). Default 'result'.
+ * @param {string} [config.announce]    - 'result' (announce final text once), 'status'
+ *                                         (announce only "ready") or 'none' (the caller
+ *                                         announces; no live region). Default 'result'.
  * @param {boolean}[config.autoStart]   - Open the stream on init (default true).
  * @param {string} [config.startMessage]- Announced when streaming begins.
  * @param {string} [config.readyMessage]- Announced on completion in 'status' mode.
+ * @param {string} [config.stoppedMessage] - Announced on abort.
+ * @param {string} [config.failedMessage]  - Announced on failure, `:message` substituted.
+ * @param {Object} [config.failMessages]   - The failure reasons, keyed open, lost, http,
+ *                                            unreadable and generic.
+ * @param {string} [config.simulate]    - Text to stream token by token from a local timer.
+ * @param {number} [config.simulateSpeed] - Milliseconds per simulated token (default 55).
  * @param {string} [config.initialText] - Seed text (SSR / resume a completed response,
  *                                         and it lets a static demo show content).
  */

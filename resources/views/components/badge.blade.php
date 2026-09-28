@@ -147,8 +147,9 @@
         default => WireKit::validateProp('badge', 'intent', $intent, ['primary', 'accent', 'success', 'warning', 'danger', 'info', 'neutral']),
     };
 
-    // SOLID: filled intent background + on-color foreground. `info` has no own
-    // base color (it is a soft accent), so it borrows the accent fill; `neutral`
+    // SOLID: filled intent background + on-color foreground. `info` shares the
+    // accent fill: a solid chip needs an on-color token, info has no surface token,
+    // and --color-wk-info is the tone the charts and the flash tint read; `neutral`
     // becomes a dark filled chip (text-bg pair). Literal class strings (not
     // interpolated) so the Tailwind text scanner / drift audit see them.
     $solidClasses = match ($intent) {
@@ -259,10 +260,7 @@
      wrap is conditional so a badge WITHOUT a tooltip stays a bare span with
      zero Alpine overhead. The if/else duplicates the span deliberately —
      Blade pairs anonymous component tags at compile time, so the wrapper
-     cannot be split across a runtime conditional. (Note: literal component
-     tag syntax is kept out of this comment on purpose — Blade's component
-     compiler scans comments too and an unbalanced tag here would break the
-     pairing.) --}}
+     cannot be split across a runtime conditional. --}}
 @if($tooltip)
     <x-wirekit::tooltip :text="$tooltip" :scope="$scope">
         <span

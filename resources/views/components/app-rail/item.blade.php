@@ -31,13 +31,12 @@
     'label' => '',
     // Opt-in: a visible name that does not fit is cut with an ellipsis instead of wrapping.
     //
-    // ⚠ THIS IS A DELIBERATE EXCEPTION TO AN ABSOLUTE RULE, decided by the maintainer on
-    // 2026-09-21 and scoped to exactly what the rule protects. The rule below ("AND IT IS
-    // NEVER TRUNCATED") is about DESTINATIONS: "Insig…" cannot be told apart from
-    // "Insights" or "Insight reports", so a clipped module name names nothing. That argument
-    // does not reach an entry that is not a destination — the account trigger at the foot
-    // of a rail, labeled with a person's name, which is unambiguous even when cut and which
-    // pushed its row to 52px beside 32px neighbors when a test fixture drew a long name.
+    // This is a deliberate exception to an absolute rule, scoped to exactly what the rule
+    // protects. The rule below (a visible name is never truncated) is about destinations:
+    // "Insig…" cannot be told apart from "Insights" or "Insight reports", so a clipped module
+    // name names nothing. That argument does not reach an entry that is not a destination —
+    // the account trigger at the foot of a rail, labeled with a person's name, which is
+    // unambiguous even when cut and whose row would otherwise grow past its neighbors.
     //
     // So the default stays the rule, and nothing changes for any existing rail. A caller
     // who sets this takes the trade knowingly, on an entry where the name is not what tells
@@ -81,9 +80,10 @@
     $expandable = BooleanProp::from($expandable, false);
     $attributes = $attributes->except(['labels', 'expandable']);
 
-    // Livewire 4 emits `data-current` on a `wire:navigate` link automatically. Honoring
-    // it means a developer does not repeat routing knowledge the route file already
-    // holds on every module. Explicit `:active` always wins.
+    // A caller may mark the module current with `data-current` in the attribute bag
+    // instead of `:active`; an explicit `:active` always wins. Livewire's own
+    // `data-current` on a `wire:navigate` link is written in the browser and never
+    // reaches this bag.
     if (! $active) {
         $dataCurrent = $attributes->get('data-current');
         if ($dataCurrent === true || $dataCurrent === 'true' || $dataCurrent === '1' || $dataCurrent === 'page') {
@@ -123,12 +123,10 @@
         // 10px of padding either side, so 5px of surplus — and a leading-aligned glyph sits
         // 2.5px off the module's own center. Reported on 2026-09-01 from three pages at once.
         //
-        // ⚠️ CENTERING WAS TRIED THE SAME DAY AND TAKEN BACK, and a guard is the reason rather
-        // than a preference. `CollapsibleNoShiftTest` holds that a folding column must not move
-        // its icon sideways — from a report on 2026-08-25 measuring −1.5px, +4px and −1.5px
-        // across three previews. Centering the icon-only mode alone reintroduces exactly that:
-        // the expanded row carries a label beside its glyph and has to stay leading-aligned, so
-        // the glyph moves by half the surplus on every fold.
+        // Not centered: a folding column must not move its icon sideways, and centering the
+        // icon-only mode alone would do exactly that. The expanded row carries a label beside
+        // its glyph and has to stay leading-aligned, so a centered glyph would move by half the
+        // surplus on every fold.
         //
         // The surplus is where the two reports meet, and it exists ONLY beside an inset panel —
         // measured 0 on the multi-column shell against 5 there. Removing it satisfies both, and
@@ -286,8 +284,8 @@
     $buttonReset = $railTag === 'button' ? 'wk-rail-item-button' : '';
 
     // The pointer rides the same condition but stays a utility rather than joining
-    // that reset rule. Tailwind v4's preflight sets `cursor: default` on `button`,
-    // reversing v3, so every button in this package puts the affordance back through
+    // that reset rule. Tailwind v4's preflight no longer sets `cursor: pointer` on
+    // `button` (v3 did), so every button in this package puts the affordance back through
     // its own class list — the rail item is the one that would spell it somewhere
     // else, and a cursor is an affordance rather than a piece of the UA-chrome reset
     // the rule above undoes. The `<a>` branch gets none: an anchor with an href
@@ -309,9 +307,10 @@
      copies of the link is one @include — the same reason the sidebar's zones live in a
      partial: the copy that drifts is always the second one.
 
-     `block` overrides the tooltip's own `inline-block` so the wrapper fills the rail's
-     column; an inline-block wrapper leaves the module's hover target narrower than the
-     row it appears to occupy. `focusable-trigger="false"` because the slot is already an
+     `w-full` makes the wrapper fill the rail's column; without it the module's hover
+     target is narrower than the row it appears to occupy. The `block` beside it does not
+     change the display: Tailwind emits `.inline-block` after `.block`, so the tooltip's
+     own `inline-block` wins that tie. `focusable-trigger="false"` because the slot is already an
      <a> — the default would put a second tab stop in front of every module. --}}
 @if($needsTooltip)
     {{-- The tooltip must go quiet the moment the label becomes visible, so `disabled` is BOUND

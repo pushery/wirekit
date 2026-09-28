@@ -19,7 +19,7 @@ namespace Pushery\WireKit\Support;
  *   `x-data="wirekitAlertDialog({…})"` parses too — and leaves the element with NO SCOPE
  *   when that factory was never registered.
  *
- * ⚠️ **The second failure escapes upward, which is its camouflage.** An element whose
+ * **The second failure escapes upward, which is its camouflage.** An element whose
  * factory is missing gets no scope. Alpine's init removes `x-cloak` anyway, and
  * `x-show="open"` cannot evaluate, so it never sets `display: none`. The panel is VISIBLE
  * and every control in it is dead — which reads as a layout bug rather than as a missing
@@ -28,7 +28,7 @@ namespace Pushery\WireKit\Support;
  * ## Why the pattern is not anchored on `Alpine.data(`
  *
  * A minified bundle renames the parameter. This package's own shipped bundle registers
- * through a SINGLE LETTER, so a pattern containing `Alpine.` reads 262 KiB full of
+ * through a SINGLE LETTER, so a pattern containing `Alpine.` reads a whole bundle full of
  * registrations as empty — and "no registrations found" is indistinguishable from
  * "nothing is registered", which is a finding rather than a broken extractor.
  *

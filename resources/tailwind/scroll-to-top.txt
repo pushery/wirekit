@@ -79,6 +79,7 @@ $threshold
 20
 20"
 34px
+34px,
 40×40
 44px
 44×44
@@ -101,9 +102,6 @@ $threshold
 @props([
 @props.
 @unless($forceVisible)
-A
-AND
-ASSEMBLED
 Alpine's
 Alpine.js
 Alpine:
@@ -117,18 +115,13 @@ Declared
 Dev-only
 English.
 Expands
-FROM
-FULL,
 Fully
 German
 Hence
-IN
 IS
 It
 Its
-NOT
 Normalized
-OUT
 On
 PHP
 Playwright,
@@ -138,17 +131,15 @@ Pushery\WireKit\WireKit;
 Scroll-to-top
 Size
 TEXT,
-TWICE,
 Tailwind
 That
 The
 UNBOUND
 Underscores
 Uses
-VARIABLE.
 WITH
-WRITTEN
 WireKit::resolveClasses('scroll-to-top',
+Written
 [
 \Pushery\WireKit\WireKit::warnUnknownProps('scroll-to-top',
 ])
@@ -214,6 +205,7 @@ can
 candidate,
 cannot
 carried
+carries
 carry
 cast
 catalog:
@@ -264,7 +256,6 @@ either
 emits
 events
 events.
-exact
 exactly
 explained
 expression
@@ -287,6 +278,7 @@ forceVisible:
 four
 frequent
 from
+full,
 functions,
 gesture
 gets
@@ -327,6 +319,7 @@ lay
 left
 left-[var(--padding-wk-x-lg)]',
 library's
+lie
 line's
 list
 listener
@@ -434,9 +427,11 @@ strict
 string
 string,
 strip
+strip,
 swipe-up
 tap
 taps".
+taps.
 target
 test
 than
@@ -458,6 +453,7 @@ top')])->class([$buttonClasses,
 translate-y-0"
 translate-y-2"
 truthy
+twice,
 two
 type="button"
 under
@@ -470,6 +466,7 @@ used
 utility
 value
 variable
+variable.
 verbatim
 via
 view's
@@ -485,6 +482,7 @@ was
 watching
 way.
 what
+where
 where,
 which
 while
@@ -492,6 +490,7 @@ wins).
 with
 without
 words,
+would
 writing
 x-cloak
 x-data="wirekitScrollToTop({
@@ -512,4 +511,3 @@ z-[var(--z-wk-sticky)]',
 }}"
 }},
 —
-⚠️

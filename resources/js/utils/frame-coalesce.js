@@ -14,7 +14,7 @@
  * has recomputed layout on its own schedule, and the write lands at the end of
  * the same one. The intervening events collapse into that single run.
  *
- * ⚠️ THE LAST EVENT WINS, WHICH IS THE POINT AND ALSO THE CONSTRAINT. This is
+ * The last event wins, which is the point and also the constraint. This is
  * for work that is IDEMPOTENT over a burst — "put the panel where the cursor
  * is", "measure where we are scrolled to". It is the wrong tool for work that
  * must observe every event, such as accumulating a delta or recording a

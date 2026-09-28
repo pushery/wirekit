@@ -90,7 +90,7 @@ $total
 ',
 '.$radiusClasses
 '2xl'
-'2xl']),
+'2xl']))
 'absolute
 'alt'
 'as'
@@ -145,10 +145,10 @@ $total
 'md'),
 'md',
 'muted'
-'muted']),
+'muted']))
 'name'
 'nav-item'
-'nav-item']),
+'nav-item']))
 'none'
 'none',
 'offline'
@@ -203,19 +203,19 @@ $total
 'var(--color-wk-success)',
 'var(--color-wk-text-muted)',
 'var(--color-wk-warning)',
-'w-10
-'w-12
 'w-16
 'w-2
 'w-2.5
 'w-3
 'w-3.5
-'w-6
-'w-8
+'w-[var(--size-wk-lg)]
+'w-[var(--size-wk-md)]
+'w-[var(--size-wk-sm)]
+'w-[var(--size-wk-xs)]
 'wk-avatar-group',
 'xl'
 'xl',
-'xl']),
+'xl']))
 'xs'
 'xs',
 ($avatarOnly)
@@ -223,16 +223,13 @@ $total
 ($avatar['initials']
 ($avatar['src']
 ($fromInitials
-($gap)
-($padding)
-($radius)
 ($shape)
 ($size)
 ($status
 ($status)
-($tone)
 (RTL-safe)
 (WireKit::validateProp('avatar',
+(WireKit::validateProp('profile',
 (`sidebar/item.blade.php`).
 (`xs`
 (body
@@ -250,9 +247,9 @@ $total
 (no
 (none
 (or
-(removed
 (silent
 (string)
+(v3
 (with
 +
 --}}
@@ -295,7 +292,6 @@ $total
 </svg>
 </{{
 <button>
-<button>,
 <div
 <img
 <path
@@ -345,8 +341,6 @@ An
 Anything
 Argument
 AvatarPalette::for((string)
-BARE
-BELOW
 BOX,
 Baked
 Base
@@ -367,7 +361,6 @@ Declared
 Default
 Dev-only
 EMPTY
-EXIST.
 EXPANDED
 Empty
 English,
@@ -378,7 +371,6 @@ Fixed
 Four
 Fully
 Gated
-HANDLERS
 HOVER,
 HTML
 Hidden
@@ -392,7 +384,6 @@ It
 Literal
 Livewire
 Livewire-morphed
-MAKES
 Measured
 Muted
 NAMED
@@ -425,8 +416,6 @@ Size
 Sizes
 Space
 Status
-THE
-TWO
 Tailwind
 Text
 That
@@ -438,8 +427,6 @@ UA
 UNBOUND
 URL
 Used
-Uses
-WHAT
 WRAPS:
 When
 WireKit
@@ -469,6 +456,7 @@ __('wirekit::Away'),
 __('wirekit::Busy'),
 __('wirekit::Offline'),
 __('wirekit::Online'),
+`--color-wk-bg-elevated`,
 `--color-wk-bg-muted`
 `--gap-wk-*`
 `--radius-wk-nav-item`.
@@ -506,11 +494,14 @@ __('wirekit::Online'),
 `prop="false"`
 `radius="nav-item"`
 `radius`
+`ring-*`
+`ring-offset-*`
 `shape="cirlce"`
 `shell-bar`
 `sidebar.item`
 `sidebar`
 `size`
+`size`,
 `sm`
 `sm`)
 `src`),
@@ -597,6 +588,7 @@ avatars.
 background
 background,
 baked
+bare
 base
 be
 because
@@ -605,6 +597,7 @@ before
 behalf
 being
 belongs
+below
 better
 between
 bg
@@ -663,7 +656,7 @@ circle.
 claimed
 class
 class,
-class="h-8
+class="h-[var(--size-wk-sm)]
 class="min-w-0
 class="sr-only">{{
 class="w-3/5
@@ -695,6 +688,7 @@ component
 component's
 component).
 component:
+computed
 concentric
 config('wirekit.components.avatar.shape',
 config('wirekit.components.avatar.size',
@@ -721,9 +715,9 @@ crc32-palette
 d="M12
 data-wk-prose-skip
 debug
+declaration
 decoration
 default
-default`
 defaults
 deliberate
 dense
@@ -740,6 +734,7 @@ developer's
 developer-supplied
 diagnosed
 did
+did),
 differed
 difference
 differences
@@ -770,6 +765,7 @@ either
 element
 element,
 element.
+elevated
 else
 emit
 emitted
@@ -790,6 +786,7 @@ everywhere
 exact
 exactly
 exist
+exist.
 existed
 existed,
 existing
@@ -849,16 +846,16 @@ group,
 group-hover/wk-profile:text-[color:var(--color-wk-text)]',
 grows
 guard
-h-10
-h-12
 h-16
 h-2',
 h-2.5',
 h-3',
 h-3.5',
 h-3/5
-h-6
-h-8
+h-[var(--size-wk-lg)]
+h-[var(--size-wk-md)]
+h-[var(--size-wk-sm)]
+h-[var(--size-wk-xs)]
 h-full
 had
 half
@@ -875,6 +872,7 @@ happened:
 happens
 hard
 has
+has:
 hash
 hash.
 have
@@ -967,10 +965,12 @@ line.
 lines
 list
 listens
+literal
 live
 live-region
 logical
 long
+longer
 look
 looking
 looks
@@ -1075,7 +1075,6 @@ owns
 package.
 padding),
 padding,
-page
 page-edge
 painting
 pair
@@ -1102,6 +1101,7 @@ places
 plus
 pointer
 pointer,
+pointer`
 post
 pre-existing
 preflight
@@ -1176,7 +1176,6 @@ right-0',
 ring
 ring,
 ring-[var(--color-wk-bg-elevated)]',
-ring-offset-*
 ring:
 role
 role="button"
@@ -1263,6 +1262,7 @@ starter
 state
 state,
 status
+status.
 status:
 stays
 still
@@ -1302,6 +1302,7 @@ that.
 the
 their
 theirs,
+them
 them,
 theme-independent.
 then
@@ -1357,11 +1358,10 @@ use
 use,
 used
 used:
-utilities
+utilities,
 v2.38.0,
 v4
 v4's
-v4).
 validator,
 values
 var(--color-wk-bg-elevated),
@@ -1372,7 +1372,7 @@ view's
 viewBox="0
 visited,
 visually
-w-8
+w-[var(--size-wk-sm)]
 walks
 warning,
 warns
@@ -1394,6 +1394,7 @@ whole
 whose
 why
 width,
+widths
 wins.
 with
 without
@@ -1432,4 +1433,3 @@ you
 →
 ──
 ──────────────────────────────
-⚠️

@@ -45,8 +45,8 @@
     $intentPropName = $intent !== null ? 'intent' : 'variant';
 
     // Validate against the canonical intent set. 'primary' and 'info'
-    // are visual synonyms on callout (both use --color-wk-accent — there is
-    // no separate --color-wk-info token in the WireKit token surface).
+    // are visual synonyms on callout (both use --color-wk-accent: info has no
+    // surface token, and --color-wk-info is the tone the charts and the flash tint read).
     $variantValue = match ($effectiveIntent) {
         'primary', 'neutral', 'info', 'success', 'warning', 'danger' => $effectiveIntent,
         default => WireKit::validateProp('callout', $intentPropName, $effectiveIntent, ['primary', 'neutral', 'info', 'success', 'warning', 'danger']),

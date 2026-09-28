@@ -104,7 +104,7 @@ $variantValue
 (silent
 (the
 +
---color-wk-accent
+--color-wk-accent:
 --color-wk-info
 --}}
 //
@@ -245,7 +245,6 @@ Validate
 Variant
 Visually
 When
-WireKit
 WireKit::resolveAnimateIn($animateIn,
 WireKit::resolveClasses('callout',
 WireKit::validateProp('callout',
@@ -333,6 +332,7 @@ carried
 carries
 cast
 changed.
+charts
 chrome,
 class="absolute
 class="flex-1
@@ -398,6 +398,7 @@ fill="currentColor"
 filled($title))
 first
 flags
+flash
 flex
 flex-wrap
 flips
@@ -517,6 +518,7 @@ put
 rather
 re-renders
 read
+read).
 reader
 reads
 reason
@@ -543,7 +545,6 @@ screen
 second
 section
 self-contained
-separate
 set
 set.
 shell's
@@ -566,7 +567,7 @@ stripe:
 stronger
 success
 supports
-surface).
+surface
 surface;
 synonyms
 tag
@@ -592,7 +593,8 @@ title
 title+body+action
 to
 toggle
-token
+token,
+tone
 tooltip,
 top-0
 trades

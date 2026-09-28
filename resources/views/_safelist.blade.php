@@ -87,9 +87,9 @@
       shadow-[var(--shadow-wk-sm)]
 
     info: aliases primary — uses the accent token chain, no info-specific
-    classes (the --color-wk-info / --color-wk-info-fg / --color-wk-info-hover
-    tokens do not exist in dist/wirekit.css; only --color-wk-info-text exists
-    and is itself an alias of accent-content).
+    classes. Info has no surface tokens (no --color-wk-info-fg or
+    --color-wk-info-hover): --color-wk-info is the tone the charts and the flash tint read,
+    and --color-wk-info-text is an alias of accent-content.
 
     ────────────────────────────────────────────────────────────────────────
     outline() — five intents (info aliases primary)
@@ -170,43 +170,6 @@
       hover:underline
       p-0
       h-auto
-
-    ────────────────────────────────────────────────────────────────────────
-    segmented-control() — selected / unselected segment appearance
-    ────────────────────────────────────────────────────────────────────────
-
-    Same problem, different origin. These used to be literals inside
-    an Alpine `:class` ternary, where Tailwind's scanner did see them — but that
-    also put them out of reach of WireKit::scope(), because resolveClasses runs
-    at render time in PHP while `:class` is a runtime binding. Moving them into
-    resolveClasses made them personalizable and, in the same step, invisible to
-    the scanner. Both branches are listed here so the move stays purely additive.
-
-      bg-[var(--color-wk-bg-elevated)]
-      text-[color:var(--color-wk-text)]
-      shadow-[var(--shadow-wk-sm)]
-      font-[number:var(--font-wk-heading-weight)]
-      text-[color:var(--color-wk-text-muted)]
-      hover:text-[color:var(--color-wk-text)]
-
-    ────────────────────────────────────────────────────────────────────────
-    pricing-table() — selected / unselected billing-interval toggle
-    ────────────────────────────────────────────────────────────────────────
-
-    Same mechanism as segmented-control above: both branches of the interval
-    toggle resolve through resolveClasses (so WireKit::scope() can reach them)
-    and are interpolated into an Alpine `:class`, which the scanner cannot see.
-
-    Every class here is already listed for segmented-control — repeated on
-    purpose. Without its own entry, a later cleanup of that section would remove
-    classes pricing-table has since come to depend on, and the toggle would lose
-    its appearance with nothing failing.
-
-      bg-[var(--color-wk-bg-elevated)]
-      text-[color:var(--color-wk-text)]
-      shadow-[var(--shadow-wk-sm)]
-      text-[color:var(--color-wk-text-muted)]
-
 
     ────────────────────────────────────────────────────────────────────────
     TablistStyles — the tab bar, added because six of its classes vanished

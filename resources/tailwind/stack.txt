@@ -20,7 +20,7 @@ $wrap
 '',
 ',
 '2xl'
-'2xl']),
+'2xl']))
 'align'
 'align',
 'around'
@@ -28,7 +28,7 @@ $wrap
 'as'
 'base',
 'baseline'
-'baseline']),
+'baseline']))
 'between'
 'between',
 'center'
@@ -37,7 +37,7 @@ $wrap
 'end'
 'end',
 'evenly'
-'evenly']),
+'evenly']))
 'false'
 'flex
 'flex-wrap'
@@ -90,9 +90,7 @@ $wrap
 'xl',
 'xs'
 'xs',
-($align)
-($gap)
-($justify)
+(WireKit::validateProp('stack',
 (`--gap-wk-md`
 (silent
 (string)

@@ -25,10 +25,9 @@
     ]), $scope);
 @endphp
 
-{{-- The inline list-style is not redundant with list-none: the docs sandbox iframe
-renders previews WITHOUT the developer's Tailwind build, so `list-none` is a dead class
-name there (it DOES load dist/wirekit.css — that is why the tokens in this component
-resolve). --}}
+{{-- The inline list-style repeats list-none on purpose: `list-none` exists only where a
+Tailwind build scanned this view, and the inline rule keeps the list unmarked in a page
+whose stylesheet did not. The tokens resolve from dist/wirekit.css either way. --}}
 <ul data-wk-prose-skip
     role="list"
     aria-label="{{ $label }}"

@@ -6,14 +6,14 @@
     'size' => 'md',
     'variant' => 'default',
     // `density` — controls the heading + paragraph block-spacing scale.
-    //   `comfortable` (default) — long-form-article rhythm: generous
-    //       `--padding-wk-y-xl` (2.5 rem) top-margin on h2 headings,
-    //       `--padding-wk-y-md` (0.75 rem) bottom-margin on paragraphs.
+    //   `comfortable` (default) — long-form-article rhythm: the larger
+    //       `--padding-wk-y-xl` top-margin on h2 headings,
+    //       `--padding-wk-y-md` bottom-margin on paragraphs.
     //       Optimized for blog posts, docs, news articles where
     //       section breaks should breathe.
     //   `compact` — marketing/landing-page rhythm: tighter
-    //       `--padding-wk-y-md` (0.75 rem) top-margin on h2, smaller
-    //       heading sizes, `--padding-wk-y-sm` (0.5 rem) paragraph
+    //       `--padding-wk-y-md` top-margin on h2, smaller
+    //       heading sizes, `--padding-wk-y-sm` paragraph
     //       bottom-margin. Reaches for the tight rhythm a marketing
     //       page wants without forcing the developer to write
     //       `.ml h2 { margin: ... }` overrides.
@@ -161,20 +161,12 @@
         // also lets the code element's min-content shrink, so it can't force
         // its parent wider than the viewport).
         '[&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:font-[family-name:var(--font-wk-mono)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:text-[length:var(--text-wk-sm)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:bg-[var(--color-wk-bg-muted)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:px-1.5 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:py-0.5 [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:rounded-[var(--radius-wk-sm)] [&_code:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:[overflow-wrap:anywhere]',
-        // ⚠️ A DESCENDANT `overflow-x` RULE ON <pre> USED TO BE HERE (the arbitrary-variant
-        // form, spelled out it would be re-emitted by the scanner reading this comment —
-        // Tailwind reads comments too, and writing the class here would resurrect the dead
-        // rule in the shipped stylesheet), AND IT MADE THE DEVELOPER'S OWN
-        // MARKUP INACCESSIBLE. A descendant selector turned every <pre> the caller passed
-        // in into a horizontal scroll region, and a <pre><code> block holds nothing
-        // focusable — so the hidden text was reachable by pointer only (WCAG 2.1.1,
-        // Level A). prose ships no JavaScript, so it cannot put a `tabindex` on markup it
-        // does not author; the only fix available to it is to stop creating the region.
-        //
-        // It was also invisible to every check we have: a static class scan cannot see a
-        // descendant selector, and axe's `scrollable-region-focusable` fires only when the
-        // content actually overflows at the tested viewport — the docs previews use short
-        // snippets, so both sweeps reported it clean.
+        // No descendant `overflow-x` rule on <pre>, and its class is not spelled out here,
+        // because Tailwind reads comments too and would emit it. Such a rule would turn every
+        // <pre> the caller passes in into a horizontal scroll region, and a <pre><code> block
+        // holds nothing focusable, so the hidden text would be reachable by pointer only
+        // (WCAG 2.1.1, Level A). prose ships no JavaScript, so it cannot put a `tabindex` on
+        // markup it does not author; not creating the region is the only answer it has.
         //
         // Wrapping instead of scrolling shows the whole line rather than hiding half of it,
         // which is the better reading experience anyway. `anywhere` is the safety net for a
@@ -197,28 +189,25 @@
         '[&_img:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:rounded-[var(--radius-wk-md)] [&_img:not(:where(.not-wk-prose,.not-wk-prose_*,[data-wk-prose-skip]))]:my-[var(--padding-wk-y-md)]',
     ], $densityClasses)), $scope);
 
-    $sizeClasses = match ($size) {
+    $sizeClasses = match (WireKit::validateProp('prose', 'size', $size, ['sm', 'md', 'lg'])) {
         'sm' => 'text-[length:var(--text-wk-sm)]',
         'md' => 'text-[length:var(--text-wk-md)]',
         'lg' => 'text-[length:var(--text-wk-lg)]',
-        default => WireKit::validateProp('prose', 'size', $size, ['sm', 'md', 'lg']),
     };
 
-    $variantClasses = match ($variant) {
+    $variantClasses = match (WireKit::validateProp('prose', 'variant', $variant, ['default', 'muted'])) {
         'default' => '',
         'muted' => 'text-[color:var(--color-wk-text-muted)]',
-        default => WireKit::validateProp('prose', 'variant', $variant, ['default', 'muted']),
     };
 
     // Readable line-length clamp. The max-width lives in dist/wirekit.css on
     // `.wk-prose` (default ~65ch) + `.wk-prose[data-measure]`, so it stays
     // themeable via --measure-wk; here we only validate + expose the override as
     // a data attribute. `default` needs no attribute (the base `.wk-prose` rule).
-    $measureAttr = match ($measure) {
+    $measureAttr = match (WireKit::validateProp('prose', 'measure', $measure, ['default', 'wide', 'none'])) {
         'default' => null,
         'wide' => 'wide',
         'none' => 'none',
-        default => WireKit::validateProp('prose', 'measure', $measure, ['default', 'wide', 'none']),
     };
 @endphp
 

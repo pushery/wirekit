@@ -54,12 +54,11 @@ class GlassInstallCommand extends Command
         /*
          * An EDITED published file is not overwritten without `--force`.
          *
-         * ⚠️ `liquid-glass.md` tells the developer, in as many words, that they can edit the
+         * `liquid-glass.md` tells the developer, in as many words, that they can edit the
          * published CSS directly to adjust blur, saturation, opacity and border. So the file
-         * this command overwrites is one the documentation invited them to change — and
-         * `File::copyDirectory()` did it silently, on a command they would plausibly re-run
-         * after upgrading the package. The customization is simply gone, with no output
-         * difference from a first install.
+         * this command overwrites is one the documentation invites them to change, on a
+         * command they would plausibly re-run after upgrading the package, and a silent copy
+         * would take the customization with no output difference from a first install.
          *
          * "Edited" is decided by CONTENT, not by mtime: a `vendor:publish`, a deploy step or
          * a checkout all rewrite the timestamp of a file nobody touched, and a warning that
@@ -91,29 +90,20 @@ class GlassInstallCommand extends Command
             $this->line('Re-run with --force to replace them, or move your changes into your own stylesheet first.');
 
             /*
-             * ⚠️ SUCCESS, AND THE EXIT CODE IS THE WHOLE DEFECT THIS BRANCH ONCE HAD.
+             * Success, not failure: skipping these files is a deliberate no-op.
              *
              * The refusal itself is right: these files may carry the developer's own edits,
-             * and the docs invite exactly that. What was wrong is calling a deliberate no-op
-             * a failure. The documented home for this command is composer's
-             * `post-install-cmd`, and composer aborts the ENTIRE `composer install` on any
-             * non-zero exit from a script there — so a warning about two files became a
-             * deployment outage.
+             * and the docs invite exactly that. The documented home for this command is
+             * composer's `post-install-cmd`, and composer aborts the entire `composer install`
+             * on any non-zero exit from a script there, so a failure exit would turn a warning
+             * about two files into a failed deploy.
              *
-             * Measured in WireKit-Docs on 2026-09-08: every deploy plus FOUR consecutive
-             * develop gates died here (2068, 2070, 2072, 2074). And the failure took its own
-             * witness with it — CI dies in the `deps` step that runs `composer install`, so
-             * everything after it is skipped, including the test that hashes these very files
-             * against the package copy. That test was red the whole time and could never say so.
+             * The trigger is usually the ordinary case, not the one the refusal is for. A
+             * developer checks the published files in so a fresh clone renders; the next
+             * release that changes glass makes the checked-in copy simply the older published
+             * version, with nothing edited.
              *
-             * ⚠️ AND THE TRIGGER IS THE ORDINARY CASE, NOT THE ONE THE REFUSAL IS FOR. A
-             * developer checks the published files in so a fresh clone renders; the next build
-             * that moves glass makes the checked-in copy simply the OLDER published version.
-             * Measured in that incident: zero lines existed only in the adopting application's copy — it
-             * was a strict subset of ours. Nobody had edited anything.
-             *
-             * `--strict` keeps the old exit for anyone who wants CI to notice, so the
-             * capability is offered rather than removed.
+             * `--strict` exits with a failure for anyone who wants CI to notice.
              */
             return $this->option('strict') ? self::FAILURE : self::SUCCESS;
         }

@@ -34,12 +34,14 @@ namespace Pushery\WireKit\Sandbox;
  * finds nothing and cannot tell whether the class was removed or their checkout
  * is broken — and the name says something about infrastructure that is not
  * theirs to know.
+ *
+ * @phpstan-import-type SandboxPropSpec from SandboxSchemaRegistry
  */
 final class RenderResult
 {
     /**
      * @param  array<int, string>  $violations
-     * @param  array<string, array{type: string, required?: bool, default?: mixed, allowed_values?: array<int, mixed>}>|null  $schema
+     * @param  array<string, SandboxPropSpec>|null  $schema
      */
     private function __construct(
         public readonly bool $ok,
@@ -50,7 +52,7 @@ final class RenderResult
     ) {}
 
     /**
-     * @param  array<string, array{type: string, required?: bool, default?: mixed, allowed_values?: array<int, mixed>}>|null  $schema
+     * @param  array<string, SandboxPropSpec>|null  $schema
      */
     public static function success(string $html, ?array $schema = null, ?string $source = null): self
     {

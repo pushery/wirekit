@@ -15,7 +15,7 @@ $as;
 $attributeKey
 $attributes->class([$classes,
 $attributes->class([$classes])
-$attributes->class([$sizeClasses]);
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->except($tag
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
@@ -68,6 +68,8 @@ $mergedAttributes->merge(['aria-hidden'
 $name,
 $name];
 $opensNewTab
+$outlinedClasses
+$outlinedClasses,
 $overflow
 $overflowClass
 $overflowClass,
@@ -88,6 +90,7 @@ $showChevron
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeMap
 $sizeMap[$validated];
 $slot
@@ -155,7 +158,7 @@ $warnNoBody
 'false'
 'flat'
 'flat']
-'flat']),
+'flat']))
 'flex
 'font-[family-name:var(--font-wk-sans)]',
 'font-[number:var(--font-wk-heading-weight)]',
@@ -175,6 +178,7 @@ $warnNoBody
 'name'
 'noopener')
 'onclick')
+'outline',
 'outlined'
 'outlined'),
 'outlined'];
@@ -229,10 +233,12 @@ $warnNoBody
 ($size
 ($svgHtml
 ($variant)
-('xs')
+('xs').
+(WireKit::validateProp('card',
 (\BladeUI\Icons\Exceptions\SvgNotFound
 (\Pushery\WireKit\Support\StrictnessGate::shouldThrowOnInvalid())
 (\Throwable
+(`outline`
 (`tabindex="{{
 (a
 (array
@@ -330,15 +336,12 @@ ALSO
 AND
 API:
 AT
-ATTEMPTED
 Adding
 Alpine
 Alpine's
 An
 And
 Auto-inject
-BECAUSE
-BELOW,
 BUILDING
 Base
 Blade
@@ -351,10 +354,7 @@ BooleanProp::from($padded,
 Both
 Button
 CALL
-CAN
-CANNOT
 COMPLETE
-CONDITION
 CONTAINER,
 CSP
 CSS:
@@ -379,20 +379,14 @@ EXCLUDES
 EXPLICITLY
 Errs
 Every
-FAIL
 FRAME
 False-positive
 Footer
 Fully
 Graceful
-HERE,
 HTTP
 Header
 Htmlable,
-IN
-INSIDE
-IS
-IT
 Icon
 IconResolver,
 If
@@ -428,7 +422,6 @@ Pushery\WireKit\Icons\IconResolver;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
 Putting
-RENDER
 REPLACES
 Read
 Reapply
@@ -439,7 +432,6 @@ Resolve
 RuntimeException
 SAME
 SCROLL
-SEE.
 SHAPE
 SITE
 SR
@@ -457,7 +449,6 @@ SvgNotFound
 SvgNotFound.
 Symmetric
 TAG
-THE
 Tailwind
 That
 The
@@ -468,7 +459,6 @@ UNBOUND
 VALUE).
 Validated
 Variant
-WAY
 WCAG
 We
 What
@@ -480,7 +470,6 @@ WireKit::resolveClasses('card.body',
 WireKit::resolveClasses('card.footer',
 WireKit::resolveClasses('card.header',
 WireKit::tagName('card',
-WireKit::validateProp('card',
 WireKit::validateProp('icon',
 With
 Wrap
@@ -505,6 +494,7 @@ Written
 ])
 ])),
 ]),
+]);
 ];
 __('wirekit::(opens
 __toString
@@ -520,6 +510,7 @@ __toString
 `<button>`
 `<div>`
 `<div>`;
+`<span>`
 `=`,
 `@`)
 `@click.stop`,
@@ -550,6 +541,7 @@ __toString
 `flat`
 `heroicon-m-inbox`
 `href`
+`icon`
 `inbox`
 `merge()`
 `outline`
@@ -632,6 +624,7 @@ aria-hidden="true"
 aria-label
 aria-labelledby
 arm
+around
 array_filter([
 array_keys($sizeMap));
 arrive
@@ -644,6 +637,7 @@ asserted:
 at
 attachment-group
 attachment-group's
+attempted
 attribute
 attribute,
 auditor
@@ -718,6 +712,7 @@ cannot,
 canonical
 card
 card's
+card).
 card.
 card.body
 card.footer
@@ -750,6 +745,7 @@ class="flex-1
 class="shrink-0
 class="shrink-0">{{
 class="sr-only">{{
+classes
 classes:
 click
 click-focusable,
@@ -766,6 +762,7 @@ code
 collapsed
 column
 combinations
+comes
 comment
 compiles
 component
@@ -810,7 +807,6 @@ data-wk-card-chevron
 data-wk-padded="{{
 data-wk-prose-skip
 debug
-debug,
 debug.
 decided
 decision,
@@ -851,9 +847,11 @@ doing
 down
 downstream
 drawing
+drawn
 drawn.');
 draws
 dressed
+drew
 drift
 drop
 dropdown
@@ -880,6 +878,7 @@ elseif
 embedded
 emit
 emits
+emitted
 empty
 empty-state
 end.
@@ -903,6 +902,7 @@ explicitly
 express
 extends
 factory:
+fail
 failure
 fallback
 fallback,
@@ -952,6 +952,8 @@ function).
 function_exists('svg'))
 further
 gap-[var(--gap-wk-sm)]'])
+gate
+gate,
 generates
 get
 gets
@@ -983,6 +985,7 @@ have)
 header
 helper
 here
+here,
 hero
 hidden
 hides
@@ -998,6 +1001,7 @@ href
 href="{{
 https://docs.wirekit.app/components/card.')
 icon
+icon's
 icon-only
 icon/avatar/illustration.
 icon;
@@ -1015,7 +1019,6 @@ imports
 in
 in_array(strtolower((string)
 including
-inert
 informative
 informative.
 injected
@@ -1201,6 +1204,7 @@ our
 out
 outcome
 outline
+outlined
 outset
 over
 overflow
@@ -1229,6 +1233,7 @@ pattern
 pattern.
 pe-[var(--padding-wk-x-lg)]',
 per-set
+personalization
 phone
 pinned
 place
@@ -1249,7 +1254,6 @@ presets
 problem
 prod).
 produces
-production.
 project
 project,
 promise
@@ -1295,6 +1299,7 @@ rendered
 renders
 replaced
 replaces
+reported
 reports
 reproduced
 request
@@ -1341,6 +1346,7 @@ scrolls
 seam
 section
 see
+see.
 sees
 selected
 semantic
@@ -1385,6 +1391,7 @@ span
 specificity,
 spelled
 spelling
+spelling,
 spelling:
 spellings,
 state
@@ -1403,6 +1410,7 @@ str_contains($rawSlot,
 str_contains($relAttr,
 str_contains($targetAttr,
 str_starts_with($attributeKey,
+strictness
 string
 string,
 strings,
@@ -1444,6 +1452,7 @@ that
 the
 their
 them
+them.
 themselves
 then
 there
@@ -1456,6 +1465,7 @@ those
 three
 through
 throw
+throw,
 throws
 tile
 title
@@ -1505,6 +1515,7 @@ useful
 uses
 utilities
 utility
+utility,
 v1.5.0-identical).
 v2.43.0
 v4
@@ -1542,6 +1553,7 @@ warning
 warning.
 was
 way
+way;
 ways
 we
 weight.
@@ -1594,4 +1606,3 @@ yet.
 }}>
 —
 …`,
-⚠️

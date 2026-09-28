@@ -12,7 +12,7 @@
  * sets. Nothing is left to how an older engine parses an attribute value it does not know, so the
  * experience below the enhancement is today's by construction rather than by assumption.
  *
- * ⚠️ WHAT THE PANEL MUST NOT CARRY, measured in Chromium 151 and WebKit 26.5:
+ * What the panel must not carry, measured in Chromium 151 and WebKit 26.5:
  * - padding, a border or a background of its own: a closed until-found element keeps its box, so
  *   those paint as an empty strip (26 px for a panel with padding and a border). They belong on
  *   an element inside it;

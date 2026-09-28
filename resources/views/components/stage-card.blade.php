@@ -23,7 +23,8 @@
     // imports may live in a later @php block, which does not reach this one.
     \Pushery\WireKit\WireKit::warnUnknownProps('stage-card', $attributes->getAttributes());
 
-    // Validate the intent first (throws in debug / falls back in prod), then
+    // Validate the intent first (reported through the strictness gate, which falls back to
+    // 'primary' where it does not throw), then
     // map to its color token. Mirrors stat / badge: info+primary share
     // accent, neutral uses the muted text token.
     $validIntent = match ($intent) {

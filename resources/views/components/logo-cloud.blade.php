@@ -52,10 +52,9 @@
 {{-- A wall of logos is a list of companies, so it is announced as one: someone
      who cannot see the wall still learns how many names are being claimed.
 
-     The inline list-style is not redundant with list-none: the docs sandbox iframe
-     renders previews WITHOUT the developer's Tailwind build, so `list-none` is a dead
-     class name there (it DOES load dist/wirekit.css — that is why the tokens in this
-     component resolve). --}}
+     The inline list-style repeats list-none on purpose: `list-none` exists only where a
+     Tailwind build scanned this view, and the inline rule keeps the list unmarked in a
+     page whose stylesheet did not. The tokens resolve from dist/wirekit.css either way. --}}
 <div data-wk-logo-cloud {{ $attributes->only('class') }}>
     @if($label)
         <p data-wk-prose-skip class="mb-[var(--space-wk-md,1rem)] text-center text-[length:var(--text-wk-sm)] text-[color:var(--color-wk-text-muted)]">

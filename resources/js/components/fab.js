@@ -164,16 +164,16 @@ export default function wirekitFab() {
          * a pile of buttons that happen to be stacked.
          */
         move(direction, event) {
-            // ⚠️ THE GUARD AND THE CANCELLATION ARE THE SAME DECISION, so they live in one
-            // place. They used to be split: `.prevent` on the binding canceled the default
-            // unconditionally, while `open &&` in the expression only gated the movement. A
-            // closed FAB therefore ate ArrowUp and ArrowDown — and it is `fixed z-40`, so a
-            // keyboard reader tabs to it on any page that renders one and then cannot scroll.
+            // The guard and the cancellation are the same decision, so they live in one
+            // place. Split between `.prevent` on the binding and `open &&` in the expression,
+            // the default would be canceled unconditionally while only the movement is gated,
+            // and a closed FAB would eat ArrowUp and ArrowDown: it is `fixed z-40`, so a
+            // keyboard reader tabs to it on any page that renders one and could not scroll.
             //
             // Reading `this.open` here rather than in the template also keeps the binding
             // inside Alpine's CSP grammar: the obvious one-line fix,
-            // `open && (move(1), $event.preventDefault())`, is a sequence expression, and an
-            // expression the CSP build cannot parse goes inert with nothing reported.
+            // `open && (move(1), $event.preventDefault())`, is a sequence expression, which the
+            // CSP build does not parse: the key would log `Alpine Expression Error` and do nothing.
             if (! this.isOpen) {
                 return;
             }

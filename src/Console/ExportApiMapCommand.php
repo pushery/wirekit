@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Pushery\WireKit\ComponentRegistry;
 use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
+use Pushery\WireKit\Support\BlueprintSections;
 use Pushery\WireKit\Support\DocsVisibility;
 use Pushery\WireKit\Support\PublicCssClassInventory;
 use Pushery\WireKit\Support\VersionResolver;
@@ -24,6 +25,7 @@ use Pushery\WireKit\WireKit;
  * Output shape:
  *   {
  *     version: "1.x.x",
+ *     released_version: "1.x.x",
  *     generated_at: ISO-8601,
  *     docs_base: "https://docs.wirekit.app",
  *     groups: [
@@ -31,12 +33,19 @@ use Pushery\WireKit\WireKit;
  *       { id: "themes", count, items: [...] },
  *       { id: "fonts", count, items: [...] },
  *       { id: "icons", count, items: [...] },
- *       { id: "layouts", count, items: [...] },
+ *       { id: "page-layouts", count, items: [...] },
  *       { id: "blueprints", count, items: [...] },
+ *       { id: "partials", count, items: [...] },
  *       { id: "recipes", count, items: [...] },
- *       { id: "commands", count, items: [...] }
+ *       { id: "commands", count, items: [...] },
+ *       { id: "helpers", count, items: [...] },
+ *       { id: "css-classes", count, items: [...] }
  *     ]
  *   }
+ *
+ * `version` is the installed package version; `released_version` is the newest released
+ * section of the shipped CHANGELOG.md, or null when it has none, so a reader can tell whether
+ * the two agree.
  *
  * Output is XSS-safe: `JSON_HEX_TAG` is set so user-controlled string
  * values containing `</script>` cannot break out of a consuming
@@ -350,25 +359,11 @@ class ExportApiMapCommand extends Command
 
         $group['items'] = array_values(array_filter(
             $group['items'],
-            static fn (array $item): bool => self::isPageLayout($item['id']),
+            static fn (array $item): bool => BlueprintSections::isPageLayout($item['id']),
         ));
         $group['count'] = count($group['items']);
 
         return $group;
-    }
-
-    /** The page-layout sections, by the directory they sit in under `docs/blueprints/`. */
-    private const PAGE_LAYOUT_SECTIONS = ['application-shells', 'auth', 'dashboards', 'errors', 'marketing'];
-
-    private static function isPageLayout(string $id): bool
-    {
-        foreach (self::PAGE_LAYOUT_SECTIONS as $section) {
-            if (str_starts_with($id, $section.'/')) {
-                return true;
-            }
-        }
-
-        return $id === 'page-layouts';
     }
 
     /**
@@ -399,7 +394,7 @@ class ExportApiMapCommand extends Command
             static fn (array $item): bool => ! str_starts_with($item['id'], 'partials/')
                 && ! str_starts_with($item['id'], 'recipes/')
                 // …and the page-layout sections, which carry their own group above.
-                && ! self::isPageLayout($item['id']),
+                && ! BlueprintSections::isPageLayout($item['id']),
         ));
         $group['count'] = count($group['items']);
 
@@ -444,7 +439,7 @@ class ExportApiMapCommand extends Command
      * The recipes live under `blueprints/`, and scanning `recipes/` found nothing anywhere.
      *
      * This group was empty even in a checkout of the package repository, where the sources
-     * do exist — `docs/recipes` has never been a directory; the eleven recipe pages are at
+     * do exist — `docs/recipes` has never been a directory; the recipe pages are at
      * `docs/blueprints/recipes`. So the group had two independent reasons to come back
      * empty, and the second one hid the first: in a Composer install the whole of `docs/` is
      * absent anyway, which is the explanation anyone would reach for and stop at.
@@ -481,16 +476,13 @@ class ExportApiMapCommand extends Command
             // refusing to emit them would trade one wrong answer for a worse one. The group
             // is marked instead, so the absence travels with the data.
             //
-            // ⚠️ On STDERR, and that is the whole point of the line rather than a detail of
+            // On STDERR, and that is the whole point of the line rather than a detail of
             // it. This command's entire stdout is one JSON document, and the documented way
             // to run it is `wirekit:export-api-map --pretty | jq …` — `jq` does not skip a
             // human sentence, so a notice printed alongside the object makes the manifest
-            // unparseable while the command still exits 0. That is the worst shape a failure
-            // can take: a build step that reports success and produced nothing usable. This
-            // file already carries the incident once (see `layoutsGroup()`: scanning a
-            // directory that no longer existed "made the whole manifest unparseable"), and
-            // the notice then reintroduced it four times per run in EVERY Composer install,
-            // where `docs/` is export-ignored and therefore always absent.
+            // unparseable while the command still exits 0: a build step that reports success
+            // and produced nothing usable. In a Composer install `docs/` is export-ignored and
+            // therefore always absent, so this notice is printed on every run there.
             $this->output->getErrorStyle()->writeln(sprintf(
                 '<comment>WARN</comment>  api-map: the "%s" group has no source in this installation — docs/%s is not part of '.
                 'the distributed package, so the group is reported as unavailable rather than empty.',
@@ -747,12 +739,11 @@ class ExportApiMapCommand extends Command
      * the actual shipped CSS — adding or removing a `wk-*` class without
      * updating the catalog fails the upstream build.
      *
-     * ⚠️ The scan itself is `PublicCssClassInventory`, and it is shared
-     * rather than restated HERE for a measured reason: this method used
-     * to carry its own copy of the regex, the copy predated three
-     * learned exclusions, and it published ten identifiers as Stable
+     * The scan itself is `PublicCssClassInventory`, shared rather than
+     * restated here, so the exclusions it has learned apply to this
+     * export too: a copy of the regex would publish identifiers as Stable
      * public CSS classes that style nothing. See that class for what
-     * each exclusion is and what published it.
+     * each exclusion is.
      *
      * @return array{id: string, count: int, items: array<int, array<string, string>>}
      */

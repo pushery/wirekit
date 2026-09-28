@@ -15,11 +15,11 @@ import { createFocusTrap } from '../utils/focus-trap.js';
  * adopting application at 375px with the drawer open: `role` null, `aria-modal` null, the
  * toggle's `aria-controls` null, and Escape did nothing — visibility stayed `visible`.
  *
- * ⚠️ The failure that makes it worth a factory rather than a few attributes is asymmetric,
- * and asymmetry is why it looked fine to everyone who tried it with a mouse. The
- * scrim backdrop blocks POINTERS from the page behind it. It does not block the
- * keyboard. So focus walked on through controls the backdrop was covering — visible to
- * nobody, operable by exactly the people who cannot see where focus went.
+ * The failure that makes it worth a factory rather than a few attributes is asymmetric,
+ * which is why it looks fine with a mouse. The scrim backdrop blocks pointers from the page
+ * behind it. It does not block the keyboard, so without a trap focus would walk on through
+ * controls the backdrop covers — visible to nobody, operable by exactly the people who
+ * cannot see where focus went.
  *
  * The width test is asked of `matchMedia`, not of a class, because ARIA cannot be set from
  * a media query: `role` and `aria-modal` are attributes, and an attribute has one value at
@@ -191,10 +191,9 @@ export default function wirekitAppShell(config = {}) {
             // sliding in and the question "who opened this" can no longer be asked.
             this._opener = typeof document !== 'undefined' ? document.activeElement : null;
 
-            // ⚠️ ESCAPE HAS TO WORK BEFORE THE TRAP DOES, and the gap is the whole arming
-            // wait below — measured by an adopting application at 375px, three rounds per
-            // engine: 156/156/162 ms in Blink and 164/171/173 ms in WebKit from the click
-            // to focus arriving in the drawer, against a 150 ms panel transition.
+            // Escape has to work before the trap does, and the gap is the whole arming
+            // wait below: focus arrives in the drawer a little after the panel transition
+            // ends, not with the click.
             //
             // In that window the drawer is already over the page and already visible, focus
             // is still on the toggle, and `escapeDeactivates` belongs to a trap that is not
@@ -211,9 +210,9 @@ export default function wirekitAppShell(config = {}) {
                 // drawer.
                 // Named EXPLICITLY rather than left to the library's own tabbable scan.
                 //
-                // That scan runs once, at `activate()`, and on this panel it kept coming up
-                // empty — the trap then reported `active: true` and never moved focus, at
-                // any delay we tried. A function resolves at activation time and asks the
+                // The library picks the initial focus once, at `activate()`, and on this
+                // panel its scan came up empty there: the trap reported `active: true` and
+                // never moved focus. A function resolves at activation time and asks the
                 // DOM directly, which is the same question with a reliable answer.
                 //
                 // Falling back to the panel itself is why it carries `tabindex="-1"`: a
@@ -303,10 +302,11 @@ export default function wirekitAppShell(config = {}) {
 
             // WHEN to activate is the whole problem, and it took a browser to see it.
             //
-            // `focus-trap` computes its tabbables once, at `activate()`. Called while the
-            // panel is still translated out and mid-transition, it finds none, focuses
-            // nothing, and then reports `active: true` forever after — a trap that exists,
-            // claims to be armed, and never moved focus. Measured: `_trap` truthy,
+            // `focus-trap` places the initial focus once, at `activate()`; it re-reads its
+            // tabbables later (on each Tab, when the focused node goes away), but it does
+            // not come back to the initial focus. Called while the panel is still
+            // translated out and mid-transition, it finds nothing to focus, and the trap
+            // reports `active: true` without ever having moved focus. Measured: `_trap` truthy,
             // `active: true`, two visible tabbable links in the panel, and
             // `document.activeElement` still `BODY` at 0, 50, 150, 400 and 900 ms.
             //
@@ -319,35 +319,28 @@ export default function wirekitAppShell(config = {}) {
             // `transitionend` does not fire for a zero-duration transition, for
             // `prefers-reduced-motion`, or when the browser coalesces the frame. Whichever
             // comes first wins; `activate` is idempotent against its own guard.
-            // Both halves are held on `this`, and only the timer was. `destroy()` cleared
-            // the timeout and left the `transitionend` on the panel — so a shell torn down
-            // WHILE the drawer animates (a Livewire navigation is the ordinary case; the
-            // window is the whole 350 ms) kept a listener on a detached node that then ran
-            // `activate()`, arming a focus trap over markup nobody owns.
-            //
-            // A handle that lives only in a closure cannot be released from anywhere else,
-            // which is why the timer — the half that WAS reachable — is the half that was
-            // being cleaned up.
+            // Both halves are held on `this`, so `destroy()` can release both. A shell torn
+            // down while the drawer animates (a Livewire navigation is the ordinary case; the
+            // window is the whole 350 ms) would otherwise keep a listener on a detached node
+            // that then runs `activate()`, arming a focus trap over markup nobody owns; a
+            // handle that lives only in a closure cannot be released from anywhere else.
             this._settlePanel = panel;
             this._onSettle = (event) => {
-                // ⚠️ `transitionend` BUBBLES, and this panel is full of things that transition.
-                // Every link inside it animates its color on hover, the toggle animates its
-                // own transform — and each of those used to arrive here and arm the trap
-                // early, in the middle of the drawer sliding in. That is the exact moment the
-                // long comment above proves focus lands nowhere.
+                // `transitionend` bubbles, and this panel is full of things that transition:
+                // every link inside it animates its color on hover, the toggle animates its
+                // own transform. Each of those would arm the trap early, in the middle of the
+                // drawer sliding in, the moment the comment above shows focus lands nowhere.
                 //
                 // The sibling already had this right: `app-rail` filters on
                 // `propertyName === 'width' && target === $el` and says why in one line —
                 // "this element also transitions colors, and every one of those would
                 // otherwise publish the names early".
                 //
-                // ⚠️ AND THE PROPERTY LIST IS BOTH OF THE PANEL'S OWN, NOT JUST `transform`.
-                // This read "so `transform` is its settle", which is a reasonable reading of
-                // `transition-[transform,visibility]` and is not what the browser does.
-                // Measured at 393px in Blink, on all four application-shell blueprints: the
-                // ONLY `transitionend` this panel emits is `visibility` at ~152 ms. No
-                // `transform` event arrives at all, so the narrow filter discarded the one
-                // event there was and left the 350 ms fallback as the whole arming path.
+                // And the property list is the panel's own, not just `transform`: under
+                // `transition-[transform,visibility]` Blink emits `visibility` as the panel's
+                // `transitionend` and no `transform` event at all, so a filter on `transform`
+                // alone would discard the one event there is and leave the 350 ms fallback as
+                // the whole arming path.
                 //
                 // What that cost is not subtle: for 350 ms after the drawer opens, focus sits
                 // on `<body>`, so an Escape aimed at the focused element never reaches the
@@ -359,17 +352,14 @@ export default function wirekitAppShell(config = {}) {
                 // `div`, and a link's color transition bubbles from a child. Neither is the
                 // panel.
                 //
-                // ⚠️ AND THE TIMER PATH MUST SURVIVE THE FILTER. `setTimeout(this._onSettle, …)`
+                // And the timer path must survive the filter. `setTimeout(this._onSettle, …)`
                 // calls this with NO event, and that call is the whole fallback for a
                 // zero-duration transition, for `prefers-reduced-motion`, and for a coalesced
                 // frame. Filtering an absent event would leave exactly those readers with a
-                // drawer that never traps focus — the failure this settle exists to prevent,
-                // reintroduced by its own fix.
-                // `translate` joined the list with the panel's own transition: Tailwind 4
-                // writes `translate-x-*` as the standalone `translate` property, so a list
-                // naming only `transform` never animated the slide, and the drawer appeared at
-                // its open position in the first frame. Now it slides, and its `translate`
-                // end is as much the settle as `visibility`'s.
+                // drawer that never traps focus.
+                // `translate` is on the list because Tailwind 4 writes `translate-x-*` as the
+                // standalone `translate` property: the panel's transition names it, the drawer
+                // slides, and its `translate` end is as much the settle as `visibility`'s.
                 if (event && (! ['translate', 'transform', 'visibility'].includes(event.propertyName) || event.target !== panel)) {
                     return;
                 }
@@ -461,10 +451,11 @@ export default function wirekitAppShell(config = {}) {
          * from anywhere else, and this one has three exits — the trap arming, the drawer
          * closing by any other means, and the shell being torn down mid-animation.
          *
-         * Deliberately does NOT call `preventDefault()`. With the trap armed, Escape
-         * reaches the page's own keydown listeners too; suppressing it only in the first
-         * 160 ms would make the drawer behave differently depending on how fast the reader
-         * is, which is the defect one level up.
+         * Calls `preventDefault()`, as the armed trap does with the same key: focus-trap's
+         * Escape handler prevents the default before it deactivates. A page listener that
+         * checks `defaultPrevented` then sees the same flag whether the reader pressed Escape
+         * before the trap armed or after, and the drawer does not behave differently
+         * depending on how fast the reader is.
          *
          * @param {Element} panel the drawer, so focus can be returned the way the trap does
          */
@@ -477,6 +468,8 @@ export default function wirekitAppShell(config = {}) {
                 if (event?.key !== 'Escape' || ! this.sidebarOpen) {
                     return;
                 }
+
+                event.preventDefault?.();
 
                 this._releaseInterimEscape();
 

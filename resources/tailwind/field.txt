@@ -1,6 +1,5 @@
 !
 !==
-"&nbsp;"
 "\u{00A0}")
 "any
 "choose
@@ -126,8 +125,6 @@ $wrapperClasses
 /
 //
 13.5px
-2026-09-04
-2026-09-04.
 :
 :for="$targetId"
 :required="$required"
@@ -203,18 +200,15 @@ Blade
 BooleanProp::from($announceError
 BooleanProp::from($required,
 Both
-CAPTION
-CHILD.
 ComponentSlot,
 DEFAULT
-DENSE,
 Declared
+Dense,
 Dev-only
 Emitted
 Empty
 Error
 Everything
-FIELDSET'S
 FIRST
 FieldGroup
 FieldGroup::describedBy($group,
@@ -222,7 +216,6 @@ FieldGroup::open($name,
 Fully
 GRANDCHILD,
 GROUP
-GROUP'S
 Gated
 Grouped
 HERE,
@@ -231,7 +224,6 @@ Horizontal:
 How
 IDs
 IS
-IT
 If
 It
 Label
@@ -242,9 +234,9 @@ Move
 NAME,
 NOT
 Normalized
+Not
 Nothing
 OFFER,
-ONLY
 OR
 OUTER
 OWN
@@ -260,7 +252,6 @@ ROLE
 Read
 Render
 Renders
-Reported
 Required
 Rich
 Set
@@ -269,23 +260,17 @@ So
 Stable
 Standalone
 Support\SlotAttributes):
-THE
-TOP
 TYPE
 Takes
 That
 The
 They
-This
 Through
 U+00A0
 UNBOUND
-UNBRACKETED
 Use
-VARIABLE,
 Vertical
 WCAG-recommended
-WHILE
 WRITTEN
 We
 Whatever
@@ -315,7 +300,6 @@ Written
 ]),
 `$component`.
 `$wkFieldSet`,
-`&nbsp;`
 `//`
 `<span>`
 `<x-…>`
@@ -342,7 +326,7 @@ Written
 `legend`
 `min-w-0`
 `min-width:
-`ms-0.5`
+`ms-0.5`,
 `name`
 `name`)
 `name`,
@@ -403,7 +387,6 @@ answers
 any
 appears
 application
-application.
 are
 arguments
 aria-*;
@@ -453,7 +436,6 @@ below.
 beside
 beside)
 between
-blank
 block
 block,
 blocks).
@@ -466,7 +448,6 @@ box,
 box:
 boxes,
 breadcrumb
-bug.
 built
 but
 button
@@ -490,15 +471,13 @@ carry
 cast
 catalog
 changes,
-characters
 checkbox
 checkboxes,
 child
+child.
 child:
 choosing
 chrome
-claim
-claimed
 class
 class="flex
 class="flex-1
@@ -511,6 +490,7 @@ classes
 classes:
 cleared:
 collapses
+collected,
 colors
 column
 comment
@@ -569,7 +549,6 @@ design
 detection:
 developer
 dies
-docblock
 does
 does.
 double
@@ -598,14 +577,12 @@ empty
 end
 end`
 ends
-entity
 entry
 error
 error,
 error-bag
 error/hint
 errors
-escaped
 escaped,
 even
 evenly
@@ -637,7 +614,6 @@ fill
 filled($legend);
 fires.
 first
-fix.
 fixes
 flags
 flex
@@ -698,8 +674,8 @@ hint's
 hint/error
 hint:
 hits:
+hold
 hold.
-holding
 holds
 hook
 horizontal
@@ -767,7 +743,6 @@ library's
 library.
 like
 line
-line,
 line-height,
 line.
 lines
@@ -775,7 +750,6 @@ lining
 link
 links
 list
-literal
 literals,
 live
 logger()->warning('[wirekit]
@@ -805,7 +779,6 @@ message,
 messages
 min-content`
 min-w-0
-misalignment
 missing.
 mode,
 moment
@@ -857,6 +830,7 @@ one.
 ones
 only
 opaque,
+open.
 opposite
 optimistic-ui:
 or
@@ -928,7 +902,6 @@ read.
 reader
 reader:
 readers
-reading
 reads
 reads.
 real
@@ -983,7 +956,6 @@ separator,
 set
 set.
 sets
-seven
 shape:
 shapes,
 shared
@@ -1001,7 +973,6 @@ simply
 site
 sits
 sitting
-six
 sizes
 slides
 slot
@@ -1009,6 +980,7 @@ slot,
 slot.
 so
 space
+space,
 space-y
 space-y-1.5">
 space.
@@ -1042,6 +1014,7 @@ such
 supported
 surface
 surrounding
+survive:
 survives
 tag
 tag,
@@ -1080,7 +1053,6 @@ three
 three,
 three:
 through
-through,
 time
 to
 to.
@@ -1091,6 +1063,7 @@ told.
 top
 treatment
 tree
+trimmed
 true
 true),
 true);
@@ -1102,6 +1075,7 @@ two
 two-line
 typography
 unaffected
+unbracketed
 undefined
 under
 unknown
@@ -1148,7 +1122,6 @@ wiring:
 with
 without
 work.
-worse
 worth
 would
 wrapped
@@ -1177,4 +1150,3 @@ your
 }}`
 —
 …controls…
-⚠️

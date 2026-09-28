@@ -140,6 +140,11 @@
     filter: url(#wk-glass-refract);
 }
 
+/* The compound form comes first because it is the one a WireKit page matches: the theme script
+   and the theme controller put `dark` on `<html>`, and `wirekit-glass.js` puts the detector class
+   on `<html>` as well. An element is not its own descendant, so the two descendant forms below
+   only cover a `.dark` region inside the detector's scope or around it. */
+.dark.wk-glass-tier2 .wk-glass-refract::before,
 .dark .wk-glass-tier2 .wk-glass-refract::before,
 .wk-glass-tier2 .dark .wk-glass-refract::before {
     background: rgba(30, 30, 32, 0.32);

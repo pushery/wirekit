@@ -33,10 +33,9 @@
         // list-none: this is a semantic <ul> for assistive tech, not a bulleted list — a disc
         // marker beside a product thumbnail is pure noise.
         'list-none',
-        // The container is NAMED so a line can ask about THIS list's width rather than the
-        // viewport's. Measured: in the documentation column a cart line is 369px wide on a
-        // 393px phone \u2014 a media query would have called that a phone and been right by
-        // accident, and called a 369px sidebar on a desktop a desktop and been wrong.
+        // The container is named so a line can ask about this list's width rather than the
+        // viewport's: a cart list in a narrow sidebar on a desktop is as narrow as one on a
+        // phone, and a media query would call it a desktop.
         '@container/wk-cart-list',
         'flex flex-col',
         $divided ? 'divide-y divide-[color:var(--color-wk-border)]' : '',
@@ -48,9 +47,9 @@ whose marker is removed, so a cart styled with `list-none` is announced as a run
 Safari and on every iPhone — the engine this repository has an incident about. The explicit
 role puts the semantics back.
 
-The inline list-style is a separate belt again: the docs sandbox iframe renders previews
-WITHOUT the developer's Tailwind build, so `list-none` is a dead class name there (it DOES
-load dist/wirekit.css — that is why the tokens in this component resolve). --}}
+The inline list-style is a separate belt again: `list-none` exists only where a Tailwind
+build scanned this view, and the inline rule keeps the cart unmarked in a page whose
+stylesheet did not. The tokens resolve from dist/wirekit.css either way. --}}
 <ul data-wk-prose-skip
     role="list"
     aria-label="{{ $label }}"

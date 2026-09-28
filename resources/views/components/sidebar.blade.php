@@ -21,7 +21,7 @@
     // afterwards could not say so — the nearest thing was rebuilding the kit's own cookie read
     // in a layout, superglobal fallback and all.
     //
-    // ⚠️ BOTH DRIVERS ANSWER THIS THE SAME WAY, which is the half that makes it one idea rather
+    // Both drivers answer this the same way, which is the half that makes it one idea rather
     // than two. The cookie driver seeds the first RENDER from here; the local driver renders
     // from here and then hands this same value to the store read as its fallback, so an empty
     // localStorage keeps it instead of collapsing to `false`.
@@ -81,10 +81,10 @@
     // the right, and the mirror image of that is a rule on the page margin and a chevron
     // pointing into the panel it is closing.
     //
-    // ⚠️ NOT derivable from `toggle`, which was tried and measured wrong. `toggle` says
-    // where the CONTROL sits inside the column, not which side the column is on — the
-    // multi-column shell uses `toggle="start"` for a list on the left AND a details panel
-    // on the right, so the inference would have broken the list to fix the panel.
+    // Not derivable from `toggle`: `toggle` says where the control sits inside the column,
+    // not which side the column is on — the multi-column shell uses `toggle="start"` for a
+    // list on the left and a details panel on the right, so the inference would break the
+    // list to fix the panel.
     'side' => 'start',
     // Optional storage key — persists the collapsed state across reloads.
     'persist' => null,
@@ -145,6 +145,10 @@
     $zoneInset = BooleanProp::from($zoneInset, true);
 
     $persistDriver = WireKit::validateProp('sidebar', 'persistDriver', $persistDriver, ['local', 'cookie']);
+
+    // Whether the CALLER set `collapsed`, taken before anything below answers it: an explicit
+    // value wins over the store, in the factory and in the seed script alike.
+    $collapsedPinned = $collapsed !== null;
 
     // The server half of the cookie driver, and it runs BEFORE the boolean cast on purpose:
     // the cast turns null into false, and after that "not set" and "explicitly expanded" are
@@ -337,20 +341,14 @@
         //
         // `mt-auto` still does the pushing; the gap token is added on top so the control
         // keeps its distance from the last row of a short list.
-        // ⚠️ THE PUSH AND THE GAP USED TO SIT HERE TOGETHER, AND THE LINE ABOVE SAYS WHY THAT
-        // CANNOT WORK: an auto top margin and a tokened one are the same property, so the
-        // later one in the
-        // emitted stylesheet wins and the other is simply not applied. Measured in Chromium:
-        // the auto won, resolved to 0 in a column no taller than its content, and the
-        // control's hover surface shared an edge with the last navigation row — the exact
-        // state the guard beside this component was written to prevent. Both jobs now live
-        // ⚠️ AND THE NOTE ITSELF MUST NOT SPELL THE UTILITY: Tailwind scans this file as text,
-        // so an example class written in prose becomes a REAL rule in the compiled sheet with
-        // nothing in the markup behind it. One was emitted here and the reverse drift diff
-        // caught it, which is exactly what that check is for.
-        // on two different ELEMENTS now: the wrapper at the include site claims the leftover
-        // height, and the token margin stays here on the button. One `margin-top` each, so
-        // neither can silently drop the other.
+        // The push and the gap cannot sit here together: an auto top margin and a tokened
+        // one are the same property, so the later one in the emitted stylesheet wins and the
+        // other is simply not applied. So the two jobs live on two different elements: the
+        // wrapper at the include site claims the leftover height, and the token margin stays
+        // here on the button. One `margin-top` each, so neither can silently drop the other.
+        // This note does not spell the combined utility: Tailwind scans this file as text, so
+        // an example class written in prose becomes a real rule in the compiled sheet with
+        // nothing in the markup behind it.
         isset($footer) ? '' : 'mt-[var(--space-wk-nav-gap)]',
         'inline-flex items-center justify-center shrink-0',
         'p-1 rounded-[var(--radius-wk-sm)]',
@@ -358,24 +356,12 @@
         'hover:bg-[var(--color-wk-bg-muted)] hover:text-[color:var(--color-wk-text)]',
         'focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-[var(--color-wk-ring)]',
         'transition-colors duration-[var(--transition-wk-duration)] cursor-pointer',
-        // Riding on the footer band. This used to take the control OUT OF FLOW and
-        // center it on the band by hand, reasoning that in flow it would either stretch
-        // the band or shorten the row it sits beside. Shortening that row is exactly what
-        // was asked for — the highlight has to stop where the control's space begins —
-        // and the stretching half was never true once the band became a flex row: a 28px
-        // control in a 56px band stretches nothing.
-        //
-        // Out of flow cost more than it saved, in three layers. The offsets were assembled
-        // here in PHP, so Tailwind never saw them and neither the offset nor the shift
-        // was ever in the stylesheet; the control had been falling back to its static
-        // position for as long as this shipped. Safelisting them only moved the defect:
-        // the offset then resolved against the tooltip wrapper beside the button rather
-        // than against the band. And the half-height shift is a `translate` property in
-        // Tailwind v4, which a `transform` reset does not reach — so the button kept
-        // riding 14px high with every declaration in the cascade reading correct.
-        //
-        // The band places it now (`.wk-shell-foot` in `dist/wirekit.css`), which is the
-        // one place that knows how tall it is.
+        // Riding on the footer band, in flow. The band places it (`.wk-shell-foot` in
+        // `dist/wirekit.css`), the one place that knows how tall it is: a 28px control in a
+        // 56px band that is a flex row stretches nothing, and the highlight of the row beside
+        // it stops where the control's space begins. Out of flow it would need offsets
+        // assembled here in PHP, which Tailwind never sees, and they would resolve against
+        // the tooltip wrapper beside the button rather than against the band.
         '',
         // In the collapsed rail the button centers with the icons.
         isset($footer) ? '' : 'group-data-[collapsed]/wk-sidebar:self-center',
@@ -446,11 +432,12 @@
     <nav
         {{-- The rail's folded state lives in resources/js/components/sidebar-rail.js.
              It cannot live here: an inline object literal cannot declare methods
-             under Alpine's CSP build, so the fold button did nothing at all under
-             a strict policy. The key is emitted as a JSON literal rather than
-             through {{ \Pushery\WireKit\Support\AlpinePayload::from() }}, because {{ \Pushery\WireKit\Support\AlpinePayload::from() }} renders a non-empty payload as
-             JSON.parse(…) and JSON is a global the CSP evaluator cannot resolve. --}}
-        x-data="wirekitSidebarRail({ collapsed: {{ $collapsed ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }}, persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::from($persistDriver) }} })"
+             under Alpine's CSP build, so the fold button would do nothing under a
+             strict policy. The key and the driver go through AlpinePayload, which
+             writes a plain JavaScript literal. Js::from would write JSON.parse(…)
+             for anything but a scalar, and JSON is a global the CSP evaluator
+             cannot resolve. --}}
+        x-data="wirekitSidebarRail({ collapsed: {{ $collapsed ? 'true' : 'false' }}, pinned: {{ $collapsedPinned ? 'true' : 'false' }}, persist: {{ $persist === null ? 'null' : \Pushery\WireKit\Support\AlpinePayload::from($persist) }}, persistDriver: {{ \Pushery\WireKit\Support\AlpinePayload::from($persistDriver) }} })"
         {{-- Emitted STATICALLY as well as bound, for the same reason the width below is.
              Until Alpine boots, `:data-collapsed` has not run — and roughly 25 descendant
              rules key off `group-data-[collapsed]/wk-sidebar:*`. Without this a column that
@@ -511,8 +498,8 @@
     {{-- Immediately after the column, so `document.currentScript.previousElementSibling` is
          this sidebar and nothing else. Only for the `local` driver: the cookie driver was
          already answered by the server above, and re-answering it here would be a second
-         source for one value. --}}
-    @if($persist !== null && $persistDriver === 'local')
+         source for one value. Nor when the page set `collapsed`: that value wins over the store. --}}
+    @if($persist !== null && $persistDriver === 'local' && ! $collapsedPinned)
         @include('wirekit::components.partials.nav-persist-seed', [
             'seedKey' => $persist,
             'seedOn' => $collapsed,

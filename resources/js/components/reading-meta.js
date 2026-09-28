@@ -94,7 +94,7 @@ export default function wirekitReadingMeta(config = {}) {
         /**
          * Take the injected spans back out of the article.
          *
-         * ⚠️ This component writes into a subtree it does not own — the article is the
+         * This component writes into a subtree it does not own — the article is the
          * developer's, and the annotations are ours. That makes removal our job in a way it
          * would not be for markup inside the component's own root, which Alpine tears down
          * with the element. Nothing here is reference-counted: `_paragraphData` is the

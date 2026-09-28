@@ -7,6 +7,7 @@ namespace Pushery\WireKit;
 use Illuminate\Contracts\Foundation\CachesConfiguration;
 use Illuminate\Contracts\Translation\Loader;
 use Illuminate\Foundation\Http\Events\RequestHandled;
+use Illuminate\Queue\Events\JobProcessing;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
@@ -43,7 +44,11 @@ use Pushery\WireKit\Fonts\FontRegistry;
 use Pushery\WireKit\Icons\IconResolver;
 use Pushery\WireKit\Support\BaseLocaleJsonLoader;
 use Pushery\WireKit\Support\DomId;
+use Pushery\WireKit\Support\FaqCollector;
 use Pushery\WireKit\Support\FlagPackage;
+use Pushery\WireKit\Support\LogThrottle;
+use Pushery\WireKit\Support\StrictnessGate;
+use Pushery\WireKit\Support\TourStepCounter;
 
 class WireKitServiceProvider extends ServiceProvider
 {
@@ -68,13 +73,17 @@ class WireKitServiceProvider extends ServiceProvider
         // ceiling.
         $this->mergeConfigRecursivelyFrom(__DIR__.'/../config/wirekit.php', 'wirekit');
 
-        // Register WireKit as singleton so static state is scoped to the app container
+        // Bound as a singleton for code that resolves it from the container. Its state is
+        // static and not scoped to the container; `WireKit::flush()` is what clears it.
         $this->app->singleton(WireKit::class, fn () => new WireKit);
 
-        // IconResolver as singleton — one instance per request for caching
+        // IconResolver as a singleton, so one alias cache serves every icon the container
+        // renders. Octane clones the booted application for each request, and boot() resolves
+        // this one in the local environment, so there it lives as long as the worker.
         $this->app->singleton(IconResolver::class);
 
-        // ChartManager as singleton — caches the adapter instance per request
+        // ChartManager as a singleton, so the adapter it builds serves every chart the
+        // container renders.
         $this->app->singleton(ChartManager::class);
 
         // ── Regional locales reach the shipped catalogs ──
@@ -119,13 +128,22 @@ class WireKitServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // Reset the per-request DOM-id dedup registry after each request so ids start
-        // clean on the next one. Matters under Octane / a persistent worker; a fresh
-        // FPM process starts empty anyway, and WireKit::flush() covers tests.
-        $this->app['events']->listen(
-            RequestHandled::class,
-            static fn () => DomId::reset(),
-        );
+        // Reset the per-render registries after each request and before each queued job: DOM
+        // ids start clean, a rejected prop value is reported again, tour steps count from zero,
+        // and a question an orphaned faq-item left behind reaches no later FAQ. The registries
+        // are static, and static state lasts as long as the PHP script that holds it: FPM starts
+        // the script afresh for every HTTP request, so they start empty there anyway, while an
+        // Octane worker and a queue worker run one script across many requests or jobs. A queue
+        // worker never finishes an HTTP request, hence the second listener; WireKit::flush()
+        // covers tests.
+        $resetPerRender = static function (): void {
+            DomId::reset();
+            StrictnessGate::forgetLogged();
+            TourStepCounter::reset();
+            FaqCollector::reset();
+        };
+        $this->app['events']->listen(RequestHandled::class, $resetPerRender);
+        $this->app['events']->listen(JobProcessing::class, $resetPerRender);
 
         // ── Publishable assets (FIRST — must register before anything that could fail) ──
         // Registered early so vendor:publish always works, even if later steps throw.
@@ -361,8 +379,8 @@ class WireKitServiceProvider extends ServiceProvider
         //
         // The MINIFIED twin, not the readable dist/wirekit.css. That file is the source of
         // truth for every design token and stays published so a developer can read it, but
-        // two thirds of it is comments and it is RENDER-BLOCKING: linking it cost 60 KB gzip
-        // on every uncached page-view to deliver rules that compress to 13 KB.
+        // most of it is comments and it is RENDER-BLOCKING: linking it would cost every
+        // uncached page view several times the gzipped size of the rules it delivers.
         //
         // Two-tier serving strategy with automatic staleness detection:
         //
@@ -375,11 +393,12 @@ class WireKitServiceProvider extends ServiceProvider
         // may name the file because the directive body hardcodes it; the rule may not.
         //
         //   1. If a published copy of the file this directive links exists under
-        //      public/vendor/wirekit/ AND is at least as new as the package's own copy in
-        //      dist/, the web server serves it directly (fastest path).
+        //      public/vendor/wirekit/ AND carries the same bytes as the package's own copy
+        //      in dist/ (`publishedIsStale()`: the sizes first, a hash when they agree), the
+        //      web server serves it directly (fastest path).
         //
-        //   2. Otherwise — either no published copy, OR one older than the package's (a
-        //      `composer update pushery/wirekit` without the matching
+        //   2. Otherwise — either no published copy, OR one that differs from the package's
+        //      (a `composer update pushery/wirekit` without the matching
         //      `vendor:publish --tag=wirekit-assets --force`) — we fall back to the route,
         //      which reads straight from the package's own dist/ directory and is therefore
         //      guaranteed fresh after every `composer update`.
@@ -509,12 +528,20 @@ class WireKitServiceProvider extends ServiceProvider
                 // its own assets, so this force-injection is a safety net for
                 // Alpine-only pages, not a replacement for the layout directives.
                 //
-                // Guarded by class_exists() + method_exists() so installs
-                // without Livewire OR with older Livewire versions silently
-                // skip rather than crashing.
-                if (class_exists(\Livewire\Livewire::class) && method_exists(\Livewire\Livewire::class, "forceAssetInjection")) {
+                // Asked of the MANAGER, the way Livewire\'s own `@persist` does
+                // (`app("livewire")->forceAssetInjection()`). `Livewire\Livewire` is a
+                // facade that reaches the method through `__callStatic`, which
+                // method_exists() does not see, so a check against the facade is
+                // false on every install. Guarded so an install without Livewire,
+                // or with a version that lacks the method, skips rather than crashes.
+                //
+                // Never for the `csp` bundle. It carries its own Alpine, built for a
+                // policy without unsafe-eval, and the assets Livewire injects start a
+                // second one on the same page, which evaluates every expression with
+                // the function constructor that such a policy refuses.
+                if ($__wk_bundle !== "csp" && class_exists(\Livewire\LivewireManager::class) && method_exists(\Livewire\LivewireManager::class, "forceAssetInjection") && app()->bound("livewire")) {
                     try {
-                        \Livewire\Livewire::forceAssetInjection();
+                        app("livewire")->forceAssetInjection();
                     } catch (\Throwable $__wk_e) {
                         // Swallow — defensive against future API changes.
                     }
@@ -522,14 +549,20 @@ class WireKitServiceProvider extends ServiceProvider
             ?>';
         });
 
-        // Alpine x-transition directive — outputs shared transition attributes
-        // Duration and easing come from CSS tokens (--transition-wk-duration, --transition-wk-easing)
-        Blade::directive('wirekitTransition', fn () => '<?php echo "x-transition:enter=\"transition\" "'
-            .'" x-transition:enter-start=\"opacity-0 scale-95\" "'
-            .'" x-transition:enter-end=\"opacity-100 scale-100\" "'
-            .'" x-transition:leave=\"transition\" "'
-            .'" x-transition:leave-start=\"opacity-100 scale-100\" "'
-            .'" x-transition:leave-end=\"opacity-0 scale-95\""; ?>');
+        // Alpine x-transition directive — outputs shared transition attributes. Duration and
+        // easing read the CSS tokens (--transition-wk-duration, --transition-wk-easing) through
+        // the same arbitrary-value utilities the component templates use, so changing a token
+        // changes this transition too; a bare `transition` would read Tailwind's own defaults.
+        // The attributes are plain text, which Blade writes into the compiled view unchanged:
+        // nothing in them is evaluated at render time.
+        Blade::directive('wirekitTransition', fn (): string => implode(' ', [
+            'x-transition:enter="transition duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]"',
+            'x-transition:enter-start="opacity-0 scale-95"',
+            'x-transition:enter-end="opacity-100 scale-100"',
+            'x-transition:leave="transition duration-[var(--transition-wk-duration)] ease-[var(--transition-wk-easing)]"',
+            'x-transition:leave-start="opacity-100 scale-100"',
+            'x-transition:leave-end="opacity-0 scale-95"',
+        ]));
 
         // ── Config Validation ──
         // Two distinct font-config problems, two distinct severities:
@@ -538,9 +571,9 @@ class WireKitServiceProvider extends ServiceProvider
         //    (never fatally break a deployed page over a config typo).
         //  - KNOWN preset that is not published: WARN in EVERY environment.
         //    The page still renders, but the developer's chosen font silently fell back
-        //    to system fonts. This used to be undetectable in production; a throttled
-        //    log line (once per preset per process) now surfaces it for ops, and the
-        //    <x-wirekit::fonts> component renders an inert HTML comment in every env.
+        //    to system fonts. In production a log line, at most one per preset and hour,
+        //    is how ops learns of it, and the <x-wirekit::fonts> component renders an
+        //    inert HTML comment in every env.
         $isLocal = app()->environment('local');
         $fontConfig = config('wirekit.fonts', []);
 
@@ -577,17 +610,19 @@ class WireKitServiceProvider extends ServiceProvider
     }
 
     /**
-     * Guards the unpublished-font warning to once per preset key per process, so a
-     * persistent misconfiguration logs a single actionable line instead of flooding
-     * the log with one entry per request/render. Reset in tests via a direct assign.
+     * The preset keys already warned about in this request, so the cache is asked once per
+     * key. Reset in tests via a direct assign, which is also what the next request under FPM
+     * starts with.
      *
      * @var array<string, bool>
      */
     public static array $unpublishedFontWarned = [];
 
     /**
-     * Log a single warning that a configured, known font preset is not published and
-     * text is therefore falling back to system fonts. Throttled per process.
+     * Log a warning that a configured, known font preset is not published and text is
+     * therefore falling back to system fonts. {@see LogThrottle} lets it through once per
+     * preset and hour across requests, so a persistent misconfiguration writes one
+     * actionable line rather than one per request.
      */
     protected static function warnUnpublishedFont(string $category, string $presetKey): void
     {
@@ -596,6 +631,10 @@ class WireKitServiceProvider extends ServiceProvider
         }
 
         static::$unpublishedFontWarned[$presetKey] = true;
+
+        if (! LogThrottle::firstAcrossRequests('unpublished-font:'.$presetKey)) {
+            return;
+        }
 
         Log::warning(
             "WireKit: font preset '{$presetKey}' ({$category}) is configured but its CSS is not "
@@ -863,10 +902,8 @@ class WireKitServiceProvider extends ServiceProvider
      * for these asset routes short of forking. `wirekit.assets.middleware` is
      * that way back — and the default is what makes the response honest.
      *
-     * ⚠️ This said "these nine routes" while the asset map registered TEN, plus the
-     * font route below that runs through the same group. A count in a sentence beside
-     * the array it describes is a second copy of `count()`, and it is the copy that
-     * drifts — so the sentence names the SET now, not its size.
+     * The sentence above names the set, not its size: a count beside the array it
+     * describes is a second copy of `count()`, and it is the copy that drifts.
      *
      * @return array<int, string>
      */
@@ -898,7 +935,7 @@ class WireKitServiceProvider extends ServiceProvider
         // stylesheet loaded from a page inherits the document's encoding, so
         // every app looked fine and only someone pasting the asset URL into the
         // address bar ever saw it. The font route below has always declared it;
-        // these nine were written first and never caught up.
+        // the routes below were written first and never caught up.
         $assets = [
             'wirekit/wirekit.css' => ['file' => 'wirekit.css', 'type' => 'text/css; charset=utf-8'],
             'wirekit/wirekit.min.css' => ['file' => 'wirekit.min.css', 'type' => 'text/css; charset=utf-8'],

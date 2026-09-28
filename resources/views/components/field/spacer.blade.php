@@ -46,9 +46,7 @@
 
 {{-- aria-hidden: there is nothing here to read. A screen reader that announced an empty
      label would be describing a layout decision as if it were content. --}}
-{{-- The no-break space is passed as a slot VARIABLE, not written as `&nbsp;` in the
-     markup. A component slot is escaped on the way through, so the literal entity arrives
-     as the six visible characters "&nbsp;" — a label reading that instead of holding a
-     blank line, which is worse than the misalignment it was meant to fix. --}}
+{{-- A no-break space, because an ordinary one does not survive: a component slot is trimmed
+     when it is collected, and a label left empty has no line to hold the row open. --}}
 @php($wkSpacerBlank = "\u{00A0}")
 <x-wirekit::label aria-hidden="true" {{ $attributes->class([$classes]) }}>{{ $wkSpacerBlank }}</x-wirekit::label>

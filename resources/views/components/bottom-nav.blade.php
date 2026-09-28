@@ -36,7 +36,8 @@
 
     $classes = WireKit::resolveClasses('bottom-nav', 'base', implode(' ', [
         'wk-bottom-nav',
-        'fixed inset-x-0 bottom-0 z-40',
+        // The layer TOKEN rather than its number, so a theme that moves the layer moves this too.
+        'fixed inset-x-0 bottom-0 z-[var(--z-wk-sticky)]',
         'flex items-stretch justify-around',
         'border-t-[length:var(--border-wk-width)] border-[var(--color-wk-border)]',
         'bg-[var(--color-wk-bg-elevated)]',

@@ -29,8 +29,8 @@
 
     // An icon-only action with no label has no accessible name at all — a menu
     // item a screen reader can only announce as "button". Nothing downstream can
-    // recover that, so say it where the developer will see it (throws in debug,
-    // logs in production — the house strictness gate).
+    // recover that, so say it where the developer will see it: through the house
+    // strictness gate, as an exception or a log line depending on its settings.
     if ($label === '' && $icon !== null) {
         WireKit::validateProp('fab.action', 'label', '', ['a non-empty label describing the action']);
     }

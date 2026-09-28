@@ -60,6 +60,9 @@
     // Both route the field through the flex wrapper and add a tiny inline Alpine
     // island; when neither is set the input renders exactly as before.
     'clearable' => false,
+    // What the X says it clears, as its accessible name and its tooltip. A field whose X
+    // lifts more than the text (a found receipt, a started return) says so here.
+    'clearLabel' => null,
     'copyable' => false,
     'scope' => null,
     // HTML5 form-state props — surface in the schema so AI / IDE tools
@@ -84,6 +87,7 @@
     $hideLabel = BooleanProp::from($hideLabel, false);
     $reserveMessage = BooleanProp::from($reserveMessage, false);
     $clearable = BooleanProp::from($clearable, false);
+    $clearText = filled($clearLabel) ? (string) $clearLabel : __('wirekit::Clear input');
     $mono = BooleanProp::from($mono, false);
 
     // The field-value font: mono for codes/measurements, otherwise the sans stack.
@@ -121,7 +125,7 @@
     // auto-derived from this component's @props.
     WireKit::warnUnknownProps('input', $attributes->getAttributes());
 
-    // Auto-generate ID from name attribute, or generate random if neither provided
+    // The id from the attribute or the name; with neither, DomId counts one per request.
     $id = \Pushery\WireKit\Support\DomId::unique($attributes->get('id') ?? $attributes->get('name'), 'input-'); // page-unique DOM id; see Support\DomId
     $name = $attributes->get('name', $id);
     // Strip the caller's `id` AND `name` from the bag: both are rendered explicitly
@@ -431,20 +435,22 @@
 
             @if($clearable)
                 {{-- Clear button. Only visible when the field has content
-                     (hasValue); empties + refocuses the field. --}}
+                     (hasValue); empties + refocuses the field. An icon-only button, so its
+                     name is also its tooltip; the tooltip does not describe the button a
+                     second time, because the name already says the same words. --}}
+                <x-wirekit::tooltip :text="$clearText" :focusable-trigger="false" :describes="false" x-show="hasValue" x-cloak class="shrink-0">
                 <button
                     type="button"
-                    x-show="hasValue"
-                    x-cloak
                     @click="clear()"
                     @if($disabled) disabled @endif
-                    aria-label="{{ __('wirekit::Clear input') }}"
+                    aria-label="{{ $clearText }}"
                     class="wk-field-affordance shrink-0 inline-flex items-center justify-center {{ $affordanceSizeClasses }} mr-[var(--padding-wk-x-sm)] rounded-[var(--radius-wk-sm)] text-[color:var(--color-wk-text-muted)] hover:text-[color:var(--color-wk-danger-text)] hover:bg-[var(--color-wk-bg-subtle)] focus-visible:outline-hidden focus-visible:ring-[length:var(--ring-wk-width)] focus-visible:ring-inset focus-visible:ring-[var(--color-wk-ring)] disabled:opacity-[var(--opacity-wk-disabled)] disabled:cursor-not-allowed transition-colors duration-[var(--transition-wk-duration)] cursor-pointer"
                 >
                     <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                         <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z"/>
                     </svg>
                 </button>
+                </x-wirekit::tooltip>
             @endif
 
             @if($hasAffordances)

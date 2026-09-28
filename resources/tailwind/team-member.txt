@@ -133,18 +133,18 @@ $words
 'var(--color-wk-success)',
 'var(--color-wk-text-muted)',
 'var(--color-wk-warning)',
-'w-10
-'w-12
 'w-16
 'w-2
 'w-2.5
 'w-3
 'w-3.5
-'w-6
-'w-8
+'w-[var(--size-wk-lg)]
+'w-[var(--size-wk-md)]
+'w-[var(--size-wk-sm)]
+'w-[var(--size-wk-xs)]
 'wk-avatar-group',
 'xl'
-'xl']),
+'xl']))
 'xs'
 'xs',
 ("Head
@@ -166,7 +166,6 @@ $words
 (for
 (int)
 (no
-(removed
 (silent
 (string)
 (with
@@ -272,6 +271,7 @@ Hidden
 How
 Icon-only
 Ignored
+Inline
 L"
 Links
 Literal
@@ -308,7 +308,6 @@ Through
 Two
 UNBOUND
 UTF-8.
-Uses
 WHILE
 When
 WireKit
@@ -335,6 +334,7 @@ __('wirekit::Away'),
 __('wirekit::Busy'),
 __('wirekit::Offline'),
 __('wirekit::Online'),
+`--color-wk-bg-elevated`,
 `:remaining="7"`
 `alt=""`
 `aria-hidden`
@@ -343,8 +343,11 @@ __('wirekit::Online'),
 `default
 `initials`
 `prop="false"`
+`ring-*`
+`ring-offset-*`
 `shape="cirlce"`
 `size`
+`size`,
 `src`),
 `statusVariant="Dot"`
 `status`
@@ -397,7 +400,6 @@ avatar,
 avatars
 avatars.
 background
-background,
 base
 be
 because
@@ -444,6 +446,7 @@ colored
 compare
 compiles
 component's
+computed
 concentric
 condition
 config('wirekit.components.avatar.shape',
@@ -466,6 +469,7 @@ data-wk-team-member-links
 data-wk-team-member-name
 data-wk-team-member-role
 debug
+declaration
 decorative
 decorative-image
 default
@@ -489,6 +493,7 @@ element
 element,
 element.
 elements
+elevated
 else
 emit
 emitted
@@ -530,21 +535,22 @@ glance
 goes
 group
 guard
-h-10
-h-12
 h-16
 h-2',
 h-2.5',
 h-3',
 h-3.5',
 h-3/5
-h-6
-h-8
+h-[var(--size-wk-lg)]
+h-[var(--size-wk-md)]
+h-[var(--size-wk-sm)]
+h-[var(--size-wk-xs)]
 h-full
 had
 half
 happened:
 has
+has:
 hash
 hash.
 hears
@@ -579,7 +585,6 @@ inline-flex
 inner
 input
 inside
-instead
 instead.
 interactive
 into
@@ -606,6 +611,7 @@ legal.
 like
 links
 list
+literal
 live
 live-region
 lives
@@ -673,7 +679,6 @@ outer
 overflow
 overrides
 own
-page
 page.
 pair
 pairs
@@ -735,7 +740,6 @@ right
 right-0',
 ring
 ring-[var(--color-wk-bg-elevated)]',
-ring-offset-*
 role
 role="group"
 role="img"
@@ -788,6 +792,7 @@ stack.
 standing
 state
 status
+status.
 status:
 stays
 still
@@ -798,6 +803,7 @@ strings
 style
 substr()
 subtree
+surface
 surface-color
 surrounds
 technology
@@ -816,6 +822,7 @@ than
 that
 the
 their
+them
 theme-independent.
 there
 these
@@ -842,8 +849,8 @@ unknown
 unlabeled
 use
 used
-utilities
-v4).
+utilities,
+v4
 validator,
 values
 var(--color-wk-bg-elevated),
@@ -869,6 +876,7 @@ white
 whole
 whose
 width,
+widths
 with
 without
 worse.

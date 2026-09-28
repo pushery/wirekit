@@ -19,7 +19,7 @@
                 <p>Swap this body for your own prose; the sidebar rebuilds from whatever headings it finds.</p>
 
                 <h3 id="prerequisites">Prerequisites</h3>
-                <p>Give every heading you want in the sidebar an id — that is what its links point at.</p>
+                <p>A heading without an id gets one from its text. Set it yourself where a link should survive a change of wording.</p>
 
                 <h2 id="usage">Usage</h2>
                 <p>Give each article its own bookmarkKey so a reader's position is remembered per article.</p>

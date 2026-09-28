@@ -44,14 +44,14 @@
         ? $formatter->formatCurrency((float) $displayBase, $currency)
         : null;
 
-    // Unit price (Grundpreis) — required by EU Price Indication Directive
-    // 98/6/EC and German PAngV (Preisangabenverordnung) for pre-packaged
-    // goods sold by weight / volume / length / area. Reference units are
-    // kg, L, m, m² (or 100 g / 100 ml for nominal quantities ≤ 250 g/ml).
-    // Format: "(€8.99 / L)" alongside the main price, in same currency,
-    // same field of vision, clearly readable. The component does NOT
-    // enforce or validate the chosen reference unit — that is the
-    // developer's call based on the jurisdiction and product type.
+    // Unit price (Grundpreis), required beside the selling price for goods offered by
+    // weight, volume, length or area: EU Price Indication Directive 98/6/EC, and in
+    // Germany the PAngV (Preisangabenverordnung). The reference unit is 1 kg, 1 l, 1 m,
+    // 1 m² or 1 m³, or a unit a member state customarily uses for a product; in Germany,
+    // loose goods sold by weight or volume may use 100 g or 100 ml where that is the
+    // custom. Format: "(€8.99 / L)" beside the main price, in the same currency and the
+    // same field of vision. The component does not validate the reference unit: which
+    // one applies depends on the jurisdiction and the product.
     $formattedUnitPrice = ($displayUnitPrice !== null && $unitMeasure)
         ? $formatter->formatCurrency((float) $displayUnitPrice, $currency)
         : null;
@@ -81,13 +81,12 @@
     // reader the direction too.
 
     // Size classes for the primary amount
-    $sizeClasses = match ($size) {
+    $sizeClasses = match (WireKit::validateProp('price', 'size', $size, ['xs', 'sm', 'md', 'lg', 'xl'])) {
         'xs' => 'text-[length:var(--text-wk-xs)]',
         'sm' => 'text-[length:var(--text-wk-sm)]',
         'md' => 'text-[length:var(--text-wk-md)]',
         'lg' => 'text-[length:var(--text-wk-lg)]',
         'xl' => 'text-[length:var(--text-wk-xl)]',
-        default => WireKit::validateProp('price', 'size', $size, ['xs', 'sm', 'md', 'lg', 'xl']),
     };
 
     // Base classes

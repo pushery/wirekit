@@ -68,7 +68,7 @@ export default function wirekitPageProgress(config = {}) {
             document.addEventListener('livewire:navigate', this._onNavigate);
             document.addEventListener('livewire:navigated', this._onNavigated);
 
-            // ⚠️ THE EASING STOPS IN A BACKGROUND TAB, and it can because its work is
+            // The easing stops in a background tab, and it can because its work is
             // re-derivable: the position is a decoration over a wait whose real end is the
             // answer, not a clock anybody is counting. A reader who returns mid-request finds
             // the bar where it was and it resumes — which is indistinguishable from having

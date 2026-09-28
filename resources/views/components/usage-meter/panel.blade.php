@@ -15,7 +15,6 @@
     \Pushery\WireKit\WireKit::warnUnknownProps('usage-meter.panel', $attributes->getAttributes());
 
     use Pushery\WireKit\WireKit;
-    use Illuminate\Support\Str;
 
     // A simple vertical stack of <x-wirekit::usage-meter> rows, with an optional
     // multi-column grid on wider viewports. The panel owns layout only — every
@@ -24,7 +23,7 @@
 
     // The visible heading IS the group's accessible name (via aria-labelledby) —
     // not a duplicate aria-label, which would double-announce the title.
-    // STABLE across re-renders, which the old `Str::random(6)` was not: the group's
+    // The same on every render, where a random id would not be: the group's
     // aria-labelledby and the heading's id are the two halves of one pairing, and a usage
     // panel is a natural wire:poll surface — the very place a fresh id per render costs the
     // group its accessible name on every tick.

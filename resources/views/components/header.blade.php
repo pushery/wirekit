@@ -27,14 +27,12 @@
     // Header — top-level page header for app-shell layouts.
     //
     // Inline `display: flex; align-items: center` is the load-bearing layout
-    // primitive — same lesson as the chart-wrapper, sparkline, reading-spine
-    // fixes: utility classes for decoration, inline style for layout that
-    // must work even when developer Tailwind isn't in scope (the docs-sandbox
-    // iframe is the canonical example, but any tenant-isolated CSS context
-    // hits the same gap). Without `display: flex` inline, the slot children
-    // stack vertically in the sandbox and `<x-wirekit::spacer />` /
-    // `margin-left: auto` idioms can't push items to the right edge because
-    // the container isn't actually a flex parent.
+    // primitive: utility classes for decoration, inline style for layout that
+    // has to hold in a page whose stylesheet does not come from a Tailwind
+    // build that scanned this view. Without `display: flex` there, the slot
+    // children stack vertically, and `<x-wirekit::spacer />` /
+    // `margin-left: auto` cannot push items to the right edge because the
+    // container is not a flex parent.
     // `flex-wrap: wrap` keeps brand + nav cluster on a single row whenever they
     // fit, but lets them break to a second row on narrow viewports — without it
     // a long nav cluster (Dashboard / Projects / Team / Reports / Settings +
@@ -42,15 +40,17 @@
     // `margin-left: auto` pushed it on top of the brand instead of below it).
     // Desktop layout is unaffected: wrap only engages when content overflows.
     $headerStyle = 'display: flex; flex-wrap: wrap; align-items: center; width: 100%; gap: var(--gap-wk-md);';
-    // `wk-header` marker — see `dist/wirekit.css` notes for why this is
-    // load-bearing against developer prose `max-width: 75ch` clamps.
+    // `wk-header` marker: a developer prose wrapper that clamps its direct children
+    // to a reading measure usually carves out WireKit components with
+    // `> :not([class*="wk-"])`, and the marker is what keeps the header at the
+    // parent's full width inside one.
     $classes = WireKit::resolveClasses('header', 'base', implode(' ', [
         'wk-header',
         // `w-full` keeps the header full-width inside docs.wirekit.app
         // flex-row preview wrapper (see footer.blade.php for full rationale).
         'w-full',
-        // `flex-wrap` mirrors $headerStyle's inline rule so Tailwind-aware
-        // contexts pick up the same behavior as the sandbox-inline one.
+        // `flex-wrap` mirrors $headerStyle's inline rule, so a page with and a
+        // page without the utility wrap the same way.
         // h-16 becomes a MIN-height once wrap engages (`min-h-16`) so a
         // wrapped second row doesn't squeeze its children's line-height.
         'flex flex-wrap items-center',

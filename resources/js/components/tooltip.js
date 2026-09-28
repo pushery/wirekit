@@ -295,9 +295,7 @@ export default function wirekitTooltip(config = {}) {
                     placement: this._placement,
                     offset: this._offset,
 
-                    // ⚠️ A TOOLTIP LOOKS LIKE THE ONE OVERLAY THAT CANNOT NEED THIS, AND THE
-                    // MEASUREMENT SAYS OTHERWISE — which is why the reasoning is written out
-                    // rather than assumed.
+                    // A tooltip looks like the one overlay that cannot need this, and it does.
                     //
                     // Everything this call writes is inline style, and a framework update patches
                     // the panel against its own template, whose `style` attribute carries none of
@@ -307,12 +305,11 @@ export default function wirekitTooltip(config = {}) {
                     //
                     // The obvious objection is that a tooltip lasts a moment, so an update can
                     // hardly catch one. That holds for the pointer, and not at all for the
-                    // keyboard: a tooltip opened by FOCUS stands for as long as the focus does,
-                    // which on a form is minutes. Measured with a focused trigger and one
-                    // refresh: still visible, focus still on the trigger, `top` gone from
-                    // `295.5px` to empty.
+                    // keyboard: a tooltip opened by focus stands for as long as the focus does,
+                    // which on a form is minutes, and one refresh in that time erases `top`
+                    // while the tooltip stays visible and focus stays on the trigger.
                     //
-                    // ⚠️ That is an accessibility path rather than a cosmetic one. The trigger's
+                    // That is an accessibility path rather than a cosmetic one. The trigger's
                     // `aria-describedby` still points at this panel, so a screen reader is
                     // describing a control with a box that is now nowhere near it.
                     //

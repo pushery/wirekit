@@ -214,7 +214,7 @@ case,
 cast
 change
 chooses.
-class="font-[font-variant-emoji:emoji]"
+class="[font-variant-emoji:emoji]"
 class="font-[number:var(--font-wk-heading-weight)]
 class="inline-flex
 class="inline-flex">

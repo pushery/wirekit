@@ -1,7 +1,7 @@
-{{-- optimistic-ui: n/a — presentational
-     Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+{{-- optimistic-ui: n/a — client-only
+     A reading layout. The controls it places keep their state in the browser: the current
+     heading, the current section and the bookmark are not values a server owns, and the
+     shell adds no action of its own. --}}
 @props([
     'bookmarkKey' => null,
     // Toggles default to null so the density preset's per-primitive default
@@ -106,7 +106,7 @@
     $renderBookmark = $bookmarkExplicit && $bookmarkKey !== null;
 @endphp
 
-<div {{ $attributes->class(['wk-reading-shell']) }}>
+<div {{ $attributes->class([WireKit::resolveClasses('reading-shell', 'base', 'wk-reading-shell', $scope)]) }}>
     @if ($renderProgress)
         <x-wirekit::reading-progress
             :height="$densityDefaults['progressHeight']"

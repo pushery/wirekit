@@ -2,11 +2,7 @@
      The one interactive thing here is the scroll region's own keyboard reach: it takes
      `tabindex="0"` so a drawer holding only text can be scrolled without a mouse, which is
      WCAG 2.1.1 and not an action. Nothing about it reaches the server, so there is no result
-     to show early.
-
-     ⚠️ This said "presentational" until the keyboard reach landed, and the guard is what
-     caught it — that arm reads the component rather than the comment, which is the whole
-     reason it exists. --}}
+     to show early. --}}
 @props([
     'scope' => null,
 ])

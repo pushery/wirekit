@@ -58,14 +58,19 @@
         $units = ['KB', 'MB', 'GB', 'TB'];
         $value = $b / 1024;
         $i = 0;
-        while ($value >= 1024 && $i < count($units) - 1) {
+        // Each boundary is judged on the number as it will be shown: 1023.7 KB rounds to
+        // 1024 KB, so it is shown as 1.0 MB instead.
+        while (round($value) >= 1024 && $i < count($units) - 1) {
             $value /= 1024;
             $i++;
         }
 
         // One decimal below 10 (2.4 MB), none above (24 MB) — the convention
-        // every file manager uses.
-        return ($value < 10 ? LocalizedNumber::format($value, precision: 1) : (string) round($value)).' '.$units[$i];
+        // every file manager uses. Rounded before the comparison, so 9.96 MB is
+        // shown as 10 MB rather than 10.0 MB.
+        $shown = round($value, 1);
+
+        return ($shown < 10 ? LocalizedNumber::format($shown, precision: 1) : (string) round($value)).' '.$units[$i];
     };
 
     // Short, human label. Prefer the file extension (PDF, DOCX) — it is more
@@ -94,11 +99,9 @@
      * The state is never color-only: each carries its own text, which is the whole
      * accessibility position here (WCAG 1.4.1 — color is not the only carrier of meaning).
      *
-     * ⚠️ THIS USED TO DESTRUCTURE A SECOND VALUE, AN INTENT PER STATE, AND NOTHING EVER READ
-     * IT. An unused value beside a rule like this one is not merely dead: it reads as a
-     * half-wired feature, and the obvious way to "finish" it is to tint the row by state —
-     * which is exactly the decision the line above was written to hold. Removed rather than
-     * kept, because there is no state in which a reader should reach for it.
+     * One value per state, and no intent beside it. An intent per state would read as a
+     * half-wired feature, and the obvious way to "finish" it is to tint the row by state,
+     * which is exactly what the line above rules out.
      */
     $stateText = match ($stateValue) {
         'uploading' => __('wirekit::Uploading'),
@@ -195,7 +198,7 @@
          Decorative either way — the card's aria-label carries the meaning. --}}
     <span
         data-wk-attachment-media
-        class="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)]"
+        class="flex h-[var(--size-wk-md)] w-[var(--size-wk-md)] shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-wk-sm)] bg-[var(--color-wk-bg-muted)]"
     >
         @if($isImage)
             <img data-wk-prose-skip src="{{ $thumbnail }}" alt="" loading="lazy" decoding="async" class="h-full w-full object-cover" />

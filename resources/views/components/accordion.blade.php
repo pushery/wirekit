@@ -20,12 +20,10 @@
     'findable' => config('wirekit.components.accordion.findable', true),
     // Whether a panel animates its height open and shut. Read by every item through @aware.
     //
-    // ⚠️ ON BY DEFAULT, AND THAT IS A CHANGE RATHER THAN A NEW SWITCH. The mechanism was always
-    // there — `x-wk-findable` carries a `.collapse` modifier that animates the height, reads
-    // `--transition-wk-duration` off the element, and skips itself under reduced motion — and
-    // `collapsible`, the sibling disclosure in this same library, has been calling it all along.
-    // The accordion simply did not, so a page showing both had one that eased and one that
-    // jumped. Reported from a screen, because no suite can see it: nothing is broken.
+    // On by default. `x-wk-findable` carries a `.collapse` modifier that animates the height,
+    // reads `--transition-wk-duration` off the element, and skips itself under reduced motion,
+    // and `collapsible`, the sibling disclosure in this library, calls it too, so a page showing
+    // both eases both.
     //
     // A switch defaulting to OFF would have closed the ticket without changing the screen it
     // came from. The escape hatch is here for a caller who wants the jump back, which is the
@@ -63,17 +61,10 @@
     //   - 'multiple' → any combination of panels can be open (like checkboxes)
     // The mode reaches the behavior through the `x-data` payload below, and ONLY through it.
     //
-    // ⚠️ THIS COMMENT USED TO SAY the mode is exposed via `data-wk-accordion-mode` "so that the
-    // accordion.item sub-component can read it at click-time". It does not and never did:
-    // nothing in `resources/js` reads that attribute, in either the literal or the
-    // `dataset.wkAccordionMode` spelling. Measured against the real factory — given the
-    // attribute and no config the component behaved as `single`; given the config and no
-    // attribute it behaved as `multiple`.
-    //
-    // The attribute itself is harmless and stays: the suite pins it and it is a usable hook for
-    // a developer's own CSS. The sentence was the damage. A maintainer trimming the `x-data`
-    // payload because "the attribute already carries the mode" would have broken the component
-    // while reading a comment that told them it was safe.
+    // `data-wk-accordion-mode` does not carry the mode to the behavior: nothing in
+    // `resources/js` reads that attribute, in either the literal or the `dataset.wkAccordionMode`
+    // spelling. It stays as a hook for a developer's own CSS. Trimming the `x-data` payload
+    // because "the attribute already carries the mode" would break the component.
     //
     // Container classes are variant-driven. `bordered` keeps the original card
     // look; `flush` strips the chrome to just row dividers; `separated` turns
@@ -129,9 +120,9 @@
     {{-- Which panels are open lives in resources/js/components/accordion.js.
          It cannot live here: an inline literal cannot declare methods under
          Alpine's CSP build, and the spread and arrow function inside them are
-         out of its grammar too — no panel opened under a strict policy. The
-         mode is a validated enum, so it goes in as a plain quoted literal
-         rather than through {{ \Pushery\WireKit\Support\AlpinePayload::from() }}. --}}
+         out of its grammar too — no panel would open under a strict policy. The
+         mode goes in through AlpinePayload::string(), which writes it as a quoted
+         JavaScript string whatever the caller passed. --}}
     x-data="wirekitAccordion({ mode: {{ \Pushery\WireKit\Support\AlpinePayload::string($mode) }} })"
     {{-- Arrow keys, Home and End move focus between the headers — the model the
          component's documented keyboard table promises. The handler sits on the

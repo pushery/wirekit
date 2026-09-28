@@ -33,7 +33,8 @@ $wrapperClasses
 'text-[color:var(--color-wk-text)]',
 'text-[length:var(--text-wk-md)]',
 'wrapper',
-(60)
+(`--z-wk-dropdown`),
+(`--z-wk-tooltip`)
 (aria-haspopup,
 (button/link)
 (e.g.
@@ -41,7 +42,6 @@ $wrapperClasses
 (hover)
 (int)
 (keyboard
-(matches
 (silent
 +
 --}}
@@ -181,7 +181,7 @@ div.
 docs/theming.md
 documentation
 does
-dropdown/sticky
+dropdown
 duration-[var(--transition-wk-duration)]"
 ease-in
 ease-out
@@ -218,6 +218,7 @@ header
 header,
 here
 high
+higher
 host
 hover-card
 however
@@ -233,10 +234,12 @@ interacts
 is
 it
 it)
+it.
 its
 itself,
 keeps
 later
+layer
 layout`,
 list
 live
@@ -264,12 +267,13 @@ of.
 offering
 offset:
 on
+one
 one.
 open
+open;
 opens
 optimistic-ui:
 or
-other
 out
 outside
 own
@@ -278,6 +282,7 @@ padding
 pads
 page
 painted
+paints
 panel
 panel's
 panel.
@@ -321,11 +326,11 @@ server
 share
 sibling
 site
+sits
 sitting
 so
 spec
 stacking
-stacking).
 state
 stays
 sticky
@@ -348,8 +353,8 @@ time.
 to
 toggles
 told
+too,
 tooltip
-tooltip-level
 transform
 trap.
 traps
@@ -362,6 +367,7 @@ unpadded
 use
 user
 users
+uses
 utility
 value
 via

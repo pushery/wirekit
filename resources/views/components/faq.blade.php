@@ -1,7 +1,6 @@
-{{-- optimistic-ui: n/a — presentational
-     Renders no interactive element, so there is no action whose result could be
-     shown early. Measured rather than asserted: the guard refutes this reason for
-     any file that renders one. --}}
+{{-- optimistic-ui: n/a — client-only
+     An accordion of questions. Its state is which answers are open, and that is not a value
+     a server owns. --}}
 @props([
     // Accessible name for the question list.
     'label' => config('wirekit.components.faq.label') ?? __('wirekit::Frequently asked questions'),
@@ -28,10 +27,11 @@
     // and two of them compete rather than combine.
     'schema' => true,
     // Strip markup from the SCHEMA answer text (the visible answer is untouched).
-    // Google's FAQPage accepts only a limited HTML subset, so answers containing
-    // nested components, data-* attributes or Alpine directives can fail
-    // rich-result validation. The schema text stays DERIVED from what is rendered
-    // — same content, markup removed — so it cannot drift from the page.
+    // The schema is read outside the page, where the data-* attributes, Alpine
+    // directives and utility classes of nested components mean nothing, and plain
+    // text is what every reader of it takes reliably. The schema text stays DERIVED
+    // from what is rendered — same content, markup removed — so it cannot drift
+    // from the page.
     'plainText' => false,
     // Passed to the accordion: a question's answer stays findable by the browser's find in page.
     'findable' => config('wirekit.components.accordion.findable', true),
@@ -48,7 +48,6 @@
 
     // `findable="false"` on an unbound tag is the string "false", which is truthy.
     $findable = BooleanProp::from($findable, config('wirekit.components.accordion.findable', true));
-    $animate = BooleanProp::from($animate, config('wirekit.components.accordion.animate', true));
 
     // Dev-only — flags unknown props in debug (silent in prod). Declared list
     // auto-derived from this component's @props. Fully qualified: this view's
@@ -86,14 +85,10 @@
         :size="$size"
         :mode="$multiple ? 'multiple' : 'single'"
         :findable="$findable"
-        {{-- ⚠️ `animate` IS NOT FORWARDED HERE, AND THAT IS MEASURED RATHER THAN FORGOTTEN.
-             `accordion.item` reads it through `@aware`, which walks the ancestor components
-             until it finds the name — and this component is one of them, so the value arrives
-             whether the accordion repeats it or not. Adding the line changed no rendered byte
-             in either direction, for a set attribute and for none.
-             What IS load-bearing is the prop above: without it, an unbound `animate="false"`
-             stays the STRING "false", which is truthy — the same trap this file already names
-             for `findable`. --}}
+        {{-- `animate` is not forwarded here. `accordion.item` reads it through `@aware`,
+             which walks the ancestor components until it finds the name — and this component
+             is one of them, so the value arrives whether the accordion repeats it or not —
+             and normalizes it itself, so an unbound `animate="false"` is false there. --}}
         :aria-label="$label"
     >
         {{ $slot }}

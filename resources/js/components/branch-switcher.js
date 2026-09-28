@@ -6,7 +6,7 @@
  * template. A zero-based internal index would mean three places converting, and the one that
  * forgot would be off by one in a number the reader can see.
  *
- * ⚠️ ANNOUNCEMENT IS THE WHOLE SENTENCE, EVERY TIME — never a fragment appended to a live
+ * Announcement is the whole sentence, every time — never a fragment appended to a live
  * region. A screen reader reading "2 of 3" without the noun tells its user nothing, and a
  * region that already holds "1 of 3" may coalesce a change into silence. The count beside the
  * buttons is a plain label for the same reason: making it live would interrupt the reader in

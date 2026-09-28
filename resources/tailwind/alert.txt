@@ -89,6 +89,7 @@ $variantValue
 ("Warning:
 ($effectiveIntent)
 ($variantValue)
+(`fill="currentColor"`),
 (assertive
 (avoids
 (both
@@ -101,7 +102,7 @@ $variantValue
 (shown:
 (silent
 +
---color-wk-accent
+--color-wk-accent:
 --color-wk-info
 --}}
 -m-1
@@ -237,7 +238,6 @@ UNBOUND
 Validate
 Variant
 Visually
-WireKit
 WireKit::resolveAnimateIn($animateIn,
 WireKit::resolveClasses('alert',
 WireKit::validateProp('alert',
@@ -311,6 +311,7 @@ can
 canonical
 cast
 change
+charts
 class="flex-1
 class="font-[number:var(--font-wk-heading-weight)]
 class="mt-2
@@ -359,7 +360,6 @@ double-x-data
 each
 emitting
 error
-exists
 falls
 false)
 false);
@@ -370,6 +370,7 @@ fill="currentColor"
 fill="none"
 fix
 flags
+flash
 flex
 flips
 focus-visible:outline-hidden
@@ -457,14 +458,13 @@ optimistic-ui:
 opts
 other
 otherwise
-outline
 over
 own
 p-1
 page
 passthrough
 path
-paths,
+paths
 per
 persists
 pointing
@@ -481,6 +481,7 @@ prop's
 props
 quiet
 reaches
+read);
 reader
 readers
 reads
@@ -497,7 +498,6 @@ saying
 screen
 semantic
 send
-separate
 set.
 ship
 shown
@@ -508,6 +508,7 @@ site's
 skipped
 slot
 so
+solid
 someone
 starts
 state
@@ -520,7 +521,7 @@ stroke-width="2"
 stroke="currentColor"
 subtle
 success
-surface);
+surface
 synonyms
 text-[color:var(--color-wk-text-muted)]
 that
@@ -536,8 +537,9 @@ title
 to
 toggle
 toggles
-token
+token,
 tokens
+tone
 treatment
 true),
 true);

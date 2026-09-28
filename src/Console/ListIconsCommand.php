@@ -397,11 +397,10 @@ class ListIconsCommand extends Command
             // rather than silently honored — the house convention `InstallCommand`
             // states outright and `BoostSkillsCommand` follows for `--check --force`.
             //
-            // ⚠️ This dispatched BEFORE the flags were read, which meant
-            // `--audit --as=json` printed the human report and exited 0. That is the
-            // one answer a pipeline cannot recognize: `--as=json` is the flag a script
-            // passes, and the audit is the mode a script most wants structured. A human
-            // sees the decorated text and knows; a script sees success and parses it.
+            // Read before the audit dispatches: `--audit --as=json` answered with the human
+            // report and exit 0 would be the one answer a pipeline cannot recognize, because
+            // `--as=json` is the flag a script passes. A human sees the decorated text and
+            // knows; a script sees success and parses it.
             $inapplicable = [];
 
             if ($asValue !== null && $asValue !== '') {

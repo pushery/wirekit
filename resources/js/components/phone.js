@@ -155,17 +155,17 @@ export default function wirekitPhone(config = {}) {
                 }
             }
 
-            // ⚠️ The emit happens HERE rather than as a second statement in the template.
-            // Alpine's CSP grammar parses ONE expression, so `onInput(); emit($refs.bound)` is
-            // rejected outright — and an expression the CSP build cannot parse is never
-            // evaluated at all, in either build, with nothing logged.
+            // The emit happens HERE rather than as a second statement in the template.
+            // Alpine's CSP grammar parses ONE expression, so `onInput(); emit($refs.bound)`
+            // never runs on the CSP bundle: the first keystroke logs `Alpine Expression
+            // Error`, and the value never reaches `wire:model`.
             this.emit(boundEl);
         },
 
         /**
          * Tell the hidden input it changed, so a `wire:model` on it hears about it.
          *
-         * ⚠️ This is not housekeeping. The bound value lives on a hidden input written by an
+         * This is not housekeeping. The bound value lives on a hidden input written by an
          * Alpine binding, and an attribute binding dispatches NOTHING — Livewire listens for an
          * `input` event and never receives one. Without this call the field looks right, submits
          * right through a plain form POST, and binds nothing at all through `wire:model`: the

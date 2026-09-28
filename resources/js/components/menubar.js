@@ -194,7 +194,7 @@ export default function wirekitMenubar() {
         /**
          * The tab stop the reader would reach by leaving the whole bar.
          *
-         * ⚠️ THE BAR IS ONE TAB STOP, so "the next element in the tab sequence"
+         * The bar is one tab stop, so "the next element in the tab sequence"
          * is the next one OUTSIDE it — not the next trigger. That is the
          * difference from navigation-menu, whose top-level items are each their
          * own stop and whose panel Tab therefore steps along the bar.
@@ -507,15 +507,15 @@ export default function wirekitMenubar() {
                     // the key there would only reimplement what works.
                     if (! this.activeMenu) break;
 
-                    // ⚠️ WITH A MENU OPEN THE BROWSER IS WRONG, and it fails silently.
+                    // With a menu open the browser's own Tab is wrong, and it fails silently.
                     // The panel is teleported to the end of <body> while it is drawn
                     // under its trigger, and its items carry `tabindex="-1"` — so the
                     // sequential order continues from a point at the end of the
                     // document. Forwards that leaves the document for the browser
                     // chrome; backwards it lands on whatever precedes the overlay root.
-                    // Either way the menu stayed OPEN and painted over the page with
-                    // focus somewhere else, which is the half of the pattern the docs
-                    // page promised and this handler did not implement.
+                    // Either way the menu would stay open, painted over the page, with
+                    // focus somewhere else, so this handler implements that half of the
+                    // pattern the docs page promises.
                     //
                     // preventDefault is not optional here: focus sits on a `tabindex=-1`
                     // element inside the overlay root, so there is nothing sensible for

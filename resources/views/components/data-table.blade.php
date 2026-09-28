@@ -233,13 +233,11 @@
     // string literals) so Tailwind compiles them AND the drift inventory traces
     // them; the cell binds `:class="badgeClasses[badgeIntent(...)]"`.
     //
-    // ⚠️ ALL SEVEN of `badge`'s intents, and the count is the point. This map and
-    // `badgeIntent()` in the JS both carried FOUR — `success`, `warning`, `danger`,
-    // `neutral` — while `<x-wirekit::badge>` validates against seven. A column
-    // declaring `'intents' => ['processing' => 'accent']` therefore named a value the
-    // badge component accepts, and this table silently rendered it `neutral`. Nothing
-    // warned; the pill simply came out gray, which reads as "no status" rather than as
-    // a rejected value.
+    // All seven of `badge`'s intents, and the count is the point: this map and
+    // `badgeIntent()` in the JS have to accept what `<x-wirekit::badge>` validates
+    // against. A column declaring `'intents' => ['processing' => 'accent']` names a
+    // value the badge component accepts, and a shorter map would silently render it
+    // `neutral`: a gray pill, which reads as "no status" rather than as a rejected value.
     //
     // `primary` and `info` have no base color of their own — they are soft accents, and
     // `badge` says so in its own branch. The strengths below mirror badge's exactly
@@ -277,10 +275,11 @@
     $linkClass = WireKit::resolveClasses('link', 'base', implode(' ', [
         'font-[family-name:var(--font-wk-sans)]',
         'cursor-pointer',
-        'transition-colors',
+        // Opacity is in the list: `transition-colors` leaves it out, and the hover dim jumped.
+        'transition-[color,text-decoration-color,opacity]',
         'duration-[var(--transition-wk-duration)]',
         'ease-[var(--transition-wk-easing)]',
-        'hover:opacity-80',
+        'hover:opacity-[var(--opacity-wk-hover)]',
         'text-[color:var(--color-wk-accent-text)]',
         'underline underline-offset-2',
     ]), $scope);
@@ -586,7 +585,7 @@
                                 <template x-if="col.cellType === 'number' && ! rowIntent(row, col)">
                                     <span :class="avatarText(row, col) ? 'inline-flex items-center gap-[var(--gap-wk-sm)]' : ''">
                                         <template x-if="avatarText(row, col)">
-                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-6 h-6 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
+                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
                                         </template>
                                         <span>
                                             <span class="tabular-nums block" :class="prominenceClass(col)" x-text="cellText(row, col)"></span>
@@ -604,12 +603,12 @@
                                 <template x-if="col.cellType === 'code' && ! rowIntent(row, col)">
                                     <span :class="avatarText(row, col) ? 'inline-flex items-center gap-[var(--gap-wk-sm)]' : ''">
                                         <template x-if="avatarText(row, col)">
-                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-6 h-6 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
+                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
                                         </template>
                                         <span>
-                                            <span class="font-mono block" :class="prominenceClass(col)" x-text="cellText(row, col)"></span>
+                                            <span class="font-[family-name:var(--font-wk-mono,ui-monospace,monospace)] block" :class="prominenceClass(col)" x-text="cellText(row, col)"></span>
                                             <template x-if="subText(row, col)">
-                                                <span class="font-mono block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
+                                                <span class="font-[family-name:var(--font-wk-mono,ui-monospace,monospace)] block text-[length:var(--text-wk-xs)] text-[color:var(--color-wk-text-muted)]" x-text="subText(row, col)"></span>
                                             </template>
                                         </span>
                                     </span>
@@ -623,7 +622,7 @@
                                 <template x-if="col.cellType === 'link' && cellHref(row, col) && ! rowIntent(row, col)">
                                     <span :class="avatarText(row, col) ? 'inline-flex items-center gap-[var(--gap-wk-sm)]' : ''">
                                         <template x-if="avatarText(row, col)">
-                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-6 h-6 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
+                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
                                         </template>
                                         <span>
                                             <a data-wk-prose-skip :href="cellHref(row, col)" class="block w-fit {{ $linkClass }}" x-text="cellText(row, col)"></a>
@@ -639,7 +638,7 @@
                                 <template x-if="isPlainCell(row, col) && ! rowIntent(row, col)">
                                     <span :class="avatarText(row, col) ? 'inline-flex items-center gap-[var(--gap-wk-sm)]' : ''">
                                         <template x-if="avatarText(row, col)">
-                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-6 h-6 rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
+                                            <span aria-hidden="true" class="inline-flex shrink-0 items-center justify-center w-[var(--size-wk-xs)] h-[var(--size-wk-xs)] rounded-[var(--radius-wk-full)] text-[length:var(--text-wk-sm)] font-semibold" :style="avatarStyle(row, col)" x-text="avatarText(row, col)"></span>
                                         </template>
                                         <span>
                                             <span class="block" :class="prominenceClass(col)" x-text="cellText(row, col)"></span>

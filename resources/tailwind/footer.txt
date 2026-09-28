@@ -22,7 +22,7 @@ $slot
 'font-[family-name:var(--font-wk-sans)]',
 'footer');
 'full'
-'full']),
+'full']))
 'lg'
 'lg',
 'max'
@@ -46,8 +46,8 @@ $slot
 'xl'
 'xl');
 'xl',
-($max)
 (=
+(WireKit::validateProp('footer',
 (columns,
 (default
 (footer's
@@ -119,7 +119,6 @@ The
 WireKit
 WireKit::resolveAnimateIn($animateIn,
 WireKit::resolveClasses('footer',
-WireKit::validateProp('footer',
 Without
 [
 ['sm',

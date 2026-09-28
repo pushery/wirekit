@@ -10,9 +10,8 @@
  *  into the iframe context. `aria-hidden="true"` does NOT mitigate that —
  *  it only hides the iframe from assistive tech.
  *
- *  ⚠️ This module is the SECOND line, not the only one, and the paragraph
- *  here used to say otherwise ("scripts still execute"). The caller sets
- *  `sandbox="allow-same-origin"` on the frame and does NOT grant
+ *  This module is the second line, not the only one. The caller sets
+ *  `sandbox="allow-same-origin"` on the frame and does not grant
  *  `allow-scripts`, so script does not run in it at all. That is worth
  *  stating accurately in both directions: overstating the exposure makes
  *  every finding here read as critical, and a reader who checks the caller
@@ -164,15 +163,13 @@ function stripOnce(html) {
  *
  * Returns a new string; never mutates the input.
  *
- * ⚠️ **A SINGLE PASS IS NOT A FIXED POINT, AND THIS FUNCTION USED TO MAKE ONE.** Removing a
- * substring joins what stood on either side of it, so a pass can BUILD the very tag the
- * next pattern would have caught. Measured, on the shipped version:
+ * **A single pass is not a fixed point.** Removing a substring joins what stood on either
+ * side of it, so a pass can build the very tag the next pattern would have caught:
  *
  *     '<scr<script>ipt src=//evil/x.js>'   ->   '<script src=//evil/x.js>'
  *
- * `<script>` matched in the middle, was removed, and the two halves closed around a live
- * script element pointing at an off-origin file. The docblock here claimed idempotence at
- * the time, which is what made it read as settled.
+ * `<script>` matches in the middle, is removed, and the two halves close around a live
+ * script element pointing at an off-origin file.
  *
  * So the pipeline runs until the string stops changing. Convergence is the norm — the
  * second pass is a no-op for anything a page actually contains — and the bound exists for
@@ -202,13 +199,9 @@ export function sanitizeMinimapHtml(html) {
 /**
  * Density check over an HTML STRING — the number of opening tags in it.
  *
- * ⚠️ NOT what the minimap uses, and this docblock said it was. It described "the minimap's
- * lazy-init path" deciding "whether to clone into rendered-mode or fall back to stripes",
- * and that path is gone: the iframe-clone was replaced by a canvas walk, and the decision now
- * counts the LIVE DOM with `source.querySelectorAll('*').length`. The comment beside that
- * count says as much — "ports from the iframe-clone path" — so the two halves of the same
- * change disagreed, and a reader tuning the threshold would have tuned this function and
- * changed nothing.
+ * Not what the minimap uses: the minimap walks a canvas and decides by counting the live DOM
+ * with `source.querySelectorAll('*').length`, so tuning the threshold means tuning that count,
+ * not this function.
  *
  * It is kept because it is the right tool for the question it actually answers: how heavy is
  * a string of HTML, before anything has parsed it. `sanitizeMinimapHtml` above works on the

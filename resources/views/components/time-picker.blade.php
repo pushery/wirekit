@@ -27,13 +27,17 @@
     // the surface and because an undeclared `format` would land on the control as
     // a stray HTML attribute instead of being absorbed here.
     'format' => '24h', // 24h | 12h
-    // The native `step` attribute, in SECONDS, exactly as HTML defines it:
-    // 900 is a quarter of an hour, 60 is one minute, null leaves the browser's
-    // own default. It read as MINUTES here for a quick-pick list that was
-    // computed on every render and never emitted, and the value never reached the
-    // control at all — so a caller writing the documented `step="900"` got a
-    // field that still accepted 09:07, and the arrow keys still stepped by one.
+    // The native `step` attribute, in seconds, exactly as HTML defines it: 900 is
+    // a quarter of an hour, 60 is one minute, null leaves the browser's own
+    // default of one minute. A value off the step is a step mismatch the form
+    // refuses to submit.
     'step' => null,
+    // Declared rather than left in the attribute bag, so that a date object arrives as itself:
+    // Blade casts a bound attribute that is not a prop to an escaped string before the template
+    // runs, and an Eloquent `datetime` cast would reach the control as `Y-m-d H:i:s`.
+    'value' => null,
+    'min' => null,
+    'max' => null,
     'size' => config('wirekit.components.time-picker.size', 'md'),
     'scope' => null,
 ])
@@ -77,6 +81,16 @@
     // passed one got two name attributes on one control — invalid HTML the browser
     // accepts silently by keeping the first, which is why nothing ever went red over it.
     $attributes = $attributes->except(['id', 'name']);
+
+    // A date object, which is what an Eloquent `datetime` cast hands over, is written as the time
+    // of day a native time field reads: `HH:MM`, or `HH:MM:SS` when it carries seconds. Cast to a
+    // string it would be `Y-m-d H:i:s`, which the field reads as no value at all.
+    $toTime = static fn ($time) => $time instanceof \DateTimeInterface
+        ? $time->format($time->format('s') === '00' ? 'H:i' : 'H:i:s')
+        : $time;
+    $value = $toTime($value);
+    $min = $toTime($min);
+    $max = $toTime($max);
 
     $hasError = $error || ($errors ?? null)?->has($name);
     $errorMessage = $error ?? ($errors ?? null)?->first($name);
@@ -139,10 +153,9 @@
 
 @php
     $optimisticConfig = $optimistic === null ? null : \Pushery\WireKit\Support\AlpinePayload::from([
-        // `value` is NOT a declared prop here — it passes through the bag. Reading
-        // it as a prop mounts the layer with an empty value, which is what the
-        // first assertion catches.
-        'value' => (string) ($attributes->get('value') ?? ''),
+        // The value the control renders with, after the date-object normalization
+        // above, so the layer starts from the time the reader sees.
+        'value' => (string) ($value ?? ''),
         'action' => $optimistic,
         'args' => array_values((array) $optimisticArgs),
         'debug' => (bool) config('app.debug'),
@@ -168,10 +181,12 @@
         type="time"
         id="{{ $id }}"
         name="{{ $name }}"
-        {{-- Seconds, per the HTML attribute. It also decides the arrow-key
-             increment, so a control documented as quarter-hourly steps by a
-             quarter of an hour rather than by one minute. --}}
+        {{-- Seconds, per the HTML attribute: a value off the step is a step
+             mismatch, and stepUp() and stepDown() move by it. --}}
         @if($step !== null) step="{{ $step }}" @endif
+        @if($value) value="{{ $value }}" @endif
+        @if($min) min="{{ $min }}" @endif
+        @if($max) max="{{ $max }}" @endif
         @if($hasError) aria-invalid="true" @endif
             @if($optimisticConfig)
                 x-ref="control"

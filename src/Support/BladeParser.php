@@ -18,12 +18,6 @@ namespace Pushery\WireKit\Support;
  * build failure: a drift guard refuses a new regex against the props directive
  * anywhere in `src/`, and allowlists only PropsParser itself.
  *
- * ⚠️ THIS SAID "should be flagged by a future drift-audit guard (next iteration)"
- * FOR SEVERAL RELEASES AFTER THAT GUARD SHIPPED. A reader takes it at
- * its word and concludes the rule is aspirational — which is the direction that
- * costs something: it is an invitation to write the regex the guard would have
- * refused, and to find out at the gate instead of at the keyboard.
- *
  * Why this exists alongside PropsParser: the parser strategies overlap
  * but the use cases differ. PropsParser parses ONE PHP-syntax block
  * (the array literal inside `@props(...)`). BladeParser scans the
@@ -144,12 +138,11 @@ final class BladeParser
          * catalog: three slots a developer was told to supply, one of which (`swap`'s `off`)
          * falls back to the default slot by design.
          *
-         * ⚠️ THIS SIGNAL ONLY DOWNGRADES; it never introduces a name, and that is the whole
-         * design rather than caution. Measured across the 179 component templates before
-         * building it: 153 names occur ONLY inside a `??` and are never referenced bare —
-         * props and locals, not one of them a slot. Collecting them the way `isset` names are
-         * collected would have invented 153 optional slots. `isset($x)` on a template is
-         * almost always a slot-presence check; `??` is ordinary expression punctuation.
+         * This signal only downgrades; it never introduces a name. Most names that occur only
+         * inside a `??` are props and locals, not slots, and collecting them the way `isset`
+         * names are collected would invent optional slots by the hundred. `isset($x)` on a
+         * template is almost always a slot-presence check; `??` is ordinary expression
+         * punctuation.
          */
         $coalescedNames = [];
 
@@ -159,20 +152,19 @@ final class BladeParser
             }
         }
 
-        // ⚠️ A `{{ … }}` INSIDE AN `@php` BLOCK IS NOT OUTPUT — it is characters in a PHP
-        // string, and the parser was reading them as an expression.
+        // A `{{ … }}` inside an `@php` block is not output — it is characters in a PHP
+        // string, not an expression.
         //
         // `reading-bookmark` throws an exception whose MESSAGE shows the developer how to
         // call it: `key="article-{{ $post->slug }}"`. That documentation string made `post`
         // a required slot in every artifact derived from this parser — `components.json`,
         // the api-map, the MCP catalog an assistant reads.
         //
-        // ⚠️ AND ONLY THOSE SEQUENCES, NOT THE WHOLE BLOCK. Dropping the block entirely was
-        // the first attempt and it cost a REAL slot: `faq-item` reads its own content as
-        // `$answerHtml = trim($slot->toHtml())` and nowhere else, so the component's whole
-        // body stopped being a slot. Measured — 206 slots became 203, and one of the three
-        // was that one. A `{{ }}` in PHP can only be a string; a `$name->method()` there is
-        // ordinary code and may well be the only reference a slot has.
+        // And only those sequences, not the whole block. `faq-item` reads its own content as
+        // `$answerHtml = trim($slot->toHtml())` and nowhere else, so dropping the block would
+        // stop the component's whole body being a slot. A `{{ }}` in PHP can only be a string;
+        // a `$name->method()` there is ordinary code and may well be the only reference a slot
+        // has.
         $output = (string) preg_replace_callback(
             '/@php\b.*?@endphp/s',
             static fn (array $m): string => (string) preg_replace('/\{\{.*?\}\}|\{!!.*?!!\}/s', '', $m[0]),
@@ -316,7 +308,7 @@ final class BladeParser
          * the same head. Both sides of a `=>` are bound, and taking only the value half is
          * how `optionValue` survived a first pass at this.
          *
-         * ⚠️ THE HEAD IS READ WITH BALANCED PARENTHESES, not to the first `)`. A non-greedy
+         * The head is read with balanced parentheses, not to the first `)`. A non-greedy
          * `\((.*?)\)` stops inside the collection expression the moment it contains one --
          * a cast or a method call is enough:
          *
@@ -421,7 +413,7 @@ final class BladeParser
             }
         }
 
-        // ⚠️ CLOSURE AND FUNCTION PARAMETERS BIND A NAME TOO, and this is the same class of
+        // Closure and function parameters bind a name too, and this is the same class of
         // miss the docblock above records for destructuring — a name bound without an `=`.
         //
         // `fn (?FontPreset $preset) => …` inside an `@php` block made `fonts` advertise
@@ -527,12 +519,11 @@ final class BladeParser
      * telling a developer to change working code — `card` is the reported case, where the
      * `x-data` belongs to a debug warning that fires only when a card is composed wrongly.
      *
-     * ⚠️ THIS UNDER-REPORTS ON PURPOSE, and that is the trade. A component that sets the
+     * This under-reports on purpose, and that is the trade. A component that sets the
      * attribute only inside a condition that happens to be TRUE at runtime does collide, and
-     * this answers "no". The alternative is the behavior being replaced, which asserts a
-     * collision that mostly is not there. A hint that is silent in a rare real case costs a
-     * developer nothing; one that tells them to rewrite correct code costs them the trust
-     * they had in every other hint.
+     * this answers "no". The alternative asserts a collision that mostly is not there. A hint
+     * that is silent in a rare real case costs a developer nothing; one that tells them to
+     * rewrite correct code costs them the trust they had in every other hint.
      *
      * The exact answer would need the component's own runtime state and would have to be
      * wired per component. That is the right shape for a component that genuinely wants it,
@@ -567,7 +558,7 @@ final class BladeParser
     /**
      * How much one line changes the conditional nesting depth.
      *
-     * ⚠️ `@else`, `@elseif`, `@case`, `@default` and the bare `@empty` of a `@forelse` are
+     * `@else`, `@elseif`, `@case`, `@default` and the bare `@empty` of a `@forelse` are
      * NOT openers — they continue a block someone else opened and have no `@end…` of their
      * own. Counting them opens a level that never closes, so after the first `@if … @else …
      *
@@ -641,7 +632,7 @@ final class BladeParser
      * linter read that sentence as an unnamed `role="img"` and reported an ERROR over two
      * wrappers that both carry `aria-label`.
      *
-     * ⚠️ BLANKED, NOT REMOVED, AND THAT IS THE WHOLE DESIGN. Every caller reports a line
+     * Blanked, not removed, and that is the whole design. Every caller reports a line
      * number, and most compute it from a byte offset with `substr_count(…, "\n")`. Deleting a
      * comment shifts everything after it, so a scanner fed a stripped file would report real
      * findings at the wrong lines — trading a false positive for a wrong address, which is
@@ -1147,6 +1138,206 @@ final class BladeParser
     }
 
     /**
+     * Every rendering of an attribute value that its conditional blocks allow: each `@if`,
+     * `@unless` and `@isset` block replaced by one of its branches, the directives removed.
+     *
+     * A value like `{ a: 1@if($x), b: 2@endif }` is a fragment rather than an expression, and
+     * what a browser receives is one of its renderings. Handing each of them to a client-side
+     * grammar measures what the value can be, where a single substitution can only report
+     * that it did not know.
+     *
+     * A block without `@else` renders empty as well, because its condition can be false.
+     * Echoes and comments are copied rather than searched, so an `@if(` inside a PHP string
+     * in `{{ … }}` is text. `@@` is Blade's escape for a literal `@`, and an `@` right after a
+     * word character is not a directive either, which is how Blade itself reads them.
+     *
+     * Null when a block does not close, when a directive closes a block that is not open, or
+     * when the renderings would exceed `$limit`: the caller then treats the value as one it
+     * could not read, rather than as a clean one.
+     *
+     * @return list<string>|null
+     */
+    public static function conditionalBranches(string $value, int $limit = 16): ?array
+    {
+        $position = 0;
+        $renderings = self::renderSequence($value, $position, [], $limit);
+
+        return $renderings === null ? null : array_values(array_unique($renderings));
+    }
+
+    /**
+     * The renderings of `$value` from `$position` up to the first of `$stops` at this level,
+     * with `$position` left on it; with no stops, up to the end.
+     *
+     * @param  list<string>  $stops
+     * @return list<string>|null
+     */
+    private static function renderSequence(string $value, int &$position, array $stops, int $limit): ?array
+    {
+        $renderings = [''];
+        $length = strlen($value);
+        $textStart = $position;
+
+        for ($i = $position; $i < $length; $i++) {
+            $past = self::pastEchoOrComment($value, $i);
+
+            if ($past === null) {
+                return null;
+            }
+
+            if ($past !== $i) {
+                $i = $past - 1;
+
+                continue;
+            }
+
+            if ($value[$i] !== '@') {
+                continue;
+            }
+
+            if (($value[$i + 1] ?? '') === '@') {
+                $i++;
+
+                continue;
+            }
+
+            if ($i > 0 && preg_match('/\w/', $value[$i - 1]) === 1) {
+                continue;
+            }
+
+            if (preg_match('/\G@(elseif|else|endif|endunless|endisset|if|unless|isset)\b/', $value, $match, 0, $i) !== 1) {
+                continue;
+            }
+
+            $directive = $match[1];
+            $text = substr($value, $textStart, $i - $textStart);
+
+            if (in_array($directive, $stops, true)) {
+                $position = $i;
+
+                return array_map(static fn (string $rendering): string => $rendering.$text, $renderings);
+            }
+
+            if (! in_array($directive, ['if', 'unless', 'isset'], true)) {
+                return null;
+            }
+
+            $position = $i;
+            $block = self::renderBlock($value, $position, $directive, $limit);
+
+            if ($block === null || count($renderings) * count($block) > $limit) {
+                return null;
+            }
+
+            $combined = [];
+
+            foreach ($renderings as $rendering) {
+                foreach ($block as $branch) {
+                    $combined[] = $rendering.$text.$branch;
+                }
+            }
+
+            $renderings = $combined;
+            $textStart = $position;
+            $i = $position - 1;
+        }
+
+        if ($stops !== []) {
+            return null;
+        }
+
+        $position = $length;
+        $text = substr($value, $textStart);
+
+        return array_map(static fn (string $rendering): string => $rendering.$text, $renderings);
+    }
+
+    /**
+     * The renderings of the block that opens at `$position`, one per branch, with `$position`
+     * left just past its closing directive.
+     *
+     * @return list<string>|null
+     */
+    private static function renderBlock(string $value, int &$position, string $opener, int $limit): ?array
+    {
+        $closer = 'end'.$opener;
+        $alternatives = match ($opener) {
+            'if' => ['elseif', 'else'],
+            'unless' => ['else'],
+            default => [],
+        };
+
+        $cursor = self::pastDirectiveArgument($value, $position + 1 + strlen($opener));
+        $branches = [];
+        $hasElse = false;
+
+        while ($cursor !== null) {
+            $body = self::renderSequence($value, $cursor, $hasElse ? [$closer] : [...$alternatives, $closer], $limit);
+
+            if ($body === null) {
+                return null;
+            }
+
+            array_push($branches, ...$body);
+
+            if (count($branches) > $limit || preg_match('/\G@(\w+)/', $value, $match, 0, $cursor) !== 1) {
+                return null;
+            }
+
+            if ($match[1] === $closer) {
+                $position = $cursor + 1 + strlen($closer);
+
+                return $hasElse ? $branches : [...$branches, ''];
+            }
+
+            if ($match[1] === 'else') {
+                $hasElse = true;
+                $cursor += strlen('@else');
+
+                continue;
+            }
+
+            // `@elseif`, which carries a condition of its own.
+            $cursor = self::pastDirectiveArgument($value, $cursor + strlen('@elseif'));
+        }
+
+        return null;
+    }
+
+    /**
+     * The offset just past an echo or a comment that opens at `$offset`, `$offset` itself when
+     * none does, or null when one opens and never closes. The longer openers are tried first:
+     * `{{--` is also a `{{`.
+     */
+    private static function pastEchoOrComment(string $value, int $offset): ?int
+    {
+        foreach (['{{--' => '--}}', '{!!' => '!!}', '{{' => '}}'] as $open => $close) {
+            if (substr($value, $offset, strlen($open)) === $open) {
+                $end = strpos($value, $close, $offset + strlen($open));
+
+                return $end === false ? null : $end + strlen($close);
+            }
+        }
+
+        return $offset;
+    }
+
+    /**
+     * The offset just past the parenthesized argument that follows a directive name ending at
+     * `$offset`, or null when there is none or it never closes.
+     */
+    private static function pastDirectiveArgument(string $value, int $offset): ?int
+    {
+        if ($offset >= strlen($value)) {
+            return null;
+        }
+
+        $open = $offset + strspn($value, " \t\r\n", $offset);
+
+        return ($value[$open] ?? '') === '(' ? self::pastMatchingParen($value, $open) : null;
+    }
+
+    /**
      * Replace every `@js(…)` whose parens close with `$placeholder`, leaving the rest alone.
      *
      * Scanned rather than pattern-replaced because the end of the directive is a matching
@@ -1263,13 +1454,13 @@ final class BladeParser
      *   - a `//` or `#` line comment inside `@php … @endphp`
      *   - the same inside a raw `<?php … ?>` island
      *
-     * Measured in WireKit-Docs, which uses the `@import` path and no directive at all: the only
+     * Measured in a documentation site that uses the `@import` path and no directive at all: the only
      * surviving match was the phrase `and ``@wirekitStyles`` now links it` in a PHP comment, and
      * the doctor printed `✓ @wirekitStyles directive found` instead of the correct PASS line for
      * the `@import` path. Harmless there because a valid path existed; on an install with
      * NEITHER it reports a green setup over a broken one.
      *
-     * ⚠️ THE PHP HALF IS TOKENIZED RATHER THAN MATCHED, and that is not fastidiousness: `//`
+     * The PHP half is tokenized rather than matched, and that is not fastidiousness: `//`
      * also occurs inside `'https://…'` and `#` inside `'#fff'`. A pattern that cuts at either
      * would truncate a live line — and truncating a line is how a strip meant to remove false
      * positives starts producing false negatives instead. `token_get_all()` is the reader PHP

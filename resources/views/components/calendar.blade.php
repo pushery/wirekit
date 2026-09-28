@@ -40,7 +40,6 @@
 ])
 
 @php
-    use Illuminate\Support\Js;
     use Pushery\WireKit\Support\BooleanProp;
     use Pushery\WireKit\WireKit;
 
@@ -54,6 +53,21 @@
     // Normalized against each prop's own default so a cast never flips a feature that was on.
     $selectableHeader = BooleanProp::from($selectableHeader, false);
     $range = BooleanProp::from($range, false);
+
+    // A date object, which is what an Eloquent `date` cast hands over, is written as the day it
+    // names: cast to a string it would carry a time of day the factory cannot read. A range may
+    // also arrive as its two ends, `['start' => …, 'end' => …]` or `[$start, $end]` as on the
+    // date picker, each end a date object or a `YYYY-MM-DD` string.
+    $toDay = static fn ($date) => $date instanceof \DateTimeInterface ? $date->format('Y-m-d') : $date;
+
+    if (is_array($value)) {
+        $value = implode('/', array_filter(
+            [$toDay($value['start'] ?? ($value[0] ?? null)), $toDay($value['end'] ?? ($value[1] ?? null))],
+            static fn ($end): bool => $end !== null && $end !== ''
+        ));
+    } else {
+        $value = $toDay($value);
+    }
 
     // Split for the pre-Alpine markup only. The component reads the same string
     // again in JS — one parse per side rather than a value threaded through two
@@ -99,7 +113,7 @@
 
     $dayBtnClasses = implode(' ', [
         'flex items-center justify-center',
-        'w-9 h-9',
+        'w-[var(--size-wk-md-compact)] h-[var(--size-wk-md-compact)]',
         'rounded-[var(--radius-wk-sm)]',
         'text-[length:var(--text-wk-sm)]',
         'tabular-nums',
@@ -133,23 +147,21 @@
     // Built here rather than assembled inside the attribute, for two reasons —
     // and the second one is not cosmetic.
     //
-    // An apostrophe used to end the JS string it sat in. `{{ }}` escapes it to
-    // &#039;, the browser decodes it back to ' inside the attribute, and
-    // everything after it is read as more of the expression: a name like
-    // "o'clock" was developer-controlled source injected into an evaluated
-    // directive. Js::from escapes it.
+    // Both literals come from AlpinePayload, which writes a JavaScript string the
+    // CSP parser reads as one argument. A prop written straight into a quoted JS
+    // literal is not safe in a directive: `{{ }}` escapes an apostrophe to
+    // &#039;, the browser decodes it back before Alpine reads the attribute, and
+    // a name like "o'clock" would end the string and run the rest as expression.
+    // Echoed through `{{ }}`, the literal's own double quotes arrive as &quot;,
+    // so the attribute stays whole.
     //
-    // And the literals keep a double quote out of the DIRECTIVE. An inner "
-    // ends the attribute for anything scanning the template, which is how this
-    // expression stayed invisible to the CSP audit — it was measuring a
-    // truncated fragment and reporting the component as broken.
+    // Js::from is not interchangeable with it here: it writes JSON.parse('…') for
+    // a JsonSerializable value, and JSON is a global the CSP evaluator cannot
+    // resolve; and it writes non-ASCII as \u escapes, which some CSP tokenizers
+    // read back without the backslash, so a name with an umlaut arrives mangled.
     //
-    // The (string) cast matters: without it Js::from would take the
-    // JsonSerializable path for a Carbon value and emit JSON.parse('…'), which
-    // is a global the CSP evaluator cannot resolve.
-    // AlpinePayload, not Js::from: inside a directive the latter emits \u escapes
-    // for non-ASCII, and Alpine's CSP tokenizer drops the backslash while keeping the
-    // letters — a name with an umlaut would arrive mangled with nothing logged.
+    // The cast makes the value a string before it is encoded; the factory splits
+    // it on `/`.
     $valueLiteral = $value ? \Pushery\WireKit\Support\AlpinePayload::from((string) $value) : 'null';
     $nameLiteral = \Pushery\WireKit\Support\AlpinePayload::from($name);
 

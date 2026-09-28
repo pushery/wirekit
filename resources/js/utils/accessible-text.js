@@ -1,11 +1,6 @@
 /**
  * The VISIBLE text of an element, with `aria-hidden` descendants left out.
  *
- * ⚠️ The summary line used to say "the text as a reader of its ACCESSIBLE content would see
- * it", which reads as the whole accessible-name computation and is one rule of it. The
- * paragraphs below always scoped it correctly; the first line did not, and the first line is
- * what a caller reads.
- *
  * `textContent` walks straight through `aria-hidden="true"`, which is the one attribute
  * whose entire meaning is "this is not part of the accessible content". Anything building a
  * label from a heading — a table of contents, a spine, a minimap — is exactly the kind of

@@ -15,7 +15,7 @@
  * document: a page may hold several replayable demos, and a document-wide lookup
  * would reset whichever one happened to come first.
  *
- * ⚠️ WHICH MEANS THE BUTTON IS ALWAYS INSIDE WHAT IT REPLACES, and that is why
+ * Which means the button is always inside what it replaces, and that is why
  * this file has to think about focus at all. `closest()` matches the element
  * itself or an ancestor and never a sibling, so in the only arrangement where
  * `replay()` does anything, `root.innerHTML = source` detaches the very button
@@ -68,9 +68,10 @@ export default function wirekitReplayButton() {
 
             root.innerHTML = source;
 
-            // The replaced markup carries its own directives, and Alpine only
-            // walks a tree once. Without this the demo comes back as static
-            // HTML — visually right, completely dead.
+            // The replaced markup carries its own directives. Alpine's mutation
+            // observer would initialize it a microtask later; initializing it
+            // here makes that synchronous, so the focus restored just below
+            // lands on a live button.
             if (window.Alpine) {
                 window.Alpine.initTree(root);
             }
@@ -111,7 +112,7 @@ export default function wirekitReplayButton() {
         /**
          * Put focus back inside the replayed demo.
          *
-         * ⚠️ THE FALLBACK IS LOAD-BEARING, not defensive padding. A snapshot is
+         * The fallback is load-bearing, not defensive padding. A snapshot is
          * whatever was captured, and one taken without the button in it rebuilds a
          * demo with no replay control at all — the documented manual shape renders
          * demo and button from one string precisely so this cannot happen, but the

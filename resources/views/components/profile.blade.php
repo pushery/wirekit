@@ -89,7 +89,7 @@
     // Both maps emit nothing for `none`, which is what the layout primitives
     // already do — `gap-0` and an empty string render the same, and one spelling
     // across the kit is worth more than the shorter one here.
-    $gapClasses = match ($gap) {
+    $gapClasses = match (WireKit::validateProp('profile', 'gap', (string) $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl'])) {
         'none' => '',
         'xs' => 'gap-[var(--gap-wk-xs)]',
         'sm' => 'gap-[var(--gap-wk-sm)]',
@@ -97,30 +97,27 @@
         'lg' => 'gap-[var(--gap-wk-lg)]',
         'xl' => 'gap-[var(--gap-wk-xl)]',
         '2xl' => 'gap-[var(--gap-wk-2xl)]',
-        default => WireKit::validateProp('profile', 'gap', (string) $gap, ['none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl']),
     };
 
     // Muted goes full on HOVER, which is the half that makes it match rather than
     // merely dim: an entry above it does exactly that. The pair sits on the span
     // because the span is what overrides an inherited color, and it is keyed to a
     // NAMED group so a `group-hover:` a caller writes in the slot cannot capture it.
-    $toneClasses = match ($tone) {
+    $toneClasses = match (WireKit::validateProp('profile', 'tone', (string) $tone, ['default', 'muted'])) {
         'default' => 'text-[color:var(--color-wk-text)]',
         'muted' => 'text-[color:var(--color-wk-text-muted)] group-hover/wk-profile:text-[color:var(--color-wk-text)]',
-        default => WireKit::validateProp('profile', 'tone', (string) $tone, ['default', 'muted']),
     };
 
-    $paddingClasses = match ($padding) {
+    $paddingClasses = match (WireKit::validateProp('profile', 'padding', (string) $padding, ['none', 'xs', 'sm', 'md', 'lg', 'xl'])) {
         'none' => '',
         'xs' => 'px-[var(--padding-wk-x-xs)]',
         'sm' => 'px-[var(--padding-wk-x-sm)]',
         'md' => 'px-[var(--padding-wk-x-md)]',
         'lg' => 'px-[var(--padding-wk-x-lg)]',
         'xl' => 'px-[var(--padding-wk-x-xl)]',
-        default => WireKit::validateProp('profile', 'padding', (string) $padding, ['none', 'xs', 'sm', 'md', 'lg', 'xl']),
     };
 
-    $radiusClasses = match ($radius) {
+    $radiusClasses = match (WireKit::validateProp('profile', 'radius', (string) $radius, ['none', 'sm', 'md', 'lg', 'xl', 'full', 'nav-item'])) {
         'none' => '',
         'sm' => 'rounded-[var(--radius-wk-sm)]',
         'md' => 'rounded-[var(--radius-wk-md)]',
@@ -128,7 +125,6 @@
         'xl' => 'rounded-[var(--radius-wk-xl)]',
         'full' => 'rounded-[var(--radius-wk-full)]',
         'nav-item' => 'rounded-[var(--radius-wk-nav-item)]',
-        default => WireKit::validateProp('profile', 'radius', (string) $radius, ['none', 'sm', 'md', 'lg', 'xl', 'full', 'nav-item']),
     };
 
     // ── An avatar-only control IS the avatar ──────────────────────────────
@@ -162,8 +158,8 @@
         // Add focus-visible ring when this is a control — same shape as the
         // canonical button focus state (matches the button component).
         // `cursor-pointer` is not decoration on the button branch: Tailwind v4's
-        // preflight sets `cursor: default` on <button>, which is where the pointer
-        // would otherwise go missing. The rest of the UA chrome — the border, the
+        // preflight no longer sets `cursor: pointer` on <button> (v3 did), which is where
+        // the pointer would otherwise go missing. The rest of the UA chrome — the border, the
         // background, the button's own font — that same preflight already removes,
         // and Tailwind v4 is a hard requirement of this package.
         // An interactive row answers the pointer, not only the keyboard.
@@ -198,7 +194,7 @@
     @if($interactive && $tag !== 'button')
         tabindex="0"
         role="button"
-        {{-- ⚠️ THE BARE `x-data` IS WHAT MAKES THE TWO HANDLERS BELOW EXIST. Alpine walks
+        {{-- The bare `x-data` is what makes the two handlers below exist. Alpine walks
              only the trees rooted at an element carrying `x-data` or `x-init` — everything
              else in the document is never visited, so an `x-on:` on an unscoped element is
              inert markup: no handler, no error, no console line. The row takes focus and
@@ -224,7 +220,7 @@
     {{ $attributes->class([$classes]) }}
 >
     @if($avatarSrc)
-        <img data-wk-prose-skip src="{{ $avatarSrc }}" alt="{{ $avatarAlt }}" class="h-8 w-8 rounded-full object-cover" />
+        <img data-wk-prose-skip src="{{ $avatarSrc }}" alt="{{ $avatarAlt }}" class="h-[var(--size-wk-sm)] w-[var(--size-wk-sm)] rounded-full object-cover" />
     @elseif($avatarInitials)
         {{-- The PRIMITIVE, not a copy of it. This was hand-rolled, and the comment above it
              claimed "the same deterministic-palette shape as the canonical avatar primitive"

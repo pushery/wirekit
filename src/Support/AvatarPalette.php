@@ -22,8 +22,9 @@ namespace Pushery\WireKit\Support;
 final class AvatarPalette
 {
     /**
-     * Canonical background palette. Eight hues at a fixed lightness/chroma
-     * tuned so `#fff` foreground clears WCAG AA (4.5:1) on every entry.
+     * Canonical background palette. Eight hues at a fixed lightness of 47%,
+     * with the chroma tuned per hue between 0.11 and 0.15, so `#fff`
+     * foreground clears WCAG AA (4.5:1) on every entry.
      * oklch() is in the Tailwind v4 browser baseline.
      *
      * @var list<string>

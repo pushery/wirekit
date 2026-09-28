@@ -35,7 +35,7 @@ final class SourceComments
     /**
      * Every comment replaced by its own newlines.
      *
-     * ⚠️ NEWLINES SURVIVE, and that is not tidiness. Callers report findings as
+     * Newlines survive, and that is not tidiness. Callers report findings as
      * `file:line`; a multi-line comment removed outright shifts every line after
      * it, so the one piece of information a reader uses to go and look points at
      * the wrong place — in exactly the files that carry the most prose.

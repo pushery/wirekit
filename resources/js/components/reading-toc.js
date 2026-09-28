@@ -117,16 +117,14 @@ export default (options = {}) => ({
     /**
      * Keep `activeIndex` on the section the reader is in, recomputed as the page scrolls.
      *
-     * ⚠️ THIS USED TO BE AN IntersectionObserver WITH A 600 MS TIMER, and both halves were
-     * wrong. Its band sat at the top of the WINDOW, while `scrollTo()` stands a heading
-     * below the strip and inside whatever region actually scrolls, so a clicked heading landed
-     * below the line it was measured against, and the previous section came back the moment
-     * anything recomputed. An observer also fires only when a heading crosses ITS band, so a
-     * heading crossing the right line said nothing at all. The timer hid it on a fast machine.
+     * Every scroll in the document is a reason to look, at most once a frame. The listener sits
+     * on `document` in the capture phase: a scroll event does not bubble, and capture is how one
+     * listener hears an inner region as well as the page.
      *
-     * Now every scroll in the document is a reason to look, at most once a frame. The listener
-     * sits on `document` in the capture phase: a scroll event does not bubble, and capture is
-     * how one listener hears an inner region as well as the page.
+     * Not an IntersectionObserver: its band sits at the top of the window, while `scrollTo()`
+     * stands a heading below the strip and inside whatever region actually scrolls, so a clicked
+     * heading would land below the line it is measured against, and an observer fires only when a
+     * heading crosses its own band.
      */
     observeActive() {
         this._onScroll = () => {

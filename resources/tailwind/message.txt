@@ -35,8 +35,8 @@ $as);
 $attachments
 $attributes->class([$baseClasses])
 $attributes->class([$groupClasses])
-$attributes->class([$sizeClasses]);
 $attributes->class(['relative
+$attributes->class([WireKit::resolveClasses('icon',
 $attributes->get('aria-hidden');
 $attributes->get('aria-label');
 $attributes->get('aria-labelledby');
@@ -135,6 +135,7 @@ $sideValue
 $size
 $size,
 $sizeClasses
+$sizeClasses)]);
 $sizeClasses,
 $sizeClasses])
 $sizeMap
@@ -444,15 +445,15 @@ $wrap
 'var(--color-wk-success)',
 'var(--color-wk-text-muted)',
 'var(--color-wk-warning)',
-'w-10
-'w-12
 'w-16
 'w-2
 'w-2.5
 'w-3
 'w-3.5
-'w-6
-'w-8
+'w-[var(--size-wk-lg)]
+'w-[var(--size-wk-md)]
+'w-[var(--size-wk-sm)]
+'w-[var(--size-wk-xs)]
 'w-max',
 'warning'
 'warning',
@@ -464,7 +465,7 @@ $wrap
 'wrap'
 'x-circle'
 'xl'
-'xl']),
+'xl']))
 'xs'
 'xs',
 'z-[var(--z-wk-tooltip)]',
@@ -494,13 +495,12 @@ $wrap
 ($surface)
 ($svgHtml
 ($timestamp
-('xs')
+('xs').
 (AA
 (Alpine
 (Blade
 (CTA
 (Carbon|string).
-(Note:
 (RTL-safe)
 (SOFT
 (WCAG
@@ -539,7 +539,6 @@ $wrap
 (int)
 (intent-tinted
 (isoFormat('LT')
-(it
 (matches
 (mirrors
 (mouse-only)
@@ -551,7 +550,6 @@ $wrap
 (preserving
 (provides
 (regex
-(removed
 (same
 (set
 (shouldSetHidden=true),
@@ -572,6 +570,7 @@ $wrap
 --border-wk-width
 --color-wk-accent
 --color-wk-accent)
+--color-wk-info
 --shadow-wk-badge
 --}}
 -text
@@ -728,7 +727,6 @@ AND
 API:
 ARIA
 AT
-ATTEMPTED
 Accept
 Accessible
 Actions
@@ -742,8 +740,6 @@ Attachments
 Aurora
 Avatar
 AvatarPalette::for((string)
-BECAUSE
-BELOW,
 BOTH
 Base
 Blade
@@ -764,10 +760,7 @@ Both
 Box-shadow
 Bubble
 CALLER's
-CAN
-CANNOT
 CLASS,
-CONDITION
 CSS
 CUT
 Carbon
@@ -799,7 +792,6 @@ Each
 English
 English,
 Escape
-FAIL
 FILTER_VALIDATE_BOOLEAN);
 Fast
 Fixed
@@ -815,7 +807,6 @@ German
 Given
 Glyph
 Graceful
-HERE,
 HOVER,
 HOVERABLE:
 HTML,
@@ -825,16 +816,14 @@ Hidden
 How
 Htmlable,
 ID
-IN
-INSIDE
 IS
-IT
 Icon
 IconResolver,
 If
 Ignored
 In
 Inherits
+Inline
 It
 Its
 JS
@@ -877,7 +866,6 @@ Optional
 Overlap
 PERFECTLY
 PM"
-POINTING
 Parse
 Pass
 Pick
@@ -886,7 +874,6 @@ Pushery\WireKit\Support\AvatarPalette.
 Pushery\WireKit\Support\AvatarPalette;
 Pushery\WireKit\Support\BooleanProp;
 Pushery\WireKit\WireKit;
-RENDER
 Reactions
 Reapply
 Render
@@ -899,7 +886,6 @@ Revealed
 Rich
 Ring
 RuntimeException
-SEE.
 SHAPE
 SIBLING.
 SOFT
@@ -919,6 +905,7 @@ Single-line
 Size
 Sizes
 So
+Stable
 Status
 Strip
 Surface
@@ -928,7 +915,6 @@ Switch
 Symmetric
 TAG
 THE
-THIS
 TWO
 Tailwind
 Teleporting
@@ -952,11 +938,9 @@ Validate
 VariantResolver::INTENTS
 Visually
 WAS
-WAY
 WCAG
 WHEN
 WIDTH
-WINDOW,
 WITHOUT
 WRAPPER,
 We
@@ -1025,16 +1009,17 @@ __('wirekit::Sent'),
 __toString
 `$as`
 `$refs`
+`--color-wk-bg-elevated`,
 `:remaining="7"`
 `<button>`
 `<div>`
 `<p>`
+`<span>`
 `<template
 `<template>`
 `<x-wirekit::scroll-area
 `=`,
 `Illegal
-`Str::random(12)`
 `Svg
 `_x_dataStack`,
 `aria-describedby`
@@ -1068,6 +1053,7 @@ __toString
 `focusable-trigger`
 `group`
 `heroicon-m-inbox`
+`icon`
 `inbox`
 `info`
 `initials`
@@ -1093,9 +1079,12 @@ __toString
 `pointer-events-none`
 `position:
 `prop="false"`
+`ring-*`
+`ring-offset-*`
 `role="img"`.
 `shape="cirlce"`
 `size`
+`size`,
 `soft`
 `span`:
 `src`),
@@ -1128,7 +1117,6 @@ above.
 absence
 absent,
 accent
-accent),
 accent-fg
 accept
 accessibility
@@ -1141,6 +1129,7 @@ actions-reveal="always"
 actual
 actually
 add
+adds
 affects
 after
 again.
@@ -1228,6 +1217,7 @@ assertion
 assistive
 association
 at
+attempted
 attribute
 attribute,
 attribute.
@@ -1315,7 +1305,6 @@ border-[var(--color-wk-text)]',
 border-[var(--color-wk-warning)]',
 border.
 bordered-only
-borrows
 both
 bottom-0
 bottom-right
@@ -1376,6 +1365,7 @@ catch.
 caught
 cell
 centering,
+charts
 chat
 check
 check.
@@ -1432,17 +1422,16 @@ colors,
 come
 comes
 comment
-comments
 common
 compare
 compete
 compile
-compiler
 compiles
 component
 component's
 components
 composer
+computed
 concentric
 concept,
 condition
@@ -1514,10 +1503,10 @@ datetime="{{
 de
 dead.
 debug
-debug,
 decided
 decision,
 decision:
+declaration
 declared
 declaring
 decorative
@@ -1635,7 +1624,6 @@ event
 event.
 event:
 events
-ever
 every
 exact
 exactly
@@ -1658,6 +1646,7 @@ fact
 factory,
 factory:
 fade="…">`
+fail
 failed"
 failed.
 fails
@@ -1678,7 +1667,7 @@ field,
 file
 files
 fill
-fill;
+fill:
 fill="currentColor"
 fill="none"
 filled
@@ -1688,7 +1677,6 @@ finds
 fine).
 finish
 fire
-fired
 fires
 first
 fix
@@ -1698,6 +1686,7 @@ fixed-height
 fixed`
 fixes
 flags
+flash
 flatten
 flattened
 flattens
@@ -1751,6 +1740,8 @@ gap-[var(--space-wk-sm,0.5rem)]
 gap-[var(--space-wk-sm,0.5rem)]',
 gap-[var(--space-wk-xs,0.25rem)]
 gap-x-1',
+gate
+gate,
 generic
 genuinely
 get
@@ -1778,8 +1769,6 @@ guard
 guarded
 guess
 h-1.5
-h-10
-h-12
 h-16
 h-2',
 h-2.5',
@@ -1787,8 +1776,10 @@ h-3',
 h-3.5',
 h-3/5
 h-5
-h-6
-h-8
+h-[var(--size-wk-lg)]
+h-[var(--size-wk-md)]
+h-[var(--size-wk-sm)]
+h-[var(--size-wk-xs)]
 h-full
 h/w
 had
@@ -1806,6 +1797,7 @@ hard
 hardcoded
 harder
 has
+has:
 hash
 hash.
 hatch
@@ -1847,6 +1839,7 @@ hover:opacity-100',
 how
 however
 icon
+icon's
 icon,
 icon-only
 icon;
@@ -1877,6 +1870,7 @@ independent
 indicator
 individual
 inert
+info
 information
 informative
 informative.
@@ -1939,7 +1933,6 @@ justify-center
 justify-center',
 keep
 keeps
-kept
 key
 keyboard
 keyboard,
@@ -2034,6 +2027,7 @@ menus
 merge
 message
 message's
+message.
 message:
 messages
 messaging
@@ -2100,7 +2094,6 @@ none,
 none.
 nor
 not
-not.
 not:
 nothing
 nothing.
@@ -2177,7 +2170,6 @@ pages
 pair
 pair).
 pairing
-pairing.)
 pairing;
 pairs
 palette
@@ -2210,6 +2202,7 @@ per-surface
 permanently
 person
 person,
+personalization
 phone
 phrasing
 pick
@@ -2224,6 +2217,7 @@ places
 plain
 pointer
 pointer-events
+pointing
 polled
 popover's
 popovers
@@ -2251,7 +2245,6 @@ problem
 problem,
 prod).
 produced
-production.
 project,
 prominent
 prop
@@ -2262,7 +2255,6 @@ provide
 provides
 proxy
 pure
-purpose
 purpose,
 put
 puts
@@ -2285,12 +2277,10 @@ radius
 radius,
 radius.
 raises
-random
 rare
 rather
 raw
 re-inject
-re-renders,
 re-renders.
 re-thrown
 reach
@@ -2303,6 +2293,7 @@ read
 read)
 read,
 read.
+read;
 reader
 readers
 readers).
@@ -2373,7 +2364,6 @@ right-0',
 ring
 ring,
 ring-[var(--color-wk-bg-elevated)]',
-ring-offset-*
 role
 role,
 role="article"
@@ -2408,7 +2398,6 @@ scale
 scaling
 scanner
 scanner.
-scans
 scope
 scope,
 screen
@@ -2419,6 +2408,7 @@ scroll
 second
 see
 see,
+see.
 sees
 sees.
 semantic
@@ -2444,6 +2434,7 @@ shadows:
 shape
 shape,
 shared
+shares
 shares:
 shipped
 short
@@ -2479,12 +2470,14 @@ sizing.
 slot
 slot's
 slot.
+slots.
 small
 so
 soft
 soft).
 soft-chip
 soft-tone
+solid
 solved
 somebody
 something
@@ -2514,6 +2507,7 @@ state
 state.
 static
 status
+status,
 status.
 status:
 stay
@@ -2524,6 +2518,7 @@ stopped
 stops
 storage/logs/laravel.log.
 strategy:
+strictness
 string
 string,
 string.
@@ -2561,7 +2556,6 @@ swapped
 sweep
 switches
 synonyms
-syntax
 system
 tab
 tab-stop
@@ -2636,6 +2630,7 @@ threads
 three
 through
 throw
+throw,
 throws
 tick
 tick,
@@ -2662,7 +2657,7 @@ to.
 toHtml().
 token
 token,
-too
+tone
 tooltip
 tooltip,
 tooltip.
@@ -2711,7 +2706,6 @@ typically
 typography,
 unaffected
 unaffected.
-unbalanced
 unbound
 uncaught
 unchanged.
@@ -2736,9 +2730,9 @@ used
 useful
 user
 uses
-utilities
+utilities,
 utility
-v4).
+v4
 valid
 validateProp
 validator,
@@ -2758,6 +2752,7 @@ view's
 viewBox="0
 viewport.
 visibility
+visibility,
 visible
 visual
 visually
@@ -2810,6 +2805,8 @@ widening
 width
 width)
 width,
+widths
+window,
 wins
 wire:key="wk-tooltip-panel"
 with
@@ -2890,5 +2887,4 @@ zoom,
 —
 →
 ≥4.5:1
-⚠️
 ✓✓

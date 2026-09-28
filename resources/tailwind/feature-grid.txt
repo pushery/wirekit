@@ -126,7 +126,7 @@ $token,
 'stagger'
 'wk-stagger'
 'xl'
-'xl']),
+'xl']))
 'xl:1'
 'xl:2'
 'xl:3'
@@ -140,8 +140,8 @@ $token,
 'xl:grid-cols-5',
 'xl:grid-cols-6',
 ($developerStyle
-($gap)
 ($hasStagger)
+(WireKit::validateProp('feature-grid',
 (default
 (e.g.
 (null

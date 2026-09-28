@@ -33,7 +33,8 @@
     $count = $count === null || $count === '' ? null : max(0, (int) $count);
 
     // The arrows call the method by name inside an attribute Livewire evaluates, so it has to be
-    // a name. Anything else throws in debug, and in production the arrows render without one.
+    // a name. Anything else is reported through the strictness gate, and where the gate does not
+    // throw, the arrows render without one.
     if (! is_string($action) || preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $action) !== 1) {
         WireKit::validateProp('table.reorder', 'action', is_string($action) ? $action : '', [
             'the name of the Livewire method the table body\'s wire:sort calls',
